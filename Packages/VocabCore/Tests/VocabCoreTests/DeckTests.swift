@@ -36,6 +36,56 @@ struct DeckTests {
         }
     }
 
+    // MARK: Newest batch
+
+    private func card(_ question: String, created offset: TimeInterval) -> Card {
+        Card(question: question, answer: question, created: date.addingTimeInterval(offset))
+    }
+
+    @Test func theNewestBatchIsWhatTheLatestRunAdded() throws {
+        // Two runs, a lesson each; the second added three cards, in deck order.
+        let first = [card("a", created: 0), card("b", created: 0)]
+        let second = [card("c", created: 86400), card("d", created: 86400), card("e", created: 86400)]
+        let deck = try Deck(cards: [first[0], second[0], first[1], second[1], second[2]])
+        #expect(deck.newestBatchIDs == second.map(\.id))
+    }
+
+    @Test func theNewestBatchComparesWholeSeconds() throws {
+        // `deck.json` keeps whole seconds, a batch just added still holds the fractions.
+        let batch = [card("c", created: 86400), card("d", created: 86400.4), card("e", created: 86400.9)]
+        let deck = try Deck(cards: [card("a", created: 0), batch[0], batch[1], batch[2], card("older", created: 86399.9)])
+        #expect(deck.newestBatchIDs == batch.map(\.id))
+    }
+
+    @Test func theNewestBatchLeavesOutSuspendedCards() throws {
+        var suspended = card("d", created: 5)
+        suspended.isSuspended = true
+        let deck = try Deck(cards: [card("a", created: 0), card("c", created: 5), suspended])
+        #expect(deck.newestBatchIDs == [deck.cards[1].id])
+    }
+
+    @Test func theNewestBatchIgnoresWhatWasStudied() throws {
+        var studied = card("c", created: 5)
+        studied.learningState = LearningState(phase: .review, stability: 3, difficulty: 5, lastReview: date, due: date, reviews: 3)
+        let deck = try Deck(cards: [card("a", created: 0), studied, card("d", created: 5)])
+        #expect(deck.newestBatchIDs == [studied.id, deck.cards[2].id])
+    }
+
+    @Test func aDeckWithoutCardsHasNoNewestBatch() {
+        #expect(Deck().newestBatchIDs.isEmpty)
+    }
+
+    @Test func aBatchOfWordsIsPracticedWithoutChangingTheCards() throws {
+        let deck = try Deck(cards: [card("a", created: 0), card("b", created: 9), card("c", created: 9)])
+        var mode = SessionMode.practice(Practice(practicing: deck.newestBatchIDs, at: date))
+        #expect(mode.session.totalCount == 2)
+        guard case .practiced? = mode.grade(.good, in: deck, at: date, calendar: .testing) else {
+            Issue.record("Practice only counts the review.")
+            return
+        }
+        #expect(mode.session.completedCount == 1)
+    }
+
     /// The same rules as for options set on a deck, `DeckChange.changingLearningOptions`.
     @Test func learningOptionsAreClampedLikeThoseSetOnADeck() throws {
         var options = LearningOptions()

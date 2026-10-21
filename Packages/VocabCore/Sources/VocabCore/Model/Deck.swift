@@ -176,6 +176,18 @@ public struct Deck: Hashable, Sendable {
         cards.reduce(0) { $0 + ($1.isSuspended ? 1 : 0) }
     }
 
+    /// The newest batch of words: the cards whose `created` falls on the second of the
+    /// deck's latest one, in deck order, without suspended cards. `deck-from-tsv` stamps one
+    /// `created` per run, so a batch is what one run added, usually the words of the last
+    /// lesson or two. Empty for a deck without cards. Meant for `Practice(practicing:at:)`.
+    ///
+    /// Cards added by hand in between start a batch of their own.
+    public var newestBatchIDs: [Card.ID] {
+        func second(_ card: Card) -> Int { Int(card.created.timeIntervalSince1970.rounded(.down)) }
+        guard let newest = cards.map(second).max() else { return [] }
+        return cards.filter { second($0) == newest && !$0.isSuspended }.map(\.id)
+    }
+
     /// Whether `card` is a leech by the deck's `LearningOptions.leechThreshold`.
     public func isLeech(_ card: Card) -> Bool {
         card.isLeech(threshold: learningOptions.leechThreshold)
