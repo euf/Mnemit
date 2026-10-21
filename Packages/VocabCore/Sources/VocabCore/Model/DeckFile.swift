@@ -30,7 +30,11 @@ import Foundation
 /// `optimizeFromRevealed` (ADR 0005): an older app version drops them, rates revealed
 /// reviews with its fixed third and trains the optimizer on typed reviews only, until a
 /// newer version writes the deck again. `leechThreshold` came the same way: an older app
-/// version drops it, and its sessions suspend no leeches.
+/// version drops it, and its sessions suspend no leeches. So did `contentChanged` of a
+/// card, `learningOptionsChanged` and `deletedCards` of the deck, which merges between
+/// devices that both edit cards need: an older app version drops them on save, and a
+/// merge then settles the texts and options by `contentModified` as before, and may
+/// bring back a card deleted on the other device.
 ///
 /// When `currentVersion` goes up: a missing key takes its default, so a newer app
 /// version reads an older deck of the same version. The other way round, an older
@@ -181,6 +185,11 @@ extension DeckFile {
         var progress: [SnapshotRecord]
         /// Left out until the content first changes.
         var contentModified: Date?
+        /// Left out until the learning options first change.
+        var learningOptionsChanged: Date?
+        /// Left out while no card was deleted; by ID, so the file stays the same when the
+        /// deck is saved again.
+        var deletedCards: [DeletionRecord]?
 
         init(_ deck: Deck) {
             format = DeckFile.format
@@ -189,6 +198,9 @@ extension DeckFile {
             cards = deck.cards.map(CardRecord.init)
             progress = deck.progress.map(SnapshotRecord.init)
             contentModified = deck.contentModified
+            learningOptionsChanged = deck.learningOptionsChanged
+            let deletions = deck.deletedCards.map { DeletionRecord(id: $0.key, date: $0.value) }
+            deletedCards = deletions.isEmpty ? nil : deletions.sorted { $0.id.uuidString < $1.id.uuidString }
         }
 
         func deck() throws -> Deck {
@@ -197,12 +209,20 @@ extension DeckFile {
                     learningOptions: try learningOptions.learningOptions(),
                     cards: cards.map(\.card),
                     progress: try progress.map { try $0.snapshot() },
-                    contentModified: contentModified
+                    contentModified: contentModified,
+                    learningOptionsChanged: learningOptionsChanged,
+                    deletedCards: Dictionary((deletedCards ?? []).map { ($0.id, $0.date) }) { first, _ in first }
                 )
             } catch Deck.Error.duplicateCardID(let card) {
                 throw DeckFile.Error.duplicateCardID(question: card.question)
             }
         }
+    }
+
+    /// A card the learner deleted, see `Deck.deletedCards`.
+    private struct DeletionRecord: Codable {
+        var id: UUID
+        var date: Date
     }
 
     /// Missing keys take the default. Whether a new option needs a new format
@@ -343,6 +363,8 @@ extension DeckFile {
         var suspended: Bool?
         /// Left out unless the card was ever suspended.
         var suspensionChanged: Date?
+        /// Left out unless the texts, the note or the kind were ever changed.
+        var contentChanged: Date?
 
         init(_ card: Card) {
             id = card.id
@@ -356,6 +378,7 @@ extension DeckFile {
             learningStateReset = card.learningStateReset
             suspended = card.isSuspended ? true : nil
             suspensionChanged = card.suspensionChanged
+            contentChanged = card.contentChanged
         }
 
         var card: Card {
@@ -370,7 +393,8 @@ extension DeckFile {
                 learningState: learningState?.learningState,
                 learningStateReset: learningStateReset,
                 isSuspended: suspended ?? false,
-                suspensionChanged: suspensionChanged
+                suspensionChanged: suspensionChanged,
+                contentChanged: contentChanged
             )
         }
     }

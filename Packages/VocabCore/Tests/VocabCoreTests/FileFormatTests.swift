@@ -66,6 +66,34 @@ struct DeckFileTests {
         #expect(try DeckFile.decode(DeckFile.fileWrapper(for: deck)) == deck)
     }
 
+    /// What merges between devices that both edit cards need: the stamp of a card's last
+    /// edit, that of the learning options and the deleted cards. They come without a new
+    /// version, so a deck without them writes none of their keys.
+    @Test func editStampsAndDeletionsRoundTripAndAreLeftOutWhenEmpty() throws {
+        var card = Card(question: "dom", answer: "Haus", created: date)
+        card.contentChanged = date.addingTimeInterval(60)
+        let deleted = [UUID(), UUID()]
+        let deck = try Deck(
+            cards: [card], contentModified: date,
+            learningOptionsChanged: date.addingTimeInterval(120),
+            deletedCards: [deleted[0]: date.addingTimeInterval(180), deleted[1]: date.addingTimeInterval(240), card.id: date]
+        )
+        // A deleted card that is in the deck is no longer deleted.
+        #expect(deck.deletedCards.keys.sorted { $0.uuidString < $1.uuidString } == deleted.sorted { $0.uuidString < $1.uuidString })
+
+        let wrapper = try DeckFile.fileWrapper(for: deck)
+        let read = try DeckFile.decode(wrapper)
+        #expect(read == deck)
+        #expect(read.cards[0].contentChanged == date.addingTimeInterval(60))
+        #expect(read.learningOptionsChanged == date.addingTimeInterval(120))
+        #expect(read.deletedCards == deck.deletedCards)
+        // The same bytes every time, whatever the order of the dictionary.
+        #expect(try DeckFile.encodeDeck(read) == DeckFile.encodeDeck(deck))
+
+        let plain = String(decoding: try DeckFile.encodeDeck(sampleDeck()), as: UTF8.self)
+        #expect(!plain.contains("deletedCards") && !plain.contains("learningOptionsChanged") && !plain.contains("contentChanged"))
+    }
+
     /// A `deck.json` of version 4 as the app writes it, with every kind of value.
     @Test func fixedDeckReadsAndWritesBackUnchanged() throws {
         let url = try #require(Bundle.module.url(forResource: "Resources/deck-v4", withExtension: "json"))

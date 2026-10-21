@@ -33,13 +33,13 @@ struct DeckChangeTests {
         edited.answer = "Haus / Heim"
 
         let inverse = deck.apply(DeckChange(upserts: [edited]), day: 100)
-        #expect(deck.cards[0] == edited)
+        #expect(deck.cards[0].unstamped == edited)
         #expect(deck.cards.count == 2)
 
         let redo = deck.apply(inverse, day: 100)
-        #expect(deck.cards[0] == card)
+        #expect(deck.cards[0].unstamped == card)
         _ = deck.apply(redo, day: 100)
-        #expect(deck.cards[0] == edited)
+        #expect(deck.cards[0].unstamped == edited)
     }
 
     @Test func removingRestoresOriginalPositions() throws {
@@ -50,7 +50,7 @@ struct DeckChangeTests {
         #expect(deck.cards.map(\.question) == ["q0", "q2", "q4"])
 
         let redo = deck.apply(inverse, day: 100)
-        #expect(deck.cards == cards)
+        #expect(deck.cards.unstamped == cards)
         _ = deck.apply(redo, day: 100)
         #expect(deck.cards.map(\.question) == ["q0", "q2", "q4"])
     }
@@ -174,10 +174,10 @@ struct DeckChangeTests {
         #expect(DeckChange.settingNote("dom", kind: .recognition, of: UUID(), in: deck) == nil)
         let cleared = try #require(DeckChange.settingNote(" ", kind: nil, of: studied.id, in: deck))
         _ = deck.apply(cleared, day: 100)
-        #expect(deck.cards == [studied])
+        #expect(deck.cards.unstamped == [studied])
 
         _ = deck.apply(inverse, day: 100)
-        #expect(deck.cards == [studied])
+        #expect(deck.cards.unstamped == [studied])
     }
 
     @Test func aCardCanBeCreatedWithIDNoteAndKind() {
@@ -446,18 +446,18 @@ struct DeckChangeTests {
             return card
         }
         let undoEditing = deck.apply(DeckChange(upserts: edited), day: 100)
-        #expect(deck.cards == edited)
+        #expect(deck.cards.unstamped == edited)
 
         let removed = Set(cards.indices.filter { $0 % 3 != 0 }.map { cards[$0].id })
         let undoRemoving = deck.apply(DeckChange(removals: Array(removed)), day: 100)
         #expect(deck.cards.map(\.id) == cards.map(\.id).filter { !removed.contains($0) })
 
         let redoRemoving = deck.apply(undoRemoving, day: 100)
-        #expect(deck.cards == edited)
+        #expect(deck.cards.unstamped == edited)
         _ = deck.apply(redoRemoving, day: 100)
         _ = deck.apply(undoRemoving, day: 100)
         _ = deck.apply(undoEditing, day: 100)
-        #expect(deck.cards == cards)
+        #expect(deck.cards.unstamped == cards)
         _ = deck.apply(undoAdding, day: 100)
         #expect(deck.cards.isEmpty)
     }

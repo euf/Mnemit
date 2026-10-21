@@ -5,7 +5,7 @@ import os
 
 /// The document of one deck, in the Mac app and in the iPhone app. On the Mac it is the
 /// `ReferenceFileDocument` behind `DocumentGroup`; the iPhone app opens and saves its
-/// decks itself (#285).
+/// decks itself (#285). Both apps edit cards the same way.
 ///
 /// All changes go through methods that register undo actions. Besides providing
 /// undo, this is how SwiftUI learns that the document has unsaved changes. They
@@ -23,10 +23,10 @@ import os
 ///
 /// Why the document doesn't switch to Observation: `docs/adr/0003-dokument-bleibt-observableobject.md`.
 ///
-/// The iPhone app only studies and never edits cards (#254, #289): the changes it
-/// makes are here, those of the Mac app alone in its extension in
-/// `VocabularyDocument+Editing.swift` (#297), like the conformance to
-/// `ReferenceFileDocument`.
+/// The changes of a study session, suspending and merging are here; adding, editing,
+/// deleting and resetting cards and the learning options are in the extension in
+/// `VocabularyDocument+Editing.swift`, which both apps compile. Only the conformance to
+/// `ReferenceFileDocument` is the Mac app's alone (#297).
 ///
 /// The document lives on the main actor, so the compiler checks that the deck is only
 /// read and changed there. Initializers and what saves the deck are `nonisolated`:
@@ -269,7 +269,7 @@ final class VocabularyDocument: ObservableObject {
     // MARK: - Undo machinery
 
     /// Applies `change` and registers its inverse as one undo action, see below. Every
-    /// change of the deck goes through here, also those of the Mac app's extension.
+    /// change of the deck goes through here, also those of `VocabularyDocument+Editing`.
     func perform(_ change: DeckChange, actionName: String, alongside companion: UndoCompanion? = nil) {
         perform([change], actionName: actionName, alongside: companion)
     }
@@ -280,7 +280,7 @@ final class VocabularyDocument: ObservableObject {
     ///
     /// Without an undo manager the change could be neither undone nor saved, so it stops
     /// before it changes the deck, see `attachedUndoManager`.
-    private func perform(_ changes: [DeckChange], actionName: String, alongside companion: UndoCompanion? = nil) {
+    func perform(_ changes: [DeckChange], actionName: String, alongside companion: UndoCompanion? = nil) {
         perform(changes, actionName: actionName, alongside: companion, registeringWith: attachedUndoManager)
     }
 

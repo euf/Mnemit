@@ -26,3 +26,18 @@ extension Card {
         )
     }
 }
+
+extension Card {
+    /// The card without the stamp of its last change of content, to compare it with one
+    /// built by hand: a change of the content stamps the time it is applied, and so does
+    /// undoing it.
+    var unstamped: Card {
+        var card = self
+        card.contentChanged = nil
+        return card
+    }
+}
+
+extension [Card] {
+    var unstamped: [Card] { map(\.unstamped) }
+}
