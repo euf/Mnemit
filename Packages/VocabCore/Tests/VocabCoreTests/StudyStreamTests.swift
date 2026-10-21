@@ -331,10 +331,12 @@ struct StudyStreamTests {
         let id = run.currentID
         run.grade(.good)
         #expect(run.stream.stage == .rest)
+        #expect(run.stream.stepCount == 1)
         // What undo does: the card, then the stream.
         run.deck = deckBefore
         run.stream = before
         #expect(run.stream.stage == .plan)
+        #expect(run.stream.stepCount == 0)
         #expect(run.currentID == id)
         #expect(run.stream.id == before.id)
         run.grade(.good)

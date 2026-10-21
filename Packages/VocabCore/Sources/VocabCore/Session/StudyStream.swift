@@ -61,6 +61,9 @@ public struct StudyStream: Sendable {
     /// The segment now running; an empty one at rest.
     public private(set) var mode: SessionMode
     public private(set) var recap = Recap()
+    /// The reviews and suspensions in the stream so far, in every segment: what undo takes
+    /// back. Part of the value, so undo restores it with the rest.
+    public private(set) var stepCount = 0
     /// How the study segments ask their cards.
     public let reviewMode: ReviewMode
     /// A stream of one practice, which then rests instead of going on.
@@ -105,10 +108,13 @@ public struct StudyStream: Sendable {
 
     /// Grades the current card of the segment, see `SessionMode.grade(_:in:at:calendar:)`.
     public mutating func grade(_ grade: Grade, in deck: Deck, at now: Date, calendar: StudyCalendar) -> SessionMode.Outcome? {
-        mode.grade(grade, in: deck, at: now, calendar: calendar)
+        let outcome = mode.grade(grade, in: deck, at: now, calendar: calendar)
+        if outcome != nil { stepCount += 1 }
+        return outcome
     }
 
     public mutating func perform(_ command: SessionCommand) {
+        if case .suspend = command, session.currentCardID != nil { stepCount += 1 }
         mode.perform(command)
     }
 
