@@ -4,19 +4,22 @@ import VocabCore
 /// The study stream in the style of flash cards: the question, a tap shows the answer,
 /// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stream has
 /// no end of its own: today's plan, a short rest (`StreamRestView`), then review ahead and
-/// practice. Every grade is saved at once, so leaving loses nothing. The ring in the middle of
-/// the bar shows today's reviews against the goal, with the streak (`DailyRingView`).
+/// practice. Every grade is saved at once, so leaving loses nothing. The bar shows the close
+/// button, today's reviews against the goal as a small ring with "14 of 20", and the menu.
 ///
 /// Once the answer shows, the card can be swiped instead of the buttons: left is Forgot,
-/// right Good, right and up Easy, right and down Hard. The card follows the finger and
-/// takes the colour of the grade the swipe would give; letting go far enough, or flicking,
-/// grades and sends the card off in that direction. The buttons stay for VoiceOver and as
-/// a legend: during a swipe the button of the grade it would give stands out and the others
-/// step back. A line under the bar offers Undo for a few seconds after each grade, and
-/// a shake undoes too.
+/// right Good, up on the right Easy, down on the right Hard (`GradeSwipe`). The card follows
+/// the finger, turning about the point it was grabbed at, and takes the colour of the grade the
+/// swipe would give; letting go far enough, or flicking, grades and sends the card off in that
+/// direction. The buttons stay for VoiceOver and as a legend: during a swipe the button of the
+/// grade it would give stands out and the others step back. A line under the bar offers Undo
+/// for a few seconds after each grade, and a shake undoes too.
+///
+/// The card and the grade area keep their size from the question to the answer: the grade
+/// buttons are in the layout all the time and fade in, and Show Answer sits on top of them.
 ///
 /// A long press on the card opens what the app knows about it (`CardInfoSheet`). With
-/// "Speak Greek automatically" on, a Greek question is spoken when its card comes up, and
+/// "Speak Greek automatically" on, a Greek question is spoken when its card has settled, and
 /// a Greek answer when it is shown; see `GreekSpeech.cardAppeared(_:)`.
 struct StudyView: View {
     var model: StudyModel
@@ -26,11 +29,23 @@ struct StudyView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(GreekSpeech.autoSpeakKey) private var autoSpeak = true
-    @State private var flight = CardFlight()
+    @State private var flight: CardFlight
     /// The card whose info shows in a sheet.
     @State private var info: Card?
     /// Whether a finger is down; a drag the system cancels still springs the card back.
     @GestureState private var isDragging = false
+    /// As high as the grade buttons (`GradeChoice`), so Show Answer fills the space they take.
+    @ScaledMetric(relativeTo: .body) private var buttonHeight: CGFloat = 50
+
+    /// - Parameter flight: The card's movement; a test passes one it has moved.
+    init(model: StudyModel, ring: DailyRingModel, flight: CardFlight? = nil, onClose: @escaping () -> Void) {
+        self.model = model
+        self.ring = ring
+        self.onClose = onClose
+        _flight = State(initialValue: flight ?? CardFlight())
+    }
+
+    private var isCompact: Bool { verticalSizeClass == .compact }
 
     var body: some View {
         NavigationStack {
@@ -48,18 +63,17 @@ struct StudyView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done", systemImage: "chevron.backward", action: onClose)
+                    closeButton
                 }
                 ToolbarItem(placement: .principal) {
-                    // In landscape the ring sits between the grade buttons.
-                    if !model.isResting && verticalSizeClass != .compact {
+                    if !model.isResting {
                         header
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     // In a menu, so a stray tap doesn't suspend the card; Undo comes first
                     // (#293). The rest keeps the menu for Undo and the new cards.
-                    Menu("More", systemImage: "ellipsis.circle") {
+                    Menu("More", systemImage: "ellipsis") {
                         // Only reviews and suspensions of this stream: undo beyond them
                         // would change cards the stream doesn't show.
                         Button("Undo", systemImage: "arrow.uturn.backward") {
@@ -90,7 +104,7 @@ struct StudyView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            // iOS 26 adds a back button of its own; End Session takes its place.
+            // iOS 26 adds a back button of its own; the close button takes its place.
             .navigationBarBackButtonHidden()
         }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
@@ -99,7 +113,8 @@ struct StudyView: View {
         .sheet(item: $info) { card in
             CardInfoSheet(document: model.document, card: card)
         }
-        // After the card has flown out: the question changes when the grade is given.
+        // After the card has flown out: the question changes when the grade is given. The
+        // speech waits until the new card has settled.
         .onChange(of: model.questionNumber, initial: true) {
             GreekSpeech.shared.cardAppeared(model.currentCard)
         }
@@ -108,69 +123,82 @@ struct StudyView: View {
                 GreekSpeech.shared.answerRevealed(of: card)
             }
         }
-        .onDisappear { GreekSpeech.shared.stop() }
+        .onDisappear { GreekSpeech.shared.close() }
+    }
+
+    /// The standard Close button of the platform; an `xmark` before iOS 26 has none.
+    @ViewBuilder
+    private var closeButton: some View {
+        if #available(iOS 26, *) {
+            Button(role: .close, action: onClose)
+        } else {
+            Button("Close", systemImage: "xmark", action: onClose)
+        }
     }
 
     /// Names the last grade and offers Undo for a few seconds, at the top of the screen,
-    /// under the bar.
+    /// under the bar. It keeps its height when empty, so nothing below it moves.
     private var chip: some View {
         UndoChip(receipt: model.receipt, onUndo: model.undoLast, onExpire: model.dismissReceipt)
     }
 
-    /// The ring in the row of buttons, in the middle between them.
-    private var rowRing: some View {
-        DailyRingView(progress: ring.progress, diameter: 40)
-            .frame(width: 120)
-    }
-
-    /// The ring in the middle of the bar, with the stage before it when the learner is not
-    /// at today's plan: review ahead and practice don't change the plan, and practice
-    /// doesn't change the schedule.
+    /// The middle of the bar: today's ring with its figures, and the stage before it when the
+    /// learner is not at today's plan: review ahead doesn't change the plan, and practice
+    /// changes neither the plan nor the schedule, so it shows no ring.
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             switch model.streamStage {
-            case .reviewAhead:
-                Text("Review Ahead")
-                    .font(.subheadline.weight(.semibold))
             case .practiceMistakes, .practiceNewest:
                 Text("Practice")
                     .font(.subheadline.weight(.semibold))
+            case .reviewAhead:
+                Text("Review Ahead")
+                    .font(.subheadline.weight(.semibold))
+                ringAndFigures
             case .plan, .rest:
-                EmptyView()
+                ringAndFigures
             }
-            DailyRingView(progress: ring.progress, diameter: 30)
         }
     }
 
-    /// In portrait the buttons sit below the card. In landscape the iPhone is too low
-    /// for that: the card takes the full width, the buttons one row below it, Forgot
-    /// and the three others on either side of the ring.
+    /// "14 of 20", or "26 today" once the goal is met, beside a small ring.
     @ViewBuilder
-    private func cardArea(_ card: Card) -> some View {
-        if verticalSizeClass == .compact {
-            VStack(spacing: 8) {
-                chip
-                cardView(card)
-                buttonRow
-                    .padding(.top, 4)
+    private var ringAndFigures: some View {
+        let daily = ring.progress?.ring
+        HStack(spacing: 8) {
+            StreamRing(fraction: daily?.fraction ?? 0)
+            if let daily {
+                Group {
+                    if daily.isGoalMet {
+                        Text("\(daily.reviews) today")
+                    } else {
+                        Text("\(daily.reviews) of \(daily.goal)")
+                    }
+                }
+                .font(.subheadline)
+                .monospacedDigit()
             }
-            .padding()
-        } else {
-            VStack(spacing: 8) {
-                chip
-                cardView(card)
-                actions
-                    .padding(.top, 16)
-            }
-            .padding()
         }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// In portrait the buttons sit below the card. In landscape the iPhone is too low for the
+    /// two rows: Forgot and the three others share one row.
+    private func cardArea(_ card: Card) -> some View {
+        VStack(spacing: isCompact ? 8 : 12) {
+            chip
+            cardView(card)
+            gradeArea
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
     }
 
     /// The card, which the learner taps to show the answer and swipes to grade it. The
     /// gestures sit on a place that stays put, as the card moves away under the finger.
     private func cardView(_ card: Card) -> some View {
         FlightCard(flight: flight) {
-            face(of: card)
+            CardFace(card: card, isRevealed: model.stage == .revealed)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
@@ -181,18 +209,16 @@ struct StudyView: View {
         .onChange(of: isDragging) { _, isDragging in
             if !isDragging { flight.springBack() }
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: flight.committing) { _, committing in
-            committing != nil
-        }
+        .swipeHaptics(flight)
     }
 
-    /// Global coordinates: the card moves with the finger, and a drag measured in its own
-    /// would shrink as it follows.
+    /// In the card's own coordinates, which stay put while the card moves: the translation is
+    /// the finger's, and the start is where the card was grabbed.
     private var swipe: some Gesture {
-        DragGesture(minimumDistance: Self.swipeStartDistance, coordinateSpace: .global)
+        DragGesture(minimumDistance: Self.swipeStartDistance, coordinateSpace: .local)
             .updating($isDragging) { _, isDragging, _ in isDragging = true }
             .onChanged { value in
-                flight.drag(value.translation, isRevealed: model.stage == .revealed)
+                flight.drag(value.translation, from: value.startLocation, isRevealed: model.stage == .revealed)
             }
             .onEnded { value in
                 guard model.stage == .revealed, let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
@@ -204,101 +230,83 @@ struct StudyView: View {
     }
 
     /// Flies the card out in the direction of `grade`, then grades. A swipe, a button and
-    /// VoiceOver all come here.
+    /// VoiceOver all come here. What the card was saying stops with it.
     private func commit(_ grade: Grade) {
         guard model.stage == .revealed, !flight.isFlying else { return }
+        GreekSpeech.shared.stop()
         flight.fly(grade, reduceMotion: reduceMotion) { model.grade(grade) }
     }
 
-    /// The divider stays in one place, whatever the card says: the question above it,
-    /// the answer below. It sits a little above the middle, as the row of buttons below
-    /// weighs more than the text. Text too long for its half gets smaller.
-    private func face(of card: Card) -> some View {
-        let revealed = model.stage == .revealed
-        return VStack(spacing: 16) {
-            question(of: card)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            Group {
-                Divider()
-                answer(of: card)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-            .opacity(revealed ? 1 : 0)
-            // The hidden answer has no speaker button to tap.
-            .allowsHitTesting(revealed)
-            .accessibilityHidden(!revealed)
-            Color.clear
-                .frame(height: 24)
-        }
-        .minimumScaleFactor(0.5)
-        .multilineTextAlignment(.center)
-        .padding(20)
-    }
-
-    private func question(of card: Card) -> some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 8) {
-                Text(card.question)
-                    .font(.largeTitle.weight(.semibold))
-                SpeakButton(text: card.question)
-            }
-            if !card.hint.isEmpty {
-                Text(card.hint)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+    /// The same space for Show Answer and for the grade buttons: both are in the layout, one
+    /// of them invisible, so the card keeps its height at the reveal.
+    private var gradeArea: some View {
+        let isRevealed = model.stage == .revealed
+        return ZStack(alignment: .bottom) {
+            grades
+                .opacity(isRevealed ? 1 : 0)
+                .allowsHitTesting(isRevealed)
+                .accessibilityHidden(!isRevealed)
+            if !isRevealed {
+                showAnswer
             }
         }
-    }
-
-    private func answer(of card: Card) -> some View {
-        HStack(spacing: 8) {
-            Text(card.answer)
-                .font(.largeTitle)
-            SpeakButton(text: card.answer)
-        }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
-    private var actions: some View {
-        if model.stage == .revealed {
-            GradeChoice(highlighted: flight.highlighted, onGrade: commit)
-        } else {
-            Button {
-                model.reveal()
-            } label: {
-                Text("Show Answer")
-                    .frame(maxWidth: .infinity, minHeight: 44)
+    private var grades: some View {
+        if isCompact {
+            HStack(spacing: 12) {
+                GradeChoice(part: .forgot, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
+                    .frame(maxWidth: Self.forgotWidth)
+                GradeChoice(part: .recalled, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+        } else {
+            GradeChoice(highlighted: flight.highlighted, onGrade: commit)
         }
     }
 
-    /// Forgot, the ring, then Hard, Good and Easy in a row. Before the answer shows, a
-    /// Show button takes the place of the row, and the ring stays where it is.
-    private var buttonRow: some View {
-        HStack(spacing: 12) {
-            if model.stage == .revealed {
-                GradeChoice(part: .forgot, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
-                    .frame(maxWidth: Self.forgotWidth)
-                rowRing
-                GradeChoice(part: .recalled, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
-            } else {
-                Color.clear
-                    .frame(maxWidth: Self.forgotWidth, maxHeight: 0)
-                rowRing
-                Button {
-                    model.reveal()
-                } label: {
-                    Text("Show")
-                        .frame(maxWidth: .infinity, minHeight: 32)
-                }
-                .buttonStyle(.borderedProminent)
-            }
+    private var showAnswer: some View {
+        Button {
+            model.reveal()
+        } label: {
+            Text("Show Answer")
+                .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
     }
 
     private static let forgotWidth: CGFloat = 170
     /// How far a finger moves before it swipes the card, in points.
     private static let swipeStartDistance: CGFloat = 6
+}
+
+/// Today's reviews against the goal as a small ring in the bar; the laps after the goal go on
+/// in a lighter arc, as `DailyRingView` does. It has no streak and no popover: the bar is calm.
+private struct StreamRing: View {
+    var fraction: Double
+    private let lineWidth: CGFloat = 3
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.primary.opacity(0.12), lineWidth: lineWidth)
+            if fraction > 0 {
+                arc(min(fraction, 1), color: .dailyRing)
+            }
+            if fraction > 1 {
+                arc(min(fraction - 1, 1), color: .dailyRingLap)
+            }
+        }
+        .frame(width: 22, height: 22)
+        .animation(.easeOut(duration: 0.4), value: fraction)
+    }
+
+    private func arc(_ fraction: Double, color: Color) -> some View {
+        Circle()
+            .trim(from: 0, to: fraction)
+            .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+            .rotationEffect(.degrees(-90))
+    }
 }
