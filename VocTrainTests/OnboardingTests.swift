@@ -92,6 +92,15 @@ struct OnboardingTests {
         #expect(samples.map(\.question) == ["la mariposa", "la bibliothèque", "il treno", "η αστυνομία"])
     }
 
+    @Test func theHintMovesTheCardIntoTheZoneOfItsGrade() {
+        for grade in SwipePractice.order {
+            let step = SwipePractice.nudge(for: grade)
+            // The tint the card takes is the grade's own, so the step must be read as that swipe.
+            #expect(GradeSwipe.zone(step) == grade)
+            #expect(abs(hypot(step.width, step.height) - SwipePractice.nudgeTravel) < 0.001)
+        }
+    }
+
     @Test func aPracticeStartsWhereItIsAskedToAndStaysInRange() {
         #expect(SwipePractice(index: 2).current == .easy)
         #expect(SwipePractice(index: 9).isDone)
@@ -216,10 +225,10 @@ struct OnboardingSnapshotTests {
         OnboardingView(knownDecks: try decks ?? knownDecks(), reminders: Reminders(), step: step, onFinish: {})
     }
 
-    private func practice(_ index: Int) -> some View {
+    private func practice(_ index: Int, isRevealed: Bool = false, flight: CardFlight? = nil) -> some View {
         ZStack {
             Color(.systemGroupedBackground).ignoresSafeArea()
-            GesturePracticeView(practice: SwipePractice(index: index), done: {})
+            GesturePracticeView(practice: SwipePractice(index: index), isRevealed: isRevealed, flight: flight, done: {})
         }
     }
 
@@ -233,6 +242,28 @@ struct OnboardingSnapshotTests {
             try await shots.shoot("onboarding-2-swipe-\(index + 1)", practice(index))
         }
         try await shots.shoot("onboarding-2-swipe-done", practice(4))
+    }
+
+    /// The finger has landed: the answer shows, as on the study card.
+    @Test func practiceCardWithItsAnswer() async throws {
+        try await HomeSnapshotTests().shoot("onboarding-2-swipe-1-answer", practice(0, isRevealed: true))
+    }
+
+    /// The hint: the card a step to the side, in the tint of its grade; Easy goes up and right.
+    @Test func practiceCardWhileTheHintShowsTheWay() async throws {
+        let shots = HomeSnapshotTests()
+        for index in [0, 2] {
+            let grade = SwipePractice.order[index]
+            let flight = CardFlight()
+            flight.drag(SwipePractice.nudge(for: grade), isRevealed: true)
+            try await shots.shoot("onboarding-2-swipe-\(index + 1)-hint", practice(index, flight: flight))
+        }
+    }
+
+    /// A taller screen: the card grows to its limit and stays in the middle of the room.
+    @Test func practiceCardOnATallScreen() async throws {
+        try await HomeSnapshotTests().shoot("onboarding-2-swipe-1-tall", practice(0), height: 844)
+        try await HomeSnapshotTests().shoot("onboarding-2-swipe-done-tall", practice(4), height: 844)
     }
 
     @Test func syncBeforeAChoice() async throws {

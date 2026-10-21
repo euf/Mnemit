@@ -4,32 +4,54 @@ import VocabCore
 /// The second step of the introduction: four sample cards, not those of a deck, each asking for
 /// one swipe: right, left, right and up, right and down. The prompt above the card names what
 /// the direction means, so the four meanings are the rules of the app. The card is the study
-/// screen's own, `FlightCard` driven by `CardFlight` and `GradeSwipe`, so the swipe tints, flies
-/// and gives way as it will there; only nothing is graded.
+/// screen's own, `FlightCard` driven by `CardFlight` and `GradeSwipe`, and it goes the way of
+/// the study screen: the word first, the answer when the finger lands (`StudyView.touch`),
+/// then the swipe, which tints, flies and gives way as it will there; only nothing is graded.
 ///
 /// A swipe the other way springs the card back with a warning and a shake of the prompt. After
-/// a moment without a touch an arrow shows the direction, moving, or still with Reduce Motion.
+/// a moment without a touch the card itself shows the way: it moves a step in the direction,
+/// in the tint of the grade, and springs back, again and again until a finger lands. With
+/// Reduce Motion it stays and the tint shows alone.
 struct GesturePracticeView: View {
-    /// How long a card waits for a touch before the arrow shows the way, in seconds.
+    /// How long a card waits for a touch before it shows the way, in seconds.
     static let idleBeforeHint = 2.0
+    /// The pause between two such hints, from the end of one.
+    static let hintPause = 2.5
+    /// How strong the tint of the hint is when the card doesn't move (Reduce Motion).
+    static let stillTint = 0.35
+    /// The tallest the card grows; below it the card fills the room between prompt and button.
+    static let cardMaxHeight: CGFloat = 460
+    /// How far a finger moves before it swipes the card, in points, as in `StudyView`.
+    private static let swipeStartDistance: CGFloat = 6
 
     var done: () -> Void
 
     @State private var practice: SwipePractice
-    @State private var flight = CardFlight()
+    @State private var flight: CardFlight
     /// A swipe in the wrong direction: the haptic and the shake count them.
     @State private var mistakes = 0
     @State private var nudges = 0
     /// The swipe was too short to count: the prompt asks for more.
     @State private var wasShort = false
-    @State private var showsHint = false
-    /// Whether a finger is down; a drag the system cancels still springs the card back.
+    /// The answer of the card in front shows: the finger has landed on it.
+    @State private var isRevealed: Bool
+    /// The tint the hint gives a card that stays in place.
+    @State private var stillHint = 0.0
+    /// Whether a finger is down on the card, still or moving.
+    @GestureState private var isTouching = false
+    /// Whether the swipe has begun; a drag the system cancels still springs the card back.
     @GestureState private var isDragging = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// `practice` lets the snapshot tests start at a later card.
-    init(practice: SwipePractice = SwipePractice(), done: @escaping () -> Void) {
+    /// `practice`, `isRevealed` and `flight` let the snapshot tests start at a later card, with
+    /// its answer shown, and with the card moved.
+    init(
+        practice: SwipePractice = SwipePractice(), isRevealed: Bool = false, flight: CardFlight? = nil,
+        done: @escaping () -> Void
+    ) {
         _practice = State(initialValue: practice)
+        _isRevealed = State(initialValue: isRevealed)
+        _flight = State(initialValue: flight ?? CardFlight())
         self.done = done
     }
 
@@ -40,7 +62,7 @@ struct GesturePracticeView: View {
     }
 
     private var idle: Idle {
-        Idle(card: practice.index, isWaiting: !practice.isDone && !isDragging && !flight.isFlying)
+        Idle(card: practice.index, isWaiting: !practice.isDone && !isTouching && !flight.isFlying)
     }
 
     var body: some View {
@@ -56,36 +78,65 @@ struct GesturePracticeView: View {
 
             dots
 
-            if let grade = practice.current {
-                prompt(for: grade)
-                card(for: grade)
-                    .frame(maxHeight: 340)
-            } else {
-                success
-            }
+            // Stays in its place, unseen, after the last card, so the Well Done sits where the
+            // card was.
+            prompt(for: SwipePractice.order[min(practice.index, SwipePractice.order.count - 1)])
+                .opacity(practice.isDone ? 0 : 1)
+                .accessibilityHidden(practice.isDone)
 
-            Spacer(minLength: 0)
-
-            Button(action: done) {
-                Text("Continue")
-                    .frame(maxWidth: .infinity, minHeight: 36)
+            // The room between the prompt and the bottom of the screen: the card grows to
+            // `cardMaxHeight` and sits in the middle of it; at the end the Well Done and its
+            // button fill it.
+            Group {
+                if let grade = practice.current {
+                    card(for: grade)
+                        .frame(maxHeight: Self.cardMaxHeight)
+                        // Room for the hint's step up, so the card doesn't touch the prompt.
+                        .padding(.vertical, 12)
+                } else {
+                    VStack(spacing: 16) {
+                        success
+                        Button(action: done) {
+                            Text("Continue")
+                                .frame(maxWidth: .infinity, minHeight: 36)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                    }
+                    .transition(.opacity)
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            // Stays in its place and out of the way until the practice is over.
-            .opacity(practice.isDone ? 1 : 0)
-            .disabled(!practice.isDone)
-            .accessibilityHidden(!practice.isDone)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding(20)
         .sensoryFeedback(.warning, trigger: mistakes)
         .task(id: idle) {
-            showsHint = false
-            guard idle.isWaiting else { return }
-            try? await Task.sleep(for: .seconds(Self.idleBeforeHint))
-            if !Task.isCancelled {
-                showsHint = true
+            guard idle.isWaiting, let grade = practice.current else { return }
+            var wait = Self.idleBeforeHint
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(wait))
+                if Task.isCancelled { return }
+                await nudge(grade)
+                wait = Self.hintPause
             }
+        }
+    }
+
+    /// Shows the way on the card: a step in the direction of the grade, in its tint, and back
+    /// with a spring. With Reduce Motion the card stays and the tint comes and goes. A finger
+    /// landing cancels the task; the card goes back the same way, so it is never left moved.
+    private func nudge(_ grade: Grade) async {
+        if reduceMotion {
+            withAnimation(.easeOut(duration: 0.2)) { stillHint = Self.stillTint }
+            try? await Task.sleep(for: .seconds(0.5))
+            withAnimation(.easeOut(duration: 0.3)) { stillHint = 0 }
+        } else {
+            // Revealed or not: the nudge shows direction and colour, the answer is for the touch.
+            withAnimation(.easeOut(duration: 0.25)) {
+                flight.drag(SwipePractice.nudge(for: grade), isRevealed: true)
+            }
+            try? await Task.sleep(for: .seconds(0.4))
+            flight.springBack()
         }
     }
 
@@ -133,18 +184,21 @@ struct GesturePracticeView: View {
                     LinearKeyframe(0, duration: 0.05)
                 }
             }
-            Group {
-                if wasShort {
-                    Text("Swipe farther, in the direction of the arrow: the card leaves once you pass the threshold.")
-                } else {
-                    Text("Swipe the card in the direction of the arrow.")
-                }
+            // Both lines take their room, one of them unseen, so the card doesn't move when the
+            // line changes.
+            ZStack {
+                Text("Touch the card to see the answer, then swipe toward the arrow.")
+                    .opacity(wasShort ? 0 : 1)
+                    .accessibilityHidden(wasShort)
+                Text("Swipe farther, in the direction of the arrow: the card leaves once you pass the threshold.")
+                    .opacity(wasShort ? 1 : 0)
+                    .accessibilityHidden(!wasShort)
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, minHeight: 84, alignment: .top)
+        .frame(maxWidth: .infinity, alignment: .top)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.updatesFrequently)
     }
@@ -156,43 +210,62 @@ struct GesturePracticeView: View {
                 Text(verbatim: sample.question)
                     .font(.largeTitle.weight(.semibold))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                Divider()
-                Text(verbatim: sample.answer)
-                    .font(.title)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                // The answer is in the layout all the time and fades in, as on the study card.
+                Group {
+                    Divider()
+                    Text(verbatim: sample.answer)
+                        .font(.title)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                }
+                .opacity(isRevealed ? 1 : 0)
+                .animation(.easeOut(duration: 0.15), value: isRevealed)
             }
             .minimumScaleFactor(0.5)
             .multilineTextAlignment(.center)
             .padding(20)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay {
-            if showsHint {
-                SwipeHint(grade: grade, reduceMotion: reduceMotion)
+            // The tint of the hint that doesn't move the card, under the text like the card's own.
+            .background {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(grade.color)
+                    .opacity(stillHint)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
-        .gesture(swipe(expecting: grade))
+        .gesture(touch(expecting: grade))
         .onChange(of: isDragging) { _, isDragging in
             if !isDragging { flight.springBack() }
         }
-        .swipeHaptics(flight)
+        // The ticks of `swipeHaptics`, but only under a finger: a hint is not a touch.
+        .sensoryFeedback(.impact(weight: .light), trigger: flight.zone) { _, zone in zone != nil && isDragging }
+        .sensoryFeedback(.impact(weight: .medium), trigger: flight.isFlying) { _, isFlying in isFlying }
         // VoiceOver can't swipe: the action does what the swipe does.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Sample card: \(sample.question), \(sample.answer)"))
         .accessibilityAction(named: Text(grade.meaning)) { commit(grade, expecting: grade) }
     }
 
-    /// The study screen's swipe, in the coordinates of the card's place, which stays put as the
-    /// card moves with the finger.
-    private func swipe(expecting expected: Grade) -> some Gesture {
-        DragGesture(minimumDistance: 6, coordinateSpace: .local)
-            .updating($isDragging) { _, isDragging, _ in isDragging = true }
+    /// A finger on the card, as on the study screen (`StudyView.touch`), in the coordinates of
+    /// the card's place, which stays put as the card moves with the finger. It shows the answer
+    /// as the finger lands, so one gesture reveals and grades: touch, look, swipe on. Past
+    /// `swipeStartDistance` it swipes the card. A hint under way ends where the finger lands:
+    /// the task of the hint sees the touch and springs the card back.
+    private func touch(expecting expected: Grade) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .updating($isTouching) { _, isTouching, _ in isTouching = true }
+            .updating($isDragging) { value, isDragging, _ in
+                if !isDragging, hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance {
+                    isDragging = true
+                }
+            }
             .onChanged { value in
-                flight.drag(value.translation, from: value.startLocation, isRevealed: true)
+                isRevealed = true
+                // Once the swipe has begun the card follows the finger, however near it comes back.
+                guard isDragging || hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance else { return }
+                flight.drag(value.translation, from: value.startLocation, isRevealed: isRevealed)
             }
             .onEnded { value in
-                guard let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
+                guard isRevealed, let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
                     flight.springBack()
                     if hypot(value.translation.width, value.translation.height) >= GradeSwipe.deadZone {
                         wasShort = true
@@ -217,6 +290,10 @@ struct GesturePracticeView: View {
         }
         wasShort = false
         flight.fly(grade, reduceMotion: reduceMotion) {
+            // The next card starts with its word alone, and doesn't fade its answer out.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { isRevealed = false }
             withAnimation(.easeInOut(duration: 0.25)) { practice.advance() }
             if let next = practice.current {
                 AccessibilityNotification.Announcement(next.meaning).post()
@@ -230,49 +307,16 @@ struct GesturePracticeView: View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.green)
+                .foregroundStyle(Color.accentColor)
                 .accessibilityHidden(true)
             Text("Well Done")
                 .font(.title.bold())
-            Text("Every card in your decks works like this: look at the answer, then swipe how well you remembered it.")
+            Text("Every card works like this: touch to see the answer, then swipe how well you remembered it.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
-        .transition(.opacity)
-    }
-}
-
-/// The arrow that shows the way of the swipe: it leaves the middle of the card in that
-/// direction, and again, fading as it goes. With Reduce Motion it stands still, further out.
-private struct SwipeHint: View {
-    var grade: Grade
-    var reduceMotion: Bool
-
-    @State private var isMoving = false
-
-    private static let travel: CGFloat = 80
-
-    var body: some View {
-        let exit = GradeSwipe.exit(of: grade)
-        let length = hypot(exit.width, exit.height)
-        let end = CGSize(width: exit.width / length * Self.travel, height: exit.height / length * Self.travel)
-        Text(grade.arrow)
-            .font(.title.bold())
-            .foregroundStyle(grade.onColor)
-            .frame(width: 56, height: 56)
-            .background(grade.color, in: Circle())
-            .offset(reduceMotion || isMoving ? end : .zero)
-            .opacity(!reduceMotion && isMoving ? 0 : 1)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
-                    isMoving = true
-                }
-            }
     }
 }

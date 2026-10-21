@@ -62,6 +62,25 @@ struct SwipePractice: Equatable {
         index = min(index + 1, Self.order.count)
     }
 
+    /// How far the hint moves a card, in points: past the dead zone of `GradeSwipe`, so the card
+    /// takes the tint of the grade.
+    static let nudgeTravel: CGFloat = 24
+
+    /// The step the hint moves the card for `grade`: `nudgeTravel` points from the middle of the
+    /// grade's zone in `GradeSwipe.zone`. Not the way the card leaves: for Easy that is 37° above
+    /// the horizontal, which `zone` calls Good.
+    static func nudge(for grade: Grade) -> CGSize {
+        let degrees: Double =
+            switch grade {
+            case .again: 180
+            case .good: 0
+            case .easy: 50
+            case .hard: -50
+            }
+        let radians = degrees * .pi / 180
+        return CGSize(width: nudgeTravel * cos(radians), height: -nudgeTravel * sin(radians))
+    }
+
     /// The card that asks for `grade`. The four come from four languages, so the app doesn't
     /// look as if it were for one of them.
     static func sample(for grade: Grade) -> PracticeSample {

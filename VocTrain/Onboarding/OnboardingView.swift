@@ -175,7 +175,7 @@ private struct SyncStep: View {
                 .fontWeight(.semibold)
             } icon: {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.accentColor)
             }
             if decks.isEmpty {
                 Divider()

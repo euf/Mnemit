@@ -1522,12 +1522,12 @@
         }
       }
     },
-    "Every card in your decks works like this: look at the answer, then swipe how well you remembered it.": {
+    "Every card works like this: touch to see the answer, then swipe how well you remembered it.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jede Karte in deinen Stapeln funktioniert so: Sieh dir die Antwort an und wische dann, wie gut du sie gewusst hast."
+            "value": "Jede Karte funktioniert so: Berühre sie, um die Antwort zu sehen, und wische dann, wie gut du sie gewusst hast."
           }
         }
       }
@@ -3602,16 +3602,6 @@
         }
       }
     },
-    "Swipe the card in the direction of the arrow.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wische die Karte in Pfeilrichtung."
-          }
-        }
-      }
-    },
     "Sync Your Cards": {
       "localizations": {
         "de": {
@@ -3948,6 +3938,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten gesamt %lld · Ausgesetzt %lld"
+          }
+        }
+      }
+    },
+    "Touch the card to see the answer, then swipe toward the arrow.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berühre die Karte, um die Antwort zu sehen, und wische dann in Pfeilrichtung."
           }
         }
       }
