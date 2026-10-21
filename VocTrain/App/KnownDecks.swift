@@ -88,12 +88,12 @@ final class KnownDecks {
         folder.map { Self.isSameFile(url.deletingLastPathComponent(), $0) } ?? false
     }
 
-    /// The deck studied last.
+    /// The deck used last: studied or added to. Cards are added to it from Today.
     var last: URL? {
         entries.first?.deck.url
     }
 
-    /// Adds the deck that is open now, or moves it to the front.
+    /// Adds the deck that is used now, or moves it to the front.
     func remember(_ url: URL) {
         guard let bookmark = Self.bookmark(for: url) else { return }
         removeEntry(for: url)
@@ -103,6 +103,15 @@ final class KnownDecks {
 
     func forget(_ url: URL) {
         removeEntry(for: url)
+        save()
+    }
+
+    /// The deck at `old` was renamed, or moved: the list knows it at `new`, in the same
+    /// place of the order. A deck that is in the list only by its folder needs no entry:
+    /// `refreshFolder()` finds it by its new name.
+    func replace(_ old: URL, with new: URL) {
+        guard let index = entries.firstIndex(where: { Self.isSameFile($0.deck.url, old) }), let bookmark = Self.bookmark(for: new) else { return }
+        entries[index] = Entry(deck: KnownDeck(url: new), bookmark: bookmark)
         save()
     }
 

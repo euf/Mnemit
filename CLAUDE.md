@@ -102,14 +102,30 @@
   `KnownDecks` (файлы читает `DeckFileReader`), Mac — по открытым документам
   (`OpenDecks`).
 - iPhone запускается на Today (`StartScreen` держит состояние, `TodayScreen` рисует): «N due», кольцо
-  и streak по всем колодам, колоды строками. Study и строка колоды открывают поток одним касанием
-  поверх экрана (`StudyRunView`), `info.circle` в строке — лист деталей колоды (`DeckView.swift`:
-  счётчики дня, число карточек, практики, статистика). Study без колоды ведёт колоды с планом по
-  очереди (`StudyRun`: изученная последней первой, дальше по списку); пока поток колоды отдыхает,
-  кнопка «Next: …» открывает следующую. Последнюю колоду приложение само не открывает. Акцент —
-  терракота в `AccentColor` (светлый #AC5334, тёмный #B95937): заливка кнопки, кольцо, глиф, но
-  не текст; счётчики New/Learning/Review нейтральные. Спека — `references/design-spec.md`, кадры
-  Today и деталей даёт `VocTrainTests/HomeSnapshotTests` (каталог — `TEST_RUNNER_HOME_SHOTS_DIR`).
+  и streak по всем колодам, колоды строками. Study открывает поток одним касанием поверх экрана
+  (`StudyRunView`). Строка колоды толкает на стек Today экран колоды (`DeckScreen`/`DeckContent`:
+  счётчики дня, Study This Deck, Cards → браузер, Add Cards, практики, Statistics, Options; меню:
+  Rename…, Delete Deck). Колоды стека держит открытыми `PushedDecks`: открывает при пуше маршрута
+  (`DeckRoute`, колода назвала слотом, а не файлом — переименование не меняет маршрут), закрывает, когда
+  маршрут ушёл из `path`; экраны выше (`CardBrowserScreen`, `CardDetailScreen`, опции) показывают один
+  документ. Study This Deck идёт по колоде экрана (`StudyRun(ownsDeck: false)`: поток её не закрывает;
+  после потока `undoManager.removeAllActions()`, чтобы Undo браузера не откатывал оценки). Rename и
+  Delete закрывают колоду до `DeckFiles.rename`/`trash` и обновляют `KnownDecks` (`replace`, `forget`).
+  Поиск Today (`AllCardsSearch`) читает файлы всех колод без открытия, `CardSearchIndex` ищет и по word
+  key; результат толкает `CardDetailScreen` на колоде, открытой слотом. Меню «+»: Add Cards в колоду,
+  использованную последней (`KnownDecks.last`: изучена или пополнена), New Deck (в папку колод,
+  без папки — в Documents приложения). Браузер карточек: фильтры All · Due · New · Learning ·
+  Suspended · Difficult (`BrowserFilter`: приостановленная карточка только в All, Suspended и, если
+  leech, Difficult), сортировки `BrowserSort`, логика в `CardBrowserList` без экрана и с тестами.
+  Undo правок — `UndoWatch` (кнопка в панели, пока есть что откатить) и встряска (`StartScreen`, если
+  не открыт лист). Карточка из потока (`CardInfoSheet`) — тот же `CardDetailScreen`. Study без
+  колоды ведёт колоды с планом по очереди (`StudyRun`: использованная последней первой, дальше по
+  списку); пока поток колоды отдыхает, кнопка «Next: …» открывает следующую. Последнюю колоду
+  приложение само не открывает. Акцент — терракота в `AccentColor` (светлый #AC5334, тёмный #B95937):
+  заливка кнопки, кольцо, глиф, но не текст; счётчики New/Learning/Review нейтральные. Спека —
+  `references/design-spec.md`, контракт экранов — `references/flows.md`. Кадры: Today и экран колоды —
+  `VocTrainTests/HomeSnapshotTests` (каталог — `TEST_RUNNER_HOME_SHOTS_DIR`), браузер, карточка и
+  правка — `BrowserSnapshotTests` (`TEST_RUNNER_STUDY_SHOTS_DIR`).
 - Последняя партия слов: `Deck.newestBatchIDs` — карточки с тем же `created` (до секунды),
   что и самая свежая в колоде, без suspended; `deck-from-tsv` ставит один `created` на
   прогон. Практика партии расписание не трогает: Mac — Study ▸ Practice Newest Words

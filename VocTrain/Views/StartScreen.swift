@@ -3,16 +3,18 @@ import VocabCore
 
 /// The root of the app: Today (`TodayScreen`) with the decks it has opened (#288), what is
 /// due and the daily ring. The app starts here, not in the deck it showed last: Study and a
-/// deck row each show the first card with one tap. Decks it doesn't know yet open through the
-/// file picker, or from the Files app, and join the list.
+/// deck's Study This Deck each show the first card with one tap. Decks it doesn't know yet open
+/// through the file picker, or from the Files app, and join the list.
 ///
 /// The learner can also choose the folder that holds the decks: every deck in it is
 /// listed, and pulling the list down looks for new ones. At the first launch the
 /// introduction covers the screen, `OnboardingView`; Settings brings it back. The daily
 /// reminder and the number on the app icon follow the counts, see `Reminders`.
 ///
-/// A study stream covers the screen (`StudyRunView`); the info button of a row opens the
-/// deck's details in a sheet (`DeckDetailsSheet`).
+/// A tap on a deck pushes its screen (`DeckScreen`) on the stack of Today, and a card the
+/// search found pushes the card. The decks of the stack are held open by `PushedDecks`: opened
+/// when the route is pushed, closed once it has left the path. A study stream covers the screen
+/// (`StudyRunView`); one started from a deck's screen studies the deck the screen holds.
 struct StartScreen: View {
     @State private var knownDecks = KnownDecks()
     @State private var deckCounts = KnownDeckCounts()
@@ -20,9 +22,17 @@ struct StartScreen: View {
     /// Today's reviews against the goal and the streak, over all known decks.
     @State private var ring = DailyRingModel()
     @State private var run: StudyRun?
-    @State private var details: OpenDeck?
-    /// A stream started from the details: it covers the screen once the sheet has gone.
-    @State private var pendingRun: StudyRun?
+    @State private var path: [DeckRoute] = []
+    @State private var pushed = PushedDecks()
+    @State private var search = AllCardsSearch()
+    @State private var query = ""
+    /// The deck whose Add Cards sheet is up, from the + menu.
+    @State private var addingCards: OpenDeck?
+    @State private var showsNewDeck = false
+    /// The deck a new deck's sheet leaves to push once it has gone.
+    @State private var openAfterSheet: PushedDecks.Slot?
+    /// The name of a deck that was set aside instead of going to the Trash.
+    @State private var setAsideDeck: String?
     @State private var isChoosing = false
     @State private var choosesFolder = false
     @State private var showsSettings = false
@@ -32,12 +42,16 @@ struct StartScreen: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             TodayScreen(
-                decks: knownDecks.byName, counts: deckCounts.counts, progress: ring.progress, now: Date(),
-                canForget: { !knownDecks.isInFolder($0.url) }, study: study, showDetails: showDetails,
-                forget: { knownDecks.forget($0.url) }, chooseFolder: { choose(folder: true) },
-                openDeck: { choose(folder: false) }, showSettings: { showsSettings = true }, refresh: refreshAll)
+                decks: knownDecks.byName, counts: deckCounts.counts, progress: ring.progress, now: Date(), query: $query,
+                hits: search.hits(for: query), isSearching: !search.isLoaded,
+                canForget: { !knownDecks.isInFolder($0.url) }, study: study, showDeck: showDeck, showCard: showCard,
+                forget: { knownDecks.forget($0.url) }, addCards: addCardsToLastDeck, newDeck: { showsNewDeck = true },
+                chooseFolder: { choose(folder: true) }, openDeck: { choose(folder: false) },
+                showSettings: { showsSettings = true }, refresh: refreshAll
+            )
+            .navigationDestination(for: DeckRoute.self, destination: destination)
         }
         .deckPicker(isPresented: $isChoosing, choosesFolder: choosesFolder) { url in
             if url.isDeck {
@@ -50,17 +64,22 @@ struct StartScreen: View {
         .sheet(isPresented: $showsSettings, onDismiss: showIntroductionAfterSettings) {
             SettingsView(reminders: reminders) { wantsIntroduction = true }
         }
-        .sheet(item: $details, onDismiss: startPendingRun) { deck in
-            DeckDetailsSheet(deck: deck, knownCounts: deckCounts.counts[deck.url]) { entry in
-                pendingRun = StudyRun(deck: deck, entry: entry)
-                details = nil
-            }
+        .sheet(isPresented: $showsNewDeck, onDismiss: openNewDeck) {
+            NewDeckSheet(onCreate: createDeck)
+        }
+        .sheet(item: $addingCards) { deck in
+            AddCardsHost(deck: deck)
         }
         .fullScreenCover(item: $run) { run in
             StudyRunView(run: run, ring: ring, knownDecks: knownDecks, counts: deckCounts.counts) { self.run = nil }
         }
         .fullScreenCover(isPresented: $showsIntroduction) {
             OnboardingView(knownDecks: knownDecks, reminders: reminders, onFinish: finishIntroduction)
+        }
+        .alert("Deck Moved", isPresented: Binding(get: { setAsideDeck != nil }, set: { if !$0 { setAsideDeck = nil } })) {
+            Button("OK") {}
+        } message: {
+            Text("This place has no Trash, so “\(setAsideDeck ?? "")” was moved to the folder “\(DeckFiles.setAsideFolderName)” next to it. Files can put it back.")
         }
         .onOpenURL(perform: add(deckAt:))
         .onAppear {
@@ -71,18 +90,39 @@ struct StartScreen: View {
         .onChange(of: run) { previous, current in
             if current == nil, let previous {
                 Task {
-                    // The deck saves what it changed before the list reads the file.
-                    await previous.close()
-                    await refreshAll()
+                    if previous.ownsDeck {
+                        // The deck saves what it changed before the list reads the file.
+                        await previous.close()
+                        await refreshAll()
+                    } else {
+                        // The screen that holds the deck goes on with it: the reviews of the
+                        // stream are not for its Undo.
+                        previous.deck.undoManager.removeAllActions()
+                    }
                 }
             }
         }
-        .onChange(of: details) { previous, current in
-            // A stream started from the details takes the deck over, and closes it.
-            if current == nil, let previous, pendingRun?.deck !== previous {
+        .onChange(of: path) {
+            Task {
+                // What has left the path saves and closes; back on Today, the lists read the files.
+                await pushed.close(except: Set(path.map(\.slot)))
+                if path.isEmpty {
+                    search.invalidate()
+                    await refreshAll()
+                    await searchAgain()
+                }
+            }
+        }
+        .onChange(of: query) {
+            Task { await searchAgain() }
+        }
+        .onChange(of: addingCards) { previous, current in
+            if current == nil, let previous {
                 Task {
                     await previous.close()
-                    await refreshCounts()
+                    search.invalidate()
+                    await refreshAll()
+                    await searchAgain()
                 }
             }
         }
@@ -90,24 +130,66 @@ struct StartScreen: View {
             switch phase {
             case .background:
                 run?.deck.suspend()
-                details?.suspend()
-                reminders.rescheduleBeforeSuspending(decks: knownDecks.byName, open: run?.deck)
+                pushed.suspend()
+                addingCards?.suspend()
+                reminders.rescheduleBeforeSuspending(decks: knownDecks.byName, open: openDeck)
             case .active:
                 run?.deck.resume()
-                details?.resume()
+                pushed.resume()
+                addingCards?.resume()
             default: break
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
+            undoOnShake()
         }
         .onChange(of: reminders.isEnabled) { Task { await rescheduleReminders() } }
         .onChange(of: reminders.minutes) { Task { await rescheduleReminders() } }
         // At launch and whenever the app comes back to the front. A deck that is open shows
         // its own figures, and Today reads again once it is closed.
         .task(id: scenePhase) {
-            if scenePhase == .active, run == nil, details == nil {
+            if scenePhase == .active, run == nil, path.isEmpty, addingCards == nil {
                 await refreshAll()
             }
         }
     }
+
+    // MARK: Routes
+
+    @ViewBuilder
+    private func destination(_ route: DeckRoute) -> some View {
+        PushedDeckView(pushed: pushed, slot: route.slot) { deck in
+            switch route {
+            case let .deck(slot):
+                DeckScreen(
+                    deck: deck, knownCounts: deckCounts.counts[deck.url], start: { studyDeck(deck, entry: $0) },
+                    rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) })
+            case let .card(_, id):
+                CardHost(deck: deck, id: id)
+            }
+        }
+    }
+
+    private func showDeck(_ deck: KnownDeck) {
+        guard run == nil else { return }
+        path.append(.deck(pushed.open(deck.url)))
+    }
+
+    private func showCard(_ hit: AllCardsSearch.Hit) {
+        guard run == nil else { return }
+        path.append(.card(pushed.open(hit.deck.url), hit.card))
+    }
+
+    /// A shake takes back the last change of the deck on the screen, unless a sheet is up: it
+    /// is for the sheet then, and the study stream has its own.
+    private func undoOnShake() {
+        guard UIApplication.shared.isShowingNoPresentation, let slot = path.last?.slot, let deck = pushed.deck(slot),
+            deck.undoManager.canUndo
+        else { return }
+        deck.undoManager.undo()
+    }
+
+    // MARK: Study
 
     /// Starts the stream of one deck, or of every deck with cards due, one after the other.
     private func study(_ scope: StudyScope) {
@@ -121,6 +203,12 @@ struct StartScreen: View {
         run = StudyRun(deck: OpenDeck(url: first), upcoming: Array(urls.dropFirst()))
     }
 
+    /// Starts the stream of the deck whose screen is open, on the deck the screen holds.
+    private func studyDeck(_ deck: OpenDeck, entry: StudyModel.Entry) {
+        guard run == nil else { return }
+        run = StudyRun(deck: deck, entry: entry, ownsDeck: false)
+    }
+
     /// The decks with cards due, the one studied last first and the others in the order of the
     /// list. With nothing due, the deck studied last alone: its stream rests at once and offers
     /// to go on. Before the decks are read every deck counts as due.
@@ -128,7 +216,7 @@ struct StartScreen: View {
         let urls = knownDecks.byName.map(\.url)
         let isRead = !deckCounts.counts.isEmpty
         var due = urls.filter { deckCounts.counts[$0].map { $0.total > 0 } ?? !isRead }
-        let last = knownDecks.last.flatMap { last in urls.first { KnownDecks.isSameFile($0, last) } }
+        let last = lastUsed(in: urls)
         if let last, let index = due.firstIndex(of: last) {
             due.insert(due.remove(at: index), at: 0)
         }
@@ -138,17 +226,85 @@ struct StartScreen: View {
         return due
     }
 
-    private func showDetails(_ deck: KnownDeck) {
-        guard details == nil, run == nil else { return }
-        details = OpenDeck(url: deck.url)
+    /// The deck used last, as the list spells its file.
+    private func lastUsed(in urls: [URL]) -> URL? {
+        knownDecks.last.flatMap { last in urls.first { KnownDecks.isSameFile($0, last) } }
     }
 
-    private func startPendingRun() {
-        if let pendingRun {
-            run = pendingRun
-            self.pendingRun = nil
+    // MARK: Adding and creating
+
+    /// Opens the sheet that adds cards to the deck used last, or to the first of the list.
+    private func addCardsToLastDeck() {
+        guard run == nil, addingCards == nil, path.isEmpty else { return }
+        let urls = knownDecks.byName.map(\.url)
+        guard let url = lastUsed(in: urls) ?? urls.first else { return }
+        knownDecks.remember(url)
+        addingCards = OpenDeck(url: url)
+    }
+
+    /// Makes the deck in the folder of decks, which is the app's own folder on the iPhone while the
+    /// learner has chosen none, and prepares its screen: an empty deck is for adding cards.
+    private func createDeck(named name: String) async throws {
+        if knownDecks.folder == nil {
+            knownDecks.useLocalFolder()
+        }
+        guard let folder = knownDecks.folder else { return }
+        let url = try await DeckFiles.create(named: name, in: folder)
+        knownDecks.remember(url)
+        knownDecks.refreshFolder()
+        openAfterSheet = pushed.open(url)
+        showsNewDeck = false
+    }
+
+    /// The sheet of the new deck has gone: the deck's screen.
+    private func openNewDeck() {
+        if let slot = openAfterSheet {
+            openAfterSheet = nil
+            path = [.deck(slot)]
         }
     }
+
+    // MARK: Renaming and deleting
+
+    /// Gives the deck of `slot` a new name. The deck is closed for it, as the file is moved;
+    /// it opens again at its new place, in the same slot, so its screen stays.
+    private func rename(_ slot: PushedDecks.Slot, to name: String) async throws {
+        guard let deck = pushed.deck(slot) else { return }
+        let old = deck.url
+        await pushed.close(slot)
+        do {
+            let new = try await DeckFiles.rename(old, to: name)
+            knownDecks.replace(old, with: new)
+            knownDecks.refreshFolder()
+            pushed.reopen(slot, at: new)
+        } catch {
+            pushed.reopen(slot, at: old)
+            throw error
+        }
+    }
+
+    /// Moves the deck of `slot` to the Trash and goes back to Today. A place without a Trash
+    /// keeps the deck in a folder of its own, which the learner is told.
+    private func trash(_ slot: PushedDecks.Slot) async throws {
+        guard let deck = pushed.deck(slot) else { return }
+        let url = deck.url
+        await pushed.close(slot)
+        let outcome: DeckFiles.Trashed
+        do {
+            outcome = try await DeckFiles.trash(url)
+        } catch {
+            pushed.reopen(slot, at: url)
+            throw error
+        }
+        knownDecks.forget(url)
+        knownDecks.refreshFolder()
+        path = []
+        if case .setAside = outcome {
+            setAsideDeck = deck.name
+        }
+    }
+
+    // MARK: Lists
 
     private func choose(folder: Bool) {
         choosesFolder = folder
@@ -174,8 +330,20 @@ struct StartScreen: View {
         await rescheduleReminders()
     }
 
+    /// Reads the cards of all decks for the search, while there is something to search for.
+    private func searchAgain() async {
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        await search.load(knownDecks.byName)
+    }
+
+    /// The deck that is open outside the lists, for the reminders: they count its cards as the
+    /// document has them, not as the file does.
+    private var openDeck: OpenDeck? {
+        run?.deck ?? addingCards ?? pushed.openDecks.first
+    }
+
     private func rescheduleReminders() async {
-        await reminders.reschedule(decks: knownDecks.byName, open: run?.deck)
+        await reminders.reschedule(decks: knownDecks.byName, open: openDeck)
     }
 
     private func showIntroductionAfterSettings() {

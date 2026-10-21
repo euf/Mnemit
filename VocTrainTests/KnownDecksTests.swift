@@ -49,6 +49,28 @@ struct KnownDecksTests {
         #expect(FileManager.default.fileExists(atPath: url.path))
     }
 
+    /// A rename keeps the deck's place in the list of decks used, which Study and Add Cards
+    /// read; a deck that is only in the folder has no entry to change.
+    @Test func aRenamedDeckKeepsItsPlace() throws {
+        let polish = try makeDeck(named: "Polish")
+        let spanish = try makeDeck(named: "Spanish")
+        let known = KnownDecks(defaults: defaults)
+        known.remember(polish)
+        known.remember(spanish)
+        let renamed = directory.appending(path: "Czech.mnemit", directoryHint: .isDirectory)
+        try FileManager.default.moveItem(at: polish, to: renamed)
+
+        known.replace(polish, with: renamed)
+        #expect(known.byName.map(\.name) == ["Czech", "Spanish"])
+        let last = try #require(known.last)
+        #expect(KnownDecks.isSameFile(last, spanish))
+
+        let next = KnownDecks(defaults: defaults)
+        #expect(next.byName.map(\.name) == ["Czech", "Spanish"])
+        known.replace(directory.appending(path: "Unknown.mnemit"), with: renamed)
+        #expect(known.byName.count == 2)
+    }
+
     @Test func aDeletedDeckIsForgotten() throws {
         let url = try makeDeck(named: "Polish")
         KnownDecks(defaults: defaults).remember(url)

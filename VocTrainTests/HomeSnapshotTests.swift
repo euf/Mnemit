@@ -30,13 +30,14 @@ struct HomeSnapshotTests {
     }
 
     func today(
-        decks: [KnownDeck] = [greekA1, greekB1], counts: [URL: StudyCounts], progress: DailyProgress?
+        decks: [KnownDeck] = [greekA1, greekB1], counts: [URL: StudyCounts], progress: DailyProgress?, query: String = "",
+        hits: [AllCardsSearch.Hit] = []
     ) -> some View {
         NavigationStack {
             TodayScreen(
-                decks: decks, counts: counts, progress: progress, now: Self.now, canForget: { _ in true },
-                study: { _ in }, showDetails: { _ in }, forget: { _ in }, chooseFolder: {}, openDeck: {},
-                showSettings: {}, refresh: {})
+                decks: decks, counts: counts, progress: progress, now: Self.now, query: .constant(query), hits: hits,
+                isSearching: false, canForget: { _ in true }, study: { _ in }, showDeck: { _ in }, showCard: { _ in },
+                forget: { _ in }, addCards: {}, newDeck: {}, chooseFolder: {}, openDeck: {}, showSettings: {}, refresh: {})
         }
     }
 
@@ -86,8 +87,15 @@ struct HomeSnapshotTests {
                 question: "λάθος", answer: "mistake", created: created,
                 learningState: state(.relearning, due: Self.now.addingTimeInterval(86_400)),
                 log: [ReviewLogEntry(date: Self.now.addingTimeInterval(-1800), grade: .again, mode: .revealed)]))
-        return try VocabularyDocument(deck: Deck(cards: cards), clock: StudyClock { Self.now })
+        let document = try VocabularyDocument(deck: Deck(cards: cards), clock: StudyClock { Self.now })
+        // The document holds its undo manager weakly: the test run keeps it.
+        let undoManager = UndoManager()
+        Self.undoManagers.append(undoManager)
+        document.attachUndoManager(undoManager)
+        return document
     }
+
+    private static var undoManagers: [UndoManager] = []
 
     // MARK: Rendering
 
@@ -165,35 +173,30 @@ struct HomeSnapshotTests {
         try await shoot("today-empty", today(decks: [], counts: [:], progress: nil))
     }
 
-    @Test func deckDetails() async throws {
-        let document = try sampleDocument()
-        let merger = VersionMerger { _ in }
-        let view = DeckDetails(
-            name: "Greek B1", knownCounts: nil, document: document, failure: nil, merger: merger, canEdit: true, start: { _ in })
-        try await shoot("details", view)
+    @Test func todayWithSearchResults() async throws {
+        let hits = [
+            AllCardsSearch.Hit(deck: Self.greekB1, card: UUID(), question: "το σπίτι", answer: "дом · the house"),
+            AllCardsSearch.Hit(deck: Self.greekB1, card: UUID(), question: "house", answer: "το σπίτι"),
+            AllCardsSearch.Hit(deck: Self.greekA1, card: UUID(), question: "η πολυκατοικία", answer: "многоквартирный дом · block of flats\nΜένουμε σε μια πολυκατοικία."),
+        ]
+        try await shoot("today-search", today(counts: dueCounts, progress: nil, query: "house", hits: hits))
     }
 
-    @Test func deckDetailsInTheMediumDetent() async throws {
-        let document = try sampleDocument()
-        let merger = VersionMerger { _ in }
-        let view = DeckDetails(
-            name: "Greek B1", knownCounts: nil, document: document, failure: nil, merger: merger, canEdit: true, start: { _ in })
-        try await shoot("details-medium", view, height: 420)
+    func deckScreen(document: VocabularyDocument?, counts: StudyCounts? = nil, canEdit: Bool = true) -> some View {
+        NavigationStack {
+            DeckContent(
+                name: "Greek B1", knownCounts: counts, document: document, failure: nil, merger: document.map { _ in VersionMerger { _ in } },
+                canEdit: canEdit, start: { _ in }, rename: { _ in }, delete: {})
+        }
     }
 
-    @Test func deckDetailsWhileLoading() async throws {
-        let view = DeckDetails(
-            name: "Greek B1", knownCounts: Self.counts(new: 20, learning: 4, review: 3), document: nil, failure: nil, merger: nil,
-            canEdit: false, start: { _ in })
-        try await shoot("details-loading", view)
+    @Test func deckScreenWhileLoading() async throws {
+        try await shoot("deck-loading", deckScreen(document: nil, counts: Self.counts(new: 20, learning: 4, review: 3), canEdit: false))
     }
 
-    @Test func deckDetailsAtAccessibilitySize() async throws {
+    @Test func deckScreenAtAccessibilitySize() async throws {
         let document = try sampleDocument()
-        let merger = VersionMerger { _ in }
-        let view = DeckDetails(
-            name: "Greek B1", knownCounts: nil, document: document, failure: nil, merger: merger, canEdit: true, start: { _ in })
-        try await shoot("details", view, types: [.accessibility3])
+        try await shoot("deck", deckScreen(document: document), types: [.accessibility3])
     }
 }
 
