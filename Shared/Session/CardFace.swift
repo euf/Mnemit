@@ -44,29 +44,25 @@ struct CardFace: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .opacity(isRevealed ? 1 : 0)
-            // The hidden answer has no speaker button to tap.
+            // The hidden answer has no speaker button to tap, nor a place the card's touch
+            // would leave to it (a disabled speaker reports none).
             .allowsHitTesting(isRevealed)
+            .disabled(!isRevealed)
             .accessibilityHidden(!isRevealed)
             .animation(.easeOut(duration: 0.15), value: isRevealed)
             #if os(iOS)
             // Lifts the divider a little above the middle: the buttons below weigh more.
             Color.clear
-                .frame(height: 24)
+                .frame(height: Spacing.section)
             #endif
         }
         .multilineTextAlignment(.center)
-        .padding(20)
+        .padding(Metrics.padding)
     }
 
     private var questionBlock: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 8) {
-                Text(question)
-                    .font(Metrics.question(isGreek: question.containsGreek))
-                    .minimumScaleFactor(0.6)
-                    .selectable()
-                SpeakButton(text: question)
-            }
+        VStack(spacing: Metrics.questionHintSpacing) {
+            SpokenWord(text: question, font: Metrics.question(isGreek: question.containsGreek))
             if !hint.isEmpty {
                 Text(hint)
                     .font(Metrics.hint)
@@ -79,14 +75,8 @@ struct CardFace: View {
 
     private var answerBlock: some View {
         let parts = parts
-        return VStack(spacing: 12) {
-            HStack(spacing: 8) {
-                Text(parts.head)
-                    .font(Metrics.answerHead(isGreek: parts.head.containsGreek))
-                    .minimumScaleFactor(0.6)
-                    .selectable()
-                SpeakButton(text: parts.head)
-            }
+        return VStack(spacing: Metrics.answerExampleSpacing) {
+            SpokenWord(text: parts.head, font: Metrics.answerHead(isGreek: parts.head.containsGreek))
             if let example = parts.example {
                 Text(example)
                     .font(Metrics.example)
@@ -98,21 +88,61 @@ struct CardFace: View {
     }
 
     /// Sizes per platform: the iPhone follows Dynamic Type, the Mac has fixed sizes (it has no
-    /// Dynamic Type; its built-in styles are 26, 22, 17, 15 and 13 points).
+    /// Dynamic Type; its built-in styles are 26, 22, 17, 15 and 13 points). The iPhone's gaps
+    /// are from `Spacing`: 24 round the card's content, 16 between the question, the divider and
+    /// the answer, 12 between a word and the line under it.
     private enum Metrics {
         #if os(macOS)
+        static let padding: CGFloat = 20
         static let spacing: CGFloat = 10
+        static let questionHintSpacing: CGFloat = 16
+        static let answerExampleSpacing: CGFloat = 12
         static func question(isGreek: Bool) -> Font { .system(size: isGreek ? 32 : 26, weight: .semibold) }
         static func answerHead(isGreek: Bool) -> Font { isGreek ? .system(size: 32, weight: .semibold) : .title }
         static let hint = Font.title3
         static let example = Font.title3
         #else
-        static let spacing: CGFloat = 16
+        static let padding = Spacing.section
+        static let spacing = Spacing.margin
+        static let questionHintSpacing = Spacing.gap
+        static let answerExampleSpacing = Spacing.gap
         static func question(isGreek: Bool) -> Font { isGreek ? .largeTitle.weight(.semibold) : .title.weight(.semibold) }
         static func answerHead(isGreek: Bool) -> Font { isGreek ? .largeTitle.weight(.semibold) : .title2 }
         static let hint = Font.title3
         static let example = Font.body
         #endif
+    }
+}
+
+/// A word of the card with the speaker that says it, beside it. On the iPhone the speaker takes
+/// the font of the word, so it grows and shrinks with it, and the row is aligned by the first
+/// baseline, so the speaker stands by the word's first line: a word that wraps ("απαντάω
+/// (απάντησα)") has the speaker by its first line, not between the two. On the Mac the speaker
+/// is a small button at its own size, centred beside the word.
+struct SpokenWord: View {
+    var text: String
+    var font: Font
+
+    var body: some View {
+        #if os(iOS)
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
+            word
+            SpeakButton(text: text, font: font)
+        }
+        #else
+        // The Mac's speaker is a small button at its own size, centred beside the word.
+        HStack(spacing: Spacing.tight) {
+            word
+            SpeakButton(text: text)
+        }
+        #endif
+    }
+
+    private var word: some View {
+        Text(text)
+            .font(font)
+            .minimumScaleFactor(0.6)
+            .selectable()
     }
 }
 

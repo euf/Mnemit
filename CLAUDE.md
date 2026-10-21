@@ -104,6 +104,19 @@
   Mac — `AppDelegate` и `WelcomeWindow` (откат: `defaults write <bundle id> showsWelcomeWindow
   -bool NO`). «Add Lesson Words…» (⇧⌘L) — `LessonWords` в VocabCore: `note` по `key()` из
   `greek-lessons/vocab/merge.py`, две карточки на слово, одна отмена.
+- Экран Study на iPhone (`StudyView`): все отступы берутся из шкалы `Spacing` в
+  `Shared/Support/Presentation.swift` (4, 8, 12, 16, 24 pt): 16 по бокам, 12 между чипом,
+  карточкой и кнопками и под кнопками, 24 внутри карточки. Show Answer лежит оверлеем на
+  блоке оценок и занимает его прямоугольник, поэтому карточка не меняет высоту при открытии.
+  Касание карточки открывает ответ (`touch`: `DragGesture(minimumDistance: 0)` через
+  `simultaneousGesture`); касание, начатое на динамике, остаётся за кнопкой: динамики
+  (`SpeakButton`) сообщают свои рамки в `SpeakerPlaces`, и жест карточки такие касания
+  пропускает (ни ответа, ни свайпа, ни листа информации). Динамик рядом со словом
+  (`SpokenWord`) берёт его шрифт и стоит на первой базовой линии. Чип отмены (`UndoChip`)
+  занимает своё место всегда, даже пустой. Кадры состояний пишет
+  `VocTrainTests/StudyScreenSnapshotTests` (путь — переменная окружения
+  `TEST_RUNNER_STUDY_SHOTS_DIR` у процесса xcodebuild, аргументом она не доходит), замеры по
+  пикселям — `SpeakerAlignmentTests` и `PixelBitmap`.
 
 ## Upstream
 
