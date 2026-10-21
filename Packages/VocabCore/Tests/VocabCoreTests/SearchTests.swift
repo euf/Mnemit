@@ -17,6 +17,12 @@ struct CardSearchIndexTests {
         #expect(index.positions(matching: "gebäude") == [1])
     }
 
+    @Test func searchesTheWordKey() {
+        let index = CardSearchIndex(cards: [Card(question: "το σπίτι", answer: "дом", note: "σπίτι|Haus"), Card(question: "dom", answer: "Haus")])
+        #expect(index.positions(matching: "HAUS") == [0, 1])
+        #expect(index.positions(matching: "σπιτι|") == [0])
+    }
+
     @Test func replacedEntryFindsNewText() {
         var index = CardSearchIndex(cards: cards)
         index.replace(at: 1, with: Card(question: "chata", answer: "Hütte"))
