@@ -15,6 +15,18 @@ struct PreferencesTests {
         #expect(defaults.persistentDomain(forName: domain)?[Preferences.reopenDecksKey] as? Bool == true)
     }
 
+    @Test func studiesByFlashcardsUnlessChosenOtherwise() throws {
+        let defaults = try #require(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        #expect(Preferences.studyBy(defaults) == .flashcards)
+
+        defaults.set("typing", forKey: Preferences.studyByKey)
+        #expect(Preferences.studyBy(defaults) == .typing)
+
+        defaults.set("unknown", forKey: Preferences.studyByKey)
+        #expect(Preferences.studyBy(defaults) == .flashcards)
+    }
+
     @Test func keepsTheChosenSetting() throws {
         let defaults = try #require(UserDefaults(suiteName: domain))
         defer { defaults.removePersistentDomain(forName: domain) }

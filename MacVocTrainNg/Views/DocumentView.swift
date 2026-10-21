@@ -133,7 +133,7 @@ struct DocumentView: View {
 
     private func startSession() {
         guard canEdit, session == nil else { return }
-        let model = SessionViewModel(document: document)
+        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy())
         if !model.isFinished {
             session = model
         }

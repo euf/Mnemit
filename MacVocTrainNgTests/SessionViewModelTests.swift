@@ -313,6 +313,70 @@ struct SessionViewModelTests {
         #expect(model.isFinished)
     }
 
+    @Test func flashCardsGradeOnlyAfterRevealingAndCanBeUndone() throws {
+        let document = try makeDocument(cards: 2)
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, studyBy: .flashcards)
+        let first = try #require(model.currentCard)
+
+        step(undoManager) { model.grade(.good) }
+        #expect(model.stage == .asking)
+        #expect(document.card(withID: first.id)?.log.isEmpty == true)
+        model.input = first.answer
+        model.submit()
+        #expect(model.stage == .asking)
+
+        model.reveal()
+        #expect(model.stage == .revealed)
+        #expect(model.suggestedGrade == nil)
+        step(undoManager) { model.grade(.good) }
+        #expect(document.card(withID: first.id)?.log.map(\.mode) == [.revealed])
+        #expect(model.previous?.grade == .good)
+        #expect(model.currentCard?.id != first.id)
+        #expect(model.stage == .asking)
+
+        undoManager.undo()
+        #expect(document.card(withID: first.id)?.isNew == true)
+        #expect(model.currentCard == first)
+        #expect(model.stage == .asking)
+    }
+
+    @Test func typingIgnoresReveal() throws {
+        let document = try makeDocument(cards: 1)
+        let model = SessionViewModel(document: document)
+        model.reveal()
+        #expect(model.stage == .asking)
+    }
+
+    /// Practice and the next study session ask the way the session did.
+    @Test func flashCardsCarryOverToPracticeAndLaterSessions() throws {
+        let document = try makeDocument(cards: 1)
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, studyBy: .flashcards)
+        model.reveal()
+        step(undoManager) { model.grade(.again) }
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
+        #expect(model.isFinished)
+
+        let before = document.deck
+        model.practiceMistakes()
+        #expect(model.isPracticing)
+        step(undoManager) { model.grade(.good) }
+        #expect(!model.isFinished)
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
+        #expect(model.isFinished)
+        #expect(document.deck == before)
+
+        model.continueStudying()
+        guard case let .study(study) = model.mode else {
+            Issue.record("A new regular session is a study session.")
+            return
+        }
+        #expect(study.reviewMode == .revealed)
+    }
+
     @Test func practicingMistakesLeavesScheduleAlone() throws {
         let document = try makeDocument(cards: 1)
         let undoManager = makeUndoManager(for: document)

@@ -8,9 +8,12 @@ import VocabCore
 /// and Return accepts the suggested grade; 1–4 choose a grade explicitly, e.g. 3
 /// when the response was right after all. ⌘Z takes back the last review.
 ///
-/// ⌘E edits the card being asked (#289); before the response is checked, without
-/// showing its answer. The response typed so far stays, and a response already checked
-/// is checked again against the edited card.
+/// With flash cards (the preference "Study by"), there is no response: Space or Return
+/// shows the answer, then 1–4 choose the grade.
+///
+/// ⌘E edits the card being asked (#289); before the response is checked or the answer
+/// shown, without showing its answer. The response typed so far stays, and a response
+/// already checked is checked again against the edited card.
 ///
 /// "Suspend Card", under the arrow of "Edit Card…" (#293), leaves out the card from now
 /// on, until the learner resumes it (#290).
@@ -61,7 +64,8 @@ struct SessionView: View {
         }
     }
 
-    /// Edits the card being asked; its answer stays hidden until the response is checked.
+    /// Edits the card being asked; its answer stays hidden until the response is checked
+    /// or, with flash cards, shown.
     private func editCurrentCard() {
         guard let card = model.currentCard else { return }
         editing = EditRequest(card: card, hidesAnswer: model.stage == .asking)
@@ -125,25 +129,29 @@ struct SessionView: View {
                     .multilineTextAlignment(.center)
             }
 
-            TextField("Response", text: $model.input, prompt: Text("Response"))
-                .textFieldStyle(.roundedBorder)
-                .font(.title2)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 480)
-                .focused($focusedQuestion, equals: model.questionNumber)
-                .disabled(model.stage != .asking)
-                .onSubmit { model.submit() }
-                // Before `id`, so it runs for every new field, not only the first.
-                .onAppear { focus(model.questionNumber) }
-                // A new field per question: with automatic continuing the field never
-                // ends editing, and ⌘Z would first take back the previous typing (#9).
-                .id(model.questionNumber)
+            if model.studyBy == .typing {
+                TextField("Response", text: $model.input, prompt: Text("Response"))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.title2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 480)
+                    .focused($focusedQuestion, equals: model.questionNumber)
+                    .disabled(model.stage != .asking)
+                    .onSubmit { model.submit() }
+                    // Before `id`, so it runs for every new field, not only the first.
+                    .onAppear { focus(model.questionNumber) }
+                    // A new field per question: with automatic continuing the field never
+                    // ends editing, and ⌘Z would first take back the previous typing (#9).
+                    .id(model.questionNumber)
+            }
 
             Group {
                 if case let .feedback(result, response) = model.stage {
                     FeedbackView(result: result, response: response, expected: card.answer, highlightedAnswer: model.highlightedAnswer) { grade in
                         model.grade(grade)
                     }
+                } else if model.studyBy == .flashcards {
+                    FlashcardView(answer: card.answer, isRevealed: model.stage == .revealed, onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
                 } else {
                     Text("Press Return to check your response.")
                         .foregroundStyle(.tertiary)
@@ -250,6 +258,53 @@ private struct FeedbackView: View {
                 return text + Text(segment.text).bold().underline().foregroundColor(Grade.again.color)
             }
             return text + Text(segment.text)
+        }
+    }
+}
+
+/// Flash cards: the button that shows the answer, then the answer and the grade buttons.
+private struct FlashcardView: View {
+    var answer: String
+    var isRevealed: Bool
+    var onReveal: () -> Void
+    var onGrade: (Grade) -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            if isRevealed {
+                Text(answer)
+                    .font(.title2)
+                    .textSelection(.enabled)
+
+                HStack(spacing: 10) {
+                    ForEach(Grade.allCases, id: \.self) { grade in
+                        GradeButton(grade: grade, isSuggested: false) {
+                            onGrade(grade)
+                        }
+                    }
+                }
+            } else {
+                Button(action: onReveal) {
+                    VStack(spacing: 2) {
+                        Text("Show Answer")
+                        Text("Space or ↩")
+                            .font(.caption)
+                    }
+                    .frame(minWidth: 120)
+                    .padding(.vertical, 2)
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+
+                // A button takes one shortcut; Space shows the answer too.
+                Button(action: onReveal) {
+                    Text(verbatim: "")
+                }
+                .keyboardShortcut(.space, modifiers: [])
+                .opacity(0)
+                .frame(width: 0, height: 0)
+                .accessibilityHidden(true)
+            }
         }
     }
 }

@@ -29,6 +29,21 @@ enum Preferences {
         UserDefaults.standard.object(forKey: autoAdvanceKey) as? Bool ?? true
     }
 
+    /// How a session asks its cards.
+    enum StudyBy: String {
+        /// The learner reveals the answer and grades without a response, as on the iPhone.
+        case flashcards
+        /// The learner types the response, which the app checks.
+        case typing
+    }
+
+    static let studyByKey = "studyBy"
+
+    /// What the learner chose; flash cards until then or if the stored value is unknown.
+    static func studyBy(_ defaults: UserDefaults = .standard) -> StudyBy {
+        defaults.string(forKey: studyByKey).flatMap(StudyBy.init(rawValue:)) ?? .flashcards
+    }
+
     /// Reopen the decks that were open at quit. The key is AppKit's own, which also
     /// handles ⌥⌘Q; in the app's domain it overrides the system setting "Close windows
     /// when quitting an application".

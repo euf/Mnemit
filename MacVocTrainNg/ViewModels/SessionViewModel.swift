@@ -3,14 +3,17 @@ import Observation
 import VocabCore
 
 /// Drives a session on the Mac: checks responses, moves on after a correct one if
-/// asked to, practises the mistakes and finishes up. Applying grades and keeping the
-/// session's place in step with undo and redo and with every other change to the deck
-/// is left to a `SessionDriver`, which the iPhone app shares.
+/// asked to, practises the mistakes and finishes up. With flash cards (`studyBy`) there
+/// is no response to check: the learner reveals the answer and grades it. Applying
+/// grades and keeping the session's place in step with undo and redo and with every
+/// other change to the deck is left to a `SessionDriver`, which the iPhone app shares.
 @MainActor @Observable
 final class SessionViewModel {
     enum Stage: Equatable {
         /// Waiting for the response to the current card.
         case asking
+        /// Flash cards: the answer is shown; waiting for a grade.
+        case revealed
         /// The response was checked; waiting for the learner to confirm a grade.
         case feedback(CheckResult, response: String)
         case finished
@@ -27,6 +30,8 @@ final class SessionViewModel {
     let document: VocabularyDocument
     /// Move on right after a correct response instead of asking for a grade.
     let autoAdvance: Bool
+    /// How this session, its practice and the sessions after it ask their cards.
+    let studyBy: Preferences.StudyBy
     private let driver: SessionDriver
     private(set) var stage: Stage
     private(set) var previous: PreviousReview?
@@ -36,10 +41,12 @@ final class SessionViewModel {
     var input = ""
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the same study day.
-    init(document: VocabularyDocument, autoAdvance: Bool = Preferences.autoAdvance) {
-        let study = StudySession(deck: document.deck, at: document.clock.now, calendar: document.calendar)
+    /// Types by default, so a test doesn't depend on the learner's preference; the app passes it.
+    init(document: VocabularyDocument, autoAdvance: Bool = Preferences.autoAdvance, studyBy: Preferences.StudyBy = .typing) {
+        let study = Self.makeStudySession(for: document, studyBy: studyBy)
         self.document = document
         self.autoAdvance = autoAdvance
+        self.studyBy = studyBy
         driver = SessionDriver(document: document, mode: .study(study))
         stage = study.session.isFinished ? .finished : .asking
         driver.delegate = self
@@ -80,7 +87,7 @@ final class SessionViewModel {
 
     /// Checks the response. An empty response counts as "I don't know".
     func submit() {
-        guard stage == .asking, let card = currentCard else { return }
+        guard stage == .asking, studyBy == .typing, let card = currentCard else { return }
         let result = checker.check(input, against: card.answer)
         if result == .correct, autoAdvance {
             grade(.good)
@@ -89,8 +96,15 @@ final class SessionViewModel {
         }
     }
 
+    /// Flash cards: shows the answer.
+    func reveal() {
+        guard studyBy == .flashcards, stage == .asking else { return }
+        stage = .revealed
+    }
+
+    /// With flash cards only once the answer is shown.
     func grade(_ grade: Grade) {
-        guard stage != .finished, let card = currentCard, driver.grade(grade) else { return }
+        guard stage != .finished, studyBy == .typing || stage == .revealed, let card = currentCard, driver.grade(grade) else { return }
         previous = PreviousReview(question: card.question, answer: card.answer, grade: grade)
     }
 
@@ -123,7 +137,11 @@ final class SessionViewModel {
     /// Starts a new regular session with the cards that are still due.
     func continueStudying() {
         previous = nil
-        driver.start(.study(StudySession(deck: document.deck, at: document.clock.now, calendar: document.calendar)))
+        driver.start(.study(Self.makeStudySession(for: document, studyBy: studyBy)))
+    }
+
+    private static func makeStudySession(for document: VocabularyDocument, studyBy: Preferences.StudyBy) -> StudySession {
+        StudySession(deck: document.deck, at: document.clock.now, calendar: document.calendar, reviewMode: studyBy == .flashcards ? .revealed : .typed)
     }
 }
 

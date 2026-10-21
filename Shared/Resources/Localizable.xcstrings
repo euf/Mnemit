@@ -1100,6 +1100,26 @@
         }
       }
     },
+    "Flashcards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karteikarten"
+          }
+        }
+      }
+    },
+    "Flashcards: reveal the answer, then grade yourself. Typing: the app checks your response.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karteikarten: Antwort aufdecken, dann selbst bewerten. Eintippen: Die App prüft deine Eingabe."
+          }
+        }
+      }
+    },
     "Format:": {
       "localizations": {
         "de": {
@@ -2110,6 +2130,16 @@
         }
       }
     },
+    "Space or ↩": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leertaste oder ↩"
+          }
+        }
+      }
+    },
     "Spread out intervals": {
       "localizations": {
         "de": {
@@ -2186,6 +2216,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lernen (%lld)"
+          }
+        }
+      }
+    },
+    "Study by": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernen mit"
           }
         }
       }
@@ -2466,6 +2506,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gesamt"
+          }
+        }
+      }
+    },
+    "Typing": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eintippen"
           }
         }
       }
