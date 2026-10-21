@@ -68,9 +68,24 @@ final class SessionViewModel {
 
     var isFinished: Bool { stage == .finished }
 
-    /// What each grade would schedule for the card being asked, shown on the buttons;
-    /// `nil` in practice.
-    var gradeIntervals: [Grade: ReviewInterval]? { driver.gradeIntervals }
+    /// What the last grade did, shown in the chip that offers Undo.
+    var receipt: GradeReceipt? { driver.lastReceipt }
+
+    func dismissReceipt() {
+        driver.dismissReceipt()
+    }
+
+    /// Whether Z, Esc and the chip can take back the review or suspension shown below the
+    /// card.
+    var canUndoLast: Bool {
+        previous != nil && document.undoManager?.canUndo == true
+    }
+
+    /// Takes back the last review or suspension, like ⌘Z.
+    func undoLast() {
+        guard canUndoLast else { return }
+        document.undoManager?.undo()
+    }
 
     var suggestedGrade: Grade? {
         guard case let .feedback(result, _) = stage else { return nil }

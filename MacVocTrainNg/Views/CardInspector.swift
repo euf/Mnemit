@@ -103,8 +103,10 @@ private struct CardDetail: View {
                 Section("Review Log") {
                     ForEach(Array(card.log.suffix(50).reversed().enumerated()), id: \.offset) { _, entry in
                         LabeledContent(entry.date.formatted(date: .abbreviated, time: .shortened)) {
-                            Text(entry.grade.title)
-                                .foregroundStyle(entry.grade.color)
+                            HStack(spacing: 6) {
+                                GradeDot(grade: entry.grade)
+                                Text(entry.grade.title)
+                            }
                         }
                     }
                 }
