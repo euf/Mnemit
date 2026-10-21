@@ -200,7 +200,11 @@ struct DocumentView: View {
     /// Opens the study stream, which rests at once if today's plan is empty.
     private func startSession() {
         guard canEdit, session == nil, !document.deck.cards.isEmpty else { return }
-        session = SessionViewModel(document: document, studyBy: Preferences.studyBy())
+        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy())
+        session = model
+        if model.studyBy == .flashcards {
+            shortcutsHelp.showForFirstSession()
+        }
     }
 
     /// Practices the cards that went wrong today, whatever their schedule: the reviews
@@ -210,9 +214,6 @@ struct DocumentView: View {
         let model = SessionViewModel(document: document, studyBy: Preferences.studyBy(), entry: .practiceMistakes)
         if !model.isResting {
             session = model
-            if model.studyBy == .flashcards {
-                shortcutsHelp.showForFirstSession()
-            }
         }
     }
 
