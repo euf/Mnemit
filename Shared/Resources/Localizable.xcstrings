@@ -230,6 +230,46 @@
         }
       }
     },
+    "%lld lapses": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Mal vergessen"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Mal vergessen"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld lapse"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld lapses"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld lines without a word and a translation are left out.": {
       "localizations": {
         "de": {
@@ -542,12 +582,32 @@
         }
       }
     },
+    "A Translation → Greek card stays locked until its Greek → translation card has an interval this long. A word is asked in one direction per day.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte Übersetzung → Griechisch bleibt gesperrt, bis ihre Karte Griechisch → Übersetzung ein so langes Intervall hat. Ein Wort wird pro Tag nur in einer Richtung abgefragt."
+          }
+        }
+      }
+    },
     "A card you forget this many times, and again after every further multiple of it, is suspended as a leech. Resume it in the card list. Off never suspends.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Eine Karte, die du so oft vergisst, und danach bei jedem weiteren Vielfachen davon, wird als Lernbremse ausgesetzt. Nimm sie in der Kartenliste wieder auf. Aus setzt nie aus."
+          }
+        }
+      }
+    },
+    "A card you forget this many times, and again after every further multiple, is suspended and marked Difficult. Resume it in the Card Browser. Off never suspends.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte, die du so oft vergisst, und danach bei jedem weiteren Vielfachen davon, wird ausgesetzt und als Schwierig markiert. Nimm sie in der Kartenliste wieder auf. Aus setzt nie aus."
           }
         }
       }
@@ -588,6 +648,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hinzufügen"
+          }
+        }
+      }
+    },
+    "Add %lld Cards": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte hinzufügen"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten hinzufügen"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Add %lld Card"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Add %lld Cards"
+                }
+              }
+            }
           }
         }
       }
@@ -722,6 +822,56 @@
         }
       }
     },
+    "Added · %lld cards so far": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hinzugefügt · bisher %lld Karte"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hinzugefügt · bisher %lld Karten"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Added · %lld card so far"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Added · %lld cards so far"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Adds a second card that asks the other way round. It unlocks once you know the first.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fügt eine zweite Karte hinzu, die in die Gegenrichtung fragt. Sie wird freigeschaltet, sobald du die erste kannst."
+          }
+        }
+      }
+    },
     "Adds the maturity, the day the card is due and the number of reviews.": {
       "localizations": {
         "de": {
@@ -788,6 +938,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schon weiter oben: %1$@ → %2$@"
+          }
+        }
+      }
+    },
+    "Already earlier in the list: %@ → %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schon weiter oben in der Liste: %1$@ → %2$@"
           }
         }
       }
@@ -898,6 +1058,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Durchschnittliche Abrufwahrscheinlichkeit der Karten in der Wiederholungsphase im Moment, ohne ausgesetzte Karten."
+          }
+        }
+      }
+    },
+    "Both directions": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beide Richtungen"
           }
         }
       }
@@ -1212,6 +1382,26 @@
         }
       }
     },
+    "Counts every new card except the Translation → Greek ones.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zählt alle neuen Karten außer den Karten Übersetzung → Griechisch."
+          }
+        }
+      }
+    },
+    "Create": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anlegen"
+          }
+        }
+      }
+    },
     "Current": {
       "localizations": {
         "de": {
@@ -1412,6 +1602,16 @@
         }
       }
     },
+    "Difficult after": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwierig nach"
+          }
+        }
+      }
+    },
     "Difficulty": {
       "localizations": {
         "de": {
@@ -1428,6 +1628,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Richtung"
+          }
+        }
+      }
+    },
+    "Discard": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwerfen"
+          }
+        }
+      }
+    },
+    "Discard what you typed?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eingegebenen Text verwerfen?"
           }
         }
       }
@@ -1732,6 +1952,16 @@
         }
       }
     },
+    "From a List": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus einer Liste"
+          }
+        }
+      }
+    },
     "Get Started": {
       "localizations": {
         "de": {
@@ -1788,6 +2018,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schwer"
+          }
+        }
+      }
+    },
+    "Hide Keyboard": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tastatur ausblenden"
+          }
+        }
+      }
+    },
+    "Higher means better recall but more reviews. 90% is a good balance.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Höher bedeutet besseres Erinnern, aber mehr Abfragen. 90 % ist ein guter Kompromiss."
           }
         }
       }
@@ -2122,6 +2372,16 @@
         }
       }
     },
+    "Line %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeile %lld"
+          }
+        }
+      }
+    },
     "Log loss": {
       "localizations": {
         "de": {
@@ -2232,6 +2492,16 @@
         }
       }
     },
+    "Name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
     "Never locked": {
       "localizations": {
         "de": {
@@ -2258,6 +2528,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Neu"
+          }
+        }
+      }
+    },
+    "New Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Karten"
+          }
+        }
+      }
+    },
+    "New Deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Stapel"
           }
         }
       }
@@ -2298,6 +2588,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Neue Karten pro Tag"
+          }
+        }
+      }
+    },
+    "New per day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue pro Tag"
           }
         }
       }
@@ -2522,6 +2822,16 @@
         }
       }
     },
+    "One Card": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte"
+          }
+        }
+      }
+    },
     "One word per line: the Greek word, an equals sign or a dash, then the translation.": {
       "localizations": {
         "de": {
@@ -2578,6 +2888,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Öffne deinen Mnemit-Ordner, um die Stapel darin zu sehen, oder importiere Karten aus einer Tabelle."
+          }
+        }
+      }
+    },
+    "Options": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optionen"
           }
         }
       }
@@ -2988,6 +3308,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aus der Liste entfernen"
+          }
+        }
+      }
+    },
+    "Rename": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umbenennen"
+          }
+        }
+      }
+    },
+    "Rename Deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel umbenennen"
           }
         }
       }
@@ -3982,6 +4322,16 @@
         }
       }
     },
+    "Translation → Greek": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersetzung → Griechisch"
+          }
+        }
+      }
+    },
     "Try the Gestures": {
       "localizations": {
         "de": {
@@ -4062,6 +4412,16 @@
         }
       }
     },
+    "Unlock after": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Freischalten nach"
+          }
+        }
+      }
+    },
     "Unlock production cards after": {
       "localizations": {
         "de": {
@@ -4108,6 +4468,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "iCloud Drive verwenden"
+          }
+        }
+      }
+    },
+    "Used for this deck.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gilt für diesen Stapel."
           }
         }
       }
