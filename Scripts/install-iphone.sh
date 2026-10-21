@@ -3,8 +3,12 @@
 # certificate bought from iApps (Furman in Telegram, 20.10.2026) and installs it on the
 # iPhone over the CoreDevice connection Xcode already has.
 #
-# The profile allows exactly one App ID, so the bundle id comes from the profile, not
-# from the project: a build with the project's id would install and refuse to launch.
+# The profile allows exactly one App ID, and the bundle id is taken from it rather than
+# from the project. Another bundle id signed with this profile also installs and runs
+# (measured 21.10.2026 with FicTypeApp, the way GBox and ESign sign), but without a bundle
+# id equal to the App ID background tasks, file coordination and, from iOS 26, Share don't
+# work; Mnemit edits its decks through file coordination, so it takes the App ID itself.
+# Other apps signed with this certificate: ~/dotfiles/ios-install, ~/Code/GUI-APPS.md §15.
 # Identity and profile live outside the repository in $IOS_SIGNING_DIR:
 #   iapps.mobileprovision   the profile from the chat
 #   signing.keychain-db     a keychain of its own holding only that identity
