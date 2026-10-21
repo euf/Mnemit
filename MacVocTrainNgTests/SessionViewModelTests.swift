@@ -43,15 +43,15 @@ struct SessionViewModelTests {
         #expect(undoManager.undoActionName == String(localized: "Review"))
     }
 
-    @Test func undoingAReviewOfAnEarlierSessionOnlyTakesBackTheCard() throws {
+    @Test func undoingAReviewOfAnEarlierStreamOnlyTakesBackTheCard() throws {
         let document = try makeDocument(cards: 2, steps: 2)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        let first = try #require(model.currentCard)
-        model.input = first.answer
-        step(undoManager) { model.submit() }
+        let earlier = SessionViewModel(document: document, autoAdvance: true)
+        let first = try #require(earlier.currentCard)
+        earlier.input = first.answer
+        step(undoManager) { earlier.submit() }
 
-        model.continueStudying()
+        let model = SessionViewModel(document: document, autoAdvance: true)
         let session = model.session.id
         let current = try #require(model.currentCard)
 
@@ -96,7 +96,7 @@ struct SessionViewModelTests {
             step(undoManager) { model.submit() }
             places.append(Place(model))
         }
-        #expect(model.isFinished)
+        #expect(model.isResting)
 
         for place in places.dropLast().reversed() {
             undoManager.undo()
@@ -111,45 +111,21 @@ struct SessionViewModelTests {
         #expect(!undoManager.canRedo)
     }
 
-    @Test func undoingTheReviewThatFinishedTheSessionAsksAgain() throws {
+    @Test func undoingTheReviewThatEmptiedThePlanAsksAgain() throws {
         let document = try makeDocument(cards: 1)
         let undoManager = makeUndoManager(for: document)
         let model = SessionViewModel(document: document, autoAdvance: true)
         let card = try #require(model.currentCard)
         model.input = card.answer
         step(undoManager) { model.submit() }
-        #expect(model.isFinished)
+        #expect(model.isResting)
 
         undoManager.undo()
         #expect(model.stage == .asking)
         #expect(model.currentCard == card)
 
         undoManager.redo()
-        #expect(model.isFinished)
-    }
-
-    /// The summary shows the time up to the last review, however long it stays open (#185).
-    @Test func durationStaysTheSameAfterTheSessionEnds() throws {
-        let clock = ManualClock(Date(timeIntervalSince1970: 1_791_216_000))
-        var learningOptions = LearningOptions()
-        learningOptions.steps = 1
-        let deck = try Deck(learningOptions: learningOptions, cards: [Card(question: "dom", answer: "Haus")])
-        let document = VocabularyDocument(deck: deck, clock: clock.studyClock, calendar: .testing)
-        let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
-
-        clock.now.addTimeInterval(30)
-        model.input = "Haus"
-        step(undoManager) { model.submit() }
-        #expect(model.isFinished)
-        #expect(model.session.duration == 30)
-
-        clock.now.addTimeInterval(5 * 3600)
-        undoManager.undo()
-        #expect(model.stage == .asking)
-        undoManager.redo()
-        #expect(model.isFinished)
-        #expect(model.session.duration == 30)
+        #expect(model.isResting)
     }
 
     /// The fuzz of intervals belongs to the session's value: after undo, the same grade
@@ -175,7 +151,7 @@ struct SessionViewModelTests {
         step(undoManager) { model.submit() }
         let reviewed = try #require(document.card(withID: card.id)?.learningState)
         #expect(reviewed.phase == .review)
-        #expect(model.isFinished)
+        #expect(model.isResting)
 
         undoManager.undo()
         undoManager.undo()
@@ -189,47 +165,49 @@ struct SessionViewModelTests {
         #expect(document.card(withID: card.id)?.learningState == reviewed)
     }
 
-    /// Grades the current card `.again`, so the next card is asked, then finishes up.
-    /// Undo and redo of that review must bring back none of the cards not asked by
-    /// then (#180).
-    private func expectFinishUpOutlastsUndoAndRedo(of model: SessionViewModel, undoManager: UndoManager) throws {
-        let first = try #require(model.currentCard)
-        model.input = "wrong"
-        model.submit()
-        step(undoManager) { model.grade(.again) }
-        model.finishUp()
-        #expect(model.session.totalCount == 2)
-        let finishedUp = Place(model)
+    /// Today's plan, review ahead, practice: undo takes back the reviews of all of them, one by
+    /// one, and the place of the stream with each. The review ahead is an ordinary review.
+    @Test func undoReachesAcrossTheSegmentsOfTheStream() throws {
+        let now = Date()
+        let lastReview = now.addingTimeInterval(-5 * 86400)
+        let state = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: now.addingTimeInterval(5 * 86400), reviews: 1)
+        let ahead = Card(question: "ahead", answer: "voraus", learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
+        let due = Card(question: "due", answer: "fällig", learningState: LearningState(phase: .review, stability: 3, difficulty: 5, lastReview: now.addingTimeInterval(-3 * 86400), due: now.addingTimeInterval(-3600), reviews: 1))
+        var learningOptions = LearningOptions()
+        learningOptions.fuzzing = false
+        let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [due, ahead]), calendar: .testing)
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, studyBy: .flashcards)
+        #expect(model.streamStage == .plan)
+
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
+        #expect(model.isResting)
+        model.keepGoing()
+        #expect(model.streamStage == .reviewAhead)
+        #expect(model.currentCard?.id == ahead.id)
+        // Ahead of time, the review asks the way the plan did.
+        guard case let .study(study) = model.mode else {
+            Issue.record("Review ahead is a study segment.")
+            return
+        }
+        #expect(study.reviewMode == .revealed)
+
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
+        #expect(model.isPracticing)
+        #expect(document.card(withID: ahead.id)?.log.count == 2)
+        #expect(model.canUndoLast)
 
         undoManager.undo()
-        #expect(model.currentCard?.id == first.id)
-        #expect(model.session.totalCount == 1)  // the card asked after the review is out
-        #expect(model.session.completedCount == 0)
-
-        undoManager.redo()
-        #expect(Place(model) == finishedUp)
-    }
-
-    @Test func undoingAReviewKeepsTheStudySessionFinishedUp() throws {
-        let document = try makeDocument(cards: 3)
-        let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        try expectFinishUpOutlastsUndoAndRedo(of: model, undoManager: undoManager)
-    }
-
-    @Test func undoingAReviewKeepsPracticeFinishedUp() throws {
-        let document = try makeDocument(cards: 3)
-        let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        for _ in 0..<20 where model.session.mistakeIDs.count < 3 {
-            model.input = "wrong"
-            model.submit()
-            step(undoManager) { model.grade(.again) }
-        }
-        #expect(model.session.mistakeIDs.count == 3)
-        model.practiceMistakes()
-        #expect(model.isPracticing)
-        try expectFinishUpOutlastsUndoAndRedo(of: model, undoManager: undoManager)
+        #expect(model.streamStage == .reviewAhead)
+        #expect(model.currentCard?.id == ahead.id)
+        #expect(document.card(withID: ahead.id) == ahead)
+        undoManager.undo()
+        #expect(model.streamStage == .plan)
+        #expect(model.currentCard?.id == due.id)
+        #expect(document.card(withID: due.id) == due)
+        #expect(!undoManager.canUndo)
     }
 
     @Test func aNewReviewAfterUndoDropsTheRedo() throws {
@@ -310,7 +288,7 @@ struct SessionViewModelTests {
         #expect(model.suggestedGrade == .good)
         step(undoManager) { model.grade(.easy) }
         #expect(document.deck.cards[0].log.map(\.grade) == [.easy])
-        #expect(model.isFinished)
+        #expect(model.isResting)
     }
 
     @Test func flashCardsGradeOnlyAfterRevealingAndCanBeUndone() throws {
@@ -348,27 +326,33 @@ struct SessionViewModelTests {
         #expect(model.stage == .asking)
     }
 
-    /// "Practice Newest Words" practises the cards it names, from a fresh window, and
-    /// changes none of them.
-    @Test func practisingGivenCardsAsksOnlyThemAndChangesNothing() throws {
-        let document = try makeDocument(cards: 3)
+    /// "Practice Newest Words" practises the newest batch, from a fresh window, and changes
+    /// none of the cards; the practice ends at rest.
+    @Test func practisingTheNewestWordsAsksOnlyThemAndChangesNothing() throws {
+        let older = Card(text: CardText(question: "older", answer: "älter")!, created: Date(timeIntervalSince1970: 1_791_000_000))
+        let newest = (0..<2).map { Card(text: CardText(question: "n\($0)", answer: "a\($0)")!, created: Date(timeIntervalSince1970: 1_791_216_000)) }
+        let document = try VocabularyDocument(deck: Deck(cards: [older] + newest), calendar: .testing)
         let undoManager = makeUndoManager(for: document)
-        let ids = document.deck.cards.suffix(2).map(\.id)
+        let ids = Set(newest.map(\.id))
         let before = document.deck
 
-        let model = SessionViewModel(document: document, autoAdvance: true, practicing: ids)
+        let model = SessionViewModel(document: document, autoAdvance: true, entry: .practiceNewest)
         #expect(model.isPracticing)
         #expect(model.session.totalCount == 2)
-        while !model.isFinished {
+        while !model.isResting {
             let card = try #require(model.currentCard)
             #expect(ids.contains(card.id))
             model.input = card.answer
             step(undoManager) { model.submit() }
         }
-        #expect(model.session.completedCount == 2)
+        #expect(model.rest.recap.cards == 2)
+        #expect(model.rest.isPracticeOnly)
+        #expect(!model.rest.canKeepGoing)
+        #expect(model.extraNew == nil)
         #expect(document.deck == before)
 
-        #expect(SessionViewModel(document: document, practicing: []).isFinished)
+        #expect(SessionViewModel(document: VocabularyDocument(), entry: .practiceNewest).isResting)
+        #expect(SessionViewModel(document: document, entry: .practiceMistakes).isResting)
     }
 
     /// The lapse that reaches the leech threshold suspends the card; one undo takes the
@@ -392,18 +376,17 @@ struct SessionViewModelTests {
         #expect(stored.isSuspended)
         #expect(stored.learningState?.lapses == 8)
         #expect(document.deck.isLeech(stored))
-        #expect(model.isFinished)
+        #expect(model.isResting)
         #expect(model.receipt?.isLeech == true)
-        #expect(model.session.leechIDs == [leech.id])
 
         undoManager.undo()
         #expect(document.card(withID: leech.id) == leech)
-        #expect(!model.isFinished)
+        #expect(!model.isResting)
         #expect(model.session.leechIDs.isEmpty)
     }
 
-    /// Practice and the next study session ask the way the session did.
-    @Test func flashCardsCarryOverToPracticeAndLaterSessions() throws {
+    /// Practice goes on from the plan the way it asked, and changes no card.
+    @Test func flashCardsCarryOverToPractice() throws {
         let document = try makeDocument(cards: 1)
         let undoManager = makeUndoManager(for: document)
         let model = SessionViewModel(document: document, studyBy: .flashcards)
@@ -411,24 +394,18 @@ struct SessionViewModelTests {
         step(undoManager) { model.grade(.again) }
         model.reveal()
         step(undoManager) { model.grade(.good) }
-        #expect(model.isFinished)
+        #expect(model.isResting)
 
         let before = document.deck
-        model.practiceMistakes()
-        #expect(model.isPracticing)
+        model.keepGoing()
+        #expect(model.streamStage == .practiceMistakes)
+        // The answer has to be revealed before it is graded, in practice too.
         step(undoManager) { model.grade(.good) }
-        #expect(!model.isFinished)
+        #expect(model.session.reviewCount == 0)
         model.reveal()
         step(undoManager) { model.grade(.good) }
-        #expect(model.isFinished)
+        #expect(model.streamStage == .practiceNewest)
         #expect(document.deck == before)
-
-        model.continueStudying()
-        guard case let .study(study) = model.mode else {
-            Issue.record("A new regular session is a study session.")
-            return
-        }
-        #expect(study.reviewMode == .revealed)
     }
 
     @Test func practicingMistakesLeavesScheduleAlone() throws {
@@ -440,19 +417,30 @@ struct SessionViewModelTests {
         step(undoManager) { model.grade(.again) }
         model.input = "a0"
         step(undoManager) { model.submit() }
-        #expect(model.isFinished)
+        #expect(model.isResting)
+        #expect(model.rest.canKeepGoing)
 
+        // From the stream: the mistakes of today, then the newest words.
         let before = document.deck
-        model.practiceMistakes()
+        model.keepGoing()
+        #expect(model.streamStage == .practiceMistakes)
         #expect(model.isPracticing)
-        #expect(!model.isFinished)
+        #expect(!model.isResting)
         model.input = "a0"
         step(undoManager) { model.submit() }
-        #expect(model.isFinished)
+        #expect(model.streamStage == .practiceNewest)
+        #expect(document.deck == before)
+
+        // As an entry of its own: the practice of the mistakes alone, which ends at rest.
+        let practice = SessionViewModel(document: document, autoAdvance: true, entry: .practiceMistakes)
+        #expect(practice.isPracticing)
+        practice.input = "a0"
+        step(undoManager) { practice.submit() }
+        #expect(practice.isResting)
         #expect(document.deck == before)
     }
 
-    /// A mistake suspended later in the session isn't practised (#290).
+    /// A mistake suspended later isn't practised (#290).
     @Test func suspendedMistakesAreNotPractised() throws {
         let document = try makeDocument(cards: 1, steps: 2)
         let undoManager = makeUndoManager(for: document)
@@ -464,21 +452,20 @@ struct SessionViewModelTests {
         #expect(model.currentCard == document.card(withID: card.id))
 
         step(undoManager) { model.suspendCurrentCard() }
-        #expect(model.isFinished)
+        #expect(model.isResting)
         #expect(model.previous?.question == card.question)
         #expect(model.previous?.grade == nil)
-        #expect(model.session.mistakeIDs == [card.id])
-        #expect(model.mistakesToPractice.isEmpty)
-        model.practiceMistakes()
-        #expect(!model.isPracticing)
+        #expect(document.deck.mistakes(onDayOf: document.clock.now, calendar: document.calendar).isEmpty)
+        #expect(!model.rest.canKeepGoing)
+        #expect(SessionViewModel(document: document, entry: .practiceMistakes).isResting)
 
         undoManager.undo()
-        #expect(!model.isFinished)
+        #expect(!model.isResting)
         #expect(model.currentCard?.id == card.id)
         #expect(model.previous == nil)
     }
 
-    @Test func undoingPracticeReviewKeepsEarlierSessionIntact() throws {
+    @Test func undoingPracticeReviewKeepsTheEarlierPlanIntact() throws {
         let document = try makeDocument(cards: 1)
         let undoManager = makeUndoManager(for: document)
         let model = SessionViewModel(document: document, autoAdvance: true)
@@ -487,22 +474,22 @@ struct SessionViewModelTests {
         step(undoManager) { model.grade(.again) }
         model.input = "a0"
         step(undoManager) { model.submit() }
-        model.practiceMistakes()
+        model.keepGoing()
         let scheduled = document.deck
 
         model.input = "a0"
         step(undoManager) { model.submit() }
-        #expect(model.isFinished)
+        #expect(model.streamStage == .practiceNewest)
         undoManager.undo()
-        #expect(!model.isFinished)
+        #expect(model.streamStage == .practiceMistakes)
         #expect(model.isPracticing)
         #expect(document.deck == scheduled)
         undoManager.redo()
-        #expect(model.isFinished)
+        #expect(model.streamStage == .practiceNewest)
     }
 
-    /// A study session with a mistake, then a practice review of it. Nothing else holds the
-    /// model, as in the app once the view closes the session.
+    /// A plan with a mistake, then a practice review of it. Nothing else holds the model,
+    /// as in the app once the view closes the stream.
     private func practicedMistake(in document: VocabularyDocument, undoManager: UndoManager) -> SessionViewModel {
         let model = SessionViewModel(document: document, autoAdvance: true)
         model.input = "wrong"
@@ -510,7 +497,7 @@ struct SessionViewModelTests {
         step(undoManager) { model.grade(.again) }
         model.input = "a0"
         step(undoManager) { model.submit() }
-        model.practiceMistakes()
+        model.keepGoing()
         model.input = "a0"
         step(undoManager) { model.submit() }
         return model
@@ -554,7 +541,7 @@ struct SessionViewModelTests {
         autoreleasepool {
             let undoManager = makeUndoManager(for: document)
             let model = practicedMistake(in: document, undoManager: undoManager)
-            #expect(model.isFinished)
+            #expect(model.isPracticing)
             released = undoManager
         }
         #expect(released == nil)
@@ -743,14 +730,14 @@ struct SessionViewModelTests {
         #expect(model.stage == .feedback(.wrong, response: ""))
     }
 
-    @Test func nothingDueMeansFinished() throws {
+    @Test func nothingDueMeansTheStreamRestsAtOnce() throws {
         let learningState = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: Date(), due: Date().addingTimeInterval(86400))
         let card = Card(question: "q", answer: "a", learningState: learningState)
         let model = try SessionViewModel(document: VocabularyDocument(deck: Deck(cards: [card])))
-        #expect(model.isFinished)
+        #expect(model.isResting)
     }
 
-    @Test func sessionsAcrossTheStartOfAStudyDay() throws {
+    @Test func streamsAcrossTheStartOfAStudyDay() throws {
         let calendar = StudyCalendar.testing
         let day = CivilDate(year: 2026, month: 10, day: 6).dayNumber
         // 03:30, still the study day before.
@@ -777,15 +764,14 @@ struct SessionViewModelTests {
 
         clock.now = state.due.addingTimeInterval(-60)
         #expect(document.deck.dueCount(at: clock.now) == 0)
-        model.continueStudying()
-        #expect(model.isFinished)
+        #expect(SessionViewModel(document: document, autoAdvance: true).isResting)
 
         clock.now = state.due.addingTimeInterval(60)
         #expect(document.deck.dueCount(at: clock.now) == 1)
-        model.continueStudying()
-        #expect(model.currentCard?.id == card.id)
-        model.input = "Haus"
-        step(undoManager) { model.submit() }
+        let next = SessionViewModel(document: document, autoAdvance: true)
+        #expect(next.currentCard?.id == card.id)
+        next.input = "Haus"
+        step(undoManager) { next.submit() }
         #expect(document.card(withID: card.id)?.learningState?.lastReview == clock.now)
         #expect(document.deck.progress.map(\.day) == [day - 1, day - 1 + interval])
     }

@@ -2,13 +2,14 @@ import Foundation
 import Observation
 import VocabCore
 
-/// Drives a study session in the style of flash cards (#258): shows the question,
+/// Drives the study stream in the style of flash cards (#258): shows the question,
 /// reveals the answer on request and applies the grade the learner gives. There is no
-/// response to check, so the app suggests no grade; the reviews record `.revealed`. At the
-/// end, the learner can practise the mistakes, which changes no card.
+/// response to check, so the app suggests no grade; the reviews record `.revealed`. The
+/// stream has no end of its own: today's plan, a short rest, then review ahead and practice,
+/// which changes no card.
 ///
 /// Like `SessionViewModel` on the Mac, it leaves applying grades and keeping the
-/// session's place in step with undo and redo and with every other change to the deck
+/// stream's place in step with undo and redo and with every other change to the deck
 /// to a `SessionDriver` (#264).
 @MainActor @Observable
 final class StudyModel: Identifiable {
@@ -17,39 +18,64 @@ final class StudyModel: Identifiable {
         case asking
         /// The answer is shown too; waiting for a grade.
         case revealed
-        case finished
+        /// The stream waits for the learner, see `StudyStream.Stage.rest`.
+        case resting
+    }
+
+    /// What the stream starts with.
+    enum Entry {
+        /// Today's plan, then review ahead and practice.
+        case study
+        /// A practice of the cards that went wrong today, which changes no card.
+        case practiceMistakes
+        /// A practice of the newest words, which changes no card.
+        case practiceNewest
     }
 
     let document: VocabularyDocument
     private let driver: SessionDriver
     private(set) var stage: Stage
     /// Counts the questions asked: one more with every move to another card, also back
-    /// after an undo, and to the end. The view speaks a Greek question when it changes.
+    /// after an undo, and to rest. The view speaks a Greek question when it changes.
     private(set) var questionNumber = 0
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
     /// same study day.
-    init(document: VocabularyDocument) {
+    init(document: VocabularyDocument, entry: Entry = .study) {
+        let now = document.clock.now
+        let stream: StudyStream
+        switch entry {
+        case .study:
+            stream = StudyStream(deck: document.deck, at: now, calendar: document.calendar, reviewMode: .revealed)
+        case .practiceMistakes:
+            stream = StudyStream(practicingMistakesIn: document.deck, at: now, calendar: document.calendar)
+        case .practiceNewest:
+            stream = StudyStream(practicingNewestWordsIn: document.deck, at: now)
+        }
         self.document = document
-        driver = SessionDriver(document: document, mode: Self.makeSession(for: document))
-        stage = driver.session.isFinished ? .finished : .asking
+        driver = SessionDriver(document: document, stream: stream)
+        stage = driver.isResting ? .resting : .asking
         driver.delegate = self
     }
 
-    /// A study session, or practice of its mistakes; `SessionMode` is how the core
-    /// records the reviews.
+    /// The segment running: study, or practice; `SessionMode` is how the core records the
+    /// reviews.
     var mode: SessionMode { driver.mode }
 
     var session: Session { driver.session }
 
+    /// Where the stream is: today's plan, review ahead, practice, or at rest.
+    var streamStage: StudyStream.Stage { driver.stream.stage }
+
     /// The card being asked, as the deck holds it now.
     var currentCard: Card? { driver.currentCard }
 
-    var isPracticing: Bool {
-        if case .practice = mode { true } else { false }
-    }
+    var isPracticing: Bool { streamStage.isPractice }
 
-    var isFinished: Bool { stage == .finished }
+    var isResting: Bool { stage == .resting }
+
+    /// What the stream shows at rest.
+    var rest: StreamRest { driver.rest }
 
     /// What the last grade did, shown in the chip that offers Undo.
     var receipt: GradeReceipt? { driver.lastReceipt }
@@ -71,48 +97,40 @@ final class StudyModel: Identifiable {
     /// Suspends the card being asked, so no session asks it until the learner resumes
     /// it on the Mac, and moves on (#290). Undo takes it back like a review.
     func suspendCurrentCard() {
-        guard stage != .finished else { return }
+        guard stage != .resting else { return }
         driver.suspendCurrentCard()
     }
 
-    /// Whether this session did something that undo takes back: a review or a
-    /// suspension. Undo beyond them would change cards the session doesn't show.
-    var hasUndoableSteps: Bool {
-        session.reviewCount > 0 || session.suspendedCount > 0
+    /// Goes on beyond the plan, from rest: review ahead, then practice.
+    func keepGoing() {
+        driver.keepGoing()
     }
 
-    /// Takes back the last review or suspension of this session, like Undo in the menu.
+    /// Adds 10 new cards beyond the daily limits, from rest or in the middle of the stream.
+    func addNewCards() {
+        driver.addNewCards()
+    }
+
+    /// The new cards `addNewCards()` would add and what they cost; `nil` if there are none
+    /// and for a practice.
+    var extraNew: ExtraNewCards? { driver.extraNew }
+
+    /// Whether the stream did something that undo takes back: a review or a suspension,
+    /// in any segment. Undo beyond them would change cards the stream doesn't show.
+    var hasUndoableSteps: Bool {
+        driver.stream.stepCount > 0
+    }
+
+    /// Takes back the last review or suspension of this stream, like Undo in the menu.
     func undoLast() {
         guard hasUndoableSteps, document.undoManager?.canUndo == true else { return }
         document.undoManager?.undo()
-    }
-
-    /// The mistakes of this session that are still in the deck and not suspended.
-    var mistakesToPractice: [Card.ID] {
-        session.mistakeIDs.filter { document.card(withID: $0)?.isSuspended == false }
-    }
-
-    /// Practises the mistakes of this session once more, without affecting their
-    /// schedule, as on the Mac.
-    func practiceMistakes() {
-        let ids = mistakesToPractice
-        guard !ids.isEmpty else { return }
-        driver.start(.practice(Practice(practicing: ids, at: document.clock.now)))
-    }
-
-    /// Starts a new study session with the cards that are still due.
-    func continueStudying() {
-        driver.start(Self.makeSession(for: document))
-    }
-
-    private static func makeSession(for document: VocabularyDocument) -> SessionMode {
-        .study(StudySession(deck: document.deck, at: document.clock.now, calendar: document.calendar, reviewMode: .revealed))
     }
 }
 
 extension StudyModel: SessionDriverDelegate {
     func sessionDriverDidMoveOn(_ driver: SessionDriver) {
         questionNumber += 1
-        stage = session.isFinished ? .finished : .asking
+        stage = driver.isResting ? .resting : .asking
     }
 }

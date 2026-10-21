@@ -8,6 +8,9 @@ struct DeckActions {
     var isEditable: Bool
     var canStartSession: Bool
     var startSession: () -> Void
+    /// Whether any card went wrong today, see `Deck.mistakes(onDayOf:calendar:)`.
+    var canPracticeMistakes: Bool
+    var practiceMistakes: () -> Void
     /// Whether the deck has a newest batch to practice, see `Deck.newestBatchIDs`.
     var canPracticeNewest: Bool
     var practiceNewest: () -> Void
@@ -43,9 +46,11 @@ struct AppCommands: Commands {
         }
 
         CommandMenu("Study") {
-            Button("Start Session") { actions?.startSession() }
+            Button("Study") { actions?.startSession() }
                 .keyboardShortcut("l", modifiers: .command)
                 .disabled(actions?.canStartSession != true)
+            Button("Practice Today's Mistakes") { actions?.practiceMistakes() }
+                .disabled(actions?.canPracticeMistakes != true)
             Button("Practice Newest Words") { actions?.practiceNewest() }
                 .disabled(actions?.canPracticeNewest != true)
 

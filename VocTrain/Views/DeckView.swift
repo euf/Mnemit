@@ -1,10 +1,10 @@
 import SwiftUI
 import VocabCore
 
-/// The screen of an open deck: what today's study session takes, new, learning and
-/// review cards, and the start of the session.
+/// The screen of an open deck: what today's plan takes, new, learning and review cards,
+/// the daily ring with the streak over all known decks, and the start of the study stream.
 ///
-/// A study session goes on when another device changes the file: `OpenDeck` merges
+/// A study stream goes on when another device changes the file: `OpenDeck` merges
 /// the change into the document (#296).
 struct DeckView: View {
     @ObservedObject var document: VocabularyDocument
@@ -17,6 +17,11 @@ struct DeckView: View {
     var merger: VersionMerger
     @State private var study: StudyModel?
     @State private var isShowingStatistics = false
+    /// Today's reviews against the goal and the streak, over all known decks.
+    @State private var ring = DailyRingModel()
+    /// The other known decks, read from their files for the ring; `nil` until asked.
+    @State private var otherDecks: [URL]?
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         let counts = document.dueCards.counts
@@ -43,13 +48,17 @@ struct DeckView: View {
             }
 
             Section {
-                Button(action: startStudying) {
+                ringRow
+            }
+
+            Section {
+                Button(action: { startStudying() }) {
                     studyLabel(counts)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .disabled(counts.total == 0 || !canEdit)
+                .disabled(document.deck.cards.isEmpty || !canEdit)
             } footer: {
                 if counts.total == 0, let nextDue = counts.nextDue {
                     Text("Next review \(Format.due(nextDue, now: document.clock.now))")
@@ -57,6 +66,8 @@ struct DeckView: View {
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
+
+            practiceSection
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -70,8 +81,73 @@ struct DeckView: View {
         }
         .documentSync(document, fileURL: fileURL, isEditable: isEditable, merger: merger, isInSession: study != nil)
         .fullScreenCover(item: $study) { model in
-            StudyView(model: model) { study = nil }
+            StudyView(model: model, ring: ring) { study = nil }
         }
+        .onAppear { refreshRing(reload: true) }
+        .onReceive(document.deckDidChange) { refreshRing() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { refreshRing(reload: true) }
+        }
+        // The plan and the study day change as time passes.
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                refreshRing()
+            }
+        }
+    }
+
+    /// The ring with today's figures and the streak.
+    private var ringRow: some View {
+        HStack(spacing: 16) {
+            DailyRingView(progress: ring.progress, diameter: 56)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Daily Goal")
+                    .font(.headline)
+                if let progress = ring.progress {
+                    Text("\(progress.ring.reviews) / \(progress.ring.goal)")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    if progress.streak.days > 0 {
+                        Label("\(progress.streak.days) days", systemImage: "flame")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+
+    /// Practice of the mistakes of today and of the newest words, which changes no card.
+    @ViewBuilder
+    private var practiceSection: some View {
+        let mistakes = document.deck.mistakes(onDayOf: document.clock.now, calendar: document.calendar).count
+        let newest = document.deck.newestBatchIDs.count
+        if canEdit, mistakes > 0 || newest > 0 {
+            Section {
+                if mistakes > 0 {
+                    Button("Practice Mistakes (\(mistakes))") { startStudying(.practiceMistakes) }
+                }
+                if newest > 0 {
+                    Button("Practice Newest Words (\(newest))") { startStudying(.practiceNewest) }
+                }
+            } footer: {
+                Text("Practice doesn't change when cards come back")
+            }
+        }
+    }
+
+    /// Evaluates the ring over this deck and the other known ones. `reload` reads the other
+    /// decks from their files again.
+    private func refreshRing(reload: Bool = false) {
+        if reload || otherDecks == nil {
+            otherDecks = KnownDecks().byName.map(\.url).filter { url in
+                fileURL.map { !KnownDecks.isSameFile(url, $0) } ?? true
+            }
+        }
+        ring.refresh(documents: [document], files: otherDecks ?? [], reloadFiles: reload)
     }
 
     /// Whether a study session may change the deck: the file can be written, and
@@ -80,9 +156,10 @@ struct DeckView: View {
         isEditable && document.isReadyToEdit
     }
 
-    private func startStudying() {
+    /// Opens the study stream, which rests at once if today's plan is empty, or a practice.
+    private func startStudying(_ entry: StudyModel.Entry = .study) {
         guard canEdit else { return }
-        study = StudyModel(document: document)
+        study = StudyModel(document: document, entry: entry)
     }
 
     /// All cards of the deck, and the suspended ones.
@@ -92,7 +169,8 @@ struct DeckView: View {
         return suspended > 0 ? Text("Total cards \(total) · Suspended \(suspended)") : Text("Total cards \(total)")
     }
 
-    /// The size of the session; "Done for today" once nothing is left to study.
+    /// The size of today's plan; "Done for today" once nothing is left of it, from where the
+    /// stream goes on with review ahead and practice.
     @ViewBuilder
     private func studyLabel(_ counts: StudyCounts) -> some View {
         if counts.total > 0 {

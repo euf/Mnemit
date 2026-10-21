@@ -73,6 +73,27 @@ struct LocalizationTests {
         }
     }
 
+    /// The lines of the stream at rest: "≈ +1 review/day" but "≈ +2 reviews/day".
+    @Test func streamPhrasesAreSingularForOne() throws {
+        let english: [(String.LocalizationValue, String)] = [
+            ("≈ +\(1) reviews/day next week", "≈ +1 review/day next week"),
+            ("≈ +\(2) reviews/day next week", "≈ +2 reviews/day next week"),
+            ("\(1) cards in today's plan", "1 card in today's plan"),
+            ("\(2) cards in today's plan", "2 cards in today's plan"),
+        ]
+        let german: [(String.LocalizationValue, String)] = [
+            ("≈ +\(1) reviews/day next week", "≈ +1 Abfrage pro Tag in der nächsten Woche"),
+            ("≈ +\(2) reviews/day next week", "≈ +2 Abfragen pro Tag in der nächsten Woche"),
+            ("\(1) cards in today's plan", "1 Karte im heutigen Plan"),
+            ("\(2) cards in today's plan", "2 Karten im heutigen Plan"),
+        ]
+        for (language, cases) in [("en", english), ("de", german)] {
+            for (value, expected) in cases {
+                #expect(try localized(value, in: language) == expected)
+            }
+        }
+    }
+
     /// A text whose wording depends on a count has plural forms in every language.
     @Test func everyLanguageHasThePluralsOfTheOthers() throws {
         let languages = ["en", "de"]

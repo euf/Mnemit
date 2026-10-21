@@ -1,15 +1,18 @@
 import SwiftUI
 import VocabCore
 
-/// A study session in the style of flash cards: the question, a tap shows the answer,
-/// and the learner grades with Forgot, or with Hard, Good and Easy below it.
+/// The study stream in the style of flash cards: the question, a tap shows the answer,
+/// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stream has
+/// no end of its own: today's plan, a short rest (`StreamRestView`), then review ahead and
+/// practice. Every grade is saved at once, so leaving loses nothing. The ring in the middle of
+/// the bar shows today's reviews against the goal, with the streak (`DailyRingView`).
 ///
 /// Once the answer shows, the card can be swiped instead of the buttons: left is Forgot,
 /// right Good, right and up Easy, right and down Hard. The card follows the finger and
 /// takes the colour of the grade the swipe would give; letting go far enough, or flicking,
 /// grades and sends the card off in that direction. The buttons stay for VoiceOver and as
 /// a legend: during a swipe the button of the grade it would give stands out and the others
-/// step back. A line under the progress offers Undo for a few seconds after each grade, and
+/// step back. A line under the bar offers Undo for a few seconds after each grade, and
 /// a shake undoes too.
 ///
 /// A long press on the card opens what the app knows about it (`CardInfoSheet`). With
@@ -17,6 +20,7 @@ import VocabCore
 /// a Greek answer when it is shown; see `GreekSpeech.cardAppeared(_:)`.
 struct StudyView: View {
     var model: StudyModel
+    var ring: DailyRingModel
     var onClose: () -> Void
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -31,10 +35,12 @@ struct StudyView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if model.isFinished {
+                if model.isResting {
                     VStack(spacing: 0) {
                         chip
-                        StudySummaryView(model: model, onClose: onClose)
+                        StreamRestView(
+                            rest: model.rest, progress: ring.progress,
+                            onKeepGoing: model.keepGoing, onAddNewCards: model.addNewCards, onDone: onClose)
                     }
                 } else if let card = model.currentCard {
                     cardArea(card)
@@ -42,32 +48,38 @@ struct StudyView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    if !model.isFinished {
-                        Button("End Session", systemImage: "chevron.backward", action: onClose)
-                    }
+                    Button("Done", systemImage: "chevron.backward", action: onClose)
                 }
                 ToolbarItem(placement: .principal) {
-                    // In landscape the progress sits between the grade buttons.
-                    if !model.isFinished && verticalSizeClass != .compact {
-                        progress
+                    // In landscape the ring sits between the grade buttons.
+                    if !model.isResting && verticalSizeClass != .compact {
+                        header
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     // In a menu, so a stray tap doesn't suspend the card; Undo comes first
-                    // (#293). The summary keeps the menu for Undo.
+                    // (#293). The rest keeps the menu for Undo and the new cards.
                     Menu("More", systemImage: "ellipsis.circle") {
-                        // Only reviews and suspensions of this session: undo beyond them
-                        // would change cards the session doesn't show.
+                        // Only reviews and suspensions of this stream: undo beyond them
+                        // would change cards the stream doesn't show.
                         Button("Undo", systemImage: "arrow.uturn.backward") {
                             model.document.undoManager?.undo()
                         }
                         .disabled(!model.hasUndoableSteps || model.document.undoManager?.canUndo != true)
-                        if !model.isFinished {
+                        if !model.isResting {
                             Button("Card Info", systemImage: "info.circle") {
                                 info = model.currentCard
                             }
                             Button("Suspend Card", systemImage: "pause.circle") {
                                 model.suspendCurrentCard()
+                            }
+                        }
+                        if let extra = model.extraNew {
+                            Button {
+                                model.addNewCards()
+                            } label: {
+                                Text("+\(extra.cards) new")
+                                Text("≈ +\(extra.reviewsPerDay) reviews/day next week")
                             }
                         }
                         if GreekSpeech.shared.voice != nil {
@@ -100,47 +112,39 @@ struct StudyView: View {
     }
 
     /// Names the last grade and offers Undo for a few seconds, at the top of the screen,
-    /// under the progress.
+    /// under the bar.
     private var chip: some View {
         UndoChip(receipt: model.receipt, onUndo: model.undoLast, onExpire: model.dismissReceipt)
     }
 
-    /// The progress in the row of buttons: the bar at the height of their middle, the
-    /// numbers small below it.
-    private var rowProgress: some View {
-        let session = model.session
-        return ProgressView(value: Double(session.completedCount), total: Double(max(session.totalCount, 1)))
+    /// The ring in the row of buttons, in the middle between them.
+    private var rowRing: some View {
+        DailyRingView(progress: ring.progress, diameter: 40)
             .frame(width: 120)
-            .overlay(alignment: .top) {
-                Text("\(session.completedCount) / \(session.totalCount)")
-                    .font(.caption)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .fixedSize()
-                    .offset(y: 8)
-            }
     }
 
-    private var progress: some View {
-        let session = model.session
-        return VStack(spacing: 4) {
-            HStack(spacing: 6) {
-                if model.isPracticing {
-                    Text("Practice")
-                        .fontWeight(.semibold)
-                }
-                Text("\(session.completedCount) / \(session.totalCount)")
-                    .monospacedDigit()
+    /// The ring in the middle of the bar, with the stage before it when the learner is not
+    /// at today's plan: review ahead and practice don't change the plan, and practice
+    /// doesn't change the schedule.
+    private var header: some View {
+        HStack(spacing: 10) {
+            switch model.streamStage {
+            case .reviewAhead:
+                Text("Review Ahead")
+                    .font(.subheadline.weight(.semibold))
+            case .practiceMistakes, .practiceNewest:
+                Text("Practice")
+                    .font(.subheadline.weight(.semibold))
+            case .plan, .rest:
+                EmptyView()
             }
-            .font(.subheadline)
-            ProgressView(value: Double(session.completedCount), total: Double(max(session.totalCount, 1)))
-                .frame(width: 120)
+            DailyRingView(progress: ring.progress, diameter: 30)
         }
     }
 
     /// In portrait the buttons sit below the card. In landscape the iPhone is too low
     /// for that: the card takes the full width, the buttons one row below it, Forgot
-    /// and the three others on either side of the progress.
+    /// and the three others on either side of the ring.
     @ViewBuilder
     private func cardArea(_ card: Card) -> some View {
         if verticalSizeClass == .compact {
@@ -270,19 +274,19 @@ struct StudyView: View {
         }
     }
 
-    /// Forgot, the progress, then Hard, Good and Easy in a row. Before the answer shows, a
-    /// Show button takes the place of the row, and the progress stays where it is.
+    /// Forgot, the ring, then Hard, Good and Easy in a row. Before the answer shows, a
+    /// Show button takes the place of the row, and the ring stays where it is.
     private var buttonRow: some View {
         HStack(spacing: 12) {
             if model.stage == .revealed {
                 GradeChoice(part: .forgot, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
                     .frame(maxWidth: Self.forgotWidth)
-                rowProgress
+                rowRing
                 GradeChoice(part: .recalled, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
             } else {
                 Color.clear
                     .frame(maxWidth: Self.forgotWidth, maxHeight: 0)
-                rowProgress
+                rowRing
                 Button {
                     model.reveal()
                 } label: {

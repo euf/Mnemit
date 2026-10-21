@@ -3,9 +3,9 @@ import Foundation
 import Observation
 import VocabCore
 
-/// Runs a session over the deck of a document, for `SessionViewModel` on the Mac and
+/// Runs a study stream over the deck of a document, for `SessionViewModel` on the Mac and
 /// `StudyModel` on the iPhone (#264): applies grades to the document and keeps the
-/// session's place in step with undo and redo of its reviews and with every other
+/// stream's place in step with undo and redo of its reviews and with every other
 /// change to the deck, e.g. a merge that deleted the card being asked.
 ///
 /// What a model adds, like checking typed responses or revealing the answer, it does
@@ -13,34 +13,39 @@ import VocabCore
 @MainActor @Observable
 final class SessionDriver {
     let document: VocabularyDocument
-    /// The running session; its mode decides how a review is recorded.
-    private(set) var mode: SessionMode
+    /// The running stream: today's plan, then review ahead and practice. Undo and redo
+    /// bring back the whole of it, so they reach a review of an earlier segment as well.
+    private(set) var stream: StudyStream
     /// The card being asked, as the deck holds it now. Undoing an edit of the card
-    /// during the session shows up here.
+    /// during the stream shows up here.
     private(set) var currentCard: Card?
     /// What the last grade did, until the learner has seen it, undone it or moved on; see
-    /// `UndoChip`. Practice and study sessions alike leave one.
+    /// `UndoChip`. Practice and study alike leave one.
     private(set) var lastReceipt: GradeReceipt?
     @ObservationIgnored weak var delegate: (any SessionDriverDelegate)?
-    /// The session the learner finished up. Finishing up has no undo of its own, so
-    /// undo and redo of a review in it finish up again (#180).
-    @ObservationIgnored private var finishedUpSessionID: UUID?
     @ObservationIgnored private var deckObservation: AnyCancellable?
 
-    /// Starts with the current card of `mode`'s session. Tells the delegate of no move:
-    /// it isn't set yet.
-    init(document: VocabularyDocument, mode: SessionMode) {
+    /// Starts with the current card of `stream`, or at rest. Tells the delegate of no
+    /// move: it isn't set yet.
+    init(document: VocabularyDocument, stream: StudyStream) {
         self.document = document
-        self.mode = mode
-        skipUnaskableCards()
+        self.stream = stream
+        advance()
         refreshCurrentCard()
         deckObservation = document.deckDidChange.sink { [weak self] in
             self?.deckDidChange()
         }
     }
 
-    /// The part of the session that study sessions and practice share.
-    var session: Session { mode.session }
+    /// The segment running; its mode decides how a review is recorded.
+    var mode: SessionMode { stream.mode }
+
+    /// The part of the segment that study and practice share.
+    var session: Session { stream.session }
+
+    /// The stream waits for the learner: today's plan is done, or the practice of a
+    /// practice-only stream.
+    var isResting: Bool { stream.isResting }
 
     /// When the card being asked would be asked next after each grade, if given now; `nil`
     /// in practice, which schedules nothing, and without a card.
@@ -51,26 +56,26 @@ final class SessionDriver {
     }
 
     /// Grades the card being asked and moves on. One undo action takes back the review
-    /// and the session's place: the document restores the card, then the session.
+    /// and the stream's place: the document restores the card, then the stream.
     /// Practice changes no card, but undo should still take back the last review
-    /// instead of reaching a review of the earlier session.
+    /// instead of reaching a review before the practice.
     ///
-    /// - Returns: Whether the session recorded the review; it doesn't once it is
-    ///   finished, nor while the document can't be changed (#305).
+    /// - Returns: Whether the stream recorded the review; it doesn't while it rests, nor
+    ///   while the document can't be changed (#305).
     @discardableResult
     func grade(_ grade: Grade) -> Bool {
         guard document.isReadyToEdit else { return false }
-        let before = mode
+        let before = stream
         let interval = gradeIntervals?[grade]
-        guard let outcome = mode.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar) else { return false }
-        let restore = sessionRestore(from: before, to: mode)
+        guard let outcome = stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar) else { return false }
+        let restore = sessionRestore(from: before, to: stream)
         switch outcome {
         case let .rescheduled(change):
             document.applyReview(change, alongside: restore)
         case .practiced:
             registerPracticeUndo(restore)
         }
-        lastReceipt = GradeReceipt(grade: grade, interval: interval, isLeech: mode.session.leechIDs.count > before.session.leechIDs.count)
+        lastReceipt = GradeReceipt(grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count)
         moveOn()
         return true
     }
@@ -81,18 +86,18 @@ final class SessionDriver {
     }
 
     /// Suspends the card being asked and moves on (#290). Like a review, one undo action
-    /// takes back the suspension and the session's place: the document resumes the
-    /// card, then the session asks it again.
+    /// takes back the suspension and the stream's place: the document resumes the
+    /// card, then the stream asks it again.
     ///
-    /// - Returns: Whether the card was suspended; it isn't once the session is finished,
+    /// - Returns: Whether the card was suspended; it isn't while the stream rests,
     ///   nor while the document can't be changed (#305).
     @discardableResult
     func suspendCurrentCard() -> Bool {
         guard document.isReadyToEdit, let id = session.currentCardID, let card = document.card(withID: id), !card.isSuspended else { return false }
-        let before = mode
-        mode.perform(.suspend)
-        guard document.setSuspended(true, of: [id], alongside: sessionRestore(from: before, to: mode)) else {
-            mode = before
+        let before = stream
+        stream.perform(.suspend)
+        guard document.setSuspended(true, of: [id], alongside: sessionRestore(from: before, to: stream)) else {
+            stream = before
             return false
         }
         lastReceipt = nil
@@ -100,33 +105,63 @@ final class SessionDriver {
         return true
     }
 
-    /// Only finishes the cards already asked.
-    func finishUp() {
-        mode.perform(.finishUp)
-        finishedUpSessionID = session.id
-        moveOn()
-    }
-
-    /// Runs `mode` from now on, e.g. practice of the mistakes or a new study session.
-    func start(_ mode: SessionMode) {
-        self.mode = mode
+    /// From rest, goes on beyond the plan: review ahead, practice.
+    func keepGoing() {
+        guard stream.keepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
         lastReceipt = nil
         moveOn()
     }
 
-    /// Moves to the current card of the session, past cards deleted or suspended
-    /// meanwhile, and tells the delegate.
+    /// Adds `StudyStream.newCardChunk` new cards beyond the daily limits to the stream,
+    /// from rest or in the middle of it.
+    func addNewCards() {
+        guard stream.addNewCards(StudyStream.newCardChunk, in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
+        lastReceipt = nil
+        moveOn()
+    }
+
+    /// The new cards `addNewCards()` would add now and what they cost; `nil` if there are
+    /// none, and for a practice.
+    var extraNew: ExtraNewCards? {
+        guard !stream.isPracticeOnly else { return nil }
+        let count = StudyStream.extraNewCards(in: document.deck, at: document.clock.now, calendar: document.calendar)
+        guard count > 0 else { return nil }
+        let load = NewCardLoad.reviewsPerDay(addingNewCards: count, options: document.deck.learningOptions, at: document.clock.now, calendar: document.calendar)
+        return ExtraNewCards(cards: count, reviewsPerDay: Int(load.rounded()))
+    }
+
+    /// What the stream shows at rest.
+    var rest: StreamRest {
+        StreamRest(
+            isPracticeOnly: stream.isPracticeOnly,
+            recap: stream.recap,
+            nextDue: StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar).nextDue,
+            now: document.clock.now,
+            canKeepGoing: stream.canKeepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar),
+            extraNew: extraNew)
+    }
+
+    /// Moves to the current card, past cards deleted or suspended meanwhile and on to the
+    /// next segment of the stream as the one before runs out, and tells the delegate.
     private func moveOn() {
-        skipUnaskableCards()
+        advance()
         refreshCurrentCard()
         delegate?.sessionDriverDidMoveOn(self)
+    }
+
+    /// The stream moves on once the segment has no card to ask, which may be several
+    /// segments in a row if the cards of one are all gone.
+    private func advance() {
+        repeat {
+            skipUnaskableCards()
+        } while stream.advance(in: document.deck, at: document.clock.now, calendar: document.calendar)
     }
 
     /// Cards deleted meanwhile, e.g. by undoing "Add Card" or by a merge, can't be
     /// asked, nor can cards suspended meanwhile, e.g. on another device.
     private func skipUnaskableCards() {
         while let id = session.currentCardID, !canAsk(id) {
-            mode.perform(.skip)
+            stream.perform(.skip)
         }
     }
 
@@ -150,9 +185,9 @@ final class SessionDriver {
         }
     }
 
-    /// Brings back the session's place before a review on undo and after it on redo.
-    /// Holds the driver weakly: the document's undo stack outlives a closed session.
-    private func sessionRestore(from before: SessionMode, to after: SessionMode) -> UndoCompanion {
+    /// Brings back the stream's place before a review on undo and after it on redo.
+    /// Holds the driver weakly: the document's undo stack outlives a closed stream.
+    private func sessionRestore(from before: StudyStream, to after: StudyStream) -> UndoCompanion {
         UndoCompanion(
             undo: { [weak self] in self?.restore(before) },
             redo: { [weak self] in self?.restore(after) }
@@ -174,32 +209,29 @@ final class SessionDriver {
         document.registerUndo(companion, actionName: String(localized: "Review"))
     }
 
-    /// Called by undo and redo of a review.
-    private func restore(_ snapshot: SessionMode) {
-        guard snapshot.session.id == session.id else { return }  // a different session by now
-        mode = snapshot
+    /// Called by undo and redo of a review. The snapshot is the stream as it was, whatever
+    /// segment it was in: undoing the last review of the plan after review ahead began
+    /// asks that card again, and redo moves on again.
+    private func restore(_ snapshot: StudyStream) {
+        guard snapshot.id == stream.id else { return }  // a different stream by now
+        stream = snapshot
         lastReceipt = nil
-        // A snapshot from before finishing up would bring back the cards not asked yet.
-        if session.id == finishedUpSessionID {
-            mode.perform(.finishUp)
-        }
         delegate?.sessionDriverDidRestore(self)
         moveOn()
     }
 }
 
 /// What a model around a `SessionDriver` hears of. Each call comes after the driver's
-/// `mode` and `currentCard` hold the new state.
+/// `stream` and `currentCard` hold the new state.
 @MainActor
 protocol SessionDriverDelegate: AnyObject {
-    /// The driver moved on to the next card, or to the end of the session: after a
-    /// grade, a new mode, finishing up, undo or redo, or because the card being asked
-    /// was deleted.
+    /// The driver moved on to the next card, or to rest: after a grade, going on beyond
+    /// the plan, new cards, undo or redo, or because the card being asked was deleted.
     func sessionDriverDidMoveOn(_ driver: SessionDriver)
     /// The deck changed, but the card being asked is still there; `currentCard` holds
     /// it as the deck does now.
     func sessionDriverCardDidChange(_ driver: SessionDriver)
-    /// Undo or redo brought back the session's place before or after a review; the
+    /// Undo or redo brought back the stream's place before or after a review; the
     /// driver moves on right after.
     func sessionDriverDidRestore(_ driver: SessionDriver)
 }
