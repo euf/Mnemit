@@ -8,7 +8,8 @@ import VocabCore
 /// right Good, right and up Easy, right and down Hard. The card follows the finger and
 /// takes the colour of the grade the swipe would give; letting go far enough, or flicking,
 /// grades and sends the card off in that direction. The buttons stay for VoiceOver and as
-/// a legend. A line under the progress offers Undo for a few seconds after each grade, and
+/// a legend: during a swipe the button of the grade it would give stands out and the others
+/// step back. A line under the progress offers Undo for a few seconds after each grade, and
 /// a shake undoes too.
 struct StudyView: View {
     var model: StudyModel
@@ -106,7 +107,7 @@ struct StudyView: View {
 
     /// In portrait the buttons sit below the card. In landscape the iPhone is too low
     /// for that: the card takes the full width, the buttons one row below it, Forgot
-    /// and the capsule on either side of the progress.
+    /// and the three others on either side of the progress.
     @ViewBuilder
     private func cardArea(_ card: Card) -> some View {
         if verticalSizeClass == .compact {
@@ -221,7 +222,7 @@ struct StudyView: View {
     @ViewBuilder
     private var actions: some View {
         if model.stage == .revealed {
-            GradeChoice(onGrade: commit)
+            GradeChoice(highlighted: flight.highlighted, onGrade: commit)
         } else {
             Button {
                 model.reveal()
@@ -234,16 +235,15 @@ struct StudyView: View {
         }
     }
 
-    /// Forgot, the progress, then Hard, Good and Easy in their capsule. Before the answer
-    /// shows, a Show button takes the place of the capsule, and the progress stays where
-    /// it is.
+    /// Forgot, the progress, then Hard, Good and Easy in a row. Before the answer shows, a
+    /// Show button takes the place of the row, and the progress stays where it is.
     private var buttonRow: some View {
         HStack(spacing: 12) {
             if model.stage == .revealed {
-                GradeChoice(part: .forgot, isCompact: true, onGrade: commit)
+                GradeChoice(part: .forgot, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
                     .frame(maxWidth: Self.forgotWidth)
                 rowProgress
-                GradeChoice(part: .recalled, isCompact: true, onGrade: commit)
+                GradeChoice(part: .recalled, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
             } else {
                 Color.clear
                     .frame(maxWidth: Self.forgotWidth, maxHeight: 0)

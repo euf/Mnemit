@@ -58,38 +58,33 @@ extension Grade {
     /// The grade's colour: red for Again, the only "no", and three shades of one green
     /// for Hard, Good and Easy, the three kinds of "yes". It fills the grade buttons, the
     /// card while it is swiped and the review history. Always shown together with the
-    /// grade's title; `onColor` is the text on it.
+    /// grade's title; `onColor` is the text on it, white on all four.
     ///
     /// How the greens were chosen: one hue (OKLCH 150°, a plain green clearly apart from
-    /// the maturity ramp's blue), told apart by lightness alone, in steps of at least 0.16
-    /// OKLCH L, so colour-vision deficiencies don't matter. Good has the same medium shade
-    /// (L 0.535) in both appearances, dark enough for white text at 4.9:1. Hard is the
-    /// lightest on light and the deepest on dark, Easy the other way round, so the
-    /// shade farther from the background is always the stronger answer. Again is the
-    /// system red, darkened to carry white text (5.4:1 on light, 4.6:1 on dark). Every
-    /// `onColor` has at least 4.5:1 on its fill.
+    /// the maturity ramp's blue), told apart by lightness alone, which falls from Hard to
+    /// Good to Easy in steps of 0.14 OKLCH L, so colour-vision deficiencies don't matter and
+    /// the three read as one answer in three strengths. The ramp is the same in light and
+    /// dark mode. Contrast of white on the fill (WCAG, computed with a script):
+    /// - Hard 0x2E9E52, L 0.62: 3.4:1, the 3:1 of large text, as the labels are 17 pt semibold
+    /// - Good 0x007132, L 0.48: 6.2:1
+    /// - Easy 0x00451B, L 0.34: 11.3:1
+    /// - Again, the system red darkened to carry white text: 5.4:1 on light (0xD70015),
+    ///   4.6:1 on dark (0xD93A30)
     var color: Color {
         switch self {
         case .again: Color(light: 0xD70015, dark: 0xD93A30)
-        case .hard: Color(light: 0xC2F3CB, dark: 0x1B4526)
-        case .good: Color(light: 0x1D8240, dark: 0x1D8240)
-        case .easy: Color(light: 0x09471F, dark: 0x93E8A5)
+        case .hard: Color(light: 0x2E9E52, dark: 0x2E9E52)
+        case .good: Color(light: 0x007132, dark: 0x007132)
+        case .easy: Color(light: 0x00451B, dark: 0x00451B)
         }
     }
 
     /// Text and symbols on `color`.
-    var onColor: Color {
-        switch self {
-        case .again, .good: .white
-        case .hard: Color(light: 0x01421A, dark: 0xB9EEC2)
-        case .easy: Color(light: 0xFFFFFF, dark: 0x012D10)
-        }
-    }
+    var onColor: Color { .white }
 }
 
-/// A grade's colour as a dot beside its title. The light shade of Hard couldn't carry the
-/// title as text colour, nor could three greens apart; as a dot, with a hairline for
-/// the light shades on a light background, they can.
+/// A grade's colour as a dot beside its title, with a hairline so the darkest green shows on
+/// a dark background too.
 struct GradeDot: View {
     var grade: Grade
 
