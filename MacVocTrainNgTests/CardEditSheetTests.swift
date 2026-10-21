@@ -53,11 +53,6 @@ extension WindowTests {
             return fields.sorted { $0.convert($0.bounds, to: nil).maxY > $1.convert($1.bounds, to: nil).maxY }
         }
 
-        /// The default button, Save.
-        private func saveButton(of sheet: NSWindow) -> NSButton? {
-            sheet.contentView.flatMap { descendants(of: $0).lazy.compactMap { $0 as? NSButton }.first { $0.keyEquivalent == "\r" } }
-        }
-
         private func descendants(of view: NSView) -> [NSView] {
             view.subviews.flatMap { [$0] + descendants(of: $0) }
         }
@@ -170,22 +165,32 @@ extension WindowTests {
         }
 
         /// Clears the question (0) or the answer (1): Save is disabled, and Return keeps
-        /// the sheet open.
+        /// the sheet open. Typing again enables it.
+        ///
+        /// Asks Save through Return and not through an `NSButton`: from macOS 26 on, SwiftUI
+        /// draws the buttons of a sheet itself, so the window has no button to read the state
+        /// of. Return that finds no enabled Save is the same fact the learner meets. Asking
+        /// early is harmless: with an empty question or answer, saving changes nothing.
         @Test(arguments: [0, 1])
         func saveIsDisabledWhileQuestionOrAnswerIsEmpty(field: Int) async throws {
             defer { close() }
             let sheet = try await showSheet()
-            #expect(saveButton(of: sheet)?.isEnabled == true)
             let editor = try await edit(fields(of: sheet)[field], in: sheet)
             editor.selectAll(nil)
             editor.deleteBackward(nil)
-            try await waitUntil("Save is disabled") { saveButton(of: sheet)?.isEnabled == false }
+            try await waitUntil("Return finds no enabled Save") { (try? pressReturn(in: sheet)) == false }
 
-            #expect(try !pressReturn(in: sheet))
             try await settle()
+            #expect(try !pressReturn(in: sheet))
             #expect(window.attachedSheet === sheet)
             #expect(deckCard == card)
             #expect(!undoManager.canUndo)
+
+            // The negative is no accident of the test window: Save works once the text is back.
+            await type("x", into: editor)
+            try await waitUntil("Return saves again") { (try? pressReturn(in: sheet)) == true }
+            try await waitUntil("the sheet is closed") { window.attachedSheet == nil }
+            #expect(field == 0 ? deckCard?.question == "x" : deckCard?.answer == "x")
         }
 
         /// The sheet's window has an undo manager of its own (#48): ⌘Z takes back typing,
