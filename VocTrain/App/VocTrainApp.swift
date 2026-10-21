@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// The iPhone app: studies a deck that the Mac app keeps, opened from iCloud Drive or
-/// the Files app (#254). It never edits cards; that is left to the Mac app.
+/// The iPhone app: studies and edits decks it keeps in iCloud Drive or on the iPhone,
+/// or opens from the Files app (#254). It edits cards the way the Mac app does, through
+/// `VocabularyDocument+Editing`, and merges what the other device wrote, see
+/// `VersionMerger`.
 ///
 /// The deck is the same `VocabularyDocument` as on the Mac, from the folder `Shared`.
 /// The app opens and saves it itself, without `DocumentGroup`: it starts on Today, which
