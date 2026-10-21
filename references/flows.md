@@ -96,4 +96,13 @@ New Deck, Import Cards, Open Mnemit Folder.
    failing tests).
 2. iPhone Deck screen and Card Browser with Card Detail and Edit; Add Cards; New Deck,
    Rename, Delete, Options; empty state.
-3. Import/export on the iPhone; `.apkg` import on both (see `deck-formats-and-sources.md`).
+3. Import and export on both platforms (facts in `deck-formats-and-sources.md`):
+   - `.apkg` import, all three layouts, with review history replayed into FSRS; text fields
+     with HTML stripped; media and cloze notes skipped and counted in the preview. Mnemit
+     registers `.apkg`, so "Open in Mnemit" from Files, Safari or Mail starts the import.
+   - CSV/TSV import on the iPhone; export on both with Anki's `#separator` / `#columns`
+     headers and the word key and kind columns, so Anki reads the file as is.
+   - No in-app deck catalogue: AnkiWeb has no API and its terms allow only browser access.
+     Import offers a link to AnkiWeb's shared decks, which opens in Safari; the downloaded
+     `.apkg` comes back through "Open in Mnemit".
+4. Later: example sentences from Tatoeba's open API (CC BY) in Add Cards and Card Detail.
