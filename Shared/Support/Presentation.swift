@@ -108,15 +108,15 @@ extension Grade {
     /// Text and symbols on `color`.
     var onColor: Color { .white }
 
-    /// The SF Symbol of the way a swipe gives the grade: ← Forgot, → Good, ↗ Easy, ↘ Hard.
+    /// The SF Symbol of the way a swipe gives the grade: ← Forgot, → Good, ↑ Easy, ↓ Hard.
     /// Beside the colour, it says which grade it was to a reader who tells the greens apart
     /// badly.
     var arrowSymbol: String {
         switch self {
         case .again: "arrow.left"
-        case .hard: "arrow.down.right"
+        case .hard: "arrow.down"
         case .good: "arrow.right"
-        case .easy: "arrow.up.right"
+        case .easy: "arrow.up"
         }
     }
 }

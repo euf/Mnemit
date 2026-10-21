@@ -53,7 +53,7 @@ Mnemit state: version 0.10.5, commit 763366d, read from code (no GUI was run). T
 | Answer buttons with next interval | Interval above each button; can be hidden (desktop preference, AnkiMobile "Next Times") [S3][S15] | different. Hidden before the grade, shown after it in the receipt chip; the buttons are labelled with the grade name only | – | – |
 | Undo | AnkiMobile Undo action, shake by default [S15]; AnkiDroid button and `z` [S16]; desktop reviewer UNVERIFIED | yes. Chip for 3 s, ⌘Z, Z, Esc, shake, ••• menu; restores the session position (`SessionDriver`) | – | – |
 | Keyboard shortcuts | Space/Enter, 1–4, `s` overview, `i` info, `t` stats, `r`/F5 replay, `o` options [S1][S3][S7]; AnkiDroid also `e * - = @ ! z` [S16]; desktop keys for edit, mark, bury, suspend UNVERIFIED | partial. Space/Return, 1–4, arrows, Z/Esc/⌘Z, S speak, ⌘E, ⌘L; no mark, bury, suspend, info keys | low | S |
-| Gestures and tap zones | AnkiMobile: 9 tap zones, 4 swipes, any action assignable, vertical swipe must start at the far screen edge. AnkiDroid: 4 swipes, double touch, 4 touch zones [S15][S16] | different. Fixed four-way swipe with diagonals, tint, flick, haptic at commit (`GradeSwipe`, `CardFlight`); tap reveals; nothing configurable | medium | – |
+| Gestures and tap zones | AnkiMobile: 9 tap zones, 4 swipes, any action assignable, vertical swipe must start at the far screen edge. AnkiDroid: 4 swipes, double touch, 4 touch zones [S15][S16] | different. Fixed four-way swipe along the axes, with gaps that keep Forgot away from the yes grades, tint, flick, haptic at commit (`GradeSwipe`, `CardFlight`); tap reveals; nothing configurable | medium | – |
 | Auto advance | Timed reveal and answer (23.12+) [S2] | no | low | S–M |
 | Timebox | Periodic count of cards studied in N minutes [S3][S16] | no | low | S |
 | On-screen timer, answer time | Stats only; no effect on scheduling [S2] | no (session duration only) | low | S |
@@ -95,7 +95,7 @@ What it does badly, with evidence level:
 
 What Mnemit does differently:
 - Bounded session with a visible finish line (`n / N` bar) instead of three live counters.
-- Forgot is its own full-width button, Hard/Good/Easy a row under "Recalled"; the swipe maps to the same shape (← Forgot, → Good, ↗ Easy, ↘ Hard) with tint, haptic at the commit distance and a lit button for the grade about to be given.
+- Forgot is its own full-width button, Hard/Good/Easy a row under "Recalled"; the swipe maps to the same shape (← Forgot, → Good, ↑ Easy, ↓ Hard) with tint, haptic at the commit distance and a lit button for the grade about to be given.
 - Interval is told after the grade, which removes the cue to choose a button by its interval.
 - Mac typing mode with a suggested grade; flashcards on both platforms.
 
@@ -104,7 +104,7 @@ Recommendations:
 2. A small state label on the card: New, Relearning, "Leech · 9 lapses". Mac has `CardStateLine`, iPhone has nothing. S.
 3. ••• menu: Postpone to next session (existing `.skip`), Bury today, Flag, Card info; keep Undo and Suspend. S–M.
 4. Optional auto-speak when the Greek side appears or when the answer is revealed; the voice code exists in `GreekSpeech`. S.
-5. Keep the diagonal swipes. No equivalent exists in either Anki mobile client, per their gesture lists [S15][S16].
+5. Keep the swipe along all four axes, with the gaps next to Forgot.
 
 ### 3.2 Deck overview
 

@@ -8,10 +8,12 @@ import VocabCore
 /// button, today's reviews against the goal as a small ring with "14 of 20", and the menu.
 ///
 /// Once the answer shows, the card can be swiped instead of the buttons: left is Forgot,
-/// right Good, up on the right Easy, down on the right Hard (`GradeSwipe`). The card follows
-/// the finger, turning about the point it was grabbed at, and takes the colour of the grade the
-/// swipe would give; letting go far enough, or flicking, grades and sends the card off in that
-/// direction. The buttons stay for VoiceOver and as a legend: during a swipe the button of the
+/// right Good, up Easy, down Hard (`GradeSwipe`, four sectors around the axes, with a gap
+/// between Forgot and the two grades next to it where no grade is given). The card goes with
+/// the finger, bent toward the grade's target (a swipe up moves it up and to the right),
+/// turning about the point it was grabbed at, and takes the colour of the grade the swipe would
+/// give; letting go far enough, or flicking, grades and sends the card off in the direction of
+/// the grade. The buttons stay for VoiceOver and as a legend: during a swipe the button of the
 /// grade it would give stands out and the others step back. A line under the bar offers Undo
 /// for a few seconds after each grade, and a shake undoes too.
 ///

@@ -120,7 +120,7 @@
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
 - Первый запуск на iPhone (`OnboardingView`, шаги `OnboardingStep`): приветствие с одной
   кнопкой → практика свайпов (`GesturePracticeView`, порядок и образцы карточек —
-  `SwipePractice`: → помню, ← забыл, ↗ сразу, ↘ с трудом; четыре значения и есть правила,
+  `SwipePractice`: ← забыл, ↑ сразу, ↓ с трудом, → помню; четыре значения и есть правила,
   отдельного экрана правил нет; «Пропустить» ведёт к синхронизации) → синхронизация
   (iCloud Drive: пикер папки, `chooseFolder`; «Only on This iPhone»: `useLocalFolder`, папка
   Documents приложения без закладки и scope, в Files — On My iPhone ▸ Mnemit) → напоминание.
@@ -148,6 +148,18 @@
   `VocTrainTests/StudyScreenSnapshotTests` (путь — переменная окружения
   `TEST_RUNNER_STUDY_SHOTS_DIR` у процесса xcodebuild, аргументом она не доходит), замеры по
   пикселям — `SpeakerAlignmentTests` и `PixelBitmap`.
+- Свайп карточки (`GradeSwipe`, `CardFlight`): четыре стороны, те же, что стрелки на Mac:
+  ← Forgot, → Good, ↑ Easy, ↓ Hard. Угол пальца считается против часовой от востока, y экрана
+  вверх, сектора — константы `GradeSwipe` (`goodReach` 55, `easyEnd` 120, `forgotStart` 150,
+  `forgotEnd` 210, `hardStart` 240): Good −55°…55°, Easy 55°…120°, Forgot 150°…210°, Hard
+  240°…305°. Зазоры 120°…150° и 210°…240° оценки не дают: нет тинта и подсветки кнопки, карточка
+  идёт на `gapTravel` (половину) пути пальца, отпускание возвращает её, даже за порогом и фликом.
+  Между Good, Easy и Hard зазоров нет. Карточка идёт по нормированному среднему
+  единичного направления пальца и цели оценки (Good E, Easy NE, Forgot W, Hard SE) на расстоянии
+  пальца (`GradeSwipe.pull`); на смене зоны или зазора её плавит короткая пружина
+  (`CardFlight.glide`, 300 мс). Порог 100 pt, мёртвая зона 20 pt, флик 30 pt пути и 300 pt прогноза; вылет
+  по цели. Подсказка онбординга играет шаг пальца по оси сектора через `CardFlight.drag`. Спека —
+  `references/design-spec.md` §4.7.
 
 ## Upstream
 

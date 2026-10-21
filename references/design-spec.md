@@ -570,6 +570,27 @@ struct AnswerText: View {
 
 `StudyView`: the `End Session` button with `chevron.backward`; the `ellipsis.circle` symbol of the More menu (also in `DeckView`); `progress` (the VStack with the 120-pt `ProgressView`); `rowProgress`; the `Color.clear` placeholder of `buttonRow`; `.font(.largeTitle)` on the whole answer; the single `minimumScaleFactor(0.5)` on the face; the 44-pt `frame(minHeight: 44)` on Show Answer; `.padding(.top, 16)` on `actions` (the container owns the spacing). `GradeChoice`: spacings 4 / 6 / 8, `minimumScaleFactor(0.7)`, the separate `height` values 52 / 44 (one `@ScaledMetric` and a landscape value).
 
+### 4.7 Swipe grading
+
+The card is swiped once its answer shows (`GradeSwipe`, `CardFlight`, `StudyView.touch`). Four directions, one per grade, the same as the arrow keys on the Mac: ← Forgot, → Good, ↑ Easy, ↓ Hard (`Grade.arrow`, `Grade.arrowSymbol`). The finger's direction is an angle counter-clockwise from east with the screen's y turned up. The sectors are constants of `GradeSwipe`, to be tuned there:
+
+| Sector | Angle | Constants | Grade |
+|---|---|---|---|
+| East | -55° to 55° | `goodReach` = 55 | Good |
+| North | 55° to 120° | `goodReach`, `easyEnd` = 120 | Easy |
+| North-west gap | 120° to 150° | `easyEnd`, `forgotStart` = 150 | none |
+| West | 150° to 210° | `forgotStart`, `forgotEnd` = 210 | Forgot |
+| South-west gap | 210° to 240° | `forgotEnd`, `hardStart` = 240 | none |
+| South | 240° to 305° | `hardStart`, 360 - `goodReach` | Hard |
+
+Forgot is the only "no", and Easy given for a forgotten card is the costly slip, so Forgot has a gap on each side. Between two "yes" grades (east and north, east and south) there is no gap: a misread there is cheap. Commit distance 100 pt, dead zone 20 pt, flick (30 pt moved, 300 pt predicted) are `GradeSwipe.commitDistance`, `deadZone`, `flickMinimum`, `flickReach`.
+
+- **In a gap** the swipe gives no grade: no tint, no lit button, no commit. The card follows the finger at `gapTravel` = half the travel, so it reads as "not a choice". Letting go springs it back, past the commit distance or on a flick; a flick also has to start in a zone and end in one. The light haptic ticks when the finger enters a zone, and when it enters a gap from a zone.
+- **Visual pull.** From the dead zone on, the card moves along the normalized average of the finger's unit direction and the target direction of the recognized grade, at the finger's distance (`GradeSwipe.pull`). Targets: Good east (0°), Easy north-east (45°), Forgot west (180°), Hard south-east (-45°). A finger straight up moves the card at 67.5°, between north and north-east; a finger straight down at -67.5°. Every "yes" leans right; Forgot's target is due west. No sector lies 90° or more from its target, so the average is always defined. Rotation and pivot are computed from the card's own offset. Tint, the lit button and the commit follow the recognized grade. Under the dead zone the card goes with the finger one to one.
+- **Easing.** When the finger crosses into another zone or a gap, the card's way jumps. For 300 ms after a crossing the card eases with an interactive spring (response 0.12 s, damping 0.85, `CardFlight.glide`); the rest of the swipe is one to one.
+- **Fly-off** goes along the target: Good and Forgot 640 pt horizontally, Easy up and Hard down 560 pt right and 560 pt up or down (`GradeSwipe.exit`).
+- **Onboarding** asks for ← Forgot, ↑ Easy, ↓ Hard, → Good in that order (`SwipePractice.order`). The idle hint plays the finger's step along the sector's axis through `CardFlight.drag`, so the card shows the way a real swipe would move it (Easy at 67.5°).
+
 ## 5. Accent and colour roles
 
 ### 5.1 Accent: terracotta

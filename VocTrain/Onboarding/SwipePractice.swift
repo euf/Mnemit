@@ -6,9 +6,9 @@ extension Grade {
     var arrow: String {
         switch self {
         case .again: "←"
-        case .hard: "↘"
+        case .hard: "↓"
         case .good: "→"
-        case .easy: "↗"
+        case .easy: "↑"
         }
     }
 
@@ -34,9 +34,8 @@ struct PracticeSample: Equatable {
 /// order, each asking for one direction. Nothing is graded; only the order and the progress
 /// are kept here, so the view stays a drawing of it.
 struct SwipePractice: Equatable {
-    /// The directions, in the order they are asked: the common one first, then its opposite,
-    /// then the two that need a turn of the thumb.
-    static let order: [Grade] = [.good, .again, .easy, .hard]
+    /// The directions, in the order they are asked: left, up, down, right.
+    static let order: [Grade] = [.again, .easy, .hard, .good]
 
     /// How many cards are done.
     private(set) var index = 0
@@ -66,16 +65,16 @@ struct SwipePractice: Equatable {
     /// takes the tint of the grade.
     static let nudgeTravel: CGFloat = 24
 
-    /// The step the hint moves the card for `grade`: `nudgeTravel` points from the middle of the
-    /// grade's zone in `GradeSwipe.zone`. Not the way the card leaves: for Easy that is 37° above
-    /// the horizontal, which `zone` calls Good.
+    /// The finger's step the hint plays for `grade`: `nudgeTravel` points along the axis of the
+    /// grade's sector, which `GradeSwipe.zone` reads as the grade. The card moves by the pull of
+    /// `CardFlight.drag` like under a real finger: for Easy up and to the right, at 67.5°.
     static func nudge(for grade: Grade) -> CGSize {
         let degrees: Double =
             switch grade {
             case .again: 180
             case .good: 0
-            case .easy: 50
-            case .hard: -50
+            case .easy: 90
+            case .hard: -90
             }
         let radians = degrees * .pi / 180
         return CGSize(width: nudgeTravel * cos(radians), height: -nudgeTravel * sin(radians))

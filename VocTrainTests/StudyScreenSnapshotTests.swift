@@ -145,15 +145,19 @@ struct StudyScreenSnapshotTests {
         window.isHidden = true
     }
 
-    /// Mid-swipe in each zone: the card tinted, turned about where it was grabbed, and the
-    /// button of the grade lit. The finger is at `grab` in the card (a share of its size).
+    /// Mid-swipe in each zone: the card tinted, bent toward the grade's target, turned about where
+    /// it was grabbed, and the button of the grade lit; and in a gap between two zones, where
+    /// the card is neither tinted nor lit. The finger is at `grab` in the card (a share of its
+    /// size).
     @Test(arguments: [false, true])
     func swipes(dark: Bool) async throws {
         let cases: [(name: String, translation: CGSize, grab: CGPoint)] = [
             ("3-swipe-forgot", CGSize(width: -110, height: 15), CGPoint(x: 0.5, y: 0.3)),
-            ("4-swipe-hard", CGSize(width: 105, height: 80), CGPoint(x: 0.5, y: 0.7)),
+            ("4-swipe-hard", CGSize(width: 30, height: 110), CGPoint(x: 0.5, y: 0.7)),
             ("5-swipe-good", CGSize(width: 130, height: -20), CGPoint(x: 0.5, y: 0.3)),
-            ("6-swipe-easy", CGSize(width: 90, height: -110), CGPoint(x: 0.5, y: 0.3)),
+            ("6-swipe-easy", CGSize(width: 25, height: -120), CGPoint(x: 0.5, y: 0.3)),
+            // Between Easy and Forgot: no grade, no tint, the card half way.
+            ("6b-swipe-gap", CGSize(width: -85, height: -85), CGPoint(x: 0.5, y: 0.3)),
         ]
         for item in cases {
             let (model, ring) = try await prepare(reviews: 2)

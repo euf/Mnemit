@@ -32,9 +32,9 @@ struct OnboardingTests {
 
     // MARK: Practice
 
-    @Test func theCardsAskForRightThenLeftThenUpAndRightThenDownAndRight() {
-        #expect(SwipePractice.order == [.good, .again, .easy, .hard])
-        #expect(SwipePractice.order.map(\.arrow) == ["→", "←", "↗", "↘"])
+    @Test func theCardsAskForLeftThenUpThenDownThenRight() {
+        #expect(SwipePractice.order == [.again, .easy, .hard, .good])
+        #expect(SwipePractice.order.map(\.arrow) == ["←", "↑", "↓", "→"])
         // The meanings are the rules of the app: four different ones.
         #expect(Set(SwipePractice.order.map(\.meaning)).count == 4)
     }
@@ -62,47 +62,62 @@ struct OnboardingTests {
     @Test func aSwipeIsJudgedByItsDirection() {
         let right = CGSize(width: 160, height: 0)
         let left = CGSize(width: -160, height: 0)
-        let upRight = CGSize(width: 120, height: -130)
-        let downRight = CGSize(width: 120, height: 130)
+        let up = CGSize(width: 0, height: -160)
+        let down = CGSize(width: 0, height: 160)
+        // Up and to the left, a gap: no grade.
+        let upLeft = CGSize(width: -120, height: -120)
         func released(_ translation: CGSize) -> Grade? {
             GradeSwipe.released(translation: translation, predictedEnd: translation)
         }
 
         var practice = SwipePractice()
-        #expect(released(right).map(practice.accepts) == true)
-        #expect(released(left).map(practice.accepts) == false)
-        practice.advance()
         #expect(released(left).map(practice.accepts) == true)
         #expect(released(right).map(practice.accepts) == false)
+        #expect(released(up).map(practice.accepts) == false)
         practice.advance()
-        #expect(released(upRight).map(practice.accepts) == true)
-        #expect(released(downRight).map(practice.accepts) == false)
+        #expect(released(up).map(practice.accepts) == true)
+        #expect(released(down).map(practice.accepts) == false)
+        #expect(released(left).map(practice.accepts) == false)
         practice.advance()
-        #expect(released(downRight).map(practice.accepts) == true)
-        #expect(released(upRight).map(practice.accepts) == false)
-        // Too short to count: no grade at all, so no mistake either.
+        #expect(released(down).map(practice.accepts) == true)
+        #expect(released(up).map(practice.accepts) == false)
+        practice.advance()
+        #expect(released(right).map(practice.accepts) == true)
+        #expect(released(left).map(practice.accepts) == false)
+        // Too short to count, or in a gap: no grade at all, so no mistake either.
         #expect(released(CGSize(width: 40, height: 0)) == nil)
+        #expect(released(upLeft) == nil)
     }
 
     @Test func theFourSampleCardsAreDifferentAndNotAllGreek() {
         let samples = SwipePractice.order.map(SwipePractice.sample(for:))
         #expect(Set(samples.map(\.question)).count == 4)
         #expect(samples.allSatisfy { !$0.question.isEmpty && !$0.answer.isEmpty })
-        // Four languages: Spanish, French, Italian, Greek.
-        #expect(samples.map(\.question) == ["la mariposa", "la bibliothèque", "il treno", "η αστυνομία"])
+        // Four languages: French, Italian, Greek, Spanish.
+        #expect(samples.map(\.question) == ["la bibliothèque", "il treno", "η αστυνομία", "la mariposa"])
     }
 
-    @Test func theHintMovesTheCardIntoTheZoneOfItsGrade() {
+    @Test func theHintPlaysTheFingerOfItsGradeAndTheCardTakesTheWayOfARealSwipe() {
+        let ways: [Grade: Double] = [.again: 180, .easy: 67.5, .hard: 292.5, .good: 0]
         for grade in SwipePractice.order {
             let step = SwipePractice.nudge(for: grade)
-            // The tint the card takes is the grade's own, so the step must be read as that swipe.
+            // The finger's axis is read as the grade, so the card takes the grade's own tint.
             #expect(GradeSwipe.zone(step) == grade)
             #expect(abs(hypot(step.width, step.height) - SwipePractice.nudgeTravel) < 0.001)
+            // The card goes as under a finger: the average of the axis and the target.
+            let flight = CardFlight()
+            flight.drag(step, isRevealed: true)
+            #expect(flight.zone == grade)
+            #expect(flight.highlighted == grade)
+            let way = GradeSwipe.angle(of: flight.offset)
+            let expected = ways[grade] ?? 0
+            #expect(abs(way - expected) < 0.001 || abs(way - expected - 360) < 0.001, "\(grade)")
+            #expect(abs(hypot(flight.offset.width, flight.offset.height) - SwipePractice.nudgeTravel) < 0.001)
         }
     }
 
     @Test func aPracticeStartsWhereItIsAskedToAndStaysInRange() {
-        #expect(SwipePractice(index: 2).current == .easy)
+        #expect(SwipePractice(index: 2).current == .hard)
         #expect(SwipePractice(index: 9).isDone)
         #expect(SwipePractice(index: -3).index == 0)
     }
@@ -249,10 +264,11 @@ struct OnboardingSnapshotTests {
         try await HomeSnapshotTests().shoot("onboarding-2-swipe-1-answer", practice(0, isRevealed: true))
     }
 
-    /// The hint: the card a step to the side, in the tint of its grade; Easy goes up and right.
+    /// The hint: the card a step the way a real swipe moves it, in the tint of its grade; Easy
+    /// goes up and right, Hard down and right.
     @Test func practiceCardWhileTheHintShowsTheWay() async throws {
         let shots = HomeSnapshotTests()
-        for index in [0, 2] {
+        for index in 0..<4 {
             let grade = SwipePractice.order[index]
             let flight = CardFlight()
             flight.drag(SwipePractice.nudge(for: grade), isRevealed: true)

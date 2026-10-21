@@ -2,16 +2,16 @@ import SwiftUI
 import VocabCore
 
 /// The second step of the introduction: four sample cards, not those of a deck, each asking for
-/// one swipe: right, left, right and up, right and down. The prompt above the card names what
-/// the direction means, so the four meanings are the rules of the app. The card is the study
-/// screen's own, `FlightCard` driven by `CardFlight` and `GradeSwipe`, and it goes the way of
-/// the study screen: the word first, the answer when the finger lands (`StudyView.touch`),
-/// then the swipe, which tints, flies and gives way as it will there; only nothing is graded.
+/// one swipe: left, up, down, right. The prompt above the card names what the direction means,
+/// so the four meanings are the rules of the app. The card is the study screen's own,
+/// `FlightCard` driven by `CardFlight` and `GradeSwipe`, and it goes the way of the study
+/// screen: the word first, the answer when the finger lands (`StudyView.touch`), then the
+/// swipe, which tints, flies and gives way as it will there; only nothing is graded.
 ///
 /// A swipe the other way springs the card back with a warning and a shake of the prompt. After
-/// a moment without a touch the card itself shows the way: it moves a step in the direction,
-/// in the tint of the grade, and springs back, again and again until a finger lands. With
-/// Reduce Motion it stays and the tint shows alone.
+/// a moment without a touch the card itself shows the way: it moves a step the way a real swipe
+/// in the direction would move it, in the tint of the grade, and springs back, again and again
+/// until a finger lands. With Reduce Motion it stays and the tint shows alone.
 struct GesturePracticeView: View {
     /// How long a card waits for a touch before it shows the way, in seconds.
     static let idleBeforeHint = 2.0
@@ -122,7 +122,7 @@ struct GesturePracticeView: View {
         }
     }
 
-    /// Shows the way on the card: a step in the direction of the grade, in its tint, and back
+    /// Shows the way on the card: a step as a real swipe in the direction of the grade moves it, in its tint, and back
     /// with a spring. With Reduce Motion the card stays and the tint comes and goes. A finger
     /// landing cancels the task; the card goes back the same way, so it is never left moved.
     private func nudge(_ grade: Grade) async {
@@ -132,9 +132,7 @@ struct GesturePracticeView: View {
             withAnimation(.easeOut(duration: 0.3)) { stillHint = 0 }
         } else {
             // Revealed or not: the nudge shows direction and colour, the answer is for the touch.
-            withAnimation(.easeOut(duration: 0.25)) {
-                flight.drag(SwipePractice.nudge(for: grade), isRevealed: true)
-            }
+            flight.drag(SwipePractice.nudge(for: grade), isRevealed: true, glide: .easeOut(duration: 0.25))
             try? await Task.sleep(for: .seconds(0.4))
             flight.springBack()
         }
@@ -237,7 +235,7 @@ struct GesturePracticeView: View {
             if !isDragging { flight.springBack() }
         }
         // The ticks of `swipeHaptics`, but only under a finger: a hint is not a touch.
-        .sensoryFeedback(.impact(weight: .light), trigger: flight.zone) { _, zone in zone != nil && isDragging }
+        .sensoryFeedback(.impact(weight: .light), trigger: flight.zone) { old, new in isDragging && flight.isTick(from: old, to: new) }
         .sensoryFeedback(.impact(weight: .medium), trigger: flight.isFlying) { _, isFlying in isFlying }
         // VoiceOver can't swipe: the action does what the swipe does.
         .accessibilityElement(children: .ignore)

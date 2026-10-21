@@ -1,10 +1,11 @@
 import SwiftUI
 import VocabCore
 
-/// How a flash card moves and looks while it is swiped, graded and replaced: it follows
-/// the finger, turns about the point where it was grabbed, tints with the colour of the grade
-/// the swipe would give, springs back when let go too early, and flies out when a grade is
-/// given, by swipe, key or button. A view shows it with `FlightCard`.
+/// How a flash card moves and looks while it is swiped, graded and replaced: it goes with the
+/// finger but bent toward the target of the grade the swipe would give (`GradeSwipe.cardOffset`),
+/// turns about the point where it was grabbed, tints with the colour of that grade, springs back
+/// when let go too early or between two zones, and flies out when a grade is given, by swipe,
+/// key or button. A view shows it with `FlightCard`.
 @MainActor @Observable
 final class CardFlight {
     /// How long a grade shows before the next card comes, in seconds: the card flies out,
@@ -22,6 +23,12 @@ final class CardFlight {
     private static let rotationDistance: CGFloat = 200
     /// A card grabbed at the middle still turns this share of what it does at the edge.
     private static let minimumLever = 0.35
+    /// How the card eases when the finger crosses into another zone or a gap, where the card's
+    /// way jumps (`GradeSwipe.cardOffset`): a short spring that keeps the card's speed, used for
+    /// `glideDuration` after the crossing and not on the rest of the swipe, so the card stays
+    /// under the finger.
+    static let glide = Animation.interactiveSpring(response: 0.12, dampingFraction: 0.85)
+    static let glideDuration = Duration.milliseconds(300)
 
     private(set) var offset = CGSize.zero
     private(set) var rotation = Angle.zero
@@ -34,8 +41,10 @@ final class CardFlight {
     private(set) var tint: Grade?
     private(set) var tintStrength = 0.0
     /// The grade the direction of the finger stands for now, for a haptic when it changes;
-    /// `nil` in the dead zone and before the answer shows.
+    /// `nil` in the dead zone, in a gap between zones (`isInGap`) and before the answer shows.
     private(set) var zone: Grade?
+    /// The finger points into a gap between two zones: no grade, no tint, the card half way.
+    private(set) var isInGap = false
     /// The grade letting go now would give, for the commit threshold.
     private(set) var committing: Grade?
     /// A grade has been given: the card is on its way out, and takes no more input.
@@ -43,6 +52,16 @@ final class CardFlight {
     /// The size of the card, which `FlightCard` reports: the point where the card was grabbed
     /// is a share of it.
     var size = CGSize.zero
+
+    /// Where the finger is, for easing the card when it changes: the dead zone, a gap or a zone.
+    private enum Region: Equatable {
+        case none
+        case gap
+        case zone(Grade)
+    }
+
+    private var region = Region.none
+    private var glideUntil = ContinuousClock.now
 
     /// The grade whose button the row of buttons lights up: the one a swipe would give if
     /// let go now, or, while the card flies out, the one just given by swipe, key or button.
@@ -63,28 +82,45 @@ final class CardFlight {
         return .degrees(max(-maxRotation, min(maxRotation, degrees)))
     }
 
-    /// The card follows the finger one to one and turns about the point grabbed at `start`, in
-    /// the card's own coordinates. Before the answer is shown it only gives way a little,
-    /// without tint.
-    func drag(_ translation: CGSize, from start: CGPoint? = nil, isRevealed: Bool) {
+    /// The card goes with the finger, bent toward the target of the grade the finger's direction
+    /// stands for (`GradeSwipe.cardOffset`), and turns about the point grabbed at `start`, in the
+    /// card's own coordinates. In a gap between two zones it takes no grade and goes half way.
+    /// Before the answer is shown it only gives way a little, without tint. When the finger
+    /// crosses into another zone or a gap the card eases to its new way with `glide`.
+    func drag(_ translation: CGSize, from start: CGPoint? = nil, isRevealed: Bool, glide: Animation = CardFlight.glide) {
         guard !isFlying else { return }
-        let share: CGFloat = isRevealed ? 1 : 0.25
-        offset = CGSize(width: translation.width * share, height: translation.height * share)
+        let distance = hypot(translation.width, translation.height)
+        let grade = isRevealed ? GradeSwipe.zone(translation) : nil
+        let gap = isRevealed && GradeSwipe.isInGap(translation)
+        let region: Region = grade.map { .zone($0) } ?? (gap ? .gap : .none)
+        if region != self.region {
+            self.region = region
+            glideUntil = .now + Self.glideDuration
+        }
+        let moved = isRevealed ? GradeSwipe.cardOffset(for: translation) : CGSize(width: translation.width * 0.25, height: translation.height * 0.25)
         if let start, size.width > 0, size.height > 0 {
             pivot = UnitPoint(x: start.x / size.width, y: start.y / size.height)
         }
-        rotation = Self.rotation(dx: offset.width, grabY: start?.y, height: size.height)
-        let distance = hypot(translation.width, translation.height)
-        guard isRevealed, let grade = GradeSwipe.zone(translation) else {
-            tintStrength = 0
-            zone = nil
-            committing = nil
-            return
-        }
         zone = grade
-        tint = grade
-        tintStrength = min(Self.fullTint, Double(distance / Self.tintDistance))
-        committing = distance >= GradeSwipe.commitDistance ? grade : nil
+        isInGap = gap
+        if let grade { tint = grade }
+        committing = grade.flatMap { distance >= GradeSwipe.commitDistance ? $0 : nil }
+        let strength = grade == nil ? 0 : min(Self.fullTint, Double(distance / Self.tintDistance))
+        let follow = {
+            self.offset = moved
+            self.rotation = Self.rotation(dx: moved.width, grabY: start?.y, height: self.size.height)
+            self.tintStrength = strength
+        }
+        if ContinuousClock.now < glideUntil {
+            withAnimation(glide, follow)
+        } else {
+            follow()
+        }
+    }
+
+    /// Whether a change of `zone` is felt as a light tick: entering a zone, or a gap from a zone.
+    func isTick(from old: Grade?, to new: Grade?) -> Bool {
+        new != nil || (old != nil && isInGap)
     }
 
     /// Springs back, with a little bounce, and fades the tint out with it.
@@ -92,6 +128,8 @@ final class CardFlight {
         guard !isFlying else { return }
         committing = nil
         zone = nil
+        isInGap = false
+        region = .none
         withAnimation(.spring(response: 0.4, dampingFraction: 0.62)) {
             offset = .zero
             rotation = .zero
@@ -107,6 +145,8 @@ final class CardFlight {
         isFlying = true
         committing = nil
         zone = nil
+        isInGap = false
+        region = .none
         tint = grade
         if reduceMotion {
             withAnimation(.easeOut(duration: 0.1)) {
@@ -204,10 +244,10 @@ struct FlightCard<Content: View>: View {
 
 #if os(iOS)
 extension View {
-    /// The haptics of a swipe: a light tick whenever the finger enters another grade's zone, and
-    /// a medium one when the card is graded, whether by swipe or by button.
+    /// The haptics of a swipe: a light tick whenever the finger enters another grade's zone or a
+    /// gap from one, and a medium one when the card is graded, whether by swipe or by button.
     func swipeHaptics(_ flight: CardFlight) -> some View {
-        sensoryFeedback(.impact(weight: .light), trigger: flight.zone) { _, zone in zone != nil }
+        sensoryFeedback(.impact(weight: .light), trigger: flight.zone) { old, new in flight.isTick(from: old, to: new) }
             .sensoryFeedback(.impact(weight: .medium), trigger: flight.isFlying) { _, isFlying in isFlying }
     }
 }
