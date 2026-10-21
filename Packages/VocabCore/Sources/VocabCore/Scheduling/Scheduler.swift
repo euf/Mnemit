@@ -1,5 +1,13 @@
 import Foundation
 
+/// When a card is asked again after a grade, see `Scheduler.previewIntervals`.
+public enum ReviewInterval: Sendable, Hashable {
+    /// The card is in (re)learning: it stays due and the session asks it again.
+    case learning
+    /// The card is in the review phase, due after this many study days, at least 1.
+    case days(Int)
+}
+
 /// Applies grades to cards: updates stability and difficulty with FSRS, moves cards
 /// between phases and computes the next due date.
 ///
@@ -84,6 +92,22 @@ public struct Scheduler: Sendable {
         )
         updated.log.append(ReviewLogEntry(date: now, grade: grade, mode: mode))
         return updated
+    }
+
+    /// When `card` would be asked next after each grade given at `now` in `mode`: what
+    /// `review` would schedule, without applying any grade and without fuzz, which moves
+    /// an interval by a few percent only.
+    public func previewIntervals(of card: Card, at now: Date, mode: ReviewMode = .typed) -> [Grade: ReviewInterval] {
+        var exact = self
+        exact.learningOptions.fuzzing = false
+        // Never drawn from without fuzz.
+        var random = SeededRandom(seed: 0)
+        return Dictionary(
+            uniqueKeysWithValues: Grade.allCases.map { grade in
+                let learningState = exact.review(card, grade: grade, at: now, mode: mode, using: &random).learningState
+                guard let learningState, learningState.phase == .review else { return (grade, .learning) }
+                return (grade, .days(calendar.days(from: now, to: learningState.due)))
+            })
     }
 
     /// `card` after studying the reviews of `log` from scratch, oldest first: the

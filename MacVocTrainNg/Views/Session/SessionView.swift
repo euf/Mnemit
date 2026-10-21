@@ -9,7 +9,8 @@ import VocabCore
 /// when the response was right after all. ⌘Z takes back the last review.
 ///
 /// With flash cards (the preference "Study by"), there is no response: Space or Return
-/// shows the answer, then 1–4 choose the grade.
+/// shows the answer, then 1–4 choose the grade (Forgot, Hard, Good, Easy), and Space or
+/// Return mean Good.
 ///
 /// ⌘E edits the card being asked (#289); before the response is checked or the answer
 /// shown, without showing its answer. The response typed so far stays, and a response
@@ -147,17 +148,23 @@ struct SessionView: View {
 
             Group {
                 if case let .feedback(result, response) = model.stage {
-                    FeedbackView(result: result, response: response, expected: card.answer, highlightedAnswer: model.highlightedAnswer) { grade in
+                    FeedbackView(
+                        result: result, response: response, expected: card.answer, highlightedAnswer: model.highlightedAnswer,
+                        intervals: model.gradeIntervals
+                    ) { grade in
                         model.grade(grade)
                     }
                 } else if model.studyBy == .flashcards {
-                    FlashcardView(answer: card.answer, isRevealed: model.stage == .revealed, onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
+                    FlashcardView(
+                        answer: card.answer, isRevealed: model.stage == .revealed, intervals: model.gradeIntervals,
+                        onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
                 } else {
                     Text("Press Return to check your response.")
                         .foregroundStyle(.tertiary)
                 }
             }
-            .frame(minHeight: 150, alignment: .top)
+            // As high as the feedback with its grade buttons, so the question stays put.
+            .frame(minHeight: 230, alignment: .top)
 
             Spacer()
 
@@ -190,7 +197,9 @@ private struct FeedbackView: View {
     var expected: String
     /// The answer with the differences marked, for almost correct responses.
     var highlightedAnswer: [ResponseDiff.Segment]?
-    var onGrade: (Grade) -> Void
+    /// What each grade would schedule; `nil` in practice.
+    var intervals: [Grade: ReviewInterval]?
+    var onGrade: @MainActor (Grade) -> Void
 
     var body: some View {
         VStack(spacing: 14) {
@@ -208,24 +217,9 @@ private struct FeedbackView: View {
                 }
             }
 
-            HStack(spacing: 10) {
-                ForEach(Grade.allCases, id: \.self) { grade in
-                    GradeButton(grade: grade, isSuggested: grade == result.suggestedGrade) {
-                        onGrade(grade)
-                    }
-                }
-            }
-
             // Return accepts the suggestion.
-            Button {
-                onGrade(result.suggestedGrade)
-            } label: {
-                Text(verbatim: "")
-            }
-            .keyboardShortcut(.defaultAction)
-            .opacity(0)
-            .frame(width: 0, height: 0)
-            .accessibilityHidden(true)
+            GradeChoice(intervals: intervals, defaultGrade: result.suggestedGrade, onGrade: onGrade)
+                .frame(maxWidth: 440)
         }
     }
 
@@ -266,8 +260,10 @@ private struct FeedbackView: View {
 private struct FlashcardView: View {
     var answer: String
     var isRevealed: Bool
+    /// What each grade would schedule; `nil` in practice.
+    var intervals: [Grade: ReviewInterval]?
     var onReveal: () -> Void
-    var onGrade: (Grade) -> Void
+    var onGrade: @MainActor (Grade) -> Void
 
     var body: some View {
         VStack(spacing: 14) {
@@ -276,13 +272,9 @@ private struct FlashcardView: View {
                     .font(.title2)
                     .textSelection(.enabled)
 
-                HStack(spacing: 10) {
-                    ForEach(Grade.allCases, id: \.self) { grade in
-                        GradeButton(grade: grade, isSuggested: false) {
-                            onGrade(grade)
-                        }
-                    }
-                }
+                // Space and Return showed the answer and now mean Good.
+                GradeChoice(intervals: intervals, defaultGrade: .good, acceptsSpace: true, onGrade: onGrade)
+                    .frame(maxWidth: 440)
             } else {
                 Button(action: onReveal) {
                     VStack(spacing: 2) {
@@ -304,35 +296,6 @@ private struct FlashcardView: View {
                 .opacity(0)
                 .frame(width: 0, height: 0)
                 .accessibilityHidden(true)
-            }
-        }
-    }
-}
-
-private struct GradeButton: View {
-    var grade: Grade
-    var isSuggested: Bool
-    var action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Text(grade.title)
-                    .fontWeight(isSuggested ? .semibold : .regular)
-                Text(isSuggested ? "\(grade.rawValue) or ↩" : "\(grade.rawValue)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(minWidth: 80)
-            .padding(.vertical, 2)
-        }
-        .keyboardShortcut(grade.shortcutKey, modifiers: [])
-        .tint(grade.color)
-        .buttonStyle(.bordered)
-        .overlay {
-            if isSuggested {
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(grade.color, lineWidth: 2)
             }
         }
     }

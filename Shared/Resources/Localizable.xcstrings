@@ -1120,6 +1120,16 @@
         }
       }
     },
+    "Forgot": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergessen"
+          }
+        }
+      }
+    },
     "Format:": {
       "localizations": {
         "de": {
@@ -2126,6 +2136,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kartendetails ein- oder ausblenden"
+          }
+        }
+      }
+    },
+    "Soon": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bald"
           }
         }
       }

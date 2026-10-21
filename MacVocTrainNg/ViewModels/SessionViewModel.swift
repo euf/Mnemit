@@ -68,6 +68,10 @@ final class SessionViewModel {
 
     var isFinished: Bool { stage == .finished }
 
+    /// What each grade would schedule for the card being asked, shown on the buttons;
+    /// `nil` in practice.
+    var gradeIntervals: [Grade: ReviewInterval]? { driver.gradeIntervals }
+
     var suggestedGrade: Grade? {
         guard case let .feedback(result, _) = stage else { return nil }
         return result.suggestedGrade

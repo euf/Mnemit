@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// A study session in the style of flash cards: the question, a tap shows the answer,
-/// and the learner grades with Again and Good, or with Hard and Easy below them.
+/// and the learner grades with Forgot, or with Hard, Good and Easy below it.
 struct StudyView: View {
     var model: StudyModel
     var onClose: () -> Void
@@ -82,8 +82,8 @@ struct StudyView: View {
     }
 
     /// In portrait the buttons sit below the card. In landscape the iPhone is too low
-    /// for that: the card takes the full width, the buttons one row below it, half to
-    /// each side of the progress.
+    /// for that: the card takes the full width, the buttons one row below it, Forgot
+    /// and the capsule on either side of the progress.
     @ViewBuilder
     private func cardArea(_ card: Card) -> some View {
         if verticalSizeClass == .compact {
@@ -166,16 +166,7 @@ struct StudyView: View {
     @ViewBuilder
     private var actions: some View {
         if model.stage == .revealed {
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    GradeButton(grade: .hard, onGrade: model.grade)
-                    GradeButton(grade: .easy, onGrade: model.grade)
-                }
-                HStack(spacing: 12) {
-                    GradeButton(grade: .again, isTall: true, onGrade: model.grade)
-                    GradeButton(grade: .good, isTall: true, onGrade: model.grade)
-                }
-            }
+            GradeChoice(intervals: model.gradeIntervals, onGrade: model.grade)
         } else {
             Button {
                 model.reveal()
@@ -188,22 +179,20 @@ struct StudyView: View {
         }
     }
 
-    /// Again, Hard, the progress, Easy, Good. Before the answer shows, a short Show
-    /// button takes the place of Good; the other places stay empty, so the progress
-    /// stays in the middle.
+    /// Forgot, the progress, then Hard, Good and Easy in their capsule. Before the answer
+    /// shows, a Show button takes the place of the capsule, and the progress stays where
+    /// it is.
     private var buttonRow: some View {
         HStack(spacing: 12) {
             if model.stage == .revealed {
-                GradeButton(grade: .again, onGrade: model.grade)
-                GradeButton(grade: .hard, onGrade: model.grade)
+                GradeChoice(part: .forgot, intervals: model.gradeIntervals, isCompact: true, onGrade: model.grade)
+                    .frame(maxWidth: Self.forgotWidth)
                 rowProgress
-                GradeButton(grade: .easy, onGrade: model.grade)
-                GradeButton(grade: .good, onGrade: model.grade)
+                GradeChoice(part: .recalled, intervals: model.gradeIntervals, isCompact: true, onGrade: model.grade)
             } else {
-                emptyPlace
-                emptyPlace
+                Color.clear
+                    .frame(maxWidth: Self.forgotWidth, maxHeight: 0)
                 rowProgress
-                emptyPlace
                 Button {
                     model.reveal()
                 } label: {
@@ -215,35 +204,5 @@ struct StudyView: View {
         }
     }
 
-    private var emptyPlace: some View {
-        Color.clear
-            .frame(maxWidth: .infinity, maxHeight: 0)
-    }
-}
-
-/// Again and Good stand out, as they are the usual grades; in portrait they are also
-/// taller than Hard and Easy. Good stays the grade for a word one knew, so cards don't
-/// jump to long intervals.
-private struct GradeButton: View {
-    var grade: Grade
-    var isTall = false
-    var onGrade: @MainActor (Grade) -> Void
-
-    var body: some View {
-        let button = Button {
-            onGrade(grade)
-        } label: {
-            Text(grade.title)
-                .frame(maxWidth: .infinity, minHeight: isTall ? 56 : 32)
-        }
-        .tint(grade.color)
-        if grade == .again || grade == .good {
-            button
-                .buttonStyle(.borderedProminent)
-                .font(isTall ? .title3.weight(.semibold) : .body.weight(.semibold))
-        } else {
-            button
-                .buttonStyle(.bordered)
-        }
-    }
+    private static let forgotWidth: CGFloat = 170
 }

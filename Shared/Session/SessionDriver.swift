@@ -39,6 +39,14 @@ final class SessionDriver {
     /// The part of the session that study sessions and practice share.
     var session: Session { mode.session }
 
+    /// When the card being asked would be asked next after each grade, if given now; `nil`
+    /// in practice, which schedules nothing, and without a card.
+    var gradeIntervals: [Grade: ReviewInterval]? {
+        guard case let .study(study) = mode, let card = currentCard else { return nil }
+        let scheduler = Scheduler(learningOptions: document.deck.learningOptions, calendar: document.calendar)
+        return scheduler.previewIntervals(of: card, at: document.clock.now, mode: study.reviewMode)
+    }
+
     /// Grades the card being asked and moves on. One undo action takes back the review
     /// and the session's place: the document restores the card, then the session.
     /// Practice changes no card, but undo should still take back the last review

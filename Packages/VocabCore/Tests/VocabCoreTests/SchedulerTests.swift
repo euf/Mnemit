@@ -214,6 +214,79 @@ struct SchedulerTests {
         var random = SeededRandom(seed: 7)
         #expect(Scheduler.fuzzed(interval: 2, maximum: 100, using: &random) == 2)
     }
+
+    var cardInReview: Card {
+        var card = Card(question: "dom", answer: "Haus")
+        card.learningState = LearningState(phase: .review, stability: 20, difficulty: 5, lastReview: now.addingTimeInterval(-20 * 86400), due: now)
+        return card
+    }
+
+    @Test func previewMatchesWhatEachGradeWouldSchedule() throws {
+        let card = cardInReview
+        let preview = scheduler.previewIntervals(of: card, at: now)
+        #expect(Set(preview.keys) == Set(Grade.allCases))
+        #expect(preview[.again] == .learning)
+        for grade in [Grade.hard, .good, .easy] {
+            let due = try #require(scheduler.review(card, grade: grade, at: now).learningState?.due)
+            #expect(preview[grade] == .days(calendar.days(from: now, to: due)))
+        }
+        guard case let .days(hard) = preview[.hard], case let .days(good) = preview[.good], case let .days(easy) = preview[.easy] else {
+            Issue.record("a recalled review card keeps a number of days")
+            return
+        }
+        #expect(1 <= hard && hard < good && good < easy)
+    }
+
+    @Test func previewOfANewCardNeedsEnoughStepsExceptForEasy() {
+        let preview = scheduler.previewIntervals(of: Card(question: "dom", answer: "Haus"), at: now)
+        #expect(preview[.again] == .learning)
+        #expect(preview[.hard] == .learning)
+        #expect(preview[.good] == .learning)
+        guard case let .days(easy)? = preview[.easy] else {
+            Issue.record("easy sends a new card to the review phase")
+            return
+        }
+        #expect(easy > 1)
+    }
+
+    @Test func previewOfTheLastStepGivesDays() throws {
+        var card = Card(question: "dom", answer: "Haus")
+        card = scheduler.review(card, grade: .good, at: now)
+        let due = try #require(scheduler.review(card, grade: .good, at: now).learningState?.due)
+        #expect(scheduler.previewIntervals(of: card, at: now)[.good] == .days(calendar.days(from: now, to: due)))
+    }
+
+    @Test func previewIgnoresFuzzAndChangesNothing() {
+        var fuzzing = scheduler
+        fuzzing.learningOptions.fuzzing = true
+        let card = cardInReview
+        let copy = card
+        #expect(fuzzing.previewIntervals(of: card, at: now) == scheduler.previewIntervals(of: card, at: now))
+        #expect(card == copy)
+        #expect(card.log.isEmpty)
+    }
+
+    @Test func previewUsesTheModeOfTheReview() throws {
+        let card = cardInReview
+        let typed = scheduler.previewIntervals(of: card, at: now, mode: .typed)
+        let revealed = scheduler.previewIntervals(of: card, at: now, mode: .revealed)
+        #expect(typed[.again] == revealed[.again])
+        for grade in [Grade.hard, .good, .easy] {
+            guard case let .days(typedDays)? = typed[grade], case let .days(revealedDays)? = revealed[grade] else {
+                Issue.record("a recalled review card keeps a number of days")
+                return
+            }
+            #expect(revealedDays < typedDays)
+        }
+    }
+
+    @Test func previewRespectsTheMaximumInterval() {
+        var capped = scheduler
+        capped.learningOptions.maximumInterval = 30
+        var card = cardInReview
+        card.learningState?.stability = 500
+        #expect(capped.previewIntervals(of: card, at: now)[.easy] == .days(30))
+    }
 }
 
 extension Scheduler {

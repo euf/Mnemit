@@ -84,6 +84,22 @@ enum Format {
         return String(localized: "\(rounded) days")
     }
 
+    /// When a card is asked again after a grade: "Soon" while it is in (re)learning,
+    /// else the system's short form of the days, rounded to one unit ("2 days", "3 mths",
+    /// "1 yr"), or spelled out for VoiceOver ("3 months").
+    static func interval(_ interval: ReviewInterval, spelledOut: Bool = false) -> String {
+        guard case let .days(days) = interval else { return String(localized: "Soon") }
+        var components = DateComponents(day: days)
+        if days >= 30 {
+            let months = Int((Double(days) / 30.4375).rounded())
+            components = months < 12 ? DateComponents(month: months) : DateComponents(year: Int((Double(days) / 365.25).rounded()))
+        }
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = spelledOut ? .full : .short
+        formatter.allowedUnits = [.year, .month, .day]
+        return formatter.string(from: components) ?? Format.days(Double(days))
+    }
+
     static func percent(_ value: Double) -> String {
         value.formatted(.percent.precision(.fractionLength(0)))
     }
@@ -97,6 +113,13 @@ enum Format {
 }
 
 extension Color {
+    /// The recalled grades' capsule in the grade buttons: the fill of Good, and the tint
+    /// behind Hard and Easy. Darker than `Grade.good.color`, so the white text on Good
+    /// reads at the size of an interval.
+    static let recalled = Color(light: 0x1A7F37, dark: 0x238636)
+    /// Text of Hard and Easy on the tint of `recalled`.
+    static let onRecalledTint = Color(light: 0x0F5323, dark: 0x9BE9A8)
+
     /// A colour that adapts to light and dark appearance.
     init(light: UInt32, dark: UInt32) {
         #if os(macOS)

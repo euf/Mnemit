@@ -42,6 +42,9 @@ final class StudyModel: Identifiable {
 
     var isFinished: Bool { stage == .finished }
 
+    /// What each grade would schedule for the card being asked, shown on the buttons.
+    var gradeIntervals: [Grade: ReviewInterval]? { driver.gradeIntervals }
+
     func reveal() {
         guard stage == .asking else { return }
         stage = .revealed
