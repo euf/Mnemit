@@ -17,9 +17,10 @@ public enum ReviewInterval: Sendable, Hashable {
 ///   resets it, `.easy` moves the card to the review phase at once). While
 ///   (re)learning they remain due.
 /// - Cards in the review phase get an interval in whole study days from FSRS.
-/// - A revealed review a card recalls gains only `ReviewMode.revealed.stabilityGainShare`
-///   of the stability FSRS adds: self-grading after seeing the answer is optimistic and
-///   fixes the answer less than typing it. A lapse counts in full.
+/// - A revealed review a card recalls gains `LearningOptions.revealedRecallWeight` of the
+///   stability FSRS adds, a typed one all of it. The weight is 1 by default, as in Anki;
+///   below 1 it allows for self-grading after seeing the answer being optimistic and
+///   fixing the answer less than typing it (ADR 0004, ADR 0005). A lapse counts in full.
 public struct Scheduler: Sendable {
     public var learningOptions: LearningOptions
     public var calendar: StudyCalendar
@@ -158,11 +159,12 @@ public struct Scheduler: Sendable {
     }
 
     /// The memory after a review with `grade` in `mode`: FSRS's, with the stability gain
-    /// of a recalled revealed review scaled by `ReviewMode.stabilityGainShare`.
+    /// of a recalled revealed review scaled by `LearningOptions.revealedRecallWeight`.
     func memory(after previous: FSRS.Memory?, elapsedDays: Int, grade: Grade, mode: ReviewMode) -> FSRS.Memory {
         var memory = fsrs.review(previous, elapsedDays: elapsedDays, grade: grade)
         if grade.isRecall, let previous, memory.stability > previous.stability {
-            memory.stability = previous.stability + (memory.stability - previous.stability) * mode.stabilityGainShare
+            let share = mode.stabilityGainShare(revealedRecallWeight: learningOptions.revealedRecallWeight)
+            memory.stability = previous.stability + (memory.stability - previous.stability) * share
         }
         return memory
     }

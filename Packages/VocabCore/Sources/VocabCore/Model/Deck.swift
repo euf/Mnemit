@@ -33,6 +33,15 @@ public struct LearningOptions: Hashable, Sendable {
     /// Spreads review intervals slightly so cards learned together don't stay clustered.
     public var fuzzing: Bool = true
     public var parameters: FSRSParameters = .default
+    /// Share of the stability FSRS adds that a card keeps after recalling it in a revealed
+    /// review (`ReviewMode.revealed`); a typed review keeps all of it. 1 treats a revealed
+    /// review like any other, as Anki does; the lower bound, a third, is the damping of
+    /// ADR 0004. Applies where the scheduler rates a review, replays a log and in the
+    /// optimizer's model; see ADR 0005.
+    public var revealedRecallWeight: Double = 1
+    /// Whether the optimizer also learns from revealed reviews. Off, only typed reviews
+    /// are its targets, as with ADR 0004.
+    public var optimizeFromRevealed: Bool = true
 
     public init() {}
 
@@ -44,6 +53,21 @@ public struct LearningOptions: Hashable, Sendable {
     /// For `newProductionPerSession` when it is limited: unlike the other limits, 0 is valid.
     public static let productionLimitRange: ClosedRange<Int> = 0...9999
     public static let productionUnlockDaysRange: ClosedRange<Int> = 0...365
+    /// From the damping of ADR 0004 (a third) to none.
+    public static let revealedRecallWeightRange: ClosedRange<Double> = (1.0 / 3)...1
+}
+
+extension LearningOptions {
+    /// What a card's memory (stability and difficulty) is computed with. A card's memory
+    /// is replayed from its review log when this changes: `DeckChange` and merges.
+    struct MemoryModel: Hashable, Sendable {
+        var parameters: FSRSParameters
+        var revealedRecallWeight: Double
+    }
+
+    var memoryModel: MemoryModel {
+        MemoryModel(parameters: parameters, revealedRecallWeight: revealedRecallWeight)
+    }
 }
 
 /// The order in which a study session takes new cards when a limit leaves some out.
@@ -67,6 +91,8 @@ extension LearningOptions {
         newCardsPerSession = newCardsPerSession?.clamped(to: Self.sessionLimitRange)
         newProductionPerSession = newProductionPerSession?.clamped(to: Self.productionLimitRange)
         productionUnlockDays = productionUnlockDays.clamped(to: Self.productionUnlockDaysRange)
+        if !revealedRecallWeight.isFinite { revealedRecallWeight = LearningOptions().revealedRecallWeight }
+        revealedRecallWeight = revealedRecallWeight.clamped(to: Self.revealedRecallWeightRange)
     }
 }
 

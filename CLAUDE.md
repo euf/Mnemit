@@ -43,6 +43,11 @@
   `--new-per-session` и `--new-production-per-session` тоже называются по-старому и
   задают дневной лимит. `Deck.dueCount` считает каждую нетронутую карточку, им кнопку
   «Study» и строки со счётом не кормить.
+- Повторения `.revealed` (карточки: весь iPhone и Mac в режиме Flashcards) в форке главный
+  сигнал, как в Anki: `LearningOptions.revealedRecallWeight` (1/3…1, по умолчанию 1)
+  заменил жёсткую треть из ADR 0004, `optimizeFromRevealed` (по умолчанию `true`) пускает
+  такие повторения в оптимизатор целями. Откат к ADR 0004: вес 0.33 и выключатель в
+  Learning Options (ADR 0005).
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
 

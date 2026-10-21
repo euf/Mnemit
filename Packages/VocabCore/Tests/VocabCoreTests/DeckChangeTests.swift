@@ -269,6 +269,52 @@ struct DeckChangeTests {
         #expect(deck.learningOptions.parameters == options.parameters)
     }
 
+    @Test func aNewRevealedRecallWeightReplaysMemoryOfCardsWithCompleteLog() throws {
+        // The last review, after 20 days, is revealed; the weight was 1 when it happened.
+        let scheduler = Scheduler(learningOptions: LearningOptions(), calendar: .testing)
+        var random = SeededRandom(seed: 1)
+        let reviews: [(TimeInterval, Grade, ReviewMode)] = [(0, .good, .typed), (60, .good, .typed), (20 * 86400, .good, .revealed)]
+        let studied = reviews.reduce(Card(question: "dom", answer: "Haus")) {
+            scheduler.review($0, grade: $1.1, at: start.addingTimeInterval($1.0), mode: $1.2, using: &random)
+        }
+        var deck = try Deck(cards: [studied])
+
+        var options = LearningOptions()
+        options.revealedRecallWeight = 0.5
+        let change = try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing))
+        _ = deck.apply(change, day: 100)
+
+        let replayed = try #require(deck.cards[0].learningState)
+        #expect(replayed.stability < studied.learningState!.stability)
+        #expect(replayed.difficulty == studied.learningState!.difficulty)
+        #expect(replayed.due == studied.learningState!.due)
+        #expect(deck.cards[0].log == studied.log)
+        #expect(deck.learningOptions.revealedRecallWeight == 0.5)
+    }
+
+    @Test func theOptimizerOptionAloneLeavesTheCards() throws {
+        let studied = studiedCard()
+        var deck = try Deck(cards: [studied])
+        var options = LearningOptions()
+        options.optimizeFromRevealed = false
+        let change = try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing))
+        _ = deck.apply(change, day: 100)
+        #expect(deck.cards == [studied])
+        #expect(!deck.learningOptions.optimizeFromRevealed)
+    }
+
+    @Test func theRevealedRecallWeightIsClamped() throws {
+        var deck = Deck()
+        for (set, expected) in [(0.1, 1.0 / 3), (0.33, 1.0 / 3), (0.5, 0.5), (3.0, 1.0), (.nan, 1.0)] {
+            var options = deck.learningOptions
+            options.revealedRecallWeight = set
+            if let change = DeckChange.changingLearningOptions(options, in: deck, calendar: .testing) {
+                _ = deck.apply(change, day: 100)
+            }
+            #expect(deck.learningOptions.revealedRecallWeight == expected)
+        }
+    }
+
     @Test func changesToTheContentStampTheirTimeInWholeSeconds() throws {
         let card = Card(question: "dom", answer: "Haus")
         var deck = Deck()

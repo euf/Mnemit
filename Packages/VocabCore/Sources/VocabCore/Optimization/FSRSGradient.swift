@@ -7,7 +7,7 @@ import Foundation
 /// also at most `maximumStability`) and records which branch each review took, so the
 /// backward pass follows the same path. Gradients stop where a bound is exceeded.
 /// Like `Scheduler`, it scales the stability gain of a recalled revealed review by
-/// `ReviewMode.stabilityGainShare`.
+/// `LearningOptions.revealedRecallWeight`.
 struct FSRSGradient {
     static let maximumStability = 36500.0
     /// Predictions are clamped to `minimumProbability...(1 - minimumProbability)`
@@ -17,14 +17,18 @@ struct FSRSGradient {
     private static let stabilityRange = FSRS.minimumStability...maximumStability
 
     let w: [Double]
+    /// The share of the stability gain a recalled revealed review keeps, see
+    /// `ReviewMode.stabilityGainShare(revealedRecallWeight:)`.
+    let revealedRecallWeight: Double
     private let decay: Double
     private let factor: Double
     private let factorDerivative: Double
     private let failureFloorDivisor: Double
     private let easyDifficulty: Double
 
-    init(weights: [Double]) {
+    init(weights: [Double], revealedRecallWeight: Double) {
         w = weights
+        self.revealedRecallWeight = revealedRecallWeight
         decay = -weights[20]
         let c = log(0.9)
         factor = exp(c / decay) - 1
@@ -140,7 +144,7 @@ struct FSRSGradient {
             newS = lastS * (increase + 1)
         }
         if grade.isRecall && newS > lastS {
-            step.gainShare = review.mode.stabilityGainShare
+            step.gainShare = review.mode.stabilityGainShare(revealedRecallWeight: revealedRecallWeight)
             newS = lastS + (newS - lastS) * step.gainShare
         }
 

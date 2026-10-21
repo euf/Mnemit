@@ -7,7 +7,8 @@ import Foundation
 /// information about the forgetting curve.
 struct SyntheticLearner {
     /// The review history of one card: its first study day and each review's grade
-    /// with the study days since the previous review.
+    /// with the study days since the previous review. A third number of 1 marks a
+    /// revealed review.
     struct History: Codable, Equatable {
         var day: Int
         var reviews: [[Int]]
@@ -15,10 +16,17 @@ struct SyntheticLearner {
 
     var parameters: FSRSParameters
     var random: SeededRandom
+    /// The share of reviews that are revealed, and what the learner's memory gains from a
+    /// recalled one: `LearningOptions.revealedRecallWeight`. Without revealed reviews the
+    /// learner draws the same numbers as before.
+    var revealedShare: Double
+    var revealedRecallWeight: Double
 
-    init(parameters: FSRSParameters = .default, seed: UInt64) {
+    init(parameters: FSRSParameters = .default, seed: UInt64, revealedShare: Double = 0, revealedRecallWeight: Double = 1) {
         self.parameters = parameters
         random = SeededRandom(seed: seed)
+        self.revealedShare = revealedShare
+        self.revealedRecallWeight = revealedRecallWeight
     }
 
     /// Learner parameters that differ clearly from the defaults.
@@ -39,13 +47,25 @@ struct SyntheticLearner {
 
     mutating func histories(cards: Int, days: Int) -> [History] {
         let fsrs = FSRS(parameters: parameters)
+        var options = LearningOptions()
+        options.parameters = parameters
+        options.revealedRecallWeight = revealedRecallWeight
+        let scheduler = Scheduler(learningOptions: options, calendar: .testing)
+        let revealedShare = revealedShare
+        // Apart from `random`, so choosing a mode draws nothing from it.
+        var modeRandom = SeededRandom(seed: 99)
         return (0..<cards).map { _ in
             let start = Int.random(in: 0..<(days / 2), using: &random)
             var reviews: [[Int]] = []
             var memory: FSRS.Memory?
             func review(_ grade: Grade, after elapsed: Int) {
-                memory = fsrs.review(memory, elapsedDays: elapsed, grade: grade)
-                reviews.append([grade.rawValue, elapsed])
+                if revealedShare > 0, Double.random(in: 0..<1, using: &modeRandom) < revealedShare {
+                    memory = scheduler.memory(after: memory, elapsedDays: elapsed, grade: grade, mode: .revealed)
+                    reviews.append([grade.rawValue, elapsed, 1])
+                } else {
+                    memory = fsrs.review(memory, elapsedDays: elapsed, grade: grade)
+                    reviews.append([grade.rawValue, elapsed])
+                }
             }
 
             review(firstGrade(), after: 0)
@@ -99,7 +119,7 @@ extension SyntheticLearner.History {
         for (position, review) in reviews.enumerated() {
             day += review[1]
             let date = calendar.start(ofDay: day).addingTimeInterval(3600 + Double(index) + Double(position) * 0.001)
-            log.append(ReviewLogEntry(date: date, grade: Grade(rawValue: review[0])!))
+            log.append(ReviewLogEntry(date: date, grade: Grade(rawValue: review[0])!, mode: review.count > 2 && review[2] == 1 ? .revealed : .typed))
         }
         let state = LearningState(
             phase: .review, stability: 1, difficulty: 5,
