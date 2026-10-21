@@ -75,8 +75,19 @@
   `lapses` до порога и до каждого следующего кратного, `StudySession.review` сразу
   превращает в suspend (оба приложения, одним `DeckChange` с отменой), карточка уходит
   из сессии, `GradeReceipt` говорит «leech, suspended». Флага в файле нет: `Card.isLeech(
-  threshold:)` выводится из `lapses`, поэтому фильтр «Leeches» на Mac показывает и
-  возобновлённые карточки, а слияния нового правила не требуют.
+  threshold:)` выводится из `lapses`, поэтому фильтр Difficult показывает и возобновлённые
+  карточки, а слияния нового правила не требуют.
+- Браузер карточек: фильтры **All · Due · New · Learning · Suspended · Difficult** — одни и
+  те же имена на обоих приложениях, правила в `CardFilter` (VocabCore: `matches`,
+  `Deck.filterCounts(at:)`; Due, New и Learning не берут suspended, Difficult берёт),
+  названия — `CardFilter.title` в `Shared/Support/Presentation.swift`. На Mac это
+  сегментный контрол `ScopeBar` над таблицей (`searchScopes` на Mac живёт только пока идёт
+  поиск, а фильтры должны быть видны всегда), со счётом в каждом сегменте. Поиск
+  (`CardSearchIndex`) смотрит и в `note`; колонка Kind сортируется по `CardRow.kindRank`;
+  инспектор ведёт к сиблингу ссылкой (`Deck.siblings(of:)`), лист правки меняет ключ
+  слова через `VocabularyDocument.setNote` (`DeckChange.settingNote`, kind остаётся) и
+  прячет его, пока сессия ещё спрашивает карточку: ключ карточки «перевод → греческий»
+  и есть ответ.
 - Study открывает поток без конца, сессий нет (`StudyStream` в VocabCore, на обоих
   приложениях его ведёт `SessionDriver`): каждая оценка пишется сразу, выход ничего не
   теряет. Порядок: план дня (`StudySession.counts`, тот же отбор и лимиты; пока план

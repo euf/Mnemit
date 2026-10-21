@@ -47,6 +47,35 @@ struct CardTableTests {
         #expect(table.rows(of: changed, sortedBy: byQuestion, matching: "").map(\.position) == [3, 2, 1, 0])
     }
 
+    /// The Kind column sorts recognition cards before production cards, cards without a kind
+    /// last, and a card's edit of its kind moves its row.
+    @Test func sortsByKind() {
+        let kinds = [
+            Card(question: "a", answer: "1", note: "a", kind: .production),
+            Card(question: "b", answer: "2"),
+            Card(question: "c", answer: "3", note: "c", kind: .recognition),
+            Card(question: "d", answer: "4", note: "d", kind: .production),
+        ]
+        let table = CardTable()
+        let ascending = [KeyPathComparator(\CardRow.kindRank)]
+        let rows = table.rows(of: kinds, sortedBy: ascending, matching: "")
+        #expect(rows.map(\.question) == ["c", "a", "d", "b"])
+        #expect(rows.map(\.kind) == [.recognition, .production, .production, nil])
+
+        let descending = [KeyPathComparator(\CardRow.kindRank, order: .reverse)]
+        #expect(table.rows(of: kinds, sortedBy: descending, matching: "").map(\.question) == ["b", "a", "d", "c"])
+
+        var changed = kinds
+        changed[1] = Card(id: kinds[1].id, question: "b", answer: "2", note: "b", kind: .recognition)
+        #expect(table.rows(of: changed, sortedBy: ascending, matching: "").map(\.question) == ["b", "c", "a", "d"])
+    }
+
+    /// The word key is searched like the texts, in the table too.
+    @Test func searchFindsTheWordKey() {
+        let cards = [Card(question: "lieben", answer: "αγαπώ", note: "agapo", kind: .production), Card(question: "Katze", answer: "γάτα")]
+        #expect(CardTable().rows(of: cards, sortedBy: deckOrder, matching: "AGAPO").map(\.question) == ["lieben"])
+    }
+
     @Test func equalValuesKeepDeckOrder() {
         let twins = [
             Card(question: "b", answer: "1"),

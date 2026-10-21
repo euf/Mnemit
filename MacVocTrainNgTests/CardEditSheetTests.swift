@@ -10,7 +10,7 @@ extension WindowTests {
     /// it and typed into through the field editor of the sheet's own window.
     @MainActor
     struct CardEditSheetTests {
-        let card = Card(question: "blim", answer: "blom")
+        let card = Card(question: "blim", answer: "blom", note: "blim-key", kind: .recognition)
         let document: VocabularyDocument
         /// Groups by event like in the app: the sheet changes the deck when SwiftUI runs
         /// the action of its button, not inside a group a test could open.
@@ -38,24 +38,22 @@ extension WindowTests {
         /// Opens the sheet once the window shows its content, as a click would, and returns
         /// it when it shows its fields. In CI (macOS 15), a sheet asked for while the content
         /// first appeared never came.
-        private func showSheet() async throws -> NSWindow {
+        private func showSheet(hidesAnswer: Bool = false) async throws -> NSWindow {
             try await waitUntil("the window shows its content") { request.hasAppeared }
+            request.hidesAnswer = hidesAnswer
             request.card = card
             try await waitUntil("the sheet is shown") { window.attachedSheet != nil }
             let sheet = try #require(window.attachedSheet)
-            try await waitUntil("the sheet shows its three fields") { fields(of: sheet).count == 3 }
+            // A hidden answer takes the answer and the word key out of the sheet.
+            let count = hidesAnswer ? 2 : 4
+            try await waitUntil("the sheet shows its \(count) fields") { fields(of: sheet).count == count }
             return sheet
         }
 
-        /// The fields question, answer and hint, top to bottom.
+        /// The fields question, answer, hint and word key, top to bottom.
         private func fields(of sheet: NSWindow) -> [NSTextField] {
             let fields = sheet.contentView.map { descendants(of: $0).compactMap { $0 as? NSTextField }.filter(\.isEditable) } ?? []
             return fields.sorted { $0.convert($0.bounds, to: nil).maxY > $1.convert($1.bounds, to: nil).maxY }
-        }
-
-        /// The default button, Save.
-        private func saveButton(of sheet: NSWindow) -> NSButton? {
-            sheet.contentView.flatMap { descendants(of: $0).lazy.compactMap { $0 as? NSButton }.first { $0.keyEquivalent == "\r" } }
         }
 
         private func descendants(of view: NSView) -> [NSView] {
@@ -155,6 +153,64 @@ extension WindowTests {
             #expect(!undoManager.canUndo)
         }
 
+        /// The word key is a field of the sheet and changes with the texts: one Save, one undo
+        /// action, and the kind stays.
+        @Test func returnSavesTheWordKeyWithTheTextAsOneUndoAction() async throws {
+            defer { close() }
+            let sheet = try await showSheet()
+            let key = try await edit(fields(of: sheet)[3], in: sheet)
+            #expect(key.string == "blim-key")
+            await type("2", into: key)
+            let answer = try await edit(fields(of: sheet)[1], in: sheet)
+            await type("ps", into: answer)
+            try await settle()
+            #expect(deckCard == card)
+
+            #expect(try pressReturn(in: sheet))
+            try await waitUntil("the sheet is closed") { window.attachedSheet == nil }
+            var saved = card.withAnswer("blomps")
+            saved.note = "blim-key2"
+            #expect(deckCard == saved)
+            #expect(deckCard?.kind == .recognition)
+
+            undoManager.undo()
+            #expect(deckCard == card)
+            #expect(!undoManager.canUndo)
+        }
+
+        @Test func anEmptyWordKeyClearsIt() async throws {
+            defer { close() }
+            let sheet = try await showSheet()
+            let key = try await edit(fields(of: sheet)[3], in: sheet)
+            key.selectAll(nil)
+            key.deleteBackward(nil)
+            try await settle()
+
+            #expect(try pressReturn(in: sheet))
+            try await waitUntil("the sheet is closed") { window.attachedSheet == nil }
+            #expect(deckCard?.note == nil)
+            #expect(deckCard?.kind == .recognition)
+            #expect(deckCard?.question == "blim")
+            undoManager.undo()
+            #expect(deckCard == card)
+        }
+
+        /// The word key of a translation card is the Greek word, its answer: the sheet of a
+        /// card a session still asks shows neither, and saves the key as the deck has it.
+        @Test func aHiddenAnswerHidesTheWordKeyAndKeepsIt() async throws {
+            defer { close() }
+            let sheet = try await showSheet(hidesAnswer: true)
+            let editor = try await edit(fields(of: sheet)[0], in: sheet)
+            await type("s", into: editor)
+            try await settle()
+
+            #expect(try pressReturn(in: sheet))
+            try await waitUntil("the sheet is closed") { window.attachedSheet == nil }
+            #expect(deckCard?.question == "blims")
+            #expect(deckCard?.note == "blim-key")
+            #expect(deckCard?.kind == .recognition)
+        }
+
         @Test func escapeCancelsAndLeavesTheDeckUnchanged() async throws {
             defer { close() }
             let sheet = try await showSheet()
@@ -170,22 +226,32 @@ extension WindowTests {
         }
 
         /// Clears the question (0) or the answer (1): Save is disabled, and Return keeps
-        /// the sheet open.
+        /// the sheet open. Typing again enables it.
+        ///
+        /// Asks Save through Return and not through an `NSButton`: from macOS 26 on, SwiftUI
+        /// draws the buttons of a sheet itself, so the window has no button to read the state
+        /// of. Return that finds no enabled Save is the same fact the learner meets. Asking
+        /// early is harmless: with an empty question or answer, saving changes nothing.
         @Test(arguments: [0, 1])
         func saveIsDisabledWhileQuestionOrAnswerIsEmpty(field: Int) async throws {
             defer { close() }
             let sheet = try await showSheet()
-            #expect(saveButton(of: sheet)?.isEnabled == true)
             let editor = try await edit(fields(of: sheet)[field], in: sheet)
             editor.selectAll(nil)
             editor.deleteBackward(nil)
-            try await waitUntil("Save is disabled") { saveButton(of: sheet)?.isEnabled == false }
+            try await waitUntil("Return finds no enabled Save") { (try? pressReturn(in: sheet)) == false }
 
-            #expect(try !pressReturn(in: sheet))
             try await settle()
+            #expect(try !pressReturn(in: sheet))
             #expect(window.attachedSheet === sheet)
             #expect(deckCard == card)
             #expect(!undoManager.canUndo)
+
+            // The negative is no accident of the test window: Save works once the text is back.
+            await type("x", into: editor)
+            try await waitUntil("Return saves again") { (try? pressReturn(in: sheet)) == true }
+            try await waitUntil("the sheet is closed") { window.attachedSheet == nil }
+            #expect(field == 0 ? deckCard?.question == "x" : deckCard?.answer == "x")
         }
 
         /// The sheet's window has an undo manager of its own (#48): ⌘Z takes back typing,
@@ -214,6 +280,7 @@ extension WindowTests {
 @Observable
 private final class SheetRequest {
     var card: Card?
+    var hidesAnswer = false
     var hasAppeared = false
 }
 
@@ -224,7 +291,7 @@ private struct SheetPresenter: View {
 
     var body: some View {
         Color.clear
-            .sheet(item: $request.card) { CardEditSheet(document: document, card: $0) }
+            .sheet(item: $request.card) { CardEditSheet(document: document, card: $0, hidesAnswer: request.hidesAnswer) }
             .onAppear { request.hasAppeared = true }
     }
 }

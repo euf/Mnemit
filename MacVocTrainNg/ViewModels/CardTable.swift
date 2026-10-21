@@ -8,6 +8,9 @@ struct CardRow: Identifiable {
     var question: String
     var answer: String
     var hint: String
+    var kind: CardKind?
+    /// Recognition first, then production, cards without a kind last.
+    var kindRank: Int
     var category: MaturityCategory
     var categoryRank: Int
     var due: Date?
@@ -21,6 +24,8 @@ struct CardRow: Identifiable {
         question = card.question
         answer = card.answer
         hint = card.hint
+        kind = card.kind
+        kindRank = card.kind.flatMap(CardKind.allCases.firstIndex(of:)) ?? CardKind.allCases.count
         category = MaturityCategory(card: card)
         categoryRank = StabilityBins.bin(for: card)
         due = card.learningState?.due

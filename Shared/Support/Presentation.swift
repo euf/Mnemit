@@ -55,6 +55,17 @@ extension Grade {
         KeyEquivalent(Character(String(rawValue)))
     }
 
+    /// The direction of the swipe that gives the grade; the review history shows it beside
+    /// the grade's colour.
+    var arrow: String {
+        switch self {
+        case .again: "←"
+        case .hard: "↓"
+        case .good: "→"
+        case .easy: "↑"
+        }
+    }
+
     /// The grade's colour: red for Again, the only "no", and three greens for Hard, Good and
     /// Easy, the three kinds of "yes". It fills the grade buttons, the card while it is swiped
     /// and the review history. Always shown together with the grade's title; `onColor` is the
@@ -158,10 +169,39 @@ extension LearningPhase {
 }
 
 extension CardKind {
+    /// Which way the card asks, as the browsers show it.
     var title: String {
         switch self {
-        case .recognition: String(localized: "Recognition")
-        case .production: String(localized: "Production")
+        case .recognition: String(localized: "Greek → translation")
+        case .production: String(localized: "translation → Greek")
+        }
+    }
+}
+
+extension CardFilter {
+    /// The filter's name, the same in every browser: All, Due, New, Learning, Suspended,
+    /// Difficult.
+    var title: String {
+        switch self {
+        case .all: String(localized: "All")
+        case .due: String(localized: "Due")
+        case .new: String(localized: "New")
+        case .learning: String(localized: "Learning")
+        case .suspended: String(localized: "Suspended")
+        case .difficult: String(localized: "Difficult")
+        }
+    }
+
+    /// What an empty list under the filter says; `nil` for All, whose list is empty only
+    /// while the deck has no cards.
+    var emptyDescription: String? {
+        switch self {
+        case .all: nil
+        case .due: String(localized: "No card is due right now.")
+        case .new: String(localized: "Every card has been studied.")
+        case .learning: String(localized: "No card is being learned or relearned.")
+        case .suspended: String(localized: "No card is suspended.")
+        case .difficult: String(localized: "Cards you keep forgetting show up here.")
         }
     }
 }

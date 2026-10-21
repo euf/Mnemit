@@ -2,16 +2,6 @@ import Foundation
 import VocabCore
 
 extension Grade {
-    /// The direction of the swipe that gives the grade.
-    var arrow: String {
-        switch self {
-        case .again: "←"
-        case .hard: "↓"
-        case .good: "→"
-        case .easy: "↑"
-        }
-    }
-
     /// What the grade means, in the words of the practice: the four meanings are the rules
     /// of the app.
     var meaning: String {

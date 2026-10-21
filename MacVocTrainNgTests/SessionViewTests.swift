@@ -111,7 +111,8 @@ extension WindowTests {
             try await respond("wrong")
             try await waitUntil("the answer is shown") { model.stage != .asking }
 
-            let sheet = try await showEditSheet(fieldCount: 3)
+            // Question, answer, hint and word key.
+            let sheet = try await showEditSheet(fieldCount: 4)
             #expect(editableFields(in: sheet).contains { $0.stringValue == card.answer })
             window.endSheet(sheet)
         }

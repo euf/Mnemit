@@ -572,6 +572,24 @@
               }
             }
           }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld-day streak"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld-day streak"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1104,6 +1122,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten, die keine Lernsitzung abfragt, bis du sie in der Kartenliste wieder aufnimmst."
+          }
+        }
+      }
+    },
+    "Cards of one word share its key: a study session asks only one of them a day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten eines Wortes teilen sich seinen Schlüssel: Eine Lernsitzung fragt am Tag nur eine davon ab"
           }
         }
       }
@@ -1798,6 +1826,16 @@
         }
       }
     },
+    "Every card has been studied.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Karten wurden schon gelernt."
+          }
+        }
+      }
+    },
     "Every card works like this: touch to see the answer, then swipe how well you remembered it.": {
       "localizations": {
         "de": {
@@ -1884,6 +1922,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "FSRS beginnt mit Parametern, die über viele Lernende gemittelt sind. Aus dem Verlauf dieses Stapels berechnet, passen sie zu deinem Gedächtnis: Bei gleicher angestrebter Abrufquote brauchen die Karten weniger Abfragen. Fälligkeiten bleiben; neue Abstände gelten ab der nächsten Abfrage einer Karte."
+          }
+        }
+      }
+    },
+    "Filter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
           }
         }
       }
@@ -2034,6 +2082,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Griechisch → Übersetzung"
+          }
+        }
+      }
+    },
+    "Greek, every day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Griechisch, jeden Tag"
           }
         }
       }
@@ -2628,6 +2686,16 @@
         }
       }
     },
+    "Next Review": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Abfrage"
+          }
+        }
+      }
+    },
     "Next review": {
       "localizations": {
         "de": {
@@ -2718,6 +2786,16 @@
         }
       }
     },
+    "No Matching Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine passenden Karten"
+          }
+        }
+      }
+    },
     "No Progress Yet": {
       "localizations": {
         "de": {
@@ -2734,6 +2812,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keine Auswahl"
+          }
+        }
+      }
+    },
+    "No card is being learned or relearned.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Karte wird gerade gelernt oder erneut gelernt."
+          }
+        }
+      }
+    },
+    "No card is due right now.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Moment ist keine Karte fällig."
+          }
+        }
+      }
+    },
+    "No card is suspended.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Karte ist ausgesetzt."
           }
         }
       }
@@ -3828,6 +3936,16 @@
         }
       }
     },
+    "Show the sibling card in the list": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschwisterkarte in der Liste zeigen"
+          }
+        }
+      }
+    },
     "Sibling Card": {
       "localizations": {
         "de": {
@@ -4768,6 +4886,16 @@
         }
       }
     },
+    "Word key (optional)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wortschlüssel (optional)"
+          }
+        }
+      }
+    },
     "Wrong": {
       "localizations": {
         "de": {
@@ -5044,6 +5172,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "diesem Stapel"
+          }
+        }
+      }
+    },
+    "translation → Greek": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersetzung → Griechisch"
           }
         }
       }
