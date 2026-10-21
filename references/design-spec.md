@@ -1,0 +1,818 @@
+# Mnemit design spec: home, deck details, study stream, accent, Mac
+
+Spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on macOS 27). Read from code: `StartScreen`, `DeckView`, `StudyCountsView`, `StudyView`, `GradeChoice`, `Presentation`, `CardFlight`, Mac `DocumentView`, `SessionView`, `WelcomeView`, `AppCommands`. Read from the stream agent's worktree (`.claude/worktrees/agent-aa4d062d083bbd42b`, uncommitted): `DailyProgress.swift` (`DailyGoal` 20 reviews, `DailyRing`, `Streak`, `DailyProgress.evaluate(_:at:calendar:)` over all decks) and `StudyStream.swift` (per deck: `plan`, `rest`, `reviewAhead`, practice). No GUI was run for this spec.
+
+## 0. How to read this
+
+- `[H:slug]` is a Human Interface Guidelines page, opened on 2026-10-21 through the HIG's own data feed (`https://developer.apple.com/tutorials/data/design/human-interface-guidelines/<slug>.json`); the page URL is `https://developer.apple.com/design/human-interface-guidelines/<slug>`. `oc` cannot render these pages (JavaScript only), the JSON can be read with curl. Other tags are in §7.
+- UNVERIFIED marks a claim whose source was not opened, or a behaviour that only a screen can show. §7 lists all of them.
+- Every Swift block in this file was typechecked against `iPhoneSimulator26.2.sdk` and `MacOSX26.2.sdk` (swiftc 6.2.4, `-swift-version 6`) with stubs for the model types (`StudyCounts`, `DailyRing`, `Streak`, `DailyProgress`, `KnownDeck`, `StudyScope`). Typechecked means the API exists and compiles; it does not mean the screen looks right.
+- Sizes are points. Device: iPhone 13 mini is 375 x 812 pt, portrait safe area top 50 / bottom 34, landscape sides 50 / bottom 21, width class compact [U:loaf].
+
+## 1. Verdicts
+
+| # | Decision | Reason | Rollback |
+|---|---|---|---|
+| 1 | Launch lands on **Today**. The app no longer reopens the last deck. | Study is one tap from launch. | Re-enable `reopen()`. |
+| 2 | The primary button **Study** runs all decks that have cards due, one deck stream after the other: last studied deck first, then list order. A tap on a deck row studies that deck only. | The ring and the streak are one value over all decks (`DailyProgress.evaluate` takes `[DeckActivity]`), so one button must be able to finish them. The user studies two decks daily. | `StudyScope.all` falls back to the last studied deck (`knownDecks.last`), label unchanged. |
+| 3 | Deck details open from a trailing `info.circle` button as a **sheet**. No chevron, no context menu. | A tap on the row starts studying, so a chevron would promise navigation the row does not do. The HIG gives the info button the job of revealing more about a row's content and the disclosure indicator the job of drilling down [H:lists-and-tables]. A context menu is hidden and would repeat the button [H:context-menus]. | – |
+| 4 | New / Learning / Review are **neutral**: number in primary label colour (0 in secondary), label in secondary. | Blue/red/green reuse the meanings of Forgot (red), Good (green) and the maturity ramp (blue); the HIG asks for one colour per meaning [H:color]. The owner dislikes the coloured counts. | `StudyCount.color` stays in git history. |
+| 5 | One accent, **terracotta**: light `#AC5334`, dark `#B95937`. | It is the bottom stop of the icon tile. Numbers in §5. | Change two values in `AccentColor.colorset`. |
+| 6 | Raise the deployment targets to **iOS 26 / macOS 26**. | Only the owner's devices run the app: iOS 27, macOS 27, built with Xcode 26.3. `safeAreaBar`, `.glassProminent`, `Button(role: .close)`, `ToolbarSpacer` need 26. | Keep 17 / 14, wrap five call sites in `#available` with `.safeAreaInset` and `.borderedProminent`. |
+| 7 | Large title **Today**. The app name appears nowhere on the screen. | The HIG advises against naming a window after the app and asks for titles under 15 characters; large titles are the iOS pattern [H:toolbars]. | `.navigationBarTitleDisplayMode(.inline)`. |
+| 8 | Mac: toolbar gets the ring chip and a prominent Study (phase A); a **Today window with a sidebar of decks** replaces the Welcome window (phase B). Settings stay in the app menu. | A document window shows one deck, so a deck sidebar can only live in a window of its own. | Phase A alone is complete. |
+
+### Diagnosis of the current screens
+
+| Owner remark | Cause in code |
+|---|---|
+| Two taps | `StartScreen` pushes `DeckScreen` (and `reopen()` pushes it at launch); the Study button is on that second screen. |
+| Huge "Mnemit" title | `.navigationTitle(Text(verbatim: "Mnemit"))` in a large-title stack. |
+| Hand-made deck card, big rounded box | `DeckView` section 1 is a `VStack` with `StudyCountsColumns` (34 pt numerals, `design: .rounded`, `minimumScaleFactor(0.6)`) and a footnote; section 2 is a clear row with `listRowInsets(EdgeInsets())` that makes `.borderedProminent` + `.controlSize(.large)` run edge to edge. |
+| Coloured counts, mixed weights | `StudyCountsLine`: semibold coloured number, regular secondary label, `subheadline`, 12 pt between pairs. The line sits under a `Label` with a symbol, so it starts under the symbol, one indent left of the name (derived from code, not seen on screen). |
+| Kerning | No `.tracking` or `.kerning` anywhere in the sources (grep). SF Pro tracks −0.43 pt at 17 pt and +0.40 at 34; SF Pro Rounded tracks +0.37 at 17 and +0.51 at 13 [H:typography]. The count column puts 34 pt rounded numerals over 13 pt SF Pro labels, and `minimumScaleFactor` shrinks glyphs cut for 34 pt. Whether SwiftUI re-tracks scaled text is UNVERIFIED. Fix by construction: text styles only, no `.rounded`, no `minimumScaleFactor` on numerals. |
+| Accent | `AccentColor.colorset` has no colour, so the app is system blue; counts are blue/red/green; `.tint(.primary)` on the deck row hides the blue of a `Button`; Forgot is red, the ramp is blue. Nothing is the brand. |
+
+## 2. iPhone home (Today)
+
+### 2.1 Flow
+
+Launch → Today. Tap **Study** (one tap) or a deck row (one tap) → the study stream covers the screen at once and shows the first card. No summary screen in between. A tap on `info.circle` opens deck details as a sheet.
+
+Rejected: auto-start of the stream at launch. The learner would not see what is due, and the HIG asks launch to restore the previous position [H:launching]. Rejected: a tab bar. There is one section; a tab bar is for navigation and Study is an action [H:tab-bars].
+
+### 2.2 Wireframe (375 x 812)
+
+```
+┌───────────────────────────────────────┐
+│ 9:41                                  │ status area 50
+│                                  ( … )│ nav bar 44: ellipsis menu (trailing)
+│ Today                                 │ large title 34 bold, system
+│ ┌───────────────────────────────────┐ │ insetGrouped section, margin 16
+│ │  ╭─────╮   87 due                  │ │ title2 semibold, monospaced digits
+│ │  │  ◔  │   14 of 20 today          │ │ subheadline, secondary
+│ │  ╰─────╯   [flame] 12-day streak   │ │ subheadline; flame = accent when goal met
+│ └───────────────────────────────────┘ │ ring 72, line 10, round caps
+│  DECKS                                │ system section header
+│ ┌───────────────────────────────────┐ │
+│ │ Greek B1                    27  ⓘ │ │ body | body, monospaced | info.circle, 44 x 44
+│ │ 20 new · 4 learning · 3 review    │ │ subheadline, secondary, monospaced digits
+│ │ ───────────────────────────────── │ │
+│ │ Greek A1–A2                 60  ⓘ │ │
+│ │ 30 new · 0 learning · 30 review   │ │
+│ └───────────────────────────────────┘ │
+│                                       │
+│ ╭───────────────────────────────────╮ │ safeAreaBar(.bottom)
+│ │               Study               │ │ .glassProminent, .large, side margin 16
+│ ╰───────────────────────────────────╯ │ 8 above the home indicator zone
+└───────────────────────────────────────┘ safe area bottom 34
+```
+
+Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + summary 88 + header 35 + two rows 130 = about 400 of 812. Four more decks fit above the button.
+
+### 2.3 Components
+
+| Element | SwiftUI | Style and values |
+|---|---|---|
+| Container | `NavigationStack` > `List` | `.listStyle(.insetGrouped)`; no custom row insets, no custom backgrounds; margins come from the list (16). |
+| Title | `.navigationTitle("Today")` | Large, automatic. German `Heute` already in the catalog. |
+| Toolbar | one `ToolbarItem(.primaryAction)` | `Menu("More", systemImage: "ellipsis")`: Choose Mnemit Folder…, Open Deck…, Settings. The HIG prefers symbols without borders in toolbars [H:toolbars]: `ellipsis` without the circle. "Show Introduction" leaves the menu; Settings has it. |
+| Summary | `Section { SummaryRow }` | Ring 72 (`@ScaledMetric(relativeTo: .title2)`), gap 16, row `.padding(.vertical, 8)`. Lines: `.title2.weight(.semibold)` / `.subheadline` secondary / `.subheadline` secondary. One `.monospacedDigit()` on the text column. `.accessibilityElement(children: .combine)`. |
+| Ring | `Circle().stroke` + `trim` | Line = 14 % of diameter, round cap, track `.fill.tertiary`, progress `Color.accentColor`, `checkmark` bold at 34 % when full. Single ring, no gradient, no head glyph, no black backing: the HIG forbids imitating Activity rings and asks other rings to look different [H:activity-rings]. |
+| Streak line | `Label` | `flame.fill`; accent when today's goal is met, secondary when it is not yet met. Hidden at 0 days. Text colour stays secondary. |
+| Section header | `Section("Decks")` | System. |
+| Deck row | `HStack` with two buttons | Button 1 (name block, trailing total) `.buttonStyle(.plain)`, `contentShape(Rectangle())`, starts the deck. Button 2 `info.circle`, `.imageScale(.large)`, `frame(minWidth: 44, minHeight: 44)`, `.buttonStyle(.borderless)`, opens details. Both need an explicit non-automatic style, otherwise a tap anywhere fires both [U:nilcoalescing]. Name `.body`; subtitle `.subheadline` secondary. Total `.body`, `.monospacedDigit()`, trailing. |
+| Zero due | same row | Trailing `checkmark` in secondary, subtitle `Next review <relative>` from `Format.due`. |
+| Swipe | `.swipeActions` | Keep Remove from List for decks outside the folder. |
+| Primary action | `.safeAreaBar(edge: .bottom)` | `Button` label `Text("Study")` full width, `.buttonStyle(.glassProminent)`, `.controlSize(.large)`, `.padding(.horizontal, 16)`, `.padding(.bottom, 8)`. System height, no fixed frame, no icon, no count in the label. The scroll edge effect comes from `safeAreaBar`; no background under it [H:layout]. |
+| Accessibility | | Study button `accessibilityValue("\(due) cards due")`. |
+
+### 2.4 States
+
+| State | Summary row | Button |
+|---|---|---|
+| Cards due | `87 due`, `14 of 20 today`, streak | `Study`, `.glassProminent` |
+| Nothing due, reviews today | ring full with checkmark, `All done`, `N reviews today`, streak | `Keep Going`, `.glass` (not prominent), opens the stream at `rest`, which offers keep going and new cards |
+| Nothing due, no reviews today | track only, `Nothing due`, `Next review <relative date>`, no `x of y` line | `Keep Going`, `.glass` |
+| No decks | `ContentUnavailableView` as now; title `No Decks`; prominent `Choose Mnemit Folder…`, plain `Open Deck…` | – |
+| First frame | Last counts and ring from `UserDefaults` | enabled when the cached total is above 0 |
+| Deck unreadable (iCloud) | row without counts | row stays tappable; the stream cover shows the existing failure view |
+| Accessibility sizes (`isAccessibilitySize`) | ring above the text (`AnyLayout` switch) | unchanged |
+
+The "no reviews, nothing due" case exists because `DailyGoal.goal(reviews: 0, owed: 0)` is 1; the row hides the goal then.
+
+### 2.5 Scope of Study
+
+Order for `StudyScope.all`: decks with `total > 0`, last studied first (`KnownDecks.last`), then list order. Each deck runs its own `StudyStream`. When a stream reaches `rest` and another deck has cards due, the rest screen puts **Next: <deck> · <n> due** first, above its own Keep Going and Add New Cards. Leaving anywhere loses nothing, every grade is saved. No mixing of decks inside one stream in this version: A1–A2 and B1 differ in level, and interleaving needs two open documents.
+
+### 2.6 Code (typechecked)
+
+```swift
+import SwiftUI
+
+/// Today's ring: one ring in the accent colour. Not an Activity ring ([H:activity-rings]).
+struct ProgressRing: View {
+    var fraction: Double
+    var diameter: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let line = diameter * 0.14
+        ZStack {
+            Circle().stroke(.fill.tertiary, lineWidth: line)
+            if fraction > 0 {
+                Circle()
+                    .trim(from: 0, to: min(fraction, 1))
+                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: line, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            if fraction >= 1 {
+                Image(systemName: "checkmark")
+                    .font(.system(size: diameter * 0.34, weight: .bold))
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+        .frame(width: diameter, height: diameter)
+        .animation(reduceMotion ? nil : .smooth, value: fraction)
+        .accessibilityHidden(true)
+    }
+}
+
+struct TodayScreen: View {
+    var decks: [KnownDeck]
+    var counts: [URL: StudyCounts]
+    var progress: DailyProgress?
+    var now: Date
+    var study: (StudyScope) -> Void
+    var showDetails: (KnownDeck) -> Void
+
+    private var due: Int { decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) } }
+
+    var body: some View {
+        List {
+            Section {
+                SummaryRow(due: due, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(), now: now)
+            }
+            Section("Decks") {
+                ForEach(decks) { deck in
+                    DeckRow(name: deck.name, counts: counts[deck.url], now: now,
+                            start: { study(.deck(deck.url)) }, details: { showDetails(deck) })
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle("Today")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu("More", systemImage: "ellipsis") { Button("Settings", systemImage: "gearshape") {} }
+            }
+        }
+        .safeAreaBar(edge: .bottom) {
+            StudyButton(due: due) { study(.all) }
+        }
+    }
+}
+
+struct StudyButton: View {
+    var due: Int
+    var action: () -> Void
+
+    var body: some View {
+        let label = Button(action: action) {
+            Text(due > 0 ? "Study" : "Keep Going").frame(maxWidth: .infinity)
+        }
+        Group {
+            if due > 0 {
+                label.buttonStyle(.glassProminent)
+            } else {
+                label.buttonStyle(.glass)
+            }
+        }
+        .controlSize(.large)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+    }
+}
+
+struct SummaryRow: View {
+    var due: Int
+    var progress: DailyProgress?
+    var nextDue: Date?
+    var now: Date
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .title2) private var diameter = 72
+
+    var body: some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 16))
+        layout {
+            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: diameter)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(due > 0 ? "\(due) due" : "All done")
+                    .font(.title2.weight(.semibold))
+                if let ring = progress?.ring {
+                    Text("\(ring.reviews) of \(ring.goal) today")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                if let streak = progress?.streak, streak.days > 0 {
+                    Label {
+                        Text("\(streak.days)-day streak")
+                    } icon: {
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(progress?.ring.isGoalMet == true ? Color.accentColor : Color.secondary)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .monospacedDigit()
+        }
+        .padding(.vertical, 8)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct DeckRow: View {
+    var name: String
+    var counts: StudyCounts?
+    var now: Date
+    var start: () -> Void
+    var details: () -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Button(action: start) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(name)
+                        if let counts {
+                            Text(counts.total > 0
+                                 ? "\(counts.new) new · \(counts.learning) learning · \(counts.review) review"
+                                 : "Next review tomorrow")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    if let counts {
+                        if counts.total > 0 {
+                            Text(counts.total, format: .number).monospacedDigit()
+                        } else {
+                            Image(systemName: "checkmark").foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            Button(action: details) {
+                Image(systemName: "info.circle")
+                    .imageScale(.large)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(Text("Deck Details"))
+        }
+    }
+}
+```
+
+In the real row the "Next review tomorrow" string comes from `Format.due(counts.nextDue, now: now)`; the stub shows the shape only.
+
+### 2.7 Remove
+
+- `StartScreen`: `.navigationTitle(Text(verbatim: "Mnemit"))`; `reopen()`, `hasReopened` and the `knownDecks.last` auto-open; `.navigationDestination(item: $deck)` push and `DeckScreen`'s `.navigationTitle`/inline mode (the deck opens in a full-screen cover or a sheet); the `Label(known.name, systemImage: "rectangle.stack")` row, `StudyCountsLine`, `.tint(.primary)`; `Menu` symbol `ellipsis.circle` and its "Show Introduction" item; the Settings sheet's text `Button("Done")` (use `Button(role: .close)`).
+- `StudyCountsView.swift` goes entirely: `StudyCountsLine`, `StudyCountsColumns`, the `StudyCount` enum with its colours, `design: .rounded`, `minimumScaleFactor(0.6)`. `CountsRow` (§3.3) replaces it and needs no enum.
+- `DeckView`: the whole study `Section` with `listRowBackground(Color.clear)` and `listRowInsets(EdgeInsets())`, the `Label("Study \(n)", systemImage: "graduationcap")` button, the `More` menu with one item.
+
+### 2.8 Budget
+
+A tap on a row sets one state value and presents the stream cover in the next frame; `OpenDeck` loads behind a `ProgressView` inside the cover (target 8 ms median, 16 ms ceiling to first presented frame [G §6]). The first Today frame reads cached counts and the cached ring from `UserDefaults`; file reads stay on `Task.detached` as in `KnownDeckCounts`. The ring needs the review logs of both decks (`DeckActivity`); compute off the main actor and cache per study day.
+
+## 3. iPhone deck details
+
+### 3.1 Wireframe (sheet, detents medium and large, grabber)
+
+```
+┌───────────────────────────────────────┐
+│ ✕           Greek B1        [ Study ] │ inline title; close = Button(role: .close); prominent primary
+│  TODAY                                │
+│ ┌───────────────────────────────────┐ │
+│ │    20          4          3       │ │ title2 semibold, monospaced; 0 in secondary
+│ │   New      Learning     Review    │ │ footnote, secondary
+│ └───────────────────────────────────┘ │
+│  What today's plan takes from this    │ footer, footnote
+│  deck.                                │
+│ ┌───────────────────────────────────┐ │
+│ │ Cards                       2 236 │ │ LabeledContent, monospaced digits
+│ │ Suspended                      78 │ │ only when above 0
+│ └───────────────────────────────────┘ │
+│  PRACTICE                             │
+│ ┌───────────────────────────────────┐ │
+│ │ ▶ Practice Newest Words           │ │ rectangle.stack.badge.play
+│ │ ↻ Practice Today's Mistakes       │ │ only when mistakes exist
+│ └───────────────────────────────────┘ │
+│ ┌───────────────────────────────────┐ │
+│ │ ▥ Retention                     › │ │ NavigationLink to StatisticsScreen
+│ └───────────────────────────────────┘ │
+└───────────────────────────────────────┘
+```
+
+### 3.2 Components
+
+| Element | SwiftUI | Values |
+|---|---|---|
+| Sheet | `.sheet(item:)` with `NavigationStack` | `.presentationDetents([.medium, .large])`, `.presentationDragIndicator(.visible)` (resizable sheets carry a grabber [H:sheets]). |
+| Toolbar | `.cancellationAction` / `.primaryAction` | `Button(role: .close)`; `Button("Study")` prominent. One prominent button in the view [H:buttons]. |
+| Counts | `CountsRow` inside a `Section` | Three equal columns, value `.title2.weight(.semibold)` + `.monospacedDigit()`, label `.footnote` secondary, gap 2, `.padding(.vertical, 4)`. At accessibility sizes the columns stack with left alignment. No colours. |
+| Totals | `LabeledContent("Cards", value:, format: .number)` | Section `.monospacedDigit()`. Next review row when nothing is due. |
+| Practice | `Button(_, systemImage:)` rows | Uses `StudyStream(practicingNewestWordsIn:)` and `StudyStream(practicingMistakesIn:)`; hide a row that has no cards. |
+| Statistics | `NavigationLink` + `Label(_, systemImage: "chart.bar")` | Existing `StatisticsScreen`. |
+| Loading | counts at once from `KnownDeckCounts`; totals, retention after `OpenDeck` loads | – |
+
+### 3.3 Code (typechecked)
+
+```swift
+struct DeckDetails: View {
+    var name: String
+    var counts: StudyCounts
+    var total: Int
+    var suspended: Int
+    var start: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    CountsRow(counts: counts)
+                } header: {
+                    Text("Today")
+                } footer: {
+                    Text("What today's plan takes from this deck.")
+                }
+                Section {
+                    LabeledContent("Cards", value: total, format: .number)
+                    if suspended > 0 { LabeledContent("Suspended", value: suspended, format: .number) }
+                }
+                .monospacedDigit()
+                Section("Practice") {
+                    Button("Practice Newest Words", systemImage: "rectangle.stack.badge.play") {}
+                }
+                Section {
+                    NavigationLink { Text("Retention") } label: { Label("Retention", systemImage: "chart.bar") }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle(name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(role: .close) { dismiss() } }
+                ToolbarItem(placement: .primaryAction) { Button("Study", action: start).buttonStyle(.glassProminent) }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+struct CountsRow: View {
+    var counts: StudyCounts
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 0))
+        layout {
+            cell("New", counts.new)
+            cell("Learning", counts.learning)
+            cell("Review", counts.review)
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func cell(_ title: LocalizedStringKey, _ value: Int) -> some View {
+        VStack(spacing: 2) {
+            Text(value, format: .number)
+                .font(.title2.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(value > 0 ? .primary : .secondary)
+            Text(title)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+```
+
+### 3.4 Remove
+
+`DeckView` and `DeckScreen` as screens (their notices, `EmptyDeckNotice` and the merge `Notice` move into the sheet's list); `StudyCountsColumns`; the totals footnote `Text("Total cards … · Suspended …")` (becomes two `LabeledContent` rows); the footer `Next review …` under the Study button; `fullScreenCover(item: $study)` moves to Today.
+
+## 4. Study stream screen
+
+### 4.1 Wireframe (portrait, 13 mini, answer shown)
+
+```
+┌───────────────────────────────────────┐
+│ ✕          ◔  14 of 20           (…) │ nav 44: close | principal: ring 22 + subheadline | ellipsis
+│          Good · in 4 days   Undo      │ UndoChip, 32 high, always reserved
+│ ┌───────────────────────────────────┐ │
+│ │                                   │ │ card: margin 16, inner padding 20, radius 22,
+│ │         ο Άγγλος    [spk]         │ │   secondarySystemBackground (unchanged)
+│ │ ───────────────────────────────── │ │ divider at a fixed height
+│ │       англичанин · Englishman     │ │ title2, regular
+│ │       Ο Τζον είναι Άγγλος.        │ │ body, secondary
+│ │                                   │ │
+│ └───────────────────────────────────┘ │ card is about 490 high on the 13 mini
+│ ╭───────────────────────────────────╮ │
+│ │            ✕ Forgot               │ │ 50, Grade.again.color
+│ ╰───────────────────────────────────╯ │
+│               Recalled                │ footnote, secondary; 12 above, 6 below
+│ ╭────────╮ ╭──────────╮ ╭────────╮    │ 50 high; gaps 12; widths 98 / 123 / 98
+│ │  Hard  │ │   Good   │ │  Easy  │    │
+│ ╰────────╯ ╰──────────╯ ╰────────╯    │
+└───────────────────────────────────────┘ 8 bottom padding above the safe area
+```
+
+Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98, Good 123, Easy 98.
+
+### 4.2 Header
+
+- Leading: `Button(role: .close)` (xmark). It replaces the `chevron.backward` End Session button; the stream has no session to end, every grade is saved. The HIG asks for the standard Close symbol and no text label [H:toolbars].
+- Principal: `ProgressRing(diameter: 22)` (line 3) + `Text("14 of 20")`, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)`. Goal met: `26 today` with a full ring. This replaces both the 120-pt linear bar with `n / N` and the landscape `rowProgress`.
+- Trailing: `Menu("More", systemImage: "ellipsis")` with Undo, Card Info, Suspend Card, Speak toggle (as now).
+- The streak is not in the header. At the moment the goal is met, reuse the `UndoChip` slot for one line (`Goal reached · 12-day streak`, 3 s) and give `sensoryFeedback(.success)`. No new element.
+- Practice stages show the word `Practice` as the principal text, without the ring.
+
+### 4.3 Grade area
+
+| Part | Spec |
+|---|---|
+| Container | One fixed-height container for both stages. Today `actions` is a 44-pt Show Answer button before the reveal and about 133 pt of grades after it, so the card shrinks by about 80 pt at the reveal and the divider with the question moves up by about 40 pt (derived from `cardArea` and `face`; not seen on screen). Keep the grade rows in the layout at all times (`opacity`, `allowsHitTesting`, `accessibilityHidden` as `face` does for the answer) and bottom-align Show Answer in the same container. |
+| Show Answer | `Button`, `.buttonStyle(.borderedProminent)`, `.controlSize(.large)`, full width, accent fill, bottom edge of the container. Height equal to the grade buttons. |
+| Forgot | Full width, height `@ScaledMetric(relativeTo: .body) var height = 50` (52 today), `Label("Forgot", systemImage: "xmark")`, `.font(.body.weight(.semibold))`, fill `Grade.again.color`, white label. |
+| Caption | `Text("Recalled")`, `.footnote`, secondary. 12 above (after Forgot), 6 below. |
+| Hard / Good / Easy | `WeightedRow(weights: [1, 1.25, 1], spacing: 12)`, same height as Forgot, fills `Grade.hard/good/easy.color`, white labels. `minimumScaleFactor(0.7)` goes away; at `isAccessibilitySize` the four buttons stack, full width, gap 12. |
+| Spacing | 12 between bezeled controls [H:accessibility]; today 8 and 4. Hard taken for Forgot is the costly slip for FSRS (comment in `GradeChoice`); the caption with its 12 + 6 keeps the two rows about 36 apart. |
+| Corner radius | 14 (as now). |
+| Press state | `Pressable` (opacity 0.6) stays; the HIG requires a press state on custom buttons [H:buttons]. |
+| Landscape (`verticalSizeClass == .compact`) | One row: Forgot (170) + Hard/Good/Easy, gap 12, height 44. The progress leaves the row for the nav bar. |
+
+Four coloured grade buttons are one choice control; the HIG limit of one or two prominent buttons per view [H:buttons] applies to action buttons.
+
+### 4.4 Card typography
+
+Corpus (`cards-a1a2.tsv`, `cards-b1.tsv`, 5 494 cards): question length p95 24 and 27 characters, max 48; answer first line p95 42 and 48, max 87; example p95 42 and 52, max 86; 1 818 of 3 258 and 2 184 of 2 236 answers carry an example after `\n`.
+
+| Role | iPhone | Mac |
+|---|---|---|
+| Greek text as question (recognition) or as answer head (production) | `.largeTitle.weight(.semibold)` 34/41 at the default size | `.system(size: 32, weight: .semibold)` as now |
+| Other question (production, Russian) | `.title.weight(.semibold)` 28/34 | `.system(size: 26, weight: .semibold)` |
+| Other answer head (Russian · English) | `.title2` 22/28, regular | `.title` (22 on macOS) |
+| Example (second line of the answer) | `.body` 17/22, secondary | `.title3` (15 on macOS), secondary |
+| Hint | `.title3` 20/25, secondary | `.title3` (15), secondary |
+| Card state line (optional) | `.footnote` secondary: `Greek B1 · New` | `CardStateLine` as now |
+
+Today the whole answer, example included, is `.largeTitle` regular, and the face applies `minimumScaleFactor(0.5)` to everything, so a 135-character answer renders at roughly half size (estimate) while a short one stays at 34. The size varies from card to card. The split above keeps each role at one size. `minimumScaleFactor(0.6)` stays only as a valve for the largest Dynamic Type sizes. The answer is split at the first `\n`; Greek is detected by script (`0x0370...0x03FF`, `0x1F00...0x1FFF`); `GreekSpeech.canSpeak` would also require an installed voice.
+
+Mac note: macOS has no Dynamic Type; its built-in styles are Large Title 26, Title 1 22, Title 2 17, Title 3 15, Body 13 [H:typography]. Keep explicit sizes for the card there, as `SessionView` does. The Mac "other question" uses 26, so Greek at 32 stays the largest.
+
+Worst case on the 13 mini at the default size (estimate, measure in the simulator): question 4 lines at 41 = 164 + hint 25 above the divider; gloss 4 lines at 28 = 112 + example 3 lines at 22 = 66 below it. Each half of the card has about 200.
+
+Dynamic Type sizes from [H:typography] for the styles used (iPhone, points):
+
+| Style | Large (default) | xxxLarge | AX1 | AX5 |
+|---|---|---|---|---|
+| Large Title | 34 | 40 | 44 | 60 |
+| Title 1 | 28 | 34 | 38 | 58 |
+| Title 2 | 22 | 28 | 34 | 56 |
+| Title 3 | 20 | 26 | 31 | 55 |
+| Body | 17 | 23 | 28 | 53 |
+| Subhead | 15 | 21 | 25 | 49 |
+| Footnote | 13 | 19 | 23 | 44 |
+
+Behaviour: up to xxxLarge the layout is as drawn (estimate: Hard at 23 pt is about 52 wide in a 98 button). From AX1 the grade buttons stack and the summary ring moves above its text. The card is not capped; its text may reach the 0.6 scale floor at AX3 and above.
+
+### 4.5 Code (typechecked)
+
+```swift
+struct StreamToolbar: ToolbarContent {
+    var ring: DailyRing
+    var close: () -> Void
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) { Button(role: .close, action: close) }
+        ToolbarItem(placement: .principal) {
+            HStack(spacing: 8) {
+                ProgressRing(fraction: ring.fraction, diameter: 22)
+                Text("\(ring.reviews) of \(ring.goal)").font(.subheadline).monospacedDigit()
+            }
+            .accessibilityElement(children: .combine)
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Menu("More", systemImage: "ellipsis") { Button("Undo", systemImage: "arrow.uturn.backward") {} }
+        }
+    }
+}
+
+/// Grade rows stay in the layout so the card keeps its height; Show Answer sits on top at the bottom edge.
+struct GradeArea<Show: View, Rows: View>: View {
+    var isRevealed: Bool
+    @ViewBuilder var show: Show
+    @ViewBuilder var rows: Rows
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            rows
+                .opacity(isRevealed ? 1 : 0)
+                .allowsHitTesting(isRevealed)
+                .accessibilityHidden(!isRevealed)
+            if !isRevealed { show }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+enum CardFont {
+    static func question(isGreek: Bool) -> Font { isGreek ? .largeTitle.weight(.semibold) : .title.weight(.semibold) }
+    static func answerHead(isGreek: Bool) -> Font { isGreek ? .largeTitle.weight(.semibold) : .title2 }
+    static var hint: Font { .title3 }
+    static var example: Font { .body }
+}
+
+func isGreek(_ text: String) -> Bool {
+    text.unicodeScalars.contains { (0x0370...0x03FF).contains($0.value) || (0x1F00...0x1FFF).contains($0.value) }
+}
+
+struct AnswerText: View {
+    var answer: String
+    var body: some View {
+        let parts = answer.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: true)
+        VStack(spacing: 12) {
+            if let head = parts.first {
+                Text(head).font(CardFont.answerHead(isGreek: isGreek(String(head))))
+            }
+            if parts.count > 1 {
+                Text(parts[1]).font(CardFont.example).foregroundStyle(.secondary)
+            }
+        }
+        .multilineTextAlignment(.center)
+    }
+}
+```
+
+### 4.6 Remove
+
+`StudyView`: the `End Session` button with `chevron.backward`; the `ellipsis.circle` symbol of the More menu (also in `DeckView`); `progress` (the VStack with the 120-pt `ProgressView`); `rowProgress`; the `Color.clear` placeholder of `buttonRow`; `.font(.largeTitle)` on the whole answer; the single `minimumScaleFactor(0.5)` on the face; the 44-pt `frame(minHeight: 44)` on Show Answer; `.padding(.top, 16)` on `actions` (the container owns the spacing). `GradeChoice`: spacings 4 / 6 / 8, `minimumScaleFactor(0.7)`, the separate `height` values 52 / 44 (one `@ScaledMetric` and a landscape value).
+
+## 5. Accent and colour roles
+
+### 5.1 Accent: terracotta
+
+Icon colours, sampled from `icon_1024x1024.png`: tile top `#CA714F`, middle `#BF6645`, bottom `#AC5334`, left card `#F3E6D3`, right card `#FCF3E6`. Dark icon: tile `#5D2E1F` to `#3B1B11`, cards `#CDB69C` and `#E9D8C0`.
+
+| Appearance | Value | White label on it | On surface |
+|---|---|---|---|
+| Light | `#AC5334` (icon tile, bottom stop) | 5.20 | 5.20 on white, 4.66 on `#F2F2F7` |
+| Light, Increase Contrast | `#8C3A1F` | 7.66 | 7.66 on white, 6.87 on `#F2F2F7` |
+| Dark | `#B95937` | 4.62 | 4.55 on black, 3.68 on `#1C1C1E`, 3.02 on `#2C2C2E` |
+| Dark, Increase Contrast | `#B95937` (same) | 4.62 | as above |
+
+For comparison, system blue: light `#007AFF` 4.02 with white and 3.60 on `#F2F2F7`; dark `#0A84FF` 3.65 with white, 5.76 on black, 4.66 on `#1C1C1E`. Terracotta beats blue on the label in both appearances and on light surfaces; it is lower on dark grouped rows (3.68 against 4.66).
+
+The colorset above compiled with `actool` (iphoneos, 26.0) without warnings, and `assetutil` lists the four variants with the values in the table. Surface hex values are the UIKit defaults from memory (UNVERIFIED; the HIG swatches are images). The gate test below reads the real ones.
+
+Why one dark value and not a lighter accent with a dark label: a single colour cannot give 4.5:1 for a white label (luminance at most 0.183) and 4.5:1 as text on `#1C1C1E` (at least 0.227). The accent therefore is never small text. It is a button fill (label 4.5 or more), a ring, a flame, a glyph (3.0 or more, WCAG non-text) [H:accessibility]. Dark Increase Contrast keeps the normal value because raising the ring contrast would lower the label contrast; this is a deliberate gap in the HIG advice for increased-contrast variants [H:color].
+
+Roles of the accent: prominent button fill (Study, Show Answer, Study in the details sheet), ring, flame when the goal is met, `info.circle`, selection. Nothing else: no text, no backgrounds, no card face.
+
+`AccentColor.colorset` for both targets (the build setting `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor` is already set; the files today hold no colour, so the app is system blue):
+
+```json
+{
+  "colors" : [
+    { "idiom" : "universal",
+      "color" : { "color-space" : "srgb", "components" : { "red" : "0xAC", "green" : "0x53", "blue" : "0x34", "alpha" : "1.000" } } },
+    { "idiom" : "universal",
+      "appearances" : [ { "appearance" : "luminosity", "value" : "dark" } ],
+      "color" : { "color-space" : "srgb", "components" : { "red" : "0xB9", "green" : "0x59", "blue" : "0x37", "alpha" : "1.000" } } },
+    { "idiom" : "universal",
+      "appearances" : [ { "appearance" : "contrast", "value" : "high" } ],
+      "color" : { "color-space" : "srgb", "components" : { "red" : "0x8C", "green" : "0x3A", "blue" : "0x1F", "alpha" : "1.000" } } },
+    { "idiom" : "universal",
+      "appearances" : [ { "appearance" : "luminosity", "value" : "dark" }, { "appearance" : "contrast", "value" : "high" } ],
+      "color" : { "color-space" : "srgb", "components" : { "red" : "0xB9", "green" : "0x59", "blue" : "0x37", "alpha" : "1.000" } } }
+  ],
+  "info" : { "author" : "xcode", "version" : 1 }
+}
+```
+
+### 5.2 Neighbours of the accent
+
+- **Forgot red** (`#D70015` light, `#D93A30` dark) has a luminance ratio of 1.04 (light) and 1.01 (dark) against the accent. In OKLCH the hues are 39.5° (accent) and 27° / 28° (red), 12° apart, chroma 0.13 against 0.20 to 0.22; hue and chroma are the only separators, and some colour-vision deficiencies may merge them. Forgot always carries `xmark` and its word, and the accent never means "wrong". On the stream screen the accent is a 22-pt ring and the Show Answer button, which the grade buttons replace. Fallback if the owner finds them too close: the same lightness and chroma at hue 50°, light `#A95722` (white 5.16), dark `#B65E24` (white 4.55); only the colorset changes.
+- **Greens** (`#149D7B`, `#0A6E56`, `#044333`, unchanged) lie far from terracotta on the colour wheel (OKLCH hue 170° against 39.5°). Luminance ratio to the accent is 1.2 to 2.5, so Hard and Good rely on hue for the separation; the grade buttons are labelled, and the accent is never next to them as a peer.
+- **Maturity ramp** stays blue (`Presentation.swift`, CLAUDE.md asks to keep it). Chart colours are data colours and differ from the interactive accent, which keeps accent = "tap or progress".
+- **Card face** stays `secondarySystemBackground`. `CardFlight.textColor` records contrast numbers for the grade tint measured on a neutral face (Hard text 2.3 to 2.9 on a light card); a warm face would move all of them. The icon's off-white cards are not reused in the UI.
+
+### 5.3 New / Learning / Review
+
+Neutral, decided in §1. Number `.primary`, 0 in `.secondary`; label `.secondary`; same weight in every column; no symbols. The words carry the meaning, so nothing depends on colour [H:accessibility]. The order New, Learning, Review stays, as in Anki.
+
+### 5.4 Role table
+
+| Role | Colour | Where |
+|---|---|---|
+| Action, progress | `AccentColor` | §5.1 list |
+| Text | `.primary`, `.secondary`, `.tertiary` | everything else |
+| Counts | neutral | Today row, details, Mac |
+| Grades | `Grade.color`, unchanged | grade buttons, swipe tint, review history |
+| Maturity | blue ramp, unchanged | statistics |
+| Destructive | system red | Remove from List |
+
+### 5.5 Gate test (spec)
+
+`AccentContrastTests` in `VocTrainTests`: for appearance in light, dark, light + high contrast, dark + high contrast resolve `UIColor(named: "AccentColor")` and the surfaces `systemBackground`, `systemGroupedBackground`, `secondarySystemGroupedBackground`, `secondarySystemBackground` with `UITraitCollection`; compute WCAG relative luminance; print the table; fail below 4.5 for the white label and below 3.0 for every surface. Same on the Mac with `NSAppearance` pinned (`performAsCurrentDrawingAppearance`) [G §12]. Resolve system colours at run time; do not hard-code them.
+
+```swift
+func relativeLuminance(_ r: Double, _ g: Double, _ b: Double) -> Double {
+    func lin(_ c: Double) -> Double { c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4) }
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+}
+
+func contrast(_ a: Double, _ b: Double) -> Double {
+    (max(a, b) + 0.05) / (min(a, b) + 0.05)
+}
+```
+
+### 5.6 Mac accent
+
+On macOS `AccentColor` applies only when the system accent is Multicolor, and selection and sidebar icons follow the user's choice [G §12][H:sidebars]. No `.tint(...)` override on the Mac. Ring and prominent buttons use `Color.accentColor` and `.borderedProminent`, so a Graphite machine shows them gray by the owner's choice.
+
+## 6. Mac
+
+### 6.1 Hierarchy
+
+Level 0 Today (all decks) → level 1 deck (details) → level 2 the deck document window (Cards, Statistics, Learning Options). iPhone shows the same levels as Today → details sheet → statistics.
+
+### 6.2 Phase A: deck window (document window, small change)
+
+Toolbar order, left to right: segmented `Cards | Statistics` (principal, as now) · ring chip · **Study** (`.borderedProminent`) · fixed space · Add Lesson Words · Learning Options.
+
+- Ring chip: `ProgressRing(diameter: 16)` + `Text("14/20")` monospaced, `.help("14 of 20 reviews today · 12-day streak")`, `.sharedBackgroundVisibility(.hidden)` (an indicator takes no button background).
+- Study: `Button("Study")` without count and without the `graduationcap` label. `ToolbarSpacer(.fixed)` between it and the symbol buttons: a text button next to symbol buttons reads as one control [H:toolbars]. The menu command Study ▸ Start Session (⌘L) exists, so the toolbar item has its menu twin [H:toolbars]; rename the item `Start Studying`.
+- Session header (`SessionView.header`): replace the 320-pt `ProgressView` and `n / N` with the ring chip; keep the mistakes counter and Edit Card…; End Session becomes Done.
+- Spacing: `GradeChoice` gap 12 on Mac too; height stays 38 (HIG default Mac control 28, minimum 20 [H:accessibility]).
+- Settings: the `Settings` scene and ⌘, stay; no settings button in the toolbar [H:settings]. A daily-goal setting, if one is added, becomes a pane there.
+- Status bar (`CardListView.StatusBar`) keeps its Today counts line, neutral, as now.
+
+### 6.3 Phase B: Today window
+
+Replaces the Welcome window (`WelcomeWindow`, `WelcomeView`); opens at launch when no document opens, Window ▸ Today (⌘0), Dock click with no window. Single-instance SwiftUI `Window("Today", id: "today")`.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ ● ● ●  ◫       Today                     ◔ 14/20     [ Study ]   │ title Today, subtitle 14 of 20 reviews
+├────────────────┬─────────────────────────────────────────────────┤
+│ (o) Today      │ ┌ Form, .grouped ───────────────────────────┐   │
+│                │ │ ╭──╮ 87 due                               │   │
+│ Decks          │ │ │◔ │ 14 of 20 today · [flame] 12-day streak│   │
+│ ▤ Greek A1–A2 60│ └───────────────────────────────────────────┘   │
+│ ▤ Greek B1    27│ ┌ Decks ────────────────────────────────────┐   │
+│                │ │ Greek A1–A2  30 new · 0 learning · 30 review│   │
+│                │ │ Greek B1     20 new · 4 learning · 3 review │   │
+└────────────────┴─────────────────────────────────────────────────┘
+```
+
+| Element | SwiftUI |
+|---|---|
+| Layout | `NavigationSplitView`; sidebar `List(selection:)`, `.listStyle(.sidebar)`, `.navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)` |
+| Sidebar rows | `Label("Today", systemImage: "sun.max")`; section `Decks` with `Label(name, systemImage: "rectangle.stack")` + `.badge(total)`. Icons keep the system accent. At most two levels; no controls at the bottom of the sidebar [H:sidebars]. |
+| Detail, Today | `Form` with `.formStyle(.grouped)`: summary and per-deck rows, same strings as the iPhone |
+| Detail, deck | the iPhone `DeckDetails` content (counts row, totals, practice, retention) plus `Open Deck`, which opens the document window |
+| Toolbar | ring chip, `ToolbarSpacer(.fixed)`, `Study` `.borderedProminent` (studies the selected deck; with Today selected it starts the first deck of the queue in §2.5, and the rest screen offers the next one) |
+| Study | opens the deck window and starts the stream there: the stream needs the document and its undo manager, which the deck window's view attaches. Same one-shot request as `WelcomeRequest.takeImportCards()`. |
+| Panes | the sidebar can be hidden; View ▸ Show/Hide Sidebar. The window title is the selection, never the app name [H:toolbars]. |
+
+The window has no bottom bar; nothing critical sits at its bottom edge [H:windows][H:sidebars].
+
+### 6.4 Code (typechecked, macOS)
+
+```swift
+enum HomeSelection: Hashable { case today, deck(URL) }
+
+struct MacHome: View {
+    var decks: [KnownDeck]
+    var counts: [URL: StudyCounts]
+    var ring: DailyRing
+    @State private var selection: HomeSelection? = .today
+
+    var body: some View {
+        NavigationSplitView {
+            List(selection: $selection) {
+                Label("Today", systemImage: "sun.max").tag(HomeSelection.today)
+                Section("Decks") {
+                    ForEach(decks) { deck in
+                        Label(deck.name, systemImage: "rectangle.stack")
+                            .badge(counts[deck.url]?.total ?? 0)
+                            .tag(HomeSelection.deck(deck.url))
+                    }
+                }
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
+        } detail: {
+            Form {
+                Section("Today") { Text("summary") }
+            }
+            .formStyle(.grouped)
+            .navigationTitle("Today")
+            .navigationSubtitle("\(ring.reviews) of \(ring.goal) reviews")
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                HStack(spacing: 6) {
+                    ProgressRing(fraction: ring.fraction, diameter: 16)
+                    Text("\(ring.reviews)/\(ring.goal)").monospacedDigit()
+                }
+                .help("14 of 20 reviews today")
+            }
+            .sharedBackgroundVisibility(.hidden)
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarItem(placement: .primaryAction) {
+                Button("Study") {}
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+}
+```
+
+### 6.5 Remove (Mac)
+
+`DocumentView`: `StartStudyButton`'s `Label("Study (\(count))", systemImage: "graduationcap")`. `SessionView.header`: `ProgressView(...).frame(maxWidth: 320)` and `n / N`. Welcome window: the 30-pt bold "Mnemit" title and the icon block on the left, `Greek, every day`, the large prominent `Open Mnemit Folder…` (the folder choice moves to File ▸ and the empty state of the Today window), `DeckRow`'s `.fontWeight(.semibold)` and tinted `rectangle.stack` icons.
+
+## 7. Build order, strings, checks, sources
+
+### 7.1 Order
+
+1. `AccentColor.colorset` in both targets, remove `StudyCount.color` (S).
+2. `ProgressRing`, `SummaryRow`, `DeckRow`, `TodayScreen`, launch change, deployment targets (M). Needs `DailyProgress` from the stream agent.
+3. `DeckDetails` sheet (S).
+4. Stream header, grade area, card fonts (S–M). Needs the stream view model.
+5. Mac phase A (S), phase B (M).
+
+Dependencies on the stream agent: `DailyProgress`, `DailyRing`, `Streak`; a `StudyScope` with a deck queue; a `Next: <deck>` action on the `rest` screen; `StudyStream` practice initialisers for the details sheet.
+
+### 7.2 New strings (Shared/Resources/Localizable.xcstrings, German in state `translated`)
+
+`Today` and `Study` exist (`Heute`, `Lernen`). New: `Decks`, `Keep Going`, `All done`, `Nothing due`, `%lld due` (plural forms in en and de), `%lld of %lld today`, `%lld today`, `%lld-day streak` (plural), `Deck Details`, `Practice Newest Words`, `Practice Today's Mistakes`, `What today's plan takes from this deck.`, `Next: %@`, `Goal reached`, `No Decks`, `Open Deck`.
+
+### 7.3 Check matrix (on the 13 mini simulator or device; Mac with `vqa`)
+
+| Screen | States |
+|---|---|
+| Today | due, nothing due with reviews, nothing due without reviews, no decks, cached first frame, one deck unreadable; light, dark, Increase Contrast, Reduce Transparency; Large, xxxLarge, AX3; landscape |
+| Details | medium and large detent, counts with zeros, suspended 0 and above 0, AX3 |
+| Stream | question, revealed, grade area height equal in both stages, 4-line question, 135-character answer, AX1 and AX3, landscape |
+| Contrast | gate test table, all four appearances |
+| Mac | phase A toolbar at the minimum window width 720 (items must not overflow by default [H:toolbars]), Graphite and Multicolor accent |
+
+### 7.4 UNVERIFIED
+
+- All rendering: glass prominent button label colour and height, `safeAreaBar` with a `List`, principal toolbar ring, press feedback of a `.plain` button in a list row, concentric card corners. iOS 27 behaviour: the installed SDK is 26.2 (Xcode 26.3).
+- Fitness and Reminders layouts (ring left, metrics right, counts trailing in My Lists) are from memory; only the facts in [A:fitness] were read.
+- Surface hex values in §5.1 (UIKit defaults from memory); the gate test replaces them.
+- `.buttonStyle(.borderedProminent)` giving the prominent glass look in toolbars (the HIG names the `.prominent` style, the API mapping is from memory).
+- Deck window toolbar overflow at width 720 with the new items.
+- That `minimumScaleFactor` does not re-track text.
+
+### 7.5 Sources (opened 2026-10-21)
+
+- [H:layout] https://developer.apple.com/design/human-interface-guidelines/layout
+- [H:typography] https://developer.apple.com/design/human-interface-guidelines/typography (iOS size tables and SF Pro / SF Pro Rounded tracking tables read from the JSON feed)
+- [H:buttons] https://developer.apple.com/design/human-interface-guidelines/buttons
+- [H:lists-and-tables] https://developer.apple.com/design/human-interface-guidelines/lists-and-tables
+- [H:color] https://developer.apple.com/design/human-interface-guidelines/color
+- [H:toolbars] https://developer.apple.com/design/human-interface-guidelines/toolbars
+- [H:tab-bars] https://developer.apple.com/design/human-interface-guidelines/tab-bars
+- [H:sidebars] https://developer.apple.com/design/human-interface-guidelines/sidebars
+- [H:activity-rings] https://developer.apple.com/design/human-interface-guidelines/activity-rings
+- [H:accessibility] https://developer.apple.com/design/human-interface-guidelines/accessibility
+- [H:sheets] https://developer.apple.com/design/human-interface-guidelines/sheets
+- [H:context-menus] https://developer.apple.com/design/human-interface-guidelines/context-menus
+- [H:launching] https://developer.apple.com/design/human-interface-guidelines/launching
+- [H:windows] https://developer.apple.com/design/human-interface-guidelines/windows
+- [H:settings] https://developer.apple.com/design/human-interface-guidelines/settings
+- [H:materials], [H:dark-mode], [H:split-views], [H:progress-indicators], [H:gauges]: read, cited only for background (Liquid Glass stays out of the content layer; dark backgrounds use the system elevated set).
+- [A:fitness] https://support.apple.com/guide/iphone/see-your-activity-summary-iph4c34a8a95/ios and https://support.apple.com/guide/iphone/get-started-with-fitness-ipha5dddb411/ios
+- [U:loaf] https://useyourloaf.com/blog/iphone-13-screen-sizes/ (third party, not Apple)
+- [U:nilcoalescing] https://nilcoalescing.com/blog/MultipleButtonsInListRows/
+- [G] `~/Code/GUI-APPS.md` §6 (8 / 16 ms budget), §11 (right-aligned numbers, tabular digits), §12 (contrast gate, system accent on macOS)
+- Code: `/Users/eugene/Code/Mnemit/VocTrain/Views/StartScreen.swift`, `DeckView.swift`, `StudyCountsView.swift`, `VocTrain/Session/StudyView.swift`, `Shared/Session/GradeChoice.swift`, `Shared/Session/CardFlight.swift`, `Shared/Support/Presentation.swift`, `MacVocTrainNg/Views/DocumentView.swift`, `Session/SessionView.swift`, `Welcome/WelcomeView.swift`, `App/AppCommands.swift`; card data `~/Documents/greek-lessons/vocab/cards-a1a2.tsv`, `cards-b1.tsv`.
