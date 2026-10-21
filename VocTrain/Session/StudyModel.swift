@@ -4,7 +4,8 @@ import VocabCore
 
 /// Drives a study session in the style of flash cards (#258): shows the question,
 /// reveals the answer on request and applies the grade the learner gives. There is no
-/// response to check, so the app suggests no grade; the reviews record `.revealed`.
+/// response to check, so the app suggests no grade; the reviews record `.revealed`. At the
+/// end, the learner can practise the mistakes, which changes no card.
 ///
 /// Like `SessionViewModel` on the Mac, it leaves applying grades and keeping the
 /// session's place in step with undo and redo and with every other change to the deck
@@ -22,6 +23,9 @@ final class StudyModel: Identifiable {
     let document: VocabularyDocument
     private let driver: SessionDriver
     private(set) var stage: Stage
+    /// Counts the questions asked: one more with every move to another card, also back
+    /// after an undo, and to the end. The view speaks a Greek question when it changes.
+    private(set) var questionNumber = 0
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
     /// same study day.
@@ -32,13 +36,18 @@ final class StudyModel: Identifiable {
         driver.delegate = self
     }
 
-    /// Always a study session; `SessionMode` is how the core records its reviews.
+    /// A study session, or practice of its mistakes; `SessionMode` is how the core
+    /// records the reviews.
     var mode: SessionMode { driver.mode }
 
     var session: Session { driver.session }
 
     /// The card being asked, as the deck holds it now.
     var currentCard: Card? { driver.currentCard }
+
+    var isPracticing: Bool {
+        if case .practice = mode { true } else { false }
+    }
 
     var isFinished: Bool { stage == .finished }
 
@@ -78,7 +87,20 @@ final class StudyModel: Identifiable {
         document.undoManager?.undo()
     }
 
-    /// Starts a new session with the cards that are still due.
+    /// The mistakes of this session that are still in the deck and not suspended.
+    var mistakesToPractice: [Card.ID] {
+        session.mistakeIDs.filter { document.card(withID: $0)?.isSuspended == false }
+    }
+
+    /// Practises the mistakes of this session once more, without affecting their
+    /// schedule, as on the Mac.
+    func practiceMistakes() {
+        let ids = mistakesToPractice
+        guard !ids.isEmpty else { return }
+        driver.start(.practice(Practice(practicing: ids, at: document.clock.now)))
+    }
+
+    /// Starts a new study session with the cards that are still due.
     func continueStudying() {
         driver.start(Self.makeSession(for: document))
     }
@@ -90,6 +112,7 @@ final class StudyModel: Identifiable {
 
 extension StudyModel: SessionDriverDelegate {
     func sessionDriverDidMoveOn(_ driver: SessionDriver) {
+        questionNumber += 1
         stage = session.isFinished ? .finished : .asking
     }
 }

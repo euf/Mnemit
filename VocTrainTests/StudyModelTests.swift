@@ -91,6 +91,48 @@ struct StudyModelTests {
         #expect(!model.hasUndoableSteps)
     }
 
+    /// The mistakes of a finished session can be practised, which changes no card, as on
+    /// the Mac.
+    @Test func practicingMistakesLeavesScheduleAlone() throws {
+        let (document, undoManager) = try makeDocument(questions: ["dom"])
+        let model = StudyModel(document: document)
+        let id = try #require(model.currentCard?.id)
+        #expect(model.mistakesToPractice.isEmpty)
+
+        model.reveal()
+        grade(model, .again, undoManager: undoManager)
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isFinished)
+        #expect(!model.isPracticing)
+        #expect(model.mistakesToPractice == [id])
+
+        let before = document.deck
+        model.practiceMistakes()
+        #expect(model.isPracticing)
+        #expect(!model.isFinished)
+        #expect(model.currentCard?.id == id)
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isFinished)
+        #expect(document.deck == before)
+    }
+
+    /// The view speaks a Greek question when this changes: once per move to a card, also
+    /// when undo brings a card back, and not for a reveal.
+    @Test func questionNumberCountsEveryMoveOnce() throws {
+        let (document, undoManager) = try makeDocument()
+        let model = StudyModel(document: document)
+        #expect(model.questionNumber == 0)
+
+        model.reveal()
+        #expect(model.questionNumber == 0)
+        grade(model, .good, undoManager: undoManager)
+        #expect(model.questionNumber == 1)
+        undoManager.undo()
+        #expect(model.questionNumber == 2)
+    }
+
     @Test func sessionWithoutDueCardsIsFinished() throws {
         let (document, _) = try makeDocument(questions: [])
         let model = StudyModel(document: document)

@@ -60,22 +60,30 @@ extension Grade {
     /// card while it is swiped and the review history. Always shown together with the
     /// grade's title; `onColor` is the text on it, white on all four.
     ///
-    /// How the greens were chosen: one hue (OKLCH 150°, a plain green clearly apart from
-    /// the maturity ramp's blue), told apart by lightness alone, which falls from Hard to
-    /// Good to Easy in steps of 0.14 OKLCH L, so colour-vision deficiencies don't matter and
-    /// the three read as one answer in three strengths. The ramp is the same in light and
-    /// dark mode. Contrast of white on the fill (WCAG, computed with a script):
-    /// - Hard 0x2E9E52, L 0.62: 3.4:1, the 3:1 of large text, as the labels are 17 pt semibold
-    /// - Good 0x007132, L 0.48: 6.2:1
-    /// - Easy 0x00451B, L 0.34: 11.3:1
+    /// How the greens were chosen: one hue (OKLCH 170°, a jade green, apart from the maturity
+    /// ramp's blue at about 255°), told apart by lightness alone, which falls from Hard to
+    /// Good to Easy in steps of 0.14 OKLCH L, so the three read as one answer in three
+    /// strengths. The ramp is the same in light and dark mode. Contrast of white on the
+    /// fill (WCAG, computed with a script):
+    /// - Hard 0x149D7B, L 0.62, C 0.12: 3.4:1, the 3:1 of large text, as the labels are 17 pt semibold
+    /// - Good 0x0A6E56, L 0.48, C 0.09: 6.2:1
+    /// - Easy 0x044333, L 0.34, C 0.07: 11.3:1
     /// - Again, the system red darkened to carry white text: 5.4:1 on light (0xD70015),
     ///   4.6:1 on dark (0xD93A30)
+    ///
+    /// Why 170°: the first ramp, at 150° with the same lightness steps, was Microsoft Excel's
+    /// (0x21A366, 0x107C41, 0x185C37 at 152° to 157°), and the owner saw Office in it. The hues
+    /// from 135° to 143° are Office's too (chart green 0x70AD47 and 0x4EA72E, Fluent 0x107C10),
+    /// so they are no way out. At 170° the colours lie 0.03 to 0.05 away from Excel's greens of
+    /// the same lightness in the chroma plane of OKLab (0.006 to 0.019 before). Colour-vision
+    /// deficiency favours it: for deuteranopia Hard and Good are 0.12 and 0.15 OKLab away from
+    /// Forgot's red (0.07 and 0.11 at 150°, 0.05 and 0.09 at 138°).
     var color: Color {
         switch self {
         case .again: Color(light: 0xD70015, dark: 0xD93A30)
-        case .hard: Color(light: 0x2E9E52, dark: 0x2E9E52)
-        case .good: Color(light: 0x007132, dark: 0x007132)
-        case .easy: Color(light: 0x00451B, dark: 0x00451B)
+        case .hard: Color(light: 0x149D7B, dark: 0x149D7B)
+        case .good: Color(light: 0x0A6E56, dark: 0x0A6E56)
+        case .easy: Color(light: 0x044333, dark: 0x044333)
         }
     }
 
@@ -104,6 +112,39 @@ extension LearningPhase {
         case .review: String(localized: "Review phase")
         case .relearning: String(localized: "Relearning")
         }
+    }
+}
+
+extension CardKind {
+    var title: String {
+        switch self {
+        case .recognition: String(localized: "Recognition")
+        case .production: String(localized: "Production")
+        }
+    }
+}
+
+extension ReviewMode {
+    var title: String {
+        switch self {
+        case .typed: String(localized: "Typed")
+        case .revealed: String(localized: "Revealed")
+        }
+    }
+}
+
+/// A maturity as a dot in its colour beside its title.
+struct MaturityLabel: View {
+    var category: MaturityCategory
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(category.color)
+                .frame(width: 8, height: 8)
+            Text(category.title)
+        }
+        .help(category.explanation)
     }
 }
 
