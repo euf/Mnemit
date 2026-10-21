@@ -3000,6 +3000,16 @@
         }
       }
     },
+    "Time to study": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeit zum Lernen"
+          }
+        }
+      }
+    },
     "Today (incl. overdue)": {
       "localizations": {
         "de": {
