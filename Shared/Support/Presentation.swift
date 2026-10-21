@@ -55,14 +55,50 @@ extension Grade {
         KeyEquivalent(Character(String(rawValue)))
     }
 
-    /// Status colours; always shown together with the grade's title.
+    /// The grade's colour: red for Again, the only "no", and three shades of one green
+    /// for Hard, Good and Easy, the three kinds of "yes". It fills the grade buttons, the
+    /// card while it is swiped and the review history. Always shown together with the
+    /// grade's title; `onColor` is the text on it.
+    ///
+    /// How the greens were chosen: one hue (OKLCH 150°, a plain green clearly apart from
+    /// the maturity ramp's blue), told apart by lightness alone, in steps of at least 0.16
+    /// OKLCH L, so colour-vision deficiencies don't matter. Good has the same medium shade
+    /// (L 0.535) in both appearances, dark enough for white text at 4.9:1. Hard is the
+    /// lightest on light and the deepest on dark, Easy the other way round, so the
+    /// shade farther from the background is always the stronger answer. Again is the
+    /// system red, darkened to carry white text (5.4:1 on light, 4.6:1 on dark). Every
+    /// `onColor` has at least 4.5:1 on its fill.
     var color: Color {
         switch self {
-        case .again: Color(light: 0xD03B3B, dark: 0xD03B3B)
-        case .hard: Color(light: 0xEC835A, dark: 0xEC835A)
-        case .good: Color(light: 0x0CA30C, dark: 0x0CA30C)
-        case .easy: Color(light: 0x2A78D6, dark: 0x3987E5)
+        case .again: Color(light: 0xD70015, dark: 0xD93A30)
+        case .hard: Color(light: 0xC2F3CB, dark: 0x1B4526)
+        case .good: Color(light: 0x1D8240, dark: 0x1D8240)
+        case .easy: Color(light: 0x09471F, dark: 0x93E8A5)
         }
+    }
+
+    /// Text and symbols on `color`.
+    var onColor: Color {
+        switch self {
+        case .again, .good: .white
+        case .hard: Color(light: 0x01421A, dark: 0xB9EEC2)
+        case .easy: Color(light: 0xFFFFFF, dark: 0x012D10)
+        }
+    }
+}
+
+/// A grade's colour as a dot beside its title. The light shade of Hard couldn't carry the
+/// title as text colour, nor could three greens apart; as a dot, with a hairline for
+/// the light shades on a light background, they can.
+struct GradeDot: View {
+    var grade: Grade
+
+    var body: some View {
+        Circle()
+            .fill(grade.color)
+            .overlay { Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 0.5) }
+            .frame(width: 10, height: 10)
+            .accessibilityHidden(true)
     }
 }
 
@@ -84,20 +120,16 @@ enum Format {
         return String(localized: "\(rounded) days")
     }
 
-    /// When a card is asked again after a grade: "Soon" while it is in (re)learning,
-    /// else the system's short form of the days, rounded to one unit ("2 days", "3 mths",
-    /// "1 yr"), or spelled out for VoiceOver ("3 months").
-    static func interval(_ interval: ReviewInterval, spelledOut: Bool = false) -> String {
-        guard case let .days(days) = interval else { return String(localized: "Soon") }
-        var components = DateComponents(day: days)
-        if days >= 30 {
-            let months = Int((Double(days) / 30.4375).rounded())
-            components = months < 12 ? DateComponents(month: months) : DateComponents(year: Int((Double(days) / 365.25).rounded()))
-        }
-        let formatter = DateComponentsFormatter()
-        formatter.unitsStyle = spelledOut ? .full : .short
-        formatter.allowedUnits = [.year, .month, .day]
-        return formatter.string(from: components) ?? Format.days(Double(days))
+    /// When a card is asked again after a grade, as the end of a sentence: "in 4 days",
+    /// "in 2 months", "in 1 year", rounded to one unit; "again today" while the card is
+    /// in (re)learning.
+    static func interval(_ interval: ReviewInterval) -> String {
+        guard case let .days(days) = interval else { return String(localized: "again today") }
+        if days < 30 { return String(localized: "in \(days) days") }
+        let months = Int((Double(days) / 30.4375).rounded())
+        if months < 12 { return String(localized: "in \(months) months") }
+        let years = Int((Double(days) / 365.25).rounded())
+        return String(localized: "in \(years) years")
     }
 
     static func percent(_ value: Double) -> String {
@@ -113,12 +145,15 @@ enum Format {
 }
 
 extension Color {
-    /// The recalled grades' capsule in the grade buttons: the fill of Good, and the tint
-    /// behind Hard and Easy. Darker than `Grade.good.color`, so the white text on Good
-    /// reads at the size of an interval.
-    static let recalled = Color(light: 0x1A7F37, dark: 0x238636)
-    /// Text of Hard and Easy on the tint of `recalled`.
-    static let onRecalledTint = Color(light: 0x0F5323, dark: 0x9BE9A8)
+    /// The face of a flash card: a little off the background, so the card stands out
+    /// from the screen it is swiped across.
+    static var cardSurface: Color {
+        #if os(macOS)
+        Color(nsColor: .controlBackgroundColor)
+        #else
+        Color(uiColor: .secondarySystemBackground)
+        #endif
+    }
 
     /// A colour that adapts to light and dark appearance.
     init(light: UInt32, dark: UInt32) {

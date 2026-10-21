@@ -4,7 +4,8 @@ import VocabCore
 /// The grades of a card whose answer is shown, laid out by what they mean: Forgot is
 /// the only "no"; Hard, Good and Easy are three kinds of "yes" and share one capsule,
 /// Good in the middle and wider. Four equal buttons hid that, and Hard after forgetting
-/// is the worst mistake for FSRS. Every part names the interval its grade gives now.
+/// is the worst mistake for FSRS. The buttons carry the grade's name and nothing else:
+/// when the card comes back shows only once the grade is given, see `UndoChip`.
 ///
 /// On the Mac the keys 1 to 4 choose a grade, and Return accepts `defaultGrade`.
 struct GradeChoice: View {
@@ -14,14 +15,14 @@ struct GradeChoice: View {
     }
 
     var part = Part.both
-    /// What each grade gives now, see `Scheduler.previewIntervals`; `nil` where grading
-    /// schedules nothing, in practice.
-    var intervals: [Grade: ReviewInterval]?
     /// The grade Return accepts on the Mac, marked on its button: the suggestion after a
     /// typed response, Good with flash cards.
     var defaultGrade: Grade?
     /// Lets Space accept `defaultGrade` too, as Space showed the answer.
     var acceptsSpace = false
+    /// Lets the arrow keys grade on the Mac, the way a swipe does on the iPhone: ← Forgot,
+    /// → Good, ↑ Easy, ↓ Hard.
+    var acceptsArrows = false
     /// The iPhone in landscape, where the row of buttons has little height.
     var isCompact = false
     var onGrade: @MainActor (Grade) -> Void
@@ -46,7 +47,7 @@ struct GradeChoice: View {
             }
         }
         #if os(macOS)
-        .background { acceptKeys }
+        .background { extraKeys }
         #endif
     }
 
@@ -55,26 +56,24 @@ struct GradeChoice: View {
         return Button {
             onGrade(.again)
         } label: {
-            VStack(spacing: 2) {
-                Label(title, systemImage: "xmark")
-                    .font(titleFont(emphasised: true))
-                    .lineLimit(1)
-                details(of: .again)
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 52)
-            .background(Grade.again.color, in: Capsule())
-            .overlay { marker(of: .again, color: .white) }
-            .contentShape(Capsule())
+            Label(title, systemImage: "xmark")
+                .font(titleFont(emphasised: true))
+                .lineLimit(1)
+                .foregroundStyle(Grade.again.onColor)
+                .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 52)
+                .background(Grade.again.color, in: Capsule())
+                .overlay { marker(of: .again) }
+                .contentShape(Capsule())
         }
         .buttonStyle(Pressable())
         #if os(macOS)
         .keyboardShortcut(Grade.again.shortcutKey, modifiers: [])
+        .help(Text(verbatim: "\(Grade.again.rawValue)"))
         #endif
-        .accessibilityLabel(spoken(title, of: .again))
     }
 
-    /// Hard, Good and Easy: one shape, so the three read as one answer.
+    /// Hard, Good and Easy: one shape, so the three read as one answer, three shades of
+    /// one green.
     private var recalled: some View {
         WeightedRow(weights: [1, 1.4, 1]) {
             segment(.hard)
@@ -90,35 +89,29 @@ struct GradeChoice: View {
 
     private var separator: some View {
         Rectangle()
-            .fill(Color.recalled.opacity(0.4))
+            .fill(.background)
             .frame(width: 1)
     }
 
-    /// Good is filled; Hard and Easy are tinted.
     private func segment(_ grade: Grade) -> some View {
-        let isGood = grade == .good
-        let textColor = isGood ? Color.white : Color.onRecalledTint
-        return Button {
+        Button {
             onGrade(grade)
         } label: {
-            VStack(spacing: 2) {
-                Text(grade.title)
-                    .font(titleFont(emphasised: isGood))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                details(of: grade)
-            }
-            .foregroundStyle(textColor)
-            .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 56, maxHeight: .infinity)
-            .background(isGood ? Color.recalled : Color.recalled.opacity(0.16))
-            .overlay { marker(of: grade, color: textColor) }
-            .contentShape(Rectangle())
+            Text(grade.title)
+                .font(titleFont(emphasised: grade == .good))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(grade.onColor)
+                .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 56, maxHeight: .infinity)
+                .background(grade.color)
+                .overlay { marker(of: grade) }
+                .contentShape(Rectangle())
         }
         .buttonStyle(Pressable())
         #if os(macOS)
         .keyboardShortcut(grade.shortcutKey, modifiers: [])
+        .help(Text(verbatim: "\(grade.rawValue)"))
         #endif
-        .accessibilityLabel(spoken(grade.title, of: grade))
     }
 
     private func titleFont(emphasised: Bool) -> Font {
@@ -129,69 +122,48 @@ struct GradeChoice: View {
         #endif
     }
 
-    /// The interval below the title, on the Mac the key too.
-    @ViewBuilder
-    private func details(of grade: Grade) -> some View {
-        if let interval = intervals?[grade] {
-            Text(Format.interval(interval))
-                .font(.caption)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        #if os(macOS)
-        if grade == defaultGrade {
-            Text("\(grade.rawValue) or ↩")
-                .font(.caption2)
-        } else {
-            Text(verbatim: "\(grade.rawValue)")
-                .font(.caption2)
-        }
-        #endif
-    }
-
     /// A ring in the part that Return accepts.
     @ViewBuilder
-    private func marker(of grade: Grade, color: Color) -> some View {
+    private func marker(of grade: Grade) -> some View {
         #if os(macOS)
         if grade == defaultGrade {
             Capsule()
-                .strokeBorder(color, lineWidth: 2)
+                .strokeBorder(grade.onColor, lineWidth: 2)
                 .padding(3)
         }
         #endif
     }
 
-    /// For VoiceOver: the grade and its interval, "Good, 4 days".
-    private func spoken(_ title: String, of grade: Grade) -> String {
-        guard let interval = intervals?[grade] else { return title }
-        return "\(title), \(Format.interval(interval, spelledOut: true))"
-    }
-
     #if os(macOS)
-    /// Return, and Space if asked, accept `defaultGrade`. A button takes one shortcut.
+    /// Return, Space and the arrows, each a button of its own: a button takes one shortcut.
     @ViewBuilder
-    private var acceptKeys: some View {
-        if let defaultGrade {
-            Group {
-                Button {
-                    onGrade(defaultGrade)
-                } label: {
-                    Text(verbatim: "")
-                }
-                .keyboardShortcut(.defaultAction)
+    private var extraKeys: some View {
+        Group {
+            if let defaultGrade {
+                key(.return, grade: defaultGrade)
                 if acceptsSpace {
-                    Button {
-                        onGrade(defaultGrade)
-                    } label: {
-                        Text(verbatim: "")
-                    }
-                    .keyboardShortcut(.space, modifiers: [])
+                    key(.space, grade: defaultGrade)
                 }
             }
-            .opacity(0)
-            .frame(width: 0, height: 0)
-            .accessibilityHidden(true)
+            if acceptsArrows {
+                key(.leftArrow, grade: .again)
+                key(.rightArrow, grade: .good)
+                key(.upArrow, grade: .easy)
+                key(.downArrow, grade: .hard)
+            }
         }
+        .opacity(0)
+        .frame(width: 0, height: 0)
+        .accessibilityHidden(true)
+    }
+
+    private func key(_ key: KeyEquivalent, grade: Grade) -> some View {
+        Button {
+            onGrade(grade)
+        } label: {
+            Text(verbatim: "")
+        }
+        .keyboardShortcut(key, modifiers: [])
     }
     #endif
 }

@@ -42,8 +42,12 @@ final class StudyModel: Identifiable {
 
     var isFinished: Bool { stage == .finished }
 
-    /// What each grade would schedule for the card being asked, shown on the buttons.
-    var gradeIntervals: [Grade: ReviewInterval]? { driver.gradeIntervals }
+    /// What the last grade did, shown in the chip that offers Undo.
+    var receipt: GradeReceipt? { driver.lastReceipt }
+
+    func dismissReceipt() {
+        driver.dismissReceipt()
+    }
 
     func reveal() {
         guard stage == .asking else { return }
@@ -66,6 +70,12 @@ final class StudyModel: Identifiable {
     /// suspension. Undo beyond them would change cards the session doesn't show.
     var hasUndoableSteps: Bool {
         session.reviewCount > 0 || session.suspendedCount > 0
+    }
+
+    /// Takes back the last review or suspension of this session, like Undo in the menu.
+    func undoLast() {
+        guard hasUndoableSteps, document.undoManager?.canUndo == true else { return }
+        document.undoManager?.undo()
     }
 
     /// Starts a new session with the cards that are still due.

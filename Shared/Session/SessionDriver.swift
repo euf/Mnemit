@@ -18,6 +18,9 @@ final class SessionDriver {
     /// The card being asked, as the deck holds it now. Undoing an edit of the card
     /// during the session shows up here.
     private(set) var currentCard: Card?
+    /// What the last grade did, until the learner has seen it, undone it or moved on; see
+    /// `UndoChip`. Practice and study sessions alike leave one.
+    private(set) var lastReceipt: GradeReceipt?
     @ObservationIgnored weak var delegate: (any SessionDriverDelegate)?
     /// The session the learner finished up. Finishing up has no undo of its own, so
     /// undo and redo of a review in it finish up again (#180).
@@ -58,6 +61,7 @@ final class SessionDriver {
     func grade(_ grade: Grade) -> Bool {
         guard document.isReadyToEdit else { return false }
         let before = mode
+        let interval = gradeIntervals?[grade]
         guard let outcome = mode.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar) else { return false }
         let restore = sessionRestore(from: before, to: mode)
         switch outcome {
@@ -66,8 +70,14 @@ final class SessionDriver {
         case .practiced:
             registerPracticeUndo(restore)
         }
+        lastReceipt = GradeReceipt(grade: grade, interval: interval)
         moveOn()
         return true
+    }
+
+    /// The learner has seen what the last grade did.
+    func dismissReceipt() {
+        lastReceipt = nil
     }
 
     /// Suspends the card being asked and moves on (#290). Like a review, one undo action
@@ -85,6 +95,7 @@ final class SessionDriver {
             mode = before
             return false
         }
+        lastReceipt = nil
         moveOn()
         return true
     }
@@ -99,6 +110,7 @@ final class SessionDriver {
     /// Runs `mode` from now on, e.g. practice of the mistakes or a new study session.
     func start(_ mode: SessionMode) {
         self.mode = mode
+        lastReceipt = nil
         moveOn()
     }
 
@@ -166,6 +178,7 @@ final class SessionDriver {
     private func restore(_ snapshot: SessionMode) {
         guard snapshot.session.id == session.id else { return }  // a different session by now
         mode = snapshot
+        lastReceipt = nil
         // A snapshot from before finishing up would bring back the cards not asked yet.
         if session.id == finishedUpSessionID {
             mode.perform(.finishUp)

@@ -48,6 +48,31 @@ struct LocalizationTests {
         }
     }
 
+    /// The phrases of the undo chip, "in 1 day" but "in 2 days", end to end.
+    @Test func intervalPhrasesAreSingularForOne() throws {
+        let english: [(String.LocalizationValue, String)] = [
+            ("in \(1) days", "in 1 day"),
+            ("in \(2) days", "in 2 days"),
+            ("in \(1) months", "in 1 month"),
+            ("in \(3) months", "in 3 months"),
+            ("in \(1) years", "in 1 year"),
+            ("in \(2) years", "in 2 years"),
+        ]
+        let german: [(String.LocalizationValue, String)] = [
+            ("in \(1) days", "in 1 Tag"),
+            ("in \(2) days", "in 2 Tagen"),
+            ("in \(1) months", "in 1 Monat"),
+            ("in \(3) months", "in 3 Monaten"),
+            ("in \(1) years", "in 1 Jahr"),
+            ("in \(2) years", "in 2 Jahren"),
+        ]
+        for (language, cases) in [("en", english), ("de", german)] {
+            for (value, expected) in cases {
+                #expect(try localized(value, in: language) == expected)
+            }
+        }
+    }
+
     /// A text whose wording depends on a count has plural forms in every language.
     @Test func everyLanguageHasThePluralsOfTheOthers() throws {
         let languages = ["en", "de"]

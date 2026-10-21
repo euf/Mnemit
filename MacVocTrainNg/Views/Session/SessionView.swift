@@ -9,8 +9,10 @@ import VocabCore
 /// when the response was right after all. ⌘Z takes back the last review.
 ///
 /// With flash cards (the preference "Study by"), there is no response: Space or Return
-/// shows the answer, then 1–4 choose the grade (Forgot, Hard, Good, Easy), and Space or
-/// Return mean Good.
+/// shows the answer, then ← Forgot, → Good, ↑ Easy, ↓ Hard, or 1–4 for Forgot, Hard, Good
+/// and Easy, and Space or Return mean Good. The card flies out in the direction of its
+/// grade. A line under the progress names the grade and when the card comes back, and offers
+/// Undo for a few seconds; Z, Esc and ⌘Z take the review back. S speaks the Greek side.
 ///
 /// ⌘E edits the card being asked (#289); before the response is checked or the answer
 /// shown, without showing its answer. The response typed so far stays, and a response
@@ -49,6 +51,7 @@ struct SessionView: View {
                 PreviousReviewBar(previous: previous)
             }
         }
+        .background { keys }
         .confirmationDialog("End this session?", isPresented: $confirmingEnd) {
             if model.session.startedCount > 0 {
                 Button("Finish Started Cards (\(model.session.startedCount))") {
@@ -70,6 +73,44 @@ struct SessionView: View {
     private func editCurrentCard() {
         guard let card = model.currentCard else { return }
         editing = EditRequest(card: card, hidesAnswer: model.stage == .asking)
+    }
+
+    /// Keys without a button to show: with flash cards, Z and Esc take back the review,
+    /// which ⌘Z does too; with S for the speaker button of the card. The keys that grade
+    /// belong to `GradeChoice`.
+    private var keys: some View {
+        Group {
+            if model.studyBy == .flashcards {
+                Group {
+                    Button("Undo", action: model.undoLast)
+                        .keyboardShortcut("z", modifiers: [])
+                    // Esc undoes instead of ending the session, whose button has no shortcut then.
+                    Button("Undo", action: model.undoLast)
+                        .keyboardShortcut(.escape, modifiers: [])
+                }
+                .disabled(!model.canUndoLast)
+            }
+            if let spokenText {
+                Button("Pronounce") { GreekSpeech.shared.speak(spokenText) }
+                    .keyboardShortcut("s", modifiers: [])
+            }
+        }
+        .hidden()
+    }
+
+    /// What S speaks: the question if it is Greek, else the answer once it shows. Not while
+    /// a response is typed, as the key would be a letter of it.
+    private var spokenText: String? {
+        guard let card = model.currentCard, model.studyBy == .flashcards || isAnswerShown else { return nil }
+        if GreekSpeech.shared.canSpeak(card.question) { return card.question }
+        return isAnswerShown && GreekSpeech.shared.canSpeak(card.answer) ? card.answer : nil
+    }
+
+    private var isAnswerShown: Bool {
+        switch model.stage {
+        case .revealed, .feedback: true
+        case .asking, .finished: false
+        }
     }
 
     private var header: some View {
@@ -107,7 +148,8 @@ struct SessionView: View {
                 .disabled(model.currentCard == nil)
                 .help("Fix this card without leaving the session")
                 Button("End Session") { confirmingEnd = true }
-                    .keyboardShortcut(.cancelAction)
+                    // With flash cards Esc takes back a review, see `keys`.
+                    .keyboardShortcut(model.studyBy == .flashcards ? nil : .cancelAction)
             }
         }
         .padding(.horizontal, 20)
@@ -115,13 +157,38 @@ struct SessionView: View {
     }
 
     private func cardArea(_ card: Card) -> some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 12) {
+            // Under the progress, in the same place on every card.
+            UndoChip(receipt: model.receipt, onUndo: model.undoLast, onExpire: model.dismissReceipt)
+
             Spacer()
 
-            Text(card.question)
-                .font(.system(size: 32, weight: .semibold))
-                .multilineTextAlignment(.center)
-                .textSelection(.enabled)
+            if model.studyBy == .flashcards {
+                FlashcardView(
+                    card: card, isRevealed: model.stage == .revealed,
+                    onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
+            } else {
+                typedQuestion(card)
+            }
+
+            Spacer()
+
+            CardStateLine(card: card)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// The question, the field for the response and, once it is checked, the feedback.
+    private func typedQuestion(_ card: Card) -> some View {
+        VStack(spacing: 20) {
+            HStack(spacing: 8) {
+                Text(card.question)
+                    .font(.system(size: 32, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .textSelection(.enabled)
+                SpeakButton(text: card.question)
+            }
 
             if !card.hint.isEmpty {
                 Text(card.hint)
@@ -130,34 +197,27 @@ struct SessionView: View {
                     .multilineTextAlignment(.center)
             }
 
-            if model.studyBy == .typing {
-                TextField("Response", text: $model.input, prompt: Text("Response"))
-                    .textFieldStyle(.roundedBorder)
-                    .font(.title2)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 480)
-                    .focused($focusedQuestion, equals: model.questionNumber)
-                    .disabled(model.stage != .asking)
-                    .onSubmit { model.submit() }
-                    // Before `id`, so it runs for every new field, not only the first.
-                    .onAppear { focus(model.questionNumber) }
-                    // A new field per question: with automatic continuing the field never
-                    // ends editing, and ⌘Z would first take back the previous typing (#9).
-                    .id(model.questionNumber)
-            }
+            TextField("Response", text: $model.input, prompt: Text("Response"))
+                .textFieldStyle(.roundedBorder)
+                .font(.title2)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 480)
+                .focused($focusedQuestion, equals: model.questionNumber)
+                .disabled(model.stage != .asking)
+                .onSubmit { model.submit() }
+                // Before `id`, so it runs for every new field, not only the first.
+                .onAppear { focus(model.questionNumber) }
+                // A new field per question: with automatic continuing the field never
+                // ends editing, and ⌘Z would first take back the previous typing (#9).
+                .id(model.questionNumber)
 
             Group {
                 if case let .feedback(result, response) = model.stage {
                     FeedbackView(
-                        result: result, response: response, expected: card.answer, highlightedAnswer: model.highlightedAnswer,
-                        intervals: model.gradeIntervals
+                        result: result, response: response, expected: card.answer, highlightedAnswer: model.highlightedAnswer
                     ) { grade in
                         model.grade(grade)
                     }
-                } else if model.studyBy == .flashcards {
-                    FlashcardView(
-                        answer: card.answer, isRevealed: model.stage == .revealed, intervals: model.gradeIntervals,
-                        onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
                 } else {
                     Text("Press Return to check your response.")
                         .foregroundStyle(.tertiary)
@@ -165,13 +225,7 @@ struct SessionView: View {
             }
             // As high as the feedback with its grade buttons, so the question stays put.
             .frame(minHeight: 230, alignment: .top)
-
-            Spacer()
-
-            CardStateLine(card: card)
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// Gives the response field the focus back after the edit sheet; the response typed
@@ -197,28 +251,32 @@ private struct FeedbackView: View {
     var expected: String
     /// The answer with the differences marked, for almost correct responses.
     var highlightedAnswer: [ResponseDiff.Segment]?
-    /// What each grade would schedule; `nil` in practice.
-    var intervals: [Grade: ReviewInterval]?
     var onGrade: @MainActor (Grade) -> Void
 
     var body: some View {
         VStack(spacing: 14) {
-            Label(title, systemImage: symbol)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(result.suggestedGrade.color)
+            // The dot is the colour of the grade Return accepts.
+            HStack(spacing: 8) {
+                GradeDot(grade: result.suggestedGrade)
+                Label(title, systemImage: symbol)
+            }
+            .font(.title3.weight(.semibold))
 
             if result != .correct {
                 VStack(spacing: 4) {
                     Text("Answer:")
                         .foregroundStyle(.secondary)
-                    answerText
-                        .font(.title2)
-                        .textSelection(.enabled)
+                    HStack(spacing: 8) {
+                        answerText
+                            .font(.title2)
+                            .textSelection(.enabled)
+                        SpeakButton(text: expected)
+                    }
                 }
             }
 
             // Return accepts the suggestion.
-            GradeChoice(intervals: intervals, defaultGrade: result.suggestedGrade, onGrade: onGrade)
+            GradeChoice(defaultGrade: result.suggestedGrade, onGrade: onGrade)
                 .frame(maxWidth: 440)
         }
     }
@@ -256,48 +314,106 @@ private struct FeedbackView: View {
     }
 }
 
-/// Flash cards: the button that shows the answer, then the answer and the grade buttons.
+/// Flash cards: the card with the question, then the answer under it, and the button that
+/// shows the answer or the grade buttons below. The card flies out in the direction of
+/// its grade.
 private struct FlashcardView: View {
-    var answer: String
+    var card: Card
     var isRevealed: Bool
-    /// What each grade would schedule; `nil` in practice.
-    var intervals: [Grade: ReviewInterval]?
     var onReveal: () -> Void
     var onGrade: @MainActor (Grade) -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var flight = CardFlight()
+
     var body: some View {
         VStack(spacing: 14) {
-            if isRevealed {
-                Text(answer)
-                    .font(.title2)
-                    .textSelection(.enabled)
-
-                // Space and Return showed the answer and now mean Good.
-                GradeChoice(intervals: intervals, defaultGrade: .good, acceptsSpace: true, onGrade: onGrade)
-                    .frame(maxWidth: 440)
-            } else {
-                Button(action: onReveal) {
-                    VStack(spacing: 2) {
-                        Text("Show Answer")
-                        Text("Space or ↩")
-                            .font(.caption)
-                    }
-                    .frame(minWidth: 120)
-                    .padding(.vertical, 2)
-                }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-
-                // A button takes one shortcut; Space shows the answer too.
-                Button(action: onReveal) {
-                    Text(verbatim: "")
-                }
-                .keyboardShortcut(.space, modifiers: [])
-                .opacity(0)
-                .frame(width: 0, height: 0)
-                .accessibilityHidden(true)
+            FlightCard(flight: flight) {
+                face
             }
+            .frame(maxWidth: 560, minHeight: 160, idealHeight: 240, maxHeight: 260)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onReveal)
+
+            actions
+                .frame(maxWidth: 440, minHeight: 132, alignment: .top)
         }
+    }
+
+    /// The question above the divider, the answer below it, in the same places whether or
+    /// not the answer shows.
+    private var face: some View {
+        VStack(spacing: 10) {
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    Text(card.question)
+                        .font(.system(size: 32, weight: .semibold))
+                        .textSelection(.enabled)
+                    SpeakButton(text: card.question)
+                }
+                if !card.hint.isEmpty {
+                    Text(card.hint)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+
+            Group {
+                Divider()
+                HStack(spacing: 8) {
+                    Text(card.answer)
+                        .font(.title)
+                        .textSelection(.enabled)
+                    SpeakButton(text: card.answer)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .opacity(isRevealed ? 1 : 0)
+            // The hidden answer has no speaker button to click.
+            .allowsHitTesting(isRevealed)
+            .accessibilityHidden(!isRevealed)
+        }
+        .multilineTextAlignment(.center)
+        .minimumScaleFactor(0.5)
+        .padding(20)
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        if isRevealed {
+            // Space and Return showed the answer and now mean Good; the arrows grade as the
+            // swipes do on the iPhone.
+            GradeChoice(defaultGrade: .good, acceptsSpace: true, acceptsArrows: true, onGrade: commit)
+        } else {
+            Button(action: onReveal) {
+                VStack(spacing: 2) {
+                    Text("Show Answer")
+                    Text("Space or ↩")
+                        .font(.caption)
+                }
+                .frame(minWidth: 120)
+                .padding(.vertical, 2)
+            }
+            .keyboardShortcut(.defaultAction)
+            .buttonStyle(.borderedProminent)
+
+            // A button takes one shortcut; Space shows the answer too.
+            Button(action: onReveal) {
+                Text(verbatim: "")
+            }
+            .keyboardShortcut(.space, modifiers: [])
+            .opacity(0)
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// Flies the card out in the direction of `grade`, then grades. Keys, buttons and
+    /// VoiceOver all come here, so a second key press while the card flies does nothing.
+    private func commit(_ grade: Grade) {
+        guard isRevealed, !flight.isFlying else { return }
+        flight.fly(grade, reduceMotion: reduceMotion) { onGrade(grade) }
     }
 }
 
@@ -335,8 +451,8 @@ private struct PreviousReviewBar: View {
             Text("\(previous.question) → \(previous.answer)")
                 .lineLimit(1)
             if let grade = previous.grade {
+                GradeDot(grade: grade)
                 Text(grade.title)
-                    .foregroundStyle(grade.color)
             } else {
                 Text("Suspended")
                     .foregroundStyle(.secondary)
