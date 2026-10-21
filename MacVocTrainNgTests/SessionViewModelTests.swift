@@ -627,14 +627,14 @@ struct SessionViewModelTests {
         model.input = "not submitted"
 
         undoManager.undo()
-        #expect(model.currentCard == card)
+        #expect(model.currentCard?.unstamped == card)
         #expect(model.stage == .feedback(.wrong, response: "Heim"))
         #expect(model.suggestedGrade == .again)
         #expect(model.session.reviewCount == 0)
         #expect(model.questionNumber == questionNumber)
 
         undoManager.redo()
-        #expect(model.currentCard == card.withAnswer("Heim"))
+        #expect(model.currentCard?.unstamped == card.withAnswer("Heim"))
         #expect(model.stage == .feedback(.correct, response: "Heim"))
         #expect(model.suggestedGrade == .good)
         #expect(model.session.reviewCount == 0)

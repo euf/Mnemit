@@ -552,6 +552,26 @@
         }
       }
     },
+    "A deck name can't be empty, start with a dot or contain “/” or “:”.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Stapelname darf nicht leer sein, nicht mit einem Punkt beginnen und weder „/“ noch „:“ enthalten."
+          }
+        }
+      }
+    },
+    "A deck named “%@” already exists.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einen Stapel namens „%@“ gibt es bereits."
+          }
+        }
+      }
+    },
     "A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per day counts all other new cards.": {
       "localizations": {
         "de": {
@@ -618,6 +638,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karte hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten hinzufügen"
           }
         }
       }
