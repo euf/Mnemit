@@ -70,7 +70,7 @@ final class SessionDriver {
         case .practiced:
             registerPracticeUndo(restore)
         }
-        lastReceipt = GradeReceipt(grade: grade, interval: interval)
+        lastReceipt = GradeReceipt(grade: grade, interval: interval, isLeech: mode.session.leechIDs.count > before.session.leechIDs.count)
         moveOn()
         return true
     }

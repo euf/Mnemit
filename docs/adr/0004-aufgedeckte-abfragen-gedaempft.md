@@ -39,3 +39,8 @@ Kein neues Dateiformat: Die Abfrageart steht schon in `reviews.jsonl`. Bestehend
 übernehmen die Dämpfung, sobald ihr Verlauf nachgerechnet wird. Ältere App-Versionen
 rechnen ohne Dämpfung; führt ein Gerät mit älterer Version zusammen, gilt dessen Ergebnis,
 bis eine neuere Version den Verlauf wieder nachrechnet.
+
+## Im Fork
+
+Mnemit ersetzt das feste Drittel durch die Option `revealedRecallWeight` (1/3 bis 1,
+voreingestellt 1) und lässt den Optimierer aufgedeckte Abfragen lernen: ADR 0005.

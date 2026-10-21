@@ -218,6 +218,25 @@ struct DeckMergeTests {
         #expect(card.learningState?.due == phone.cards[0].learningState?.due)
     }
 
+    @Test func aNewRevealedRecallWeightOfTheContentReplaysTheMemory() throws {
+        let mac = try baseDeck()
+        var phone = mac
+        review(&phone, dom.id, .good, at: day(3), mode: .revealed)
+
+        var macLater = mac
+        var options = macLater.learningOptions
+        options.revealedRecallWeight = 0.5
+        _ = macLater.apply(try #require(DeckChange.changingLearningOptions(options, in: macLater, calendar: calendar)), at: day(2), calendar: calendar)
+
+        let merged = merging(phone, into: macLater, at: day(4))
+        let card = try #require(merged.card(withID: dom.id))
+        let scheduler = Scheduler(learningOptions: options, calendar: calendar)
+        let replayed = try #require(scheduler.replayingMemory(of: phone.cards[0]))
+        #expect(card == replayed)
+        #expect(card.learningState?.stability != phone.cards[0].learningState?.stability)
+        #expect(card.learningState?.due == phone.cards[0].learningState?.due)
+    }
+
     @Test func progressJoinsTheDaysOfBothVersions() throws {
         let mac = try baseDeck()
         var macLater = mac

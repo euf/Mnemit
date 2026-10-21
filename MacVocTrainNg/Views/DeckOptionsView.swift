@@ -6,6 +6,7 @@ struct DeckOptionsView: View {
     @ObservedObject var document: VocabularyDocument
     @Environment(\.dismiss) private var dismiss
     @State private var options: LearningOptions
+    @State private var showsAdvanced = false
 
     init(document: VocabularyDocument) {
         self.document = document
@@ -33,7 +34,7 @@ struct DeckOptionsView: View {
 
                 Section {
                     LimitField(title: "Cards per session", value: $options.cardsPerSession, defaultValue: 100, step: 10)
-                    LimitField(title: "New cards per session", value: $options.newCardsPerSession, defaultValue: 20, step: 5)
+                    LimitField(title: "New cards per day", value: $options.newCardsPerSession, defaultValue: 20, step: 5)
                     Stepper(value: $options.steps, in: LearningOptions.stepsRange) {
                         LabeledContent("Steps per card", value: options.steps.formatted())
                     }
@@ -45,7 +46,7 @@ struct DeckOptionsView: View {
                 }
 
                 Section {
-                    LimitField(title: "New production cards per session", value: $options.newProductionPerSession, defaultValue: 7, step: 1, range: LearningOptions.productionLimitRange)
+                    LimitField(title: "New production cards per day", value: $options.newProductionPerSession, defaultValue: 7, step: 1, range: LearningOptions.productionLimitRange)
                     Stepper(value: $options.productionUnlockDays, in: LearningOptions.productionUnlockDaysRange) {
                         LabeledContent(
                             "Unlock production cards after",
@@ -58,7 +59,7 @@ struct DeckOptionsView: View {
                 } header: {
                     Text("Word cards")
                 } footer: {
-                    Text("A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per session counts all other new cards.")
+                    Text("A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per day counts all other new cards.")
                         .foregroundStyle(.secondary)
                 }
 
@@ -66,11 +67,26 @@ struct DeckOptionsView: View {
                     Toggle("Case-sensitive", isOn: $options.caseSensitive)
                 }
 
-                Section("Advanced") {
-                    Toggle("Spread out intervals", isOn: $options.fuzzing)
-                        .help("Varies intervals slightly so cards learned together don't always come back together.")
-                    Stepper(value: $options.maximumInterval, in: LearningOptions.maximumIntervalRange, step: 30) {
-                        LabeledContent("Longest interval", value: Format.days(Double(options.maximumInterval)))
+                Section {
+                    DisclosureGroup("Advanced", isExpanded: $showsAdvanced) {
+                        Toggle("Spread out intervals", isOn: $options.fuzzing)
+                            .help("Varies intervals slightly so cards learned together don't always come back together.")
+                        Stepper(value: $options.maximumInterval, in: LearningOptions.maximumIntervalRange, step: 30) {
+                            LabeledContent("Longest interval", value: Format.days(Double(options.maximumInterval)))
+                        }
+                        Stepper(value: $options.leechThreshold, in: LearningOptions.leechThresholdRange) {
+                            LabeledContent("Leech threshold", value: options.leechThreshold == 0 ? String(localized: "Off") : options.leechThreshold.formatted())
+                        }
+                        .help("A card you forget this many times, and again after every further multiple of it, is suspended as a leech. Resume it in the card list. Off never suspends.")
+                        LabeledContent("Weight of revealed recalls") {
+                            HStack {
+                                Slider(value: $options.revealedRecallWeight, in: LearningOptions.revealedRecallWeightRange)
+                                Text(Format.percent(options.revealedRecallWeight))
+                                    .monospacedDigit()
+                                    .frame(width: 44, alignment: .trailing)
+                            }
+                        }
+                        .help("How much a recalled review after revealing the answer, on flash cards and on the iPhone, adds to a card's memory compared with a typed one. 100 % treats both alike, as Anki does; 33 % damps revealed reviews to a third.")
                     }
                 }
 

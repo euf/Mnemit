@@ -16,8 +16,10 @@ public struct Session: Sendable {
     public private(set) var recalledCount = 0
     /// Cards graded `.again` at least once, in order of their first `.again`.
     public private(set) var mistakeIDs: [Card.ID] = []
-    /// Cards the learner suspended during the session; they left it.
+    /// Cards suspended during the session, by the learner or as leeches; they left it.
     public private(set) var suspendedCount = 0
+    /// Cards that became leeches during the session and were suspended for it, in order.
+    public private(set) var leechIDs: [Card.ID] = []
 
     private var queue: SessionQueue
     private var random: SeededRandom
@@ -45,8 +47,11 @@ public struct Session: Sendable {
 
     /// Counts the review of the current card at `now` and moves on to the next one.
     ///
-    /// - Parameter isDone: Whether the current card leaves the session.
-    mutating func record(_ grade: Grade, isDone: Bool, at now: Date) {
+    /// - Parameters:
+    ///   - isDone: Whether the current card leaves the session.
+    ///   - isLeech: Whether the review made the card a leech, which suspends it: it leaves
+    ///     the session, too, and counts as suspended.
+    mutating func record(_ grade: Grade, isDone: Bool, isLeech: Bool = false, at now: Date) {
         guard let id = currentCardID else { return }
         lastReviewedAt = now
         reviewCount += 1
@@ -55,7 +60,11 @@ public struct Session: Sendable {
         } else if !mistakeIDs.contains(id) {
             mistakeIDs.append(id)
         }
-        if isDone {
+        if isLeech {
+            leechIDs.append(id)
+            suspendedCount += 1
+        }
+        if isDone || isLeech {
             queue.remove(id)
         }
         advance()

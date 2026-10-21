@@ -56,9 +56,11 @@ _Vermeiden_: Answer, „deine Antwort“
 **Review mode** (Abfrageart):
 Wie eine Review lief: Typed (Getippt), der Lernende tippt eine Response, und die App
 schlägt eine Grade vor; oder Revealed (Aufgedeckt), der Lernende deckt die Answer auf und
-gibt die Grade ohne Response. Der Mac fragt Typed ab, das iPhone Revealed. Eine Revealed
-Review, die die Card weiß, bringt nur ein Drittel der Stabilität, die FSRS hinzurechnet;
-siehe `docs/adr/0004-aufgedeckte-abfragen-gedaempft.md`.
+gibt die Grade ohne Response. Der Mac fragt Typed ab oder, im Modus „Flashcards“, Revealed;
+das iPhone fragt Revealed. Eine Revealed Review, die die Card weiß, behält den Anteil
+`revealedRecallWeight` der Stabilität, die FSRS hinzurechnet (im Fork voreingestellt 1,
+einstellbar bis herunter auf ein Drittel); siehe `docs/adr/0004-aufgedeckte-abfragen-gedaempft.md` und
+`docs/adr/0005-aufgedeckte-abfragen-zaehlen-im-fork-voll.md`.
 _Vermeiden_: Karteikarten-Modus
 
 **Check result** (Prüfergebnis):

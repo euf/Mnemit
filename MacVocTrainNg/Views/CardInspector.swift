@@ -66,6 +66,16 @@ private struct CardDetail: View {
                     Label("Suspended: no study session asks this card.", systemImage: "pause.circle")
                         .foregroundStyle(.secondary)
                 }
+                if document.deck.isLeech(card) {
+                    Label {
+                        Text("Leech: you keep forgetting this card.")
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                    .foregroundStyle(.secondary)
+                    .help("The card has been forgotten as often as the leech threshold in the learning options asks. A session suspends it; resume it to keep learning it.")
+                }
                 if let learningState = card.learningState {
                     LabeledContent("Maturity") { MaturityLabel(category: MaturityCategory(card: card)) }
                     LabeledContent("Phase", value: learningState.phase.title)

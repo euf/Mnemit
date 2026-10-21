@@ -10,7 +10,8 @@ struct TrainingReview: Hashable, Sendable {
 }
 
 /// A review to predict together with all reviews of the same card before it
-/// (`FSRSItem` in fsrs-rs). The last review is the target; it is always typed.
+/// (`FSRSItem` in fsrs-rs). The last review is the target; it is revealed only if the
+/// learner asked the optimizer to learn from revealed reviews, see `items(from:calendar:revealedAreTargets:)`.
 struct TrainingItem: Hashable, Sendable {
     var reviews: [TrainingReview]
 
@@ -27,13 +28,15 @@ struct TrainingItem: Hashable, Sendable {
 }
 
 extension TrainingItem {
-    /// One item for every typed review of `cards` on a later study day than the previous
-    /// review of the same card, ordered by the time of that review, oldest first.
-    /// Revealed reviews are self-graded too optimistically to serve as targets; they
-    /// count in the history of later ones.
+    /// One item for every review of `cards` on a later study day than the previous review
+    /// of the same card, ordered by the time of that review, oldest first.
+    ///
+    /// - Parameter revealedAreTargets: Whether revealed reviews give items. If not, they
+    ///   are self-graded too optimistically to serve as targets (ADR 0004) and count only
+    ///   in the history of later items.
     ///
     /// Only cards whose review log is complete take part; see `Card.hasCompleteLog`.
-    static func items(from cards: [Card], calendar: StudyCalendar) -> [TrainingItem] {
+    static func items(from cards: [Card], calendar: StudyCalendar, revealedAreTargets: Bool) -> [TrainingItem] {
         var dated: [(date: Date, item: TrainingItem)] = []
         for card in cards where card.hasCompleteLog {
             var reviews: [TrainingReview] = []
@@ -43,7 +46,7 @@ extension TrainingItem {
                 let elapsed = previousDay.map { max(0, day - $0) } ?? 0
                 reviews.append(TrainingReview(grade: entry.grade, elapsedDays: elapsed, mode: entry.mode))
                 previousDay = day
-                if elapsed > 0 && entry.mode == .typed {
+                if elapsed > 0 && (revealedAreTargets || entry.mode == .typed) {
                     dated.append((entry.date, TrainingItem(reviews: reviews)))
                 }
             }

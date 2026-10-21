@@ -26,7 +26,11 @@ import Foundation
 /// still holds them keeps the card suspended. `note` and `kind` of a card and the
 /// options `newProductionPerSession`, `productionUnlockDays` and `newCardOrder` came
 /// without a new version too: an older app version drops them on save, and its sessions
-/// then ask production cards like any other.
+/// then ask production cards like any other. So did `revealedRecallWeight` and
+/// `optimizeFromRevealed` (ADR 0005): an older app version drops them, rates revealed
+/// reviews with its fixed third and trains the optimizer on typed reviews only, until a
+/// newer version writes the deck again. `leechThreshold` came the same way: an older app
+/// version drops it, and its sessions suspend no leeches.
 ///
 /// When `currentVersion` goes up: a missing key takes its default, so a newer app
 /// version reads an older deck of the same version. The other way round, an older
@@ -202,6 +206,9 @@ extension DeckFile {
         var caseSensitive: Bool
         var fuzzing: Bool
         var parameters: [Double]
+        var revealedRecallWeight: Double
+        var optimizeFromRevealed: Bool
+        var leechThreshold: Int
 
         init(_ options: LearningOptions) {
             targetRecall = options.targetRecall
@@ -215,6 +222,9 @@ extension DeckFile {
             caseSensitive = options.caseSensitive
             fuzzing = options.fuzzing
             parameters = options.parameters.weights
+            revealedRecallWeight = options.revealedRecallWeight
+            optimizeFromRevealed = options.optimizeFromRevealed
+            leechThreshold = options.leechThreshold
         }
 
         func learningOptions() throws -> LearningOptions {
@@ -236,13 +246,16 @@ extension DeckFile {
             options.caseSensitive = caseSensitive
             options.fuzzing = fuzzing
             options.parameters = parameters
+            options.revealedRecallWeight = revealedRecallWeight
+            options.optimizeFromRevealed = optimizeFromRevealed
+            options.leechThreshold = leechThreshold
             return options
         }
 
         private enum CodingKeys: String, CodingKey {
             case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
             case newProductionPerSession, productionUnlockDays, newCardOrder
-            case caseSensitive, fuzzing, parameters
+            case caseSensitive, fuzzing, parameters, revealedRecallWeight, optimizeFromRevealed, leechThreshold
         }
 
         init(from decoder: Decoder) throws {
@@ -269,6 +282,9 @@ extension DeckFile {
             caseSensitive = try container.decodeIfPresent(Bool.self, forKey: .caseSensitive) ?? defaults.caseSensitive
             fuzzing = try container.decodeIfPresent(Bool.self, forKey: .fuzzing) ?? defaults.fuzzing
             parameters = try container.decodeIfPresent([Double].self, forKey: .parameters) ?? defaults.parameters
+            revealedRecallWeight = try container.decodeIfPresent(Double.self, forKey: .revealedRecallWeight) ?? defaults.revealedRecallWeight
+            optimizeFromRevealed = try container.decodeIfPresent(Bool.self, forKey: .optimizeFromRevealed) ?? defaults.optimizeFromRevealed
+            leechThreshold = try container.decodeIfPresent(Int.self, forKey: .leechThreshold) ?? defaults.leechThreshold
         }
 
         func encode(to encoder: Encoder) throws {
@@ -285,6 +301,9 @@ extension DeckFile {
             try container.encode(caseSensitive, forKey: .caseSensitive)
             try container.encode(fuzzing, forKey: .fuzzing)
             try container.encode(parameters, forKey: .parameters)
+            try container.encode(revealedRecallWeight, forKey: .revealedRecallWeight)
+            try container.encode(optimizeFromRevealed, forKey: .optimizeFromRevealed)
+            try container.encode(leechThreshold, forKey: .leechThreshold)
         }
     }
 

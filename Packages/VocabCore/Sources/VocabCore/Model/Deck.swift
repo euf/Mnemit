@@ -14,11 +14,15 @@ public struct LearningOptions: Hashable, Sendable {
     public var steps: Int = 2
     /// Maximum number of cards per session; `nil` means unlimited.
     public var cardsPerSession: Int? = 100
-    /// Maximum number of never-studied cards per session, not counting new production
-    /// cards (`newProductionPerSession`); `nil` means unlimited.
+    /// Maximum number of never-studied cards a study day introduces, not counting new
+    /// production cards (`newProductionPerSession`); `nil` means unlimited. Cards whose
+    /// first review fell on the current study day count against it, so every session of
+    /// the day takes from one quota. The name keeps `deck.json` readable: it said "per
+    /// session" when the limit still restarted with each session.
     public var newCardsPerSession: Int? = nil
-    /// Maximum number of never-studied production cards per session (`CardKind.production`);
-    /// 0 asks none, `nil` means unlimited.
+    /// Maximum number of never-studied production cards (`CardKind.production`) a study
+    /// day introduces, counted like `newCardsPerSession`; 0 asks none, `nil` means
+    /// unlimited.
     public var newProductionPerSession: Int? = 7
     /// Days the interval of a note's recognition card must have reached before its
     /// production card is introduced; 0 never holds production cards back.
@@ -29,6 +33,19 @@ public struct LearningOptions: Hashable, Sendable {
     /// Spreads review intervals slightly so cards learned together don't stay clustered.
     public var fuzzing: Bool = true
     public var parameters: FSRSParameters = .default
+    /// Share of the stability FSRS adds that a card keeps after recalling it in a revealed
+    /// review (`ReviewMode.revealed`); a typed review keeps all of it. 1 treats a revealed
+    /// review like any other, as Anki does; the lower bound, a third, is the damping of
+    /// ADR 0004. Applies where the scheduler rates a review, replays a log and in the
+    /// optimizer's model; see ADR 0005.
+    public var revealedRecallWeight: Double = 1
+    /// Whether the optimizer also learns from revealed reviews. Off, only typed reviews
+    /// are its targets, as with ADR 0004.
+    public var optimizeFromRevealed: Bool = true
+    /// Lapses (Again on a card in the review phase) after which a study session suspends
+    /// the card as a leech, and after every further multiple of it; 0 never does. A card is
+    /// a leech from that many lapses on, resumed or not: `Card.isLeech(threshold:)`.
+    public var leechThreshold: Int = 8
 
     public init() {}
 
@@ -40,6 +57,23 @@ public struct LearningOptions: Hashable, Sendable {
     /// For `newProductionPerSession` when it is limited: unlike the other limits, 0 is valid.
     public static let productionLimitRange: ClosedRange<Int> = 0...9999
     public static let productionUnlockDaysRange: ClosedRange<Int> = 0...365
+    /// For `leechThreshold`; 0 is off.
+    public static let leechThresholdRange: ClosedRange<Int> = 0...99
+    /// From the damping of ADR 0004 (a third) to none.
+    public static let revealedRecallWeightRange: ClosedRange<Double> = (1.0 / 3)...1
+}
+
+extension LearningOptions {
+    /// What a card's memory (stability and difficulty) is computed with. A card's memory
+    /// is replayed from its review log when this changes: `DeckChange` and merges.
+    struct MemoryModel: Hashable, Sendable {
+        var parameters: FSRSParameters
+        var revealedRecallWeight: Double
+    }
+
+    var memoryModel: MemoryModel {
+        MemoryModel(parameters: parameters, revealedRecallWeight: revealedRecallWeight)
+    }
 }
 
 /// The order in which a study session takes new cards when a limit leaves some out.
@@ -63,6 +97,9 @@ extension LearningOptions {
         newCardsPerSession = newCardsPerSession?.clamped(to: Self.sessionLimitRange)
         newProductionPerSession = newProductionPerSession?.clamped(to: Self.productionLimitRange)
         productionUnlockDays = productionUnlockDays.clamped(to: Self.productionUnlockDaysRange)
+        leechThreshold = leechThreshold.clamped(to: Self.leechThresholdRange)
+        if !revealedRecallWeight.isFinite { revealedRecallWeight = LearningOptions().revealedRecallWeight }
+        revealedRecallWeight = revealedRecallWeight.clamped(to: Self.revealedRecallWeightRange)
     }
 }
 
@@ -137,6 +174,23 @@ public struct Deck: Hashable, Sendable {
     /// The number of suspended cards, see `Card.isSuspended`.
     public var suspendedCount: Int {
         cards.reduce(0) { $0 + ($1.isSuspended ? 1 : 0) }
+    }
+
+    /// The newest batch of words: the cards whose `created` falls on the second of the
+    /// deck's latest one, in deck order, without suspended cards. `deck-from-tsv` stamps one
+    /// `created` per run, so a batch is what one run added, usually the words of the last
+    /// lesson or two. Empty for a deck without cards. Meant for `Practice(practicing:at:)`.
+    ///
+    /// Cards added by hand in between start a batch of their own.
+    public var newestBatchIDs: [Card.ID] {
+        func second(_ card: Card) -> Int { Int(card.created.timeIntervalSince1970.rounded(.down)) }
+        guard let newest = cards.map(second).max() else { return [] }
+        return cards.filter { second($0) == newest && !$0.isSuspended }.map(\.id)
+    }
+
+    /// Whether `card` is a leech by the deck's `LearningOptions.leechThreshold`.
+    public func isLeech(_ card: Card) -> Bool {
+        card.isLeech(threshold: learningOptions.leechThreshold)
     }
 
     /// The probability of recalling `card` at `now` with the deck's learning options,

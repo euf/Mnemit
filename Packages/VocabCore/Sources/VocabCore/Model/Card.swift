@@ -85,12 +85,14 @@ public enum ReviewMode: Sendable {
     /// The learner revealed the answer and graded without a response.
     case revealed
 
-    /// Share of the stability FSRS adds on a recall that the card keeps; see `Scheduler`.
-    /// Applies neither to a lapse nor to a card's first review.
-    public var stabilityGainShare: Double {
+    /// Share of the stability FSRS adds on a recall that the card keeps: all after a typed
+    /// review, `revealedRecallWeight` (`LearningOptions.revealedRecallWeight`) after a
+    /// revealed one. Applies neither to a lapse nor to a card's first review; see
+    /// `Scheduler`.
+    public func stabilityGainShare(revealedRecallWeight: Double) -> Double {
         switch self {
         case .typed: 1
-        case .revealed: 1.0 / 3
+        case .revealed: revealedRecallWeight
         }
     }
 }
@@ -99,7 +101,8 @@ public enum ReviewMode: Sendable {
 public struct ReviewLogEntry: Hashable, Sendable {
     public var date: Date
     public var grade: Grade
-    /// A recalled revealed review gains less stability, see `ReviewMode.stabilityGainShare`.
+    /// A recalled revealed review may gain less stability, see
+    /// `LearningOptions.revealedRecallWeight`.
     public var mode: ReviewMode
 
     public init(date: Date, grade: Grade, mode: ReviewMode = .typed) {
@@ -213,6 +216,19 @@ public struct Card: Identifiable, Hashable, Sendable {
         guard !isSuspended else { return false }
         guard let learningState else { return true }
         return learningState.due <= date
+    }
+
+    /// Whether the card has lapsed `threshold` times or more; never for a threshold of 0.
+    /// Derived from the lapse count, so it needs no flag in the deck file and no merge
+    /// rule: every version of a card agrees on its lapses.
+    public func isLeech(threshold: Int) -> Bool {
+        threshold > 0 && (learningState?.lapses ?? 0) >= threshold
+    }
+
+    /// Suspends the card like `DeckChange.settingSuspended`, at `now` in whole seconds.
+    mutating func suspend(at now: Date) {
+        isSuspended = true
+        suspensionChanged = Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down))
     }
 
     /// Makes the card a new card again but keeps its content. Leaves

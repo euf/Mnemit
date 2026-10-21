@@ -10,9 +10,12 @@ struct GradeReceipt: Equatable {
     /// As `Scheduler.previewIntervals` told before the grade; `nil` in practice, which
     /// schedules nothing.
     var interval: ReviewInterval?
+    /// The grade made the card a leech, which suspended it.
+    var isLeech = false
 
-    /// "Good · in 4 days", "Forgot · again today".
+    /// "Good · in 4 days", "Forgot · again today", "Forgot · leech, suspended".
     var text: String {
+        if isLeech { return "\(grade.title) · \(String(localized: "leech, suspended"))" }
         guard let interval else { return grade.title }
         return "\(grade.title) · \(Format.interval(interval))"
     }

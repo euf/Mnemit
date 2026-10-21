@@ -72,6 +72,7 @@ public struct SyncOptions: Equatable, Sendable {
         usage: deck-from-tsv <cards.tsv> <deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR]
                              [--new-per-session N|none] [--new-production-per-session N|none]
                              [--unlock-days N] [--new-order deck|newest]
+        --new-per-session and --new-production-per-session keep their names; the limits hold per study day.
         """
 
     /// - Parameter arguments: The command line without the program name.

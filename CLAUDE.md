@@ -36,9 +36,29 @@
 - Числа «сегодня» (New · Learning · Review, размер сессии, ближайшая дата) — только
   `StudySession.counts(for:at:calendar:)`: тот же отбор, что у сессии, поэтому цифры на
   экране колоды, в тулбаре и в статусной строке совпадают с тем, что сессия возьмёт.
-  Лимиты `newCardsPerSession` и `newProductionPerSession` считаются на сессию, не на
-  день: после сессии счёт новых снова полный. `Deck.dueCount` считает каждую нетронутую
-  карточку, им кнопку «Study» и строки со счётом не кормить.
+  Лимиты `newCardsPerSession` и `newProductionPerSession` считаются на учебный день
+  (смена в 4 утра), имена остались ради `deck.json`: карточка, чья первая оценка пришлась
+  на текущий день, вычитается из лимита, поэтому вторая сессия и «Continue» новых сверх
+  лимита не берут, а следующий день возвращает полный счёт. Флаги `deck-from-tsv`
+  `--new-per-session` и `--new-production-per-session` тоже называются по-старому и
+  задают дневной лимит. `Deck.dueCount` считает каждую нетронутую карточку, им кнопку
+  «Study» и строки со счётом не кормить.
+- Повторения `.revealed` (карточки: весь iPhone и Mac в режиме Flashcards) в форке главный
+  сигнал, как в Anki: `LearningOptions.revealedRecallWeight` (1/3…1, по умолчанию 1)
+  заменил жёсткую треть из ADR 0004, `optimizeFromRevealed` (по умолчанию `true`) пускает
+  такие повторения в оптимизатор целями. Откат к ADR 0004: вес 0.33 и выключатель в
+  Learning Options (ADR 0005).
+- Leech: `LearningOptions.leechThreshold` (8 провалов, 0 — выкл). Провал, доводящий
+  `lapses` до порога и до каждого следующего кратного, `StudySession.review` сразу
+  превращает в suspend (оба приложения, одним `DeckChange` с отменой), карточка уходит
+  из сессии, `GradeReceipt` говорит «leech, suspended». Флага в файле нет: `Card.isLeech(
+  threshold:)` выводится из `lapses`, поэтому фильтр «Leeches» на Mac показывает и
+  возобновлённые карточки, а слияния нового правила не требуют.
+- Последняя партия слов: `Deck.newestBatchIDs` — карточки с тем же `created` (до секунды),
+  что и самая свежая в колоде, без suspended; `deck-from-tsv` ставит один `created` на
+  прогон. Mac: Study ▸ Practice Newest Words (`SessionViewModel(practicing:)`, расписание
+  не трогает); для iPhone API готово, кнопки нет. Карточка, добавленная руками позже,
+  начинает свою партию.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
 
