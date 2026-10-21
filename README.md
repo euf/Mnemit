@@ -9,7 +9,7 @@ wieder, wenn du sie sonst vergessen würdest.
 
 ## Funktionen
 
-- **Stapel**: einer pro Datei (`.voctrain`), lesbares JSON, Autosave, Versionen
+- **Stapel**: einer pro Datei (`.mnemit`; `.voctrain`-Dateien öffnen weiterhin), lesbares JSON, Autosave, Versionen
 - **Kartenliste**: schnelles Erfassen (Frage ↩ Antwort ↩ Hinweis ↩), Bearbeiten in einem
   Blatt (Doppelklick auf die Karte, ↩ sichert), Suche (ignoriert Akzente: „dzien“ findet
   „dzień“), Inspektor mit Lernstand und Verlauf, Undo für alles
@@ -201,7 +201,7 @@ ist unbekannt und startet neutral bei 5. FSRS passt sie mit den ersten Abfragen 
 Ein Stapel ist ein Paket, also ein Ordner, den der Finder als eine Datei zeigt:
 
 ```
-Stapel.voctrain/
+Stapel.mnemit/
   deck.json       Lernoptionen, Karten mit Lernstand, Fortschritt
   reviews.jsonl   Verlauf, eine Zeile je Abfrage
 ```

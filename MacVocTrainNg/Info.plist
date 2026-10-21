@@ -15,6 +15,20 @@
 			<true/>
 			<key>LSItemContentTypes</key>
 			<array>
+				<string>com.euf.mnemit.deck</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Mnemit Deck (.voctrain)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Default</string>
+			<key>LSTypeIsPackage</key>
+			<true/>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>de.fluch-it-consulting.voctrain.deck</string>
 			</array>
 		</dict>
@@ -23,9 +37,30 @@
 	<array>
 		<dict>
 			<key>UTTypeIdentifier</key>
-			<string>de.fluch-it-consulting.voctrain.deck</string>
+			<string>com.euf.mnemit.deck</string>
 			<key>UTTypeDescription</key>
 			<string>Mnemit Deck</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.apple.package</string>
+				<string>public.composite-content</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>mnemit</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>de.fluch-it-consulting.voctrain.deck</string>
+			<key>UTTypeDescription</key>
+			<string>Mnemit Deck (.voctrain)</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>com.apple.package</string>
@@ -39,9 +74,6 @@
 				</array>
 			</dict>
 		</dict>
-	</array>
-	<key>UTImportedTypeDeclarations</key>
-	<array>
 		<dict>
 			<key>UTTypeIdentifier</key>
 			<string>com.mfluch.MacVocTrain</string>

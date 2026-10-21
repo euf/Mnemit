@@ -8,7 +8,7 @@ import UniformTypeIdentifiers
 /// Saving a deck through the NSDocument behind `DocumentGroup` (#265).
 @MainActor
 struct FileVersionStoreTests {
-    let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).voctrain")
+    let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).mnemit")
 
     @Test func savesThroughTheDocumentOfItsFile() async throws {
         let document = SavedDocument()

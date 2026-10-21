@@ -6,7 +6,7 @@ import Testing
 /// Hearing of changes to the file of an open deck (#252, #259, #298).
 @MainActor
 struct FileWatchTests {
-    let url = URL(fileURLWithPath: "/Users/learner/Library/Mobile Documents/com~apple~CloudDocs/Polish.voctrain")
+    let url = URL(fileURLWithPath: "/Users/learner/Library/Mobile Documents/com~apple~CloudDocs/Polish.mnemit")
     let store = FakeVersionStore()
     let changes = ChangeCounter()
 

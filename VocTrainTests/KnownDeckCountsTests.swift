@@ -14,7 +14,7 @@ struct KnownDeckCountsTests {
         var options = LearningOptions()
         options.newCardsPerSession = 2
         let cards = ["dom", "kot", "pies"].map { Card(text: CardText(question: $0, answer: "x")!, created: Date()) }
-        let url = directory.appending(path: "Polish.voctrain", directoryHint: .isDirectory)
+        let url = directory.appending(path: "Polish.mnemit", directoryHint: .isDirectory)
         try DeckFile.fileWrapper(for: Deck(learningOptions: options, cards: cards)).write(to: url, options: .atomic, originalContentsURL: nil)
 
         let counts = try #require(KnownDeckCounts.counts(at: url))
@@ -23,7 +23,7 @@ struct KnownDeckCountsTests {
     }
 
     @Test func aDeckThatCannotBeReadHasNoCounts() {
-        let missing = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).voctrain", directoryHint: .isDirectory)
+        let missing = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).mnemit", directoryHint: .isDirectory)
         #expect(KnownDeckCounts.counts(at: missing) == nil)
     }
 }

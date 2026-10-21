@@ -10,7 +10,18 @@
   Внутренние имена апстрима оставлены сознательно, чтобы слияния с апстримом не превращались
   в ручную работу: проект `MacVocTrainNg.xcodeproj`, схемы и таргеты `MacVocTrainNg` и
   `VocTrain`, каталоги исходников, модули `MacVocTrain`/`VocTrain` (`PRODUCT_MODULE_NAME`),
-  формат колоды `.voctrain` и его UTType.
+  ключ `format` внутри `deck.json` (`de.fluch-it-consulting.voctrain.deck`).
+- Колода — пакет `X.mnemit` (`deck.json` + `reviews.jsonl`). Тип `com.euf.mnemit.deck`
+  экспортируется из обоих `Info.plist` и объявлен в `Shared/Document/ContentTypes.swift`
+  (`UTType.vocabularyDeck`). Расширение и проверку имени держит VocabCore:
+  `DeckFile.fileExtension`, `DeckFile.isDeckName`; остальной код расширения не пишет.
+  Файлы `.voctrain` (импортируемый тип `de.fluch-it-consulting.voctrain.deck`,
+  `UTType.legacyVocabularyDeck`) читаются так же: открываются, стоят в списках папки рядом
+  с `.mnemit`, правятся и сохраняются на месте под своим именем; приложение их не
+  переименовывает. `UTType.deckTypes` — оба типа, новый первым: это
+  `readableContentTypes` и `writableContentTypes` документа на Mac (первый тип получают
+  новые колоды) и фильтр пикера на iPhone. Внутри `deck.json` у обоих расширений один ключ
+  `format`, содержимое одно.
 - Раздел Workflow ниже — правила апстрима (issue, ветка, PR, немецкие заголовки). В форке
   они не действуют: коммит в `main` и пуш без вопроса. Правка, полезная апстриму, —
   отдельной веткой и PR туда по их правилам.
@@ -22,15 +33,16 @@
   `devicectl` на iPhone 13 mini. Bundle id берётся из профиля. Телефон должен быть
   разблокирован.
 - Синхронизация колоды с TSV на месте, без потери прогресса:
-  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--new-order deck|newest]`.
+  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--new-order deck|newest]`.
   TSV с шапкой `note⇥kind⇥question⇥answer⇥hint` (kind — `recognition` или `production`,
   `\n` в полях — перенос строки). Карточка находится по (note, kind); старая карточка без
   note усыновляется (id и повторения остаются), если её ответ равен первой строке ответа
   строки или, для production, этой строке без окончаний и артикля; иначе создаётся новая с
   id UUID v5 от `note|kind`. Текст правится на месте, удалений нет, `--suspend-missing`
   замораживает карточки с note, которого в TSV нет. Перед записью копия колоды уходит в
-  `<каталог колоды>/.backups` (10 свежих). TSV без шапки (вопрос, ответ, подсказка) работает
-  как раньше: добавляются только новые вопросы. Модель и правила выбора карточек
+  `<каталог колоды>/.backups` (10 свежих; копия получает `.mnemit`, при чистке считаются
+  копии обоих расширений). Колода с `.voctrain` пишется на месте под своим именем. TSV без
+  шапки (вопрос, ответ, подсказка) работает как раньше: добавляются только новые вопросы. Модель и правила выбора карточек
   (разблокировка production, прятание сиблингов) — в VocabCore: `Card.note`/`kind`,
   `LearningOptions.productionUnlockDays` и соседние, `StudySession.selectCards`.
 - Числа «сегодня» (New · Learning · Review, размер плана, ближайшая дата) — только

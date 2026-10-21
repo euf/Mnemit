@@ -7,7 +7,7 @@ import Testing
 /// Merging the versions of a deck that another device changed on iCloud Drive (#252).
 @MainActor
 struct VersionMergerTests {
-    let url = URL(fileURLWithPath: "/Users/learner/Library/Mobile Documents/com~apple~CloudDocs/Polish.voctrain")
+    let url = URL(fileURLWithPath: "/Users/learner/Library/Mobile Documents/com~apple~CloudDocs/Polish.mnemit")
     /// 2026-10-05 18:00 in Berlin.
     let start = Date(timeIntervalSince1970: 1_791_216_000)
     let dom: Card

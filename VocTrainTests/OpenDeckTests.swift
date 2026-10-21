@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UniformTypeIdentifiers
 
 @testable import VocTrain
 @testable import VocabCore
@@ -26,8 +27,35 @@ struct OpenDeckTests {
         await deck.close()
     }
 
+    /// A deck of MacVocTrain NG, `.voctrain`, is listed next to one of Mnemit, opens like
+    /// it and is saved in place under its name: nothing is renamed.
+    @Test func aVoctrainDeckOpensAndIsListedNextToAMnemitOne() async throws {
+        let folder = directory.appending(path: "Mnemit", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let legacy = try write(Deck(cards: [makeCard("dom")]), named: "Greek A1–A2.voctrain", in: folder)
+        try write(Deck(cards: [makeCard("kot")]), named: "Greek B1.mnemit", in: folder)
+
+        #expect(KnownDecks.decks(in: folder).map(\.name).sorted() == ["Greek A1–A2", "Greek B1"])
+        #expect(KnownDecks.decks(in: folder).allSatisfy { $0.url.isDeck })
+        let deck = OpenDeck(url: legacy)
+        let document = try await waitForDocument(of: deck)
+        #expect(document.deck.cards.map(\.question) == ["dom"])
+
+        review(document)
+        // Lets the run loop close the undo group, which the UIDocument counts.
+        try await Task.sleep(for: .milliseconds(200))
+        await deck.close()
+        let saved = try DeckFile.decode(FileWrapper(url: legacy, options: .immediate))
+        #expect(saved.cards.first?.log.map(\.grade) == [.good])
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path).sorted() == ["Greek A1–A2.voctrain", "Greek B1.mnemit"])
+
+        // The Info.plist declares the same types as document types.
+        let documentTypes = Bundle.main.infoDictionary?["CFBundleDocumentTypes"] as? [[String: Any]] ?? []
+        #expect(documentTypes.flatMap { $0["LSItemContentTypes"] as? [String] ?? [] } == UTType.deckTypes.map(\.identifier))
+    }
+
     @Test func aFileThatIsNoDeckFails() async throws {
-        let url = directory.appending(path: "Broken.voctrain", directoryHint: .isDirectory)
+        let url = directory.appending(path: "Broken.mnemit", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         let deck = OpenDeck(url: url)
 
@@ -149,8 +177,9 @@ struct OpenDeckTests {
         Card(text: CardText(question: question, answer: "x")!, created: .now.addingTimeInterval(-60))
     }
 
-    private func write(_ deck: Deck) throws -> URL {
-        let url = directory.appending(path: "Polish.voctrain", directoryHint: .isDirectory)
+    @discardableResult
+    private func write(_ deck: Deck, named name: String = "Polish.mnemit", in folder: URL? = nil) throws -> URL {
+        let url = (folder ?? directory).appending(path: name, directoryHint: .isDirectory)
         try DeckFile.fileWrapper(for: deck).write(to: url, options: .atomic, originalContentsURL: nil)
         return url
     }

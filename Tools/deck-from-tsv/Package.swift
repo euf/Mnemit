@@ -2,7 +2,7 @@
 
 import PackageDescription
 
-// Fork-only tool (euf): syncs a .voctrain deck with a TSV of word cards without the Mac
+// Fork-only tool (euf): syncs a .mnemit (or .voctrain) deck with a TSV of word cards without the Mac
 // app's GUI, never losing progress. Lives outside the upstream package so merges from
 // upstream don't touch it.
 let package = Package(

@@ -6,7 +6,11 @@ import VocabCore
 /// opens and saves its decks itself (#285, #297). Everything here is `nonisolated`:
 /// SwiftUI opens documents and writes snapshots to file wrappers off the main actor.
 extension VocabularyDocument: ReferenceFileDocument {
-    nonisolated static var readableContentTypes: [UTType] { [.vocabularyDeck] }
+    nonisolated static var readableContentTypes: [UTType] { UTType.deckTypes }
+
+    /// A deck of the old extension is saved in place, so its type must be writable too.
+    /// The first type is that of new decks: `.mnemit`.
+    nonisolated static var writableContentTypes: [UTType] { UTType.deckTypes }
 
     nonisolated convenience init(configuration: ReadConfiguration) throws {
         let deck: Deck

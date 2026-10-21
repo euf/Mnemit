@@ -59,13 +59,13 @@ struct KnownDecksTests {
     }
 
     @Test func aPackageIsTheSameFileWithOrWithoutTheSlashAtTheEnd() {
-        let url = URL(fileURLWithPath: "/Users/learner/Library/Mobile Documents/com~apple~CloudDocs/Polish.voctrain")
+        let url = URL(fileURLWithPath: "/Users/learner/Library/Mobile Documents/com~apple~CloudDocs/Polish.mnemit")
         #expect(KnownDecks.isSameFile(url, URL(fileURLWithPath: url.path + "/", isDirectory: true)))
-        #expect(!KnownDecks.isSameFile(url, url.deletingLastPathComponent().appending(path: "German.voctrain")))
+        #expect(!KnownDecks.isSameFile(url, url.deletingLastPathComponent().appending(path: "German.mnemit")))
     }
 
     private func makeDeck(named name: String) throws -> URL {
-        let url = directory.appending(path: "\(name).voctrain", directoryHint: .isDirectory)
+        let url = directory.appending(path: "\(name).mnemit", directoryHint: .isDirectory)
         try DeckFile.fileWrapper(for: Deck()).write(to: url, options: .atomic, originalContentsURL: nil)
         return url
     }

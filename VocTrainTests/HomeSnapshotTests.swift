@@ -16,8 +16,8 @@ import UIKit
 @MainActor
 struct HomeSnapshotTests {
     nonisolated static let now = Date()
-    static let greekB1 = KnownDeck(url: URL(filePath: "/Decks/Greek B1.voctrain"))
-    static let greekA1 = KnownDeck(url: URL(filePath: "/Decks/Greek A1–A2.voctrain"))
+    static let greekB1 = KnownDeck(url: URL(filePath: "/Decks/Greek B1.mnemit"))
+    static let greekA1 = KnownDeck(url: URL(filePath: "/Decks/Greek A1–A2.mnemit"))
 
     // MARK: Samples
 

@@ -1,11 +1,13 @@
 import Foundation
+import VocabCore
 
 /// Copies of a deck package made before a run writes it.
 public enum Backup {
     public static let keep = 10
 
-    /// Copies the package at `deck` to `<directory>/<name>-<yyyyMMdd-HHmmss>.voctrain`
-    /// and removes all but the newest `keep` copies of that deck there.
+    /// Copies the package at `deck` to `<directory>/<name>-<yyyyMMdd-HHmmss>.mnemit`
+    /// and removes all but the newest `keep` copies of that deck there, whichever
+    /// deck extension they have.
     ///
     /// - Parameter directory: Defaults to `.backups` next to the deck.
     /// - Returns: The copy.
@@ -17,10 +19,10 @@ public enum Backup {
         try files.createDirectory(at: directory, withIntermediateDirectories: true)
 
         let stamp = stamp(of: now)
-        var copy = directory.appendingPathComponent("\(name)-\(stamp).voctrain")
+        var copy = directory.appendingPathComponent("\(name)-\(stamp).\(DeckFile.fileExtension)")
         var counter = 2
         while files.fileExists(atPath: copy.path) {
-            copy = directory.appendingPathComponent("\(name)-\(stamp)-\(counter).voctrain")
+            copy = directory.appendingPathComponent("\(name)-\(stamp)-\(counter).\(DeckFile.fileExtension)")
             counter += 1
         }
         try files.copyItem(at: deck, to: copy)
@@ -45,8 +47,8 @@ public enum Backup {
     /// The age of a copy's file name as a sort key, `nil` if `file` isn't a copy of `deck`:
     /// the timestamp, then the counter of copies made in the same second.
     static func order(of file: String, deck: String) -> String? {
-        guard file.hasPrefix(deck + "-"), file.hasSuffix(".voctrain") else { return nil }
-        let parts = file.dropFirst(deck.count + 1).dropLast(".voctrain".count).split(separator: "-", omittingEmptySubsequences: false)
+        guard file.hasPrefix(deck + "-"), let ext = DeckFile.fileExtensions.first(where: { file.hasSuffix("." + $0) }) else { return nil }
+        let parts = file.dropFirst(deck.count + 1).dropLast(ext.count + 1).split(separator: "-", omittingEmptySubsequences: false)
         guard parts.count == 2 || parts.count == 3, parts.allSatisfy({ !$0.isEmpty && $0.allSatisfy(\.isWholeNumber) }),
             parts[0].count == 8, parts[1].count == 6
         else { return nil }

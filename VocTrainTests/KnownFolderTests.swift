@@ -50,7 +50,7 @@ struct KnownFolderTests {
     @Test func aDeckOpenedBeforeAndInTheFolderIsListedOnce() throws {
         let folder = try makeFolder(decks: ["Greek A1–A2", "Greek B1"], others: [])
         let known = KnownDecks(defaults: defaults)
-        known.remember(folder.appending(path: "Greek B1.voctrain", directoryHint: .isDirectory))
+        known.remember(folder.appending(path: "Greek B1.mnemit", directoryHint: .isDirectory))
         known.chooseFolder(folder)
 
         #expect(known.byName.map(\.name) == ["Greek A1–A2", "Greek B1"])
@@ -62,14 +62,14 @@ struct KnownFolderTests {
         let known = KnownDecks(defaults: defaults)
         known.chooseFolder(folder)
 
-        #expect(known.isInFolder(folder.appending(path: "Greek B1.voctrain", directoryHint: .isDirectory)))
+        #expect(known.isInFolder(folder.appending(path: "Greek B1.mnemit", directoryHint: .isDirectory)))
         #expect(!known.isInFolder(elsewhere))
     }
 
     @Test func aPlaceholderOfADeckThatIsNotDownloadedStandsForTheDeck() throws {
-        let folder = try makeFolder(decks: ["Greek A1–A2"], others: [".Greek B1.voctrain.icloud", ".DS_Store", ".notes.txt.icloud"])
+        let folder = try makeFolder(decks: ["Greek A1–A2"], others: [".Greek B1.mnemit.icloud", ".Greek B2.voctrain.icloud", ".DS_Store", ".notes.txt.icloud"])
 
-        #expect(KnownDecks.decks(in: folder).map(\.name).sorted() == ["Greek A1–A2", "Greek B1"])
+        #expect(KnownDecks.decks(in: folder).map(\.name).sorted() == ["Greek A1–A2", "Greek B1", "Greek B2"])
     }
 
     private func makeFolder(decks: [String], others: [String]) throws -> URL {
@@ -86,7 +86,7 @@ struct KnownFolderTests {
 
     @discardableResult
     private func makeDeck(named name: String, in folder: URL) throws -> URL {
-        let url = folder.appending(path: "\(name).voctrain", directoryHint: .isDirectory)
+        let url = folder.appending(path: "\(name).mnemit", directoryHint: .isDirectory)
         try DeckFile.fileWrapper(for: Deck()).write(to: url, options: .atomic, originalContentsURL: nil)
         return url
     }

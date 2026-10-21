@@ -687,7 +687,7 @@ function macWelcome(f){
 }
 function macOpenPanel(f){
  const sh=openModal(f,`<h3>Выберите папку с колодами</h3><p class="sub">iCloud Drive › Mnemit</p>
-  <ul class="files"><li>${ic("deck")}<span>Greek A1–A2.voctrain</span><em>вчера</em></li><li>${ic("deck")}<span>Greek B1.voctrain</span><em>сегодня</em></li></ul>
+  <ul class="files"><li>${ic("deck")}<span>Greek A1–A2.mnemit</span><em>вчера</em></li><li>${ic("deck")}<span>Greek B1.mnemit</span><em>сегодня</em></li></ul>
   <p class="found2">${ic("check")} Найдено 2 колоды</p>
   <div class="acts"><button class="btn sec" data-dismiss>Отмена</button><button class="btn go" data-focus>Открыть</button></div>`,{style:"--w:520px;height:300px"});
  $(".go",sh).onclick=()=>{f.modal.close();f.go(1);f.toast("Открыто 2 колоды из iCloud Drive/Mnemit")};
@@ -737,7 +737,7 @@ function macMain(f,withWords){
    const name=inp.value.trim();if(!name)return;
    const id="x"+s.decks.length;
    s.decks.push({id,name,mode:"Изучение",n:0,l:0,r:0,total:0,frozen:0,cards:[]});
-   s.sel=id;s.row=-1;f.modal.close();redraw();f.toast(`Колода «${name}» создана: iCloud Drive/Mnemit/${name}.voctrain`);
+   s.sel=id;s.row=-1;f.modal.close();redraw();f.toast(`Колода «${name}» создана: iCloud Drive/Mnemit/${name}.mnemit`);
   };
   go.onclick=create;inp.onkeydown=e=>{if(e.key==="Enter")create()};
  }

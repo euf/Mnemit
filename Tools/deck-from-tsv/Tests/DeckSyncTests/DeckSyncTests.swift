@@ -223,6 +223,8 @@ struct SyncRunTests {
         #expect(after.learningOptions.productionUnlockDays == 30)
         #expect(after.learningOptions.newCardOrder == .newestFirst)
         #expect(try FileManager.default.contentsOfDirectory(atPath: backups.path).count == 1)
+        // A deck with the old extension is written in place under its name, and no deck of the new one appears.
+        #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("Greek.mnemit").path))
 
         // Again: nothing to do, nothing written, no new backup.
         let again = try SyncRun.run(options(arguments), now: now.addingTimeInterval(5))
@@ -234,7 +236,7 @@ struct SyncRunTests {
     @Test func suspendMissingSuspendsAndKeepsProgress() throws {
         let directory = try scratch()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let deckURL = directory.appendingPathComponent("Greek.voctrain")
+        let deckURL = directory.appendingPathComponent("Greek.mnemit")
         _ = try writeDeck(at: deckURL, questions: [("a", "α"), ("b", "β")])
         let tsv = directory.appendingPathComponent("cards.tsv")
         try "note\tkind\tquestion\tanswer\thint\nα\tproduction\ta\tα\t\nβ\tproduction\tb\tβ\t\n".write(to: tsv, atomically: true, encoding: .utf8)
@@ -252,7 +254,7 @@ struct SyncRunTests {
     @Test func plainTableStillAddsNewQuestionsOnly() throws {
         let directory = try scratch()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let deckURL = directory.appendingPathComponent("Greek.voctrain")
+        let deckURL = directory.appendingPathComponent("Greek.mnemit")
         _ = try writeDeck(at: deckURL, questions: [("dynamic", "δυναμικός")])
         let tsv = directory.appendingPathComponent("cards.tsv")
         try "dynamic\tδυναμικός\t\nhasty\tβιαστικός\tx\n".write(to: tsv, atomically: true, encoding: .utf8)
@@ -268,7 +270,7 @@ struct SyncRunTests {
     @Test func newDeckIsCreatedWithoutBackup() throws {
         let directory = try scratch()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let deckURL = directory.appendingPathComponent("New.voctrain")
+        let deckURL = directory.appendingPathComponent("New.mnemit")
         let tsv = directory.appendingPathComponent("cards.tsv")
         try "note\tkind\tquestion\tanswer\thint\nα\trecognition\tα\ta\t\n".write(to: tsv, atomically: true, encoding: .utf8)
         let report = try SyncRun.run(options([tsv.path, deckURL.path]), now: now)
@@ -280,7 +282,7 @@ struct SyncRunTests {
     @Test func keepsTheTenNewestBackupsOfThisDeckOnly() throws {
         let directory = try scratch()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let deckURL = directory.appendingPathComponent("Greek.voctrain")
+        let deckURL = directory.appendingPathComponent("Greek.mnemit")
         _ = try writeDeck(at: deckURL, questions: [("a", "α")])
         let backups = directory.appendingPathComponent(".backups")
         for second in 0..<14 {
@@ -288,26 +290,30 @@ struct SyncRunTests {
         }
         // The same second twice gets a counter and counts as newer.
         let twin = try Backup.make(of: deckURL, in: nil, at: now.addingTimeInterval(13))
-        let other = backups.appendingPathComponent("Other-20260101-000000.voctrain")
+        let other = backups.appendingPathComponent("Other-20260101-000000.mnemit")
         try FileManager.default.copyItem(at: deckURL, to: other)
+        // A copy from before the extension changed counts with the others, and as the oldest it goes.
+        let oldest = backups.appendingPathComponent("Greek-20250101-000000.voctrain")
+        try FileManager.default.copyItem(at: deckURL, to: oldest)
         try Backup.make(of: deckURL, in: nil, at: now.addingTimeInterval(14))
 
         let names = try FileManager.default.contentsOfDirectory(atPath: backups.path).filter { $0.hasPrefix("Greek-") }
         #expect(names.count == Backup.keep)
         #expect(names.contains(twin.lastPathComponent))
         #expect(FileManager.default.fileExists(atPath: other.path))
+        #expect(!FileManager.default.fileExists(atPath: oldest.path))
     }
 
     @Test func parsesTheCommandLine() throws {
-        let options = try SyncOptions.parse(["a.tsv", "b.voctrain", "--dry-run", "--new-per-session", "none", "--new-production-per-session", "0", "--unlock-days", "0", "--new-order", "deck"])
+        let options = try SyncOptions.parse(["a.tsv", "b.mnemit", "--dry-run", "--new-per-session", "none", "--new-production-per-session", "0", "--unlock-days", "0", "--new-order", "deck"])
         #expect(options.dryRun && !options.suspendMissing)
         #expect(options.overrides.newPerSession == .unlimited)
         #expect(options.overrides.newProductionPerSession == .count(0))
         #expect(options.overrides.unlockDays == 0)
         #expect(options.overrides.newOrder == .deckOrder)
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv"]) }
-        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.voctrain", "--new-per-session", "0"]) }
-        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.voctrain", "--new-order", "random"]) }
-        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.voctrain", "--bogus"]) }
+        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-per-session", "0"]) }
+        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-order", "random"]) }
+        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--bogus"]) }
     }
 }

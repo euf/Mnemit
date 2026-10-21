@@ -14,7 +14,7 @@ extension WindowTests {
 
         init() throws {
             folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-            deck = folder.appendingPathComponent("Glossary.voctrain", isDirectory: true)
+            deck = folder.appendingPathComponent("Glossary.mnemit", isDirectory: true)
             try FileManager.default.createDirectory(at: deck, withIntermediateDirectories: true)
         }
 
@@ -30,7 +30,7 @@ extension WindowTests {
         @Test func findsOpenDeck() throws {
             defer { try? FileManager.default.removeItem(at: folder) }
             withDocument(at: deck) {
-                #expect(LegacyImport.openDeckError(at: deck)?.name == "Glossary.voctrain")
+                #expect(LegacyImport.openDeckError(at: deck)?.name == "Glossary.mnemit")
             }
         }
 
@@ -40,7 +40,7 @@ extension WindowTests {
             defer { try? FileManager.default.removeItem(at: folder) }
             let link = folder.appendingPathComponent("Link", isDirectory: false)
             try FileManager.default.createSymbolicLink(at: link, withDestinationURL: folder)
-            let spelling = link.appendingPathComponent("Glossary.voctrain", isDirectory: false)
+            let spelling = link.appendingPathComponent("Glossary.mnemit", isDirectory: false)
             withDocument(at: deck) {
                 #expect(LegacyImport.openDeckError(at: spelling) != nil)
             }
@@ -48,11 +48,11 @@ extension WindowTests {
 
         @Test func letsOtherDeckThrough() throws {
             defer { try? FileManager.default.removeItem(at: folder) }
-            let other = folder.appendingPathComponent("Other.voctrain", isDirectory: true)
+            let other = folder.appendingPathComponent("Other.mnemit", isDirectory: true)
             try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
             withDocument(at: deck) {
                 #expect(LegacyImport.openDeckError(at: other) == nil)
-                #expect(LegacyImport.openDeckError(at: folder.appendingPathComponent("New.voctrain")) == nil)
+                #expect(LegacyImport.openDeckError(at: folder.appendingPathComponent("New.mnemit")) == nil)
             }
         }
 

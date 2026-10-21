@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+import VocabCore
 
 /// The folder that holds the learner's decks, Mnemit in iCloud Drive: the welcome window
 /// lists the decks in it. Kept as a security-scoped bookmark of the folder in the user
@@ -29,8 +30,8 @@ final class DeckFolder {
     /// The decks in `folder` by name: packages with the extension of a deck.
     nonisolated static func decks(in folder: URL) -> [URL] {
         let contents = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])) ?? []
-        return contents.filter { $0.pathExtension == "voctrain" }
-            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+        return contents.filter { DeckFile.isDeckName($0.lastPathComponent) }
+            .sorted { $0.deletingPathExtension().lastPathComponent.localizedStandardCompare($1.deletingPathExtension().lastPathComponent) == .orderedAscending }
     }
 
     /// Reads the decks in the folder again, to pick up the ones that arrived since.

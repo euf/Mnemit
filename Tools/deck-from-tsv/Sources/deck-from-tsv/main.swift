@@ -1,7 +1,7 @@
 import DeckSync
 import Foundation
 
-// deck-from-tsv <cards.tsv> <deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR]
+// deck-from-tsv <cards.tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR]
 //               [--new-per-session N|none] [--new-production-per-session N|none]
 //               [--unlock-days N] [--new-order deck|newest]
 //

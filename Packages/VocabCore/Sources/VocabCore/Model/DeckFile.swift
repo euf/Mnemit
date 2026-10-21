@@ -5,7 +5,7 @@ import Foundation
 /// A deck is a package (a directory shown as one file):
 ///
 /// ```
-/// Stapel.voctrain/
+/// Stapel.mnemit/
 ///   deck.json       learning options, cards with their learning state, progress
 ///   reviews.jsonl   one line per review: {"card":"…","date":1791216000,"grade":3}
 /// ```
@@ -42,6 +42,20 @@ import Foundation
 /// `currentVersion` goes up, and older app versions reject the deck as
 /// `unsupportedVersion`. Incompatible changes always raise it.
 public enum DeckFile {
+    /// The extension of a deck package.
+    public static let fileExtension = "mnemit"
+    /// The extension the decks of MacVocTrain NG have: such a deck is read like any other
+    /// and saved in place under its name, never renamed.
+    public static let legacyFileExtension = "voctrain"
+    public static let fileExtensions = [fileExtension, legacyFileExtension]
+
+    /// Whether `name`, the last component of a path, names a deck package.
+    public static func isDeckName(_ name: String) -> Bool {
+        fileExtensions.contains { name.hasSuffix("." + $0) }
+    }
+
+    /// The identifier in the `format` key of `deck.json`. It stays that of the decks of
+    /// MacVocTrain NG, so both extensions hold the same contents.
     public static let format = "de.fluch-it-consulting.voctrain.deck"
     /// What decks said in `format` before the app moved to the company's identifiers;
     /// still read, never written.

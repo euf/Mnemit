@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import VocabCore
 
 /// A deck the app has opened, as the start screen lists it (#288).
 struct KnownDeck: Identifiable, Hashable {
@@ -139,7 +140,7 @@ final class KnownDecks {
     }
 
     /// The decks in `folder`: packages with the extension of a deck. A deck that iCloud
-    /// Drive has not downloaded yet is only a hidden placeholder, ".Greek B1.voctrain.icloud",
+    /// Drive has not downloaded yet is only a hidden placeholder, ".Greek B1.mnemit.icloud",
     /// whose download starts here; the deck itself opens as soon as it has arrived.
     nonisolated static func decks(in folder: URL) -> [KnownDeck] {
         let contents = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
@@ -147,12 +148,12 @@ final class KnownDecks {
             let name = url.lastPathComponent
             if name.hasPrefix("."), name.hasSuffix(".icloud") {
                 let deckName = String(name.dropFirst().dropLast(".icloud".count))
-                guard deckName.hasSuffix(".voctrain") else { return nil }
+                guard DeckFile.isDeckName(deckName) else { return nil }
                 let deck = folder.appending(path: deckName, directoryHint: .isDirectory)
                 try? FileManager.default.startDownloadingUbiquitousItem(at: deck)
                 return KnownDeck(url: deck)
             }
-            return url.pathExtension == "voctrain" ? KnownDeck(url: url) : nil
+            return DeckFile.isDeckName(name) ? KnownDeck(url: url) : nil
         }
     }
 

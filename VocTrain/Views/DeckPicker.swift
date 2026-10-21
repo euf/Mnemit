@@ -1,4 +1,6 @@
 import SwiftUI
+import UniformTypeIdentifiers
+import VocabCore
 
 extension View {
     /// The file picker for the folder of decks or for a single deck, whichever
@@ -6,7 +8,7 @@ extension View {
     /// cancel each other, so one serves both; `onPick` tells the result apart with
     /// `URL.isDeck`.
     func deckPicker(isPresented: Binding<Bool>, choosesFolder: Bool, onPick: @escaping (URL) -> Void) -> some View {
-        fileImporter(isPresented: isPresented, allowedContentTypes: choosesFolder ? [.folder] : [.vocabularyDeck]) { result in
+        fileImporter(isPresented: isPresented, allowedContentTypes: choosesFolder ? [.folder] : UTType.deckTypes) { result in
             if case let .success(url) = result {
                 onPick(url)
             }
@@ -15,8 +17,8 @@ extension View {
 }
 
 extension URL {
-    /// Whether this is a deck, a package with the extension `voctrain`.
+    /// Whether this is a deck, a package with the extension `mnemit` or `voctrain`.
     var isDeck: Bool {
-        pathExtension == "voctrain"
+        DeckFile.isDeckName(lastPathComponent)
     }
 }
