@@ -181,13 +181,15 @@ enum Format {
 }
 
 extension Color {
-    /// The daily ring (`DailyRingView`): an amber that no grade, count or maturity uses, so the
-    /// ring never reads as one of them. The first lap; at least 3:1 against the light and the
-    /// grouped background in both appearances (4.3:1 on white, 5.1:1 on the dark background).
-    static var dailyRing: Color { Color(light: 0xC25E00, dark: 0xC9791A) }
+    /// The daily ring: the app's accent, terracotta (`AccentColor`). On the Mac the user's
+    /// system accent shows instead unless it is Multicolor. The accent is a fill, a ring and
+    /// a glyph, never small text: white on it has 4.6:1 or more, but it is 3.0 to 3.7:1 on
+    /// the dark grouped surfaces.
+    static var dailyRing: Color { Color.accentColor }
 
-    /// The second and later laps of the ring, a lighter amber that stands out against the first.
-    static var dailyRingLap: Color { Color(light: 0xF59A3C, dark: 0xFFC060) }
+    /// The second and later laps of `DailyRingView`, a lighter terracotta that stands out
+    /// against the first.
+    static var dailyRingLap: Color { Color(light: 0xD98B6F, dark: 0xE3A68E) }
 
     /// The face of a flash card: a little off the background, so the card stands out
     /// from the screen it is swiped across.

@@ -48,15 +48,24 @@ final class ShortcutsHelp {
 
     /// Whether the cheat sheet took `event`.
     private func take(_ event: NSEvent) -> Bool {
-        // Only the document's own window, and not while a sheet or a text field has the keys.
-        guard let window, event.window === window, window.attachedSheet == nil, !event.modifierFlags.contains(.command) else { return false }
+        // Only while the document's own window has the keys, and not while a sheet has them or
+        // for a key with ⌘. The window is asked, not `event.window`: an event that carries no
+        // window number, as those of other tools do, has none.
+        guard let window, window.isKeyWindow, window.attachedSheet == nil, !event.modifierFlags.contains(.command) else { return false }
         if isShown {
             isShown = false
             return true
         }
-        guard opensWithQuestionMark, event.characters == "?", !(window.firstResponder is NSText) else { return false }
+        // A flash card session has no field to type "?" into, so the first responder isn't checked.
+        guard opensWithQuestionMark, Self.isQuestionMark(event) else { return false }
         isShown = true
         return true
+    }
+
+    /// "?", or Shift with the key that carries it on a US keyboard: another layout's
+    /// characters for that key are other ones.
+    private static func isQuestionMark(_ event: NSEvent) -> Bool {
+        event.characters == "?" || (event.keyCode == 44 && event.modifierFlags.contains(.shift))
     }
 }
 

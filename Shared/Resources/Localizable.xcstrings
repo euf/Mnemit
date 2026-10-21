@@ -220,6 +220,16 @@
         }
       }
     },
+    "%lld due": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld fällig"
+          }
+        }
+      }
+    },
     "%lld lines without a word and a translation are left out.": {
       "localizations": {
         "de": {
@@ -256,6 +266,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%lld new · %lld learning · %lld review": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld neu · %lld lernend · %lld zu wiederholen"
           }
         }
       }
@@ -320,12 +340,62 @@
         }
       }
     },
+    "%lld of %lld today": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld von %2$lld heute"
+          }
+        }
+      }
+    },
     "%lld or ↩": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld oder ↩"
+          }
+        }
+      }
+    },
+    "%lld reviews today": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Abfrage heute"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Abfragen heute"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld review today"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld reviews today"
+                }
+              }
+            }
           }
         }
       }
@@ -413,6 +483,28 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld words are in the deck already, or earlier in the list, and are left out."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld-day streak": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie: %lld Tag"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie: %lld Tage"
                 }
               }
             }
@@ -606,6 +698,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Algorithmus-Parameter"
+          }
+        }
+      }
+    },
+    "All done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles erledigt"
           }
         }
       }
@@ -1130,12 +1232,32 @@
         }
       }
     },
+    "Deck Details": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapeldetails"
+          }
+        }
+      }
+    },
     "Deck order": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Reihenfolge im Stapel"
+          }
+        }
+      }
+    },
+    "Decks": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel"
           }
         }
       }
@@ -2180,12 +2302,32 @@
         }
       }
     },
+    "Next review": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Abfrage"
+          }
+        }
+      }
+    },
     "Next review %@": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Nächste Abfrage %@"
+          }
+        }
+      }
+    },
+    "Next: %@ · %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter: %@ · %@"
           }
         }
       }
@@ -2206,6 +2348,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kein Stapel geöffnet"
+          }
+        }
+      }
+    },
+    "No Decks": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Stapel"
           }
         }
       }
@@ -2286,6 +2438,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anmerkung"
+          }
+        }
+      }
+    },
+    "Nothing due": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nichts fällig"
           }
         }
       }
@@ -3926,6 +4088,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wann passt es dir zu lernen? Ein paar Minuten am Tag genügen."
+          }
+        }
+      }
+    },
+    "What today's plan takes from this deck.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das nimmt der heutige Plan aus diesem Stapel."
           }
         }
       }

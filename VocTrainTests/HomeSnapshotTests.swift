@@ -1,0 +1,207 @@
+import SwiftUI
+import Testing
+import UIKit
+
+@testable import VocTrain
+@testable import VocabCore
+
+/// Renders Today and the deck details with sample data to PNGs, in light and dark mode at the
+/// width of an iPhone 13 mini (375 x 812 pt), to look at without a screen of the owner's. The
+/// views sit in a window of the hosting app and are drawn with `drawHierarchy`: `ImageRenderer`
+/// leaves a `List` blank, as it is a UIKit view. Nothing is compared; the test fails only when
+/// a view can't be drawn.
+///
+/// Where the PNGs go: the environment variable `HOME_SHOTS_DIR`, else `home-shots` in the
+/// temporary directory.
+@MainActor
+struct HomeSnapshotTests {
+    nonisolated static let now = Date()
+    static let greekB1 = KnownDeck(url: URL(filePath: "/Decks/Greek B1.voctrain"))
+    static let greekA1 = KnownDeck(url: URL(filePath: "/Decks/Greek A1–A2.voctrain"))
+
+    // MARK: Samples
+
+    static func counts(new: Int, learning: Int, review: Int, nextDue: Date? = nil) -> StudyCounts {
+        StudyCounts(newProduction: 0, newOther: new, learning: learning, review: review, nextDue: nextDue)
+    }
+
+    static func progress(reviews: Int, goal: Int, streak: Int) -> DailyProgress {
+        DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streak, repairReviews: nil))
+    }
+
+    func today(
+        decks: [KnownDeck] = [greekA1, greekB1], counts: [URL: StudyCounts], progress: DailyProgress?
+    ) -> some View {
+        NavigationStack {
+            TodayScreen(
+                decks: decks, counts: counts, progress: progress, now: Self.now, canForget: { _ in true },
+                study: { _ in }, showDetails: { _ in }, forget: { _ in }, chooseFolder: {}, openDeck: {},
+                showSettings: {}, refresh: {})
+        }
+    }
+
+    var dueCounts: [URL: StudyCounts] {
+        [
+            Self.greekA1.url: Self.counts(new: 30, learning: 0, review: 30),
+            Self.greekB1.url: Self.counts(new: 20, learning: 4, review: 3),
+        ]
+    }
+
+    var doneCounts: [URL: StudyCounts] {
+        let tomorrow = Self.now.addingTimeInterval(86_400)
+        return [
+            Self.greekA1.url: Self.counts(new: 0, learning: 0, review: 0, nextDue: tomorrow),
+            Self.greekB1.url: Self.counts(new: 0, learning: 0, review: 0, nextDue: tomorrow),
+        ]
+    }
+
+    /// A deck with cards in every state: new, learning, due for review, suspended, one gone wrong today.
+    func sampleDocument() throws -> VocabularyDocument {
+        let created = Self.now.addingTimeInterval(-90 * 86_400)
+        let newest = Self.now.addingTimeInterval(-3600)
+        func state(_ phase: LearningPhase, due: Date, reviews: Int = 3) -> LearningState {
+            LearningState(phase: phase, stability: 6, difficulty: 5, lastReview: Self.now.addingTimeInterval(-5 * 86_400), due: due, reviews: reviews)
+        }
+        var cards: [Card] = []
+        for index in 0..<24 {
+            cards.append(Card(question: "νέο \(index)", answer: "new \(index)", created: newest, learningState: nil))
+        }
+        for index in 0..<4 {
+            cards.append(
+                Card(question: "μαθαίνω \(index)", answer: "learn \(index)", created: created, learningState: state(.learning, due: Self.now.addingTimeInterval(-60))))
+        }
+        for index in 0..<30 {
+            cards.append(
+                Card(question: "επανάληψη \(index)", answer: "review \(index)", created: created, learningState: state(.review, due: Self.now.addingTimeInterval(-3600))))
+        }
+        for index in 0..<40 {
+            cards.append(
+                Card(question: "μακριά \(index)", answer: "later \(index)", created: created, learningState: state(.review, due: Self.now.addingTimeInterval(20 * 86_400))))
+        }
+        for index in 0..<3 {
+            cards.append(Card(question: "παύση \(index)", answer: "paused \(index)", created: created, learningState: nil, isSuspended: true))
+        }
+        cards.append(
+            Card(
+                question: "λάθος", answer: "mistake", created: created,
+                learningState: state(.relearning, due: Self.now.addingTimeInterval(86_400)),
+                log: [ReviewLogEntry(date: Self.now.addingTimeInterval(-1800), grade: .again, mode: .revealed)]))
+        return try VocabularyDocument(deck: Deck(cards: cards), clock: StudyClock { Self.now })
+    }
+
+    // MARK: Rendering
+
+    static var directory: URL {
+        let path = ProcessInfo.processInfo.environment["HOME_SHOTS_DIR"]
+        return path.map { URL(filePath: $0, directoryHint: .isDirectory) }
+            ?? FileManager.default.temporaryDirectory.appending(path: "home-shots", directoryHint: .isDirectory)
+    }
+
+    func shoot(_ name: String, _ view: some View, height: CGFloat = 812, types: [DynamicTypeSize?] = [nil]) async throws {
+        for dark in [false, true] {
+            for type in types {
+                let root = AnyView(view.dynamicTypeSize(type ?? .large))
+                let suffix = type.map { "-\($0)" } ?? ""
+                try await render(root, to: "\(name)\(suffix)-\(dark ? "dark" : "light").png", dark: dark, height: height)
+            }
+        }
+    }
+
+    func render(_ view: AnyView, to file: String, dark: Bool, height: CGFloat) async throws {
+        let size = CGSize(width: 375, height: height)
+        let controller = UIHostingController(rootView: view)
+        controller.overrideUserInterfaceStyle = dark ? .dark : .light
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(origin: .zero, size: size)
+        window.rootViewController = controller
+        window.isHidden = false
+        window.layoutIfNeeded()
+        // The safe area of an iPhone 13 mini: 50 pt at the top, 34 at the bottom.
+        let inset = window.safeAreaInsets
+        controller.additionalSafeAreaInsets = UIEdgeInsets(top: 50 - inset.top, left: 0, bottom: 34 - inset.bottom, right: 0)
+        controller.view.frame = window.bounds
+        controller.view.layoutIfNeeded()
+        // Lets SwiftUI lay out, and the list and the navigation bar draw.
+        try await Task.sleep(for: .milliseconds(800))
+        controller.view.layoutIfNeeded()
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 2
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            window.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: true)
+        }
+        window.isHidden = true
+        try FileManager.default.createDirectory(at: Self.directory, withIntermediateDirectories: true)
+        let data = try #require(image.pngData())
+        try data.write(to: Self.directory.appending(path: file))
+    }
+
+    // MARK: Tests
+
+    @Test func todayWithCardsDue() async throws {
+        try await shoot("today-due", today(counts: dueCounts, progress: Self.progress(reviews: 14, goal: 20, streak: 12)))
+    }
+
+    @Test func todayWithCardsDueAtLargeTypeSizes() async throws {
+        try await shoot(
+            "today-due", today(counts: dueCounts, progress: Self.progress(reviews: 14, goal: 20, streak: 12)),
+            types: [.xxxLarge, .accessibility3])
+    }
+
+    @Test func todayWithNothingDueAfterReviews() async throws {
+        try await shoot("today-done", today(counts: doneCounts, progress: Self.progress(reviews: 26, goal: 20, streak: 13)))
+    }
+
+    @Test func todayWithNothingDueAndNoReviews() async throws {
+        try await shoot("today-nothing", today(counts: doneCounts, progress: Self.progress(reviews: 0, goal: 1, streak: 0)))
+    }
+
+    @Test func todayBeforeTheDecksAreRead() async throws {
+        try await shoot("today-loading", today(counts: [:], progress: nil))
+    }
+
+    @Test func todayAtFirstLaunch() async throws {
+        try await shoot("today-empty", today(decks: [], counts: [:], progress: nil))
+    }
+
+    @Test func deckDetails() async throws {
+        let document = try sampleDocument()
+        let merger = VersionMerger { _ in }
+        let view = DeckDetails(
+            name: "Greek B1", knownCounts: nil, document: document, failure: nil, merger: merger, canEdit: true, start: { _ in })
+        try await shoot("details", view)
+    }
+
+    @Test func deckDetailsInTheMediumDetent() async throws {
+        let document = try sampleDocument()
+        let merger = VersionMerger { _ in }
+        let view = DeckDetails(
+            name: "Greek B1", knownCounts: nil, document: document, failure: nil, merger: merger, canEdit: true, start: { _ in })
+        try await shoot("details-medium", view, height: 420)
+    }
+
+    @Test func deckDetailsWhileLoading() async throws {
+        let view = DeckDetails(
+            name: "Greek B1", knownCounts: Self.counts(new: 20, learning: 4, review: 3), document: nil, failure: nil, merger: nil,
+            canEdit: false, start: { _ in })
+        try await shoot("details-loading", view)
+    }
+
+    @Test func deckDetailsAtAccessibilitySize() async throws {
+        let document = try sampleDocument()
+        let merger = VersionMerger { _ in }
+        let view = DeckDetails(
+            name: "Greek B1", knownCounts: nil, document: document, failure: nil, merger: merger, canEdit: true, start: { _ in })
+        try await shoot("details", view, types: [.accessibility3])
+    }
+}
+
+/// A simulator plays speech through the speakers of the Mac, so the app that hosts the tests
+/// must not speak by itself, see `VocTrainApp.init()`.
+@MainActor
+struct TestRunsAreSilent {
+    @Test func theHostAppDoesNotSpeakByItself() {
+        #expect(GreekSpeech.autoSpeak == false)
+    }
+}

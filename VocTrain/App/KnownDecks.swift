@@ -13,8 +13,8 @@ struct KnownDeck: Identifiable, Hashable {
     }
 }
 
-/// The decks the app has opened, which the start screen lists (#288); the one opened
-/// last opens again at the next launch (#282, #285).
+/// The decks the app has opened, which the start screen lists (#288); the one studied
+/// last comes first in the queue of Study.
 ///
 /// Kept as bookmarks in the user defaults: a deck on iCloud Drive lies outside the
 /// app's sandbox, and only a bookmark keeps the access the file picker granted to it.
@@ -72,7 +72,7 @@ final class KnownDecks {
         folder.map { Self.isSameFile(url.deletingLastPathComponent(), $0) } ?? false
     }
 
-    /// The deck opened last.
+    /// The deck studied last.
     var last: URL? {
         entries.first?.deck.url
     }

@@ -62,13 +62,16 @@ struct DocumentView: View {
                     .labelStyle(.titleOnly)
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    DailyRingView(progress: ring.progress)
+                    RingChip(progress: ring.progress)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .primaryAction) {
                     StartStudyButton(dueCards: document.dueCards, hasCards: !document.deck.cards.isEmpty, action: startSession)
                         .disabled(!canEdit)
                 }
-                ToolbarItem {
+                // A text button beside symbol buttons reads as one control without a gap.
+                ToolbarSpacer(.fixed, placement: .primaryAction)
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         addingLessonWords = true
                     } label: {
@@ -77,7 +80,7 @@ struct DocumentView: View {
                     .help("Add Lesson Words…")
                     .disabled(!canEdit)
                 }
-                ToolbarItem {
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingOptions = true
                     } label: {
@@ -200,7 +203,11 @@ struct DocumentView: View {
     /// Opens the study stream, which rests at once if today's plan is empty.
     private func startSession() {
         guard canEdit, session == nil, !document.deck.cards.isEmpty else { return }
-        session = SessionViewModel(document: document, studyBy: Preferences.studyBy())
+        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy())
+        session = model
+        if model.studyBy == .flashcards {
+            shortcutsHelp.showForFirstSession()
+        }
     }
 
     /// Practices the cards that went wrong today, whatever their schedule: the reviews
@@ -210,9 +217,6 @@ struct DocumentView: View {
         let model = SessionViewModel(document: document, studyBy: Preferences.studyBy(), entry: .practiceMistakes)
         if !model.isResting {
             session = model
-            if model.studyBy == .flashcards {
-                shortcutsHelp.showForFirstSession()
-            }
         }
     }
 
@@ -232,21 +236,46 @@ struct DocumentView: View {
     }
 }
 
-/// "Study" button showing how many cards today's plan takes, not how many are due: the
-/// plan introduces only as many new cards as its limits allow. The stream it opens has no
-/// end, so the button works once the plan is done, too, and offers review ahead and practice.
+/// The prominent "Study" button of the toolbar. The stream it opens has no end, so the button
+/// works once the plan is done, too, and offers review ahead and practice; the menu command
+/// Study ▸ Study is its twin.
 private struct StartStudyButton: View {
     var dueCards: DueCardCounter
     var hasCards: Bool
     var action: () -> Void
 
     var body: some View {
-        let count = dueCards.count
-        Button(action: action) {
-            Label(count > 0 ? "Study (\(count))" : "Study", systemImage: "graduationcap")
-                .labelStyle(.titleAndIcon)
+        Button("Study", action: action)
+            .buttonStyle(.borderedProminent)
+            .disabled(!hasCards)
+            .help(dueCards.count > 0 ? "Study today's plan" : "Done for today")
+    }
+}
+
+/// Today's reviews against the goal as a small ring and "14/20", beside the Study button. An
+/// indicator, no button: it takes no background in the toolbar.
+private struct RingChip: View {
+    var progress: DailyProgress?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: 16)
+            if let ring = progress?.ring {
+                Text(verbatim: "\(ring.reviews)/\(ring.goal)")
+                    .monospacedDigit()
+            }
         }
-        .disabled(!hasCards)
-        .help(count > 0 ? "Study today's plan" : "Done for today")
+        .help(help)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Daily Goal"))
+        .accessibilityValue(help)
+    }
+
+    /// "14 of 20 today", and "· 12-day streak" when there is one.
+    private var help: String {
+        guard let progress else { return "" }
+        let today = String(localized: "\(progress.ring.reviews) of \(progress.ring.goal) today")
+        guard progress.streak.days > 0 else { return today }
+        return today + " · " + String(localized: "\(progress.streak.days)-day streak")
     }
 }
