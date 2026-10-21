@@ -44,6 +44,24 @@ struct DeckOptionsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section {
+                    LimitField(title: "New production cards per session", value: $options.newProductionPerSession, defaultValue: 7, step: 1, range: LearningOptions.productionLimitRange)
+                    Stepper(value: $options.productionUnlockDays, in: LearningOptions.productionUnlockDaysRange) {
+                        LabeledContent(
+                            "Unlock production cards after",
+                            value: options.productionUnlockDays == 0 ? String(localized: "Never locked") : Format.days(Double(options.productionUnlockDays)))
+                    }
+                    Picker("New card order", selection: $options.newCardOrder) {
+                        Text("Deck order").tag(NewCardOrder.deckOrder)
+                        Text("Newest first").tag(NewCardOrder.newestFirst)
+                    }
+                } header: {
+                    Text("Word cards")
+                } footer: {
+                    Text("A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per session counts all other new cards.")
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Checking") {
                     Toggle("Case-sensitive", isOn: $options.caseSensitive)
                 }
@@ -77,7 +95,7 @@ struct DeckOptionsView: View {
             }
             .padding(16)
         }
-        .frame(width: 520, height: 560)
+        .frame(width: 520, height: 640)
     }
 }
 
@@ -87,6 +105,7 @@ private struct LimitField: View {
     @Binding var value: Int?
     var defaultValue: Int
     var step: Int
+    var range = LearningOptions.sessionLimitRange
 
     var body: some View {
         LabeledContent(title) {
@@ -94,7 +113,7 @@ private struct LimitField: View {
                 if let limit = value {
                     // A stepper rather than a text field: a text field only commits on
                     // Return, so clicking Save right after typing would lose the value.
-                    Stepper(value: Binding(get: { limit }, set: { value = $0 }), in: LearningOptions.sessionLimitRange, step: step) {
+                    Stepper(value: Binding(get: { limit }, set: { value = $0 }), in: range, step: step) {
                         Text(limit.formatted())
                             .monospacedDigit()
                     }

@@ -68,11 +68,23 @@ public struct StudySession: Sendable {
 
     /// Due cards in the order of their `Urgency`, cards of the same urgency at
     /// random. At most `cardsPerSession` cards are selected.
+    ///
+    /// Cards of a note (`Card.note`) take part as follows:
+    /// - A new production card waits until every recognition card of its note is in the
+    ///   review phase with a scheduled interval of `productionUnlockDays` or more.
+    /// - Siblings are buried: a new or review card is left out for the day if another
+    ///   card of its note was reviewed on the current study day or is already selected.
+    ///   Learning and relearning cards are never left out. Skipping changes no card.
+    /// - New cards fill their limits in `newCardOrder`: production cards up to
+    ///   `newProductionPerSession`, all others up to `newCardsPerSession`.
     static func selectCards(from deck: Deck, at now: Date, calendar: StudyCalendar, using random: inout SeededRandom) -> [Card.ID] {
-        let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
-        var newCardsLeft = deck.learningOptions.newCardsPerSession ?? Int.max
-        var candidates: [(id: Card.ID, urgency: Urgency, tieBreak: UInt64)] = []
+        let options = deck.learningOptions
+        let scheduler = Scheduler(learningOptions: options, calendar: calendar)
+        let lockedNotes = notesAwaitingRecognition(in: deck, calendar: calendar)
+        let reviewedToday = notesReviewed(onDayOf: now, in: deck, calendar: calendar)
 
+        var due: [Candidate] = []
+        var new: [Candidate] = []
         for card in deck.cards where card.isDue(at: now) {
             let urgency: Urgency
             if let learningState = card.learningState {
@@ -83,17 +95,79 @@ public struct StudySession: Sendable {
                     urgency = .learning
                 }
             } else {
-                guard newCardsLeft > 0 else { continue }
-                newCardsLeft -= 1
+                if card.kind == .production, let note = card.note, lockedNotes.contains(note) { continue }
                 urgency = .new
             }
-            candidates.append((card.id, urgency, random.next()))
+            let candidate = Candidate(card: card, urgency: urgency, tieBreak: random.next())
+            if case .new = urgency { new.append(candidate) } else { due.append(candidate) }
+        }
+        due.sort { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
+        if options.newCardOrder == .newestFirst {
+            // Stable: cards created together stay in deck order.
+            new = new.enumerated().sorted { ($1.element.card.created, $0.offset) < ($0.element.card.created, $1.offset) }.map(\.element)
         }
 
-        let ordered =
-            candidates
+        var selected: [Candidate] = []
+        var selectedNotes = Set<String>()
+        var newLeft = options.newCardsPerSession ?? Int.max
+        var productionLeft = options.newProductionPerSession ?? Int.max
+        for candidate in due + new where selected.count < (options.cardsPerSession ?? Int.max) {
+            let card = candidate.card
+            if candidate.urgency != .learning, let note = card.note {
+                let buried = selectedNotes.contains(note) || (reviewedToday[note] ?? []).contains { $0 != card.id }
+                if buried { continue }
+            }
+            if candidate.urgency == .new {
+                if card.kind == .production {
+                    guard productionLeft > 0 else { continue }
+                    productionLeft -= 1
+                } else {
+                    guard newLeft > 0 else { continue }
+                    newLeft -= 1
+                }
+            }
+            selected.append(candidate)
+            if let note = card.note { selectedNotes.insert(note) }
+        }
+
+        return
+            selected
             .sorted { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
-            .map(\.id)
-        return Array(ordered.prefix(deck.learningOptions.cardsPerSession ?? Int.max))
+            .map(\.card.id)
+    }
+
+    private struct Candidate {
+        var card: Card
+        var urgency: Urgency
+        var tieBreak: UInt64
+    }
+
+    /// The notes with a recognition card that isn't learned yet, so their production cards
+    /// stay locked; none if `productionUnlockDays` is 0. A card is learned in the review
+    /// phase once its scheduled interval, from the last review to the due date, has
+    /// reached `productionUnlockDays`.
+    private static func notesAwaitingRecognition(in deck: Deck, calendar: StudyCalendar) -> Set<String> {
+        let unlockDays = deck.learningOptions.productionUnlockDays
+        guard unlockDays > 0 else { return [] }
+        var notes = Set<String>()
+        for card in deck.cards where card.kind == .recognition {
+            guard let note = card.note else { continue }
+            if let state = card.learningState, state.phase == .review, calendar.days(from: state.lastReview, to: state.due) >= unlockDays {
+                continue
+            }
+            notes.insert(note)
+        }
+        return notes
+    }
+
+    /// For each note, the cards reviewed on the study day of `date`.
+    private static func notesReviewed(onDayOf date: Date, in deck: Deck, calendar: StudyCalendar) -> [String: Set<Card.ID>] {
+        let today = calendar.dayNumber(for: date)
+        var reviewed: [String: Set<Card.ID>] = [:]
+        for card in deck.cards {
+            guard let note = card.note, let lastReview = card.learningState?.lastReview, calendar.dayNumber(for: lastReview) == today else { continue }
+            reviewed[note, default: []].insert(card.id)
+        }
+        return reviewed
     }
 }

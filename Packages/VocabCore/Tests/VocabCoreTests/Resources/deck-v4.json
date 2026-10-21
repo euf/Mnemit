@@ -41,6 +41,8 @@
       "answer" : "Katze",
       "created" : "2026-10-05T16:00:00Z",
       "id" : "A1B2C3D4-E5F6-4789-8ABC-DEF012345678",
+      "kind" : "production",
+      "note" : "kot",
       "question" : "kot"
     }
   ],
@@ -51,7 +53,9 @@
     "caseSensitive" : true,
     "fuzzing" : false,
     "maximumInterval" : 36500,
+    "newCardOrder" : "newestFirst",
     "newCardsPerSession" : 15,
+    "newProductionPerSession" : null,
     "parameters" : [
       0.212,
       1.2931,
@@ -75,6 +79,7 @@
       0.0658,
       0.1542
     ],
+    "productionUnlockDays" : 14,
     "steps" : 2,
     "targetRecall" : 0.85
   },

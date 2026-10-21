@@ -14,8 +14,17 @@ public struct LearningOptions: Hashable, Sendable {
     public var steps: Int = 2
     /// Maximum number of cards per session; `nil` means unlimited.
     public var cardsPerSession: Int? = 100
-    /// Maximum number of never-studied cards per session; `nil` means unlimited.
+    /// Maximum number of never-studied cards per session, not counting new production
+    /// cards (`newProductionPerSession`); `nil` means unlimited.
     public var newCardsPerSession: Int? = nil
+    /// Maximum number of never-studied production cards per session (`CardKind.production`);
+    /// 0 asks none, `nil` means unlimited.
+    public var newProductionPerSession: Int? = 7
+    /// Days the interval of a note's recognition card must have reached before its
+    /// production card is introduced; 0 never holds production cards back.
+    public var productionUnlockDays: Int = 21
+    /// In which order a session introduces new cards when it can't take all of them.
+    public var newCardOrder: NewCardOrder = .deckOrder
     public var caseSensitive: Bool = true
     /// Spreads review intervals slightly so cards learned together don't stay clustered.
     public var fuzzing: Bool = true
@@ -28,6 +37,17 @@ public struct LearningOptions: Hashable, Sendable {
     public static let stepsRange: ClosedRange<Int> = 1...5
     /// For `cardsPerSession` and `newCardsPerSession` when they are limited.
     public static let sessionLimitRange: ClosedRange<Int> = 1...9999
+    /// For `newProductionPerSession` when it is limited: unlike the other limits, 0 is valid.
+    public static let productionLimitRange: ClosedRange<Int> = 0...9999
+    public static let productionUnlockDaysRange: ClosedRange<Int> = 0...365
+}
+
+/// The order in which a study session takes new cards when a limit leaves some out.
+public enum NewCardOrder: String, Sendable, CaseIterable {
+    /// As the deck lists them.
+    case deckOrder
+    /// By creation date, the newest first; cards created together stay in deck order.
+    case newestFirst
 }
 
 extension LearningOptions {
@@ -41,6 +61,8 @@ extension LearningOptions {
         steps = steps.clamped(to: Self.stepsRange)
         cardsPerSession = cardsPerSession?.clamped(to: Self.sessionLimitRange)
         newCardsPerSession = newCardsPerSession?.clamped(to: Self.sessionLimitRange)
+        newProductionPerSession = newProductionPerSession?.clamped(to: Self.productionLimitRange)
+        productionUnlockDays = productionUnlockDays.clamped(to: Self.productionUnlockDaysRange)
     }
 }
 
