@@ -55,17 +55,17 @@ private struct WelcomeStep: View {
         let decks = knownDecks.byName
         VStack(spacing: 0) {
             Spacer()
-            Text(verbatim: "Μ")
-                .font(.system(size: 54, weight: .bold))
-                .foregroundStyle(.white)
+            // The app icon itself (BrandMark is a copy of the AppIcon PNGs, light and dark).
+            Image("BrandMark")
+                .resizable()
                 .frame(width: 96, height: 96)
-                .background(LinearGradient(colors: [Color(red: 0.18, green: 0.44, blue: 0.88), Color(red: 0.07, green: 0.24, blue: 0.56)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
                 .accessibilityHidden(true)
             Text(verbatim: "Mnemit")
                 .font(.largeTitle.bold())
                 .padding(.top, 16)
-            Text("Greek, every day")
+            Text("Remember a little every day")
                 .font(.title3)
                 .foregroundStyle(.secondary)
 
