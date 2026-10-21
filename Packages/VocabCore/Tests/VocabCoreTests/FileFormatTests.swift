@@ -11,7 +11,10 @@ struct DeckFileTests {
         learningOptions.targetRecall = 0.85
         learningOptions.newCardsPerSession = 15
         learningOptions.cardsPerSession = nil
-        var card = Card(question: "dom", answer: "Haus / Gebäude", hint: "Substantiv", created: date)
+        learningOptions.newProductionPerSession = 0
+        learningOptions.productionUnlockDays = 30
+        learningOptions.newCardOrder = .newestFirst
+        var card = Card(question: "dom", answer: "Haus / Gebäude", hint: "Substantiv", note: "dom", kind: .recognition, created: date, learningState: nil)
         card.learningState = LearningState(phase: .review, step: 0, stability: 12.5, difficulty: 4.2, lastReview: date, due: date.addingTimeInterval(86400), reviews: 3, lapses: 1)
         // One review short, like a card imported from MacVocTrain 1 with a learning state.
         card.log = [ReviewLogEntry(date: date.addingTimeInterval(-86400), grade: .again), ReviewLogEntry(date: date, grade: .hard, mode: .revealed)]
@@ -77,8 +80,48 @@ struct DeckFileTests {
         #expect(deck.cards[1].suspensionChanged == date.addingTimeInterval(-4 * 3600))
         #expect(!deck.cards[2].isSuspended)
         #expect(deck.cards[2].suspensionChanged == nil)
+        #expect(deck.cards[2].note == "kot")
+        #expect(deck.cards[2].kind == .production)
+        #expect(deck.cards[0].note == nil)
+        #expect(deck.cards[0].kind == nil)
+        #expect(deck.learningOptions.newProductionPerSession == nil)
+        #expect(deck.learningOptions.productionUnlockDays == 14)
+        #expect(deck.learningOptions.newCardOrder == .newestFirst)
 
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == String(decoding: data, as: UTF8.self))
+    }
+
+    /// The keys for notes and production cards are new: an older deck lacks them and reads
+    /// with the defaults, and a value out of range or unknown is clamped or ignored.
+    @Test func noteKindAndProductionOptionsRoundTripAndDefault() throws {
+        let deck = try sampleDeck()
+        let read = try DeckFile.decode(DeckFile.fileWrapper(for: deck))
+        #expect(read.cards[0].note == "dom")
+        #expect(read.cards[0].kind == .recognition)
+        #expect(read.cards[1].note == nil)
+        #expect(read.learningOptions.newProductionPerSession == 0)
+        #expect(read.learningOptions.productionUnlockDays == 30)
+        #expect(read.learningOptions.newCardOrder == .newestFirst)
+
+        let old = try DeckFile.decode(deckJSON())
+        #expect(old.cards[0].note == nil)
+        #expect(old.cards[0].kind == nil)
+        #expect(old.learningOptions.newProductionPerSession == 7)
+        #expect(old.learningOptions.productionUnlockDays == 21)
+        #expect(old.learningOptions.newCardOrder == .deckOrder)
+
+        let odd = Data(
+            """
+            {"format": "de.fluch-it-consulting.voctrain.deck", "version": 4, "progress": [],
+             "learningOptions": {"newProductionPerSession": 100000, "productionUnlockDays": 100000, "newCardOrder": "random"},
+             "cards": [{"id": "6F9619FF-8B86-D011-B42D-00C04FC964FF", "question": "dom", "answer": "Haus", "note": "  ", "kind": "listening"}]}
+            """.utf8)
+        let clamped = try DeckFile.decode(odd)
+        #expect(clamped.learningOptions.newProductionPerSession == LearningOptions.productionLimitRange.upperBound)
+        #expect(clamped.learningOptions.productionUnlockDays == LearningOptions.productionUnlockDaysRange.upperBound)
+        #expect(clamped.learningOptions.newCardOrder == .deckOrder)
+        #expect(clamped.cards[0].note == nil)
+        #expect(clamped.cards[0].kind == nil)
     }
 
     /// Version 3 lacks `contentModified` and has the former `format`; it is written
@@ -93,6 +136,9 @@ struct DeckFileTests {
         let written = String(decoding: data, as: UTF8.self)
             .replacingOccurrences(of: "\"version\" : 3", with: "\"version\" : 4")
             .replacingOccurrences(of: "com.mfluch.voctrain.deck", with: DeckFile.format)
+            // The options added since take their defaults.
+            .replacingOccurrences(of: "\"newCardsPerSession\" : 15,", with: "\"newCardOrder\" : \"deckOrder\",\n    \"newCardsPerSession\" : 15,\n    \"newProductionPerSession\" : 7,")
+            .replacingOccurrences(of: "    \"steps\" : 2,", with: "    \"productionUnlockDays\" : 21,\n    \"steps\" : 2,")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 
@@ -120,7 +166,7 @@ struct DeckFileTests {
         #expect(deckJSON.contains("\"format\" : \"de.fluch-it-consulting.voctrain.deck\""))
         #expect(deckJSON.contains("\"version\" : 4"))
         #expect(deckJSON.contains("\"question\" : \"dom\""))
-        for key in ["learningOptions", "targetRecall", "steps", "learningState", "learningStateReset", "reviews", "hint", "progress", "contentModified", "suspended", "suspensionChanged"] {
+        for key in ["learningOptions", "targetRecall", "steps", "learningState", "learningStateReset", "reviews", "hint", "progress", "contentModified", "suspended", "suspensionChanged", "note", "kind", "newProductionPerSession", "productionUnlockDays", "newCardOrder"] {
             #expect(deckJSON.contains("\"\(key)\" :"), "missing key \(key)")
         }
         #expect(!deckJSON.contains("\"log\""))

@@ -109,6 +109,17 @@ public struct ReviewLogEntry: Hashable, Sendable {
     }
 }
 
+/// Which direction a card of a note asks: from the foreign word to the native one, or
+/// the other way round.
+public enum CardKind: String, Sendable, CaseIterable {
+    /// Foreign → native: the learner recognizes the word.
+    case recognition
+    /// Native → foreign: the learner produces the word. A study session holds a new
+    /// production card back until the recognition card of its note is learned, see
+    /// `LearningOptions.productionUnlockDays`.
+    case production
+}
+
 /// A question with its answer and an optional hint, asked from question to answer.
 ///
 /// ID and creation date come with the card and stay; every other change goes through
@@ -120,6 +131,11 @@ public struct Card: Identifiable, Hashable, Sendable {
     public internal(set) var answer: String
     /// Optional hint shown together with the question.
     public internal(set) var hint: String
+    /// The key of the word the card belongs to, shared by its sibling cards; `nil` for a
+    /// card on its own. Content like the texts: only `DeckChange.settingNote` changes it.
+    public internal(set) var note: String?
+    /// Which direction the card asks; only means something together with a `note`.
+    public internal(set) var kind: CardKind?
     public let created: Date
     /// `nil` while the card has never been studied. Only `Scheduler` and
     /// `DeckChange` change it.
@@ -137,9 +153,17 @@ public struct Card: Identifiable, Hashable, Sendable {
     /// never. A merge takes `isSuspended` from the version that changed it last.
     public internal(set) var suspensionChanged: Date?
 
-    /// A new card, never studied.
-    public init(id: UUID = UUID(), text: CardText, created: Date) {
-        self.init(id: id, question: text.question, answer: text.answer, hint: text.hint, created: created)
+    /// A new card, never studied. `note` is trimmed; an empty one counts as none.
+    public init(id: UUID = UUID(), text: CardText, note: String? = nil, kind: CardKind? = nil, created: Date) {
+        self.init(
+            id: id, question: text.question, answer: text.answer, hint: text.hint,
+            note: Self.normalized(note), kind: kind, created: created, learningState: nil)
+    }
+
+    /// `note` without surrounding whitespace, `nil` if nothing is left.
+    static func normalized(_ note: String?) -> String? {
+        guard let note = note.map(CardText.trimmed), !note.isEmpty else { return nil }
+        return note
     }
 
     /// A new card with unchecked texts, for `LegacyImporter` and tests.
@@ -153,6 +177,8 @@ public struct Card: Identifiable, Hashable, Sendable {
         question: String,
         answer: String,
         hint: String = "",
+        note: String? = nil,
+        kind: CardKind? = nil,
         created: Date,
         learningState: LearningState?,
         log: [ReviewLogEntry] = [],
@@ -164,6 +190,8 @@ public struct Card: Identifiable, Hashable, Sendable {
         self.question = question
         self.answer = answer
         self.hint = hint
+        self.note = note
+        self.kind = kind
         self.created = created
         self.learningState = learningState
         self.log = log

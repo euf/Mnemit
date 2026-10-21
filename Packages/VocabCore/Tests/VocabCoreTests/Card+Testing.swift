@@ -8,6 +8,8 @@ extension Card {
         question: String,
         answer: String,
         hint: String = "",
+        note: String? = nil,
+        kind: CardKind? = nil,
         learningState: LearningState? = nil,
         log: [ReviewLogEntry] = []
     ) {
@@ -16,6 +18,8 @@ extension Card {
             question: question,
             answer: answer,
             hint: hint,
+            note: note,
+            kind: kind,
             created: Date(timeIntervalSince1970: 1_791_216_000),
             learningState: learningState,
             log: log

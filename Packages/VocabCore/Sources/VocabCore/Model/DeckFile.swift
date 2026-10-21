@@ -23,7 +23,10 @@ import Foundation
 /// and a merge may then bring back the reviews from before a reset, as it did before.
 /// So did `suspended` and `suspensionChanged` of a card (#290): an older app version
 /// asks a suspended card and drops both on save. A merge with a newer version that
-/// still holds them keeps the card suspended.
+/// still holds them keeps the card suspended. `note` and `kind` of a card and the
+/// options `newProductionPerSession`, `productionUnlockDays` and `newCardOrder` came
+/// without a new version too: an older app version drops them on save, and its sessions
+/// then ask production cards like any other.
 ///
 /// When `currentVersion` goes up: a missing key takes its default, so a newer app
 /// version reads an older deck of the same version. The other way round, an older
@@ -192,6 +195,10 @@ extension DeckFile {
         var steps: Int
         var cardsPerSession: Int?
         var newCardsPerSession: Int?
+        var newProductionPerSession: Int?
+        var productionUnlockDays: Int
+        /// `NewCardOrder.rawValue`; a value this version doesn't know reads as the default.
+        var newCardOrder: String
         var caseSensitive: Bool
         var fuzzing: Bool
         var parameters: [Double]
@@ -202,6 +209,9 @@ extension DeckFile {
             steps = options.steps
             cardsPerSession = options.cardsPerSession
             newCardsPerSession = options.newCardsPerSession
+            newProductionPerSession = options.newProductionPerSession
+            productionUnlockDays = options.productionUnlockDays
+            newCardOrder = options.newCardOrder.rawValue
             caseSensitive = options.caseSensitive
             fuzzing = options.fuzzing
             parameters = options.parameters.weights
@@ -220,6 +230,9 @@ extension DeckFile {
             options.steps = steps
             options.cardsPerSession = cardsPerSession
             options.newCardsPerSession = newCardsPerSession
+            options.newProductionPerSession = newProductionPerSession
+            options.productionUnlockDays = productionUnlockDays
+            options.newCardOrder = NewCardOrder(rawValue: newCardOrder) ?? options.newCardOrder
             options.caseSensitive = caseSensitive
             options.fuzzing = fuzzing
             options.parameters = parameters
@@ -228,6 +241,7 @@ extension DeckFile {
 
         private enum CodingKeys: String, CodingKey {
             case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
+            case newProductionPerSession, productionUnlockDays, newCardOrder
             case caseSensitive, fuzzing, parameters
         }
 
@@ -246,6 +260,12 @@ extension DeckFile {
                 container.contains(.newCardsPerSession)
                 ? try container.decodeIfPresent(Int.self, forKey: .newCardsPerSession)
                 : defaults.newCardsPerSession
+            newProductionPerSession =
+                container.contains(.newProductionPerSession)
+                ? try container.decodeIfPresent(Int.self, forKey: .newProductionPerSession)
+                : defaults.newProductionPerSession
+            productionUnlockDays = try container.decodeIfPresent(Int.self, forKey: .productionUnlockDays) ?? defaults.productionUnlockDays
+            newCardOrder = try container.decodeIfPresent(String.self, forKey: .newCardOrder) ?? defaults.newCardOrder
             caseSensitive = try container.decodeIfPresent(Bool.self, forKey: .caseSensitive) ?? defaults.caseSensitive
             fuzzing = try container.decodeIfPresent(Bool.self, forKey: .fuzzing) ?? defaults.fuzzing
             parameters = try container.decodeIfPresent([Double].self, forKey: .parameters) ?? defaults.parameters
@@ -259,6 +279,9 @@ extension DeckFile {
             // Written as null when unlimited, so a missing key can mean the default.
             try container.encode(cardsPerSession, forKey: .cardsPerSession)
             try container.encode(newCardsPerSession, forKey: .newCardsPerSession)
+            try container.encode(newProductionPerSession, forKey: .newProductionPerSession)
+            try container.encode(productionUnlockDays, forKey: .productionUnlockDays)
+            try container.encode(newCardOrder, forKey: .newCardOrder)
             try container.encode(caseSensitive, forKey: .caseSensitive)
             try container.encode(fuzzing, forKey: .fuzzing)
             try container.encode(parameters, forKey: .parameters)
@@ -272,6 +295,11 @@ extension DeckFile {
         var answer: String
         /// Left out when empty.
         var hint: String?
+        /// Left out for a card on its own.
+        var note: String?
+        /// `CardKind.rawValue`, left out for a card without a kind; a kind this version
+        /// doesn't know reads as none.
+        var kind: String?
         /// Read as 1970 when missing.
         var created: Date?
         /// Left out while the card is new.
@@ -288,6 +316,8 @@ extension DeckFile {
             question = card.question
             answer = card.answer
             hint = card.hint.isEmpty ? nil : card.hint
+            note = card.note
+            kind = card.kind?.rawValue
             created = card.created
             learningState = card.learningState.map(LearningStateRecord.init)
             learningStateReset = card.learningStateReset
@@ -301,6 +331,8 @@ extension DeckFile {
                 question: question,
                 answer: answer,
                 hint: hint ?? "",
+                note: Card.normalized(note),
+                kind: kind.flatMap(CardKind.init(rawValue:)),
                 created: created ?? Date(timeIntervalSince1970: 0),
                 learningState: learningState?.learningState,
                 learningStateReset: learningStateReset,

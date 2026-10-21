@@ -95,6 +95,31 @@ struct DeckMergeTests {
         #expect(replayed.learningState?.lastReview == day(20))
     }
 
+    /// Note and kind are content like the texts: the newer content brings them, the
+    /// reviews of the other version stay.
+    @Test func noteAndKindComeWithTheContent() throws {
+        let mac = try baseDeck()
+        var phone = mac
+        review(&phone, dom.id, .good, at: day(2), mode: .revealed)
+
+        var macLater = mac
+        _ = macLater.apply(try #require(DeckChange.settingNote("dom", kind: .production, of: dom.id, in: macLater)), at: day(3), calendar: calendar)
+
+        let merged = merging(phone, into: macLater, at: day(4))
+        let joined = try #require(merged.card(withID: dom.id))
+        #expect((joined.note, joined.kind) == ("dom", .production))
+        #expect(joined.log.count == 3)
+        // The phone adopts them from the Mac's version, too.
+        let adopted = merging(macLater, into: phone, at: day(4))
+        #expect(adopted.card(withID: dom.id)?.note == "dom")
+        #expect(adopted.card(withID: dom.id)?.kind == .production)
+        #expect(adopted.card(withID: dom.id)?.log.count == 3)
+
+        // A version with older content doesn't take them away.
+        let stale = merging(mac, into: macLater, at: day(4))
+        #expect(stale.card(withID: dom.id)?.note == "dom")
+    }
+
     @Test func contentComesFromTheVersionChangedLast() throws {
         let mac = try baseDeck()
         var phone = mac

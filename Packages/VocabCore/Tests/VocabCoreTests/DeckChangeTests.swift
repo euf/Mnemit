@@ -157,6 +157,36 @@ struct DeckChangeTests {
         #expect(DeckChange.editingText(of: UUID(), to: CardText(question: "kot", answer: "Katze")!, in: deck) == nil)
     }
 
+    @Test func settingNoteAndKindKeepsTheLearningStateAndIsReverted() throws {
+        let studied = studiedCard()
+        var deck = try Deck(cards: [studied])
+
+        let change = try #require(DeckChange.settingNote("  dom ", kind: .recognition, of: studied.id, in: deck))
+        let inverse = deck.apply(change, day: 100)
+        let joined = try #require(deck.card(withID: studied.id))
+        #expect((joined.note, joined.kind) == ("dom", .recognition))
+        #expect(joined.learningState == studied.learningState)
+        #expect(joined.log == studied.log)
+        #expect((joined.question, joined.answer) == (studied.question, studied.answer))
+        #expect(deck.contentModified != nil)
+
+        #expect(DeckChange.settingNote("dom", kind: .recognition, of: studied.id, in: deck) == nil)
+        #expect(DeckChange.settingNote("dom", kind: .recognition, of: UUID(), in: deck) == nil)
+        let cleared = try #require(DeckChange.settingNote(" ", kind: nil, of: studied.id, in: deck))
+        _ = deck.apply(cleared, day: 100)
+        #expect(deck.cards == [studied])
+
+        _ = deck.apply(inverse, day: 100)
+        #expect(deck.cards == [studied])
+    }
+
+    @Test func aCardCanBeCreatedWithIDNoteAndKind() {
+        let id = UUID()
+        let card = Card(id: id, text: CardText(question: "house", answer: "σπίτι")!, note: " σπίτι ", kind: .production, created: start)
+        #expect((card.id, card.note, card.kind, card.isNew) == (id, "σπίτι", .production, true))
+        #expect(Card(text: CardText(question: "a", answer: "b")!, note: "  ", created: start).note == nil)
+    }
+
     @Test func resettingTakesOnlySelectedCardsThatWereStudied() throws {
         let studied = Card(question: "dom", answer: "Haus", learningState: LearningState(phase: .review, stability: 5, difficulty: 5, lastReview: start, due: start))
         let new = Card(question: "kot", answer: "Katze")

@@ -69,6 +69,17 @@ extension DeckChange {
         return edited == card ? nil : DeckChange(upserts: [edited])
     }
 
+    /// Sets note and kind of the card with `id` in `deck`, keeping its learning state:
+    /// how an existing card joins the cards of a word. `note` is trimmed and an empty one
+    /// clears it; `nil` if `deck` doesn't hold the card or both stay.
+    public static func settingNote(_ note: String?, kind: CardKind?, of id: Card.ID, in deck: Deck) -> DeckChange? {
+        guard let card = deck.card(withID: id) else { return nil }
+        var edited = card
+        edited.note = Card.normalized(note)
+        edited.kind = kind
+        return edited == card ? nil : DeckChange(upserts: [edited])
+    }
+
     /// Makes the cards with `ids` in `deck` new again, keeping their content, and notes
     /// `now` as their `learningStateReset`, so a merge leaves out the reviews before it.
     /// Cards that are new already and have no log stay out; `nil` if that leaves none.

@@ -4,7 +4,8 @@ extension DeckChange {
     /// Merges `other`, another version of the same deck, into `deck`, e.g. a version
     /// iCloud Drive kept apart after a conflict; `nil` if `deck` holds all of it already.
     ///
-    /// - The content (cards with their texts, their order, the learning options) comes
+    /// - The content (cards with their texts, notes and kinds, their order, the learning
+    ///   options) comes
     ///   from the version with the later `contentModified`, or from `deck` if they are
     ///   the same. Only the Mac changes the content; a card the content doesn't hold
     ///   any more drops out with its reviews.
