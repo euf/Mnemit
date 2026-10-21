@@ -1,0 +1,327 @@
+import SwiftUI
+import VocabCore
+
+/// The cards of a deck, to find, read and tidy: a search over question, answer, hint and word
+/// key, the filters All, Due, New, Learning, Suspended and Difficult with their counts, four
+/// sorts, and a row per card that opens the card. Swipe a row to delete or suspend it, press
+/// it for more, or choose Select to act on several cards at once.
+///
+/// Deleting one card asks nothing, Undo takes it back (the button in the bar, or a shake, see
+/// `StartScreen`); deleting several asks once.
+struct CardBrowserScreen: View {
+    @ObservedObject var document: VocabularyDocument
+    /// Whether the deck can be changed now, see `OpenDeck.isEditable`.
+    var canEdit: Bool
+    var addCards: () -> Void
+
+    @State private var filter: BrowserFilter
+    @State private var sort: BrowserSort
+    @State private var query = ""
+    @State private var selection: Set<Card.ID>
+    @State private var editMode: EditMode
+    @State private var editing: Card?
+    /// The cards the learner is about to delete with the others of the selection.
+    @State private var deleting: Set<Card.ID> = []
+    @State private var memo = CardBrowserMemo()
+    @State private var undo: UndoWatch
+
+    /// - Parameters:
+    ///   - filter: What the list starts with; a test chooses it.
+    ///   - selecting: Starts in the mode that selects cards, with `selection` chosen.
+    init(
+        document: VocabularyDocument, canEdit: Bool, addCards: @escaping () -> Void = {}, filter: BrowserFilter = .all,
+        sort: BrowserSort = .due, query: String = "", selecting: Set<Card.ID>? = nil
+    ) {
+        self.document = document
+        self.canEdit = canEdit
+        self.addCards = addCards
+        _filter = State(initialValue: filter)
+        _sort = State(initialValue: sort)
+        _query = State(initialValue: query)
+        _selection = State(initialValue: selecting ?? [])
+        _editMode = State(initialValue: selecting == nil ? .inactive : .active)
+        _undo = State(initialValue: UndoWatch(document.undoManager))
+    }
+
+    private var isEditable: Bool { canEdit && document.isReadyToEdit }
+
+    private var isSelecting: Bool { editMode == .active }
+
+    var body: some View {
+        let now = document.clock.now
+        let threshold = document.deck.learningOptions.leechThreshold
+        let output = memo.output(
+            cards: document.deck.cards, filter: filter, sort: sort, query: query, leechThreshold: threshold, now: now)
+        Group {
+            if document.deck.cards.isEmpty {
+                ContentUnavailableView {
+                    Label("No Cards", systemImage: "rectangle.on.rectangle.slash")
+                } description: {
+                    Text("Add the words you are learning.")
+                } actions: {
+                    Button("Add Cards", action: addCards)
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!isEditable)
+                }
+            } else {
+                list(output.rows, now: now, threshold: threshold)
+            }
+        }
+        .navigationTitle("Cards")
+        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $query, prompt: Text("Search Cards"))
+        .safeAreaBar(edge: .top) {
+            if !document.deck.cards.isEmpty {
+                FilterBar(selection: $filter, counts: output.counts)
+            }
+        }
+        .environment(\.editMode, $editMode)
+        .toolbar { toolbar }
+        .onChange(of: output.rows.map(\.id)) { _, ids in
+            // What the filter or the search hides can't be chosen: the buttons below act on
+            // what the learner sees.
+            selection.formIntersection(ids)
+        }
+        .sheet(item: $editing) { card in
+            EditCardSheet(document: document, card: card)
+        }
+        .confirmationDialog(
+            Text("Delete \(deleting.count) cards?"), isPresented: Binding(get: { !deleting.isEmpty }, set: { if !$0 { deleting = [] } }),
+            titleVisibility: .visible
+        ) {
+            Button("Delete \(deleting.count) cards", role: .destructive) {
+                document.delete(deleting)
+                selection.subtract(deleting)
+                deleting = []
+            }
+        } message: {
+            Text("You can take this back with Undo.")
+        }
+    }
+
+    // MARK: List
+
+    @ViewBuilder
+    private func list(_ rows: [Card], now: Date, threshold: Int) -> some View {
+        List(selection: $selection) {
+            ForEach(rows) { card in
+                NavigationLink {
+                    CardDetailScreen(document: document, cardID: card.id, canEdit: canEdit)
+                } label: {
+                    CardRow(card: card, state: BrowserState(card, leechThreshold: threshold), now: now)
+                }
+                .swipeActions(edge: .trailing) {
+                    if isEditable {
+                        Button("Delete", systemImage: "trash", role: .destructive) { document.delete([card.id]) }
+                        suspendButton(card)
+                    }
+                }
+                .contextMenu {
+                    menu(card)
+                }
+            }
+        }
+        .listStyle(.plain)
+        .overlay {
+            if rows.isEmpty {
+                if query.trimmingCharacters(in: .whitespaces).isEmpty {
+                    ContentUnavailableView("No Cards", systemImage: "line.3.horizontal.decrease.circle", description: Text("No cards match this filter."))
+                } else {
+                    ContentUnavailableView.search(text: query)
+                }
+            }
+        }
+    }
+
+    private func suspendButton(_ card: Card) -> some View {
+        Button(card.isSuspended ? "Resume" : "Suspend", systemImage: card.isSuspended ? "play.circle" : "pause.circle") {
+            document.setSuspended(!card.isSuspended, of: [card.id])
+        }
+        .tint(Color.accentColor)
+    }
+
+    @ViewBuilder
+    private func menu(_ card: Card) -> some View {
+        Button("Edit", systemImage: "pencil") { editing = card }
+            .disabled(!isEditable)
+        if let spoken = card.spokenText {
+            Button("Speak", systemImage: "speaker.wave.2") { GreekSpeech.shared.speak(spoken) }
+        }
+        Button(card.isSuspended ? "Resume" : "Suspend", systemImage: card.isSuspended ? "play.circle" : "pause.circle") {
+            document.setSuspended(!card.isSuspended, of: [card.id])
+        }
+        .disabled(!isEditable)
+        if !card.isNew {
+            Button("Reset Progress", systemImage: "arrow.counterclockwise") { document.resetLearningState(of: [card.id]) }
+                .disabled(!isEditable)
+        }
+        Button("Delete", systemImage: "trash", role: .destructive) { document.delete([card.id]) }
+            .disabled(!isEditable)
+    }
+
+    // MARK: Bar
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        if undo.canUndo, !isSelecting {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Undo", systemImage: "arrow.uturn.backward") { undo.undo() }
+                    .labelStyle(.iconOnly)
+                    .accessibilityLabel(Text("Undo \(undo.actionName)"))
+            }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Menu("Sort", systemImage: "arrow.up.arrow.down") {
+                Picker("Sort", selection: $sort) {
+                    ForEach(BrowserSort.allCases) { sort in
+                        Text(sort.title).tag(sort)
+                    }
+                }
+            }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Button(isSelecting ? "Done" : "Select") {
+                withAnimation {
+                    editMode = isSelecting ? .inactive : .active
+                }
+                selection = []
+            }
+            .disabled(document.deck.cards.isEmpty)
+        }
+        if isSelecting {
+            // Symbols, not words: four words don't fit the bar of the narrowest iPhone. The
+            // titles are what VoiceOver reads.
+            ToolbarItemGroup(placement: .bottomBar) {
+                let canAct = isEditable && !selection.isEmpty
+                Button("Suspend", systemImage: "pause.circle") { document.setSuspended(true, of: selection) }
+                    .disabled(!canAct)
+                Spacer()
+                Button("Resume", systemImage: "play.circle") { document.setSuspended(false, of: selection) }
+                    .disabled(!canAct)
+                Spacer()
+                Button("Reset", systemImage: "arrow.counterclockwise") { document.resetLearningState(of: selection) }
+                    .disabled(!canAct)
+                Spacer()
+                Button("Delete", systemImage: "trash", role: .destructive) { delete(selection) }
+                    .disabled(!canAct)
+            }
+        }
+    }
+
+    /// One card goes at once, as Undo covers it; several ask first.
+    private func delete(_ ids: Set<Card.ID>) {
+        if ids.count == 1 {
+            document.delete(ids)
+            selection.subtract(ids)
+        } else {
+            deleting = ids
+        }
+    }
+}
+
+/// The filters in a row under the bar, each with how many cards it holds. A tap chooses
+/// one; the chosen one is the prominent button.
+struct FilterBar: View {
+    @Binding var selection: BrowserFilter
+    var counts: [BrowserFilter: Int]
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.tight) {
+                    ForEach(BrowserFilter.allCases) { filter in
+                        chip(filter)
+                            .id(filter)
+                    }
+                }
+                .padding(.horizontal, Spacing.margin)
+                .padding(.vertical, Spacing.tight)
+            }
+            .scrollClipDisabled()
+            // The chosen chip is in view when the screen opens with it chosen too.
+            .onChange(of: selection, initial: true) {
+                withAnimation { proxy.scrollTo(selection, anchor: .center) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func chip(_ filter: BrowserFilter) -> some View {
+        let isSelected = selection == filter
+        let count = counts[filter] ?? 0
+        let label = Button {
+            selection = filter
+        } label: {
+            // The count in the secondary colour on the quiet chips, so the title reads first.
+            Text("\(filter.title) \(Text(count, format: .number).monospacedDigit().foregroundStyle(isSelected ? .white : .secondary))")
+                .foregroundStyle(isSelected ? .white : .primary)
+        }
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        Group {
+            if isSelected {
+                label.buttonStyle(.borderedProminent)
+            } else {
+                label.buttonStyle(.bordered).tint(.secondary)
+            }
+        }
+        .accessibilityLabel(Text("\(filter.title), \(count) cards"))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// A card in the list: the question, the answer under it, and at the right what state the card
+/// is in. Only the first line of the answer shows, the example sentence belongs on the card's
+/// own screen.
+struct CardRow: View {
+    var card: Card
+    var state: BrowserState
+    var now: Date
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    private var answer: String {
+        card.answer.split(separator: "\n", maxSplits: 1).first.map(String.init) ?? card.answer
+    }
+
+    var body: some View {
+        // At the accessibility sizes the state goes under the answer: beside the question it
+        // would leave the words a column of their own.
+        let layout =
+            typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.hairline))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: Spacing.gap))
+        layout {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(card.question)
+                    .lineLimit(2)
+                Text(answer)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            if !typeSize.isAccessibilitySize {
+                Spacer(minLength: Spacing.tight)
+            }
+            HStack(spacing: Spacing.hairline) {
+                if let symbol = state.symbol {
+                    Image(systemName: symbol)
+                        .imageScale(.small)
+                }
+                Text(state.text(now: now))
+                    .monospacedDigit()
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+extension Card {
+    /// What the speaker says: the question if it is Greek, else the answer if that is.
+    @MainActor var spokenText: String? {
+        if GreekSpeech.shared.canSpeak(question) { return question }
+        let head = answer.prefix { !$0.isNewline }
+        return GreekSpeech.shared.canSpeak(String(head)) ? String(head) : nil
+    }
+}

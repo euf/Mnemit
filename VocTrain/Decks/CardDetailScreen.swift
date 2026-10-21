@@ -1,0 +1,263 @@
+import SwiftUI
+import VocabCore
+
+/// One card: both sides large with the speaker, its kind and the card of the same word the
+/// other way round, what the scheduler knows about it, and its history. Edit, Suspend or
+/// Resume, Reset Progress and Delete act on it.
+///
+/// Pushed from the card browser and from a search result on Today, and shown in a sheet by
+/// a long press on a card of the study stream (`CardInfoSheet`). It looks the card up by its
+/// ID, so it shows the card as the deck holds it now. Deleting the card leaves the screen
+/// in place with Undo, so the deletion can be taken back from wherever the screen was reached.
+struct CardDetailScreen: View {
+    @ObservedObject var document: VocabularyDocument
+    var cardID: Card.ID
+    /// Whether the deck can be changed now, see `OpenDeck.isEditable`.
+    var canEdit: Bool
+    @State private var editing: Card?
+    @State private var undo: UndoWatch
+
+    init(document: VocabularyDocument, cardID: Card.ID, canEdit: Bool, editing: Card? = nil) {
+        self.document = document
+        self.cardID = cardID
+        self.canEdit = canEdit
+        _editing = State(initialValue: editing)
+        _undo = State(initialValue: UndoWatch(document.undoManager))
+    }
+
+    private var isEditable: Bool { canEdit && document.isReadyToEdit }
+
+    var body: some View {
+        Group {
+            if let card = document.card(withID: cardID) {
+                CardDetailList(document: document, card: card, isEditable: isEditable, canEdit: canEdit)
+            } else {
+                ContentUnavailableView {
+                    Label("Card Deleted", systemImage: "trash")
+                } actions: {
+                    Button("Undo", systemImage: "arrow.uturn.backward") { undo.undo() }
+                        .disabled(!undo.canUndo)
+                }
+            }
+        }
+        .navigationTitle("Card")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if undo.canUndo {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Undo", systemImage: "arrow.uturn.backward") { undo.undo() }
+                        .labelStyle(.iconOnly)
+                        .accessibilityLabel(Text("Undo \(undo.actionName)"))
+                }
+            }
+            if let card = document.card(withID: cardID) {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Edit") { editing = card }
+                        .disabled(!isEditable)
+                }
+            }
+        }
+        .sheet(item: $editing) { card in
+            EditCardSheet(document: document, card: card)
+        }
+    }
+}
+
+private struct CardDetailList: View {
+    @ObservedObject var document: VocabularyDocument
+    var card: Card
+    var isEditable: Bool
+    var canEdit: Bool
+
+    /// The card of the same word that asks the other way round, if the word has one.
+    private var sibling: Card? {
+        guard let note = card.note else { return nil }
+        let others = document.deck.cards.filter { $0.note == note && $0.id != card.id }
+        return others.first { $0.kind != card.kind } ?? others.first
+    }
+
+    var body: some View {
+        let now = document.clock.now
+        List {
+            Section {
+                CardTexts(card: card)
+            }
+            if card.kind != nil || card.note != nil {
+                kindSection
+            }
+            memorySection(now: now)
+            if !card.log.isEmpty {
+                Section("History") {
+                    ForEach(Array(card.log.suffix(50).reversed().enumerated()), id: \.offset) { _, entry in
+                        HistoryRow(entry: entry)
+                    }
+                }
+            }
+            Section {
+                Button(card.isSuspended ? "Resume Card" : "Suspend Card", systemImage: card.isSuspended ? "play.circle" : "pause.circle") {
+                    document.setSuspended(!card.isSuspended, of: [card.id])
+                }
+                if !card.isNew {
+                    Button("Reset Progress", systemImage: "arrow.counterclockwise") {
+                        document.resetLearningState(of: [card.id])
+                    }
+                }
+                Button("Delete Card", systemImage: "trash", role: .destructive) {
+                    document.delete([card.id])
+                }
+            }
+            .disabled(!isEditable)
+        }
+        .listStyle(.insetGrouped)
+    }
+
+    private var kindSection: some View {
+        Section {
+            if let kind = card.kind {
+                LabeledContent("Direction", value: kind.direction)
+            }
+            if let sibling {
+                NavigationLink {
+                    CardDetailScreen(document: document, cardID: sibling.id, canEdit: canEdit)
+                } label: {
+                    VStack(alignment: .leading, spacing: Spacing.hairline) {
+                        Text(sibling.kind?.direction ?? String(localized: "Other direction"))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Text(sibling.question)
+                    }
+                }
+            }
+            if let note = card.note {
+                LabeledContent("Word Key", value: note)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func memorySection(now: Date) -> some View {
+        Section("Memory") {
+            LabeledContent("State", value: card.stateTitle)
+            if card.isSuspended {
+                Label("Suspended: no study session asks this card.", systemImage: "pause.circle")
+                    .foregroundStyle(.secondary)
+            }
+            if document.deck.isLeech(card) {
+                Label("Difficult: you keep forgetting this card.", systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.secondary)
+            }
+            if let learningState = card.learningState {
+                LabeledContent("Next review", value: Format.due(learningState.due, now: now))
+                LabeledContent("Stability", value: Format.days(learningState.stability))
+                LabeledContent("Difficulty", value: learningState.difficulty.formatted(.number.precision(.fractionLength(1))) + " / 10")
+                if let probability = document.deck.recallProbability(of: card, at: now, calendar: document.calendar) {
+                    LabeledContent("Recall Now", value: Format.percent(probability))
+                }
+                LabeledContent("Reviews", value: learningState.reviews.formatted())
+                LabeledContent("Lapses", value: learningState.lapses.formatted())
+            } else {
+                Text("This card has not been studied yet.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .monospacedDigit()
+    }
+}
+
+/// Question and answer, both large, each Greek word with its speaker. Like the face of a
+/// card of the study stream, but left aligned and without a card around it.
+private struct CardTexts: View {
+    var card: Card
+
+    /// The answer split at its first line break: the head, which the speaker says, and an
+    /// example sentence, if there is one.
+    private var answer: (head: String, example: String?) {
+        let lines = card.answer.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: true)
+        return (lines.first.map(String.init) ?? card.answer, lines.count > 1 ? String(lines[1]) : nil)
+    }
+
+    private func font(for text: String) -> Font {
+        text.containsGreek ? .largeTitle.weight(.semibold) : .title.weight(.semibold)
+    }
+
+    var body: some View {
+        let answer = answer
+        VStack(alignment: .leading, spacing: Spacing.gap) {
+            SpokenWord(text: card.question, font: font(for: card.question))
+            if !card.hint.isEmpty {
+                Text(card.hint)
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
+            Divider()
+            SpokenWord(text: answer.head, font: font(for: answer.head))
+            if let example = answer.example {
+                Text(example)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, Spacing.tight)
+        .textSelection(.enabled)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// A review: the grade as a disc of its colour with the arrow of its swipe, its name, the
+/// date, and how the card was asked.
+private struct HistoryRow: View {
+    var entry: ReviewLogEntry
+
+    var body: some View {
+        HStack(spacing: Spacing.gap) {
+            Image(systemName: entry.grade.arrowSymbol)
+                .font(.footnote.weight(.bold))
+                .foregroundStyle(entry.grade.onColor)
+                .frame(width: 28, height: 28)
+                .background(entry.grade.color, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.grade.buttonTitle)
+                Text(entry.date.formatted(date: .abbreviated, time: .shortened))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: Spacing.tight)
+            Text(entry.mode.title)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+extension Grade {
+    /// The name on the grade's button: "Forgot", not the scheduler's "Again".
+    var buttonTitle: String {
+        self == .again ? String(localized: "Forgot") : title
+    }
+}
+
+extension CardKind {
+    /// Which way the card asks, for the learner of Greek.
+    var direction: String {
+        switch self {
+        case .recognition: String(localized: "Greek → translation")
+        case .production: String(localized: "Translation → Greek")
+        }
+    }
+}
+
+extension Card {
+    /// Where the card is in its life: New, Learning, Review or Relearning.
+    var stateTitle: String {
+        switch learningState?.phase {
+        case nil: String(localized: "New")
+        case .learning: String(localized: "Learning")
+        case .review: String(localized: "Review")
+        case .relearning: String(localized: "Relearning")
+        }
+    }
+}
