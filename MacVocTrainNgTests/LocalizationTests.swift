@@ -73,6 +73,28 @@ struct LocalizationTests {
         }
     }
 
+    /// The phrases of the lesson words sheet.
+    @Test func lessonWordPhrasesAreSingularForOne() throws {
+        let deck = "Greek B1"
+        let english: [(String.LocalizationValue, String)] = [
+            ("Add \(1) cards to \(deck)", "Add 1 card to Greek B1"),
+            ("Add \(4) cards to \(deck)", "Add 4 cards to Greek B1"),
+            ("\(1) lines without a word and a translation are left out.", "1 line without a word and a translation is left out."),
+            ("\(3) lines without a word and a translation are left out.", "3 lines without a word and a translation are left out."),
+        ]
+        let german: [(String.LocalizationValue, String)] = [
+            ("Add \(1) cards to \(deck)", "1 Karte zu Greek B1 hinzufügen"),
+            ("Add \(4) cards to \(deck)", "4 Karten zu Greek B1 hinzufügen"),
+            ("\(1) lines without a word and a translation are left out.", "1 Zeile ohne Wort und Übersetzung wird ausgelassen."),
+            ("\(3) lines without a word and a translation are left out.", "3 Zeilen ohne Wort und Übersetzung werden ausgelassen."),
+        ]
+        for (language, cases) in [("en", english), ("de", german)] {
+            for (value, expected) in cases {
+                #expect(try localized(value, in: language) == expected)
+            }
+        }
+    }
+
     /// A text whose wording depends on a count has plural forms in every language.
     @Test func everyLanguageHasThePluralsOfTheOthers() throws {
         let languages = ["en", "de"]

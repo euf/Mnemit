@@ -180,6 +180,46 @@
         }
       }
     },
+    "%lld lines without a word and a translation are left out.": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Zeile ohne Wort und Übersetzung wird ausgelassen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Zeilen ohne Wort und Übersetzung werden ausgelassen."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld line without a word and a translation is left out."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld lines without a word and a translation are left out."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld mistakes": {
       "localizations": {
         "de": {
@@ -340,6 +380,46 @@
         }
       }
     },
+    "%lld words are in the deck already, or earlier in the list, and are left out.": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wort ist schon im Stapel oder weiter oben in der Liste und wird ausgelassen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wörter sind schon im Stapel oder weiter oben in der Liste und werden ausgelassen."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld word is in the deck already, or earlier in the list, and is left out."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld words are in the deck already, or earlier in the list, and are left out."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per session counts all other new cards.": {
       "localizations": {
         "de": {
@@ -360,12 +440,112 @@
         }
       }
     },
+    "Add %lld cards to %@": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte zu %@ hinzufügen"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten zu %@ hinzufügen"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Add %lld card to %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Add %lld cards to %@"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Add Card": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Karte hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Lesson Words": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lektionswörter hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Lesson Words…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lektionswörter hinzufügen …"
+          }
+        }
+      }
+    },
+    "Added %lld cards. The production cards unlock after the recognition cards are learned.": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte hinzugefügt. Die Produktionskarte wird freigeschaltet, sobald die Erkennungskarte gelernt ist."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten hinzugefügt. Die Produktionskarten werden freigeschaltet, sobald die Erkennungskarten gelernt sind."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Added %lld card. The production card unlocks after the recognition card is learned."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Added %lld cards. The production cards unlock after the recognition cards are learned."
+                }
+              }
+            }
           }
         }
       }
@@ -866,6 +1046,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schwierigkeit"
+          }
+        }
+      }
+    },
+    "Direction": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richtung"
           }
         }
       }
@@ -1380,6 +1570,16 @@
         }
       }
     },
+    "Lesson words": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lektionswörter"
+          }
+        }
+      }
+    },
     "Log loss": {
       "localizations": {
         "de": {
@@ -1650,6 +1850,16 @@
         }
       }
     },
+    "One word per line: the Greek word, an equals sign or a dash, then the translation.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Wort pro Zeile: das griechische Wort, ein Gleichheitszeichen oder ein Gedankenstrich, dann die Übersetzung."
+          }
+        }
+      }
+    },
     "Open Deck…": {
       "localizations": {
         "de": {
@@ -1740,12 +1950,32 @@
         }
       }
     },
+    "Preview": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorschau"
+          }
+        }
+      }
+    },
     "Previous:": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Vorige:"
+          }
+        }
+      }
+    },
+    "Production": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Produktion"
           }
         }
       }
@@ -1816,6 +2046,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gewusst"
+          }
+        }
+      }
+    },
+    "Recognition": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erkennung"
           }
         }
       }
@@ -2480,6 +2720,16 @@
         }
       }
     },
+    "The production card unlocks after the recognition card is learned": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Produktionskarte wird freigeschaltet, sobald die Erkennungskarte gelernt ist"
+          }
+        }
+      }
+    },
     "The review log of the card “%@” lists more reviews than the card has had.": {
       "localizations": {
         "de": {
@@ -2636,6 +2886,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten gesamt %lld · Ausgesetzt %lld"
+          }
+        }
+      }
+    },
+    "Type a word and its translation to see its cards.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib ein Wort und seine Übersetzung ein, um die Karten zu sehen."
           }
         }
       }
@@ -2926,6 +3186,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "weniger als einen Tag"
+          }
+        }
+      }
+    },
+    "this deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "diesem Stapel"
           }
         }
       }
