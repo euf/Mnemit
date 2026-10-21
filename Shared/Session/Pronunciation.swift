@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftUI
+import VocabCore
 
 extension String {
     /// Whether the text has Greek letters, of the modern alphabet or the polytonic one.
@@ -8,11 +9,19 @@ extension String {
     }
 }
 
-/// Speaks Greek text with a voice installed on the device, for the speaker button and the
-/// Mac's S key.
+/// Speaks Greek text with a voice installed on the device, for the speaker button, the
+/// Mac's S key and, if the learner wants it, by itself (`autoSpeak`).
 @MainActor
 final class GreekSpeech {
     static let shared = GreekSpeech()
+
+    /// The preference "Speak Greek automatically": a card speaks its Greek side by itself.
+    nonisolated static let autoSpeakKey = "speakGreekAutomatically"
+
+    /// On until the learner turns it off.
+    nonisolated static var autoSpeak: Bool {
+        UserDefaults.standard.object(forKey: autoSpeakKey) as? Bool ?? true
+    }
 
     /// The best voice for Greek the device has; `nil` without one, and the speaker
     /// buttons stay hidden. Looked up once: a voice installed meanwhile shows after a restart.
@@ -41,6 +50,27 @@ final class GreekSpeech {
         let utterance = AVSpeechUtterance(string: word)
         utterance.voice = voice
         synthesizer.speak(utterance)
+    }
+
+    /// Cuts off what is being said.
+    func stop() {
+        synthesizer.stopSpeaking(at: .immediate)
+    }
+
+    /// A card came up, or the session ended (`nil`): stops what the last card was saying
+    /// and, with `autoSpeak`, speaks the question if it is Greek. A card with another
+    /// question speaks its answer once that shows, see `answerRevealed(of:)`.
+    func cardAppeared(_ card: Card?) {
+        stop()
+        guard Self.autoSpeak, let card, canSpeak(card.question) else { return }
+        speak(card.question)
+    }
+
+    /// The answer of `card` shows: with `autoSpeak`, speaks it if it is Greek and the
+    /// question wasn't, which `cardAppeared(_:)` has spoken then.
+    func answerRevealed(of card: Card) {
+        guard Self.autoSpeak, !canSpeak(card.question), canSpeak(card.answer) else { return }
+        speak(card.answer)
     }
 }
 

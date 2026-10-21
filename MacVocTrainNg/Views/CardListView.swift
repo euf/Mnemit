@@ -238,20 +238,6 @@ struct SuspensionButtons: View {
     }
 }
 
-struct MaturityLabel: View {
-    var category: MaturityCategory
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(category.color)
-                .frame(width: 8, height: 8)
-            Text(category.title)
-        }
-        .help(category.explanation)
-    }
-}
-
 private struct StatusBar: View {
     @ObservedObject var document: VocabularyDocument
     var shownCount: Int

@@ -9,6 +9,7 @@ struct StudySummaryView: View {
     var body: some View {
         let session = model.session
         let nextCount = model.document.dueCards.count
+        let mistakesToPractice = model.mistakesToPractice.count
 
         List {
             Section {
@@ -23,11 +24,16 @@ struct StudySummaryView: View {
                 }
                 LabeledContent("Time", value: Duration.seconds(session.duration).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated, maximumUnitCount: 2)))
             } header: {
-                Text("Session complete")
+                Text(model.isPracticing ? "Practice complete" : "Session complete")
             }
             .monospacedDigit()
 
             Section {
+                if mistakesToPractice > 0 {
+                    Button("Practice Mistakes (\(mistakesToPractice))") {
+                        model.practiceMistakes()
+                    }
+                }
                 if nextCount > 0 {
                     Button("Continue (\(nextCount))") {
                         model.continueStudying()

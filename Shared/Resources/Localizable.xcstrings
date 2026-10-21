@@ -560,6 +560,16 @@
         }
       }
     },
+    "Card Info": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karteninfo"
+          }
+        }
+      }
+    },
     "Cards": {
       "localizations": {
         "de": {
@@ -1340,6 +1350,16 @@
         }
       }
     },
+    "Kind": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Art"
+          }
+        }
+      }
+    },
     "Lapses": {
       "localizations": {
         "de": {
@@ -1810,6 +1830,16 @@
         }
       }
     },
+    "Production": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Produktion"
+          }
+        }
+      }
+    },
     "Production cards": {
       "localizations": {
         "de": {
@@ -1870,6 +1900,16 @@
         }
       }
     },
+    "Reads a Greek question aloud when its card comes up, and a Greek answer when it shows. Needs a Greek voice on this Mac.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liest eine griechische Frage vor, sobald ihre Karte erscheint, und eine griechische Antwort, sobald sie aufgedeckt wird. Benötigt eine griechische Stimme auf diesem Mac."
+          }
+        }
+      }
+    },
     "Recall Probability": {
       "localizations": {
         "de": {
@@ -1886,6 +1926,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gewusst"
+          }
+        }
+      }
+    },
+    "Recognition": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erkennung"
           }
         }
       }
@@ -2056,6 +2106,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Behaltensquote"
+          }
+        }
+      }
+    },
+    "Revealed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgedeckt"
           }
         }
       }
@@ -2310,6 +2370,16 @@
         }
       }
     },
+    "Sibling Card": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschwisterkarte"
+          }
+        }
+      }
+    },
     "Soon": {
       "localizations": {
         "de": {
@@ -2326,6 +2396,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leertaste oder ↩"
+          }
+        }
+      }
+    },
+    "Speak Greek Automatically": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Griechisch automatisch vorlesen"
+          }
+        }
+      }
+    },
+    "Speak Greek automatically": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Griechisch automatisch vorlesen"
           }
         }
       }
@@ -2756,6 +2846,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten gesamt %lld · Ausgesetzt %lld"
+          }
+        }
+      }
+    },
+    "Typed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getippt"
           }
         }
       }

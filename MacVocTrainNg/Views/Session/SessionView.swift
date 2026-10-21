@@ -12,7 +12,8 @@ import VocabCore
 /// shows the answer, then ← Forgot, → Good, ↑ Easy, ↓ Hard, or 1–4 for Forgot, Hard, Good
 /// and Easy, and Space or Return mean Good. The card flies out in the direction of its
 /// grade, while the button of the grade flashes. A line under the progress names the grade and when the card comes back, and offers
-/// Undo for a few seconds; Z, Esc and ⌘Z take the review back. S speaks the Greek side.
+/// Undo for a few seconds; Z, Esc and ⌘Z take the review back. S speaks the Greek side, and
+/// the preference "Speak Greek automatically" does it by itself, see `GreekSpeech.cardAppeared(_:)`.
 ///
 /// ⌘E edits the card being asked (#289); before the response is checked or the answer
 /// shown, without showing its answer. The response typed so far stays, and a response
@@ -66,6 +67,17 @@ struct SessionView: View {
         .sheet(item: $editing, onDismiss: focusResponse) { request in
             CardEditSheet(document: model.document, card: request.card, hidesAnswer: request.hidesAnswer)
         }
+        // With "Speak Greek automatically": a Greek question when its card comes up, after
+        // the card has flown out and with the next one; else a Greek answer once it shows.
+        .onChange(of: model.questionNumber, initial: true) {
+            GreekSpeech.shared.cardAppeared(model.currentCard)
+        }
+        .onChange(of: isAnswerShown) { _, isShown in
+            if isShown, let card = model.currentCard {
+                GreekSpeech.shared.answerRevealed(of: card)
+            }
+        }
+        .onDisappear { GreekSpeech.shared.stop() }
     }
 
     /// Edits the card being asked; its answer stays hidden until the response is checked

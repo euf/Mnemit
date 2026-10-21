@@ -5,6 +5,7 @@ struct PreferencesView: View {
     @AppStorage(Preferences.studyByKey) private var studyBy = Preferences.StudyBy.flashcards
     @AppStorage(Preferences.autoAdvanceKey) private var autoAdvance = true
     @AppStorage(Preferences.reopenDecksKey) private var reopenDecks = true
+    @AppStorage(GreekSpeech.autoSpeakKey) private var autoSpeak = true
 
     var body: some View {
         Form {
@@ -22,6 +23,12 @@ struct PreferencesView: View {
                     .disabled(studyBy == .flashcards)
             } footer: {
                 Text("When off, you grade every review yourself, e.g. as Easy.")
+                    .foregroundStyle(.secondary)
+            }
+            Section {
+                Toggle("Speak Greek automatically", isOn: $autoSpeak)
+            } footer: {
+                Text("Reads a Greek question aloud when its card comes up, and a Greek answer when it shows. Needs a Greek voice on this Mac.")
                     .foregroundStyle(.secondary)
             }
             Section {

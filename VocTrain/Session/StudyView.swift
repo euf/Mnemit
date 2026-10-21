@@ -11,13 +11,20 @@ import VocabCore
 /// a legend: during a swipe the button of the grade it would give stands out and the others
 /// step back. A line under the progress offers Undo for a few seconds after each grade, and
 /// a shake undoes too.
+///
+/// A long press on the card opens what the app knows about it (`CardInfoSheet`). With
+/// "Speak Greek automatically" on, a Greek question is spoken when its card comes up, and
+/// a Greek answer when it is shown; see `GreekSpeech.cardAppeared(_:)`.
 struct StudyView: View {
     var model: StudyModel
     var onClose: () -> Void
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(GreekSpeech.autoSpeakKey) private var autoSpeak = true
     @State private var flight = CardFlight()
+    /// The card whose info shows in a sheet.
+    @State private var info: Card?
     /// Whether a finger is down; a drag the system cancels still springs the card back.
     @GestureState private var isDragging = false
 
@@ -56,9 +63,16 @@ struct StudyView: View {
                         }
                         .disabled(!model.hasUndoableSteps || model.document.undoManager?.canUndo != true)
                         if !model.isFinished {
+                            Button("Card Info", systemImage: "info.circle") {
+                                info = model.currentCard
+                            }
                             Button("Suspend Card", systemImage: "pause.circle") {
                                 model.suspendCurrentCard()
                             }
+                        }
+                        if GreekSpeech.shared.voice != nil {
+                            Divider()
+                            Toggle("Speak Greek Automatically", systemImage: "speaker.wave.2", isOn: $autoSpeak)
                         }
                     }
                 }
@@ -70,6 +84,19 @@ struct StudyView: View {
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
             model.undoLast()
         }
+        .sheet(item: $info) { card in
+            CardInfoSheet(document: model.document, card: card)
+        }
+        // After the card has flown out: the question changes when the grade is given.
+        .onChange(of: model.questionNumber, initial: true) {
+            GreekSpeech.shared.cardAppeared(model.currentCard)
+        }
+        .onChange(of: model.stage) { _, stage in
+            if stage == .revealed, let card = model.currentCard {
+                GreekSpeech.shared.answerRevealed(of: card)
+            }
+        }
+        .onDisappear { GreekSpeech.shared.stop() }
     }
 
     /// Names the last grade and offers Undo for a few seconds, at the top of the screen,
@@ -97,9 +124,15 @@ struct StudyView: View {
     private var progress: some View {
         let session = model.session
         return VStack(spacing: 4) {
-            Text("\(session.completedCount) / \(session.totalCount)")
-                .font(.subheadline)
-                .monospacedDigit()
+            HStack(spacing: 6) {
+                if model.isPracticing {
+                    Text("Practice")
+                        .fontWeight(.semibold)
+                }
+                Text("\(session.completedCount) / \(session.totalCount)")
+                    .monospacedDigit()
+            }
+            .font(.subheadline)
             ProgressView(value: Double(session.completedCount), total: Double(max(session.totalCount, 1)))
                 .frame(width: 120)
         }
@@ -138,6 +171,8 @@ struct StudyView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         .onTapGesture { model.reveal() }
+        // Gives up at the distance where the swipe starts, so it doesn't hold the swipe back.
+        .onLongPressGesture(maximumDistance: Self.swipeStartDistance) { info = card }
         .gesture(swipe)
         .onChange(of: isDragging) { _, isDragging in
             if !isDragging { flight.springBack() }
@@ -150,7 +185,7 @@ struct StudyView: View {
     /// Global coordinates: the card moves with the finger, and a drag measured in its own
     /// would shrink as it follows.
     private var swipe: some Gesture {
-        DragGesture(minimumDistance: 6, coordinateSpace: .global)
+        DragGesture(minimumDistance: Self.swipeStartDistance, coordinateSpace: .global)
             .updating($isDragging) { _, isDragging, _ in isDragging = true }
             .onChanged { value in
                 flight.drag(value.translation, isRevealed: model.stage == .revealed)
@@ -260,4 +295,6 @@ struct StudyView: View {
     }
 
     private static let forgotWidth: CGFloat = 170
+    /// How far a finger moves before it swipes the card, in points.
+    private static let swipeStartDistance: CGFloat = 6
 }
