@@ -3,9 +3,9 @@
 //   swift Tools/make-app-icon.swift [--concept A|B|C|D] [--preview <file.png>]
 //   swift Tools/make-app-icon.swift --sheet <file.png>
 //
-// Without `--concept` the current icon is written: a flashcard carrying a lowercase Greek mu with a
-// second card behind it, on the greens of the grade ramp in Shared/Support/Presentation.swift.
-// `--concept` writes one of the four alternatives instead, `--sheet` renders all four side by
+// Without `--concept` the shipped icon is written: concept B, the M of cards. `--concept current`
+// is not accepted; the μ design it draws was rejected and stays only for comparison sheets.
+// `--concept` writes one of the four concepts instead, `--sheet` renders all four side by
 // side (Mac 1024, 64, 16, iPhone light and dark) and leaves the asset catalogs alone. The iPhone
 // gets a dark variant of every concept; tinted falls back to the system's automatic rendering.
 //
@@ -440,7 +440,7 @@ if let sheet = value(of: "--sheet") {
     exit(0)
 }
 
-var concept = Concept.current
+var concept = Concept.b  // the shipped icon since 21.10.2026; `current` is the rejected μ design
 if let name = value(of: "--concept") {
     guard let chosen = Concept(rawValue: name.uppercased()), chosen != .current else {
         print("Unknown concept \(name); choose A, B, C or D")
