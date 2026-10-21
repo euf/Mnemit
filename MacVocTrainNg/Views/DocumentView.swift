@@ -28,6 +28,7 @@ struct DocumentView: View {
     @State private var importPreview: CardImport.Preview?
     @State private var addingLessonWords = false
     @State private var toast: Toast?
+    @State private var shortcutsHelp = ShortcutsHelp()
 
     /// Whether the deck can be changed now: the file can be written, and the document
     /// has the undo manager of the window, which this view attaches (#305).
@@ -98,6 +99,10 @@ struct DocumentView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: toast)
+        .shortcutsHelp(shortcutsHelp)
+        .onChange(of: session?.studyBy == .flashcards, initial: true) { _, isFlashcards in
+            shortcutsHelp.opensWithQuestionMark = isFlashcards
+        }
         .attachingUndoManager(to: document)
         .documentSync(document, fileURL: fileURL, isEditable: isEditable, merger: merger, isInSession: session != nil)
         .focusedSceneValue(
@@ -111,7 +116,8 @@ struct DocumentView: View {
                 showOptions: { showingOptions = true },
                 importCards: importCards,
                 exportCards: exportCards,
-                addLessonWords: { addingLessonWords = canEdit && session == nil }
+                addLessonWords: { addingLessonWords = canEdit && session == nil },
+                showShortcuts: { shortcutsHelp.isShown = true }
             )
         )
         #if DEBUG
@@ -164,6 +170,9 @@ struct DocumentView: View {
         let model = SessionViewModel(document: document, studyBy: Preferences.studyBy())
         if !model.isFinished {
             session = model
+            if model.studyBy == .flashcards {
+                shortcutsHelp.showForFirstSession()
+            }
         }
     }
 }

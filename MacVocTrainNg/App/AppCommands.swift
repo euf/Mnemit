@@ -13,6 +13,7 @@ struct DeckActions {
     var importCards: () -> Void
     var exportCards: () -> Void
     var addLessonWords: () -> Void
+    var showShortcuts: () -> Void
 }
 
 private struct DeckActionsKey: FocusedValueKey {
@@ -41,6 +42,11 @@ struct AppCommands: Commands {
             Button("Add Lesson Words…") { actions?.addLessonWords() }
                 .keyboardShortcut("l", modifiers: [.command, .shift])
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
+        }
+
+        CommandGroup(after: .help) {
+            Button("Keyboard Shortcuts") { actions?.showShortcuts() }
+                .disabled(actions == nil)
         }
 
         CommandMenu("Study") {

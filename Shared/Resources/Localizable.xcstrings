@@ -680,6 +680,16 @@
         }
       }
     },
+    "Any key closes this help.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jede Taste schließt diese Hilfe."
+          }
+        }
+      }
+    },
     "Ask these cards in study sessions again": {
       "localizations": {
         "de": {
@@ -1360,6 +1370,26 @@
         }
       }
     },
+    "Got It": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verstanden"
+          }
+        }
+      }
+    },
+    "Grade: ← Forgot, → Good, ↑ Easy, ↓ Hard": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewerten: ← Vergessen, → Gut, ↑ Leicht, ↓ Schwer"
+          }
+        }
+      }
+    },
     "Hard": {
       "localizations": {
         "de": {
@@ -1506,6 +1536,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unvollständig"
+          }
+        }
+      }
+    },
+    "Keyboard Shortcuts": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tastaturkürzel"
           }
         }
       }
@@ -2450,12 +2490,32 @@
         }
       }
     },
+    "Show the answer, then grade Good": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antwort zeigen, danach „Gut“"
+          }
+        }
+      }
+    },
     "Soon": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Bald"
+          }
+        }
+      }
+    },
+    "Space": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leertaste"
           }
         }
       }
@@ -2830,6 +2890,16 @@
         }
       }
     },
+    "This help": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Hilfe"
+          }
+        }
+      }
+    },
     "Time": {
       "localizations": {
         "de": {
@@ -2916,6 +2986,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Widerrufen"
+          }
+        }
+      }
+    },
+    "Undo the last grade": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte Bewertung widerrufen"
           }
         }
       }
@@ -3186,6 +3266,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "weniger als einen Tag"
+          }
+        }
+      }
+    },
+    "or": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "oder"
           }
         }
       }
