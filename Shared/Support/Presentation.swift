@@ -55,35 +55,53 @@ extension Grade {
         KeyEquivalent(Character(String(rawValue)))
     }
 
-    /// The grade's colour: red for Again, the only "no", and three shades of one green
-    /// for Hard, Good and Easy, the three kinds of "yes". It fills the grade buttons, the
-    /// card while it is swiped and the review history. Always shown together with the
-    /// grade's title; `onColor` is the text on it, white on all four.
+    /// The grade's colour: red for Again, the only "no", and three greens for Hard, Good and
+    /// Easy, the three kinds of "yes". It fills the grade buttons, the card while it is swiped
+    /// and the review history. Always shown together with the grade's title; `onColor` is the
+    /// text on it, white on all four.
     ///
-    /// How the greens were chosen: one hue (OKLCH 170°, a jade green, apart from the maturity
-    /// ramp's blue at about 255°), told apart by lightness alone, which falls from Hard to
-    /// Good to Easy in steps of 0.14 OKLCH L, so the three read as one answer in three
-    /// strengths. The ramp is the same in light and dark mode. Contrast of white on the
-    /// fill (WCAG, computed with a script):
-    /// - Hard 0x149D7B, L 0.62, C 0.12: 3.4:1, the 3:1 of large text, as the labels are 17 pt semibold
-    /// - Good 0x0A6E56, L 0.48, C 0.09: 6.2:1
-    /// - Easy 0x044333, L 0.34, C 0.07: 11.3:1
-    /// - Again, the system red darkened to carry white text: 5.4:1 on light (0xD70015),
-    ///   4.6:1 on dark (0xD93A30)
+    /// Confidence is CHROMA, not lightness. One hue (OKLCH 170°, a jade green, apart from the
+    /// maturity ramp's blue at about 255°) and one lightness for all three greens: Hard is a
+    /// muted grey-green, Good a medium green, Easy the most vivid green the sRGB gamut has at
+    /// that lightness. The first ramp told them apart by lightness (Hard light, Easy dark), and
+    /// in dark mode that read backwards, with Hard the brightest button and Easy the darkest.
+    /// Equal lightness keeps the buttons equal in weight, and white text (17 pt semibold,
+    /// WCAG 4.5:1) works on all of them. The ramp has the same order in light and dark mode;
+    /// dark mode lowers the lightness from 0.54 to 0.52 so the fills glare less.
+    ///
+    /// Values (OKLCH L, C; WCAG contrast of white on the fill; computed with a script, hue 170
+    /// for the greens and 27 for the red), light mode / dark mode:
+    /// - Again 0xCE0E1A / 0xC4111A: L .54 / .52, C .215 / .205; white 5.7 / 6.1
+    /// - Hard  0x63736D / 0x5E6D67: L .54 / .52, C .021 / .020; white 5.0 / 5.4
+    /// - Good  0x467B69 / 0x437464: L .54 / .52, C .064 / .060; white 4.9 / 5.4
+    /// - Easy  0x0D8265 / 0x0C7B60: L .54 / .52, C .105 / .100; white 4.8 / 5.2
+    ///
+    /// Distance between neighbours (ΔE as 100 × the distance in OKLab; about 2 is a just
+    /// noticeable difference): Hard to Good 4.3 / 3.9, Good to Easy 4.1 / 4.1, Hard to Easy
+    /// 8.3 / 8.0. Chroma steps are smaller than the lightness steps of the first ramp (14), so
+    /// the buttons also keep their order and their titles. Limit: under deuteranopia (Machado
+    /// 2009 simulation) the steps shrink to 0.3 to 0.5 and Hard to Easy to 1.0, so the three
+    /// greens read as one green there, and Forgot stays 10 apart from all of them.
+    /// Not chroma alone, because a red-green deficiency removes it; hence the title on every
+    /// button.
+    ///
+    /// The card takes the colour while it is swiped (`CardFlight`, at most 70 % over the card
+    /// face, with the text in its normal colour): primary text has 5.3 to 7.2:1 on all four at
+    /// that tint in light mode and 7.6 to 9.0:1 in dark mode; the secondary text (75 % of the
+    /// primary, `Color.cardSecondary`) 4.2 to 5.2:1 in light mode and 5.1 to 5.6:1 in dark mode.
     ///
     /// Why 170°: the first ramp, at 150° with the same lightness steps, was Microsoft Excel's
     /// (0x21A366, 0x107C41, 0x185C37 at 152° to 157°), and the owner saw Office in it. The hues
     /// from 135° to 143° are Office's too (chart green 0x70AD47 and 0x4EA72E, Fluent 0x107C10),
-    /// so they are no way out. At 170° the colours lie 0.03 to 0.05 away from Excel's greens of
-    /// the same lightness in the chroma plane of OKLab (0.006 to 0.019 before). Colour-vision
-    /// deficiency favours it: for deuteranopia Hard and Good are 0.12 and 0.15 OKLab away from
-    /// Forgot's red (0.07 and 0.11 at 150°, 0.05 and 0.09 at 138°).
+    /// so they are no way out. 170° is the family the owner accepted. Easy, the most vivid of
+    /// the three, lies 4.9 ΔE from Excel's 0x107C41 (4.5 in dark mode; 4.0 at 165°; the old Good
+    /// the owner accepted, 6.2); if it reads as Office again, move all three greens up in hue.
     var color: Color {
         switch self {
-        case .again: Color(light: 0xD70015, dark: 0xD93A30)
-        case .hard: Color(light: 0x149D7B, dark: 0x149D7B)
-        case .good: Color(light: 0x0A6E56, dark: 0x0A6E56)
-        case .easy: Color(light: 0x044333, dark: 0x044333)
+        case .again: Color(light: 0xCE0E1A, dark: 0xC4111A)
+        case .hard: Color(light: 0x63736D, dark: 0x5E6D67)
+        case .good: Color(light: 0x467B69, dark: 0x437464)
+        case .easy: Color(light: 0x0D8265, dark: 0x0C7B60)
         }
     }
 
