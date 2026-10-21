@@ -520,6 +520,16 @@
         }
       }
     },
+    "By review mode and card kind": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach Abfrageart und Kartenart"
+          }
+        }
+      }
+    },
     "CSV (comma-separated)": {
       "localizations": {
         "de": {
@@ -576,6 +586,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten in der Wiederholungsphase werden wieder abgefragt, wenn ihre Abrufwahrscheinlichkeit auf diesen Wert sinkt. Höher bedeutet mehr Abfragen, dafür seltener Vergessen; 90 % ist ein guter Kompromiss."
+          }
+        }
+      }
+    },
+    "Cards in the review phase that you recalled (Hard, Good or Easy) when they were asked again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten in der Wiederholungsphase, die du bei der erneuten Abfrage gewusst hast (Schwer, Gut oder Leicht)."
           }
         }
       }
@@ -1330,6 +1350,36 @@
         }
       }
     },
+    "Last 30 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte 30 Tage"
+          }
+        }
+      }
+    },
+    "Last 365 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte 365 Tage"
+          }
+        }
+      }
+    },
+    "Last 7 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte 7 Tage"
+          }
+        }
+      }
+    },
     "Last Review": {
       "localizations": {
         "de": {
@@ -1416,6 +1466,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sicher"
+          }
+        }
+      }
+    },
+    "Mature cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reife Karten"
           }
         }
       }
@@ -1750,6 +1810,16 @@
         }
       }
     },
+    "Production cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Produktionskarten"
+          }
+        }
+      }
+    },
     "Progress": {
       "localizations": {
         "de": {
@@ -1816,6 +1886,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gewusst"
+          }
+        }
+      }
+    },
+    "Recognition cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erkennungskarten"
           }
         }
       }
@@ -1966,6 +2046,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten wieder aufnehmen"
+          }
+        }
+      }
+    },
+    "Retention": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behaltensquote"
+          }
+        }
+      }
+    },
+    "Revealed reviews": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgedeckte Abfragen"
           }
         }
       }
@@ -2410,6 +2510,16 @@
         }
       }
     },
+    "Target recall: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angestrebte Abrufquote: %@"
+          }
+        }
+      }
+    },
     "The algorithm parameter w%lld of this deck is outside its range.": {
       "localizations": {
         "de": {
@@ -2590,6 +2700,16 @@
         }
       }
     },
+    "Today": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute"
+          }
+        }
+      }
+    },
     "Today (incl. overdue)": {
       "localizations": {
         "de": {
@@ -2636,6 +2756,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten gesamt %lld · Ausgesetzt %lld"
+          }
+        }
+      }
+    },
+    "Typed reviews": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getippte Abfragen"
           }
         }
       }
@@ -2770,12 +2900,42 @@
         }
       }
     },
+    "Yesterday": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestern"
+          }
+        }
+      }
+    },
     "Young": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Jung"
+          }
+        }
+      }
+    },
+    "Young cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Junge Karten"
+          }
+        }
+      }
+    },
+    "Young cards had an interval under 21 days when they were asked, mature cards 21 days or more. Learning steps, first reviews and further reviews on the same study day are not counted.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Junge Karten hatten bei der Abfrage einen Abstand unter 21 Tagen, reife Karten 21 Tage oder mehr. Lernschritte, erste Abfragen und weitere Abfragen am selben Lerntag zählen nicht."
           }
         }
       }
