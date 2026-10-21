@@ -2,11 +2,16 @@ import SwiftUI
 import VocabCore
 
 /// The FSRS parameters in the learning options: computes them from the deck's review
-/// log and compares them with the current ones. Saving the options applies them.
+/// log and compares them with the current ones. Saving the options applies them; the
+/// iPhone's options screen saves every change at once (`appliesAtOnce`). Shared by both
+/// apps' options screens.
 struct ParametersSection: View {
     @Binding var options: LearningOptions
     let cards: [Card]
     let calendar: StudyCalendar
+    /// Whether a change of `options` is saved as it is made, so new parameters need no
+    /// Save button to take effect.
+    var appliesAtOnce = false
 
     /// Counted once per opening of the sheet and again when `optimizeFromRevealed`
     /// changes, not in `init`: the parent rebuilds this view on every change to the
@@ -114,7 +119,11 @@ struct ParametersSection: View {
             if !comparison.isBetter {
                 Text("The current parameters already predict your reviews best.")
             } else if options.parameters == comparison.parameters {
-                Label("Takes effect when you save.", systemImage: "checkmark.circle")
+                if appliesAtOnce {
+                    Label("Used for this deck.", systemImage: "checkmark.circle")
+                } else {
+                    Label("Takes effect when you save.", systemImage: "checkmark.circle")
+                }
             } else {
                 Button("Use New Parameters") {
                     options.parameters = comparison.parameters
