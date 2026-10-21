@@ -348,6 +348,60 @@ struct SessionViewModelTests {
         #expect(model.stage == .asking)
     }
 
+    /// "Practice Newest Words" practises the cards it names, from a fresh window, and
+    /// changes none of them.
+    @Test func practisingGivenCardsAsksOnlyThemAndChangesNothing() throws {
+        let document = try makeDocument(cards: 3)
+        let undoManager = makeUndoManager(for: document)
+        let ids = document.deck.cards.suffix(2).map(\.id)
+        let before = document.deck
+
+        let model = SessionViewModel(document: document, autoAdvance: true, practicing: ids)
+        #expect(model.isPracticing)
+        #expect(model.session.totalCount == 2)
+        while !model.isFinished {
+            let card = try #require(model.currentCard)
+            #expect(ids.contains(card.id))
+            model.input = card.answer
+            step(undoManager) { model.submit() }
+        }
+        #expect(model.session.completedCount == 2)
+        #expect(document.deck == before)
+
+        #expect(SessionViewModel(document: document, practicing: []).isFinished)
+    }
+
+    /// The lapse that reaches the leech threshold suspends the card; one undo takes the
+    /// grade and the suspension back.
+    @Test func aLeechIsSuspendedByItsGradeAndUndoBringsItBack() throws {
+        var learningOptions = LearningOptions()
+        learningOptions.fuzzing = false
+        learningOptions.leechThreshold = 8
+        let state = LearningState(
+            phase: .review, stability: 10, difficulty: 5,
+            lastReview: Date(timeIntervalSinceNow: -10 * 86400), due: Date(timeIntervalSinceNow: -3600), reviews: 12, lapses: 7)
+        let leech = Card(question: "q", answer: "a", learningState: state)
+        let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [leech]), calendar: .testing)
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, autoAdvance: true)
+
+        model.input = "wrong"
+        model.submit()
+        step(undoManager) { model.grade(.again) }
+        let stored = try #require(document.card(withID: leech.id))
+        #expect(stored.isSuspended)
+        #expect(stored.learningState?.lapses == 8)
+        #expect(document.deck.isLeech(stored))
+        #expect(model.isFinished)
+        #expect(model.receipt?.isLeech == true)
+        #expect(model.session.leechIDs == [leech.id])
+
+        undoManager.undo()
+        #expect(document.card(withID: leech.id) == leech)
+        #expect(!model.isFinished)
+        #expect(model.session.leechIDs.isEmpty)
+    }
+
     /// Practice and the next study session ask the way the session did.
     @Test func flashCardsCarryOverToPracticeAndLaterSessions() throws {
         let document = try makeDocument(cards: 1)

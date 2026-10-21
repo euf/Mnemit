@@ -85,6 +85,8 @@ struct DocumentView: View {
                 isEditable: canEdit,
                 canStartSession: canEdit && session == nil && document.dueCards.count > 0,
                 startSession: startSession,
+                canPracticeNewest: canEdit && session == nil && !document.deck.newestBatchIDs.isEmpty,
+                practiceNewest: practiceNewestWords,
                 show: { screen = $0 },
                 showOptions: { showingOptions = true },
                 importCards: importCards,
@@ -137,6 +139,15 @@ struct DocumentView: View {
         if !model.isFinished {
             session = model
         }
+    }
+
+    /// Practices the words the last run of `deck-from-tsv` added, whatever their schedule:
+    /// the reviews change no card.
+    private func practiceNewestWords() {
+        guard canEdit, session == nil else { return }
+        let ids = document.deck.newestBatchIDs
+        guard !ids.isEmpty else { return }
+        session = SessionViewModel(document: document, studyBy: Preferences.studyBy(), practicing: ids)
     }
 }
 

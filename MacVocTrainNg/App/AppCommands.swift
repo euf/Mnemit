@@ -8,6 +8,9 @@ struct DeckActions {
     var isEditable: Bool
     var canStartSession: Bool
     var startSession: () -> Void
+    /// Whether the deck has a newest batch to practice, see `Deck.newestBatchIDs`.
+    var canPracticeNewest: Bool
+    var practiceNewest: () -> Void
     var show: (DocumentView.Screen) -> Void
     var showOptions: () -> Void
     var importCards: () -> Void
@@ -43,6 +46,8 @@ struct AppCommands: Commands {
             Button("Start Session") { actions?.startSession() }
                 .keyboardShortcut("l", modifiers: .command)
                 .disabled(actions?.canStartSession != true)
+            Button("Practice Newest Words") { actions?.practiceNewest() }
+                .disabled(actions?.canPracticeNewest != true)
 
             Divider()
 

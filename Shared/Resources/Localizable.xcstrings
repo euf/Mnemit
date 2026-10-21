@@ -340,6 +340,16 @@
         }
       }
     },
+    "A card you forget this many times, and again after every further multiple of it, is suspended as a leech. Resume it in the card list. Off never suspends.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte, die du so oft vergisst, und danach bei jedem weiteren Vielfachen davon, wird als Lernbremse ausgesetzt. Nimm sie in der Kartenliste wieder auf. Aus setzt nie aus."
+          }
+        }
+      }
+    },
     "A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per day counts all other new cards.": {
       "localizations": {
         "de": {
@@ -456,6 +466,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bereits im Stapel: %1$@ → %2$@"
+          }
+        }
+      }
+    },
+    "Also computes the parameters from reviews you graded after revealing the answer, which is every review on the iPhone and on the Mac with flash cards. Off uses typed reviews only.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berechnet die Parameter auch aus Abfragen, die du nach dem Aufdecken der Antwort bewertet hast: auf dem iPhone und am Mac mit Karteikarten jede. Aus nutzt nur getippte Abfragen."
           }
         }
       }
@@ -600,6 +620,16 @@
         }
       }
     },
+    "Cards you keep forgetting show up here.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten, die du immer wieder vergisst, erscheinen hier."
+          }
+        }
+      }
+    },
     "Case-sensitive": {
       "localizations": {
         "de": {
@@ -666,6 +696,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aus dem Verlauf berechnen"
+          }
+        }
+      }
+    },
+    "Computing needs %lld usable reviews: reviews on a later study day than the previous review of the same card.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Berechnung braucht %lld verwertbare Abfragen: Abfragen an einem späteren Lerntag als die vorige Abfrage derselben Karte."
           }
         }
       }
@@ -1200,6 +1240,16 @@
         }
       }
     },
+    "How much a recalled review after revealing the answer, on flash cards and on the iPhone, adds to a card's memory compared with a typed one. 100 % treats both alike, as Anki does; 33 % damps revealed reviews to a third.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie viel eine gewusste Abfrage nach dem Aufdecken der Antwort, bei Karteikarten und auf dem iPhone, zum Gedächtnis einer Karte beiträgt, verglichen mit einer getippten. 100 % behandelt beide gleich, wie Anki; 33 % dämpft aufgedeckte Abfragen auf ein Drittel."
+          }
+        }
+      }
+    },
     "How well the cards are known, by how long they are remembered.": {
       "localizations": {
         "de": {
@@ -1340,6 +1390,16 @@
         }
       }
     },
+    "Learn from revealed reviews": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus aufgedeckten Abfragen lernen"
+          }
+        }
+      }
+    },
     "Learning": {
       "localizations": {
         "de": {
@@ -1376,6 +1436,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lernstand"
+          }
+        }
+      }
+    },
+    "Leech threshold": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwelle für Lernbremsen"
+          }
+        }
+      }
+    },
+    "Leech: you keep forgetting this card.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremse: Du vergisst diese Karte immer wieder."
+          }
+        }
+      }
+    },
+    "Leeches": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremsen"
+          }
+        }
+      }
+    },
+    "Leeches: %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremsen: %lld"
           }
         }
       }
@@ -1600,6 +1700,16 @@
         }
       }
     },
+    "No Leeches": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Lernbremsen"
+          }
+        }
+      }
+    },
     "No Progress Yet": {
       "localizations": {
         "de": {
@@ -1650,6 +1760,16 @@
         }
       }
     },
+    "Off": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus"
+          }
+        }
+      }
+    },
     "Open Deck…": {
       "localizations": {
         "de": {
@@ -1696,6 +1816,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fehler üben (%lld)"
+          }
+        }
+      }
+    },
+    "Practice Newest Words": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neueste Wörter üben"
           }
         }
       }
@@ -2200,6 +2330,16 @@
         }
       }
     },
+    "Show only leeches: cards you keep forgetting": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur Lernbremsen zeigen: Karten, die du immer wieder vergisst"
+          }
+        }
+      }
+    },
     "Show or hide card details": {
       "localizations": {
         "de": {
@@ -2426,6 +2566,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Die Antwort bleibt verborgen, bis du geantwortet hast."
+          }
+        }
+      }
+    },
+    "The card has been forgotten as often as the leech threshold in the learning options asks. A session suspends it; resume it to keep learning it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Karte wurde so oft vergessen, wie die Schwelle für Lernbremsen in den Lernoptionen verlangt. Eine Sitzung setzt sie aus; nimm sie wieder auf, um sie weiter zu lernen."
           }
         }
       }
@@ -2736,6 +2886,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wochen"
+          }
+        }
+      }
+    },
+    "Weight of revealed recalls": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewicht aufgedeckter Abfragen"
           }
         }
       }

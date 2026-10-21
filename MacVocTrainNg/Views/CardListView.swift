@@ -13,6 +13,8 @@ struct CardListView: View {
     /// table would lose the click that moves the focus into it (#171).
     @FocusState private var tableIsFocused: Bool
     @State private var searchText = ""
+    /// Shows only the leeches, see `Deck.isLeech(_:)`.
+    @State private var showsLeechesOnly = false
     @State private var showingInspector = false
     @State private var table = CardTable()
     /// The card that `CardEditSheet` edits, as it was when the sheet opened.
@@ -34,6 +36,12 @@ struct CardListView: View {
             CardEditSheet(document: document, card: card)
         }
         .toolbar {
+            ToolbarItem {
+                Toggle(isOn: $showsLeechesOnly) {
+                    Label("Leeches", systemImage: "exclamationmark.triangle")
+                }
+                .help("Show only leeches: cards you keep forgetting")
+            }
             ToolbarItem {
                 Button {
                     showingInspector.toggle()
@@ -128,12 +136,14 @@ struct CardListView: View {
 
             Divider()
 
-            StatusBar(document: document, shownCount: rows.count, isFiltered: !searchText.isEmpty)
+            StatusBar(document: document, shownCount: rows.count, isFiltered: !searchText.isEmpty || showsLeechesOnly)
         }
     }
 
     @ViewBuilder private var emptyState: some View {
-        if searchText.isEmpty {
+        if searchText.isEmpty, showsLeechesOnly {
+            ContentUnavailableView("No Leeches", systemImage: "checkmark.circle", description: Text("Cards you keep forgetting show up here."))
+        } else if searchText.isEmpty {
             ContentUnavailableView(
                 "No Cards Yet",
                 systemImage: "rectangle.stack.badge.plus",
@@ -180,7 +190,11 @@ struct CardListView: View {
     }
 
     private func rows() -> [CardRow] {
-        table.rows(of: document.deck.cards, sortedBy: sortOrder, matching: searchText)
+        let deck = document.deck
+        let rows = table.rows(of: deck.cards, sortedBy: sortOrder, matching: searchText)
+        guard showsLeechesOnly else { return rows }
+        let leeches = Set(deck.cards.lazy.filter(deck.isLeech).map(\.id))
+        return rows.filter { leeches.contains($0.id) }
     }
 
     /// Context menu, double-click and inspector all edit through here: nothing opens the
@@ -261,6 +275,8 @@ private struct StatusBar: View {
         let total = document.deck.cards.count
         let today = document.dueCards.counts
         let suspended = document.deck.suspendedCount
+        let deck = document.deck
+        let leeches = deck.cards.count { deck.isLeech($0) }
         HStack(spacing: 16) {
             if isFiltered {
                 Text("\(shownCount) of \(total) cards")
@@ -270,6 +286,9 @@ private struct StatusBar: View {
             Text("Today: \(today.new) new · \(today.learning) learning · \(today.review) review")
             if suspended > 0 {
                 Text("\(suspended) suspended")
+            }
+            if leeches > 0 {
+                Text("Leeches: \(leeches)")
             }
             Spacer()
         }

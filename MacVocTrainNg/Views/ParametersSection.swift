@@ -8,11 +8,17 @@ struct ParametersSection: View {
     let cards: [Card]
     let calendar: StudyCalendar
 
-    /// Counted once per opening of the sheet, not in `init`: the parent rebuilds this
-    /// view on every change to the options, and counting goes through the whole log.
-    @State private var reviewCount: Int?
+    /// Counted once per opening of the sheet and again when `optimizeFromRevealed`
+    /// changes, not in `init`: the parent rebuilds this view on every change to the
+    /// options, and counting goes through the whole log.
+    @State private var counted: (fromRevealed: Bool, count: Int)?
     @State private var state = ComputationState.idle
     @State private var task: Task<Void, Never>?
+
+    /// The count for the current setting of `optimizeFromRevealed`; `nil` while counting.
+    private var reviewCount: Int? {
+        counted.flatMap { $0.fromRevealed == options.optimizeFromRevealed ? $0.count : nil }
+    }
 
     private enum ComputationState {
         case idle
@@ -33,7 +39,9 @@ struct ParametersSection: View {
         Section {
             LabeledContent("Current parameters", value: options.parameters == .default ? String(localized: "Default") : String(localized: "Custom"))
                 // On a row that is always there, whatever the count.
-                .task { await countReviews() }
+                .task(id: options.optimizeFromRevealed) { await countReviews() }
+            Toggle("Learn from revealed reviews", isOn: $options.optimizeFromRevealed)
+                .help("Also computes the parameters from reviews you graded after revealing the answer, which is every review on the iPhone and on the Mac with flash cards. Off uses typed reviews only.")
             switch reviewCount {
             case nil:
                 LabeledContent("Usable reviews", value: "")
@@ -54,12 +62,24 @@ struct ParametersSection: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("FSRS starts with parameters averaged over many learners. Computed from this deck's review log, they fit your memory, so cards need fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review.")
                 if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {
-                    Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: typed reviews on a later study day than the previous review of the same card.")
+                    if options.optimizeFromRevealed {
+                        Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: reviews on a later study day than the previous review of the same card.")
+                    } else {
+                        Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: typed reviews on a later study day than the previous review of the same card.")
+                    }
                 }
             }
             .foregroundStyle(.secondary)
         }
         .onDisappear { task?.cancel() }
+        // A comparison made with other inputs says nothing about the current ones.
+        .onChange(of: options.optimizeFromRevealed) { resetComputation() }
+        .onChange(of: options.revealedRecallWeight) { resetComputation() }
+    }
+
+    private func resetComputation() {
+        task?.cancel()
+        state = .idle
     }
 
     @ViewBuilder
@@ -120,9 +140,10 @@ struct ParametersSection: View {
         let cards = cards
         let calendar = calendar
         let options = options
-        reviewCount = await Task.detached(priority: .userInitiated) {
+        let count = await Task.detached(priority: .userInitiated) {
             FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar).reviewCount
         }.value
+        counted = (options.optimizeFromRevealed, count)
     }
 
     private func start() {

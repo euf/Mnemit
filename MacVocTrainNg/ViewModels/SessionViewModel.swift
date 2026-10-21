@@ -42,13 +42,21 @@ final class SessionViewModel {
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the same study day.
     /// Types by default, so a test doesn't depend on the learner's preference; the app passes it.
-    init(document: VocabularyDocument, autoAdvance: Bool = Preferences.autoAdvance, studyBy: Preferences.StudyBy = .typing) {
-        let study = Self.makeStudySession(for: document, studyBy: studyBy)
+    ///
+    /// - Parameter practicing: Cards to practice, e.g. `Deck.newestBatchIDs`, without
+    ///   changing their schedule; `nil` studies the cards that are due.
+    init(document: VocabularyDocument, autoAdvance: Bool = Preferences.autoAdvance, studyBy: Preferences.StudyBy = .typing, practicing: [Card.ID]? = nil) {
+        let mode: SessionMode
+        if let practicing {
+            mode = .practice(Practice(practicing: practicing, at: document.clock.now))
+        } else {
+            mode = .study(Self.makeStudySession(for: document, studyBy: studyBy))
+        }
         self.document = document
         self.autoAdvance = autoAdvance
         self.studyBy = studyBy
-        driver = SessionDriver(document: document, mode: .study(study))
-        stage = study.session.isFinished ? .finished : .asking
+        driver = SessionDriver(document: document, mode: mode)
+        stage = mode.session.isFinished ? .finished : .asking
         driver.delegate = self
     }
 

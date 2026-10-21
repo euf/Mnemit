@@ -54,6 +54,11 @@
   из сессии, `GradeReceipt` говорит «leech, suspended». Флага в файле нет: `Card.isLeech(
   threshold:)` выводится из `lapses`, поэтому фильтр «Leeches» на Mac показывает и
   возобновлённые карточки, а слияния нового правила не требуют.
+- Последняя партия слов: `Deck.newestBatchIDs` — карточки с тем же `created` (до секунды),
+  что и самая свежая в колоде, без suspended; `deck-from-tsv` ставит один `created` на
+  прогон. Mac: Study ▸ Practice Newest Words (`SessionViewModel(practicing:)`, расписание
+  не трогает); для iPhone API готово, кнопки нет. Карточка, добавленная руками позже,
+  начинает свою партию.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
 
