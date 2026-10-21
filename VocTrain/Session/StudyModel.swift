@@ -56,6 +56,9 @@ final class StudyModel: Identifiable {
         driver = SessionDriver(document: document, stream: stream)
         stage = driver.isResting ? .resting : .asking
         driver.delegate = self
+        // Before the first card shows: the voice and the audio session are ready by then, and
+        // the stream's speech never sets them up in the middle of an animation.
+        GreekSpeech.shared.open()
     }
 
     /// The segment running: study, or practice; `SessionMode` is how the core records the

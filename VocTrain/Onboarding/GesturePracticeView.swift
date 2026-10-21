@@ -105,9 +105,7 @@ struct GesturePracticeView: View {
         .onChange(of: isDragging) { _, isDragging in
             if !isDragging { flight.springBack() }
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: flight.committing) { _, committing in
-            committing != nil
-        }
+        .swipeHaptics(flight)
         // VoiceOver can't swipe: the actions do what the swipes do.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Sample card: η αστυνομία, the police"))
@@ -162,12 +160,13 @@ struct GesturePracticeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The study screen's swipe, in global coordinates, as the card moves with the finger.
+    /// The study screen's swipe, in the coordinates of the card's place, which stays put as the
+    /// card moves with the finger.
     private var swipe: some Gesture {
-        DragGesture(minimumDistance: 6, coordinateSpace: .global)
+        DragGesture(minimumDistance: 6, coordinateSpace: .local)
             .updating($isDragging) { _, isDragging, _ in isDragging = true }
             .onChanged { value in
-                flight.drag(value.translation, isRevealed: true)
+                flight.drag(value.translation, from: value.startLocation, isRevealed: true)
             }
             .onEnded { value in
                 guard let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {

@@ -73,7 +73,8 @@ struct SessionView: View {
                 GreekSpeech.shared.answerRevealed(of: card)
             }
         }
-        .onDisappear { GreekSpeech.shared.stop() }
+        .onAppear { GreekSpeech.shared.open() }
+        .onDisappear { GreekSpeech.shared.close() }
     }
 
     /// Edits the card being asked; its answer stays hidden until the response is checked
@@ -111,7 +112,8 @@ struct SessionView: View {
     private var spokenText: String? {
         guard let card = model.currentCard, model.studyBy == .flashcards || isAnswerShown else { return nil }
         if GreekSpeech.shared.canSpeak(card.question) { return card.question }
-        return isAnswerShown && GreekSpeech.shared.canSpeak(card.answer) ? card.answer : nil
+        // The head of the answer: a Greek example under a Russian gloss is not a Greek answer.
+        return isAnswerShown && GreekSpeech.shared.canSpeak(String(card.answer.prefix { !$0.isNewline })) ? card.answer : nil
     }
 
     private var isAnswerShown: Bool {
@@ -121,30 +123,32 @@ struct SessionView: View {
         }
     }
 
+    /// The same controls in every state, question, answer and rest, so the bar never changes
+    /// and nothing below it moves; what doesn't apply is disabled.
     private var header: some View {
         HStack(spacing: 16) {
             stageLabel
             Spacer()
-            if !model.isResting {
-                // A pull-down button: a click edits, the arrow offers Suspend Card.
-                Menu("Edit Card…") {
-                    Button("Suspend Card") { model.suspendCurrentCard() }
-                        .help("Don't ask this card again until you resume it in the card list")
-                } primaryAction: {
-                    editCurrentCard()
-                }
-                .fixedSize()
-                // On the menu, ⌘E would also show next to its first item, Suspend Card.
-                .background {
-                    Button("Edit Card…", action: editCurrentCard)
-                        .keyboardShortcut("e", modifiers: .command)
-                        .hidden()
-                }
-                .disabled(model.currentCard == nil)
-                .help("Fix this card without leaving the stream")
+            // A pull-down button: a click edits, the arrow offers Suspend Card.
+            Menu("Edit Card…") {
+                Button("Suspend Card") { model.suspendCurrentCard() }
+                    .help("Don't ask this card again until you resume it in the card list")
+            } primaryAction: {
+                editCurrentCard()
             }
-            if let extra = model.extraNew {
-                Menu("More", systemImage: "ellipsis.circle") {
+            .fixedSize()
+            // On the menu, ⌘E would also show next to its first item, Suspend Card.
+            .background {
+                Button("Edit Card…", action: editCurrentCard)
+                    .keyboardShortcut("e", modifiers: .command)
+                    .hidden()
+            }
+            .disabled(model.currentCard == nil || model.isResting)
+            .help("Fix this card without leaving the stream")
+            Menu("More", systemImage: "ellipsis.circle") {
+                Button("Undo", systemImage: "arrow.uturn.backward", action: model.undoLast)
+                    .disabled(!model.canUndoLast)
+                if let extra = model.extraNew {
                     Button {
                         model.addNewCards()
                     } label: {
@@ -152,11 +156,11 @@ struct SessionView: View {
                         Text("≈ +\(extra.reviewsPerDay) reviews/day next week")
                     }
                 }
-                .menuIndicator(.hidden)
-                .labelStyle(.iconOnly)
-                .fixedSize()
-                .help("More")
             }
+            .menuIndicator(.hidden)
+            .labelStyle(.iconOnly)
+            .fixedSize()
+            .help("More")
             DailyRingView(progress: ring.progress)
             Button("Done", action: onClose)
                 // With flash cards Esc takes back a review, see `keys`.
@@ -342,9 +346,11 @@ private struct FeedbackView: View {
     }
 }
 
-/// Flash cards: the card with the question, then the answer under it, and the button that
-/// shows the answer or the grade buttons below. The card flies out in the direction of
-/// its grade.
+/// Flash cards: the card with the question, then the answer under it, and below it the button
+/// that shows the answer or the grade buttons. The card flies out in the direction of its
+/// grade. The card and the area below it keep their size from the question to the answer: the
+/// grade buttons are in the layout all the time, invisible and disabled until the answer shows,
+/// and Show Answer sits on top of them.
 private struct FlashcardView: View {
     var card: Card
     var isRevealed: Bool
@@ -357,76 +363,45 @@ private struct FlashcardView: View {
     var body: some View {
         VStack(spacing: 14) {
             FlightCard(flight: flight) {
-                face
+                CardFace(card: card, isRevealed: isRevealed)
             }
             .frame(maxWidth: 560, minHeight: 160, idealHeight: 240, maxHeight: 260)
             .contentShape(Rectangle())
             .onTapGesture(perform: onReveal)
 
             actions
-                .frame(maxWidth: 440, minHeight: 104, alignment: .top)
+                .frame(maxWidth: 440)
         }
     }
 
-    /// The question above the divider, the answer below it, in the same places whether or
-    /// not the answer shows.
-    private var face: some View {
-        VStack(spacing: 10) {
-            VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    Text(card.question)
-                        .font(.system(size: 32, weight: .semibold))
-                        .textSelection(.enabled)
-                    SpeakButton(text: card.question)
-                }
-                if !card.hint.isEmpty {
-                    Text(card.hint)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-
-            Group {
-                Divider()
-                HStack(spacing: 8) {
-                    Text(card.answer)
-                        .font(.title)
-                        .textSelection(.enabled)
-                    SpeakButton(text: card.answer)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-            .opacity(isRevealed ? 1 : 0)
-            // The hidden answer has no speaker button to click.
-            .allowsHitTesting(isRevealed)
-            .accessibilityHidden(!isRevealed)
-        }
-        .multilineTextAlignment(.center)
-        .minimumScaleFactor(0.5)
-        .padding(20)
-    }
-
-    @ViewBuilder
     private var actions: some View {
-        if isRevealed {
+        ZStack(alignment: .top) {
             // Space and Return showed the answer and now mean Good; the arrows grade as the
-            // swipes do on the iPhone.
+            // swipes do on the iPhone. Disabled before, so their keys belong to Show Answer.
             GradeChoice(defaultGrade: .good, acceptsSpace: true, acceptsArrows: true, highlighted: flight.highlighted, onGrade: commit)
-        } else {
-            Button(action: onReveal) {
-                VStack(spacing: 2) {
-                    Text("Show Answer")
-                    Text("Space or ↩")
-                        .font(.caption)
-                }
-                .frame(minWidth: 120)
-                .padding(.vertical, 2)
+                .opacity(isRevealed ? 1 : 0)
+                .disabled(!isRevealed)
+                .accessibilityHidden(!isRevealed)
+            if !isRevealed {
+                showAnswer
             }
-            .keyboardShortcut(.defaultAction)
-            .buttonStyle(.borderedProminent)
+        }
+    }
 
-            // A button takes one shortcut; Space shows the answer too.
+    /// A standard large button; it is the default button, so the window shows it in the accent
+    /// colour while it is active, and the keys are named under it.
+    private var showAnswer: some View {
+        VStack(spacing: 6) {
+            Button("Show Answer", action: onReveal)
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            Text("Space or ↩")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        // A button takes one shortcut; Space shows the answer too.
+        .background {
             Button(action: onReveal) {
                 Text(verbatim: "")
             }
@@ -441,6 +416,7 @@ private struct FlashcardView: View {
     /// VoiceOver all come here, so a second key press while the card flies does nothing.
     private func commit(_ grade: Grade) {
         guard isRevealed, !flight.isFlying else { return }
+        GreekSpeech.shared.stop()
         flight.fly(grade, reduceMotion: reduceMotion) { onGrade(grade) }
     }
 }

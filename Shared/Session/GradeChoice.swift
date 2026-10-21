@@ -30,12 +30,17 @@ struct GradeChoice: View {
     var highlighted: Grade?
     var onGrade: @MainActor (Grade) -> Void
 
-    /// Controls of the platform's size: 52 pt on the iPhone, 44 in landscape, 38 on the Mac.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// 50 pt at the default text size, as high as Show Answer, which takes the place of the
+    /// buttons before the answer shows.
+    @ScaledMetric(relativeTo: .body) private var scaledHeight: CGFloat = 50
+
+    /// Controls of the platform's size: 50 pt on the iPhone, 44 in landscape, 38 on the Mac.
     private var height: CGFloat {
         #if os(macOS)
         38
         #else
-        isCompact ? 44 : 52
+        isCompact ? 44 : scaledHeight
         #endif
     }
 
@@ -51,12 +56,13 @@ struct GradeChoice: View {
         Group {
             switch part {
             case .both:
-                VStack(spacing: 4) {
+                VStack(spacing: 0) {
                     forgot
-                        .padding(.bottom, 6)
+                        .padding(.bottom, 12)
                     Text("Recalled")
-                        .font(.caption)
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .padding(.bottom, 6)
                         .accessibilityHidden(true)
                     recalled
                 }
@@ -83,23 +89,36 @@ struct GradeChoice: View {
                 .frame(maxWidth: .infinity, minHeight: height)
                 .background(Grade.again.color, in: shape)
                 .overlay { marker(of: .again) }
+                .overlay { outline(of: .again) }
                 .contentShape(shape)
         }
         .buttonStyle(Pressable())
-        .modifier(Emphasis(grade: .again, highlighted: highlighted))
+        .modifier(Emphasis(grade: .again, highlighted: highlighted, scale: 1.06))
         #if os(macOS)
         .keyboardShortcut(Grade.again.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(Grade.again.rawValue)"))
         #endif
     }
 
-    /// Hard, Good and Easy: three buttons of one height in a row, three shades of one
-    /// green, Good wider.
+    /// Hard, Good and Easy: three buttons of one height in a row, three strengths of one
+    /// green, Good wider. At accessibility sizes the titles no longer fit side by side and the
+    /// buttons stack.
+    @ViewBuilder
     private var recalled: some View {
-        WeightedRow(weights: [1, 1.25, 1], spacing: 8) {
-            segment(.hard)
-            segment(.good)
-            segment(.easy)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: 12) {
+                    segment(.hard)
+                    segment(.good)
+                    segment(.easy)
+                }
+            } else {
+                WeightedRow(weights: [1, 1.25, 1], spacing: 12) {
+                    segment(.hard)
+                    segment(.good)
+                    segment(.easy)
+                }
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Recalled"))
@@ -112,11 +131,11 @@ struct GradeChoice: View {
             Text(grade.title)
                 .font(.body.weight(.semibold))
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
                 .foregroundStyle(grade.onColor)
                 .frame(maxWidth: .infinity, minHeight: height, maxHeight: .infinity)
                 .background(grade.color, in: shape)
                 .overlay { marker(of: grade) }
+                .overlay { outline(of: grade) }
                 .contentShape(shape)
         }
         .buttonStyle(Pressable())
@@ -125,6 +144,14 @@ struct GradeChoice: View {
         .keyboardShortcut(grade.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(grade.rawValue)"))
         #endif
+    }
+
+    /// The ring round the button of the grade a swipe is about to give, in the grade's own
+    /// colour and clear of the fill so it shows against the screen.
+    private func outline(of grade: Grade) -> some View {
+        shape.inset(by: -3.5)
+            .stroke(grade.color, lineWidth: 2)
+            .opacity(highlighted == grade ? 1 : 0)
     }
 
     /// A ring in the button that Return accepts.
@@ -181,15 +208,23 @@ private struct Pressable: ButtonStyle {
 }
 
 /// Lights up the button of the grade a swipe is about to give or a key has just given, and
-/// steps the others back. All buttons stay as they are while no grade is highlighted.
+/// steps the others back: the chosen one grows by 8 % in full colour with a ring of its own
+/// (`GradeChoice.outline(of:)`), the others fade to 15 % and lose their colour, so the choice
+/// reads at a glance from the corner of the eye. All buttons stay as they are while no grade is
+/// highlighted.
 private struct Emphasis: ViewModifier {
     var grade: Grade
     var highlighted: Grade?
+    /// How much the chosen button grows; the full-width Forgot grows less, so with its ring it
+    /// stays inside the 16 pt margins of the screen.
+    var scale = 1.08
 
     func body(content: Content) -> some View {
+        let isOther = highlighted != nil && highlighted != grade
         content
-            .opacity(highlighted == nil || highlighted == grade ? 1 : 0.35)
-            .scaleEffect(highlighted == grade ? 1.03 : 1)
+            .saturation(isOther ? 0 : 1)
+            .opacity(isOther ? 0.15 : 1)
+            .scaleEffect(highlighted == grade ? scale : 1)
             .animation(.easeOut(duration: 0.12), value: highlighted)
     }
 }
