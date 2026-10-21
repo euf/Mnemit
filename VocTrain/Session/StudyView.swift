@@ -61,6 +61,8 @@ struct StudyView: View {
                     cardArea(card)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGroupedBackground))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     closeButton
@@ -204,7 +206,13 @@ struct StudyView: View {
         .contentShape(Rectangle())
         .onTapGesture { model.reveal() }
         // Gives up at the distance where the swipe starts, so it doesn't hold the swipe back.
-        .onLongPressGesture(maximumDistance: Self.swipeStartDistance) { info = card }
+        // Its press shows the answer as the finger lands, so one gesture reveals and grades:
+        // touch, look, swipe on (owner, 21.10.2026).
+        .onLongPressGesture(maximumDistance: Self.swipeStartDistance) {
+            info = card
+        } onPressingChanged: { isPressing in
+            if isPressing { model.reveal() }
+        }
         .gesture(swipe)
         .onChange(of: isDragging) { _, isDragging in
             if !isDragging { flight.springBack() }

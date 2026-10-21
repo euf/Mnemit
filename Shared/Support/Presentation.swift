@@ -210,12 +210,13 @@ extension Color {
     static var dailyRingLap: Color { Color.accentColor.opacity(0.55) }
 
     /// The face of a flash card: a little off the background, so the card stands out
-    /// from the screen it is swiped across.
+    /// from the screen it is swiped across. On iOS the grouped pair, as on the Today screen:
+    /// a white card on a grey screen in light, a raised grey on black in dark.
     static var cardSurface: Color {
         #if os(macOS)
         Color(nsColor: .controlBackgroundColor)
         #else
-        Color(uiColor: .secondarySystemBackground)
+        Color(uiColor: .secondarySystemGroupedBackground)
         #endif
     }
 
