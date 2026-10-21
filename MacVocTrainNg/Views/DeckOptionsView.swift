@@ -33,7 +33,7 @@ struct DeckOptionsView: View {
 
                 Section {
                     LimitField(title: "Cards per session", value: $options.cardsPerSession, defaultValue: 100, step: 10)
-                    LimitField(title: "New cards per session", value: $options.newCardsPerSession, defaultValue: 20, step: 5)
+                    LimitField(title: "New cards per day", value: $options.newCardsPerSession, defaultValue: 20, step: 5)
                     Stepper(value: $options.steps, in: LearningOptions.stepsRange) {
                         LabeledContent("Steps per card", value: options.steps.formatted())
                     }
@@ -45,7 +45,7 @@ struct DeckOptionsView: View {
                 }
 
                 Section {
-                    LimitField(title: "New production cards per session", value: $options.newProductionPerSession, defaultValue: 7, step: 1, range: LearningOptions.productionLimitRange)
+                    LimitField(title: "New production cards per day", value: $options.newProductionPerSession, defaultValue: 7, step: 1, range: LearningOptions.productionLimitRange)
                     Stepper(value: $options.productionUnlockDays, in: LearningOptions.productionUnlockDaysRange) {
                         LabeledContent(
                             "Unlock production cards after",
@@ -58,7 +58,7 @@ struct DeckOptionsView: View {
                 } header: {
                     Text("Word cards")
                 } footer: {
-                    Text("A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per session counts all other new cards.")
+                    Text("A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per day counts all other new cards.")
                         .foregroundStyle(.secondary)
                 }
 

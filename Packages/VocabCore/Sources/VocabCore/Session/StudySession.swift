@@ -76,7 +76,9 @@ public struct StudySession: Sendable {
     ///   card of its note was reviewed on the current study day or is already selected.
     ///   Learning and relearning cards are never left out. Skipping changes no card.
     /// - New cards fill their limits in `newCardOrder`: production cards up to
-    ///   `newProductionPerSession`, all others up to `newCardsPerSession`.
+    ///   `newProductionPerSession`, all others up to `newCardsPerSession`. The limits
+    ///   hold for the study day: cards first reviewed on the current study day, in this
+    ///   session or an earlier one, are subtracted from them.
     static func selectCards(from deck: Deck, at now: Date, calendar: StudyCalendar, using random: inout SeededRandom) -> [Card.ID] {
         selection(from: deck, at: now, calendar: calendar, using: &random).map(\.card.id)
     }
@@ -143,8 +145,9 @@ public struct StudySession: Sendable {
 
         var selected: [Candidate] = []
         var selectedNotes = Set<String>()
-        var newLeft = options.newCardsPerSession ?? Int.max
-        var productionLeft = options.newProductionPerSession ?? Int.max
+        let introduced = newCardsIntroduced(onDayOf: now, in: deck, calendar: calendar)
+        var newLeft = max(0, (options.newCardsPerSession ?? Int.max) - introduced.other)
+        var productionLeft = max(0, (options.newProductionPerSession ?? Int.max) - introduced.production)
         for candidate in due + new where selected.count < (options.cardsPerSession ?? Int.max) {
             let card = candidate.card
             if candidate.urgency != .learning, let note = card.note {
@@ -189,6 +192,20 @@ public struct StudySession: Sendable {
             notes.insert(note)
         }
         return notes
+    }
+
+    /// The cards introduced on the study day of `date`, production cards apart from all
+    /// others: those whose first review fell on it, whatever became of them since. A card
+    /// whose log doesn't reach back to its first review (an import from MacVocTrain 1)
+    /// says nothing about when it was introduced and doesn't count.
+    private static func newCardsIntroduced(onDayOf date: Date, in deck: Deck, calendar: StudyCalendar) -> (production: Int, other: Int) {
+        let today = calendar.dayNumber(for: date)
+        var introduced = (production: 0, other: 0)
+        for card in deck.cards {
+            guard card.hasCompleteLog, let first = card.log.first, calendar.dayNumber(for: first.date) == today else { continue }
+            if card.kind == .production { introduced.production += 1 } else { introduced.other += 1 }
+        }
+        return introduced
     }
 
     /// For each note, the cards reviewed on the study day of `date`.

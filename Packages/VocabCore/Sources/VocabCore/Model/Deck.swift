@@ -14,11 +14,15 @@ public struct LearningOptions: Hashable, Sendable {
     public var steps: Int = 2
     /// Maximum number of cards per session; `nil` means unlimited.
     public var cardsPerSession: Int? = 100
-    /// Maximum number of never-studied cards per session, not counting new production
-    /// cards (`newProductionPerSession`); `nil` means unlimited.
+    /// Maximum number of never-studied cards a study day introduces, not counting new
+    /// production cards (`newProductionPerSession`); `nil` means unlimited. Cards whose
+    /// first review fell on the current study day count against it, so every session of
+    /// the day takes from one quota. The name keeps `deck.json` readable: it said "per
+    /// session" when the limit still restarted with each session.
     public var newCardsPerSession: Int? = nil
-    /// Maximum number of never-studied production cards per session (`CardKind.production`);
-    /// 0 asks none, `nil` means unlimited.
+    /// Maximum number of never-studied production cards (`CardKind.production`) a study
+    /// day introduces, counted like `newCardsPerSession`; 0 asks none, `nil` means
+    /// unlimited.
     public var newProductionPerSession: Int? = 7
     /// Days the interval of a note's recognition card must have reached before its
     /// production card is introduced; 0 never holds production cards back.

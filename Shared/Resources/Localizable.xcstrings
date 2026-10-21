@@ -340,12 +340,12 @@
         }
       }
     },
-    "A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per session counts all other new cards.": {
+    "A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per day counts all other new cards.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eine Produktionskarte (Muttersprache zu Fremdsprache) bleibt gesperrt, bis die Erkennungskarte ihres Wortes (Fremdsprache zu Muttersprache) ein so langes Intervall hat. Eine Sitzung fragt von den Karten eines Wortes nur eine pro Tag ab. „Neue Karten pro Sitzung“ zählt alle anderen neuen Karten."
+            "value": "Eine Produktionskarte (Muttersprache zu Fremdsprache) bleibt gesperrt, bis die Erkennungskarte ihres Wortes (Fremdsprache zu Muttersprache) ein so langes Intervall hat. Eine Sitzung fragt von den Karten eines Wortes nur eine pro Tag ab. „Neue Karten pro Tag“ zählt alle anderen neuen Karten."
           }
         }
       }
@@ -1540,22 +1540,22 @@
         }
       }
     },
-    "New cards per session": {
+    "New cards per day": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Neue Karten pro Sitzung"
+            "value": "Neue Karten pro Tag"
           }
         }
       }
     },
-    "New production cards per session": {
+    "New production cards per day": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Neue Produktionskarten pro Sitzung"
+            "value": "Neue Produktionskarten pro Tag"
           }
         }
       }
