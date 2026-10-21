@@ -4,10 +4,12 @@
 # iPhone over the CoreDevice connection Xcode already has.
 #
 # The profile allows exactly one App ID, and the bundle id is taken from it rather than
-# from the project. Another bundle id signed with this profile also installs and runs
-# (measured 21.10.2026 with FicTypeApp, the way GBox and ESign sign), but without a bundle
-# id equal to the App ID background tasks, file coordination and, from iOS 26, Share don't
-# work; Mnemit edits its decks through file coordination, so it takes the App ID itself.
+# from the project. Another bundle id signed with this profile installs and runs (measured
+# 21.10.2026 with FicTypeApp, the way GBox and ESign sign), but its document picker yields
+# nothing: a Mnemit copy as com.euf.mnemit.ios could not open a deck from iCloud Drive,
+# the phone log showed "Could not resolve bookmark. Error: Cocoa 257" and
+# "didPickDocumentURLs: with an empty array of items" on every tap (21.10.2026 18:53).
+# Decks come only through the picker, so Mnemit must carry the App ID itself.
 # Other apps signed with this certificate: ~/dotfiles/ios-install, ~/Code/GUI-APPS.md §15.
 # Identity and profile live outside the repository in $IOS_SIGNING_DIR:
 #   iapps.mobileprovision   the profile from the chat
