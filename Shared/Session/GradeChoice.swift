@@ -58,11 +58,11 @@ struct GradeChoice: View {
             case .both:
                 VStack(spacing: 0) {
                     forgot
-                        .padding(.bottom, 12)
+                        .padding(.bottom, Spacing.gap)
                     Text("Recalled")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                        .padding(.bottom, 6)
+                        .padding(.bottom, Spacing.hairline)
                         .accessibilityHidden(true)
                     recalled
                 }
@@ -107,13 +107,13 @@ struct GradeChoice: View {
     private var recalled: some View {
         Group {
             if dynamicTypeSize.isAccessibilitySize {
-                VStack(spacing: 12) {
+                VStack(spacing: Spacing.gap) {
                     segment(.hard)
                     segment(.good)
                     segment(.easy)
                 }
             } else {
-                WeightedRow(weights: [1, 1.25, 1], spacing: 12) {
+                WeightedRow(weights: [1, 1.25, 1], spacing: Spacing.gap) {
                     segment(.hard)
                     segment(.good)
                     segment(.easy)

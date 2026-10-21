@@ -423,9 +423,9 @@ struct CountsRow: View {
 ```
 ┌───────────────────────────────────────┐
 │ ✕          ◔  14 of 20           (…) │ nav 44: close | principal: ring 22 + subheadline | ellipsis
-│          Good · in 4 days   Undo      │ UndoChip, 32 high, always reserved
+│        [→ Good] in 4 days  Undo       │ UndoChip: material capsule, about 32 high, always reserved
 │ ┌───────────────────────────────────┐ │
-│ │                                   │ │ card: margin 16, inner padding 20, radius 22,
+│ │                                   │ │ card: margin 16, inner padding 24, radius 22,
 │ │         ο Άγγλος    [spk]         │ │   secondarySystemBackground (unchanged)
 │ │ ───────────────────────────────── │ │ divider at a fixed height
 │ │       англичанин · Englishman     │ │ title2, regular
@@ -435,11 +435,11 @@ struct CountsRow: View {
 │ ╭───────────────────────────────────╮ │
 │ │            ✕ Forgot               │ │ 50, Grade.again.color
 │ ╰───────────────────────────────────╯ │
-│               Recalled                │ footnote, secondary; 12 above, 6 below
+│               Recalled                │ footnote, secondary; 12 above, 4 below
 │ ╭────────╮ ╭──────────╮ ╭────────╮    │ 50 high; gaps 12; widths 98 / 123 / 98
 │ │  Hard  │ │   Good   │ │  Easy  │    │
 │ ╰────────╯ ╰──────────╯ ╰────────╯    │
-└───────────────────────────────────────┘ 8 bottom padding above the safe area
+└───────────────────────────────────────┘ 12 bottom padding above the safe area; 12 between chip, card and buttons
 ```
 
 Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98, Good 123, Easy 98.
@@ -456,12 +456,12 @@ Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98
 
 | Part | Spec |
 |---|---|
-| Container | One fixed-height container for both stages. Today `actions` is a 44-pt Show Answer button before the reveal and about 133 pt of grades after it, so the card shrinks by about 80 pt at the reveal and the divider with the question moves up by about 40 pt (derived from `cardArea` and `face`; not seen on screen). Keep the grade rows in the layout at all times (`opacity`, `allowsHitTesting`, `accessibilityHidden` as `face` does for the answer) and bottom-align Show Answer in the same container. |
-| Show Answer | `Button`, `.buttonStyle(.borderedProminent)`, `.controlSize(.large)`, full width, accent fill, bottom edge of the container. Height equal to the grade buttons. |
+| Container | One fixed-height container for both stages. Today `actions` is a 44-pt Show Answer button before the reveal and about 133 pt of grades after it, so the card shrinks by about 80 pt at the reveal and the divider with the question moves up by about 40 pt (derived from `cardArea` and `face`; not seen on screen). Keep the grade rows in the layout at all times (`opacity`, `allowsHitTesting`, `accessibilityHidden` as `face` does for the answer) and lay Show Answer over them (an overlay, so it has their size). |
+| Show Answer | `Button`, `.buttonStyle(.borderedProminent)`, `.controlSize(.large)`, full width, accent fill, the whole rectangle of the grade block (Forgot's top to the bottom of the row), corner radius 14 like the grade buttons. |
 | Forgot | Full width, height `@ScaledMetric(relativeTo: .body) var height = 50` (52 today), `Label("Forgot", systemImage: "xmark")`, `.font(.body.weight(.semibold))`, fill `Grade.again.color`, white label. |
-| Caption | `Text("Recalled")`, `.footnote`, secondary. 12 above (after Forgot), 6 below. |
+| Caption | `Text("Recalled")`, `.footnote`, secondary. 12 above (after Forgot), 4 below. |
 | Hard / Good / Easy | `WeightedRow(weights: [1, 1.25, 1], spacing: 12)`, same height as Forgot, fills `Grade.hard/good/easy.color`, white labels. `minimumScaleFactor(0.7)` goes away; at `isAccessibilitySize` the four buttons stack, full width, gap 12. |
-| Spacing | 12 between bezeled controls [H:accessibility]; today 8 and 4. Hard taken for Forgot is the costly slip for FSRS (comment in `GradeChoice`); the caption with its 12 + 6 keeps the two rows about 36 apart. |
+| Spacing | 12 between bezeled controls [H:accessibility]; today 8 and 4. Hard taken for Forgot is the costly slip for FSRS (comment in `GradeChoice`); the caption with its 12 + 4 keeps the two rows about 32 apart. The scale of the study screens is `Spacing`: 4, 8, 12, 16, 24. |
 | Corner radius | 14 (as now). |
 | Press state | `Pressable` (opacity 0.6) stays; the HIG requires a press state on custom buttons [H:buttons]. |
 | Landscape (`verticalSizeClass == .compact`) | One row: Forgot (170) + Hard/Good/Easy, gap 12, height 44. The progress leaves the row for the nav bar. |
@@ -522,21 +522,19 @@ struct StreamToolbar: ToolbarContent {
     }
 }
 
-/// Grade rows stay in the layout so the card keeps its height; Show Answer sits on top at the bottom edge.
+/// Grade rows stay in the layout so the card keeps its height; Show Answer is laid over them and fills their rectangle.
 struct GradeArea<Show: View, Rows: View>: View {
     var isRevealed: Bool
     @ViewBuilder var show: Show
     @ViewBuilder var rows: Rows
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            rows
-                .opacity(isRevealed ? 1 : 0)
-                .allowsHitTesting(isRevealed)
-                .accessibilityHidden(!isRevealed)
-            if !isRevealed { show }
-        }
-        .frame(maxWidth: .infinity)
+        rows
+            .opacity(isRevealed ? 1 : 0)
+            .allowsHitTesting(isRevealed)
+            .accessibilityHidden(!isRevealed)
+            .overlay { if !isRevealed { show } }
+            .frame(maxWidth: .infinity)
     }
 }
 

@@ -1,7 +1,7 @@
 import SwiftUI
 import VocabCore
 
-/// The study stream in the style of flash cards: the question, a tap shows the answer,
+/// The study stream in the style of flash cards: the question, a touch shows the answer,
 /// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stream has
 /// no end of its own: today's plan, a short rest (`StreamRestView`), then review ahead and
 /// practice. Every grade is saved at once, so leaving loses nothing. The bar shows the close
@@ -17,6 +17,9 @@ import VocabCore
 ///
 /// The card and the grade area keep their size from the question to the answer: the grade
 /// buttons are in the layout all the time and fade in, and Show Answer sits on top of them.
+///
+/// A touch that starts on a speaker button belongs to the button: it neither shows the answer,
+/// nor swipes the card, nor opens the card's info (`SpeakerPlaces`).
 ///
 /// A long press on the card opens what the app knows about it (`CardInfoSheet`). With
 /// "Speak Greek automatically" on, a Greek question is spoken when its card has settled, and
@@ -34,8 +37,9 @@ struct StudyView: View {
     @State private var info: Card?
     /// Whether a finger is down; a drag the system cancels still springs the card back.
     @GestureState private var isDragging = false
-    /// As high as the grade buttons (`GradeChoice`), so Show Answer fills the space they take.
-    @ScaledMetric(relativeTo: .body) private var buttonHeight: CGFloat = 50
+    /// Where the speaker buttons of the card are; a touch that starts on one is the button's,
+    /// not the card's.
+    @State private var speakers = SpeakerPlaces()
 
     /// - Parameter flight: The card's movement; a test passes one it has moved.
     init(model: StudyModel, ring: DailyRingModel, flight: CardFlight? = nil, onClose: @escaping () -> Void) {
@@ -46,6 +50,8 @@ struct StudyView: View {
     }
 
     private var isCompact: Bool { verticalSizeClass == .compact }
+
+    private var isRevealed: Bool { model.stage == .revealed }
 
     var body: some View {
         NavigationStack {
@@ -139,7 +145,7 @@ struct StudyView: View {
     }
 
     /// Names the last grade and offers Undo for a few seconds, at the top of the screen,
-    /// under the bar. It keeps its height when empty, so nothing below it moves.
+    /// under the bar. It keeps its place when empty, so nothing below it moves.
     private var chip: some View {
         UndoChip(receipt: model.receipt, onUndo: model.undoLast, onExpire: model.dismissReceipt)
     }
@@ -185,50 +191,70 @@ struct StudyView: View {
     }
 
     /// In portrait the buttons sit below the card. In landscape the iPhone is too low for the
-    /// two rows: Forgot and the three others share one row.
+    /// two rows: Forgot and the three others share one row. The gaps are from `Spacing`: 12
+    /// between the chip, the card and the buttons (8 in landscape), 12 under the buttons, above
+    /// the safe area, and the 16 of the side margins.
     private func cardArea(_ card: Card) -> some View {
-        VStack(spacing: isCompact ? 8 : 12) {
+        VStack(spacing: isCompact ? Spacing.tight : Spacing.gap) {
             chip
             cardView(card)
             gradeArea
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
+        .padding(.horizontal, Spacing.margin)
+        .padding(.bottom, Spacing.gap)
     }
 
-    /// The card, which the learner taps to show the answer and swipes to grade it. The
-    /// gestures sit on a place that stays put, as the card moves away under the finger.
+    /// The card, which the learner touches to show the answer and swipes to grade it. The
+    /// gestures sit on a place that stays put, as the card moves away under the finger; it is
+    /// also the space the speaker buttons report their places in (`SpeakerPlaces`).
     private func cardView(_ card: Card) -> some View {
         FlightCard(flight: flight) {
             CardFace(card: card, isRevealed: model.stage == .revealed)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .environment(\.speakerPlaces, speakers)
+        .coordinateSpace(name: SpeakerPlaces.space)
         .contentShape(Rectangle())
-        .onTapGesture { model.reveal() }
+        // Next to the buttons inside the card, not instead of them: a touch on a speaker goes
+        // to both, and `touch` is the one that lets it go.
+        .simultaneousGesture(touch)
         // Gives up at the distance where the swipe starts, so it doesn't hold the swipe back.
-        // Its press shows the answer as the finger lands, so one gesture reveals and grades:
-        // touch, look, swipe on (owner, 21.10.2026).
         .onLongPressGesture(maximumDistance: Self.swipeStartDistance) {
-            info = card
-        } onPressingChanged: { isPressing in
-            if isPressing { model.reveal() }
+            if !speakers.touchBeganOnSpeaker { info = card }
         }
-        .gesture(swipe)
         .onChange(of: isDragging) { _, isDragging in
             if !isDragging { flight.springBack() }
         }
         .swipeHaptics(flight)
     }
 
-    /// In the card's own coordinates, which stay put while the card moves: the translation is
-    /// the finger's, and the start is where the card was grabbed.
-    private var swipe: some Gesture {
-        DragGesture(minimumDistance: Self.swipeStartDistance, coordinateSpace: .local)
-            .updating($isDragging) { _, isDragging, _ in isDragging = true }
+    private func startsOnSpeaker(_ value: DragGesture.Value) -> Bool {
+        speakers.contains(value.startLocation)
+    }
+
+    /// A finger on the card, in the card's own coordinates, which stay put while the card moves:
+    /// the translation is the finger's, and the start is where the card was grabbed. The touch
+    /// shows the answer as the finger lands, so one gesture reveals and grades: touch, look,
+    /// swipe on (owner, 21.10.2026). Past `swipeStartDistance` it swipes the card. A touch that
+    /// starts on a speaker does neither: the speaker speaks and nothing else happens.
+    private var touch: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .updating($isDragging) { value, isDragging, _ in
+                if !isDragging, hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance, !startsOnSpeaker(value) {
+                    isDragging = true
+                }
+            }
             .onChanged { value in
+                let onSpeaker = startsOnSpeaker(value)
+                speakers.touchBeganOnSpeaker = onSpeaker
+                guard !onSpeaker else { return }
+                model.reveal()
+                // Once the swipe has begun the card follows the finger, however near it comes back.
+                guard isDragging || hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance else { return }
                 flight.drag(value.translation, from: value.startLocation, isRevealed: model.stage == .revealed)
             }
             .onEnded { value in
+                guard !startsOnSpeaker(value) else { return }
                 guard model.stage == .revealed, let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
                     flight.springBack()
                     return
@@ -246,19 +272,20 @@ struct StudyView: View {
     }
 
     /// The same space for Show Answer and for the grade buttons: both are in the layout, one
-    /// of them invisible, so the card keeps its height at the reveal.
+    /// of them invisible, so the card keeps its height at the reveal. Show Answer fills all of
+    /// it, from where Forgot's top is to where the bottom of the row of buttons is.
     private var gradeArea: some View {
-        let isRevealed = model.stage == .revealed
-        return ZStack(alignment: .bottom) {
-            grades
-                .opacity(isRevealed ? 1 : 0)
-                .allowsHitTesting(isRevealed)
-                .accessibilityHidden(!isRevealed)
-            if !isRevealed {
-                showAnswer
+        grades
+            .opacity(isRevealed ? 1 : 0)
+            .allowsHitTesting(isRevealed)
+            .accessibilityHidden(!isRevealed)
+            // An overlay has the size of the grades, which is the size the area has.
+            .overlay {
+                if !isRevealed {
+                    showAnswer
+                }
             }
-        }
-        .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -274,14 +301,17 @@ struct StudyView: View {
         }
     }
 
+    /// As wide and as high as the grade buttons below the card, in the same corner radius.
     private var showAnswer: some View {
         Button {
             model.reveal()
         } label: {
             Text("Show Answer")
-                .frame(maxWidth: .infinity)
+                .font(.body.weight(.semibold))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.roundedRectangle(radius: 14))
         .controlSize(.large)
     }
 

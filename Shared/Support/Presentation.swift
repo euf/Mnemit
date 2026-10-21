@@ -107,6 +107,30 @@ extension Grade {
 
     /// Text and symbols on `color`.
     var onColor: Color { .white }
+
+    /// The SF Symbol of the way a swipe gives the grade: ← Forgot, → Good, ↗ Easy, ↘ Hard.
+    /// Beside the colour, it says which grade it was to a reader who tells the greens apart
+    /// badly.
+    var arrowSymbol: String {
+        switch self {
+        case .again: "arrow.left"
+        case .hard: "arrow.down.right"
+        case .good: "arrow.right"
+        case .easy: "arrow.up.right"
+        }
+    }
+}
+
+/// The spacing scale of the study screens, in points: every gap, margin and padding in them is
+/// one of these, so the rhythm is the same in every state. `margin` is the iPhone's standard
+/// side margin, `gap` what lies between two blocks (the card and its buttons, two bezeled
+/// controls), `section` the room a card gives its parts.
+enum Spacing {
+    static let hairline: CGFloat = 4
+    static let tight: CGFloat = 8
+    static let gap: CGFloat = 12
+    static let margin: CGFloat = 16
+    static let section: CGFloat = 24
 }
 
 /// A grade's colour as a dot beside its title, with a hairline so the darkest green shows on

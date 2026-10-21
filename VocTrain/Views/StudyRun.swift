@@ -72,7 +72,7 @@ struct StudyRunView: View {
                     deck: deck, document: document, entry: run.isFirst ? run.entry : .study, ring: ring,
                     knownDecks: knownDecks, next: next, onNext: run.advance, onClose: onClose)
             } else {
-                Placeholder(failure: deck.failure, onClose: onClose)
+                StudyPlaceholder(failure: deck.failure, onClose: onClose)
             }
         }
         // A new deck, a new stream: the state of the one before must not carry over.
@@ -86,8 +86,9 @@ struct StudyRunView: View {
     }
 }
 
-/// The deck is being read, or can't be.
-private struct Placeholder: View {
+/// The deck is being read, or can't be. On the grey page of the study screen, so the cover
+/// doesn't turn from white to grey when the stream appears.
+struct StudyPlaceholder: View {
     var failure: String?
     var onClose: () -> Void
 
@@ -100,6 +101,8 @@ private struct Placeholder: View {
                     ProgressView()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGroupedBackground))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close, action: onClose)
@@ -140,7 +143,7 @@ private struct DeckStream: View {
                         }
                     }
             } else {
-                Placeholder(failure: nil, onClose: onClose)
+                StudyPlaceholder(failure: nil, onClose: onClose)
             }
         }
         .documentSync(document, fileURL: deck.url, isEditable: deck.isEditable, merger: deck.merger, isInSession: model != nil)
@@ -187,7 +190,7 @@ private struct NextButton: View {
         }
         .buttonStyle(.glassProminent)
         .controlSize(.large)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
+        .padding(.horizontal, Spacing.margin)
+        .padding(.bottom, Spacing.gap)
     }
 }
