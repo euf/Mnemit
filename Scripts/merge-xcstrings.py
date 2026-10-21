@@ -4,7 +4,7 @@
 
 Parallel branches each add or change their own keys; git sees text conflicts in the sorted
 JSON although the keys rarely collide. This takes the three stages of the conflicted file
-(base, ours, theirs), applies theirs' additions, changes and deletions onto ours, and writes
+(base, ours, theirs), applies theirs' additions and changes onto ours (deletions are kept out on purpose), and writes
 the catalog in its own format (2-space indent, `": "`, sorted keys). A key both sides changed
 differently is reported and left as ours.
 
@@ -37,9 +37,9 @@ def main():
                 ours[key] = value  # changed only by theirs
             elif not (key in base and value == base[key]):
                 conflicts.append(key)  # changed by both
-    for key in list(ours):
-        if key in base and key not in theirs and ours[key] == base[key]:
-            del ours[key]  # deleted by theirs, untouched by ours
+    # Keys theirs deleted stay: a branch drops keys its own code no longer uses, but ours
+    # may use them (21.10.2026: "Continue" and "Time" vanished from the onboarding views).
+    # An orphaned key costs nothing; a missing one fails the localization check.
     text = json.dumps(ours_doc, ensure_ascii=False, indent=2, separators=(",", ": "), sort_keys=True)
     with open(PATH, "w", encoding="utf-8") as f:
         f.write(text + ("\n" if ours_raw.endswith("\n") else ""))
