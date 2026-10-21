@@ -21,6 +21,8 @@ struct StartScreen: View {
     @State private var reminders = Reminders()
     /// Today's reviews against the goal and the streak, over all known decks.
     @State private var ring = DailyRingModel()
+    /// Keeps what the home-screen widget shows up to date, see `WidgetSync`.
+    @State private var widget = WidgetSync()
     @State private var run: StudyRun?
     @State private var path: [DeckRoute] = []
     @State private var pushed = PushedDecks()
@@ -81,7 +83,7 @@ struct StartScreen: View {
         } message: {
             Text("This place has no Trash, so “\(setAsideDeck ?? "")” was moved to the folder “\(DeckFiles.setAsideFolderName)” next to it. Files can put it back.")
         }
-        .onOpenURL(perform: add(deckAt:))
+        .onOpenURL(perform: open)
         .onAppear {
             if !hasSeenIntroduction {
                 showsIntroduction = true
@@ -133,6 +135,7 @@ struct StartScreen: View {
                 pushed.suspend()
                 addingCards?.suspend()
                 reminders.rescheduleBeforeSuspending(decks: knownDecks.byName, open: openDeck)
+                if let inputs = widgetInputs { widget.flushBeforeSuspending(inputs) }
             case .active:
                 run?.deck.resume()
                 pushed.resume()
@@ -143,6 +146,7 @@ struct StartScreen: View {
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
             undoOnShake()
         }
+        .onChange(of: widgetTrigger) { syncWidget() }
         .onChange(of: reminders.isEnabled) { Task { await rescheduleReminders() } }
         .onChange(of: reminders.minutes) { Task { await rescheduleReminders() } }
         // At launch and whenever the app comes back to the front. A deck that is open shows
@@ -151,6 +155,7 @@ struct StartScreen: View {
             if scenePhase == .active, run == nil, path.isEmpty, addingCards == nil {
                 await refreshAll()
             }
+            if scenePhase == .active { syncWidget() }
         }
     }
 
@@ -311,6 +316,36 @@ struct StartScreen: View {
         isChoosing = true
     }
 
+    /// A deck file the learner opened from the Files app joins the list; a link from the
+    /// widget (`mnemit://study`) starts Study.
+    private func open(_ url: URL) {
+        guard WidgetLink.isStudy(url) else {
+            add(deckAt: url)
+            return
+        }
+        // The introduction comes first, and there are no decks before it.
+        guard hasSeenIntroduction else { return }
+        Task { await studyFromWidget() }
+    }
+
+    /// One tap on the widget is the first card: what covers Today closes first, the decks are
+    /// read if the app has just started, and then Study runs as from its button.
+    private func studyFromWidget() async {
+        let isCovered = showsSettings || addingCards != nil || showsNewDeck || isChoosing || !path.isEmpty
+        showsSettings = false
+        addingCards = nil
+        showsNewDeck = false
+        isChoosing = false
+        path = []
+        if isCovered {
+            try? await Task.sleep(for: .milliseconds(600))
+        }
+        if deckCounts.counts.isEmpty {
+            await refreshAll()
+        }
+        study(.all)
+    }
+
     /// A deck the learner opened with the picker or from the Files app joins the list.
     private func add(deckAt url: URL) {
         knownDecks.remember(url)
@@ -340,6 +375,35 @@ struct StartScreen: View {
     /// document has them, not as the file does.
     private var openDeck: OpenDeck? {
         run?.deck ?? addingCards ?? pushed.openDecks.first
+    }
+
+    /// What the widget's snapshot depends on; a change asks for a new one.
+    private struct WidgetTrigger: Equatable {
+        var progress: DailyProgress?
+        var decks: [KnownDeck]
+        var counts: [URL: StudyCounts]
+        var nextReminder: Date?
+    }
+
+    private var widgetTrigger: WidgetTrigger {
+        WidgetTrigger(progress: ring.progress, decks: knownDecks.byName, counts: deckCounts.counts, nextReminder: reminders.nextFire)
+    }
+
+    /// `nil` before the ring is evaluated: the widget keeps its old figures until there are new.
+    private var widgetInputs: WidgetSync.Inputs? {
+        guard let progress = ring.progress else { return nil }
+        let open = openDeck
+        let decks = knownDecks.byName.map { known -> WidgetSync.Source in
+            if let open, KnownDecks.isSameFile(open.url, known.url), let document = open.document {
+                return .open(document.deck, document.calendar)
+            }
+            return .file(known.url)
+        }
+        return WidgetSync.Inputs(progress: progress, decks: decks, nextReminder: reminders.nextFire)
+    }
+
+    private func syncWidget() {
+        if let inputs = widgetInputs { widget.request(inputs) }
     }
 
     private func rescheduleReminders() async {

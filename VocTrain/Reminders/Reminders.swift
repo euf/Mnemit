@@ -52,6 +52,10 @@ final class Reminders {
     /// What the learner allowed in the system dialog, or in the iOS settings after it.
     private(set) var status = UNAuthorizationStatus.notDetermined
 
+    /// When the next reminder fires, `nil` if none is scheduled: the reminder is off, not allowed,
+    /// or no day ahead has anything due. The widget shows it.
+    private(set) var nextFire: Date?
+
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let center: UNUserNotificationCenter
     /// The last run; the next one waits for it, so an older run never overwrites a newer one.
@@ -122,6 +126,7 @@ final class Reminders {
         center.removePendingNotificationRequests(withIdentifiers: Self.identifiers)
         await refreshStatus()
         guard isEnabled, isAllowed else {
+            nextFire = nil
             await setBadge(0)
             return
         }
@@ -138,9 +143,11 @@ final class Reminders {
         }
         await setBadge(days[0].reduce(0) { $0 + $1.total })
 
+        var first: Date?
         for (index, fire) in fires.enumerated() {
             let day = days[index + 1]
             guard let body = ReminderPlan.body(day) else { continue }
+            first = first ?? fire
             let content = UNMutableNotificationContent()
             content.title = String(localized: "Time to study")
             content.body = body
@@ -150,6 +157,7 @@ final class Reminders {
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             try? await center.add(UNNotificationRequest(identifier: Self.identifiers[index], content: content, trigger: trigger))
         }
+        nextFire = first
     }
 
     private func counts(of deck: KnownDeck, on dates: [Date], open: OpenDeck?) async -> [StudyCounts]? {
@@ -167,7 +175,7 @@ final class Reminders {
 
 /// A claim on background time from iOS, ended once the work is done or the time is up.
 @MainActor
-private final class BackgroundTime {
+final class BackgroundTime {
     var identifier = UIBackgroundTaskIdentifier.invalid
 
     func end() {
