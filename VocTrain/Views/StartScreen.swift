@@ -4,12 +4,23 @@ import SwiftUI
 /// takes from each, and opens the one it showed last at launch (#285). Decks it doesn't know yet open through the file
 /// picker, or from the Files app. The open deck lies on top, see `DeckScreen`; going
 /// back closes it.
+///
+/// The learner can also choose the folder that holds the decks: every deck in it is
+/// listed, and pulling the list down looks for new ones. At the first launch the
+/// introduction covers the screen, `OnboardingView`; the menu brings it back. The daily
+/// reminder and the number on the app icon follow the counts, see `Reminders`.
 struct StartScreen: View {
     @State private var knownDecks = KnownDecks()
     @State private var deckCounts = KnownDeckCounts()
+    @State private var reminders = Reminders()
     @State private var deck: OpenDeck?
     @State private var isChoosing = false
+    @State private var choosesFolder = false
     @State private var hasReopened = false
+    @State private var showsSettings = false
+    @State private var showsIntroduction = false
+    @State private var wantsIntroduction = false
+    @AppStorage("IntroductionSeen") private var hasSeenIntroduction = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -19,10 +30,11 @@ struct StartScreen: View {
                     ContentUnavailableView {
                         Label("No Deck Open", systemImage: "rectangle.stack")
                     } description: {
-                        Text("Decks are created in Mnemit on the Mac. Open one it saved, e.g. in iCloud Drive.")
+                        Text("Decks are created in Mnemit on the Mac. Choose the Mnemit folder in iCloud Drive, or open a single deck.")
                     } actions: {
-                        Button("Open Deck…") { isChoosing = true }
+                        Button("Choose Mnemit Folder…") { choose(folder: true) }
                             .buttonStyle(.borderedProminent)
+                        Button("Open Deck…") { choose(folder: false) }
                     }
                 } else {
                     deckList
@@ -30,47 +42,71 @@ struct StartScreen: View {
             }
             .navigationTitle(Text(verbatim: "Mnemit"))
             .toolbar {
-                if !knownDecks.byName.isEmpty {
-                    Button("Open Deck…", systemImage: "plus") { isChoosing = true }
+                Menu("More", systemImage: "ellipsis.circle") {
+                    Button("Choose Mnemit Folder…", systemImage: "folder") { choose(folder: true) }
+                    Button("Open Deck…", systemImage: "plus") { choose(folder: false) }
+                    Divider()
+                    Button("Settings", systemImage: "gearshape") { showsSettings = true }
+                    Button("Show Introduction", systemImage: "questionmark.circle") { showsIntroduction = true }
                 }
+            }
+            // The introduction covers the screen once the sheet has gone.
+            .sheet(isPresented: $showsSettings, onDismiss: showIntroductionAfterSettings) {
+                SettingsView(reminders: reminders) { wantsIntroduction = true }
             }
             .navigationDestination(item: $deck) { deck in
                 DeckScreen(deck: deck, knownDecks: knownDecks)
             }
         }
-        .fileImporter(isPresented: $isChoosing, allowedContentTypes: [.vocabularyDeck]) { result in
-            if case let .success(url) = result {
+        .deckPicker(isPresented: $isChoosing, choosesFolder: choosesFolder) { url in
+            if url.isDeck {
                 openDeck(at: url)
+            } else if knownDecks.chooseFolder(url) > 0 {
+                Task { await refreshCounts() }
             }
         }
+        .fullScreenCover(isPresented: $showsIntroduction) {
+            OnboardingView(knownDecks: knownDecks, reminders: reminders, onFinish: finishIntroduction)
+        }
         .onOpenURL(perform: openDeck(at:))
-        .onAppear(perform: reopen)
+        .onAppear {
+            reopen()
+            if !hasSeenIntroduction {
+                showsIntroduction = true
+            }
+        }
         .onChange(of: deck) { previous, _ in
             if let previous {
                 Task {
                     // The deck saves what it changed before the list reads the file.
                     await previous.close()
-                    await deckCounts.refresh(knownDecks.byName)
+                    await refreshCounts()
                 }
             }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
-            case .background: deck?.suspend()
+            case .background:
+                deck?.suspend()
+                reminders.rescheduleBeforeSuspending(decks: knownDecks.byName, open: deck)
             case .active: deck?.resume()
             default: break
             }
         }
+        .onChange(of: reminders.isEnabled) { Task { await rescheduleReminders() } }
+        .onChange(of: reminders.minutes) { Task { await rescheduleReminders() } }
         // At launch and whenever the app comes back to the front. An open deck shows its
         // own counts, and the list reads again once the deck is closed.
         .task(id: scenePhase) {
             if scenePhase == .active, deck == nil {
-                await deckCounts.refresh(knownDecks.byName)
+                knownDecks.refreshFolder()
+                await refreshCounts()
             }
         }
     }
 
-    /// The known decks; removing one from the list leaves its file alone.
+    /// The known decks; removing one from the list leaves its file alone, unless it lies in
+    /// the folder: the list would take it up again.
     private var deckList: some View {
         List(knownDecks.byName) { known in
             Button {
@@ -85,10 +121,47 @@ struct StartScreen: View {
             }
             .tint(.primary)
             .swipeActions {
-                Button("Remove from List", systemImage: "minus.circle", role: .destructive) {
-                    knownDecks.forget(known.url)
+                if !knownDecks.isInFolder(known.url) {
+                    Button("Remove from List", systemImage: "minus.circle", role: .destructive) {
+                        knownDecks.forget(known.url)
+                    }
                 }
             }
+        }
+        .refreshable {
+            knownDecks.refreshFolder()
+            await refreshCounts()
+        }
+    }
+
+    private func choose(folder: Bool) {
+        choosesFolder = folder
+        isChoosing = true
+    }
+
+    /// Reads the counts of every deck and then sets the reminders by them.
+    private func refreshCounts() async {
+        await deckCounts.refresh(knownDecks.byName)
+        await rescheduleReminders()
+    }
+
+    private func rescheduleReminders() async {
+        await reminders.reschedule(decks: knownDecks.byName, open: deck)
+    }
+
+    private func showIntroductionAfterSettings() {
+        if wantsIntroduction {
+            wantsIntroduction = false
+            showsIntroduction = true
+        }
+    }
+
+    private func finishIntroduction() {
+        hasSeenIntroduction = true
+        showsIntroduction = false
+        Task {
+            knownDecks.refreshFolder()
+            await refreshCounts()
         }
     }
 
