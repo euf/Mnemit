@@ -147,11 +147,11 @@ extension WindowTests {
 
             #expect(try pressReturn(in: sheet))
             try await waitUntil("the sheet is closed") { window.attachedSheet == nil }
-            #expect(deckCard == card.withAnswer("blomps"))
+            #expect(deckCard?.unstamped == card.withAnswer("blomps"))
             #expect(undoManager.undoActionName == "Edit Card" || undoManager.undoActionName == "Karte bearbeiten")
 
             undoManager.undo()
-            #expect(deckCard == card)
+            #expect(deckCard?.unstamped == card)
             #expect(!undoManager.canUndo)
         }
 

@@ -23,7 +23,7 @@ struct DocumentTests {
         undoManager.undo()
         #expect(document.deck.cards.isEmpty)
         undoManager.redo()
-        #expect(document.deck.cards == [card])
+        #expect(document.deck.cards.unstamped == [card])
     }
 
     @Test func addedCardsAreCreatedByTheDocumentsClock() {
@@ -67,7 +67,7 @@ struct DocumentTests {
             undoManager.undo()
         }
         #expect(!undoManager.canUndo)
-        #expect(document.deck.cards == [card])
+        #expect(document.deck.cards.unstamped == [card])
         #expect(document.deck.learningOptions == LearningOptions())
     }
 
@@ -113,15 +113,15 @@ struct DocumentTests {
 
         let edited = card.withAnswer("Haus / Heim")
         step(undoManager) { document.editText(of: card.id, to: CardText(question: "dom", answer: "Haus / Heim")!) }
-        #expect(document.deck.cards[0] == edited)
+        #expect(document.deck.cards[0].unstamped == edited)
         step(undoManager) { document.resetLearningState(of: [card.id]) }
         #expect(document.deck.cards[0].isNew)
         #expect(document.deck.cards[0].answer == "Haus / Heim")
 
         undoManager.undo()
-        #expect(document.deck.cards[0] == edited)
+        #expect(document.deck.cards[0].unstamped == edited)
         undoManager.undo()
-        #expect(document.deck.cards[0] == card)
+        #expect(document.deck.cards[0].unstamped == card)
     }
 
     @Test func unchangedEditRegistersNoUndo() throws {

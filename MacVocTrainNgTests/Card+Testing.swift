@@ -22,10 +22,23 @@ extension Card {
         )
     }
 
-    /// The card with another answer, as an edit would leave it.
+    /// The card with another answer, as an edit would leave it, but for its stamp.
     func withAnswer(_ answer: String) -> Card {
         var card = self
         card.answer = answer
         return card
     }
+
+    /// The card without the stamp of its last change of content: a change of the content
+    /// stamps the time it is applied, and so does undoing it, which a card built by hand
+    /// doesn't have.
+    var unstamped: Card {
+        var card = self
+        card.contentChanged = nil
+        return card
+    }
+}
+
+extension [Card] {
+    var unstamped: [Card] { map(\.unstamped) }
 }

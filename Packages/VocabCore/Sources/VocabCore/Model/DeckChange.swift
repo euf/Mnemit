@@ -17,18 +17,24 @@ public struct DeckChange: Sendable {
     /// New progress, before the snapshot of the day the change is applied on; `nil`
     /// keeps it. Only a merge and its inverse replace it.
     var progress: [DailySnapshot]?
+    /// The deleted cards that replace `Deck.deletedCards`; `nil` keeps them in step with
+    /// the removals and the cards that come back: those removed are noted `now`, those
+    /// that come back dropped. Only a merge and its inverse replace them.
+    var deletedCards: [Card.ID: Date]?
     var contentStamp: ContentStamp
 
-    /// What a change does to `Deck.contentModified`.
+    /// What a change does to `Deck.contentModified` and `Deck.learningOptionsChanged`.
     enum ContentStamp: Sendable {
         /// Reviews and suspensions leave the content as it is.
         case keep
         /// A change to the content stamps the time it is applied, and so does its
-        /// inverse: undoing a change changes the content, too.
+        /// inverse: undoing a change changes the content, too. A card whose texts, note
+        /// or kind change, or that comes back after its removal, gets the time as its
+        /// `contentChanged`; new learning options get it as `learningOptionsChanged`.
         case now
-        /// A merge takes the stamp of the version whose content it keeps; its inverse
-        /// restores the old one.
-        case set(Date?)
+        /// A merge takes the later stamp of both versions for each; its inverse
+        /// restores the old ones.
+        case set(Date?, learningOptions: Date?)
     }
 
     /// - Parameters:
@@ -147,17 +153,30 @@ extension Deck {
     /// which replaces the progress as a whole.
     public mutating func apply(_ change: DeckChange, at now: Date, calendar: StudyCalendar) -> DeckChange {
         var inverse = DeckChange(contentStamp: .keep)
+        // Whole seconds, as `deck.json` stores dates.
+        let stamp = Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down))
+        let isContentChange: Bool
 
         switch change.contentStamp {
         case .keep:
-            break
+            isContentChange = false
         case .now:
+            isContentChange = true
             inverse.contentStamp = .now
-            // Whole seconds, as `deck.json` stores it.
-            contentModified = Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down))
-        case let .set(date):
-            inverse.contentStamp = .set(contentModified)
+            contentModified = stamp
+            if change.learningOptions != nil {
+                learningOptionsChanged = stamp
+            }
+        case let .set(date, learningOptionsDate):
+            isContentChange = false
+            inverse.contentStamp = .set(contentModified, learningOptions: learningOptionsChanged)
             contentModified = date
+            learningOptionsChanged = learningOptionsDate
+        }
+
+        if let deletedCards = change.deletedCards {
+            inverse.deletedCards = self.deletedCards
+            self.deletedCards = deletedCards
         }
 
         if let learningOptions = change.learningOptions {
@@ -176,21 +195,38 @@ extension Deck {
             // In ascending order, so the inverse re-inserts each card at its old index.
             inverse.upserts = cards.enumerated().filter { removals.contains($0.element.id) }.map { ($0.element, $0.offset) }
             cards.removeAll { removals.contains($0.id) }
+            if change.deletedCards == nil {
+                for id in removals {
+                    deletedCards[id] = stamp
+                }
+            }
         }
 
         var indices = Dictionary(cards.enumerated().map { ($0.element.id, $0.offset) }) { first, _ in first }
         var insertions: [(card: Card, index: Int)] = []
         for (card, position) in change.upserts {
+            var card = card
             if let index = indices[card.id] {
+                if isContentChange, card.hasOtherContent(than: cards[index]) {
+                    card.contentChanged = stamp
+                }
                 inverse.upserts.append((cards[index], nil))
                 cards[index] = card
             } else if let position {
+                // Only the inverse of a removal inserts at an index: the card is back,
+                // later than its removal, which the other device may have taken in.
+                if isContentChange {
+                    card.contentChanged = stamp
+                }
                 insertions.append((card, position))
                 inverse.removals.append(card.id)
             } else {
                 indices[card.id] = cards.count
                 cards.append(card)
                 inverse.removals.append(card.id)
+            }
+            if change.deletedCards == nil {
+                deletedCards[card.id] = nil
             }
         }
         if !insertions.isEmpty {
