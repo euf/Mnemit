@@ -1,5 +1,29 @@
 # MacVocTrain NG
 
+## Форк euf — читать первым
+
+- Форк `Fluch-IT-Consulting/MacVocTrainNg` под одну задачу EF: учить греческий B1 на Mac и
+  iPhone. `origin` — `euf/MacVocTrainNg`, `upstream` — апстрим. Состояние, подпись iPhone,
+  колода — `HANDOFF.md`.
+- Раздел Workflow ниже — правила апстрима (issue, ветка, PR, немецкие заголовки). В форке
+  они не действуют: коммит в `main` и пуш без вопроса. Правка, полезная апстриму, —
+  отдельной веткой и PR туда по их правилам.
+- Апстрим: `git fetch upstream && git merge upstream/main`. Свои правки держать вне их
+  файлов, чтобы слияние не конфликтовало: `Scripts/`, `Tools/deck-from-tsv/`, `VERSION`,
+  `.versioning`, `HANDOFF.md`, этот раздел. Bundle id и версию скрипты задают параметрами
+  сборки; `project.pbxproj` и `Info.plist` не править.
+- Mac: `Scripts/install-mac.sh` → `~/Applications/MacVocTrain.app`, `com.euf.macvoctrain`,
+  подпись `euf-sign` с entitlements сборки.
+- iPhone: `Scripts/install-iphone.sh` — Release без подписи, переподпись сертификатом iApps,
+  `devicectl` на iPhone 13 mini. Bundle id берётся из профиля. Телефон должен быть
+  разблокирован.
+- Колода из TSV: `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.voctrain> [новых за сессию]`;
+  повторный прогон добавляет только новые вопросы.
+- Версия — `VERSION`, патч бампает pre-commit-хук; после клона
+  `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
+
+## Upstream
+
 macOS vocabulary trainer (SwiftUI, Swift 6, macOS 14+) with an iPhone app to study on
 the go (iOS 17+). The user writes German; code, comments and base UI strings are
 English, German comes from the String Catalog.

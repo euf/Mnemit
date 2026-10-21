@@ -1,0 +1,5 @@
+# Версия для ~/dotfiles/claude/version-hook (общий pre-commit, формат — в его шапке).
+# Установка: ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit
+# MARKETING_VERSION в project.pbxproj остаётся апстримным: скрипты Scripts/install-*.sh
+# передают версию из VERSION параметром сборки, и слияния с upstream не конфликтуют.
+carrier VERSION ^(\d+\.\d+\.\d+)$
