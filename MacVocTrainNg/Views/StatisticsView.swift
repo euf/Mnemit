@@ -26,6 +26,12 @@ struct StatisticsView: View {
                 SummaryTiles(summary: figures.summary(of: deck, at: now, calendar: calendar))
 
                 VStack(alignment: .leading, spacing: 12) {
+                    Text("Retention")
+                        .font(.title2.weight(.semibold))
+                    RetentionTables(retention: figures.retention(of: deck, at: now, calendar: calendar))
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Progress")
                             .font(.title2.weight(.semibold))

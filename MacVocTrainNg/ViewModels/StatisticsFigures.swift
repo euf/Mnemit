@@ -67,6 +67,14 @@ final class StatisticsFigures {
         var days: Int
     }
 
+    /// The retention depends on the time only through the study day.
+    private struct RetentionInputs: Equatable {
+        var cards: [Card]
+        var learningOptions: LearningOptions
+        var calendar: StudyCalendar
+        var today: Int
+    }
+
     private struct ProgressInputs: Equatable {
         var snapshots: [DailySnapshot]
         var today: Int
@@ -76,6 +84,7 @@ final class StatisticsFigures {
     private var time = Memo<Date, Date>()
     private var summary = Memo<SummaryInputs, DeckStatistics.Summary>()
     private var forecast = Memo<ForecastInputs, [Int]>()
+    private var retention = Memo<RetentionInputs, TrueRetention>()
     private var progress: [DeckStatistics.Granularity: Memo<ProgressInputs, ProgressSeries>] = [:]
 
     /// The time the figures are computed for, read from `clock` once per `tick` of the
@@ -95,6 +104,13 @@ final class StatisticsFigures {
     func forecast(of cards: [Card], calendar: StudyCalendar, today: Int, days: Int) -> [Int] {
         forecast.value(for: ForecastInputs(cards: cards, calendar: calendar, today: today, days: days)) {
             DeckStatistics.forecast(cards: cards, calendar: calendar, today: today, days: days)
+        }
+    }
+
+    func retention(of deck: Deck, at now: Date, calendar: StudyCalendar) -> TrueRetention {
+        let inputs = RetentionInputs(cards: deck.cards, learningOptions: deck.learningOptions, calendar: calendar, today: calendar.dayNumber(for: now))
+        return retention.value(for: inputs) {
+            TrueRetention(of: deck, at: now, calendar: calendar)
         }
     }
 

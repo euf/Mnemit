@@ -148,7 +148,15 @@ _Vermeiden_: Retrievability, chance of remembering, Erinnerungswahrscheinlichkei
 **Target recall** (Angestrebte Abrufquote):
 Die Recall probability, bei der eine Card in der Review phase wieder abgefragt wird; in FSRS
 „desired retention“.
-_Vermeiden_: Desired retention, Retention, Behaltensquote
+_Vermeiden_: Desired retention; „Retention“ und „Behaltensquote“ heißen die gemessene Quote
+
+**Retention** (Behaltensquote):
+Der Anteil der Reviews einer Card in der Review phase, die der Lernende wusste (Hard, Good
+oder Easy), je Zeitraum und getrennt nach Interval unter 21 Study days (Young) und ab 21
+(Mature); in Anki „true retention“. Sie zeigt, was die Target recall tatsächlich erreicht.
+Nicht gezählt werden Reviews in Learning und Relearning, die erste Review einer New card und
+weitere Reviews am selben Study day. Code: `TrueRetention`.
+_Vermeiden_: True retention, Retention für die Target recall
 
 **Parameters** (Parameter):
 Die 21 Gewichte des FSRS-Modells, je Deck in den Learning options. Sie beginnen mit den

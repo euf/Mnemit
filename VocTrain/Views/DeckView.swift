@@ -16,6 +16,7 @@ struct DeckView: View {
     /// Merges the versions of the deck from the Mac; outlives the view.
     var merger: VersionMerger
     @State private var study: StudyModel?
+    @State private var isShowingStatistics = false
 
     var body: some View {
         let counts = document.dueCards.counts
@@ -56,6 +57,16 @@ struct DeckView: View {
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu("More", systemImage: "ellipsis.circle") {
+                    Button("Statistics", systemImage: "chart.bar") { isShowingStatistics = true }
+                }
+            }
+        }
+        .navigationDestination(isPresented: $isShowingStatistics) {
+            StatisticsScreen(document: document)
         }
         .documentSync(document, fileURL: fileURL, isEditable: isEditable, merger: merger, isInSession: study != nil)
         .fullScreenCover(item: $study) { model in
