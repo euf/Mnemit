@@ -53,6 +53,11 @@ public struct Streak: Hashable, Sendable {
     /// ends without them.
     public var repairReviews: Int?
 
+    public init(days: Int, repairReviews: Int?) {
+        self.days = days
+        self.repairReviews = repairReviews
+    }
+
     /// How the streak stands. A day is met with `DailyGoal.reviewsPerDay` reviews, or with
     /// fewer if nothing was left of its plan (`owed(day) == 0`). One day missed between
     /// two met days is made up by `DailyGoal.repairReviews` reviews on the day after

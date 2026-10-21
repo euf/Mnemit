@@ -116,6 +116,27 @@
   (`SessionViewModel(entry: .practiceNewest)`), iPhone — строка в листе деталей колоды
   (`StudyModel(entry: .practiceNewest)`). Карточка, добавленная руками позже, начинает свою
   партию.
+- Виджет (таргет `MnemitWidget`, папка `MnemitWidget/`, bundle id `com.euf.mnemit.ios.widget`,
+  встроен в приложение на iPhone): home screen small и medium, lock screen circular и
+  rectangular, тап ведёт по `mnemit://study` сразу в поток (`StartScreen.open`). Данные идут
+  одним снимком `WidgetSnapshot` (`Shared/Widget`): дата, повторения и цель дня, streak и
+  выполнена ли цель, прогноз «сколько карточек к сроку» на каждый час 48 часов вперёд по всем
+  колодам, время ближайшего напоминания (`Reminders.nextFire`). Приложение пишет его JSON
+  в элемент keychain общей группы `$(AppIdentifierPrefix)com.euf.mnemit.shared`
+  (`KeychainSnapshotStore`, `AfterFirstUnlock`), App Groups нет: бесплатная Personal Team
+  даёт только keychain sharing. Один `VocTrain/Mnemit.entitlements` стоит
+  `CODE_SIGN_ENTITLEMENTS` у приложения и у виджета, скрипт подписи iPhone обязан подписать
+  им оба бандла. Префикс команды в коде не пишется: его читают из группы, куда keychain
+  кладёт элемент без группы. Писать снимок — `WidgetSync` (после оценки, при запуске, при
+  смене колод и напоминания, сразу при уходе в фон; пауза 2 с склеивает серию оценок), потом
+  `reloadAllTimelines()`; под тестом он выключен. Таймлайн (`WidgetSnapshot.timeline`) берёт
+  записи в часы прогноза, в начало следующего учебного дня (4:00, не полночь: кольцо сбрасывается
+  тогда) и на время напоминания; пока снимок не обновлён, streak держится один пропущенный день.
+  Таргет виджета собирает всю `Shared` (так лежат `DailyRingView` и всё, что ей нужно, и каталог
+  строк): новый файл в `Shared`, которому в расширении нечего делать (`UIApplication.shared`),
+  надо исключить из его членства. Кадры — `VocTrainTests/WidgetShotsTests`
+  (`TEST_RUNNER_STUDY_SHOTS_DIR`). `PRODUCT_BUNDLE_IDENTIFIER=…` в командной строке `xcodebuild`
+  перекрывает и bundle id виджета.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
 - Первый запуск на iPhone (`OnboardingView`, шаги `OnboardingStep`): приветствие с одной

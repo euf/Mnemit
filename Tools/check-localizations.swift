@@ -12,7 +12,7 @@
 import Foundation
 
 let catalogPath = "Shared/Resources/Localizable.xcstrings"
-let appTargets = ["MacVocTrainNg", "VocTrain"]
+let appTargets = ["MacVocTrainNg", "VocTrain", "MnemitWidget"]
 let catalogTable = "Localizable"
 let language = "de"
 let pluralForms = ["one", "other"]

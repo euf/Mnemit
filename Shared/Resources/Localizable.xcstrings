@@ -972,6 +972,16 @@
         }
       }
     },
+    "Cards due and your progress toward today's goal.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fällige Karten und dein Fortschritt zum heutigen Ziel."
+          }
+        }
+      }
+    },
     "Cards falling due in the next 30 days.": {
       "localizations": {
         "de": {
@@ -2562,6 +2572,16 @@
         }
       }
     },
+    "Open Mnemit to start": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Mnemit, um zu starten"
+          }
+        }
+      }
+    },
     "Open Settings": {
       "localizations": {
         "de": {
@@ -2978,6 +2998,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Erinnerung"
+          }
+        }
+      }
+    },
+    "Reminder at %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erinnerung um %@"
           }
         }
       }
