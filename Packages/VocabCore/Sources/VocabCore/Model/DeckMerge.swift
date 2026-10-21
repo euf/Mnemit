@@ -3,12 +3,22 @@ import Foundation
 extension DeckChange {
     /// Merges `other`, another version of the same deck, into `deck`, e.g. a version
     /// iCloud Drive kept apart after a conflict; `nil` if `deck` holds all of it already.
+    /// Both apps edit cards, so each part of the deck has its own rule, and none of them
+    /// takes a change of one device away for a change of the other.
     ///
-    /// - The content (cards with their texts, notes and kinds, their order, the learning
-    ///   options) comes
-    ///   from the version with the later `contentModified`, or from `deck` if they are
-    ///   the same. Only the Mac changes the content; a card the content doesn't hold
-    ///   any more drops out with its reviews.
+    /// - The cards of both versions are kept. The order is that of the version with the
+    ///   later `contentModified`, or of `deck` if they are the same, followed by the
+    ///   cards only the other version holds.
+    /// - A card deleted in one version (`Deck.deletedCards`) and still in the other is
+    ///   deleted, with its reviews, unless something was done to it after the deletion:
+    ///   edited, reset, suspended or resumed, reviewed (`Card.lastChange`). A card
+    ///   the other version changed later than the deletion stays, so a review never
+    ///   gets lost; with the same time, too.
+    /// - The texts, the note and the kind of a card come from the version that changed
+    ///   them last (`Card.contentChanged`), or, with the same stamp or none, from the
+    ///   version with the later `contentModified`.
+    /// - The learning options come from the version that changed them last
+    ///   (`Deck.learningOptionsChanged`), or likewise from the later `contentModified`.
     /// - The review logs of a card are joined. A review in both versions, at the same
     ///   second with the same grade, counts once.
     /// - A card's reviews before its latest reset (`Card.learningStateReset`) drop out:
@@ -16,7 +26,7 @@ extension DeckChange {
     ///   reviews since, replayed from scratch (#273).
     /// - The learning state of a card comes from the version that holds all its
     ///   reviews, replayed with the parameters and the `revealedRecallWeight` of the
-    ///   content if they differ there (`Scheduler.replayingMemory(of:)`). If each version has reviews the other
+    ///   learning options if they differ there (`Scheduler.replayingMemory(of:)`). If each version has reviews the other
     ///   lacks, the joined log is replayed from scratch (`Scheduler.replaying(_:of:)`);
     ///   if it doesn't reach back to the first review, see `continuing`.
     /// - Whether a card is suspended comes from the version that suspended or resumed it
@@ -27,60 +37,103 @@ extension DeckChange {
     ///
     /// Merging `deck` into `other` gives the same deck, but for the fractions of a
     /// second of reviews both versions hold (`reviews.jsonl` keeps whole seconds), and
-    /// for the content if both versions have the same `contentModified` but different
-    /// content. That happens only to versions last changed by an app version without
-    /// `contentModified`.
+    /// for what is stamped the same in both versions but differs. That happens only to
+    /// versions last changed by an app version without the stamps.
     ///
     /// - Parameter calendar: Counts study days for replaying, and should be the one
     ///   other devices use, so they all replay a log to the same learning state.
     public static func merging(_ other: Deck, into deck: Deck, calendar: StudyCalendar) -> DeckChange? {
         let otherHasContent = (other.contentModified ?? .distantPast) > (deck.contentModified ?? .distantPast)
-        let content = otherHasContent ? other : deck
-        let scheduler = Scheduler(learningOptions: content.learningOptions, calendar: calendar)
+        let (first, second) = otherHasContent ? (other, deck) : (deck, other)
+        let otherChangedOptions = (other.learningOptionsChanged ?? .distantPast) > (deck.learningOptionsChanged ?? .distantPast)
+        let sameOptionsStamp = other.learningOptionsChanged == deck.learningOptionsChanged
+        let learningOptions = (otherChangedOptions || (sameOptionsStamp && otherHasContent)) ? other.learningOptions : deck.learningOptions
+        let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
         let mine = Dictionary(deck.cards.map { ($0.id, $0) }) { first, _ in first }
         let theirs = Dictionary(other.cards.map { ($0.id, $0) }) { first, _ in first }
+        let inFirst = Set(first.cards.map(\.id))
 
         var change = DeckChange(contentStamp: .keep)
-        for (index, card) in content.cards.enumerated() {
-            var merged = card
-            if let mine = mine[card.id], let theirs = theirs[card.id] {
-                let learned = learning(
-                    of: Version(card: mine, model: deck.learningOptions.memoryModel, hasContent: !otherHasContent),
-                    and: Version(card: theirs, model: other.learningOptions.memoryModel, hasContent: otherHasContent),
-                    scheduler: scheduler
+        var kept = Set<Card.ID>()
+        for card in first.cards + second.cards.filter({ !inFirst.contains($0.id) }) {
+            let merged: Card
+            switch (mine[card.id], theirs[card.id]) {
+            case let (mine?, theirs?):
+                merged = merging(
+                    mine, and: theirs,
+                    mineModel: deck.learningOptions.memoryModel, theirsModel: other.learningOptions.memoryModel,
+                    otherHasContent: otherHasContent, scheduler: scheduler
                 )
-                merged.learningState = learned.learningState
-                merged.log = learned.log
-                merged.learningStateReset = learned.learningStateReset
-                let suspension = latestSuspension(of: mine, and: theirs, preferringMine: !otherHasContent)
-                merged.isSuspended = suspension.isSuspended
-                merged.suspensionChanged = suspension.suspensionChanged
+            case let (only?, nil), let (nil, only?):
+                // Only one version holds it: it is deleted in the other, or new in this one.
+                let deletion = (mine[card.id] == nil ? deck : other).deletedCards[card.id]
+                if let deletion, deletion > only.lastChange { continue }
+                merged = only
+            case (nil, nil):
+                continue
             }
             if let existing = mine[card.id] {
                 if merged != existing { change.upserts.append((merged, nil)) }
             } else {
-                // At its index in the content, so the cards end up in its order.
-                change.upserts.append((merged, index))
+                // At its index among the cards kept, so the cards end up in the order.
+                change.upserts.append((merged, kept.count))
             }
+            kept.insert(card.id)
         }
-        let kept = Set(content.cards.map(\.id))
         change.removals = deck.cards.map(\.id).filter { !kept.contains($0) }
 
-        if content.learningOptions != deck.learningOptions {
-            change.learningOptions = content.learningOptions
+        var deleted = deck.deletedCards
+        for (id, date) in other.deletedCards {
+            deleted[id] = max(deleted[id] ?? .distantPast, date)
         }
-        if content.contentModified != deck.contentModified {
-            change.contentStamp = .set(content.contentModified)
+        for id in kept {
+            deleted[id] = nil
+        }
+
+        if learningOptions != deck.learningOptions {
+            change.learningOptions = learningOptions
+        }
+        let contentModified = [deck.contentModified, other.contentModified].compactMap { $0 }.max()
+        let optionsChanged = [deck.learningOptionsChanged, other.learningOptionsChanged].compactMap { $0 }.max()
+        if contentModified != deck.contentModified || optionsChanged != deck.learningOptionsChanged {
+            change.contentStamp = .set(contentModified, learningOptions: optionsChanged)
         }
         let progress = joinedProgress(deck.progress, other.progress, preferringFirst: !otherHasContent)
         if progress != deck.progress {
             change.progress = progress
         }
 
-        if case .keep = change.contentStamp, change.upserts.isEmpty, change.removals.isEmpty, change.learningOptions == nil, change.progress == nil {
+        if case .keep = change.contentStamp, change.upserts.isEmpty, change.removals.isEmpty, change.learningOptions == nil, change.progress == nil, deleted == deck.deletedCards {
             return nil
         }
+        // Always set: undoing a merge must restore the deleted cards, not note the cards
+        // it takes back as deleted now.
+        change.deletedCards = deleted
         return change
+    }
+
+    /// The card both versions hold: its content from the version that changed it last,
+    /// its learning state and suspension joined.
+    private static func merging(
+        _ mine: Card, and theirs: Card,
+        mineModel: LearningOptions.MemoryModel, theirsModel: LearningOptions.MemoryModel,
+        otherHasContent: Bool, scheduler: Scheduler
+    ) -> Card {
+        let changedMine = mine.contentChanged ?? .distantPast
+        let changedTheirs = theirs.contentChanged ?? .distantPast
+        var merged = (changedTheirs > changedMine || (changedTheirs == changedMine && otherHasContent)) ? theirs : mine
+        let learned = learning(
+            of: Version(card: mine, model: mineModel, hasContent: !otherHasContent),
+            and: Version(card: theirs, model: theirsModel, hasContent: otherHasContent),
+            scheduler: scheduler
+        )
+        merged.learningState = learned.learningState
+        merged.log = learned.log
+        merged.learningStateReset = learned.learningStateReset
+        let suspension = latestSuspension(of: mine, and: theirs, preferringMine: !otherHasContent)
+        merged.isSuspended = suspension.isSuspended
+        merged.suspensionChanged = suspension.suspensionChanged
+        return merged
     }
 
     /// One version of a card in a merge.

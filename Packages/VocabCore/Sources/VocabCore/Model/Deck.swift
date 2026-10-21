@@ -107,7 +107,8 @@ extension LearningOptions {
 /// as one package (see `DeckFile`).
 ///
 /// Cards and learning options change only through `apply(_:at:calendar:)`, which
-/// keeps `progress` and `contentModified` in step with the cards.
+/// keeps `progress`, `contentModified`, `learningOptionsChanged` and `deletedCards`
+/// in step with them.
 public struct Deck: Hashable, Sendable {
     public internal(set) var learningOptions: LearningOptions
     public internal(set) var cards: [Card]
@@ -115,10 +116,22 @@ public struct Deck: Hashable, Sendable {
     public internal(set) var progress: [DailySnapshot]
     /// When the content last changed, in whole seconds: cards added, removed, edited or
     /// reset, or the learning options. Reviews and suspending or resuming a card leave
-    /// it, so a merge can tell which version holds the newer content
-    /// (`DeckChange.merging`). `nil` until the first such change since the deck was
-    /// created or saved by an app version without it.
+    /// it. A merge takes the order of the cards from the version with the later one, and
+    /// settles by it what carries no stamp of its own, as in decks saved before
+    /// `Card.contentChanged` (`DeckChange.merging`). `nil` until the first such change
+    /// since the deck was created or saved by an app version without it.
     public internal(set) var contentModified: Date?
+    /// When the learning options last changed, in whole seconds; `nil` until the first
+    /// change since the deck was created or saved by an app version without it. A merge
+    /// takes the options from the version that changed them last, so a change of the
+    /// options survives edits of cards on the other device.
+    public internal(set) var learningOptionsChanged: Date?
+    /// The cards the learner deleted, with the time they did, in whole seconds. A merge
+    /// tells a deleted card from one the other version doesn't have yet with it, and
+    /// takes the card back if something was done to it after the deletion.
+    /// `Deck.apply(_:at:calendar:)` keeps it: a card that is back in the deck is no
+    /// longer in it.
+    public internal(set) var deletedCards: [Card.ID: Date]
 
     /// Why a deck can't be built from its parts.
     enum Error: Swift.Error, Equatable {
@@ -132,6 +145,8 @@ public struct Deck: Hashable, Sendable {
         cards = []
         progress = []
         contentModified = nil
+        learningOptionsChanged = nil
+        deletedCards = [:]
     }
 
     /// A deck built from its parts, as `DeckFile` reads it or `LegacyImporter` converts
@@ -144,7 +159,9 @@ public struct Deck: Hashable, Sendable {
         learningOptions: LearningOptions = LearningOptions(),
         cards: [Card],
         progress: [DailySnapshot] = [],
-        contentModified: Date? = nil
+        contentModified: Date? = nil,
+        learningOptionsChanged: Date? = nil,
+        deletedCards: [Card.ID: Date] = [:]
     ) throws {
         var ids = Set<Card.ID>()
         if let duplicate = cards.first(where: { !ids.insert($0.id).inserted }) {
@@ -156,6 +173,8 @@ public struct Deck: Hashable, Sendable {
         self.cards = cards
         self.progress = progress
         self.contentModified = contentModified
+        self.learningOptionsChanged = learningOptionsChanged
+        self.deletedCards = deletedCards.filter { !ids.contains($0.key) }
     }
 
     public func index(of id: Card.ID) -> Int? {

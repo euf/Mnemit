@@ -149,6 +149,12 @@ public struct Card: Identifiable, Hashable, Sendable {
     /// A merge leaves out the reviews before it, which the other device may still hold
     /// (#273).
     public internal(set) var learningStateReset: Date?
+    /// When the learner last changed the texts, the note or the kind of the card, in whole
+    /// seconds; `nil` if never since it was created or since an app version without this
+    /// stamp saved it. `Deck.apply(_:at:calendar:)` sets it, and undoing a change sets it
+    /// again, so undo reaches the other device. A merge takes the content of a card
+    /// from the version that changed it last.
+    public internal(set) var contentChanged: Date?
     /// Whether the learner suspended the card (#290): it is never due, so no session asks
     /// it, until they resume it. Its learning state stays as it was meanwhile.
     public internal(set) var isSuspended: Bool
@@ -187,7 +193,8 @@ public struct Card: Identifiable, Hashable, Sendable {
         log: [ReviewLogEntry] = [],
         learningStateReset: Date? = nil,
         isSuspended: Bool = false,
-        suspensionChanged: Date? = nil
+        suspensionChanged: Date? = nil,
+        contentChanged: Date? = nil
     ) {
         self.id = id
         self.question = question
@@ -201,6 +208,7 @@ public struct Card: Identifiable, Hashable, Sendable {
         self.learningStateReset = learningStateReset
         self.isSuspended = isSuspended
         self.suspensionChanged = suspensionChanged
+        self.contentChanged = contentChanged
     }
 
     public var isNew: Bool { learningState == nil }
@@ -223,6 +231,18 @@ public struct Card: Identifiable, Hashable, Sendable {
     /// rule: every version of a card agrees on its lapses.
     public func isLeech(threshold: Int) -> Bool {
         threshold > 0 && (learningState?.lapses ?? 0) >= threshold
+    }
+
+    /// Whether the texts, the note or the kind differ from those of `other`.
+    func hasOtherContent(than other: Card) -> Bool {
+        question != other.question || answer != other.answer || hint != other.hint || note != other.note || kind != other.kind
+    }
+
+    /// The latest time anything was done to the card: created, edited, reset, suspended or
+    /// resumed, reviewed. A merge weighs it against a deletion on the other device.
+    var lastChange: Date {
+        [created, contentChanged, learningStateReset, suspensionChanged, log.last?.date, learningState?.lastReview]
+            .compactMap { $0 }.max() ?? created
     }
 
     /// Suspends the card like `DeckChange.settingSuspended`, at `now` in whole seconds.
