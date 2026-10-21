@@ -37,6 +37,8 @@ struct StudyView: View {
     @State private var info: Card?
     /// Whether a finger is down; a drag the system cancels still springs the card back.
     @GestureState private var isDragging = false
+    /// Whether a finger is on the card; resets by itself when the touch ends or is cancelled.
+    @GestureState private var isTouching = false
     /// Where the speaker buttons of the card are; a touch that starts on one is the button's,
     /// not the card's.
     @State private var speakers = SpeakerPlaces()
@@ -239,22 +241,28 @@ struct StudyView: View {
     /// starts on a speaker does neither: the speaker speaks and nothing else happens.
     private var touch: some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            // Decided once, as the finger lands: the reveal puts the answer's speaker on the
+            // card, and a swipe that began where it appears must not turn into a touch on it.
+            .updating($isTouching) { value, isTouching, _ in
+                if !isTouching {
+                    isTouching = true
+                    speakers.touchBeganOnSpeaker = startsOnSpeaker(value)
+                }
+            }
             .updating($isDragging) { value, isDragging, _ in
-                if !isDragging, hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance, !startsOnSpeaker(value) {
+                if !isDragging, hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance, !speakers.touchBeganOnSpeaker {
                     isDragging = true
                 }
             }
             .onChanged { value in
-                let onSpeaker = startsOnSpeaker(value)
-                speakers.touchBeganOnSpeaker = onSpeaker
-                guard !onSpeaker else { return }
+                guard !speakers.touchBeganOnSpeaker else { return }
                 model.reveal()
                 // Once the swipe has begun the card follows the finger, however near it comes back.
                 guard isDragging || hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance else { return }
                 flight.drag(value.translation, from: value.startLocation, isRevealed: model.stage == .revealed)
             }
             .onEnded { value in
-                guard !startsOnSpeaker(value) else { return }
+                guard !speakers.touchBeganOnSpeaker else { return }
                 guard model.stage == .revealed, let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
                     flight.springBack()
                     return
@@ -272,15 +280,14 @@ struct StudyView: View {
     }
 
     /// The same space for Show Answer and for the grade buttons: both are in the layout, one
-    /// of them invisible, so the card keeps its height at the reveal. Show Answer fills all of
-    /// it, from where Forgot's top is to where the bottom of the row of buttons is.
+    /// of them invisible, so the card keeps its height at the reveal. Show Answer takes Forgot's
+    /// place and height; the row of the other grades below it stays empty until the reveal.
     private var gradeArea: some View {
         grades
             .opacity(isRevealed ? 1 : 0)
             .allowsHitTesting(isRevealed)
             .accessibilityHidden(!isRevealed)
-            // An overlay has the size of the grades, which is the size the area has.
-            .overlay {
+            .overlay(alignment: .top) {
                 if !isRevealed {
                     showAnswer
                 }
@@ -301,19 +308,23 @@ struct StudyView: View {
         }
     }
 
-    /// As wide and as high as the grade buttons below the card, in the same corner radius.
+    /// As wide and as high as Forgot, in the same corner radius.
     private var showAnswer: some View {
         Button {
             model.reveal()
         } label: {
             Text("Show Answer")
                 .font(.body.weight(.semibold))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: showAnswerHeight)
+                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.roundedRectangle(radius: 14))
-        .controlSize(.large)
+        .buttonStyle(.plain)
     }
+
+    /// Forgot's height, `GradeChoice.scaledHeight`.
+    @ScaledMetric(relativeTo: .body) private var showAnswerHeight: CGFloat = 50
 
     private static let forgotWidth: CGFloat = 170
     /// How far a finger moves before it swipes the card, in points.
