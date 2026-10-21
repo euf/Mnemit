@@ -181,6 +181,14 @@ enum Format {
 }
 
 extension Color {
+    /// The daily ring (`DailyRingView`): an amber that no grade, count or maturity uses, so the
+    /// ring never reads as one of them. The first lap; at least 3:1 against the light and the
+    /// grouped background in both appearances (4.3:1 on white, 5.1:1 on the dark background).
+    static var dailyRing: Color { Color(light: 0xC25E00, dark: 0xC9791A) }
+
+    /// The second and later laps of the ring, a lighter amber that stands out against the first.
+    static var dailyRingLap: Color { Color(light: 0xF59A3C, dark: 0xFFC060) }
+
     /// The face of a flash card: a little off the background, so the card stands out
     /// from the screen it is swiped across.
     static var cardSurface: Color {

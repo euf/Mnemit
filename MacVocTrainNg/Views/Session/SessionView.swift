@@ -1,7 +1,11 @@
 import SwiftUI
 import VocabCore
 
-/// The session screen: asks one card after another.
+/// The screen of the study stream: asks one card after another, without an end of its own.
+/// Today's plan comes first; when it is done the stream rests for a moment
+/// (`StreamRestView`) and then goes on with review ahead and practice. Every grade is saved
+/// at once, so "Done" leaves at any time and loses nothing. The ring in the header shows
+/// today's reviews against the goal (`DailyRingView`).
 ///
 /// Keyboard flow: type the response and press Return. A correct response moves on
 /// directly (unless disabled in the preferences). Otherwise the answer is shown
@@ -20,14 +24,15 @@ import VocabCore
 /// already checked is checked again against the edited card.
 ///
 /// "Suspend Card", under the arrow of "Edit Card…" (#293), leaves out the card from now
-/// on, until the learner resumes it (#290).
+/// on, until the learner resumes it (#290). The menu "More" adds 10 new cards beyond the
+/// daily limits, with what they cost in reviews.
 struct SessionView: View {
     @Bindable var model: SessionViewModel
+    var ring: DailyRingModel
     var onClose: () -> Void
 
     /// The question whose response field has the focus.
     @FocusState private var focusedQuestion: Int?
-    @State private var confirmingEnd = false
     @State private var editing: EditRequest?
 
     /// The card that `CardEditSheet` edits, as it was when the sheet opened, and whether
@@ -42,28 +47,19 @@ struct SessionView: View {
         VStack(spacing: 0) {
             header
             Divider()
-            if model.isFinished {
-                SessionSummaryView(model: model, onClose: onClose)
+            if model.isResting {
+                StreamRestView(
+                    rest: model.rest, progress: ring.progress,
+                    onKeepGoing: model.keepGoing, onAddNewCards: model.addNewCards, onDone: onClose)
             } else if let card = model.currentCard {
                 cardArea(card)
             }
-            if let previous = model.previous, !model.isFinished {
+            if let previous = model.previous, !model.isResting {
                 Divider()
                 PreviousReviewBar(previous: previous)
             }
         }
         .background { keys }
-        .confirmationDialog("End this session?", isPresented: $confirmingEnd) {
-            if model.session.startedCount > 0 {
-                Button("Finish Started Cards (\(model.session.startedCount))") {
-                    model.finishUp()
-                }
-            }
-            Button("End Now") { onClose() }
-            Button("Continue", role: .cancel) {}
-        } message: {
-            Text("Your reviews so far are saved. Cards you haven't finished stay due.")
-        }
         .sheet(item: $editing, onDismiss: focusResponse) { request in
             CardEditSheet(document: model.document, card: request.card, hidesAnswer: request.hidesAnswer)
         }
@@ -96,7 +92,7 @@ struct SessionView: View {
                 Group {
                     Button("Undo", action: model.undoLast)
                         .keyboardShortcut("z", modifiers: [])
-                    // Esc undoes instead of ending the session, whose button has no shortcut then.
+                    // Esc undoes instead of leaving the stream, whose button has no shortcut then.
                     Button("Undo", action: model.undoLast)
                         .keyboardShortcut(.escape, modifiers: [])
                 }
@@ -121,28 +117,15 @@ struct SessionView: View {
     private var isAnswerShown: Bool {
         switch model.stage {
         case .revealed, .feedback: true
-        case .asking, .finished: false
+        case .asking, .resting: false
         }
     }
 
     private var header: some View {
         HStack(spacing: 16) {
-            let session = model.session
-            if model.isPracticing {
-                Text("Practice")
-                    .font(.headline)
-            }
-            ProgressView(value: Double(session.completedCount), total: Double(max(session.totalCount, 1)))
-                .frame(maxWidth: 320)
-            Text("\(session.completedCount) / \(session.totalCount)")
-                .monospacedDigit()
-            Label("\(session.mistakeIDs.count)", systemImage: "xmark.circle")
-                .monospacedDigit()
-                .foregroundStyle(session.mistakeIDs.isEmpty ? Color.secondary : Grade.again.color)
-                .help("Mistakes")
-                .accessibilityLabel(Text("\(session.mistakeIDs.count) mistakes"))
+            stageLabel
             Spacer()
-            if !model.isFinished {
+            if !model.isResting {
                 // A pull-down button: a click edits, the arrow offers Suspend Card.
                 Menu("Edit Card…") {
                     Button("Suspend Card") { model.suspendCurrentCard() }
@@ -158,14 +141,47 @@ struct SessionView: View {
                         .hidden()
                 }
                 .disabled(model.currentCard == nil)
-                .help("Fix this card without leaving the session")
-                Button("End Session") { confirmingEnd = true }
-                    // With flash cards Esc takes back a review, see `keys`.
-                    .keyboardShortcut(model.studyBy == .flashcards ? nil : .cancelAction)
+                .help("Fix this card without leaving the stream")
             }
+            if let extra = model.extraNew {
+                Menu("More", systemImage: "ellipsis.circle") {
+                    Button {
+                        model.addNewCards()
+                    } label: {
+                        Text("+\(extra.cards) new")
+                        Text("≈ +\(extra.reviewsPerDay) reviews/day next week")
+                    }
+                }
+                .menuIndicator(.hidden)
+                .labelStyle(.iconOnly)
+                .fixedSize()
+                .help("More")
+            }
+            DailyRingView(progress: ring.progress)
+            Button("Done", action: onClose)
+                // With flash cards Esc takes back a review, see `keys`.
+                .keyboardShortcut(model.studyBy == .flashcards ? nil : .cancelAction)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
+    }
+
+    /// Names where the stream is when it isn't the plan: what the learner reviews ahead or
+    /// practices changes nothing about today's plan, and practice nothing about the schedule.
+    @ViewBuilder
+    private var stageLabel: some View {
+        switch model.streamStage {
+        case .reviewAhead:
+            Text("Review Ahead")
+                .font(.headline)
+                .help("Cards that aren't due yet, the ones you are least likely to recall first")
+        case .practiceMistakes, .practiceNewest:
+            Text("Practice")
+                .font(.headline)
+                .help("Practice doesn't change when cards come back")
+        case .plan, .rest:
+            EmptyView()
+        }
     }
 
     private func cardArea(_ card: Card) -> some View {

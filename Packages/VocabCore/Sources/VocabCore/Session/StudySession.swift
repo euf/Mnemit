@@ -22,12 +22,29 @@ public struct StudySession: Sendable {
     ///     intervals; the same seed gives the same session.
     ///   - reviewMode: How the cards are asked: typed on the Mac, revealed on the
     ///     iPhone (#258).
-    public init(deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed) {
-        self.reviewMode = reviewMode
+    ///   - extraNew: How many new cards beyond the daily limits the session adds, see
+    ///     `selectCards(from:at:calendar:extraNew:using:)`.
+    public init(deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed, extraNew: Int = 0) {
         var random = random
-        let ids = Self.selectCards(from: deck, at: now, calendar: calendar, using: &random)
+        let ids = Self.selectCards(from: deck, at: now, calendar: calendar, extraNew: extraNew, using: &random)
+        self.init(cardIDs: ids, at: now, random: random, reviewMode: reviewMode)
+    }
+
+    /// A session over cards that are not due yet, those the learner is least likely to
+    /// recall now first, see `selectReviewAhead(from:at:calendar:using:)`. Its reviews
+    /// are ordinary reviews: FSRS takes the early review into account.
+    public init(reviewingAheadIn deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed) {
+        var random = random
+        let ids = Self.selectReviewAhead(from: deck, at: now, calendar: calendar, using: &random)
+        self.init(cardIDs: ids, at: now, random: random, reviewMode: reviewMode)
+    }
+
+    /// A session over `cardIDs` in their order of urgency, see `SessionQueue`.
+    init(cardIDs: [Card.ID], at now: Date, random: SeededRandom, reviewMode: ReviewMode) {
+        var random = random
+        self.reviewMode = reviewMode
         fuzzing = SeededRandom(seed: random.next())
-        session = Session(cardIDs: ids, startedAt: now, random: random)
+        session = Session(cardIDs: cardIDs, startedAt: now, random: random)
     }
 
     /// Reviews `card`, the current card, and moves on to the next one.
@@ -90,8 +107,44 @@ public struct StudySession: Sendable {
     ///   `newProductionPerSession`, all others up to `newCardsPerSession`. The limits
     ///   hold for the study day: cards first reviewed on the current study day, in this
     ///   session or an earlier one, are subtracted from them.
-    static func selectCards(from deck: Deck, at now: Date, calendar: StudyCalendar, using random: inout SeededRandom) -> [Card.ID] {
-        selection(from: deck, at: now, calendar: calendar, using: &random).map(\.card.id)
+    /// - `extraNew` further new cards are taken beyond those limits and beyond
+    ///   `cardsPerSession`, in the same order and under the same lock and burying: the
+    ///   learner asked for them, see `StudyStream.addNewCards(_:in:at:calendar:)`.
+    static func selectCards(from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, using random: inout SeededRandom) -> [Card.ID] {
+        selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, using: &random).map(\.card.id)
+    }
+
+    /// The cards a review ahead asks: review cards that are not due yet, lowest probability
+    /// of recall now first (the same buckets as `selectCards`, ties at random). Cards of
+    /// one note are buried as for the plan: one card per note, none if another card of the
+    /// note was reviewed on the current study day. A card reviewed today is left out, as
+    /// no study day has passed since: its recall probability is still 1. New and
+    /// suspended cards are never taken, nor are cards in (re)learning, which are due
+    /// anyway; a new production card stays locked, as only review cards come here.
+    static func selectReviewAhead(from deck: Deck, at now: Date, calendar: StudyCalendar, using random: inout SeededRandom) -> [Card.ID] {
+        let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
+        let today = calendar.dayNumber(for: now)
+        let reviewedToday = notesReviewed(onDayOf: now, in: deck, calendar: calendar)
+
+        var candidates: [Candidate] = []
+        for card in deck.cards where !card.isSuspended && !card.isDue(at: now) {
+            guard let state = card.learningState, state.phase == .review, calendar.dayNumber(for: state.lastReview) != today else { continue }
+            let r = scheduler.recallProbability(of: state, at: now)
+            candidates.append(Candidate(card: card, urgency: .review(recallBucket: (r * recallBuckets).rounded(.down)), tieBreak: random.next()))
+        }
+        candidates.sort { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
+
+        var selected: [Card.ID] = []
+        var selectedNotes = Set<String>()
+        for candidate in candidates {
+            let card = candidate.card
+            if let note = card.note {
+                if selectedNotes.contains(note) || (reviewedToday[note] ?? []).contains(where: { $0 != card.id }) { continue }
+                selectedNotes.insert(note)
+            }
+            selected.append(card.id)
+        }
+        return selected
     }
 
     /// What a session over `deck` started at `now` would take, by kind: the very
@@ -99,10 +152,10 @@ public struct StudySession: Sendable {
     ///
     /// Learning cards, then reviews, then new cards fill the session, so the counts
     /// don't depend on the random tie breaks, only which card of a kind is taken does.
-    public static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar) -> StudyCounts {
+    public static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0) -> StudyCounts {
         // The seed is arbitrary: the session this counts has a random of its own.
         var random = SeededRandom(seed: 0)
-        let selected = selection(from: deck, at: now, calendar: calendar, using: &random)
+        let selected = selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, using: &random)
         var counts = StudyCounts()
         for candidate in selected {
             switch candidate.urgency {
@@ -124,7 +177,7 @@ public struct StudySession: Sendable {
         return counts
     }
 
-    private static func selection(from deck: Deck, at now: Date, calendar: StudyCalendar, using random: inout SeededRandom) -> [Candidate] {
+    private static func selection(from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, using random: inout SeededRandom) -> [Candidate] {
         let options = deck.learningOptions
         let scheduler = Scheduler(learningOptions: options, calendar: calendar)
         let lockedNotes = notesAwaitingRecognition(in: deck, calendar: calendar)
@@ -176,6 +229,20 @@ public struct StudySession: Sendable {
             }
             selected.append(candidate)
             if let note = card.note { selectedNotes.insert(note) }
+        }
+
+        var extraLeft = extraNew
+        if extraLeft > 0 {
+            let selectedIDs = Set(selected.map(\.card.id))
+            for candidate in new where extraLeft > 0 && !selectedIDs.contains(candidate.card.id) {
+                let card = candidate.card
+                if let note = card.note {
+                    guard !selectedNotes.contains(note), !(reviewedToday[note] ?? []).contains(where: { $0 != card.id }) else { continue }
+                    selectedNotes.insert(note)
+                }
+                selected.append(candidate)
+                extraLeft -= 1
+            }
         }
 
         return selected.sorted { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }

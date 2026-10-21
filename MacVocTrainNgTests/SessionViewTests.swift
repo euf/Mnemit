@@ -6,7 +6,7 @@ import Testing
 @testable import VocabCore
 
 extension WindowTests {
-    /// The session screen in a real window, typed into through the field editor.
+    /// The study stream's screen in a real window, typed into through the field editor.
     @MainActor
     struct SessionViewTests {
         let document: VocabularyDocument
@@ -24,7 +24,7 @@ extension WindowTests {
             window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.delegate = delegate
-            window.contentView = NSHostingView(rootView: SessionView(model: model, onClose: {}))
+            window.contentView = NSHostingView(rootView: SessionView(model: model, ring: DailyRingModel(), onClose: {}))
             window.orderFront(nil)
         }
 

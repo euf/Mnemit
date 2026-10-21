@@ -1,8 +1,8 @@
 import SwiftUI
 import VocabCore
 
-/// The content of a document window: the card list or the statistics, or a
-/// session that temporarily takes over the whole window.
+/// The content of a document window: the card list or the statistics, or the study
+/// stream that temporarily takes over the whole window.
 ///
 /// Shows one document for its whole life: the window gives each document a view of
 /// its own, see `DocumentWindow`.
@@ -21,7 +21,7 @@ struct DocumentView: View {
     var isEditable: Bool
     /// Merges the versions of the deck from other devices; outlives the view.
     var merger: VersionMerger
-    /// Survives quitting when the window is restored; the session doesn't.
+    /// Survives quitting when the window is restored; the stream doesn't.
     @SceneStorage("screen") private var screen: Screen = .cards
     @State private var session: SessionViewModel?
     @State private var showingOptions = false
@@ -29,6 +29,9 @@ struct DocumentView: View {
     @State private var addingLessonWords = false
     @State private var toast: Toast?
     @State private var shortcutsHelp = ShortcutsHelp()
+    /// Today's reviews against the goal and the streak, over all decks open in the app.
+    @State private var ring = DailyRingModel()
+    @Environment(\.controlActiveState) private var controlActiveState
 
     /// Whether the deck can be changed now: the file can be written, and the document
     /// has the undo manager of the window, which this view attaches (#305).
@@ -39,7 +42,7 @@ struct DocumentView: View {
     var body: some View {
         Group {
             if let session {
-                SessionView(model: session) { self.session = nil }
+                SessionView(model: session, ring: ring) { self.session = nil }
             } else {
                 switch screen {
                 case .cards: CardListView(document: document, isEditable: canEdit)
@@ -59,7 +62,10 @@ struct DocumentView: View {
                     .labelStyle(.titleOnly)
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    StartStudyButton(dueCards: document.dueCards, action: startSession)
+                    DailyRingView(progress: ring.progress)
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    StartStudyButton(dueCards: document.dueCards, hasCards: !document.deck.cards.isEmpty, action: startSession)
                         .disabled(!canEdit)
                 }
                 ToolbarItem {
@@ -111,13 +117,31 @@ struct DocumentView: View {
         }
         .attachingUndoManager(to: document)
         .documentSync(document, fileURL: fileURL, isEditable: isEditable, merger: merger, isInSession: session != nil)
+        .onAppear {
+            OpenDecks.shared.add(document)
+            refreshRing()
+        }
+        .onDisappear { OpenDecks.shared.remove(document) }
+        .onReceive(document.deckDidChange) { refreshRing() }
+        .onChange(of: controlActiveState) { _, state in
+            if state == .key { refreshRing() }
+        }
+        // The plan and the study day change as time passes.
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                refreshRing()
+            }
+        }
         .focusedSceneValue(
             \.deckActions,
             DeckActions(
                 isInSession: session != nil,
                 isEditable: canEdit,
-                canStartSession: canEdit && session == nil && document.dueCards.count > 0,
+                canStartSession: canEdit && session == nil && !document.deck.cards.isEmpty,
                 startSession: startSession,
+                canPracticeMistakes: canEdit && session == nil && !document.deck.mistakes(onDayOf: document.clock.now, calendar: document.calendar).isEmpty,
+                practiceMistakes: practiceMistakes,
                 canPracticeNewest: canEdit && session == nil && !document.deck.newestBatchIDs.isEmpty,
                 practiceNewest: practiceNewestWords,
                 show: { screen = $0 },
@@ -173,10 +197,18 @@ struct DocumentView: View {
         fileURL?.deletingPathExtension().lastPathComponent ?? String(localized: "this deck")
     }
 
+    /// Opens the study stream, which rests at once if today's plan is empty.
     private func startSession() {
+        guard canEdit, session == nil, !document.deck.cards.isEmpty else { return }
+        session = SessionViewModel(document: document, studyBy: Preferences.studyBy())
+    }
+
+    /// Practices the cards that went wrong today, whatever their schedule: the reviews
+    /// change no card.
+    private func practiceMistakes() {
         guard canEdit, session == nil else { return }
-        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy())
-        if !model.isFinished {
+        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy(), entry: .practiceMistakes)
+        if !model.isResting {
             session = model
             if model.studyBy == .flashcards {
                 shortcutsHelp.showForFirstSession()
@@ -188,16 +220,24 @@ struct DocumentView: View {
     /// the reviews change no card.
     private func practiceNewestWords() {
         guard canEdit, session == nil else { return }
-        let ids = document.deck.newestBatchIDs
-        guard !ids.isEmpty else { return }
-        session = SessionViewModel(document: document, studyBy: Preferences.studyBy(), practicing: ids)
+        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy(), entry: .practiceNewest)
+        if !model.isResting {
+            session = model
+        }
+    }
+
+    /// Evaluates the ring for every deck open in the app.
+    private func refreshRing() {
+        ring.refresh(documents: OpenDecks.shared.documents)
     }
 }
 
-/// "Study" button showing how many cards the session takes, not how many are due:
-/// the session introduces only as many new cards as its limits allow.
+/// "Study" button showing how many cards today's plan takes, not how many are due: the
+/// plan introduces only as many new cards as its limits allow. The stream it opens has no
+/// end, so the button works once the plan is done, too, and offers review ahead and practice.
 private struct StartStudyButton: View {
     var dueCards: DueCardCounter
+    var hasCards: Bool
     var action: () -> Void
 
     var body: some View {
@@ -206,7 +246,7 @@ private struct StartStudyButton: View {
             Label(count > 0 ? "Study (\(count))" : "Study", systemImage: "graduationcap")
                 .labelStyle(.titleAndIcon)
         }
-        .disabled(count == 0)
-        .help(count > 0 ? "Start a study session" : "Done for today")
+        .disabled(!hasCards)
+        .help(count > 0 ? "Study today's plan" : "Done for today")
     }
 }

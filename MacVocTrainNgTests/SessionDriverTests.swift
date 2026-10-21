@@ -4,22 +4,30 @@ import Testing
 @testable import MacVocTrain
 @testable import VocabCore
 
-/// The part of a session that Mac and iPhone share: grades, undo and redo, and cards
-/// deleted while the session runs (#264).
+/// The part of the study stream that Mac and iPhone share: grades, undo and redo, and
+/// cards deleted while the stream runs (#264).
 @MainActor
 struct SessionDriverTests {
-    /// A study session over new cards, with a listener as its delegate. The test keeps
-    /// the undo manager and the listener, which the document and the driver hold weakly.
-    private func makeDriver(cards: Int) throws -> (SessionDriver, UndoManager, DriverListener) {
+    /// A stream over new cards, with a listener as its delegate: today's plan, or with
+    /// `practicing` the practice of the newest words. The test keeps the undo manager and
+    /// the listener, which the document and the driver hold weakly.
+    private func makeDriver(cards: Int, practicing: Bool = false) throws -> (SessionDriver, UndoManager, DriverListener) {
         var learningOptions = LearningOptions()
         learningOptions.steps = 1
         learningOptions.fuzzing = false
         let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: (0..<cards).map { Card(question: "q\($0)", answer: "a\($0)") }), calendar: .testing)
         let undoManager = makeUndoManager(for: document)
-        let driver = SessionDriver(document: document, mode: .study(StudySession(deck: document.deck, at: document.clock.now, calendar: document.calendar)))
+        let driver = SessionDriver(document: document, stream: makeStream(for: document, practicing: practicing))
         let listener = DriverListener()
         driver.delegate = listener
         return (driver, undoManager, listener)
+    }
+
+    private func makeStream(for document: VocabularyDocument, practicing: Bool = false) -> StudyStream {
+        if practicing {
+            return StudyStream(practicingNewestWordsIn: document.deck, at: document.clock.now)
+        }
+        return StudyStream(deck: document.deck, at: document.clock.now, calendar: document.calendar)
     }
 
     @Test func undoAndRedoBringBackTheCardAndThePlace() throws {
@@ -51,9 +59,8 @@ struct SessionDriverTests {
     }
 
     @Test func undoOfAPracticeReviewBringsBackThePlace() throws {
-        let (driver, undoManager, _) = try makeDriver(cards: 1)
+        let (driver, undoManager, _) = try makeDriver(cards: 2, practicing: true)
         let card = try #require(driver.currentCard)
-        driver.start(.practice(Practice(practicing: [card.id], at: driver.document.clock.now)))
         let deck = driver.document.deck
 
         step(undoManager) { driver.grade(.good) }
@@ -69,37 +76,71 @@ struct SessionDriverTests {
         #expect(driver.session.reviewCount == 1)
     }
 
-    @Test func undoingAReviewOfAnEarlierSessionOnlyTakesBackTheCard() throws {
+    /// Undo takes the card back; only the stream that made the review puts its place back.
+    @Test func undoingAReviewOfAnEarlierStreamOnlyTakesBackTheCard() throws {
         let (driver, undoManager, listener) = try makeDriver(cards: 2)
         let first = try #require(driver.currentCard)
         step(undoManager) { driver.grade(.good) }
-        driver.start(.study(StudySession(deck: driver.document.deck, at: driver.document.clock.now, calendar: driver.document.calendar)))
-        let session = driver.session.id
-        let current = driver.currentCard
+        let later = SessionDriver(document: driver.document, stream: makeStream(for: driver.document))
+        let laterListener = DriverListener()
+        later.delegate = laterListener
+        let stream = later.stream.id
+        let current = later.currentCard
 
         undoManager.undo()
         #expect(driver.document.card(withID: first.id) == first)
-        #expect(driver.session.id == session)
-        #expect(driver.currentCard == current)
-        #expect(listener.restores == 0)
+        #expect(listener.restores == 1)
+        #expect(later.stream.id == stream)
+        #expect(later.currentCard == current)
+        #expect(laterListener.restores == 0)
     }
 
-    /// Finishing up has no undo of its own (#180).
-    @Test func finishingUpOutlastsUndoAndRedo() throws {
-        let (driver, undoManager, _) = try makeDriver(cards: 3)
-        let first = try #require(driver.currentCard)
-        step(undoManager) { driver.grade(.again) }
-        driver.finishUp()
-        #expect(driver.session.totalCount == 2)
-        let finishedUp = driver.currentCard
+    /// The plan, then review ahead, then practice; undo goes back through all of them
+    /// card by card, and redo forward again.
+    @Test func undoAndRedoReachAcrossTheSegmentsOfTheStream() throws {
+        var learningOptions = LearningOptions()
+        learningOptions.steps = 1
+        learningOptions.fuzzing = false
+        let now = Date()
+        let lastReview = now.addingTimeInterval(-5 * 86400)
+        let state = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: now.addingTimeInterval(5 * 86400), reviews: 1)
+        let ahead = Card(question: "ahead", answer: "voraus", learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
+        let new = Card(question: "new", answer: "neu")
+        let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [new, ahead]), calendar: .testing)
+        let undoManager = makeUndoManager(for: document)
+        let driver = SessionDriver(document: document, stream: makeStream(for: document))
+        #expect(driver.stream.stage == .plan)
+        #expect(driver.currentCard?.id == new.id)
+
+        step(undoManager) { driver.grade(.good) }
+        #expect(driver.isResting)
+        driver.keepGoing()
+        #expect(driver.stream.stage == .reviewAhead)
+        #expect(driver.currentCard?.id == ahead.id)
+        step(undoManager) { driver.grade(.good) }
+        #expect(document.card(withID: ahead.id)?.log.count == 2)
+        #expect(driver.stream.stage == .practiceNewest)
+        #expect(driver.stream.stepCount == 2)
 
         undoManager.undo()
-        #expect(driver.currentCard?.id == first.id)
-        #expect(driver.session.totalCount == 1)  // the card asked after the review is out
+        #expect(driver.stream.stage == .reviewAhead)
+        #expect(driver.currentCard?.id == ahead.id)
+        #expect(document.card(withID: ahead.id)?.log.count == 1)
+        #expect(driver.stream.stepCount == 1)
+
+        undoManager.undo()
+        #expect(driver.stream.stage == .plan)
+        #expect(driver.currentCard?.id == new.id)
+        #expect(document.card(withID: new.id)?.isNew == true)
+        #expect(driver.stream.stepCount == 0)
 
         undoManager.redo()
-        #expect(driver.session.totalCount == 2)
-        #expect(driver.currentCard == finishedUp)
+        #expect(driver.isResting)
+        #expect(document.card(withID: new.id)?.log.count == 1)
+
+        undoManager.redo()
+        #expect(driver.stream.stage == .practiceNewest)
+        #expect(document.card(withID: ahead.id)?.log.count == 2)
     }
 
     /// Suspending is undone like a review: the card and the place in one step (#290).
@@ -133,10 +174,10 @@ struct SessionDriverTests {
         #expect(driver.session.suspendedCount == 1)
     }
 
-    @Test func suspendingTheLastCardFinishesTheSession() throws {
+    @Test func suspendingTheLastCardOfThePlanRests() throws {
         let (driver, undoManager, _) = try makeDriver(cards: 1)
         step(undoManager) { driver.suspendCurrentCard() }
-        #expect(driver.session.isFinished)
+        #expect(driver.isResting)
         #expect(driver.currentCard == nil)
         #expect(!driver.suspendCurrentCard())
     }
@@ -155,7 +196,7 @@ struct SessionDriverTests {
         #expect(driver.session.suspendedCount == 0)
 
         step(undoManager) { driver.grade(.good) }
-        #expect(driver.session.isFinished)
+        #expect(driver.isResting)
     }
 
     /// E.g. after undoing "Add Card", or after a merge with a version that deleted it.
@@ -182,7 +223,7 @@ struct SessionDriverTests {
 
         step(undoManager) { driver.grade(.good) }
         #expect(driver.currentCard == nil)
-        #expect(driver.session.isFinished)
+        #expect(driver.isResting)
     }
 
     @Test func anEditOfTheCardBeingAskedShowsUp() throws {
@@ -199,7 +240,7 @@ struct SessionDriverTests {
     /// where it is (#305).
     @Test func withoutUndoManagerNothingIsGradedOrSuspended() throws {
         let document = try VocabularyDocument(deck: Deck(cards: [Card(question: "dom", answer: "Haus"), Card(question: "kot", answer: "Katze")]), calendar: .testing)
-        let driver = SessionDriver(document: document, mode: .study(StudySession(deck: document.deck, at: document.clock.now, calendar: document.calendar)))
+        let driver = SessionDriver(document: document, stream: makeStream(for: document))
         let listener = DriverListener()
         driver.delegate = listener
         let deck = document.deck
@@ -214,9 +255,9 @@ struct SessionDriverTests {
         #expect(listener.moves == 0)
 
         // Practice changes no card, but its undo action needs the undo manager too.
-        driver.start(.practice(Practice(practicing: deck.cards.map(\.id), at: document.clock.now)))
-        #expect(!driver.grade(.good))
-        #expect(driver.session.reviewCount == 0)
+        let practice = SessionDriver(document: document, stream: makeStream(for: document, practicing: true))
+        #expect(!practice.grade(.good))
+        #expect(practice.session.reviewCount == 0)
     }
 }
 

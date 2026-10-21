@@ -60,6 +60,46 @@
         }
       }
     },
+    "%lld cards in today's plan": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte im heutigen Plan"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten im heutigen Plan"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld card in today's plan"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld cards in today's plan"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld cards in “%@”": {
       "localizations": {
         "de": {
@@ -213,46 +253,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld lines without a word and a translation are left out."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld mistakes": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Fehler"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Fehler"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld mistake"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld mistakes"
                 }
               }
             }
@@ -416,6 +416,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "+%lld new": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld neue"
           }
         }
       }
@@ -850,6 +860,16 @@
         }
       }
     },
+    "Cards that aren't due yet, the ones you are least likely to recall first": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch nicht fällige Karten, zuerst die mit der niedrigsten Abrufwahrscheinlichkeit"
+          }
+        }
+      }
+    },
     "Cards you keep forgetting show up here.": {
       "localizations": {
         "de": {
@@ -1010,16 +1030,6 @@
         }
       }
     },
-    "Continue (%lld)": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weiterlernen (%lld)"
-          }
-        }
-      }
-    },
     "Continue automatically when the response is correct": {
       "localizations": {
         "de": {
@@ -1066,6 +1076,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Angepasst"
+          }
+        }
+      }
+    },
+    "Daily Goal": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tagesziel"
           }
         }
       }
@@ -1340,36 +1360,6 @@
         }
       }
     },
-    "End Now": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jetzt beenden"
-          }
-        }
-      }
-    },
-    "End Session": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sitzung beenden"
-          }
-        }
-      }
-    },
-    "End this session?": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Sitzung beenden?"
-          }
-        }
-      }
-    },
     "Enter a question and its answer above to add your first card.": {
       "localizations": {
         "de": {
@@ -1460,22 +1450,12 @@
         }
       }
     },
-    "Finish Started Cards (%lld)": {
+    "Fix this card without leaving the stream": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Angefangene Karten abschließen (%lld)"
-          }
-        }
-      }
-    },
-    "Fix this card without leaving the session": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Karte korrigieren, ohne die Sitzung zu verlassen"
+            "value": "Diese Karte korrigieren, ohne das Lernen zu unterbrechen"
           }
         }
       }
@@ -1576,6 +1556,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vier Wischgesten, vier Bewertungen"
+          }
+        }
+      }
+    },
+    "Goal reached": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ziel erreicht"
           }
         }
       }
@@ -1796,6 +1786,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unvollständig"
+          }
+        }
+      }
+    },
+    "Keep Going": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weitermachen"
           }
         }
       }
@@ -2056,16 +2056,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fassungen zusammenführen"
-          }
-        }
-      }
-    },
-    "Mistakes": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fehler"
           }
         }
       }
@@ -2440,12 +2430,42 @@
         }
       }
     },
+    "Practice Newest Words (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neueste Wörter üben (%lld)"
+          }
+        }
+      }
+    },
+    "Practice Today's Mistakes": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heutige Fehler üben"
+          }
+        }
+      }
+    },
     "Practice complete": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Übung abgeschlossen"
+          }
+        }
+      }
+    },
+    "Practice doesn't change when cards come back": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üben ändert nicht, wann Karten wiederkommen"
           }
         }
       }
@@ -2740,6 +2760,16 @@
         }
       }
     },
+    "Repair: %lld today": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufholen: heute %lld"
+          }
+        }
+      }
+    },
     "Reset Algorithm Parameters": {
       "localizations": {
         "de": {
@@ -2846,6 +2876,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Abfrage"
+          }
+        }
+      }
+    },
+    "Review Ahead": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorab wiederholen"
           }
         }
       }
@@ -3006,16 +3046,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wähle eine Karte aus, um ihre Details zu sehen."
-          }
-        }
-      }
-    },
-    "Session complete": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sitzung abgeschlossen"
           }
         }
       }
@@ -3220,26 +3250,6 @@
         }
       }
     },
-    "Start Session": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sitzung starten"
-          }
-        }
-      }
-    },
-    "Start a study session": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Lernsitzung starten"
-          }
-        }
-      }
-    },
     "Statistics": {
       "localizations": {
         "de": {
@@ -3256,6 +3266,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lernschritte pro Karte"
+          }
+        }
+      }
+    },
+    "Streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serie"
           }
         }
       }
@@ -3296,6 +3316,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lernen mit"
+          }
+        }
+      }
+    },
+    "Study today's plan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heutigen Plan lernen"
           }
         }
       }
@@ -4020,16 +4050,6 @@
         }
       }
     },
-    "Your reviews so far are saved. Cards you haven't finished stay due.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine bisherigen Abfragen sind gespeichert. Nicht abgeschlossene Karten bleiben fällig."
-          }
-        }
-      }
-    },
     "again today": {
       "localizations": {
         "de": {
@@ -4266,6 +4286,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "„%@“ ist geöffnet."
+          }
+        }
+      }
+    },
+    "≈ +%lld reviews/day next week": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ +%lld Abfrage pro Tag in der nächsten Woche"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ +%lld Abfragen pro Tag in der nächsten Woche"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ +%lld review/day next week"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ +%lld reviews/day next week"
+                }
+              }
+            }
           }
         }
       }
