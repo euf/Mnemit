@@ -1,6 +1,9 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ %@": {
+      "shouldTranslate": false
+    },
     "%@ recalled": {
       "localizations": {
         "de": {
@@ -13,6 +16,46 @@
     },
     "%@ → %@": {
       "shouldTranslate": false
+    },
+    "%@, %lld cards": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, %lld Karte"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, %lld Karten"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, %lld card"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, %lld cards"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld": {
       "shouldTranslate": false
@@ -582,6 +625,16 @@
         }
       }
     },
+    "A second line is shown smaller, as an example.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine zweite Zeile erscheint kleiner, als Beispiel."
+          }
+        }
+      }
+    },
     "Add": {
       "localizations": {
         "de": {
@@ -682,6 +735,26 @@
         }
       }
     },
+    "Add the words you are learning.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Füge die Wörter hinzu, die du lernst."
+          }
+        }
+      }
+    },
+    "Added": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinzugefügt"
+          }
+        }
+      }
+    },
     "Added %lld cards. The production cards unlock after the recognition cards are learned.": {
       "localizations": {
         "de": {
@@ -758,6 +831,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Algorithmus-Parameter"
+          }
+        }
+      }
+    },
+    "All": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle"
           }
         }
       }
@@ -902,6 +985,9 @@
         }
       }
     },
+    "A–Z": {
+      "shouldTranslate": false
+    },
     "By review mode and card kind": {
       "localizations": {
         "de": {
@@ -948,6 +1034,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karte %lld von %lld"
+          }
+        }
+      }
+    },
+    "Card Deleted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karte gelöscht"
           }
         }
       }
@@ -1028,6 +1124,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Noch nicht fällige Karten, zuerst die mit der niedrigsten Abrufwahrscheinlichkeit"
+          }
+        }
+      }
+    },
+    "Cards with the same word key belong to one word, like the two directions of a translation.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten mit demselben Wortschlüssel gehören zu einem Wort, etwa die beiden Richtungen einer Übersetzung."
           }
         }
       }
@@ -1302,6 +1408,16 @@
         }
       }
     },
+    "Deck Moved": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel verschoben"
+          }
+        }
+      }
+    },
     "Deck order": {
       "localizations": {
         "de": {
@@ -1382,6 +1498,86 @@
         }
       }
     },
+    "Delete %lld cards": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte löschen"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten löschen"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete %lld card"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete %lld cards"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Delete %lld cards?": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte löschen?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten löschen?"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete %lld card?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete %lld cards?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Delete Card": {
       "localizations": {
         "de": {
@@ -1402,12 +1598,52 @@
         }
       }
     },
+    "Delete Deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel löschen"
+          }
+        }
+      }
+    },
+    "Delete “%@”?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ löschen?"
+          }
+        }
+      }
+    },
     "Details": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Details"
+          }
+        }
+      }
+    },
+    "Difficult": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwierig"
+          }
+        }
+      }
+    },
+    "Difficult: you keep forgetting this card.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwierig: Du vergisst diese Karte immer wieder."
           }
         }
       }
@@ -1508,6 +1744,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leicht"
+          }
+        }
+      }
+    },
+    "Edit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bearbeiten"
           }
         }
       }
@@ -1782,6 +2028,16 @@
         }
       }
     },
+    "Greek → translation": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Griechisch → Übersetzung"
+          }
+        }
+      }
+    },
     "Hard": {
       "localizations": {
         "de": {
@@ -1808,6 +2064,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hinweis (optional)"
+          }
+        }
+      }
+    },
+    "History": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verlauf"
           }
         }
       }
@@ -2142,6 +2408,16 @@
         }
       }
     },
+    "Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege einen Stapel für die Wörter an, die du lernst, oder nutze den Mnemit-Ordner in iCloud Drive, um deine Stapel zu finden."
+          }
+        }
+      }
+    },
     "Mastered": {
       "localizations": {
         "de": {
@@ -2188,6 +2464,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reifegrad"
+          }
+        }
+      }
+    },
+    "Memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gedächtnis"
           }
         }
       }
@@ -2258,6 +2544,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Neu"
+          }
+        }
+      }
+    },
+    "New Deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Stapel"
           }
         }
       }
@@ -2362,6 +2658,16 @@
         }
       }
     },
+    "No Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Karten"
+          }
+        }
+      }
+    },
     "No Cards Yet": {
       "localizations": {
         "de": {
@@ -2432,6 +2738,16 @@
         }
       }
     },
+    "No cards match this filter.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Karte passt zu diesem Filter."
+          }
+        }
+      }
+    },
     "No decks in this folder": {
       "localizations": {
         "de": {
@@ -2492,6 +2808,16 @@
         }
       }
     },
+    "Nothing due. Next review %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nichts fällig. Nächste Abfrage %@"
+          }
+        }
+      }
+    },
     "Notifications for Mnemit are off in iOS Settings.": {
       "localizations": {
         "de": {
@@ -2508,6 +2834,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jetzt"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
           }
         }
       }
@@ -2578,6 +2914,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Öffne deinen Mnemit-Ordner, um die Stapel darin zu sehen, oder importiere Karten aus einer Tabelle."
+          }
+        }
+      }
+    },
+    "Options": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optionen"
+          }
+        }
+      }
+    },
+    "Other direction": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Andere Richtung"
           }
         }
       }
@@ -2812,6 +3168,16 @@
         }
       }
     },
+    "Recall Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrufwahrscheinlichkeit jetzt"
+          }
+        }
+      }
+    },
     "Recall Probability": {
       "localizations": {
         "de": {
@@ -2992,6 +3358,16 @@
         }
       }
     },
+    "Rename…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umbenennen …"
+          }
+        }
+      }
+    },
     "Reopen the decks that were open when you quit": {
       "localizations": {
         "de": {
@@ -3012,6 +3388,16 @@
         }
       }
     },
+    "Reset": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurücksetzen"
+          }
+        }
+      }
+    },
     "Reset Algorithm Parameters": {
       "localizations": {
         "de": {
@@ -3023,6 +3409,16 @@
       }
     },
     "Reset Learning State": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernstand zurücksetzen"
+          }
+        }
+      }
+    },
+    "Reset Progress": {
       "localizations": {
         "de": {
           "stringUnit": {
@@ -3252,12 +3648,42 @@
         }
       }
     },
+    "Search All Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Karten durchsuchen"
+          }
+        }
+      }
+    },
+    "Search Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten suchen"
+          }
+        }
+      }
+    },
     "Search cards": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Karten durchsuchen"
+          }
+        }
+      }
+    },
+    "Select": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auswählen"
           }
         }
       }
@@ -3432,6 +3858,16 @@
         }
       }
     },
+    "Sort": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sortieren"
+          }
+        }
+      }
+    },
     "Space": {
       "localizations": {
         "de": {
@@ -3448,6 +3884,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Leertaste oder ↩"
+          }
+        }
+      }
+    },
+    "Speak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorlesen"
           }
         }
       }
@@ -3488,6 +3934,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stabilität"
+          }
+        }
+      }
+    },
+    "State": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zustand"
           }
         }
       }
@@ -3548,6 +4004,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lernen (%lld)"
+          }
+        }
+      }
+    },
+    "Study This Deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diesen Stapel lernen"
           }
         }
       }
@@ -3692,6 +4158,16 @@
         }
       }
     },
+    "The Deck Could Not Be Deleted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Stapel konnte nicht gelöscht werden"
+          }
+        }
+      }
+    },
     "The algorithm parameter w%lld of this deck is outside its range.": {
       "localizations": {
         "de": {
@@ -3748,6 +4224,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Der Stapel ließ sich nicht lesen."
+          }
+        }
+      }
+    },
+    "The deck moves to the Trash, from where you can put it back.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Stapel kommt in den Papierkorb, von wo du ihn zurückholen kannst."
           }
         }
       }
@@ -3902,6 +4388,16 @@
         }
       }
     },
+    "This place has no Trash, so “%@” was moved to the folder “%@” next to it. Files can put it back.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier gibt es keinen Papierkorb, deshalb wurde „%1$@“ in den Ordner „%2$@“ daneben verschoben. In „Dateien“ kannst du ihn zurückholen."
+          }
+        }
+      }
+    },
     "Time": {
       "localizations": {
         "de": {
@@ -3982,6 +4478,16 @@
         }
       }
     },
+    "Translation → Greek": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersetzung → Griechisch"
+          }
+        }
+      }
+    },
     "Try the Gestures": {
       "localizations": {
         "de": {
@@ -4038,6 +4544,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Widerrufen"
+          }
+        }
+      }
+    },
+    "Undo %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widerrufen: %@"
           }
         }
       }
@@ -4108,6 +4624,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "iCloud Drive verwenden"
+          }
+        }
+      }
+    },
+    "Use iCloud Drive Folder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud-Drive-Ordner verwenden"
           }
         }
       }
@@ -4212,6 +4738,16 @@
         }
       }
     },
+    "Word Key": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wortschlüssel"
+          }
+        }
+      }
+    },
     "Word cards": {
       "localizations": {
         "de": {
@@ -4238,6 +4774,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gestern"
+          }
+        }
+      }
+    },
+    "You can take this back with Undo.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kannst das mit „Widerrufen“ zurücknehmen."
           }
         }
       }

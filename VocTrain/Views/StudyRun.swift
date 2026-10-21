@@ -15,11 +15,15 @@ final class StudyRun {
     private(set) var upcoming: [URL]
     /// Whether the stream on `deck` starts with `entry`: only the first one does.
     private(set) var isFirst = true
+    /// Whether the run closes the deck it starts with. A run started from a Deck screen
+    /// studies the deck the screen holds open, which the screen closes.
+    let ownsDeck: Bool
 
-    init(deck: OpenDeck, entry: StudyModel.Entry = .study, upcoming: [URL] = []) {
+    init(deck: OpenDeck, entry: StudyModel.Entry = .study, upcoming: [URL] = [], ownsDeck: Bool = true) {
         self.deck = deck
         self.entry = entry
         self.upcoming = upcoming
+        self.ownsDeck = ownsDeck
     }
 
     /// The deck the next stream would run on.
@@ -34,9 +38,11 @@ final class StudyRun {
         Task { await previous.close() }
     }
 
-    /// Saves what is unsaved and lets go of the deck.
+    /// Saves what is unsaved and lets go of the deck, if the run owns it.
     func close() async {
-        await deck.close()
+        if ownsDeck {
+            await deck.close()
+        }
     }
 }
 

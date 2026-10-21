@@ -9,11 +9,11 @@ enum StudyScope: Hashable {
 }
 
 /// Today: the root of the app. What is due over all decks, the daily ring and the streak,
-/// the decks with what today's plan takes from each, and Study. A tap on Study or on a deck
-/// shows the first card at once; the info button of a row opens the deck's details.
+/// the decks with what today's plan takes from each, and Study. A tap on Study shows the
+/// first card at once; a tap on a deck opens its screen. The search finds a card in any deck.
 ///
-/// Shows what it is given and holds no state, so the snapshot test can render it, see
-/// `StartScreen` for where the figures come from.
+/// Shows what it is given and holds no state but the search text it is bound to, so the
+/// snapshot test can render it, see `StartScreen` for where the figures come from.
 struct TodayScreen: View {
     var decks: [KnownDeck]
     /// What today's plan takes from each deck; a deck missing here is not read yet, or can't be.
@@ -21,12 +21,21 @@ struct TodayScreen: View {
     /// `nil` until evaluated.
     var progress: DailyProgress?
     var now: Date
+    /// What the search field holds.
+    @Binding var query: String
+    /// The cards that match `query`, over all decks.
+    var hits: [AllCardsSearch.Hit]
+    /// Whether the decks are being read for the search.
+    var isSearching: Bool
     /// Whether the deck can be taken off the list, which it can't in the folder: the list
     /// would take it up again.
     var canForget: (KnownDeck) -> Bool
     var study: (StudyScope) -> Void
-    var showDetails: (KnownDeck) -> Void
+    var showDeck: (KnownDeck) -> Void
+    var showCard: (AllCardsSearch.Hit) -> Void
     var forget: (KnownDeck) -> Void
+    var addCards: () -> Void
+    var newDeck: () -> Void
     var chooseFolder: () -> Void
     var openDeck: () -> Void
     var showSettings: () -> Void
@@ -42,22 +51,37 @@ struct TodayScreen: View {
                 ContentUnavailableView {
                     Label("No Decks", systemImage: "rectangle.stack")
                 } description: {
-                    Text("Decks are created in Mnemit on the Mac. Choose the Mnemit folder in iCloud Drive, or open a single deck.")
+                    Text("Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.")
                 } actions: {
-                    Button("Choose Mnemit Folder…", action: chooseFolder)
+                    Button("New Deck", action: newDeck)
                         .buttonStyle(.borderedProminent)
+                    Button("Use iCloud Drive Folder", action: chooseFolder)
                     Button("Open Deck…", action: openDeck)
                 }
             } else {
-                list
+                // One view carries the search field, so it keeps its focus as the first letter
+                // turns the list into the results.
+                Group {
+                    if query.trimmingCharacters(in: .whitespaces).isEmpty {
+                        list
+                    } else {
+                        results
+                    }
+                }
+                .searchable(text: $query, prompt: Text("Search All Cards"))
             }
         }
         .navigationTitle("Today")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Menu("Add", systemImage: "plus") {
+                    Button("Add Cards", systemImage: "plus.rectangle.on.rectangle", action: addCards)
+                        .disabled(decks.isEmpty)
+                    Button("New Deck", systemImage: "rectangle.stack.badge.plus", action: newDeck)
+                }
                 Menu("More", systemImage: "ellipsis") {
                     Button("Choose Mnemit Folder…", systemImage: "folder", action: chooseFolder)
-                    Button("Open Deck…", systemImage: "plus", action: openDeck)
+                    Button("Open Deck…", systemImage: "doc", action: openDeck)
                     Divider()
                     Button("Settings", systemImage: "gearshape", action: showSettings)
                 }
@@ -74,15 +98,12 @@ struct TodayScreen: View {
             }
             Section("Decks") {
                 ForEach(decks) { deck in
-                    DeckRow(
-                        name: deck.name, counts: counts[deck.url], now: now,
-                        start: { study(.deck(deck.url)) }, details: { showDetails(deck) }
-                    )
-                    .swipeActions {
-                        if canForget(deck) {
-                            Button("Remove from List", systemImage: "minus.circle", role: .destructive) { forget(deck) }
+                    DeckRow(name: deck.name, counts: counts[deck.url], now: now) { showDeck(deck) }
+                        .swipeActions {
+                            if canForget(deck) {
+                                Button("Remove from List", systemImage: "minus.circle", role: .destructive) { forget(deck) }
+                            }
                         }
-                    }
                 }
             }
         }
@@ -90,6 +111,47 @@ struct TodayScreen: View {
         .refreshable { await refresh() }
         .safeAreaBar(edge: .bottom) {
             StudyButton(isDue: due > 0 || counts.isEmpty, due: due) { study(.all) }
+        }
+    }
+
+    /// The cards the search found, each with its deck when there is more than one.
+    private var results: some View {
+        List(hits) { hit in
+            Button {
+                showCard(hit)
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(hit.question)
+                            .lineLimit(2)
+                        Text(hit.answer.split(separator: "\n", maxSplits: 1).first.map(String.init) ?? hit.answer)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                    Spacer(minLength: 8)
+                    if decks.count > 1 {
+                        Text(hit.deck.name)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Image(systemName: "chevron.forward")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .listStyle(.plain)
+        .overlay {
+            if isSearching {
+                ProgressView()
+            } else if hits.isEmpty {
+                ContentUnavailableView.search(text: query)
+            }
         }
     }
 }
@@ -100,11 +162,13 @@ struct StudyButton: View {
     /// Whether to study: cards are due, or the decks are not read yet.
     var isDue: Bool
     var due: Int
+    /// What the button says while cards are due.
+    var title: LocalizedStringKey = "Study"
     var action: () -> Void
 
     var body: some View {
         let label = Button(action: action) {
-            Text(isDue ? "Study" : "Keep Going")
+            Text(isDue ? title : "Keep Going")
                 .frame(maxWidth: .infinity)
         }
         Group {
@@ -189,53 +253,45 @@ struct SummaryRow: View {
     }
 }
 
-/// A deck: a tap studies it, the info button opens its details.
-///
-/// Two buttons in one row: each has a style of its own, as with the automatic style a tap
-/// anywhere in the row would fire both.
+/// A deck: its name, what today's plan takes from it, and the total; a tap opens its screen.
+/// The chevron is drawn by hand, as the row is a button, not a `NavigationLink`: the deck has
+/// to be opened before the push, see `PushedDecks`.
 struct DeckRow: View {
     var name: String
     var counts: StudyCounts?
     var now: Date
-    var start: () -> Void
-    var details: () -> Void
+    var open: () -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
-            Button(action: start) {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(name)
-                        if let subtitle {
-                            subtitle
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    if let counts {
-                        if counts.total > 0 {
-                            Text(counts.total, format: .number)
-                                .monospacedDigit()
-                        } else {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.secondary)
-                        }
+        Button(action: open) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name)
+                    if let subtitle {
+                        subtitle
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
                     }
                 }
-                .contentShape(Rectangle())
+                Spacer(minLength: 0)
+                if let counts {
+                    if counts.total > 0 {
+                        Text(counts.total, format: .number)
+                            .monospacedDigit()
+                    } else {
+                        Image(systemName: "checkmark")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
             }
-            .buttonStyle(.plain)
-            Button(action: details) {
-                Image(systemName: "info.circle")
-                    .imageScale(.large)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel(Text("Deck Details"))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
     private var subtitle: Text? {
