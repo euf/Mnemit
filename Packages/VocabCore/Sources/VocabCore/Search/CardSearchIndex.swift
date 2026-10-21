@@ -1,7 +1,7 @@
 import Foundation
 
-/// Finds cards by question, answer or hint, ignoring case and diacritics, so "dzien"
-/// finds "dzień".
+/// Finds cards by question, answer, hint or word key (`Card.note`), ignoring case and
+/// diacritics, so "dzien" finds "dzień".
 ///
 /// Folds the text of every card once, so each search is a plain substring test and
 /// stays fast while typing. Build a new index when cards are added, removed or moved;
@@ -34,7 +34,7 @@ public struct CardSearchIndex: Sendable {
 
     private static func text(of card: Card) -> String {
         // The separator keeps a query from matching across two fields.
-        fold(card.question + "\u{1F}" + card.answer + "\u{1F}" + card.hint)
+        fold([card.question, card.answer, card.hint, card.note ?? ""].joined(separator: "\u{1F}"))
     }
 
     /// Case- and diacritic-insensitive, and canonically composed so a literal

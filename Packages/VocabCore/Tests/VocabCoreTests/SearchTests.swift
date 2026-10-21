@@ -80,3 +80,50 @@ struct CardSearchIndexTests {
         #expect(index.filter([2, 0], by: "o") == [2])
     }
 }
+
+/// The word key (`Card.note`) is searched like the texts.
+struct CardSearchIndexNoteTests {
+    let cards = [
+        Card(question: "αγαπώ", answer: "lieben", note: "αγαπώ", kind: .recognition),
+        Card(question: "lieben", answer: "αγαπώ", note: "αγαπώ", kind: .production),
+        Card(question: "Haus", answer: "casa", note: "σπίτι"),
+        Card(question: "Katze", answer: "γάτα"),
+    ]
+
+    /// A key that appears in no other field finds its cards.
+    @Test func findsCardsByTheirWordKey() {
+        let index = CardSearchIndex(cards: [
+            Card(question: "das Haus", answer: "σπίτι", note: "spiti-n"),
+            Card(question: "die Katze", answer: "γάτα"),
+        ])
+        #expect(index.positions(matching: "spiti") == [0])
+        #expect(index.positions(matching: "SPITI-N") == [0])
+    }
+
+    @Test func wordKeyIgnoresCaseAndAccents() {
+        let index = CardSearchIndex(cards: cards)
+        #expect(index.positions(matching: "ΑΓΑΠΩ") == [0, 1])
+        #expect(index.positions(matching: "ΣΠΙΤΙ") == [2])
+    }
+
+    @Test func aCardWithoutAKeyMatchesNothingForIt() {
+        #expect(CardSearchIndex(cards: cards).positions(matching: "katze") == [3])
+        #expect(CardSearchIndex(cards: [Card(question: "kot", answer: "Katze")]).positions(matching: "note").isEmpty)
+    }
+
+    @Test func doesNotMatchAcrossHintAndKey() {
+        let index = CardSearchIndex(cards: [Card(question: "dom", answer: "Haus", hint: "alt", note: "dom-n")])
+        #expect(index.positions(matching: "altdom").isEmpty)
+        #expect(index.positions(matching: "alt").count == 1)
+        #expect(index.positions(matching: "dom-n").count == 1)
+    }
+
+    @Test func replacedEntryFindsTheNewKey() {
+        var index = CardSearchIndex(cards: cards)
+        #expect(index.positions(matching: "gata").isEmpty)
+        index.replace(at: 3, with: Card(question: "Katze", answer: "γάτα", note: "gata"))
+        #expect(index.positions(matching: "gata") == [3])
+        index.replace(at: 3, with: Card(question: "Katze", answer: "γάτα"))
+        #expect(index.positions(matching: "gata").isEmpty)
+    }
+}
