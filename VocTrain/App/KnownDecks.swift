@@ -25,18 +25,29 @@ struct KnownDeck: Identifiable, Hashable {
 /// every deck in it is listed, and `refreshFolder()` picks up the ones that arrived since.
 /// The folder is a bookmark too, and the app keeps its access while it runs, so the decks
 /// in it open without a bookmark of their own.
+///
+/// Without iCloud Drive the folder is the app's own Documents directory, which Files shows as
+/// On My iPhone, Mnemit. It lies inside the sandbox, so it needs no bookmark and no security
+/// scope; only a flag says it was chosen, and its path is looked up at every launch, because
+/// the path of the container may change.
 @MainActor @Observable
 final class KnownDecks {
     static let key = "KnownDecks"
     static let folderKey = "KnownFolder"
+    static let localFolderKey = "KnownFolderIsLocal"
+    /// The name of the folder the learner is asked to pick or create in iCloud Drive.
+    static let folderName = "Mnemit"
 
     /// The opened last first.
     private var entries: [Entry]
     /// The folder the learner chose, `nil` before.
     private(set) var folder: URL?
+    /// Whether the folder is the app's own Documents directory, not one in iCloud Drive.
+    private(set) var isLocalFolder = false
     /// The decks in the folder, as `refreshFolder()` read them last.
     private var folderDecks: [KnownDeck] = []
     @ObservationIgnored private let defaults: UserDefaults
+    @ObservationIgnored private let localFolder: URL
     @ObservationIgnored private var isAccessingFolder = false
 
     private struct Entry {
@@ -44,16 +55,20 @@ final class KnownDecks {
         var bookmark: Data
     }
 
-    /// Reads the decks from `defaults`. Forgets those that are gone, e.g. deleted.
-    init(defaults: UserDefaults = .standard) {
+    /// Reads the decks from `defaults`. Forgets those that are gone, e.g. deleted. `localFolder`
+    /// is the directory `useLocalFolder()` takes, the app's Documents directory.
+    init(defaults: UserDefaults = .standard, localFolder: URL = .documentsDirectory) {
         self.defaults = defaults
+        self.localFolder = localFolder
         entries = (defaults.array(forKey: Self.key) as? [Data] ?? []).compactMap { bookmark in
             var isStale = false
             guard let url = try? URL(resolvingBookmarkData: bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &isStale) else { return nil }
             return Entry(deck: KnownDeck(url: url), bookmark: isStale ? Self.bookmark(for: url) ?? bookmark : bookmark)
         }
         save()
-        if let bookmark = defaults.data(forKey: Self.folderKey) {
+        if defaults.bool(forKey: Self.localFolderKey) {
+            takeLocalFolder()
+        } else if let bookmark = defaults.data(forKey: Self.folderKey) {
             resolveFolder(bookmark)
         }
     }
@@ -93,12 +108,13 @@ final class KnownDecks {
 
     /// Takes `url`, a folder the file picker returned, as the folder of decks, and returns
     /// how many decks it holds. A folder without decks is most likely the wrong one: it is
-    /// not taken, and the result is 0.
+    /// not taken, and the result is 0, unless it is named Mnemit, which the learner may have
+    /// just created, with the decks still on their way. Whether it was taken: `folder`.
     @discardableResult
     func chooseFolder(_ url: URL) -> Int {
         let isAccessing = url.startAccessingSecurityScopedResource()
         let decks = Self.decks(in: url)
-        guard !decks.isEmpty, let bookmark = Self.bookmark(for: url) else {
+        guard !decks.isEmpty || url.lastPathComponent == Self.folderName, let bookmark = Self.bookmark(for: url) else {
             if isAccessing {
                 url.stopAccessingSecurityScopedResource()
             }
@@ -106,10 +122,27 @@ final class KnownDecks {
         }
         stopAccessingFolder()
         defaults.set(bookmark, forKey: Self.folderKey)
+        defaults.removeObject(forKey: Self.localFolderKey)
         folder = url
+        isLocalFolder = false
         isAccessingFolder = isAccessing
         folderDecks = decks
         return decks.count
+    }
+
+    /// Takes the app's own Documents directory as the folder of decks, for a learner without
+    /// iCloud Drive. It is taken even when empty: decks arrive there through Files.
+    func useLocalFolder() {
+        stopAccessingFolder()
+        defaults.removeObject(forKey: Self.folderKey)
+        defaults.set(true, forKey: Self.localFolderKey)
+        takeLocalFolder()
+    }
+
+    private func takeLocalFolder() {
+        folder = localFolder
+        isLocalFolder = true
+        folderDecks = Self.decks(in: localFolder)
     }
 
     /// Reads the folder again, for decks that arrived since.

@@ -1,168 +1,191 @@
 import SwiftUI
 import VocabCore
 
-extension Grade {
-    /// The name on the grade buttons, which say Forgot where `title` says Again.
-    var buttonTitle: String {
-        self == .again ? String(localized: "Forgot") : title
-    }
-
-    /// The direction of the swipe that gives the grade.
-    var arrow: String {
-        switch self {
-        case .again: "←"
-        case .hard: "↘"
-        case .good: "→"
-        case .easy: "↗"
-        }
-    }
-}
-
-/// The second step of the introduction: a sample card, not one of a deck, to swipe once in
-/// each of the four directions. It is the study screen's own card, `FlightCard` driven by
-/// `CardFlight` and `GradeSwipe`, so the swipe tints, flies and gives way as it will there;
-/// only nothing is graded.
+/// The second step of the introduction: four sample cards, not those of a deck, each asking for
+/// one swipe: right, left, right and up, right and down. The prompt above the card names what
+/// the direction means, so the four meanings are the rules of the app. The card is the study
+/// screen's own, `FlightCard` driven by `CardFlight` and `GradeSwipe`, so the swipe tints, flies
+/// and gives way as it will there; only nothing is graded.
+///
+/// A swipe the other way springs the card back with a warning and a shake of the prompt. After
+/// a moment without a touch an arrow shows the direction, moving, or still with Reduce Motion.
 struct GesturePracticeView: View {
-    var next: () -> Void
-    var skip: () -> Void
+    /// How long a card waits for a touch before the arrow shows the way, in seconds.
+    static let idleBeforeHint = 2.0
 
+    var done: () -> Void
+
+    @State private var practice: SwipePractice
     @State private var flight = CardFlight()
-    @State private var practised: Set<Grade> = []
-    @State private var message = String(localized: "Left means forgot, right means recalled, right and up means easy, right and down means hard.")
+    /// A swipe in the wrong direction: the haptic and the shake count them.
+    @State private var mistakes = 0
+    @State private var nudges = 0
+    /// The swipe was too short to count: the prompt asks for more.
+    @State private var wasShort = false
+    @State private var showsHint = false
     /// Whether a finger is down; a drag the system cancels still springs the card back.
     @GestureState private var isDragging = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let order: [Grade] = [.again, .good, .easy, .hard]
+    /// `practice` lets the snapshot tests start at a later card.
+    init(practice: SwipePractice = SwipePractice(), done: @escaping () -> Void) {
+        _practice = State(initialValue: practice)
+        self.done = done
+    }
 
-    private var isDone: Bool {
-        practised.count == Self.order.count
+    /// What the idle timer depends on: it starts again with every card and every touch.
+    private struct Idle: Equatable {
+        var card: Int
+        var isWaiting: Bool
+    }
+
+    private var idle: Idle {
+        Idle(card: practice.index, isWaiting: !practice.isDone && !isDragging && !flight.isFlying)
     }
 
     var body: some View {
         VStack(spacing: 16) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Try the Gestures")
-                        .font(.title.bold())
-                    Group {
-                        if isDone {
-                            Text("All four gestures practised")
-                        } else {
-                            Text("Swipe the card each way, once.")
-                        }
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                }
+                Text("Try the Gestures")
+                    .font(.title.bold())
                 Spacer()
-                Button("Skip", action: skip)
+                if !practice.isDone {
+                    Button("Skip", action: done)
+                }
             }
 
-            card
-                .frame(height: 250)
+            dots
 
-            Text(message)
-                .font(.subheadline)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
-                .accessibilityAddTraits(.updatesFrequently)
-
-            checklist
+            if let grade = practice.current {
+                prompt(for: grade)
+                card(for: grade)
+                    .frame(maxHeight: 340)
+            } else {
+                success
+            }
 
             Spacer(minLength: 0)
 
-            Button(action: next) {
-                Text("Next")
+            Button(action: done) {
+                Text("Continue")
                     .frame(maxWidth: .infinity, minHeight: 36)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .disabled(!isDone)
+            // Stays in its place and out of the way until the practice is over.
+            .opacity(practice.isDone ? 1 : 0)
+            .disabled(!practice.isDone)
+            .accessibilityHidden(!practice.isDone)
         }
         .padding(20)
+        .sensoryFeedback(.warning, trigger: mistakes)
+        .task(id: idle) {
+            showsHint = false
+            guard idle.isWaiting else { return }
+            try? await Task.sleep(for: .seconds(Self.idleBeforeHint))
+            if !Task.isCancelled {
+                showsHint = true
+            }
+        }
     }
 
-    /// The card, with the faint arrows at its edges that show where each grade lies.
-    private var card: some View {
-        FlightCard(flight: flight) {
+    /// One dot per card: the colour of the grade once the card is done, a ring on the card in
+    /// front.
+    private var dots: some View {
+        let total = SwipePractice.order.count
+        return HStack(spacing: 10) {
+            ForEach(Array(SwipePractice.order.enumerated()), id: \.offset) { index, grade in
+                Circle()
+                    .fill(index < practice.index ? grade.color : Color.secondary.opacity(0.25))
+                    .overlay {
+                        if index == practice.index {
+                            Circle().strokeBorder(Color.primary.opacity(0.6), lineWidth: 1.5)
+                        }
+                    }
+                    .frame(width: 12, height: 12)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Card \(min(practice.index + 1, total)) of \(total)"))
+    }
+
+    /// What the card in front asks for: the arrow in the colour of the grade and its meaning.
+    private func prompt(for grade: Grade) -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                Text(grade.arrow)
+                    .font(.title2.bold())
+                    .foregroundStyle(grade.onColor)
+                    .frame(width: 44, height: 44)
+                    .background(grade.color, in: Circle())
+                    .accessibilityHidden(true)
+                Text(grade.meaning)
+                    .font(.title2.bold())
+            }
+            .keyframeAnimator(initialValue: 0.0, trigger: nudges) { content, offset in
+                content.offset(x: offset)
+            } keyframes: { _ in
+                KeyframeTrack {
+                    LinearKeyframe(-9, duration: 0.05)
+                    LinearKeyframe(9, duration: 0.1)
+                    LinearKeyframe(-6, duration: 0.1)
+                    LinearKeyframe(6, duration: 0.1)
+                    LinearKeyframe(0, duration: 0.05)
+                }
+            }
+            Group {
+                if wasShort {
+                    Text("Swipe farther, in the direction of the arrow: the card leaves once you pass the threshold.")
+                } else {
+                    Text("Swipe the card in the direction of the arrow.")
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 84, alignment: .top)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    private func card(for grade: Grade) -> some View {
+        let sample = SwipePractice.sample(for: grade)
+        return FlightCard(flight: flight) {
             VStack(spacing: 12) {
-                Text(verbatim: "η αστυνομία")
+                Text(verbatim: sample.question)
                     .font(.largeTitle.weight(.semibold))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 Divider()
-                Text("the police")
+                Text(verbatim: sample.answer)
                     .font(.title)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .minimumScaleFactor(0.5)
             .multilineTextAlignment(.center)
             .padding(20)
-            .overlay { edgeHints }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay {
+            if showsHint {
+                SwipeHint(grade: grade, reduceMotion: reduceMotion)
+            }
+        }
         .contentShape(Rectangle())
-        .gesture(swipe)
+        .gesture(swipe(expecting: grade))
         .onChange(of: isDragging) { _, isDragging in
             if !isDragging { flight.springBack() }
         }
         .swipeHaptics(flight)
-        // VoiceOver can't swipe: the actions do what the swipes do.
+        // VoiceOver can't swipe: the action does what the swipe does.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Sample card: η αστυνομία, the police"))
-        .accessibilityAction(named: Text(Grade.again.buttonTitle)) { commit(.again) }
-        .accessibilityAction(named: Text(Grade.good.buttonTitle)) { commit(.good) }
-        .accessibilityAction(named: Text(Grade.easy.buttonTitle)) { commit(.easy) }
-        .accessibilityAction(named: Text(Grade.hard.buttonTitle)) { commit(.hard) }
-    }
-
-    private var edgeHints: some View {
-        GeometryReader { proxy in
-            ForEach(Grade.allCases, id: \.self) { grade in
-                Text(grade.arrow)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(grade.onColor)
-                    .frame(width: 28, height: 28)
-                    .background(grade.color, in: Circle())
-                    .opacity(0.55)
-                    .position(hintPosition(of: grade, in: proxy.size))
-            }
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-
-    private func hintPosition(of grade: Grade, in size: CGSize) -> CGPoint {
-        let inset: CGFloat = 22
-        switch grade {
-        case .again: return CGPoint(x: inset, y: size.height * 0.5)
-        case .easy: return CGPoint(x: size.width - inset, y: size.height * 0.3)
-        case .good: return CGPoint(x: size.width - inset, y: size.height * 0.5)
-        case .hard: return CGPoint(x: size.width - inset, y: size.height * 0.7)
-        }
-    }
-
-    private var checklist: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(Self.order, id: \.self) { grade in
-                let isPractised = practised.contains(grade)
-                HStack(spacing: 10) {
-                    Image(systemName: isPractised ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(isPractised ? grade.color : Color.secondary)
-                    Text(grade.arrow)
-                        .fontWeight(.bold)
-                        .frame(width: 20)
-                    Text(grade.buttonTitle)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityValue(isPractised ? Text("Practised") : Text(verbatim: ""))
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityLabel(Text("Sample card: \(sample.question), \(sample.answer)"))
+        .accessibilityAction(named: Text(grade.meaning)) { commit(grade, expecting: grade) }
     }
 
     /// The study screen's swipe, in the coordinates of the card's place, which stays put as the
     /// card moves with the finger.
-    private var swipe: some Gesture {
+    private func swipe(expecting expected: Grade) -> some Gesture {
         DragGesture(minimumDistance: 6, coordinateSpace: .local)
             .updating($isDragging) { _, isDragging, _ in isDragging = true }
             .onChanged { value in
@@ -172,29 +195,84 @@ struct GesturePracticeView: View {
                 guard let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
                     flight.springBack()
                     if hypot(value.translation.width, value.translation.height) >= GradeSwipe.deadZone {
-                        message = String(localized: "Swipe farther, in the direction of the arrow: the card leaves once you pass the threshold.")
+                        wasShort = true
                     }
                     return
                 }
-                commit(grade)
+                commit(grade, expecting: expected)
             }
     }
 
-    /// Flies the card out in the direction of `grade`, as the study screen does, and ticks
-    /// the grade off.
-    private func commit(_ grade: Grade) {
-        guard !flight.isFlying else { return }
-        practised.insert(grade)
-        message = Self.meaning(of: grade)
-        flight.fly(grade, reduceMotion: reduceMotion) {}
+    /// The swipe asked for flies the card out and brings the next one; any other springs it
+    /// back, with the warning and the shake.
+    private func commit(_ grade: Grade, expecting expected: Grade) {
+        guard !flight.isFlying, practice.accepts(expected) else { return }
+        guard grade == expected else {
+            flight.springBack()
+            mistakes += 1
+            if !reduceMotion {
+                nudges += 1
+            }
+            return
+        }
+        wasShort = false
+        flight.fly(grade, reduceMotion: reduceMotion) {
+            withAnimation(.easeInOut(duration: 0.25)) { practice.advance() }
+            if let next = practice.current {
+                AccessibilityNotification.Announcement(next.meaning).post()
+            }
+        }
     }
 
-    private static func meaning(of grade: Grade) -> String {
-        switch grade {
-        case .again: String(localized: "Forgot: you didn't recall it, or got it wrong. The card comes back soon.")
-        case .hard: String(localized: "Hard: you recalled it, but with effort. It comes back sooner than usual.")
-        case .good: String(localized: "Good: you recalled it as usual. It comes back in a few days.")
-        case .easy: String(localized: "Easy: you recalled it instantly. It comes back much later.")
+    /// The end of the practice: nothing to swipe any more, only the rule that holds for every
+    /// card of every deck.
+    private var success: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.green)
+                .accessibilityHidden(true)
+            Text("Well Done")
+                .font(.title.bold())
+            Text("Every card in your decks works like this: look at the answer, then swipe how well you remembered it.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+        .transition(.opacity)
+    }
+}
+
+/// The arrow that shows the way of the swipe: it leaves the middle of the card in that
+/// direction, and again, fading as it goes. With Reduce Motion it stands still, further out.
+private struct SwipeHint: View {
+    var grade: Grade
+    var reduceMotion: Bool
+
+    @State private var isMoving = false
+
+    private static let travel: CGFloat = 80
+
+    var body: some View {
+        let exit = GradeSwipe.exit(of: grade)
+        let length = hypot(exit.width, exit.height)
+        let end = CGSize(width: exit.width / length * Self.travel, height: exit.height / length * Self.travel)
+        Text(grade.arrow)
+            .font(.title.bold())
+            .foregroundStyle(grade.onColor)
+            .frame(width: 56, height: 56)
+            .background(grade.color, in: Circle())
+            .offset(reduceMotion || isMoving ? end : .zero)
+            .opacity(!reduceMotion && isMoving ? 0 : 1)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeOut(duration: 1.1).repeatForever(autoreverses: false)) {
+                    isMoving = true
+                }
+            }
     }
 }

@@ -642,6 +642,16 @@
         }
       }
     },
+    "Add decks in Files, under On My iPhone → Mnemit.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege Stapel in der Dateien-App ab, unter „Auf meinem iPhone“ → Mnemit."
+          }
+        }
+      }
+    },
     "Added %lld cards. The production cards unlock after the recognition cards are learned.": {
       "localizations": {
         "de": {
@@ -728,16 +738,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alles erledigt"
-          }
-        }
-      }
-    },
-    "All four gestures practised": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle vier Gesten geübt"
           }
         }
       }
@@ -912,6 +912,16 @@
         }
       }
     },
+    "Card %lld of %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karte %lld von %lld"
+          }
+        }
+      }
+    },
     "Card Info": {
       "localizations": {
         "de": {
@@ -1048,16 +1058,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anderen Ordner wählen …"
-          }
-        }
-      }
-    },
-    "Choose Mnemit Folder": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mnemit-Ordner wählen"
           }
         }
       }
@@ -1322,6 +1322,16 @@
         }
       }
     },
+    "Decks you create in Mnemit on the Mac appear here once they sync.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel, die du in Mnemit auf dem Mac anlegst, erscheinen hier, sobald sie synchronisiert sind."
+          }
+        }
+      }
+    },
     "Default": {
       "localizations": {
         "de": {
@@ -1472,16 +1482,6 @@
         }
       }
     },
-    "Easy: you recalled it instantly. It comes back much later.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leicht: Du wusstest es sofort. Sie kommt viel später wieder."
-          }
-        }
-      }
-    },
     "Edit Card": {
       "localizations": {
         "de": {
@@ -1518,6 +1518,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gib oben eine Frage und ihre Antwort ein, um deine erste Karte anzulegen."
+          }
+        }
+      }
+    },
+    "Every card in your decks works like this: look at the answer, then swipe how well you remembered it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jede Karte in deinen Stapeln funktioniert so: Sieh dir die Antwort an und wische dann, wie gut du sie gewusst hast."
           }
         }
       }
@@ -1642,16 +1652,6 @@
         }
       }
     },
-    "Forgot: you didn't recall it, or got it wrong. The card comes back soon.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vergessen: Du wusstest es nicht oder hast dich geirrt. Die Karte kommt bald wieder."
-          }
-        }
-      }
-    },
     "Format:": {
       "localizations": {
         "de": {
@@ -1702,12 +1702,12 @@
         }
       }
     },
-    "Four swipes, four grades": {
+    "Get Started": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vier Wischgesten, vier Bewertungen"
+            "value": "Los geht’s"
           }
         }
       }
@@ -1728,16 +1728,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gut"
-          }
-        }
-      }
-    },
-    "Good: you recalled it as usual. It comes back in a few days.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gut: Du wusstest es wie üblich. Sie kommt in ein paar Tagen wieder."
           }
         }
       }
@@ -1768,16 +1758,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schwer"
-          }
-        }
-      }
-    },
-    "Hard: you recalled it, but with effort. It comes back sooner than usual.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schwer: Du wusstest es, aber mit Mühe. Sie kommt früher als sonst wieder."
           }
         }
       }
@@ -2102,16 +2082,6 @@
         }
       }
     },
-    "Left means forgot, right means recalled, right and up means easy, right and down means hard.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Links heißt vergessen, rechts heißt gewusst, rechts und hoch heißt leicht, rechts und runter heißt schwer."
-          }
-        }
-      }
-    },
     "Lesson words": {
       "localizations": {
         "de": {
@@ -2198,6 +2168,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fassungen zusammenführen"
+          }
+        }
+      }
+    },
+    "Mnemit keeps your cards and progress in iCloud Drive, so your iPhone and Mac stay in step.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mnemit speichert deine Karten und deinen Fortschritt in iCloud Drive, damit iPhone und Mac auf dem gleichen Stand bleiben."
           }
         }
       }
@@ -2432,6 +2412,16 @@
         }
       }
     },
+    "No decks yet": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Stapel"
+          }
+        }
+      }
+    },
     "No response": {
       "localizations": {
         "de": {
@@ -2512,6 +2502,16 @@
         }
       }
     },
+    "Only on This iPhone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur auf diesem iPhone"
+          }
+        }
+      }
+    },
     "Open Deck…": {
       "localizations": {
         "de": {
@@ -2542,16 +2542,6 @@
         }
       }
     },
-    "Open a Single Deck…": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einzelnen Stapel öffnen …"
-          }
-        }
-      }
-    },
     "Open your Mnemit folder to see the decks in it, or import cards from a table.": {
       "localizations": {
         "de": {
@@ -2578,6 +2568,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phase"
+          }
+        }
+      }
+    },
+    "Pick or create a folder named Mnemit.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle einen Ordner namens Mnemit oder lege ihn an."
           }
         }
       }
@@ -2648,16 +2648,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Üben ändert nicht, wann Karten wiederkommen"
-          }
-        }
-      }
-    },
-    "Practised": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geübt"
           }
         }
       }
@@ -2862,6 +2852,16 @@
         }
       }
     },
+    "Remembered": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewusst"
+          }
+        }
+      }
+    },
     "Remembered for 16 to 64 days": {
       "localizations": {
         "de": {
@@ -2908,6 +2908,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bleibt weniger als 4 Tage im Gedächtnis"
+          }
+        }
+      }
+    },
+    "Remembered instantly": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sofort gewusst"
+          }
+        }
+      }
+    },
+    "Remembered with effort": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit Mühe gewusst"
           }
         }
       }
@@ -3132,12 +3152,12 @@
         }
       }
     },
-    "Sample card: η αστυνομία, the police": {
+    "Sample card: %@, %@": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Beispielkarte: η αστυνομία, die Polizei"
+            "value": "Beispielkarte: %@, %@"
           }
         }
       }
@@ -3582,12 +3602,22 @@
         }
       }
     },
-    "Swipe the card each way, once.": {
+    "Swipe the card in the direction of the arrow.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wische die Karte einmal in jede Richtung."
+            "value": "Wische die Karte in Pfeilrichtung."
+          }
+        }
+      }
+    },
+    "Sync Your Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten synchronisieren"
           }
         }
       }
@@ -3698,16 +3728,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Der Stapel wurde auf einem anderen Gerät geändert und neu geöffnet. Die Abfragen der Sitzung bleiben erhalten."
-          }
-        }
-      }
-    },
-    "The normal case": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der Normalfall"
           }
         }
       }
@@ -4052,6 +4072,16 @@
         }
       }
     },
+    "Use iCloud Drive": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud Drive verwenden"
+          }
+        }
+      }
+    },
     "Varies intervals slightly so cards learned together don't always come back together.": {
       "localizations": {
         "de": {
@@ -4112,6 +4142,16 @@
         }
       }
     },
+    "Well Done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gut gemacht"
+          }
+        }
+      }
+    },
     "What time suits you for studying? A few minutes a day is enough.": {
       "localizations": {
         "de": {
@@ -4138,16 +4178,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wenn aus, bewertest du jede Abfrage selbst, z. B. als „Leicht“."
-          }
-        }
-      }
-    },
-    "When to Press What": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wann was drücken"
           }
         }
       }
@@ -4182,36 +4212,6 @@
         }
       }
     },
-    "You didn't recall it, or got it wrong": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Du wusstest es nicht oder hast dich geirrt"
-          }
-        }
-      }
-    },
-    "You knew it instantly": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Du wusstest es sofort"
-          }
-        }
-      }
-    },
-    "You recalled it, with effort": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Du wusstest es, aber mit Mühe"
-          }
-        }
-      }
-    },
     "Young": {
       "localizations": {
         "de": {
@@ -4238,16 +4238,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Junge Karten hatten bei der Abfrage einen Abstand unter 21 Tagen, reife Karten 21 Tage oder mehr. Lernschritte, erste Abfragen und weitere Abfragen am selben Lerntag zählen nicht."
-          }
-        }
-      }
-    },
-    "Your decks live in iCloud Drive, in the Mnemit folder.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine Stapel liegen in iCloud Drive, im Ordner „Mnemit“."
           }
         }
       }
@@ -4422,12 +4412,42 @@
         }
       }
     },
+    "the butterfly": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "der Schmetterling"
+          }
+        }
+      }
+    },
+    "the library": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "die Bibliothek"
+          }
+        }
+      }
+    },
     "the police": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "die Polizei"
+          }
+        }
+      }
+    },
+    "the train": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "der Zug"
           }
         }
       }

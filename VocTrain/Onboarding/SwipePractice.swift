@@ -1,0 +1,86 @@
+import Foundation
+import VocabCore
+
+extension Grade {
+    /// The direction of the swipe that gives the grade.
+    var arrow: String {
+        switch self {
+        case .again: "←"
+        case .hard: "↘"
+        case .good: "→"
+        case .easy: "↗"
+        }
+    }
+
+    /// What the grade means, in the words of the practice: the four meanings are the rules
+    /// of the app.
+    var meaning: String {
+        switch self {
+        case .again: String(localized: "Forgot")
+        case .hard: String(localized: "Remembered with effort")
+        case .good: String(localized: "Remembered")
+        case .easy: String(localized: "Remembered instantly")
+        }
+    }
+}
+
+/// A sample card of the practice: not one of a deck.
+struct PracticeSample: Equatable {
+    var question: String
+    var answer: String
+}
+
+/// The practice of the swipes, the second step of the introduction: four cards in a fixed
+/// order, each asking for one direction. Nothing is graded; only the order and the progress
+/// are kept here, so the view stays a drawing of it.
+struct SwipePractice: Equatable {
+    /// The directions, in the order they are asked: the common one first, then its opposite,
+    /// then the two that need a turn of the thumb.
+    static let order: [Grade] = [.good, .again, .easy, .hard]
+
+    /// How many cards are done.
+    private(set) var index = 0
+
+    init(index: Int = 0) {
+        self.index = min(max(index, 0), Self.order.count)
+    }
+
+    /// The grade the card in front asks for; `nil` once all four are done.
+    var current: Grade? {
+        index < Self.order.count ? Self.order[index] : nil
+    }
+
+    var isDone: Bool { current == nil }
+
+    /// Whether `grade` is the swipe the card in front asks for.
+    func accepts(_ grade: Grade) -> Bool {
+        grade == current
+    }
+
+    /// Moves on to the next card.
+    mutating func advance() {
+        index = min(index + 1, Self.order.count)
+    }
+
+    /// The card that asks for `grade`. The four come from four languages, so the app doesn't
+    /// look as if it were for one of them.
+    static func sample(for grade: Grade) -> PracticeSample {
+        switch grade {
+        case .good: PracticeSample(question: "la mariposa", answer: String(localized: "the butterfly"))
+        case .again: PracticeSample(question: "la bibliothèque", answer: String(localized: "the library"))
+        case .easy: PracticeSample(question: "il treno", answer: String(localized: "the train"))
+        case .hard: PracticeSample(question: "η αστυνομία", answer: String(localized: "the police"))
+        }
+    }
+}
+
+/// The steps of the introduction, in the order they come. Skipping the practice goes on to
+/// the next step: the storage choice and the reminder are not for skipping.
+enum OnboardingStep: CaseIterable {
+    case welcome, swipe, sync, reminder
+
+    /// The step after this one; `nil` after the last, where the introduction ends.
+    var next: OnboardingStep? {
+        Self.allCases.drop { $0 != self }.dropFirst().first
+    }
+}

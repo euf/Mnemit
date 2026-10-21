@@ -1,9 +1,9 @@
 import SwiftUI
 import VocabCore
 
-/// The introduction: shown once at the first launch, and again from the menu of the start
-/// screen. It finds the learner's decks, lets them try the four swipes on a sample card,
-/// tells which grade to press when, and offers the daily reminder.
+/// The introduction: shown once at the first launch, and again from Settings. It starts with
+/// the app, lets the learner try the four swipes on sample cards, asks where the cards are
+/// kept, and offers the daily reminder.
 struct OnboardingView: View {
     /// Where the decks are chosen; the start screen lists what it finds.
     var knownDecks: KnownDecks
@@ -11,11 +11,15 @@ struct OnboardingView: View {
     /// Called when the introduction is over, whichever way it ended.
     var onFinish: () -> Void
 
-    private enum Step {
-        case welcome, gestures, rules, reminder
-    }
+    @State private var step: OnboardingStep
 
-    @State private var step = Step.welcome
+    /// `step` lets the snapshot tests start at a later step.
+    init(knownDecks: KnownDecks, reminders: Reminders, step: OnboardingStep = .welcome, onFinish: @escaping () -> Void) {
+        self.knownDecks = knownDecks
+        self.reminders = reminders
+        self.onFinish = onFinish
+        _step = State(initialValue: step)
+    }
 
     var body: some View {
         ZStack {
@@ -24,11 +28,12 @@ struct OnboardingView: View {
             Group {
                 switch step {
                 case .welcome:
-                    WelcomeStep(knownDecks: knownDecks) { step = .gestures }
-                case .gestures:
-                    GesturePracticeView(next: { step = .rules }, skip: { step = .reminder })
-                case .rules:
-                    RulesStep(done: { step = .reminder })
+                    WelcomeStep(next: advance)
+                case .swipe:
+                    // Skipping the practice goes where finishing it goes.
+                    GesturePracticeView(done: advance)
+                case .sync:
+                    SyncStep(knownDecks: knownDecks, next: advance)
                 case .reminder:
                     ReminderStep(reminders: reminders, finish: onFinish)
                 }
@@ -37,22 +42,21 @@ struct OnboardingView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: step)
     }
+
+    private func advance() {
+        if let next = step.next {
+            step = next
+        } else {
+            onFinish()
+        }
+    }
 }
 
-/// The first step: the app, and the folder with the decks.
+/// The first step: the app, and one button.
 private struct WelcomeStep: View {
-    var knownDecks: KnownDecks
     var next: () -> Void
 
-    @State private var isChoosing = false
-    @State private var choosesFolder = true
-    @State private var problem: String?
-
-    /// How many deck names the list shows; the rest is counted.
-    private static let listed = 5
-
     var body: some View {
-        let decks = knownDecks.byName
         VStack(spacing: 0) {
             Spacer()
             // The app icon itself (BrandMark is a copy of the AppIcon PNGs, light and dark).
@@ -68,34 +72,81 @@ private struct WelcomeStep: View {
             Text("Remember a little every day")
                 .font(.title3)
                 .foregroundStyle(.secondary)
+            Spacer()
 
-            if !decks.isEmpty {
-                found(decks)
-                    .padding(.top, 32)
+            Button(action: next) {
+                Text("Get Started")
+                    .frame(maxWidth: .infinity, minHeight: 36)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
+        .padding(20)
+    }
+}
+
+/// The third step: where the cards are kept. iCloud Drive, in a folder named Mnemit that the
+/// Mac fills with decks, or the app's own storage on the iPhone.
+private struct SyncStep: View {
+    var knownDecks: KnownDecks
+    var next: () -> Void
+
+    @State private var isChoosing = false
+    @State private var problem: String?
+
+    /// How many deck names the list shows; the rest is counted.
+    private static let listed = 5
+
+    var body: some View {
+        let decks = knownDecks.byName
+        let hasChosen = knownDecks.folder != nil || !decks.isEmpty
+        VStack(spacing: 0) {
+            Spacer()
+            Image(systemName: "icloud")
+                .font(.system(size: 56))
+                .foregroundStyle(.tint)
+                .accessibilityHidden(true)
+            Text("Sync Your Cards")
+                .font(.largeTitle.bold())
+                .padding(.top, 16)
+            Text("Mnemit keeps your cards and progress in iCloud Drive, so your iPhone and Mac stay in step.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.top, 8)
+
+            if hasChosen {
+                summary(decks)
+                    .padding(.top, 24)
             }
             Spacer()
 
             VStack(spacing: 8) {
-                if decks.isEmpty {
-                    Button {
-                        choose(folder: true)
-                    } label: {
-                        Text("Choose Mnemit Folder")
-                            .frame(maxWidth: .infinity, minHeight: 36)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button("Open a Single Deck…") { choose(folder: false) }
-                } else {
+                if hasChosen {
                     Button(action: next) {
                         Text("Continue")
                             .frame(maxWidth: .infinity, minHeight: 36)
                     }
                     .buttonStyle(.borderedProminent)
-                    Button("Choose Another Folder…") { choose(folder: true) }
+                    Button("Choose Another Folder…") { isChoosing = true }
+                } else {
+                    VStack(spacing: 6) {
+                        Button {
+                            isChoosing = true
+                        } label: {
+                            Text("Use iCloud Drive")
+                                .frame(maxWidth: .infinity, minHeight: 36)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Text("Pick or create a folder named Mnemit.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    Button("Only on This iPhone") {
+                        knownDecks.useLocalFolder()
+                        problem = nil
+                    }
                 }
-                Text("Your decks live in iCloud Drive, in the Mnemit folder.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
                 // Keeps its height, so the buttons stay where they are.
                 Text(problem ?? " ")
                     .font(.footnote)
@@ -106,17 +157,36 @@ private struct WelcomeStep: View {
             .controlSize(.large)
         }
         .padding(20)
-        .deckPicker(isPresented: $isChoosing, choosesFolder: choosesFolder, onPick: picked)
+        .deckPicker(isPresented: $isChoosing, choosesFolder: true, onPick: picked)
     }
 
-    private func found(_ decks: [KnownDeck]) -> some View {
+    /// What the chosen folder holds: the decks it has, or when there are none yet, where they
+    /// will come from.
+    private func summary(_ decks: [KnownDeck]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Label {
-                Text("Found \(decks.count) decks")
-                    .fontWeight(.semibold)
+                Group {
+                    if decks.isEmpty {
+                        Text("No decks yet")
+                    } else {
+                        Text("Found \(decks.count) decks")
+                    }
+                }
+                .fontWeight(.semibold)
             } icon: {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
+            }
+            if decks.isEmpty {
+                Divider()
+                Group {
+                    if knownDecks.isLocalFolder {
+                        Text("Add decks in Files, under On My iPhone → Mnemit.")
+                    } else {
+                        Text("Decks you create in Mnemit on the Mac appear here once they sync.")
+                    }
+                }
+                .foregroundStyle(.secondary)
             }
             ForEach(decks.prefix(Self.listed)) { deck in
                 Divider()
@@ -134,84 +204,13 @@ private struct WelcomeStep: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func choose(folder: Bool) {
-        choosesFolder = folder
-        isChoosing = true
-    }
-
     private func picked(_ url: URL) {
-        if url.isDeck {
-            knownDecks.remember(url)
-            problem = nil
-        } else if knownDecks.chooseFolder(url) > 0 {
+        knownDecks.chooseFolder(url)
+        // A folder without decks that isn't the Mnemit folder is not taken, and the old one stays.
+        if let folder = knownDecks.folder, KnownDecks.isSameFile(folder, url) {
             problem = nil
         } else {
             problem = String(localized: "“\(url.lastPathComponent)” holds no Mnemit decks. Choose the Mnemit folder.")
-        }
-    }
-}
-
-/// The third step: which grade to press when.
-private struct RulesStep: View {
-    var done: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("When to Press What")
-                        .font(.title.bold())
-                    Text("Four swipes, four grades")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button("Skip", action: done)
-            }
-
-            VStack(spacing: 12) {
-                ForEach([Grade.again, .hard, .good, .easy], id: \.self) { grade in
-                    HStack(spacing: 14) {
-                        Text(grade.arrow)
-                            .font(.title2.bold())
-                            .foregroundStyle(grade.onColor)
-                            .frame(width: 44, height: 44)
-                            .background(grade.color, in: Circle())
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(grade.buttonTitle)
-                                .font(.headline)
-                            Text(Self.rule(of: grade))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 14)
-                    .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .accessibilityElement(children: .combine)
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            Button(action: done) {
-                Text("Got It")
-                    .frame(maxWidth: .infinity, minHeight: 36)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-        }
-        .padding(20)
-    }
-
-    private static func rule(of grade: Grade) -> String {
-        switch grade {
-        case .again: String(localized: "You didn't recall it, or got it wrong")
-        case .hard: String(localized: "You recalled it, with effort")
-        case .good: String(localized: "The normal case")
-        case .easy: String(localized: "You knew it instantly")
         }
     }
 }

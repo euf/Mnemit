@@ -64,7 +64,9 @@ func stringsDataFiles() -> [URL] {
         return []
     }
     return files.compactMap { $0 as? URL }.filter { file in
-        file.pathExtension == "stringsdata" && appTargets.contains { file.path.contains("/\($0).build/Objects-normal/") }
+        // Xcode 27 leaves an empty one of its own (format version 2) next to those of the sources.
+        file.pathExtension == "stringsdata" && file.lastPathComponent != "ExtractedAppShortcutsMetadata.stringsdata"
+            && appTargets.contains { file.path.contains("/\($0).build/Objects-normal/") }
     }
 }
 

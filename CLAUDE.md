@@ -107,9 +107,17 @@
   партию.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
-- Первый запуск и сценарии, спецификация — `docs/prototypes/onboarding.html`. Папка колод:
+- Первый запуск на iPhone (`OnboardingView`, шаги `OnboardingStep`): приветствие с одной
+  кнопкой → практика свайпов (`GesturePracticeView`, порядок и образцы карточек —
+  `SwipePractice`: → помню, ← забыл, ↗ сразу, ↘ с трудом; четыре значения и есть правила,
+  отдельного экрана правил нет; «Пропустить» ведёт к синхронизации) → синхронизация
+  (iCloud Drive: пикер папки, `chooseFolder`; «Only on This iPhone»: `useLocalFolder`, папка
+  Documents приложения без закладки и scope, в Files — On My iPhone ▸ Mnemit) → напоминание.
+  Одиночную колоду открывает «Open Deck…» в меню стартового экрана. Прототип сценариев —
+  `docs/prototypes/onboarding.html`. Папка колод:
   iPhone — `KnownDecks.chooseFolder` (закладка папки, колоды из неё в списке, `refreshFolder`
-  при pull-to-refresh и выходе на передний план), Mac — `DeckFolder` (закладка со scope,
+  при pull-to-refresh и выходе на передний план; пустую папку берёт только с именем
+  `Mnemit`), Mac — `DeckFolder` (закладка со scope,
   entitlement `bookmarks.app-scope`). Напоминание — `Reminders`: локальные уведомления на
   7 дней вперёд, у каждого дня свои числа `StudySession.counts(for:at:)`, число на значке;
   пересчёт при уходе в фон, после закрытия колоды и при смене времени. Окно приветствия на
