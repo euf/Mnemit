@@ -180,16 +180,6 @@
         }
       }
     },
-    "%lld due": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld fällig"
-          }
-        }
-      }
-    },
     "%lld mistakes": {
       "localizations": {
         "de": {
@@ -700,12 +690,12 @@
         }
       }
     },
-    "Continue (%lld due)": {
+    "Continue (%lld)": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Weiterlernen (%lld fällig)"
+            "value": "Weiterlernen (%lld)"
           }
         }
       }
@@ -916,6 +906,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fertig"
+          }
+        }
+      }
+    },
+    "Done for today": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für heute erledigt"
           }
         }
       }
@@ -1570,12 +1570,12 @@
         }
       }
     },
-    "Next Due": {
+    "Next review %@": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nächste Fälligkeit"
+            "value": "Nächste Abfrage %@"
           }
         }
       }
@@ -1616,16 +1616,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keine Auswahl"
-          }
-        }
-      }
-    },
-    "No cards are due": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Karten fällig"
           }
         }
       }
@@ -2310,6 +2300,16 @@
         }
       }
     },
+    "Study %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernen %lld"
+          }
+        }
+      }
+    },
     "Study (%lld)": {
       "localizations": {
         "de": {
@@ -2600,12 +2600,42 @@
         }
       }
     },
+    "Today: %lld new · %lld learning · %lld review": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute: %lld neu · %lld lernend · %lld zu wiederholen"
+          }
+        }
+      }
+    },
     "Total": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Gesamt"
+          }
+        }
+      }
+    },
+    "Total cards %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten gesamt %lld"
+          }
+        }
+      }
+    },
+    "Total cards %lld · Suspended %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten gesamt %lld · Ausgesetzt %lld"
           }
         }
       }

@@ -140,18 +140,19 @@ struct DocumentView: View {
     }
 }
 
-/// "Study" button showing how many cards are due.
+/// "Study" button showing how many cards the session takes, not how many are due:
+/// the session introduces only as many new cards as its limits allow.
 private struct StartStudyButton: View {
     var dueCards: DueCardCounter
     var action: () -> Void
 
     var body: some View {
-        let due = dueCards.count
+        let count = dueCards.count
         Button(action: action) {
-            Label(due > 0 ? "Study (\(due))" : "Study", systemImage: "graduationcap")
+            Label(count > 0 ? "Study (\(count))" : "Study", systemImage: "graduationcap")
                 .labelStyle(.titleAndIcon)
         }
-        .disabled(due == 0)
-        .help(due > 0 ? "Start a study session" : "No cards are due")
+        .disabled(count == 0)
+        .help(count > 0 ? "Start a study session" : "Done for today")
     }
 }

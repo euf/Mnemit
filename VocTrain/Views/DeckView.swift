@@ -1,8 +1,8 @@
 import SwiftUI
 import VocabCore
 
-/// The screen of an open deck: how many cards are due, when the next one is, and the
-/// start of a study session.
+/// The screen of an open deck: what today's study session takes, new, learning and
+/// review cards, and the start of the session.
 ///
 /// A study session goes on when another device changes the file: `OpenDeck` merges
 /// the change into the document (#296).
@@ -18,7 +18,7 @@ struct DeckView: View {
     @State private var study: StudyModel?
 
     var body: some View {
-        let dueCount = document.dueCards.count
+        let counts = document.dueCards.counts
 
         List {
             if let failure = merger.failure {
@@ -32,26 +32,30 @@ struct DeckView: View {
             }
 
             Section {
-                LabeledContent("Cards", value: document.deck.cards.count, format: .number)
-                LabeledContent("Due Now", value: dueCount, format: .number)
-                if document.deck.suspendedCount > 0 {
-                    LabeledContent("Suspended", value: document.deck.suspendedCount, format: .number)
+                VStack(spacing: 12) {
+                    StudyCountsColumns(counts: counts)
+                    totals
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-                if dueCount == 0, let nextDue {
-                    LabeledContent("Next Due", value: Format.due(nextDue, now: document.clock.now))
-                }
+                .padding(.vertical, 4)
             }
 
             Section {
                 Button(action: startStudying) {
-                    Label(dueCount > 0 ? "Study (\(dueCount))" : "Study", systemImage: "graduationcap")
+                    studyLabel(counts)
+                        .frame(maxWidth: .infinity)
                 }
-                .disabled(dueCount == 0 || !canEdit)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(counts.total == 0 || !canEdit)
             } footer: {
-                if dueCount == 0 {
-                    Text("No cards are due")
+                if counts.total == 0, let nextDue = counts.nextDue {
+                    Text("Next review \(Format.due(nextDue, now: document.clock.now))")
                 }
             }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
         }
         .documentSync(document, fileURL: fileURL, isEditable: isEditable, merger: merger, isInSession: study != nil)
         .fullScreenCover(item: $study) { model in
@@ -70,9 +74,23 @@ struct DeckView: View {
         study = StudyModel(document: document)
     }
 
-    /// When the next card becomes due; new cards are due at once, suspended ones never.
-    private var nextDue: Date? {
-        document.deck.cards.lazy.filter { !$0.isSuspended }.compactMap(\.learningState?.due).min()
+    /// All cards of the deck, and the suspended ones.
+    private var totals: Text {
+        let total = document.deck.cards.count
+        let suspended = document.deck.suspendedCount
+        return suspended > 0 ? Text("Total cards \(total) · Suspended \(suspended)") : Text("Total cards \(total)")
+    }
+
+    /// The size of the session; "Done for today" once nothing is left to study.
+    @ViewBuilder
+    private func studyLabel(_ counts: StudyCounts) -> some View {
+        if counts.total > 0 {
+            Label("Study \(counts.total)", systemImage: "graduationcap")
+        } else if document.deck.cards.isEmpty {
+            Label("Study", systemImage: "graduationcap")
+        } else {
+            Label("Done for today", systemImage: "checkmark.circle")
+        }
     }
 }
 

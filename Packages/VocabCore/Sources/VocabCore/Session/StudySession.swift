@@ -78,6 +78,40 @@ public struct StudySession: Sendable {
     /// - New cards fill their limits in `newCardOrder`: production cards up to
     ///   `newProductionPerSession`, all others up to `newCardsPerSession`.
     static func selectCards(from deck: Deck, at now: Date, calendar: StudyCalendar, using random: inout SeededRandom) -> [Card.ID] {
+        selection(from: deck, at: now, calendar: calendar, using: &random).map(\.card.id)
+    }
+
+    /// What a session over `deck` started at `now` would take, by kind: the very
+    /// selection of `selectCards`, so the counts can't drift from the session.
+    ///
+    /// Learning cards, then reviews, then new cards fill the session, so the counts
+    /// don't depend on the random tie breaks, only which card of a kind is taken does.
+    public static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar) -> StudyCounts {
+        // The seed is arbitrary: the session this counts has a random of its own.
+        var random = SeededRandom(seed: 0)
+        let selected = selection(from: deck, at: now, calendar: calendar, using: &random)
+        var counts = StudyCounts()
+        for candidate in selected {
+            switch candidate.urgency {
+            case .learning: counts.learning += 1
+            case .review: counts.review += 1
+            case .new:
+                if candidate.card.kind == .production { counts.newProduction += 1 } else { counts.newOther += 1 }
+            }
+        }
+
+        // A card that is due but not selected is buried, and comes back on the next study day.
+        let selectedIDs = Set(selected.map(\.card.id))
+        let nextStudyDay = calendar.start(ofDay: calendar.dayNumber(for: now) + 1)
+        for card in deck.cards where !card.isSuspended {
+            guard let due = card.learningState?.due else { continue }
+            let next = due > now ? due : (selectedIDs.contains(card.id) ? nil : nextStudyDay)
+            if let next, next < counts.nextDue ?? .distantFuture { counts.nextDue = next }
+        }
+        return counts
+    }
+
+    private static func selection(from deck: Deck, at now: Date, calendar: StudyCalendar, using random: inout SeededRandom) -> [Candidate] {
         let options = deck.learningOptions
         let scheduler = Scheduler(learningOptions: options, calendar: calendar)
         let lockedNotes = notesAwaitingRecognition(in: deck, calendar: calendar)
@@ -130,10 +164,7 @@ public struct StudySession: Sendable {
             if let note = card.note { selectedNotes.insert(note) }
         }
 
-        return
-            selected
-            .sorted { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
-            .map(\.card.id)
+        return selected.sorted { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
     }
 
     private struct Candidate {
@@ -170,4 +201,27 @@ public struct StudySession: Sendable {
         }
         return reviewed
     }
+}
+
+/// How many cards a study session started now would take, see
+/// `StudySession.counts(for:at:calendar:)`.
+public struct StudyCounts: Hashable, Sendable {
+    /// Never-studied production cards (`CardKind.production`), within
+    /// `newProductionPerSession`.
+    public internal(set) var newProduction = 0
+    /// All other never-studied cards, within `newCardsPerSession`.
+    public internal(set) var newOther = 0
+    /// Cards in learning or relearning.
+    public internal(set) var learning = 0
+    /// Cards in the review phase.
+    public internal(set) var review = 0
+    /// When something comes back that today's counts leave out: the first learning or
+    /// review date after now, or the next study day for a card that is due but buried.
+    /// `nil` if no card has been studied. Meant for `total == 0`.
+    public internal(set) var nextDue: Date?
+
+    public var new: Int { newProduction + newOther }
+
+    /// The size of the session, which `cardsPerSession` has already capped.
+    public var total: Int { new + learning + review }
 }
