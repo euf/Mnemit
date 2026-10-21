@@ -350,6 +350,16 @@
         }
       }
     },
+    "A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per session counts all other new cards.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Produktionskarte (Muttersprache zu Fremdsprache) bleibt gesperrt, bis die Erkennungskarte ihres Wortes (Fremdsprache zu Muttersprache) ein so langes Intervall hat. Eine Sitzung fragt von den Karten eines Wortes nur eine pro Tag ab. „Neue Karten pro Sitzung“ zählt alle anderen neuen Karten."
+          }
+        }
+      }
+    },
     "Add": {
       "localizations": {
         "de": {
@@ -776,6 +786,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tage"
+          }
+        }
+      }
+    },
+    "Deck order": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reihenfolge im Stapel"
           }
         }
       }
@@ -1450,6 +1470,16 @@
         }
       }
     },
+    "Never locked": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie gesperrt"
+          }
+        }
+      }
+    },
     "Never studied": {
       "localizations": {
         "de": {
@@ -1480,6 +1510,16 @@
         }
       }
     },
+    "New card order": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reihenfolge neuer Karten"
+          }
+        }
+      }
+    },
     "New cards and cards after a lapse come back within the session until they have been graded Good this many times. Hard keeps a card on its step, Again resets it, Easy moves it to the review phase at once.": {
       "localizations": {
         "de": {
@@ -1496,6 +1536,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Neue Karten pro Sitzung"
+          }
+        }
+      }
+    },
+    "New production cards per session": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Produktionskarten pro Sitzung"
+          }
+        }
+      }
+    },
+    "Newest first": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neueste zuerst"
           }
         }
       }
@@ -2540,6 +2600,16 @@
         }
       }
     },
+    "Unlock production cards after": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Produktionskarten freischalten nach"
+          }
+        }
+      }
+    },
     "Upcoming Reviews": {
       "localizations": {
         "de": {
@@ -2606,6 +2676,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wenn aus, bewertest du jede Abfrage selbst, z. B. als „Leicht“."
+          }
+        }
+      }
+    },
+    "Word cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wortkarten"
           }
         }
       }
