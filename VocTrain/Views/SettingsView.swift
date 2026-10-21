@@ -29,6 +29,11 @@ struct SettingsView: View {
                         dismiss()
                         showIntroduction()
                     }
+                } footer: {
+                    Text("Version \(Self.version) (\(Self.build))")
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 24)
+                        .textSelection(.enabled)
                 }
             }
             .navigationTitle("Settings")
@@ -41,6 +46,11 @@ struct SettingsView: View {
         }
         .task { await reminders.refreshStatus() }
     }
+
+    /// Version 1.2.3 (4c4b8ed): the marketing version from VERSION and the commit the build
+    /// was made from, which the install scripts stamp into the bundle.
+    private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    private static let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
 
     /// The reminder is on only while the system lets the app notify: asking for the
     /// permission happens the first time it is switched on.
