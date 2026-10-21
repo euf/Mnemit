@@ -31,7 +31,7 @@ wieder, wenn du sie sonst vergessen würdest.
 
 ## Installation
 
-Mit [Homebrew](https://brew.sh), macOS 14 oder neuer:
+Mit [Homebrew](https://brew.sh), macOS 26 oder neuer:
 
 ```bash
 brew install --cask fluch-it-consulting/tap/macvoctrain
@@ -74,7 +74,7 @@ UI testbar. Die iPhone-App nutzt das Paket und das Dokument aus `Shared/` mit.
 ## Bauen und testen
 
 Voraussetzung: Xcode 26.3, dieselbe Version wie die CI; es läuft ab macOS 15.6. Die App
-selbst läuft ab macOS 14.
+selbst läuft ab macOS 26.
 
 - In Xcode: `MacVocTrainNg.xcodeproj` öffnen, ⌘R startet die App, ⌘U führt alle Tests aus.
   Das Schema `VocTrain` baut und testet die iPhone-App, im Simulator oder auf einem
@@ -153,7 +153,7 @@ Tools/make-release.sh
 ```
 
 erzeugt `build/release/MacVocTrain-<Version>.dmg`: ein Universal Binary (Apple Silicon und
-Intel) für macOS 14 oder neuer. Signiert wird mit dem Zertifikat aus
+Intel) für macOS 26 oder neuer. Signiert wird mit dem Zertifikat aus
 `Config/Signing.local.xcconfig`, ohne die Datei ad hoc. Empfänger müssen die App beim
 ersten Start einmal erlauben (siehe Installation), ad hoc signiert nach jedem Update
 erneut. Mit einer Developer ID (Apple Developer Program) signiert und notarisiert das
