@@ -6,16 +6,6 @@ extension Grade {
     var buttonTitle: String {
         self == .again ? String(localized: "Forgot") : title
     }
-
-    /// The direction of the swipe that gives the grade.
-    var arrow: String {
-        switch self {
-        case .again: "←"
-        case .hard: "↘"
-        case .good: "→"
-        case .easy: "↗"
-        }
-    }
 }
 
 /// The second step of the introduction: a sample card, not one of a deck, to swipe once in

@@ -13,8 +13,8 @@ struct CardListView: View {
     /// table would lose the click that moves the focus into it (#171).
     @FocusState private var tableIsFocused: Bool
     @State private var searchText = ""
-    /// Shows only the leeches, see `Deck.isLeech(_:)`.
-    @State private var showsLeechesOnly = false
+    /// The filter of the scope bar, see `CardFilter`.
+    @State private var scope = CardFilter.all
     @State private var showingInspector = false
     @State private var table = CardTable()
     /// The card that `CardEditSheet` edits, as it was when the sheet opened.
@@ -29,19 +29,13 @@ struct CardListView: View {
         }
         .searchable(text: $searchText, prompt: "Search cards")
         .inspector(isPresented: $showingInspector) {
-            CardInspector(document: document, selection: selection, isEditable: isEditable, onEdit: edit, onDelete: delete)
+            CardInspector(document: document, selection: selection, isEditable: isEditable, onEdit: edit, onDelete: delete, onSelect: show)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
         .sheet(item: $editedCard) { card in
             CardEditSheet(document: document, card: card)
         }
         .toolbar {
-            ToolbarItem {
-                Toggle(isOn: $showsLeechesOnly) {
-                    Label("Leeches", systemImage: "exclamationmark.triangle")
-                }
-                .help("Show only leeches: cards you keep forgetting")
-            }
             ToolbarItem {
                 Button {
                     showingInspector.toggle()
@@ -54,9 +48,13 @@ struct CardListView: View {
     }
 
     private func list(at now: Date) -> some View {
-        let rows = rows()
+        let rows = rows(at: now)
 
         return VStack(spacing: 0) {
+            ScopeBar(scope: $scope, counts: document.deck.filterCounts(at: now))
+
+            Divider()
+
             AddCardForm(document: document) { id in
                 selection = [id]
             }
@@ -75,6 +73,13 @@ struct CardListView: View {
                 TableColumn("Hint", value: \.hint)
                     .customizationID("hint")
                     .disabledCustomizationBehavior([.reorder, .visibility])
+                TableColumn("Kind", value: \.kindRank) { row in
+                    Text(row.kind?.title ?? "")
+                        .foregroundStyle(.secondary)
+                }
+                .width(min: 130, ideal: 160)
+                .customizationID("kind")
+                .disabledCustomizationBehavior([.reorder, .visibility])
                 TableColumn("Maturity", value: \.categoryRank) { row in
                     MaturityLabel(category: row.category)
                 }
@@ -136,21 +141,21 @@ struct CardListView: View {
 
             Divider()
 
-            StatusBar(document: document, shownCount: rows.count, isFiltered: !searchText.isEmpty || showsLeechesOnly)
+            StatusBar(document: document, shownCount: rows.count, isFiltered: !searchText.isEmpty || scope != .all)
         }
     }
 
     @ViewBuilder private var emptyState: some View {
-        if searchText.isEmpty, showsLeechesOnly {
-            ContentUnavailableView("No Leeches", systemImage: "checkmark.circle", description: Text("Cards you keep forgetting show up here."))
-        } else if searchText.isEmpty {
+        if !searchText.isEmpty {
+            ContentUnavailableView.search(text: searchText)
+        } else if let description = scope.emptyDescription {
+            ContentUnavailableView("No Matching Cards", systemImage: "checkmark.circle", description: Text(description))
+        } else {
             ContentUnavailableView(
                 "No Cards Yet",
                 systemImage: "rectangle.stack.badge.plus",
                 description: Text("Enter a question and its answer above to add your first card.")
             )
-        } else {
-            ContentUnavailableView.search(text: searchText)
         }
     }
 
@@ -189,12 +194,24 @@ struct CardListView: View {
         }
     }
 
-    private func rows() -> [CardRow] {
+    /// The rows of the cards that match the search and the scope bar's filter at `now`.
+    private func rows(at now: Date) -> [CardRow] {
         let deck = document.deck
         let rows = table.rows(of: deck.cards, sortedBy: sortOrder, matching: searchText)
-        guard showsLeechesOnly else { return rows }
-        let leeches = Set(deck.cards.lazy.filter(deck.isLeech).map(\.id))
-        return rows.filter { leeches.contains($0.id) }
+        guard scope != .all else { return rows }
+        let threshold = deck.learningOptions.leechThreshold
+        // A row's position is that of its card in the deck.
+        return rows.filter { scope.matches(deck.cards[$0.position], at: now, leechThreshold: threshold) }
+    }
+
+    /// Selects the card in the table, e.g. the sibling the inspector links to. A card that
+    /// the search or the filter leaves out is shown by taking both off first.
+    private func show(_ id: Card.ID) {
+        if !rows(at: document.clock.now).contains(where: { $0.id == id }) {
+            searchText = ""
+            scope = .all
+        }
+        selection = [id]
     }
 
     /// Context menu, double-click and inspector all edit through here: nothing opens the
@@ -260,9 +277,6 @@ private struct StatusBar: View {
     var body: some View {
         let total = document.deck.cards.count
         let today = document.dueCards.counts
-        let suspended = document.deck.suspendedCount
-        let deck = document.deck
-        let leeches = deck.cards.count { deck.isLeech($0) }
         HStack(spacing: 16) {
             if isFiltered {
                 Text("\(shownCount) of \(total) cards")
@@ -270,12 +284,6 @@ private struct StatusBar: View {
                 Text("\(total) cards")
             }
             Text("Today: \(today.new) new · \(today.learning) learning · \(today.review) review")
-            if suspended > 0 {
-                Text("\(suspended) suspended")
-            }
-            if leeches > 0 {
-                Text("Leeches: \(leeches)")
-            }
             Spacer()
         }
         .font(.callout)
@@ -283,5 +291,40 @@ private struct StatusBar: View {
         .monospacedDigit()
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
+    }
+}
+
+/// The filters All, Due, New, Learning, Suspended and Difficult under the toolbar, each with
+/// its count in the whole deck.
+///
+/// A segmented control in the content area, above the table it filters: the HIG offers a
+/// segmented control for switching among a few closely related views, at most five to seven
+/// segments, with noun labels of the same weight [HIG segmented-controls]. SwiftUI's
+/// `searchScopes` is the system's scope bar, but on the Mac it shows only while a search is
+/// active, and these filters stay in force and visible without one. When the content column
+/// is too narrow for the segments (a window at its minimum width with the inspector open),
+/// the same choice becomes a pop-up button.
+private struct ScopeBar: View {
+    @Binding var scope: CardFilter
+    var counts: [CardFilter: Int]
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            picker.pickerStyle(.segmented).fixedSize()
+            picker.pickerStyle(.menu).fixedSize()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    private var picker: some View {
+        Picker("Filter", selection: $scope) {
+            ForEach(CardFilter.allCases) { filter in
+                Text(verbatim: "\(filter.title) \((counts[filter] ?? 0).formatted())")
+                    .tag(filter)
+            }
+        }
+        .labelsHidden()
     }
 }

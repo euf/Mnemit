@@ -740,6 +740,16 @@
         }
       }
     },
+    "All": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle"
+          }
+        }
+      }
+    },
     "All done": {
       "localizations": {
         "de": {
@@ -986,6 +996,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten, die keine Lernsitzung abfragt, bis du sie in der Kartenliste wieder aufnimmst."
+          }
+        }
+      }
+    },
+    "Cards of one word share its key: a study session asks only one of them a day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten eines Wortes teilen sich seinen Schlüssel: Eine Lernsitzung fragt am Tag nur eine davon ab"
           }
         }
       }
@@ -1390,6 +1410,26 @@
         }
       }
     },
+    "Difficult": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwierig"
+          }
+        }
+      }
+    },
+    "Difficult: you keep forgetting this card.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwierig: Du vergisst diese Karte immer wieder."
+          }
+        }
+      }
+    },
     "Difficulty": {
       "localizations": {
         "de": {
@@ -1540,6 +1580,16 @@
         }
       }
     },
+    "Every card has been studied.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Karten wurden schon gelernt."
+          }
+        }
+      }
+    },
     "Export": {
       "localizations": {
         "de": {
@@ -1616,6 +1666,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "FSRS beginnt mit Parametern, die über viele Lernende gemittelt sind. Aus dem Verlauf dieses Stapels berechnet, passen sie zu deinem Gedächtnis: Bei gleicher angestrebter Abrufquote brauchen die Karten weniger Abfragen. Fälligkeiten bleiben; neue Abstände gelten ab der nächsten Abfrage einer Karte."
+          }
+        }
+      }
+    },
+    "Filter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter"
           }
         }
       }
@@ -1780,6 +1840,26 @@
         }
       }
     },
+    "Greek → translation": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Griechisch → Übersetzung"
+          }
+        }
+      }
+    },
+    "Greek, every day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Griechisch, jeden Tag"
+          }
+        }
+      }
+    },
     "Hard": {
       "localizations": {
         "de": {
@@ -1816,6 +1896,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hinweis (optional)"
+          }
+        }
+      }
+    },
+    "History": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verlauf"
           }
         }
       }
@@ -2210,6 +2300,16 @@
         }
       }
     },
+    "Memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gedächtnis"
+          }
+        }
+      }
+    },
     "Merge Versions": {
       "localizations": {
         "de": {
@@ -2340,6 +2440,16 @@
         }
       }
     },
+    "Next Review": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Abfrage"
+          }
+        }
+      }
+    },
     "Next review": {
       "localizations": {
         "de": {
@@ -2420,6 +2530,16 @@
         }
       }
     },
+    "No Matching Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine passenden Karten"
+          }
+        }
+      }
+    },
     "No Progress Yet": {
       "localizations": {
         "de": {
@@ -2436,6 +2556,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keine Auswahl"
+          }
+        }
+      }
+    },
+    "No card is being learned or relearned.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Karte wird gerade gelernt oder erneut gelernt."
+          }
+        }
+      }
+    },
+    "No card is due right now.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Moment ist keine Karte fällig."
+          }
+        }
+      }
+    },
+    "No card is suspended.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Karte ist ausgesetzt."
           }
         }
       }
@@ -2806,6 +2956,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Liest eine griechische Frage vor, sobald ihre Karte erscheint, und eine griechische Antwort, sobald sie aufgedeckt wird. Benötigt eine griechische Stimme auf diesem Mac."
+          }
+        }
+      }
+    },
+    "Recall Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt abrufbar"
           }
         }
       }
@@ -3370,6 +3530,16 @@
         }
       }
     },
+    "Show the sibling card in the list": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschwisterkarte in der Liste zeigen"
+          }
+        }
+      }
+    },
     "Sibling Card": {
       "localizations": {
         "de": {
@@ -3456,6 +3626,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stabilität"
+          }
+        }
+      }
+    },
+    "State": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zustand"
           }
         }
       }
@@ -4170,12 +4350,32 @@
         }
       }
     },
+    "Word Key": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wortschlüssel"
+          }
+        }
+      }
+    },
     "Word cards": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Wortkarten"
+          }
+        }
+      }
+    },
+    "Word key (optional)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wortschlüssel (optional)"
           }
         }
       }
@@ -4456,6 +4656,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "diesem Stapel"
+          }
+        }
+      }
+    },
+    "translation → Greek": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersetzung → Griechisch"
           }
         }
       }

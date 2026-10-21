@@ -1,7 +1,8 @@
 import SwiftUI
 import VocabCore
 
-/// Details of the selected card: its texts, learning state and review log.
+/// Details of the selected card, in the sections of the iPhone's Card Detail: the card with
+/// its kind, word key and sibling, its memory, and the history of its reviews.
 ///
 /// The texts are only shown. "Edit…" opens the sheet that edits them, so the deck
 /// changes only once the learner saves the edit (#241).
@@ -14,11 +15,13 @@ struct CardInspector: View {
     var onEdit: (Card.ID) -> Void
     /// Deletes cards and takes them out of the selection, which belongs to the card list.
     var onDelete: (Set<Card.ID>) -> Void
+    /// Selects a card in the table, which belongs to the card list: the link to a sibling.
+    var onSelect: (Card.ID) -> Void
 
     var body: some View {
         Group {
             if selection.count == 1, let id = selection.first, let card = document.card(withID: id) {
-                CardDetail(document: document, card: card, isEditable: isEditable, onEdit: onEdit)
+                CardDetail(document: document, card: card, isEditable: isEditable, onEdit: onEdit, onDelete: onDelete, onSelect: onSelect)
                     .id(card.id)
             } else if selection.count > 1 {
                 VStack(spacing: 12) {
@@ -48,6 +51,8 @@ private struct CardDetail: View {
     let card: Card
     let isEditable: Bool
     let onEdit: (Card.ID) -> Void
+    let onDelete: (Set<Card.ID>) -> Void
+    let onSelect: (Card.ID) -> Void
 
     var body: some View {
         Form {
@@ -57,18 +62,31 @@ private struct CardDetail: View {
                 if !card.hint.isEmpty {
                     LabeledContent("Hint") { Text(card.hint).textSelection(.enabled) }
                 }
+                if let kind = card.kind {
+                    LabeledContent("Kind", value: kind.title)
+                }
+                if let note = card.note {
+                    LabeledContent("Word Key") { Text(note).textSelection(.enabled) }
+                }
+                ForEach(document.deck.siblings(of: card)) { sibling in
+                    LabeledContent("Sibling Card") {
+                        Button(sibling.question) { onSelect(sibling.id) }
+                            .buttonStyle(.link)
+                            .help("Show the sibling card in the list")
+                    }
+                }
                 Button("Edit…") { onEdit(card.id) }
                     .disabled(!isEditable)
             }
 
-            Section("Learning State") {
+            Section("Memory") {
                 if card.isSuspended {
                     Label("Suspended: no study session asks this card.", systemImage: "pause.circle")
                         .foregroundStyle(.secondary)
                 }
                 if document.deck.isLeech(card) {
                     Label {
-                        Text("Leech: you keep forgetting this card.")
+                        Text("Difficult: you keep forgetting this card.")
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
@@ -76,19 +94,26 @@ private struct CardDetail: View {
                     .foregroundStyle(.secondary)
                     .help("The card has been forgotten as often as the leech threshold in the learning options asks. A session suspends it; resume it to keep learning it.")
                 }
+                LabeledContent("State") {
+                    HStack(spacing: 8) {
+                        MaturityLabel(category: MaturityCategory(card: card))
+                        if let phase = card.learningState?.phase {
+                            Text(phase.title)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 if let learningState = card.learningState {
-                    LabeledContent("Maturity") { MaturityLabel(category: MaturityCategory(card: card)) }
-                    LabeledContent("Phase", value: learningState.phase.title)
                     // Due date and recall probability change as time passes, so these rows
                     // are re-evaluated every minute.
                     TimelineView(.everyMinute) { _ in
-                        LabeledContent("Due", value: Format.due(learningState.due, now: document.clock.now))
+                        LabeledContent("Next Review", value: Format.due(learningState.due, now: document.clock.now))
                     }
                     LabeledContent("Stability", value: Format.days(learningState.stability))
                     LabeledContent("Difficulty", value: learningState.difficulty.formatted(.number.precision(.fractionLength(1))) + " / 10")
                     TimelineView(.everyMinute) { _ in
                         if let probability = document.deck.recallProbability(of: card, at: document.clock.now, calendar: document.calendar) {
-                            LabeledContent("Recall Probability", value: Format.percent(probability))
+                            LabeledContent("Recall Now", value: Format.percent(probability))
                         }
                     }
                     LabeledContent("Reviews", value: learningState.reviews.formatted())
@@ -98,6 +123,9 @@ private struct CardDetail: View {
                     Text("This card has not been studied yet.")
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            Section {
                 Group {
                     SuspensionButtons(document: document, ids: [card.id])
                     if !card.isNew {
@@ -105,15 +133,20 @@ private struct CardDetail: View {
                             document.resetLearningState(of: [card.id])
                         }
                     }
+                    Button("Delete", role: .destructive) {
+                        onDelete([card.id])
+                    }
                 }
                 .disabled(!isEditable)
             }
 
             if !card.log.isEmpty {
-                Section("Review Log") {
+                Section("History") {
                     ForEach(Array(card.log.suffix(50).reversed().enumerated()), id: \.offset) { _, entry in
                         LabeledContent(entry.date.formatted(date: .abbreviated, time: .shortened)) {
                             HStack(spacing: 6) {
+                                Text(entry.grade.arrow)
+                                    .foregroundStyle(.secondary)
                                 GradeDot(grade: entry.grade)
                                 Text(entry.grade.title)
                             }
