@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mnemit — первый запуск и основные сценарии</title>
+<style>
+/* Same palette as grading.html, light/dark through light-dark(); the theme link forces one of them. */
+:root{color-scheme:light dark;
+--bg:light-dark(#f2f2f7,#000);--card:light-dark(#fff,#1c1c1e);--text:light-dark(#1c1c1e,#f2f2f7);
+--sub:light-dark(#6e6e73,#a1a1a6);--muted:light-dark(#aeaeb2,#636366);--line:light-dark(#e5e5ea,#38383a);
+--side:light-dark(#ececf1,#242426);--focus:#0a84ff;
+--accent:light-dark(#0062cc,#0b72e0);--link:light-dark(#0062cc,#4da3ff);--tint:light-dark(#e3effc,#12304f);
+--no:#d63f37;--g-hard:#2a8446;--g-good:#1d6a37;--g-easy:#114a26;
+--n-new:light-dark(#0a66c2,#5aa9ff);--n-learn:light-dark(#c2410c,#ff9a62);--n-rev:light-dark(#1b6b33,#7fdc98);
+--on:#fff}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;padding:24px}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:default}
+:is(button,input,textarea,.tbl):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+h2{font-size:16px;font-weight:600;margin:0}
+h3{font-size:17px;font-weight:600;margin:0 0 4px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;max-width:1240px}
+.lead{color:var(--sub);margin:0 0 20px;font-size:14px;max-width:900px}
+.link{background:none;border:none;padding:0;color:var(--link);font-size:13px}
+.link.u{text-decoration:underline;font-size:12px}
+.row{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start}
+#phoneCol{width:360px}#macCol{width:820px}
+.hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.keys{font-size:12px;color:var(--sub);margin:2px 0 8px;min-height:34px}
+.steps{display:flex;gap:4px;flex-wrap:wrap;align-content:flex-start;min-height:56px;margin-bottom:6px}
+.steps button{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:3px 9px;font-size:12px;color:var(--sub);height:24px}
+.steps button[aria-current=step]{background:var(--text);border-color:var(--text);color:var(--card)}
+.note{font-size:12px;color:var(--sub);margin:8px 0 0;min-height:68px}
+
+/* device frames */
+.dev{position:relative;background:var(--card);border:1px solid var(--line);overflow:hidden;outline:none;touch-action:none;user-select:none}
+.dev:focus-within{box-shadow:0 0 0 3px var(--focus)}
+.dev:has(.grouped){background:var(--bg)}
+.dev :is(input,textarea){user-select:text}
+.phone{width:360px;height:720px;border-radius:44px}
+.mac{width:820px;height:580px;border-radius:12px}
+.phone::after{content:"";position:absolute;bottom:8px;left:50%;width:120px;height:5px;margin-left:-60px;border-radius:3px;background:var(--text);opacity:.8;z-index:20;pointer-events:none}
+.sb{position:absolute;top:0;left:0;right:0;height:44px;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font-size:14px;font-weight:600;z-index:5;pointer-events:none}
+.sb::before{content:"";position:absolute;left:50%;top:10px;width:96px;height:26px;margin-left:-48px;border-radius:13px;background:#000}
+.batt{width:25px;height:12px;border:1.5px solid var(--text);border-radius:4px;opacity:.8;position:relative}
+.batt::after{content:"";position:absolute;inset:1.5px;background:var(--text);border-radius:1.5px}
+.screen{position:absolute;inset:0;overflow:hidden}
+.phone .screen{top:44px}
+.grouped{background:var(--bg)}
+.ic{width:1em;height:1em;fill:currentColor;vertical-align:-.125em}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;width:100%;height:52px;border-radius:26px;border:none;background:var(--accent);color:var(--on);font-size:17px;font-weight:600}
+.btn.sec{background:var(--tint);color:var(--link)}
+.btn.text{background:none;color:var(--link);font-weight:400;height:40px}
+.btn:disabled{opacity:.35}
+.mac .btn{width:auto;height:30px;border-radius:7px;font-size:13px;font-weight:500;padding:0 14px}
+.bottom{position:absolute;display:flex;flex-direction:column;gap:6px}
+.phone .bottom{left:20px;right:20px;bottom:32px}
+.foot{text-align:center;font-size:12px;color:var(--sub);margin:4px 0 0}
+kbd{display:inline-block;min-width:24px;height:24px;line-height:22px;padding:0 6px;margin-right:3px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--card);font:inherit;font-size:12px;text-align:center;color:var(--text)}
+
+/* sheets, alerts, overlays, toast */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.35);z-index:10;animation:fade .2s}
+.sheet{position:absolute;background:var(--card);z-index:11;box-shadow:0 -4px 30px rgba(0,0,0,.25)}
+.phone .sheet{left:0;right:0;bottom:0;height:500px;border-radius:14px 14px 0 0;animation:up .28s ease-out}
+.mac .sheet{left:50%;top:0;width:var(--w,520px);margin-left:calc(var(--w,520px)/-2);padding:20px 22px;border-radius:0 0 12px 12px;animation:down .22s ease-out}
+.dev .sheet.mid{left:50%;top:50%;right:auto;bottom:auto;height:auto;margin:0;transform:translate(-50%,-50%);border-radius:14px;animation:pop .2s ease-out;box-shadow:0 12px 44px rgba(0,0,0,.35)}
+.phone .sheet.mid{width:270px;padding:0}
+.mac .sheet.mid{width:var(--w,480px);padding:22px 24px 64px}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(100%)}}
+@keyframes down{from{transform:translateY(-100%)}}
+@keyframes pop{from{opacity:0;scale:.92}}
+.sheet .sub{margin:0 0 12px;font-size:13px;color:var(--sub)}
+.acts{position:absolute;right:22px;bottom:16px;display:flex;gap:8px}
+.toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:var(--text);color:var(--card);border-radius:10px;padding:9px 16px;font-size:13px;max-width:560px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:30}
+.toast.on{opacity:1}
+.al-body{padding:18px 16px 14px;text-align:center}
+.al-body b{display:block;font-size:17px;line-height:1.25}
+.al-body p{margin:6px 0 0;font-size:13px}
+.al-btns{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.al-btns button{height:44px;border:none;background:none;color:var(--link);font-size:17px}
+.al-btns button+button{border-left:1px solid var(--line);font-weight:600}
+
+/* iPhone: welcome + picker */
+.hero{position:absolute;top:96px;left:0;right:0;text-align:center}
+.appicon{width:96px;height:96px;margin:0 auto 16px;border-radius:22px;background:linear-gradient(145deg,#2f6fe0,#123c8f);color:#fff;font-size:54px;font-weight:700;display:grid;place-items:center;box-shadow:0 6px 18px rgba(18,60,143,.35)}
+.t1{font-size:32px;font-weight:700;letter-spacing:-.4px}
+.hero p{margin:4px 0 0;font-size:17px;color:var(--sub)}
+.found{position:absolute;left:20px;right:20px;top:330px;border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:12px 14px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none}
+.found.on{opacity:1;transform:none}
+.found b{display:flex;align-items:center;gap:6px;color:var(--n-rev);margin-bottom:6px}
+.fr{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line)}
+.fr em{font-style:normal;color:var(--sub);font-size:13px}
+.shead{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:52px;padding:0 16px;border-bottom:1px solid var(--line)}
+.shead .link{justify-self:start;font-size:17px}
+.path{margin:0;padding:10px 16px 4px;font-size:12px;color:var(--sub)}
+.flist{list-style:none;margin:0;padding:0}
+.flist button{display:flex;align-items:center;gap:12px;width:100%;height:50px;padding:0 16px;border:none;border-bottom:1px solid var(--line);background:none;text-align:left;font-size:17px}
+.flist button:hover{background:var(--bg)}
+.flist .fold{width:26px;height:26px;color:var(--link)}
+.flist span{flex:1}
+.flist .chev{width:14px;height:14px;color:var(--muted)}
+.err{margin:0;padding:8px 16px;min-height:44px;font-size:13px;color:var(--no)}
+
+/* iPhone: tutorial, rules, reminder */
+.ttl{position:absolute;top:6px;left:20px;font-size:24px;font-weight:700;margin:0;letter-spacing:-.3px}
+.skip{position:absolute;top:12px;right:20px}
+.tsub{position:absolute;top:40px;left:20px;right:20px;margin:0;font-size:13px;color:var(--sub)}
+.msg{position:absolute;left:20px;right:20px;top:336px;height:44px;margin:0;font-size:14px}
+.check{position:absolute;left:20px;right:20px;top:392px;list-style:none;margin:0;padding:0}
+.check li{height:30px;display:flex;align-items:center;gap:10px}
+.check b{width:18px;text-align:center;color:var(--c)}
+.dot{width:22px;height:22px;border-radius:11px;border:2px solid var(--line);display:grid;place-items:center;color:#fff;font-size:12px}
+.dot .ic{opacity:0}
+.check .done .dot{background:var(--c);border-color:var(--c)}
+.check .done .dot .ic{opacity:1}
+.rules{position:absolute;left:20px;right:20px;top:76px;display:flex;flex-direction:column;gap:12px}
+.rule{display:flex;align-items:center;gap:14px;height:84px;padding:0 14px;border-radius:14px;background:var(--bg)}
+.rule .chip{flex:none;width:44px;height:44px;border-radius:22px;background:var(--c);color:#fff;display:grid;place-items:center;font-size:22px;font-weight:700}
+.rule b{display:block;font-size:17px}
+.rule span{color:var(--sub);font-size:14px}
+.rem-t{position:absolute;top:90px;left:24px;right:24px;text-align:center}
+.rem-t p{margin:8px 0 0;font-size:16px;color:var(--sub)}
+.timebox{position:absolute;left:20px;right:20px;top:240px;height:120px;border-radius:18px;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.timebox input{border:none;background:none;font-size:56px;font-weight:300;text-align:center;font-variant-numeric:tabular-nums;width:100%}
+
+/* iPhone: home + deck */
+.large{position:absolute;top:6px;left:20px;font-size:32px;font-weight:700;letter-spacing:-.4px}
+.large.sm{top:40px;font-size:30px}
+.rem{position:absolute;top:52px;left:20px;right:20px;margin:0;font-size:14px;color:var(--sub)}
+.rem.d{top:88px}
+.legend{position:absolute;top:94px;left:22px;right:22px;display:flex;gap:14px;font-size:12px;color:var(--sub)}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--c)}
+.decks{position:absolute;top:120px;left:16px;right:16px;display:flex;flex-direction:column;gap:10px}
+.deck{display:flex;align-items:center;gap:10px;width:100%;height:76px;padding:0 14px;border-radius:14px;border:none;background:var(--card);text-align:left}
+.deck .nm{flex:1;min-width:0}
+.deck .nm b{display:block;font-size:17px;font-weight:600}
+.deck .nm span{font-size:13px;color:var(--sub)}
+.deck .chev{width:14px;height:14px;color:var(--muted)}
+.cnt{display:flex;gap:6px;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.cnt .z{opacity:.35}
+.cnt .sep{color:var(--muted);font-weight:400}
+.n-new{color:var(--n-new)}.n-learn{color:var(--n-learn)}.n-rev{color:var(--n-rev)}
+.back{position:absolute;top:10px;left:16px;font-size:17px}
+.tiles{position:absolute;left:16px;right:16px;top:132px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--card);border-radius:14px;height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tile b{font-size:30px;font-weight:700}
+.tile span{font-size:12px;color:var(--sub)}
+.all{position:absolute;left:20px;right:20px;top:242px;margin:0;text-align:center;color:var(--sub);font-size:14px}
+
+/* study (shared by iPhone and Mac) */
+.sbar{position:absolute;display:flex;align-items:center;gap:12px;height:32px}
+.phone .sbar{top:8px;left:16px;right:16px}
+.mac .sbar{top:62px;left:150px;right:150px;height:28px}
+.x,.qm{flex:none;width:32px;height:32px;border-radius:16px;border:none;background:var(--line);color:var(--sub);font-size:14px;font-weight:600}
+.mac .x,.mac .qm{width:28px;height:28px;border-radius:14px}
+.track{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.track i{display:block;height:100%;width:0;background:var(--link);transition:width .25s}
+.prog{font-size:14px;color:var(--sub);font-variant-numeric:tabular-nums}
+.undo{position:absolute;left:50%;transform:translateX(-50%);background:var(--text);color:var(--card);border:none;border-radius:16px;padding:6px 14px;font-size:13px;white-space:nowrap;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+.undo.on{opacity:1;visibility:visible}
+.phone .undo{top:44px}.mac .undo{top:96px}
+.card{position:absolute;background:var(--card);border:1px solid var(--line);border-radius:22px;will-change:transform;touch-action:none}
+.phone .card{left:16px;right:16px;top:78px;height:404px;cursor:grab}
+.mac .card{left:150px;right:150px;top:132px;height:278px;cursor:default}
+.phone .card.tut{top:72px;height:250px}
+.fill{position:absolute;inset:0;border-radius:22px;opacity:0;pointer-events:none}
+.card.filled{color:#fff}
+.card.filled :is(.h,.ex,.say,.dir,.tap){color:rgba(255,255,255,.88);border-color:rgba(255,255,255,.5)}
+.dir{position:absolute;left:14px;top:12px;font-size:12px;color:var(--sub);border:1px solid var(--line);border-radius:10px;padding:2px 8px}
+.half{position:absolute;display:flex;flex-direction:column;align-items:center;text-align:center}
+.phone .half{left:44px;right:44px}.mac .half{left:24px;right:24px}
+.phone .qh{top:0;height:190px;justify-content:flex-end;padding-bottom:16px}
+.phone .divider{top:200px}
+.phone .ah{top:208px;height:190px;justify-content:flex-start;padding-top:14px}
+.mac .qh{top:0;height:124px;justify-content:flex-end;padding-bottom:12px}
+.mac .divider{top:132px}
+.mac .ah{top:140px;height:130px;justify-content:flex-start;padding-top:10px}
+.phone .card.tut .qh{height:118px;padding-bottom:12px}
+.phone .card.tut .divider{top:126px}
+.phone .card.tut .ah{top:134px;height:110px;padding-top:10px}
+.divider{position:absolute;left:18px;right:18px;border-top:1px solid var(--line)}
+.q{font-size:28px;font-weight:600;position:relative}
+.h{font-size:14px;color:var(--sub);margin-top:8px;min-height:20px}
+.a{font-size:24px}
+.ex{font-size:14px;color:var(--sub);margin-top:8px}
+.say{border:none;background:none;color:var(--sub);padding:0 4px;vertical-align:middle}
+.say .ic{width:20px;height:20px}
+.tap{position:absolute;left:0;right:0;text-align:center;color:var(--sub);font-size:13px}
+.phone .tap{top:286px}.mac .tap{top:190px}
+.study:not(.open) :is(.divider,.ah),.study.open .tap{visibility:hidden}
+.hint{position:absolute;width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:15px;font-weight:700;font-style:normal;color:#fff;background:var(--c);opacity:0;transition:opacity .2s;pointer-events:none}
+.hint[data-z=again]{left:8px;top:calc(50% - 14px)}
+.hint[data-z=easy]{right:8px;top:calc(30% - 14px)}.hint[data-z=good]{right:8px;top:calc(50% - 14px)}.hint[data-z=hard]{right:8px;top:calc(70% - 14px)}
+.mac .hint{display:none}
+.study.open .card.hints .hint{opacity:.4}
+.card.tut .hint{opacity:.55}
+.phone .study .bottom{left:16px;right:16px;bottom:30px;gap:0}
+.mac .study .bottom{left:150px;right:150px;bottom:20px;gap:0}
+.forgot{width:100%;height:52px;border-radius:26px;border:none;background:var(--no);color:#fff;font-size:17px;font-weight:600}
+.cap{text-align:center;font-size:12px;color:var(--sub);margin:12px 0 6px}
+.seg{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px}
+.seg button{height:58px;border:none;border-radius:29px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;color:#fff}
+.seg .hard{background:var(--g-hard)}
+.seg .good{background:var(--g-good);font-size:17px;font-weight:600}
+.seg .easy{background:var(--g-easy)}
+.small{font-size:12px;font-weight:400;opacity:.9}
+.arr{font-size:11px;opacity:.85;margin-left:5px}
+.phone .arr{display:none}
+.mac .forgot{height:40px;border-radius:20px;font-size:15px}
+.mac .cap{margin:8px 0 6px}
+.mac .seg button{height:48px;border-radius:24px;font-size:14px}
+.forgot:disabled,.seg button:disabled{opacity:.35}
+
+/* end of session */
+.end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center}
+.phone .end{padding-top:96px}
+.mac .end{top:46px;justify-content:center}
+.done-ic{width:76px;height:76px;border-radius:50%;background:var(--g-good);color:#fff;display:grid;place-items:center;margin-bottom:18px}
+.done-ic .ic{width:38px;height:38px}
+.stats{display:flex;gap:40px;margin:22px 0 10px}
+.stats div{text-align:center}
+.stats b{display:block;font-size:34px;font-weight:700}
+.stats span{font-size:13px;color:var(--sub)}
+.end p{margin:2px 0;color:var(--sub);font-size:14px}
+.btns{display:flex;flex-direction:column;gap:8px}
+.phone .btns{position:absolute;left:20px;right:20px;bottom:32px}
+.mac .btns{flex-direction:row;margin-top:26px}
+
+/* Mac: window chrome */
+.lights{display:flex;gap:8px}
+.lights i{width:12px;height:12px;border-radius:50%}
+.lights i:nth-child(1){background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.lights.abs{position:absolute;top:17px;left:16px;z-index:2}
+.tb{position:absolute;top:0;left:0;right:0;height:46px;z-index:1;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--card)}
+.tb .lights{margin-right:12px}
+.tb .ttl{position:static;font-size:13px;font-weight:600;letter-spacing:0}
+.tb .sp{flex:1}
+.mw-l{position:absolute;top:0;left:0;bottom:0;width:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.mw-l .appicon{width:88px;height:88px;font-size:48px;border-radius:20px}
+.mw-l p{margin:4px 0 22px;color:var(--sub)}
+.mw-b{display:flex;flex-direction:column;gap:8px;width:240px}
+.mw-b .btn{width:100%;height:34px}
+.mw-r{position:absolute;top:0;left:380px;right:0;bottom:0;background:var(--side);border-left:1px solid var(--line);padding:60px 20px 20px}
+.mw-r h3{font-size:13px;color:var(--sub);margin:0 0 8px}
+.rec{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;border-radius:8px;background:none;text-align:left}
+.rec:hover{background:var(--tint)}
+.rec .ic{width:30px;height:30px;color:var(--link)}
+.rec b{display:block;font-size:14px;font-weight:600}
+.rec span{font-size:12px;color:var(--sub)}
+.files{list-style:none;margin:0 0 10px;padding:0;border:1px solid var(--line);border-radius:8px}
+.files li{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;font-size:13px}
+.files li+li{border-top:1px solid var(--line)}
+.files .ic{width:20px;height:20px;color:var(--link)}
+.files span{flex:1}
+.files em{font-style:normal;color:var(--sub);font-size:12px}
+.found2{margin:0;font-size:13px;color:var(--n-rev)}
+
+/* Mac: main window */
+.mside{position:absolute;top:46px;left:0;bottom:0;width:240px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.sh,.dk{display:grid;grid-template-columns:1fr 36px 36px 36px;align-items:center}
+.sh{padding:10px 16px 4px 18px;font-size:10px;color:var(--sub)}
+.sh span+span{text-align:right}
+.dk{width:calc(100% - 16px);height:34px;margin:0 8px;padding:0 8px 0 10px;border:none;border-radius:7px;background:none;text-align:left;font-size:13px}
+.dk[aria-current]{background:var(--tint)}
+.dk .c{text-align:right;font-variant-numeric:tabular-nums;border-radius:4px}
+.dk .z{opacity:.35}
+.dk.bump .c.n-new{animation:bump 1.6s}
+@keyframes bump{0%,60%{background:var(--n-new);color:#fff}}
+.sf{margin-top:auto;padding:10px 14px;border-top:1px solid var(--line)}
+.sf .link{display:flex;justify-content:space-between;align-items:center;width:100%}
+.mdetail{position:absolute;top:46px;left:240px;right:0;bottom:0}
+.dh{position:absolute;top:0;left:0;right:0;height:62px;padding:12px 20px 0}
+.dh h3{font-size:20px;margin:0}
+.dh p{margin:2px 0 0;font-size:12px;color:var(--sub)}
+.tbl{position:absolute;top:62px;left:0;right:0;bottom:0;overflow:auto;outline-offset:-2px}
+.tbl table,.pv{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.tbl th{position:sticky;top:0;z-index:1;background:var(--card);text-align:left;font-size:11px;font-weight:500;color:var(--sub);padding:6px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tbl td,.pv td{height:30px;padding:0 12px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbl tr{scroll-margin-top:30px}
+.tbl tr[aria-selected=true] td{background:var(--tint)}
+.tbl .fresh td{animation:fresh 2.6s}
+@keyframes fresh{0%,50%{background:var(--tint)}}
+.mat{display:inline-flex;gap:2px;vertical-align:middle;margin-right:6px}
+.mat i{width:9px;height:6px;border-radius:2px;background:var(--line)}
+.mat i.on{background:var(--link)}
+.lock{color:var(--sub)}
+.tbl td:nth-child(4){font-size:12px}
+.empty{padding:60px 24px;text-align:center;color:var(--sub);font-size:13px}
+.empty b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.empty .btn{display:inline-flex;margin-top:12px}
+.words{width:100%;height:96px;resize:none;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px 10px;font-size:14px;line-height:1.5}
+.skipped{margin:4px 0;min-height:18px;font-size:12px;color:var(--n-learn)}
+.pvh{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px}
+.pvh span{color:var(--sub)}
+.pvbox{height:170px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.pv td{height:28px}
+.pv td:first-child{width:70px;font-size:11px;color:var(--sub)}
+.pv tr.lk td{color:var(--sub)}
+.pv td.none{width:auto;text-align:center;color:var(--sub);padding:60px 0}
+.kl{display:grid;grid-template-columns:150px 1fr;gap:10px 12px;margin:14px 0 0;align-items:center;font-size:14px}
+.kl dt{white-space:nowrap}
+.kl dd{margin:0;color:var(--sub)}
+.help .foot{position:absolute;left:24px;bottom:24px;margin:0}
+.field{display:block;font-size:12px;color:var(--sub);margin-top:6px}
+.field input{display:block;width:100%;height:30px;margin-top:4px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font-size:14px}
+</style>
+</head>
+<body>
+<div class="head">
+<div>
+<h1>Mnemit: первый запуск и основные сценарии</h1>
+<p class="lead">Два независимых сценария: iPhone слева, Mac справа. Каждый шагается кнопками на экране и с клавиатуры, шаги можно перескакивать по индикатору, «Начать заново» сбрасывает сценарий. Клик по устройству даёт ему клавиатуру. Колоды: «Greek A1–A2» (повторение) и «Greek B1» (изучение), файлы лежат в iCloud Drive/Mnemit. Оценка карточек та же, что в grading.html.</p>
+</div>
+<button class="link u" id="theme">Тема: авто</button>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2c.4 0 .8.2 1.1.5L11 7h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></symbol>
+<symbol id="i-deck" viewBox="0 0 24 24"><rect x="3" y="8" width="14" height="11" rx="2" opacity=".45"/><rect x="7" y="5" width="14" height="11" rx="2"/></symbol>
+<symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+</svg>
+
+<div class="row">
+<section id="phoneCol"></section>
+<section id="macCol"></section>
+</div>
+
+<script>
+"use strict";
+// ---------- helpers ----------
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const plural=(n,[one,few,many])=>{const m=n%100,d=n%10;return m>10&&m<20?many:d===1?one:d>1&&d<5?few:many};
+const fmt=n=>n.toLocaleString("ru-RU");
+const ic=(n,c="")=>`<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const LIGHTS='<span class="lights"><i></i><i></i><i></i></span>';
+const total=d=>d.n+d.l+d.r;
+const selDeck=s=>s.decks.find(d=>d.id===s.sel);
+
+// ---------- grading model (same as grading.html) ----------
+const GRADES={
+ again:{name:"Не помню",iv:"ещё раз сегодня",c:"--no",arrow:"←",key:"←"},
+ hard:{name:"С трудом",iv:"через 2 дня",c:"--g-hard",arrow:"↘",key:"↓"},
+ good:{name:"Помню",iv:"через 4 дня",c:"--g-good",arrow:"→",key:"→"},
+ easy:{name:"Легко",iv:"через 9 дней",c:"--g-easy",arrow:"↗",key:"↑"}};
+const KEYG={"1":"again","2":"hard","3":"good","4":"easy",ArrowLeft:"again",ArrowRight:"good",ArrowUp:"easy",ArrowDown:"hard"};
+const OUT={again:[-640,30],good:[640,0],easy:[560,-420],hard:[560,420]};
+// drag direction: left = again; right splits by angle into hard (down), good, easy (up)
+function zone(dx,dy){if(Math.hypot(dx,dy)<20)return null;if(dx<0&&Math.abs(dx)>=Math.abs(dy)*0.8)return"again";if(dx<=0)return null;
+ const ang=Math.atan2(-dy,dx)*180/Math.PI;return ang>25?"easy":ang<-25?"hard":"good"}
+function speak(t){if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t.split("(")[0].split(",")[0]);u.lang="el-GR";speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+// session cards; k = kind for the counters (n new, l learning, r review)
+const SESSION=[
+ {d:"GR → RU",q:"υπεύθυνος, -η, -ο",h:"",a:"ответственный · responsible",e:"Η μητέρα μου είναι πολύ υπεύθυνη.",gr:"q",k:"n"},
+ {d:"RU → GR",q:"ломаться (о технике)",h:"гл. · to break down",a:"χαλάω (χάλασα)",e:"Χάλασε το αυτοκίνητο.",gr:"a",k:"l"},
+ {d:"GR → RU",q:"η παρέα",h:"",a:"компания друзей · group of friends",e:"Βγαίνω με την παρέα μου κάθε Παρασκευή.",gr:"q",k:"n"},
+ {d:"RU → GR",q:"торопливый",h:"прил. · hasty",a:"βιαστικός, -ή, -ό",e:"Μην είσαι τόσο βιαστικός!",gr:"a",k:"r"}];
+// new counts stay full after a session (limit is per session); only learning/review go down
+const consume=(d,cards)=>cards.forEach(c=>{if(c.k!=="n")d[c.k]=Math.max(0,d[c.k]-1)});
+
+// card rows for the Mac table; m = maturity 0..3, -1 = locked until the other direction is learned
+const MAT=["Новая","Учится","Молодая","Зрелая"];
+const mk=(q,a,h,m,due)=>({q,a,h,m,due});
+const newDecks=()=>[
+ {id:"a",name:"Greek A1–A2",mode:"Повторение",n:30,l:0,r:12,total:1486,frozen:31,cards:[
+  mk("καλημέρα","доброе утро","",3,"через 40 дней"),mk("ευχαριστώ","спасибо","",3,"через 62 дня"),
+  mk("το νερό","вода","",3,"через 18 дней"),mk("το σπίτι","дом","",2,"через 7 дней"),
+  mk("ο δρόμος","улица, дорога","",2,"через 4 дня"),mk("η αστυνομία","полиция","police",1,"сегодня"),
+  mk("το ψωμί","хлеб","",3,"через 27 дней"),mk("πού είναι…;","где находится…?","фраза",2,"через 9 дней")]},
+ {id:"b",name:"Greek B1",mode:"Изучение",n:27,l:3,r:5,total:2314,frozen:78,cards:[
+  mk("υπεύθυνος, -η, -ο","ответственный","",2,"через 3 дня"),mk("χαλάω (χάλασα)","ломаться (о технике)","гл. · to break down",1,"сегодня"),
+  mk("η παρέα","компания друзей","",3,"через 14 дней"),mk("βιαστικός, -ή, -ό","торопливый","прил. · hasty",0,"сегодня"),
+  mk("ο γέρος","старик","сущ. · old man",2,"через 5 дней"),mk("τρώω (έφαγα)","есть, кушать","",3,"через 21 день"),
+  mk("η συνάντηση","встреча","",1,"завтра"),mk("αποφασίζω","решать","гл. · to decide",0,"сегодня"),
+  mk("ο φίλος","друг","",3,"через 32 дня"),mk("ανησυχώ","беспокоиться","гл. · to worry",1,"сегодня")]}];
+
+// ---------- card gestures ----------
+function tint(card,g,k){const f=$(".fill",card);if(!g){f.style.opacity=0;card.classList.remove("filled");return}
+ f.style.background=`var(${GRADES[g].c})`;const o=Math.min(.9,k);f.style.opacity=o;card.classList.toggle("filled",o>.5)}
+function flyOut(card,g){const [x,y]=OUT[g];card.style.transition="transform .28s ease-in";card.style.transform=`translate(${x}px,${y}px) rotate(${x/28}deg)`}
+function flyIn(card){card.style.transition="none";card.style.transform="translateY(18px) scale(.97)";card.style.opacity=0;card.offsetWidth;
+ card.style.transition="transform .22s ease-out,opacity .22s";card.style.transform="none";card.style.opacity=1}
+// mouse/touch drag: tint follows the zone, release past 110px grades, a short click is a tap
+function dragCard(card,{dev,enabled,canGrade,onTint,onGrade,onTap,onMiss}){
+ let d=null;
+ const spring=()=>{card.style.transition="transform .2s";card.style.transform="none";onTint(null,0)};
+ card.addEventListener("pointerdown",e=>{if(!enabled()||e.target.closest("button"))return;
+  dev.focus();d={x:e.clientX,y:e.clientY,dx:0,dy:0};card.setPointerCapture(e.pointerId);card.style.transition="none"});
+ card.addEventListener("pointermove",e=>{if(!d)return;d.dx=e.clientX-d.x;d.dy=e.clientY-d.y;
+  const open=canGrade(),k=open?1:.25;
+  card.style.transform=`translate(${d.dx*k}px,${d.dy*k}px) rotate(${d.dx*k/22}deg)`;
+  onTint(open?zone(d.dx,d.dy):null,Math.hypot(d.dx,d.dy)/160)});
+ card.addEventListener("pointerup",()=>{if(!d)return;const {dx,dy}=d,dist=Math.hypot(dx,dy);d=null;
+  const z=canGrade()?zone(dx,dy):null;
+  if(z&&dist>110)return onGrade(z);
+  spring();if(dist<6)onTap();else onMiss?.()});
+ card.addEventListener("pointercancel",()=>{if(d){d=null;spring()}});
+}
+
+// ---------- flow runner: header, step indicator, restart, screen, key handling ----------
+function Flow(kind,{title,keys,steps,init}){
+ const col=$("#"+kind+"Col");
+ const f={kind,steps,step:0,token:0,modal:null,onKey:null,state:init()};
+ col.innerHTML=`<div class="hd"><h2>${title}</h2><button class="link u restart">Начать заново</button></div>
+  <p class="keys">${keys}</p><nav class="steps" aria-label="Шаги сценария"></nav>
+  <div class="dev ${kind}" tabindex="0">${kind==="phone"?'<div class="sb"><span>9:41</span><span class="batt"></span></div>':""}<div class="screen"></div><div class="toast" role="status"></div></div>
+  <p class="note"></p>`;
+ f.dev=$(".dev",col);f.screen=$(".screen",col);
+ const nav=$(".steps",col);
+ nav.innerHTML=steps.map((s,i)=>`<button data-i="${i}">${i+1} · ${s.name}</button>`).join("");
+ nav.onclick=e=>{const b=e.target.closest("button");if(!b)return;const i=+b.dataset.i;steps[i].onNav?.(f);f.go(i)};
+ $(".restart",col).onclick=()=>{f.state=init();f.go(0)};
+ f.go=i=>{
+  const had=f.dev.matches(":focus-within");
+  f.token++;f.modal=null;f.onKey=null;f.step=i;
+  f.screen.className="screen";f.screen.replaceChildren();
+  steps[i].render(f);
+  $$("button",nav).forEach((b,k)=>b.setAttribute("aria-current",k===i?"step":"false"));
+  $(".note",col).textContent=steps[i].note;
+  if(had&&!f.dev.matches(":focus-within"))f.dev.focus();
+ };
+ f.toast=t=>{const e=$(".toast",f.dev);e.textContent=t;e.classList.add("on");clearTimeout(f.tt);f.tt=setTimeout(()=>e.classList.remove("on"),4500)};
+ // a modal (sheet, alert, overlay) swallows the keys of the screen below it
+ f.dev.addEventListener("keydown",e=>{if(f.modal){if(f.modal.key(e))e.preventDefault();return}f.onKey?.(e)});
+ f.go(0);
+ return f;
+}
+
+// sheet / alert / overlay on top of the current screen; Esc and the scrim dismiss it
+function openModal(f,html,{cls="",style="",onKey,onDismiss,scrimDismiss=true}={}){
+ f.modal?.close();
+ const box=document.createElement("div");
+ box.innerHTML=`<div class="scrim"></div><div class="sheet ${cls}" role="dialog" aria-modal="true" style="${style}">${html}</div>`;
+ const [scrim,sheet]=box.children;
+ f.screen.append(scrim,sheet);
+ const m=f.modal={
+  close(){scrim.remove();sheet.remove();if(f.modal===m)f.modal=null;f.dev.focus()},
+  dismiss(){m.close();onDismiss?.()},
+  key:onKey?e=>onKey(e,m):e=>e.key==="Escape"&&(m.dismiss(),true)};
+ if(scrimDismiss)scrim.onclick=m.dismiss;
+ $$("[data-dismiss]",sheet).forEach(b=>b.onclick=m.dismiss);
+ (sheet.querySelector("[data-focus]")||sheet.querySelector("button,input,textarea"))?.focus();
+ return sheet;
+}
+
+// ---------- study screen, shared by iPhone (drag) and Mac (keys) ----------
+function Study(f,{cards,hints,onDone,onClose,keys}){
+ const mac=f.kind==="mac",S=f.screen,tok=f.token,alive=()=>tok===f.token,q=s=>$(s,S);
+ S.classList.add("study","grouped");
+ const hint=g=>`<i class="hint" data-z="${g}" style="--c:var(${GRADES[g].c})">${GRADES[g].arrow}</i>`;
+ S.insertAdjacentHTML("beforeend",`
+  <div class="sbar"><button class="x" aria-label="Закончить сессию">✕</button><div class="track"><i></i></div><span class="prog"></span></div>
+  <button class="undo"></button>
+  <div class="card${hints?" hints":""}">
+   <div class="fill"></div><span class="dir"></span>
+   ${["again","easy","good","hard"].map(hint).join("")}
+   <div class="half qh"><div class="q"></div><div class="h"></div></div>
+   <div class="divider"></div>
+   <div class="half ah"><div class="a"></div><div class="ex"></div></div>
+   <div class="tap">${mac?"пробел — открыть":"тап — открыть"}</div>
+  </div>
+  <div class="bottom">
+   <button class="forgot" data-g="again">✕ Не помню<span class="arr">${GRADES.again.key}</span></button>
+   <div class="cap">Вспомнил</div>
+   <div class="seg">${["hard","good","easy"].map(g=>`<button class="${g}" data-g="${g}"><span>${GRADES[g].name}<span class="arr">${GRADES[g].key}</span></span><span class="small">${GRADES[g].iv}</span></button>`).join("")}</div>
+  </div>`);
+ const card=q(".card"),hist=[],res=[];
+ let i=0,open=false,busy=false,undoT;
+ const setOpen=v=>{open=v;S.classList.toggle("open",v);$$(".bottom button",S).forEach(b=>b.disabled=!v)};
+ const speakCur=()=>{const c=cards[i];speak(c.gr==="q"?c.q:c.a)};
+ function render(){
+  const c=cards[i];
+  q(".dir").textContent=c.d;q(".prog").textContent=`${res.length} / ${cards.length}`;q(".track i").style.width=`${res.length/cards.length*100}%`;
+  q(".q").textContent=c.q;q(".h").textContent=c.h;q(".a").textContent=c.a;q(".ex").textContent=c.e;
+  q(c.gr==="q"?".q":".a").insertAdjacentHTML("beforeend",` <button class="say" aria-label="Произнести (S)">${ic("speaker")}</button>`);
+  setOpen(false);tint(card,null,0);card.style.transition="none";card.style.transform="none";card.style.opacity=1;
+ }
+ const reveal=()=>{if(!open&&!busy)setOpen(true)};
+ function grade(g){
+  if(!open||busy)return;busy=true;
+  hist.push(i);res.push({c:cards[i],g});
+  flyOut(card,g);tint(card,g,.9);
+  const u=q(".undo");u.innerHTML=`${GRADES[g].name} · ${GRADES[g].iv} · <u>Отменить</u>`;u.classList.add("on");
+  clearTimeout(undoT);undoT=setTimeout(()=>u.classList.remove("on"),3000);
+  setTimeout(()=>{if(!alive())return;busy=false;i++;if(i>=cards.length)return onDone(res);render();flyIn(card)},300);
+ }
+ function undo(){if(busy||!hist.length)return;i=hist.pop();res.pop();q(".undo").classList.remove("on");render();flyIn(card)}
+
+ card.addEventListener("click",e=>{if(e.target.closest(".say"))return speakCur();if(mac){f.dev.focus();reveal()}});
+ if(!mac)dragCard(card,{dev:f.dev,enabled:()=>!busy,canGrade:()=>open,onTint:(g,k)=>tint(card,g,k),onGrade:grade,onTap:reveal});
+ q(".bottom").addEventListener("click",e=>{const b=e.target.closest("button[data-g]");if(b){grade(b.dataset.g);f.dev.focus()}});
+ q(".undo").onclick=()=>{undo();f.dev.focus()};
+ q(".x").onclick=onClose;
+ f.onKey=e=>{
+  if(keys?.(e))return e.preventDefault();
+  const k=e.key;
+  if(k===" "||k==="Enter"){if(e.target.closest("button"))return;e.preventDefault();return open?grade("good"):reveal()}
+  if(k.length===1&&"zZяЯ".includes(k)||mac&&k==="Escape"){e.preventDefault();return undo()}
+  if(k.length===1&&"sSыЫ".includes(k)){e.preventDefault();return speakCur()}
+  if(KEYG[k]){e.preventDefault();grade(KEYG[k])}
+ };
+ render();
+}
+
+// summary after a session; repeat(cards) restarts a session with the cards graded "Не помню"
+function endScreen(f,res,{repeat,done}){
+ const n=res.length,bad=res.filter(r=>r.g==="again"),acc=Math.round((n-bad.length)/n*100);
+ f.screen.insertAdjacentHTML("beforeend",`<div class="end">
+  <div class="done-ic">${ic("check")}</div><div class="t1">Сессия пройдена</div>
+  <div class="stats"><div><b>${n}</b><span>пройдено</span></div><div><b>${acc} %</b><span>верно</span></div></div>
+  <p>${bad.length?`Ошибок: ${bad.length}`:"Ошибок нет"}</p><p>Следующая сессия завтра</p>
+  <div class="btns"><button class="btn sec rep"${bad.length?"":" disabled"}>Повторить ошибки${bad.length?` · ${bad.length}`:""}</button><button class="btn done">Готово</button></div>
+ </div>`);
+ $(".rep",f.screen).onclick=()=>{f.token++;f.screen.className="screen";f.screen.replaceChildren();repeat(bad.map(r=>r.c))};
+ $(".done",f.screen).onclick=done;
+}
+
+// ======================= iPHONE =======================
+const TUT={again:["←","не помню"],good:["→","помню"],easy:["↗","легко"],hard:["↘","с трудом"]};
+const MEANING={
+ again:"Не вспомнили или ошиблись: карточка вернётся ещё раз в этой сессии.",
+ good:"Вспомнили как обычно: следующий показ через несколько дней.",
+ easy:"Вспомнили мгновенно: следующий показ будет намного позже.",
+ hard:"Вспомнили, но с трудом: повтор придёт раньше обычного."};
+const RULE={again:"Не вспомнил или ошибся",hard:"Вспомнил с трудом",good:"Обычный случай",easy:"Мгновенно"};
+
+function pWelcome(f){
+ const s=f.state,S=f.screen;
+ S.innerHTML=`<div class="hero"><div class="appicon">Μ</div><div class="t1">Mnemit</div><p>Греческий каждый день</p></div>
+  <div class="found"><b>${ic("check")} Найдено 2 колоды</b>
+   <div class="fr"><span>Greek A1–A2</span><em>повторение</em></div><div class="fr"><span>Greek B1</span><em>изучение</em></div></div>
+  <div class="bottom"><button class="btn go">${s.found?"Продолжить":"Выбрать папку Mnemit"}</button><p class="foot">Колоды лежат в iCloud Drive, в папке Mnemit</p></div>`;
+ const fd=$(".found",S);if(s.found){fd.offsetWidth;fd.classList.add("on")}
+ $(".go",S).onclick=()=>s.found?f.go(1):pickFolder(f);
+}
+// simulated system folder picker
+function pickFolder(f){
+ const FOLDERS=["Documents","Downloads","Keynote","Mnemit","Numbers","Pages","Shortcuts"];
+ const sh=openModal(f,`<div class="shead"><button class="link" data-dismiss>Отмена</button><b>Выбор папки</b><span></span></div>
+  <p class="path">iCloud Drive</p>
+  <ul class="flist">${FOLDERS.map(n=>`<li><button data-n="${n}">${ic("folder","fold")}<span>${n}</span>${ic("chev","chev")}</button></li>`).join("")}</ul>
+  <p class="err" role="alert"></p>`);
+ $(".flist",sh).onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.n==="Mnemit"){f.state.found=true;f.modal.close();pWelcome(f)}
+  else $(".err",sh).textContent=`В папке «${b.dataset.n}» нет колод Mnemit. Выберите папку Mnemit.`};
+}
+
+function pGestures(f){
+ const S=f.screen,got={};let busy=false;const tok=f.token;
+ S.innerHTML=`<h2 class="ttl">Попробуйте жесты</h2><button class="link skip">Пропустить</button>
+  <p class="tsub">Смахните карточку в каждую сторону, по разу</p>
+  <div class="card tut">
+   <div class="fill"></div>
+   ${["again","easy","good","hard"].map(g=>`<i class="hint" data-z="${g}" style="--c:var(${GRADES[g].c})">${GRADES[g].arrow}</i>`).join("")}
+   <div class="half qh"><div class="q">η αστυνομία</div><div class="h"></div></div>
+   <div class="divider"></div>
+   <div class="half ah"><div class="a">полиция · police</div></div>
+  </div>
+  <p class="msg" aria-live="polite">Влево — не помню, вправо — помню, вправо-вверх — легко, вправо-вниз — с трудом.</p>
+  <ul class="check">${["again","good","easy","hard"].map(g=>`<li data-g="${g}" style="--c:var(${GRADES[g].c})"><span class="dot">${ic("check")}</span><b>${TUT[g][0]}</b>${TUT[g][1]}</li>`).join("")}</ul>
+  <div class="bottom"><button class="btn next" disabled>Дальше</button></div>`;
+ const card=$(".card",S),msg=$(".msg",S);
+ function swipe(g){
+  if(busy)return;busy=true;got[g]=true;
+  flyOut(card,g);tint(card,g,.9);
+  $(`li[data-g=${g}]`,S).classList.add("done");msg.textContent=MEANING[g];
+  if(Object.keys(got).length===4){$(".next",S).disabled=false;$(".tsub",S).textContent="Все четыре жеста освоены"}
+  setTimeout(()=>{if(tok!==f.token)return;busy=false;tint(card,null,0);flyIn(card)},320);
+ }
+ dragCard(card,{dev:f.dev,enabled:()=>!busy,canGrade:()=>true,onTint:(g,k)=>tint(card,g,k),onGrade:swipe,onTap(){},
+  onMiss:()=>{msg.textContent="Потяните дальше и в нужную сторону: карточка уходит после порога."}});
+ f.onKey=e=>{const g={ArrowLeft:"again",ArrowRight:"good",ArrowUp:"easy",ArrowDown:"hard"}[e.key];if(g){e.preventDefault();swipe(g)}};
+ $(".next",S).onclick=()=>pRules(f);
+ $(".skip",S).onclick=()=>f.go(2);
+}
+function pRules(f){
+ const S=f.screen;S.replaceChildren();f.onKey=null;f.token++;
+ S.innerHTML=`<h2 class="ttl">Когда что жать</h2><button class="link skip">Пропустить</button>
+  <p class="tsub">Четыре жеста — четыре оценки</p>
+  <div class="rules">${["again","hard","good","easy"].map(g=>`<div class="rule" style="--c:var(${GRADES[g].c})"><span class="chip">${GRADES[g].arrow}</span><div><b>${GRADES[g].name}</b><span>${RULE[g]}</span></div></div>`).join("")}</div>
+  <div class="bottom"><button class="btn ok">Понятно</button></div>`;
+ $(".ok",S).onclick=$(".skip",S).onclick=()=>f.go(2);
+ $(".ok",S).focus();
+}
+
+function pReminder(f){
+ const S=f.screen,s=f.state;
+ S.innerHTML=`<div class="rem-t"><div class="t1">Напоминание</div><p>Во сколько вам удобно позаниматься? Сессия занимает 5–10 минут.</p></div>
+  <div class="timebox"><input type="time" value="09:00" aria-label="Время напоминания"></div>
+  <div class="bottom"><button class="btn yes">Напоминать</button><button class="btn text no">Не сейчас</button></div>`;
+ const time=$("input",S);
+ $(".no",S).onclick=()=>{s.reminder=null;f.go(3)};
+ $(".yes",S).onclick=()=>{
+  const sh=openModal(f,`<div class="al-body"><b>«Mnemit» запрашивает разрешение отправлять вам уведомления</b>
+    <p>Уведомления могут включать звуки и значки. Их можно настроить в «Настройках».</p></div>
+    <div class="al-btns"><button data-v="">Не разрешать</button><button data-v="1" data-focus>Разрешить</button></div>`,{cls:"mid",scrimDismiss:false});
+  $(".al-btns",sh).onclick=e=>{const b=e.target.closest("button");if(!b)return;s.reminder=b.dataset.v?time.value||"09:00":null;f.modal.close();f.go(3)};
+ };
+}
+
+function pHome(f){
+ const S=f.screen,s=f.state,sum=s.decks.reduce((a,d)=>a+total(d),0);
+ S.classList.add("grouped");
+ const num=(v,c)=>`<span class="${c}${v?"":" z"}">${v}</span>`;
+ S.innerHTML=`<div class="large">Сегодня</div><p class="rem">${s.reminder?`Напоминание в ${s.reminder}`:"Напоминание выключено"}</p>
+  <div class="legend"><span style="--c:var(--n-new)">новые</span><span style="--c:var(--n-learn)">изучаемые</span><span style="--c:var(--n-rev)">повторение</span></div>
+  <div class="decks">${s.decks.map(d=>`<button class="deck" data-id="${d.id}"><span class="nm"><b>${d.name}</b><span>${d.mode}</span></span>
+    <span class="cnt">${num(d.n,"n-new")}<span class="sep">·</span>${num(d.l,"n-learn")}<span class="sep">·</span>${num(d.r,"n-rev")}</span>${ic("chev","chev")}</button>`).join("")}</div>
+  <div class="bottom"><button class="btn go">Учить сегодня · ${sum}</button></div>`;
+ $(".decks",S).onclick=e=>{const b=e.target.closest(".deck");if(b)pDeck(f,s.decks.find(d=>d.id===b.dataset.id))};
+ $(".go",S).onclick=()=>f.go(4);
+}
+function pDeck(f,d){
+ const S=f.screen;S.replaceChildren();
+ S.innerHTML=`<button class="link back">‹ Колоды</button><div class="large sm">${d.name}</div><p class="rem d">${d.mode} · iCloud Drive/Mnemit</p>
+  <div class="tiles"><div class="tile"><b class="n-new">${d.n}</b><span>новые</span></div><div class="tile"><b class="n-learn">${d.l}</b><span>изучаемые</span></div><div class="tile"><b class="n-rev">${d.r}</b><span>повторение</span></div></div>
+  <p class="all">Всего карточек ${fmt(d.total)} · заморожено ${d.frozen}</p>
+  <div class="bottom"><button class="btn go">Учить · ${total(d)}</button></div>`;
+ $(".back",S).onclick=()=>pHome(f);
+ $(".go",S).onclick=()=>f.go(4);
+ $(".go",S).focus();
+}
+
+function pSession(f){
+ const s=f.state;
+ const run=cards=>Study(f,{cards,hints:!s.firstDone,onClose:()=>f.go(3),
+  onDone:res=>{
+   if(!s.firstDone){s.firstDone=true;consume(s.decks.find(d=>d.id==="b"),SESSION)}
+   f.screen.className="screen";f.screen.replaceChildren();f.onKey=null;
+   endScreen(f,res,{repeat:run,done:()=>f.go(3)});
+  }});
+ run(SESSION);
+}
+
+Flow("phone",{
+ title:"iPhone · первый запуск",
+ keys:"Свайпы мышью по карточке; кнопки внизу и стрелки ← → ↑ ↓ делают то же. Тап или пробел открывают карточку.",
+ init:()=>({found:false,reminder:null,firstDone:false,decks:newDecks()}),
+ steps:[
+  {name:"Папка",render:pWelcome,note:"«Выбрать папку Mnemit» открывает системный выбор папки iCloud Drive. Любая папка, кроме Mnemit, даст сообщение, что колод в ней нет."},
+  {name:"Жесты",render:pGestures,note:"Проведите мышью по карточке во все четыре стороны, по разу (порог 110 px, стрелки тоже работают). «Пропустить» уводит к напоминанию."},
+  {name:"Напоминание",render:pReminder,note:"Время меняется цифрами и стрелками. «Напоминать» показывает системный запрос разрешения iOS; ответ виден на главном экране."},
+  {name:"Главная",render:pHome,note:"Нажмите колоду, чтобы открыть её экран, или «Учить сегодня». Счётчики: новые, изучаемые, повторение."},
+  {name:"Сессия",render:pSession,note:"В первой сессии по краям карточки видны бледные подсказки жестов. Сессия сокращена до четырёх карточек; «Повторить ошибки» берёт те, что оценены «Не помню»."}]});
+
+// ======================= MAC =======================
+const GREEK=/[\u0370-\u03ff\u1f00-\u1fff]/; // Greek and Greek Extended blocks
+const SAMPLE="κλέβω = красть\nη κλοπή = кража\nο κλέφτης = вор";
+// "слово = перевод" per line; the Greek side is detected by letters, so either order works
+function parseLines(text){
+ const pairs=[],bad=[];
+ text.split("\n").forEach((line,n)=>{
+  if(!line.trim())return;
+  const m=line.match(/^\s*(.+?)\s*(?:=|—|–|\t)\s*(.+?)\s*$/);
+  if(!m)return bad.push(n+1);
+  let [,a,b]=m;if(!GREEK.test(a)&&GREEK.test(b))[a,b]=[b,a];
+  pairs.push({gr:a,ru:b});
+ });
+ return {pairs,bad};
+}
+
+function macWelcome(f){
+ const S=f.screen,s=f.state;
+ S.innerHTML=`<span class="lights abs">${LIGHTS}</span>
+  <div class="mw-l"><div class="appicon">Μ</div><div class="t1">Mnemit</div><p>Греческий каждый день · версия 1.0</p>
+   <div class="mw-b"><button class="btn open">Открыть папку Mnemit</button><button class="btn sec imp">Импортировать карточки…</button></div></div>
+  <div class="mw-r"><h3>Недавние колоды</h3>
+   ${s.decks.slice().reverse().map(d=>`<button class="rec" data-id="${d.id}">${ic("deck")}<span><b>${d.name}</b><span>iCloud Drive › Mnemit · ${d.mode.toLowerCase()}</span></span></button>`).join("")}</div>`;
+ $(".open",S).onclick=()=>macOpenPanel(f);
+ $(".imp",S).onclick=()=>openModal(f,`<h3>Импорт карточек</h3><p class="sub">Принимает файлы TSV и CSV: вопрос, ответ, подсказка. Этот сценарий в прототипе не раскрыт.</p>
+  <div class="acts"><button class="btn" data-dismiss>Закрыть</button></div>`,{style:"--w:440px;height:170px"});
+ $(".mw-r",S).onclick=e=>{const b=e.target.closest(".rec");if(b){s.sel=b.dataset.id;f.go(1)}};
+}
+function macOpenPanel(f){
+ const sh=openModal(f,`<h3>Выберите папку с колодами</h3><p class="sub">iCloud Drive › Mnemit</p>
+  <ul class="files"><li>${ic("deck")}<span>Greek A1–A2.voctrain</span><em>вчера</em></li><li>${ic("deck")}<span>Greek B1.voctrain</span><em>сегодня</em></li></ul>
+  <p class="found2">${ic("check")} Найдено 2 колоды</p>
+  <div class="acts"><button class="btn sec" data-dismiss>Отмена</button><button class="btn go" data-focus>Открыть</button></div>`,{style:"--w:520px;height:300px"});
+ $(".go",sh).onclick=()=>{f.modal.close();f.go(1);f.toast("Открыто 2 колоды из iCloud Drive/Mnemit")};
+}
+
+// main window: sidebar with decks, card table, toolbar. withWords opens the "Добавить слова урока…" sheet.
+function macMain(f,withWords){
+ const S=f.screen,s=f.state,cur=()=>selDeck(s);
+ S.innerHTML=`<div class="tb">${LIGHTS}<b class="ttl">Mnemit</b><span class="sp"></span>
+   <button class="btn sec add">Добавить слова урока…</button><button class="btn learn"></button></div>
+  <aside class="mside"><div class="sh"><span>Колоды</span><span>нов.</span><span>изуч.</span><span>повт.</span></div><div class="dlist"></div>
+   <div class="sf"><button class="link newdeck">＋ Новая колода <kbd>⌘N</kbd></button></div></aside>
+  <section class="mdetail"></section>`;
+ const num=(v,c)=>`<span class="c ${c}${v?"":" z"}">${v}</span>`;
+ function drawSide(bumpId){
+  $(".dlist",S).innerHTML=s.decks.map(d=>`<button class="dk${d.id===bumpId?" bump":""}" data-id="${d.id}"${d.id===s.sel?' aria-current="true"':""}><span>${esc(d.name)}</span>${num(d.n,"n-new")}${num(d.l,"n-learn")}${num(d.r,"n-rev")}</button>`).join("");
+ }
+ function drawBar(){const d=cur(),b=$(".learn",S);b.textContent=`Учить · ${total(d)}`;b.disabled=!total(d)}
+ function drawDetail(){
+  const d=cur();
+  const rows=d.cards.map((c,i)=>{
+   const m=c.m<0?`<span class="lock">${ic("lock")} заблокирована</span>`:`<span class="mat">${[1,2,3].map(k=>`<i${k<=c.m?' class="on"':""}></i>`).join("")}</span>${MAT[c.m]}`;
+   return `<tr data-i="${i}" aria-selected="${i===s.row}"${c.fresh?' class="fresh"':""}><td>${esc(c.q)}</td><td>${esc(c.a)}</td><td>${esc(c.h)}</td><td>${m}</td><td>${c.due}</td></tr>`}).join("");
+  d.cards.forEach(c=>delete c.fresh);
+  $(".mdetail",S).innerHTML=`<div class="dh"><h3>${esc(d.name)}</h3><p>${d.mode} · всего карточек ${fmt(d.total)} · заморожено ${d.frozen}</p></div>
+   <div class="tbl" tabindex="0" aria-label="Карточки колоды">${d.cards.length
+    ?`<table><colgroup><col style="width:140px"><col style="width:120px"><col style="width:100px"><col style="width:112px"><col></colgroup>
+      <thead><tr><th>Вопрос</th><th>Ответ</th><th>Подсказка</th><th>Зрелость</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table>`
+    :`<div class="empty"><b>Карточек пока нет</b>Добавьте слова урока, чтобы начать.<button class="btn sec add2">Добавить слова урока…</button></div>`}</div>`;
+  $(".add2",S)?.addEventListener("click",()=>f.go(3));
+ }
+ const redraw=bumpId=>{drawSide(bumpId);drawBar();drawDetail()};
+ function select(i){
+  s.row=Math.max(0,Math.min(cur().cards.length-1,i));
+  $$("tr[data-i]",S).forEach(r=>r.setAttribute("aria-selected",+r.dataset.i===s.row));
+  $(`tr[data-i="${s.row}"]`,S)?.scrollIntoView({block:"nearest"});
+ }
+
+ // ---- sheets ----
+ function newDeck(){
+  const sh=openModal(f,`<h3>Новая колода</h3><p class="sub">Файл появится в iCloud Drive/Mnemit.</p>
+   <label class="field">Название<input class="nm" placeholder="Greek B2" maxlength="30" data-focus></label>
+   <div class="acts"><button class="btn sec" data-dismiss>Отмена</button><button class="btn mkdeck" disabled>Создать</button></div>`,{style:"--w:420px;height:220px"});
+  const inp=$(".nm",sh),go=$(".mkdeck",sh);
+  inp.oninput=()=>go.disabled=!inp.value.trim();
+  const create=()=>{
+   const name=inp.value.trim();if(!name)return;
+   const id="x"+s.decks.length;
+   s.decks.push({id,name,mode:"Изучение",n:0,l:0,r:0,total:0,frozen:0,cards:[]});
+   s.sel=id;s.row=-1;f.modal.close();redraw();f.toast(`Колода «${name}» создана: iCloud Drive/Mnemit/${name}.voctrain`);
+  };
+  go.onclick=create;inp.onkeydown=e=>{if(e.key==="Enter")create()};
+ }
+ function openWords(){
+  const d=cur();
+  const sh=openModal(f,`<h3>Добавить слова урока</h3>
+   <p class="sub">Одно слово на строку: греческое = перевод. Колода: ${esc(d.name)}.</p>
+   <textarea class="words" spellcheck="false" aria-label="Слова урока" data-focus>${SAMPLE}</textarea>
+   <p class="skipped"></p>
+   <div class="pvh"><b>Предпросмотр</b><span>${ic("lock")} RU→GR откроется после выучки</span></div>
+   <div class="pvbox"><table class="pv"></table></div>
+   <div class="acts"><button class="btn sec" data-dismiss>Отмена</button><button class="btn addgo"></button></div>`,
+   {style:"--w:660px;height:480px",onDismiss:()=>f.go(1),
+    onKey:(e,m)=>{if(e.key==="Escape"){m.dismiss();return true}if((e.metaKey||e.ctrlKey)&&e.key==="Enter"){addNow();return true}}});
+  const ta=$("textarea",sh),go=$(".addgo",sh);
+  function preview(){
+   const {pairs,bad}=parseLines(ta.value),n=pairs.length*2;
+   const rows=[...pairs.map(p=>["GR→RU",p.gr,p.ru,""]),...pairs.map(p=>["RU→GR",p.ru,p.gr,"lk"])];
+   $(".pv",sh).innerHTML=rows.map(([dir,a,b,c])=>`<tr class="${c}"><td>${dir}</td><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join("")
+    ||`<tr><td colspan="3" class="none">Введите хотя бы одну пару «слово = перевод»</td></tr>`;
+   $(".skipped",sh).textContent=bad.length?`Пропущено строк без «=»: ${bad.length}`:"";
+   go.textContent=`Добавить ${n} ${plural(n,["карточку","карточки","карточек"])} в ${d.name}`;go.disabled=!n;
+  }
+  function addNow(){
+   const {pairs}=parseLines(ta.value),k=pairs.length;if(!k)return;
+   const fresh=(q,a,m,due)=>({q,a,h:"",m,due,fresh:1});
+   d.cards.unshift(...pairs.map(p=>fresh(p.gr,p.ru,0,"первой в очереди")),...pairs.map(p=>fresh(p.ru,p.gr,-1,"после выучки")));
+   d.n+=k;d.total+=k*2;s.row=-1;
+   f.modal.close();redraw(d.id);
+   f.toast(`Слова урока пойдут первыми в очереди. Сегодня новых: ${k}, после выучки откроются ещё ${k}.`);
+  }
+  ta.oninput=preview;go.onclick=addNow;preview();
+  ta.setSelectionRange(ta.value.length,ta.value.length);
+ }
+
+ // ---- events ----
+ $(".dlist",S).onclick=e=>{const b=e.target.closest(".dk");if(!b)return;s.sel=b.dataset.id;s.row=-1;redraw();$(".dk[aria-current]",S).focus()};
+ $(".mdetail",S).onclick=e=>{const r=e.target.closest("tr[data-i]");if(r)select(+r.dataset.i)};
+ $(".learn",S).onclick=()=>f.go(2);
+ $(".add",S).onclick=()=>f.go(3);
+ $(".newdeck",S).onclick=newDeck;
+ f.onKey=e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="n"){e.preventDefault();return newDeck()}
+  if(e.target.closest(".tbl")&&(e.key==="ArrowDown"||e.key==="ArrowUp")){e.preventDefault();select(s.row+(e.key==="ArrowDown"?1:-1))}
+ };
+ redraw();
+ if(withWords)openWords();
+}
+
+function macHelp(f){
+ const kb=t=>`<kbd>${t}</kbd>`;
+ const close=(e,m)=>{if(["Shift","Meta","Control","Alt","Tab"].includes(e.key))return false;m.close();return true};
+ openModal(f,`<h3>Клавиши в сессии</h3>
+  <dl class="kl">
+   <dt>${kb("Пробел")}</dt><dd>Показать ответ</dd>
+   <dt>${kb("←")}${kb("→")}${kb("↑")}${kb("↓")}</dt><dd>Оценка: ← не помню, → помню, ↑ легко, ↓ с трудом</dd>
+   <dt>${kb("Z")} или ${kb("Esc")}</dt><dd>Отменить последнюю оценку</dd>
+   <dt>${kb("S")}</dt><dd>Произнести</dd>
+   <dt>${kb("?")}</dt><dd>Эта подсказка</dd>
+  </dl>
+  <p class="foot">Esc или любая клавиша закрывает подсказку</p>
+  <div class="acts"><button class="btn" data-dismiss data-focus>Понятно</button></div>`,{cls:"mid help",style:"--w:520px",onKey:close});
+}
+function macSession(f){
+ const s=f.state,d=selDeck(s);
+ const run=cards=>{
+  Study(f,{cards,hints:false,onClose:()=>f.go(1),keys:e=>e.key==="?"&&(macHelp(f),true),
+   onDone:res=>{
+    if(!s.firstDone){s.firstDone=true;consume(d,SESSION)}
+    f.screen.className="screen";f.screen.replaceChildren();f.onKey=null;
+    f.screen.insertAdjacentHTML("afterbegin",`<div class="tb">${LIGHTS}<b class="ttl">${esc(d.name)} · итоги</b></div>`);
+    endScreen(f,res,{repeat:run,done:()=>f.go(1)});
+   }});
+  f.screen.insertAdjacentHTML("afterbegin",`<div class="tb">${LIGHTS}<b class="ttl">${esc(d.name)} · сессия</b></div>`);
+  $(".sbar",f.screen).insertAdjacentHTML("beforeend",'<button class="qm" aria-label="Клавиши (?)">?</button>');
+  $(".qm",f.screen).onclick=()=>macHelp(f);
+ };
+ run(SESSION);
+ if(!s.seenHelp){s.seenHelp=true;macHelp(f)}
+}
+
+Flow("mac",{
+ title:"Mac · главное окно",
+ keys:"Клавиатура и мышь. Клик по окну даёт ему клавиатуру; ⌘N (или Ctrl+N) — новая колода.",
+ init:()=>({decks:newDecks(),sel:"b",row:-1,seenHelp:false,firstDone:false}),
+ steps:[
+  {name:"Старт",render:macWelcome,note:"Откройте папку Mnemit (выбор файлов имитируется листом) или выберите недавнюю колоду. Импорт в прототипе только обозначен."},
+  {name:"Окно",render:f=>macMain(f,false),note:"Слева колоды со счётчиками, справа таблица карточек; ↑ ↓ двигают выделение в таблице. «Учить · 35» запускает сессию, ⌘N создаёт колоду."},
+  {name:"Сессия",render:macSession,onNav:f=>{f.state.seenHelp=false},note:"В первой сессии открывается памятка по клавишам: любая клавиша закрывает, «?» возвращает. Пробел — показать, ← → ↑ ↓ — оценить, Z или Esc — отменить, S — произнести."},
+  {name:"Слова урока",render:f=>macMain(f,true),note:"Предпросмотр обновляется по мере ввода: у каждой пары две карточки, обратная откроется после выучки. ⌘↩ добавляет, Esc отменяет."}]});
+
+// ---------- theme link ----------
+const THEMES=["auto","light","dark"],NAMES=["авто","светлая","тёмная"];let ti=0;
+$("#theme").onclick=()=>{ti=(ti+1)%3;const r=document.documentElement;
+ if(THEMES[ti]==="auto")delete r.dataset.theme;else r.dataset.theme=THEMES[ti];
+ $("#theme").textContent=`Тема: ${NAMES[ti]}`};
+</script>
+</body>
+</html>
