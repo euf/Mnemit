@@ -3,7 +3,7 @@ import UIKit
 
 @testable import VocTrain
 
-/// The terracotta accent keeps its contrast in all four appearances: 4.5:1 for the white label
+/// The indigo accent (systemIndigo, pinned per appearance) keeps its contrast in all four appearances: 4.5:1 for the white label
 /// of a prominent button, 3:1 against the surfaces it sits on as a ring, a glyph or a fill. The
 /// system surfaces are resolved at run time, not copied. The accent is never small text.
 struct AccentContrastTests {

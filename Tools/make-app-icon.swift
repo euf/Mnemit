@@ -10,7 +10,7 @@
 // gets a dark variant of every concept; tinted falls back to the system's automatic rendering.
 //
 //   A  Flip loop      a flashcard mid-flip inside a circular arrow (the review cycle), indigo
-//   B  M of cards     two cards leaning into each other, their outline reads as an M, warm clay
+//   B  M of cards     two cards leaning into each other, their outline reads as an M, indigo
 //   C  Steps          cards rising as a staircase, each one brighter (growing intervals), sand
 //   D  Recall ripple  a card with arcs radiating from one corner (a memory echo), coral
 
@@ -66,10 +66,11 @@ enum Concept: String, CaseIterable {
         case (.a, true):
             Theme(top: 0x211A57, bottom: 0x110C33, inks: [0xE2DEF5, 0x8E85E6])
         // inks: left card, right card.
+        // Indigo since 21.10.2026, the app's accent (systemIndigo); clay read as Claude.
         case (.b, false):
-            Theme(top: 0xCB7250, bottom: 0xAB5233, inks: [0xF3E6D3, 0xFCF3E6])
+            Theme(top: 0x6C6AE4, bottom: 0x4846C2, inks: [0xE4E3FA, 0xF8F7FF])
         case (.b, true):
-            Theme(top: 0x5E2E1F, bottom: 0x3A1B11, inks: [0xCDB69C, 0xE9D8C0])
+            Theme(top: 0x2C2B6E, bottom: 0x161546, inks: [0xB4B2EC, 0xDAD9FA])
         // inks: the cards from lowest to highest.
         case (.c, false):
             Theme(top: 0xDCA444, bottom: 0xC08728, inks: [0x6E4410, 0x95601A, 0xF1D698, 0xFFF6E0])

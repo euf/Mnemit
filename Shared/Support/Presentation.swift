@@ -199,15 +199,15 @@ enum Format {
 }
 
 extension Color {
-    /// The daily ring: the app's accent, terracotta (`AccentColor`). On the Mac the user's
-    /// system accent shows instead unless it is Multicolor. The accent is a fill, a ring and
-    /// a glyph, never small text: white on it has 4.6:1 or more, but it is 3.0 to 3.7:1 on
-    /// the dark grouped surfaces.
+    /// The daily ring: the app's accent, system indigo (`AccentColor` references
+    /// `systemIndigoColor`, so light, dark and high-contrast variants come from the system).
+    /// Indigo because red means Forgot and the greens/teal mean recalled; green read as
+    /// Excel and terracotta as Claude (owner, 21.10.2026). On the Mac the user's system
+    /// accent shows instead unless it is Multicolor.
     static var dailyRing: Color { Color.accentColor }
 
-    /// The second and later laps of `DailyRingView`, a lighter terracotta that stands out
-    /// against the first.
-    static var dailyRingLap: Color { Color(light: 0xD98B6F, dark: 0xE3A68E) }
+    /// The second and later laps of `DailyRingView`: the accent, lighter.
+    static var dailyRingLap: Color { Color.accentColor.opacity(0.55) }
 
     /// The face of a flash card: a little off the background, so the card stands out
     /// from the screen it is swiped across.
