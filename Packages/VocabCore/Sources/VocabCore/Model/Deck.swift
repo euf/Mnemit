@@ -188,6 +188,22 @@ public struct Deck: Hashable, Sendable {
         return cards.filter { second($0) == newest && !$0.isSuspended }.map(\.id)
     }
 
+    /// The cards graded `.again` at least once on the study day of `date`, in deck order,
+    /// without suspended cards. Read from the review logs, so it holds across study
+    /// streams and devices. Meant for `Practice(practicing:at:)`.
+    public func mistakes(onDayOf date: Date, calendar: StudyCalendar) -> [Card.ID] {
+        let day = calendar.dayNumber(for: date)
+        return cards.filter { card in
+            guard !card.isSuspended else { return false }
+            for entry in card.log.reversed() {
+                let entryDay = calendar.dayNumber(for: entry.date)
+                if entryDay < day { break }
+                if entryDay == day, entry.grade == .again { return true }
+            }
+            return false
+        }.map(\.id)
+    }
+
     /// Whether `card` is a leech by the deck's `LearningOptions.leechThreshold`.
     public func isLeech(_ card: Card) -> Bool {
         card.isLeech(threshold: learningOptions.leechThreshold)
