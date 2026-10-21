@@ -11,7 +11,7 @@ import VocabCore
 /// With flash cards (the preference "Study by"), there is no response: Space or Return
 /// shows the answer, then ← Forgot, → Good, ↑ Easy, ↓ Hard, or 1–4 for Forgot, Hard, Good
 /// and Easy, and Space or Return mean Good. The card flies out in the direction of its
-/// grade. A line under the progress names the grade and when the card comes back, and offers
+/// grade, while the button of the grade flashes. A line under the progress names the grade and when the card comes back, and offers
 /// Undo for a few seconds; Z, Esc and ⌘Z take the review back. S speaks the Greek side.
 ///
 /// ⌘E edits the card being asked (#289); before the response is checked or the answer
@@ -336,7 +336,7 @@ private struct FlashcardView: View {
             .onTapGesture(perform: onReveal)
 
             actions
-                .frame(maxWidth: 440, minHeight: 132, alignment: .top)
+                .frame(maxWidth: 440, minHeight: 104, alignment: .top)
         }
     }
 
@@ -384,7 +384,7 @@ private struct FlashcardView: View {
         if isRevealed {
             // Space and Return showed the answer and now mean Good; the arrows grade as the
             // swipes do on the iPhone.
-            GradeChoice(defaultGrade: .good, acceptsSpace: true, acceptsArrows: true, onGrade: commit)
+            GradeChoice(defaultGrade: .good, acceptsSpace: true, acceptsArrows: true, highlighted: flight.highlighted, onGrade: commit)
         } else {
             Button(action: onReveal) {
                 VStack(spacing: 2) {

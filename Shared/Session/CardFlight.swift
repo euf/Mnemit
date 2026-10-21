@@ -30,10 +30,16 @@ final class CardFlight {
     private(set) var isFlying = false
 
     /// The colour of text on the tinted card once the tint is strong enough to need it.
+    /// Hard keeps the normal text: its green, mixed with a light card, carries white at
+    /// only 2.3 to 2.9:1, dark text at 7 or more; on a dark card the normal text is white.
     var textColor: Color? {
-        guard let tint, tintStrength >= Self.textSwitch else { return nil }
+        guard let tint, tint != .hard, tintStrength >= Self.textSwitch else { return nil }
         return tint.onColor
     }
+
+    /// The grade whose button the row of buttons lights up: the one a swipe would give if
+    /// let go now, or, while the card flies out, the one just given by swipe, key or button.
+    var highlighted: Grade? { tintStrength > 0 ? tint : nil }
 
     /// The card follows the finger one to one, turning a little with its horizontal
     /// offset. Before the answer is shown it only gives way a little, without tint.

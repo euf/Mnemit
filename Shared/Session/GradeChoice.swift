@@ -2,10 +2,10 @@ import SwiftUI
 import VocabCore
 
 /// The grades of a card whose answer is shown, laid out by what they mean: Forgot is
-/// the only "no"; Hard, Good and Easy are three kinds of "yes" and share one capsule,
-/// Good in the middle and wider. Four equal buttons hid that, and Hard after forgetting
-/// is the worst mistake for FSRS. The buttons carry the grade's name and nothing else:
-/// when the card comes back shows only once the grade is given, see `UndoChip`.
+/// the only "no"; Hard, Good and Easy are three kinds of "yes" and share a row under their
+/// own caption, Good in the middle and wider. Four equal buttons hid that, and Hard after
+/// forgetting is the worst mistake for FSRS. The buttons carry the grade's name and nothing
+/// else: when the card comes back shows only once the grade is given, see `UndoChip`.
 ///
 /// On the Mac the keys 1 to 4 choose a grade, and Return accepts `defaultGrade`.
 struct GradeChoice: View {
@@ -25,7 +25,27 @@ struct GradeChoice: View {
     var acceptsArrows = false
     /// The iPhone in landscape, where the row of buttons has little height.
     var isCompact = false
+    /// The grade a swipe is about to give, or a key has just given: its button stands out
+    /// and the others step back (`CardFlight.highlighted`).
+    var highlighted: Grade?
     var onGrade: @MainActor (Grade) -> Void
+
+    /// Controls of the platform's size: 52 pt on the iPhone, 44 in landscape, 38 on the Mac.
+    private var height: CGFloat {
+        #if os(macOS)
+        38
+        #else
+        isCompact ? 44 : 52
+        #endif
+    }
+
+    private var shape: RoundedRectangle {
+        #if os(macOS)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+        #else
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+        #endif
+    }
 
     var body: some View {
         Group {
@@ -57,40 +77,32 @@ struct GradeChoice: View {
             onGrade(.again)
         } label: {
             Label(title, systemImage: "xmark")
-                .font(titleFont(emphasised: true))
+                .font(.body.weight(.semibold))
                 .lineLimit(1)
                 .foregroundStyle(Grade.again.onColor)
-                .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 52)
-                .background(Grade.again.color, in: Capsule())
+                .frame(maxWidth: .infinity, minHeight: height)
+                .background(Grade.again.color, in: shape)
                 .overlay { marker(of: .again) }
-                .contentShape(Capsule())
+                .contentShape(shape)
         }
         .buttonStyle(Pressable())
+        .modifier(Emphasis(grade: .again, highlighted: highlighted))
         #if os(macOS)
         .keyboardShortcut(Grade.again.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(Grade.again.rawValue)"))
         #endif
     }
 
-    /// Hard, Good and Easy: one shape, so the three read as one answer, three shades of
-    /// one green.
+    /// Hard, Good and Easy: three buttons of one height in a row, three shades of one
+    /// green, Good wider.
     private var recalled: some View {
-        WeightedRow(weights: [1, 1.4, 1]) {
+        WeightedRow(weights: [1, 1.25, 1], spacing: 8) {
             segment(.hard)
-                .overlay(alignment: .trailing) { separator }
             segment(.good)
             segment(.easy)
-                .overlay(alignment: .leading) { separator }
         }
-        .clipShape(Capsule())
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Recalled"))
-    }
-
-    private var separator: some View {
-        Rectangle()
-            .fill(.background)
-            .frame(width: 1)
     }
 
     private func segment(_ grade: Grade) -> some View {
@@ -98,38 +110,30 @@ struct GradeChoice: View {
             onGrade(grade)
         } label: {
             Text(grade.title)
-                .font(titleFont(emphasised: grade == .good))
+                .font(.body.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .foregroundStyle(grade.onColor)
-                .frame(maxWidth: .infinity, minHeight: isCompact ? 44 : 56, maxHeight: .infinity)
-                .background(grade.color)
+                .frame(maxWidth: .infinity, minHeight: height, maxHeight: .infinity)
+                .background(grade.color, in: shape)
                 .overlay { marker(of: grade) }
-                .contentShape(Rectangle())
+                .contentShape(shape)
         }
         .buttonStyle(Pressable())
+        .modifier(Emphasis(grade: grade, highlighted: highlighted))
         #if os(macOS)
         .keyboardShortcut(grade.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(grade.rawValue)"))
         #endif
     }
 
-    private func titleFont(emphasised: Bool) -> Font {
-        #if os(macOS)
-        emphasised ? .body.weight(.semibold) : .body
-        #else
-        emphasised ? (isCompact ? Font.body : Font.title3).weight(.semibold) : .body
-        #endif
-    }
-
-    /// A ring in the part that Return accepts.
+    /// A ring in the button that Return accepts.
     @ViewBuilder
     private func marker(of grade: Grade) -> some View {
         #if os(macOS)
         if grade == defaultGrade {
-            Capsule()
+            shape.inset(by: 3)
                 .strokeBorder(grade.onColor, lineWidth: 2)
-                .padding(3)
         }
         #endif
     }
@@ -176,14 +180,32 @@ private struct Pressable: ButtonStyle {
     }
 }
 
-/// Places its views side by side, each as wide as its share of the weights says.
+/// Lights up the button of the grade a swipe is about to give or a key has just given, and
+/// steps the others back. All buttons stay as they are while no grade is highlighted.
+private struct Emphasis: ViewModifier {
+    var grade: Grade
+    var highlighted: Grade?
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(highlighted == nil || highlighted == grade ? 1 : 0.35)
+            .scaleEffect(highlighted == grade ? 1.03 : 1)
+            .animation(.easeOut(duration: 0.12), value: highlighted)
+    }
+}
+
+/// Places its views side by side with `spacing` between them, each as wide as its share of
+/// the weights says. The row is as high as its highest view wants to be, never higher, and
+/// its views fill that height.
 private struct WeightedRow: Layout {
     var weights: [CGFloat]
+    var spacing: CGFloat
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? 300
+        // Without a height proposal, as views that fill their height would take all of it.
         let height = zip(subviews, widths(in: width))
-            .map { $0.sizeThatFits(ProposedViewSize(width: $1, height: proposal.height)).height }
+            .map { $0.sizeThatFits(ProposedViewSize(width: $1, height: nil)).height }
             .max()
         return CGSize(width: width, height: height ?? 0)
     }
@@ -192,12 +214,13 @@ private struct WeightedRow: Layout {
         var x = bounds.minX
         for (subview, width) in zip(subviews, widths(in: bounds.width)) {
             subview.place(at: CGPoint(x: x, y: bounds.minY), anchor: .topLeading, proposal: ProposedViewSize(width: width, height: bounds.height))
-            x += width
+            x += width + spacing
         }
     }
 
     private func widths(in total: CGFloat) -> [CGFloat] {
         let sum = weights.reduce(0, +)
-        return weights.map { total * $0 / sum }
+        let free = max(0, total - spacing * CGFloat(weights.count - 1))
+        return weights.map { free * $0 / sum }
     }
 }
