@@ -42,6 +42,10 @@ public struct LearningOptions: Hashable, Sendable {
     /// Whether the optimizer also learns from revealed reviews. Off, only typed reviews
     /// are its targets, as with ADR 0004.
     public var optimizeFromRevealed: Bool = true
+    /// Lapses (Again on a card in the review phase) after which a study session suspends
+    /// the card as a leech, and after every further multiple of it; 0 never does. A card is
+    /// a leech from that many lapses on, resumed or not: `Card.isLeech(threshold:)`.
+    public var leechThreshold: Int = 8
 
     public init() {}
 
@@ -53,6 +57,8 @@ public struct LearningOptions: Hashable, Sendable {
     /// For `newProductionPerSession` when it is limited: unlike the other limits, 0 is valid.
     public static let productionLimitRange: ClosedRange<Int> = 0...9999
     public static let productionUnlockDaysRange: ClosedRange<Int> = 0...365
+    /// For `leechThreshold`; 0 is off.
+    public static let leechThresholdRange: ClosedRange<Int> = 0...99
     /// From the damping of ADR 0004 (a third) to none.
     public static let revealedRecallWeightRange: ClosedRange<Double> = (1.0 / 3)...1
 }
@@ -91,6 +97,7 @@ extension LearningOptions {
         newCardsPerSession = newCardsPerSession?.clamped(to: Self.sessionLimitRange)
         newProductionPerSession = newProductionPerSession?.clamped(to: Self.productionLimitRange)
         productionUnlockDays = productionUnlockDays.clamped(to: Self.productionUnlockDaysRange)
+        leechThreshold = leechThreshold.clamped(to: Self.leechThresholdRange)
         if !revealedRecallWeight.isFinite { revealedRecallWeight = LearningOptions().revealedRecallWeight }
         revealedRecallWeight = revealedRecallWeight.clamped(to: Self.revealedRecallWeightRange)
     }
@@ -167,6 +174,11 @@ public struct Deck: Hashable, Sendable {
     /// The number of suspended cards, see `Card.isSuspended`.
     public var suspendedCount: Int {
         cards.reduce(0) { $0 + ($1.isSuspended ? 1 : 0) }
+    }
+
+    /// Whether `card` is a leech by the deck's `LearningOptions.leechThreshold`.
+    public func isLeech(_ card: Card) -> Bool {
+        card.isLeech(threshold: learningOptions.leechThreshold)
     }
 
     /// The probability of recalling `card` at `now` with the deck's learning options,

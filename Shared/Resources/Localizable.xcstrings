@@ -2920,6 +2920,16 @@
         }
       }
     },
+    "leech, suspended": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremse, ausgesetzt"
+          }
+        }
+      }
+    },
     "less than a day": {
       "localizations": {
         "de": {

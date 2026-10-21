@@ -48,6 +48,12 @@
   заменил жёсткую треть из ADR 0004, `optimizeFromRevealed` (по умолчанию `true`) пускает
   такие повторения в оптимизатор целями. Откат к ADR 0004: вес 0.33 и выключатель в
   Learning Options (ADR 0005).
+- Leech: `LearningOptions.leechThreshold` (8 провалов, 0 — выкл). Провал, доводящий
+  `lapses` до порога и до каждого следующего кратного, `StudySession.review` сразу
+  превращает в suspend (оба приложения, одним `DeckChange` с отменой), карточка уходит
+  из сессии, `GradeReceipt` говорит «leech, suspended». Флага в файле нет: `Card.isLeech(
+  threshold:)` выводится из `lapses`, поэтому фильтр «Leeches» на Mac показывает и
+  возобновлённые карточки, а слияния нового правила не требуют.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
 

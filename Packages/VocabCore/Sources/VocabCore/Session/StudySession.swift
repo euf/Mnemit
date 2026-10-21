@@ -32,7 +32,9 @@ public struct StudySession: Sendable {
 
     /// Reviews `card`, the current card, and moves on to the next one.
     ///
-    /// The card leaves the session once it is in the review phase.
+    /// The card leaves the session once it is in the review phase. A lapse that brings its
+    /// lapses to `LearningOptions.leechThreshold`, or to a further multiple of it, makes it
+    /// a leech: the returned card is suspended, and it leaves the session at once.
     ///
     /// - Parameter calendar: Counts the elapsed study days and the due date. It may
     ///   differ from the one the session started with, e.g. after the machine's time
@@ -42,9 +44,18 @@ public struct StudySession: Sendable {
     mutating func review(_ grade: Grade, of card: Card, with learningOptions: LearningOptions, at now: Date, calendar: StudyCalendar) -> Card? {
         guard card.id == session.currentCardID else { return nil }
         let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
-        let scheduled = scheduler.review(card, grade: grade, at: now, mode: reviewMode, using: &fuzzing)
-        session.record(grade, isDone: scheduled.learningState?.phase == .review, at: now)
+        var scheduled = scheduler.review(card, grade: grade, at: now, mode: reviewMode, using: &fuzzing)
+        let becameLeech = Self.isNewLeech(scheduled, after: card, threshold: learningOptions.leechThreshold)
+        if becameLeech { scheduled.suspend(at: now) }
+        session.record(grade, isDone: scheduled.learningState?.phase == .review, isLeech: becameLeech, at: now)
         return scheduled
+    }
+
+    /// Whether the review that made `scheduled` out of `card` lapsed it onto the threshold
+    /// or a multiple of it. A resumed leech is suspended again only at the next multiple.
+    private static func isNewLeech(_ scheduled: Card, after card: Card, threshold: Int) -> Bool {
+        guard threshold > 0, !card.isSuspended, let lapses = scheduled.learningState?.lapses else { return false }
+        return lapses > (card.learningState?.lapses ?? 0) && lapses.isMultiple(of: threshold)
     }
 
     mutating func perform(_ command: SessionCommand) {

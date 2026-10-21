@@ -89,27 +89,32 @@ struct DeckFileTests {
         #expect(deck.learningOptions.newCardOrder == .newestFirst)
         #expect(deck.learningOptions.revealedRecallWeight == 0.5)
         #expect(!deck.learningOptions.optimizeFromRevealed)
+        #expect(deck.learningOptions.leechThreshold == 6)
 
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == String(decoding: data, as: UTF8.self))
     }
 
     /// The options for revealed reviews (ADR 0005) are new: an older deck lacks them and
     /// reads with the defaults of the fork, and a weight out of range is clamped.
-    @Test func revealedReviewOptionsRoundTripAndDefault() throws {
+    @Test func revealedReviewAndLeechOptionsRoundTripAndDefault() throws {
         var deck = try sampleDeck()
         #expect(deck.learningOptions.revealedRecallWeight == 1)
         #expect(deck.learningOptions.optimizeFromRevealed)
+        #expect(deck.learningOptions.leechThreshold == 8)
         var options = deck.learningOptions
         options.revealedRecallWeight = 0.4
         options.optimizeFromRevealed = false
+        options.leechThreshold = 0
         _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), day: 100)
         let read = try DeckFile.decode(DeckFile.fileWrapper(for: deck))
         #expect(read.learningOptions.revealedRecallWeight == 0.4)
         #expect(!read.learningOptions.optimizeFromRevealed)
+        #expect(read.learningOptions.leechThreshold == 0)
 
         let old = try DeckFile.decode(deckJSON()).learningOptions
         #expect(old.revealedRecallWeight == 1)
         #expect(old.optimizeFromRevealed)
+        #expect(old.leechThreshold == 8)
 
         for (stored, expected) in [("0.05", 1.0 / 3), ("7", 1.0), ("0.33", 1.0 / 3)] {
             let odd = Data(
@@ -170,6 +175,7 @@ struct DeckFileTests {
             .replacingOccurrences(of: "\"newCardsPerSession\" : 15,", with: "\"newCardOrder\" : \"deckOrder\",\n    \"newCardsPerSession\" : 15,\n    \"newProductionPerSession\" : 7,")
             .replacingOccurrences(of: "    \"steps\" : 2,", with: "    \"productionUnlockDays\" : 21,\n    \"revealedRecallWeight\" : 1,\n    \"steps\" : 2,")
             .replacingOccurrences(of: "    \"parameters\" : [", with: "    \"optimizeFromRevealed\" : true,\n    \"parameters\" : [")
+            .replacingOccurrences(of: "    \"maximumInterval\" :", with: "    \"leechThreshold\" : 8,\n    \"maximumInterval\" :")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 

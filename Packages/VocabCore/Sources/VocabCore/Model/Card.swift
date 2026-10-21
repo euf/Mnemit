@@ -218,6 +218,19 @@ public struct Card: Identifiable, Hashable, Sendable {
         return learningState.due <= date
     }
 
+    /// Whether the card has lapsed `threshold` times or more; never for a threshold of 0.
+    /// Derived from the lapse count, so it needs no flag in the deck file and no merge
+    /// rule: every version of a card agrees on its lapses.
+    public func isLeech(threshold: Int) -> Bool {
+        threshold > 0 && (learningState?.lapses ?? 0) >= threshold
+    }
+
+    /// Suspends the card like `DeckChange.settingSuspended`, at `now` in whole seconds.
+    mutating func suspend(at now: Date) {
+        isSuspended = true
+        suspensionChanged = Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down))
+    }
+
     /// Makes the card a new card again but keeps its content. Leaves
     /// `learningStateReset` to the caller: replaying a log resets the card, too.
     mutating func resetLearningState() {

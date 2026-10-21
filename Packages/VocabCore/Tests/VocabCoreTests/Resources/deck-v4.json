@@ -52,6 +52,7 @@
     "cardsPerSession" : null,
     "caseSensitive" : true,
     "fuzzing" : false,
+    "leechThreshold" : 6,
     "maximumInterval" : 36500,
     "newCardOrder" : "newestFirst",
     "newCardsPerSession" : 15,
