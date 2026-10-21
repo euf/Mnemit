@@ -29,11 +29,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		7A0000000000000000000004 /* MacVocTrain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacVocTrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A0000000000000000000004 /* Mnemit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mnemit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A0000000000000000000014 /* VocabCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = VocabCore; path = Packages/VocabCore; sourceTree = "<group>"; };
 		7A000000000000000000002D /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		7A0000000000000000000024 /* MacVocTrainNgTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacVocTrainNgTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		7A0000000000000000000047 /* VocTrain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VocTrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A0000000000000000000047 /* Mnemit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mnemit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A0000000000000000000057 /* VocTrainTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VocTrainTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A000000000000000000003A /* Signing-iOS.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Signing-iOS.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -149,9 +149,9 @@
 		7A0000000000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				7A0000000000000000000004 /* MacVocTrain.app */,
+				7A0000000000000000000004 /* Mnemit.app */,
 				7A0000000000000000000024 /* MacVocTrainNgTests.xctest */,
-				7A0000000000000000000047 /* VocTrain.app */,
+				7A0000000000000000000047 /* Mnemit.app */,
 				7A0000000000000000000057 /* VocTrainTests.xctest */,
 			);
 			name = Products;
@@ -181,7 +181,7 @@
 				7A0000000000000000000012 /* VocabCore */,
 			);
 			productName = MacVocTrainNg;
-			productReference = 7A0000000000000000000004 /* MacVocTrain.app */;
+			productReference = 7A0000000000000000000004 /* Mnemit.app */;
 			productType = "com.apple.product-type.application";
 		};
 		7A0000000000000000000020 /* MacVocTrainNgTests */ = {
@@ -228,7 +228,7 @@
 				7A0000000000000000000048 /* VocabCore */,
 			);
 			productName = VocTrain;
-			productReference = 7A0000000000000000000047 /* VocTrain.app */;
+			productReference = 7A0000000000000000000047 /* Mnemit.app */;
 			productType = "com.apple.product-type.application";
 		};
 		7A0000000000000000000050 /* VocTrainTests */ = {
@@ -447,7 +447,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MacVocTrainNg/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MacVocTrain;
+				INFOPLIST_KEY_CFBundleDisplayName = Mnemit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2013–2026 Martin Fluch";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -455,8 +455,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mfluch.MacVocTrainNg;
-				PRODUCT_NAME = MacVocTrain;
+				PRODUCT_BUNDLE_IDENTIFIER = com.euf.mnemit;
+				PRODUCT_MODULE_NAME = MacVocTrain;
+				PRODUCT_NAME = Mnemit;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 			};
@@ -474,7 +475,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MacVocTrainNg/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MacVocTrain;
+				INFOPLIST_KEY_CFBundleDisplayName = Mnemit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2013–2026 Martin Fluch";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -482,8 +483,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mfluch.MacVocTrainNg;
-				PRODUCT_NAME = MacVocTrain;
+				PRODUCT_BUNDLE_IDENTIFIER = com.euf.mnemit;
+				PRODUCT_MODULE_NAME = MacVocTrain;
+				PRODUCT_NAME = Mnemit;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 			};
@@ -497,11 +499,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mfluch.MacVocTrainNgTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.euf.mnemit.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacVocTrain.app/Contents/MacOS/MacVocTrain";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mnemit.app/Contents/MacOS/Mnemit";
 			};
 			name = Debug;
 		};
@@ -513,11 +515,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mfluch.MacVocTrainNgTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.euf.mnemit.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacVocTrain.app/Contents/MacOS/MacVocTrain";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mnemit.app/Contents/MacOS/Mnemit";
 			};
 			name = Release;
 		};
@@ -531,7 +533,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VocTrain/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = VocTrain;
+				INFOPLIST_KEY_CFBundleDisplayName = Mnemit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2013–2026 Martin Fluch";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -542,8 +544,9 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "de.fluch-it-consulting.VocTrain";
-				PRODUCT_NAME = VocTrain;
+				PRODUCT_BUNDLE_IDENTIFIER = com.euf.mnemit.ios;
+				PRODUCT_MODULE_NAME = VocTrain;
+				PRODUCT_NAME = Mnemit;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -561,7 +564,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VocTrain/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = VocTrain;
+				INFOPLIST_KEY_CFBundleDisplayName = Mnemit;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2013–2026 Martin Fluch";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -572,8 +575,9 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "de.fluch-it-consulting.VocTrain";
-				PRODUCT_NAME = VocTrain;
+				PRODUCT_BUNDLE_IDENTIFIER = com.euf.mnemit.ios;
+				PRODUCT_MODULE_NAME = VocTrain;
+				PRODUCT_NAME = Mnemit;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -590,13 +594,13 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "de.fluch-it-consulting.VocTrainTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.euf.mnemit.ios.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VocTrain.app/VocTrain";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mnemit.app/Mnemit";
 			};
 			name = Debug;
 		};
@@ -609,13 +613,13 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "de.fluch-it-consulting.VocTrainTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.euf.mnemit.ios.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VocTrain.app/VocTrain";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mnemit.app/Mnemit";
 			};
 			name = Release;
 		};

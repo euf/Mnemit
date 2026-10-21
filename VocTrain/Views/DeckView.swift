@@ -83,7 +83,7 @@ private struct EmptyDeckNotice: View {
             VStack(alignment: .leading, spacing: 4) {
                 Label("This deck has no cards", systemImage: "rectangle.stack")
                     .font(.headline)
-                Text("Decks are created and edited in MacVocTrain on the Mac. Here you only study them.")
+                Text("Decks are created and edited in Mnemit on the Mac. Here you only study them.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

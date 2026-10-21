@@ -6,7 +6,7 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>MacVocTrain Deck</string>
+			<string>Mnemit Deck</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -25,7 +25,7 @@
 			<key>UTTypeIdentifier</key>
 			<string>de.fluch-it-consulting.voctrain.deck</string>
 			<key>UTTypeDescription</key>
-			<string>MacVocTrain Deck</string>
+			<string>Mnemit Deck</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>com.apple.package</string>

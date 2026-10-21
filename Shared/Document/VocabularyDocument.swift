@@ -118,9 +118,9 @@ final class VocabularyDocument: ObservableObject {
         }
         switch error {
         case .notADeck:
-            return AppError(String(localized: "This file is not a MacVocTrain deck, or its deck.json is missing or damaged."))
+            return AppError(String(localized: "This file is not a Mnemit deck, or its deck.json is missing or damaged."))
         case .unsupportedVersion:
-            return AppError(String(localized: "This deck was created by a newer version of MacVocTrain."))
+            return AppError(String(localized: "This deck was created by a newer version of Mnemit."))
         case .outdatedVersion:
             return AppError(String(localized: "This deck was saved by a test version of MacVocTrain from before its first release and can no longer be opened."))
         case let .damagedReviewLog(line):

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds the iPhone app (VocTrain) in Release, signs it with the ad-hoc distribution
+# Builds the iPhone app (Mnemit, scheme VocTrain) in Release, signs it with the ad-hoc distribution
 # certificate bought from iApps (Furman in Telegram, 20.10.2026) and installs it on the
 # iPhone over the CoreDevice connection Xcode already has.
 #
@@ -38,7 +38,7 @@ $PB -c 'Print :ProvisionedDevices' "$OUT/profile.plist" | grep -q "$DEVICE" ||
 SHORT_VERSION="$(tr -d '[:space:]' < VERSION)"
 GIT_HASH="$(git rev-parse --short HEAD)"
 [ -z "$(git status --porcelain)" ] || GIT_HASH="${GIT_HASH}+"
-echo "building VocTrain $SHORT_VERSION ($GIT_HASH) as $BUNDLE_ID"
+echo "building Mnemit $SHORT_VERSION ($GIT_HASH) as $BUNDLE_ID"
 
 xcodebuild build -quiet -project MacVocTrainNg.xcodeproj -scheme VocTrain \
   -destination 'generic/platform=iOS' -configuration Release \
@@ -47,8 +47,8 @@ xcodebuild build -quiet -project MacVocTrainNg.xcodeproj -scheme VocTrain \
   PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
   MARKETING_VERSION="$SHORT_VERSION" CURRENT_PROJECT_VERSION="$GIT_HASH"
 
-APP="$OUT/VocTrain.app"
-cp -R build/DerivedData/Build/Products/Release-iphoneos/VocTrain.app "$APP"
+APP="$OUT/Mnemit.app"
+cp -R build/DerivedData/Build/Products/Release-iphoneos/Mnemit.app "$APP"
 cp "$PROFILE" "$APP/embedded.mobileprovision"
 
 for pair in "CFBundleIdentifier=$BUNDLE_ID" "CFBundleShortVersionString=$SHORT_VERSION" "CFBundleVersion=$GIT_HASH"; do
@@ -80,4 +80,4 @@ codesign --verify --strict "$APP"
 security lock-keychain "$KC"
 
 xcrun devicectl device install app --device "$DEVICE" "$APP"
-echo "installed VocTrain $SHORT_VERSION ($GIT_HASH) on $DEVICE"
+echo "installed Mnemit $SHORT_VERSION ($GIT_HASH) on $DEVICE"

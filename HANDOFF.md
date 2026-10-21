@@ -1,9 +1,9 @@
-# HANDOFF — форк euf
+# HANDOFF — Mnemit
 
 ## Состояние
 
-- Mac: `~/Applications/MacVocTrain.app`, `com.euf.macvoctrain`, ставится `Scripts/install-mac.sh`.
-- iPhone 13 mini (UDID `00008110-000411010C68401E`): VocTrain, ставится
+- Mac: `~/Applications/Mnemit.app`, `com.euf.mnemit`, ставится `Scripts/install-mac.sh`.
+- iPhone 13 mini (UDID `00008110-000411010C68401E`): Mnemit (bundle id из профиля), ставится
   `Scripts/install-iphone.sh`. Приложение на iPhone только учит, карточки правятся на Mac.
 - Колода: `iCloud Drive/MacVocTrain/Greek B1.voctrain`, 209 карточек, 20 новых за сессию.
   Источник — `~/Documents/greek-lessons/b1/deck-greek-b1.tsv` (индекс источников рядом в

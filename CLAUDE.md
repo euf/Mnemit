@@ -1,19 +1,23 @@
 # MacVocTrain NG
 
-## Форк euf — читать первым
+## Mnemit — форк euf, читать первым
 
-- Форк `Fluch-IT-Consulting/MacVocTrainNg` под одну задачу EF: учить греческий B1 на Mac и
-  iPhone. `origin` — `euf/MacVocTrainNg`, `upstream` — апстрим. Состояние, подпись iPhone,
-  колода — `HANDOFF.md`.
+- Mnemit (mnem- от «память», + it: «запомни это») — форк `Fluch-IT-Consulting/MacVocTrainNg` под одну задачу EF: учить
+  греческий A2–B1 на Mac и iPhone. `origin` — `euf/Mnemit`, `upstream` — апстрим. Состояние,
+  подпись iPhone, колода — `HANDOFF.md`.
+- Имя Mnemit — всё, что видит человек и система: `Mnemit.app` на Mac и iPhone, bundle id
+  `com.euf.mnemit` (`.ios`, `.tests`), репозиторий, каталог, папка в iCloud Drive, About.
+  Внутренние имена апстрима оставлены сознательно, чтобы слияния с апстримом не превращались
+  в ручную работу: проект `MacVocTrainNg.xcodeproj`, схемы и таргеты `MacVocTrainNg` и
+  `VocTrain`, каталоги исходников, модули `MacVocTrain`/`VocTrain` (`PRODUCT_MODULE_NAME`),
+  формат колоды `.voctrain` и его UTType.
 - Раздел Workflow ниже — правила апстрима (issue, ветка, PR, немецкие заголовки). В форке
   они не действуют: коммит в `main` и пуш без вопроса. Правка, полезная апстриму, —
   отдельной веткой и PR туда по их правилам.
-- Апстрим: `git fetch upstream && git merge upstream/main`. Свои правки держать вне их
-  файлов, чтобы слияние не конфликтовало: `Scripts/`, `Tools/deck-from-tsv/`, `VERSION`,
-  `.versioning`, `HANDOFF.md`, этот раздел. Bundle id и версию скрипты задают параметрами
-  сборки; `project.pbxproj` и `Info.plist` не править.
-- Mac: `Scripts/install-mac.sh` → `~/Applications/MacVocTrain.app`, `com.euf.macvoctrain`,
-  подпись `euf-sign` с entitlements сборки.
+- Апстрим: `git fetch upstream && git merge upstream/main`. Конфликты ждать в
+  `project.pbxproj` (имена продуктов и bundle id) и в строках с именем приложения.
+- Mac: `Scripts/install-mac.sh` → `~/Applications/Mnemit.app`, подпись `euf-sign` с
+  entitlements сборки.
 - iPhone: `Scripts/install-iphone.sh` — Release без подписи, переподпись сертификатом iApps,
   `devicectl` на iPhone 13 mini. Bundle id берётся из профиля. Телефон должен быть
   разблокирован.

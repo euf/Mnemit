@@ -800,22 +800,22 @@
         }
       }
     },
-    "Decks are created and edited in MacVocTrain on the Mac. Here you only study them.": {
+    "Decks are created and edited in Mnemit on the Mac. Here you only study them.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stapel werden in MacVocTrain auf dem Mac angelegt und bearbeitet. Hier lernst du sie nur."
+            "value": "Stapel werden in Mnemit auf dem Mac angelegt und bearbeitet. Hier lernst du sie nur."
           }
         }
       }
     },
-    "Decks are created in MacVocTrain on the Mac. Open one it saved, e.g. in iCloud Drive.": {
+    "Decks are created in Mnemit on the Mac. Open one it saved, e.g. in iCloud Drive.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stapel werden in MacVocTrain auf dem Mac angelegt. Öffne einen, den es gesichert hat, etwa in iCloud Drive."
+            "value": "Stapel werden in Mnemit auf dem Mac angelegt. Öffne einen, den es gesichert hat, etwa in iCloud Drive."
           }
         }
       }
@@ -2530,12 +2530,12 @@
         }
       }
     },
-    "This deck was created by a newer version of MacVocTrain.": {
+    "This deck was created by a newer version of Mnemit.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dieser Stapel wurde mit einer neueren Version von MacVocTrain erstellt."
+            "value": "Dieser Stapel wurde mit einer neueren Version von Mnemit erstellt."
           }
         }
       }
@@ -2550,12 +2550,12 @@
         }
       }
     },
-    "This file is not a MacVocTrain deck, or its deck.json is missing or damaged.": {
+    "This file is not a Mnemit deck, or its deck.json is missing or damaged.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Diese Datei ist kein MacVocTrain-Stapel, oder ihre deck.json fehlt oder ist beschädigt."
+            "value": "Diese Datei ist kein Mnemit-Stapel, oder ihre deck.json fehlt oder ist beschädigt."
           }
         }
       }

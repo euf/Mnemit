@@ -18,7 +18,7 @@ struct StartScreen: View {
                     ContentUnavailableView {
                         Label("No Deck Open", systemImage: "rectangle.stack")
                     } description: {
-                        Text("Decks are created in MacVocTrain on the Mac. Open one it saved, e.g. in iCloud Drive.")
+                        Text("Decks are created in Mnemit on the Mac. Open one it saved, e.g. in iCloud Drive.")
                     } actions: {
                         Button("Open Deck…") { isChoosing = true }
                             .buttonStyle(.borderedProminent)
@@ -27,7 +27,7 @@ struct StartScreen: View {
                     deckList
                 }
             }
-            .navigationTitle(Text(verbatim: "VocTrain"))
+            .navigationTitle(Text(verbatim: "Mnemit"))
             .toolbar {
                 if !knownDecks.byName.isEmpty {
                     Button("Open Deck…", systemImage: "plus") { isChoosing = true }
