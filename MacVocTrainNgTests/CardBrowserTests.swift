@@ -77,6 +77,42 @@ extension WindowTests {
             try await waitUntil("the table shows \(rows) rows") { tableView?.numberOfRows == rows }
         }
 
+        /// Where the segments don't fit, as in a window at its minimum width with the inspector
+        /// open, the same filters are a menu; the table stays. SwiftUI draws that menu itself,
+        /// so the test sees only that the segmented control is gone.
+        @Test func aNarrowListSwapsTheSegmentsForAMenu() async throws {
+            defer { window.close() }
+            try await waitUntil("the scope bar is shown") { scopeBar != nil }
+            window.contentView = NSHostingView(rootView: CardListView(document: document, isEditable: true).frame(width: 300, height: 500))
+            try await waitUntil("the table shows the cards") { tableView?.numberOfRows == 6 }
+            #expect(scopeBar == nil)
+        }
+
+        /// The inspector of a card with a kind, a word key, a sibling and a history builds and
+        /// lays out; its buttons are no AppKit views since macOS 26, so what it shows is for
+        /// a look at the window.
+        @Test func theInspectorBuildsForACardWithSiblingAndHistory() async throws {
+            defer { window.close() }
+            let state = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: Date(), due: Date().addingTimeInterval(86400), reviews: 3, lapses: 1)
+            let log = Grade.allCases.map { ReviewLogEntry(date: Date(), grade: $0) }
+            let word = Card(question: "αγαπώ", answer: "lieben", note: "αγαπώ", kind: .recognition, learningState: state, log: log)
+            let sibling = Card(question: "lieben", answer: "αγαπώ", note: "αγαπώ", kind: .production)
+            let deck = try VocabularyDocument(deck: Deck(cards: [word, sibling]))
+            var selected: [Card.ID] = []
+            let inspector = NSHostingView(
+                rootView: CardInspector(document: deck, selection: [word.id], isEditable: true, onEdit: { _ in }, onDelete: { _ in }, onSelect: { selected.append($0) })
+            )
+            let inspectorWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 320, height: 700), styleMask: [.titled], backing: .buffered, defer: false)
+            inspectorWindow.isReleasedWhenClosed = false
+            inspectorWindow.contentView = inspector
+            inspectorWindow.makeKeyAndOrderFront(nil)
+            defer { inspectorWindow.close() }
+            try await Task.sleep(for: .milliseconds(300))
+            #expect(inspector.fittingSize.height > 100)
+            #expect(selected.isEmpty)
+            #expect(deck.deck.siblings(of: word).map(\.id) == [sibling.id])
+        }
+
         @Test func theKindColumnShowsTheDirectionAndSorts() async throws {
             defer { window.close() }
             try await waitUntil("the table shows the cards") { tableView?.numberOfRows == 6 }
