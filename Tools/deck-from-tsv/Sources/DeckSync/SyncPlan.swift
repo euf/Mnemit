@@ -27,7 +27,8 @@ public struct SyncPlan: Sendable {
     /// 2. else by adopting a card without a note: see `adoptable(for:among:)`;
     /// 3. else a new card, whose ID follows from note and kind (`cardID(note:kind:avoiding:)`).
     ///
-    /// - Parameter suspendMissing: Also suspends the cards with a note that no row has.
+    /// - Parameter suspendMissing: Also suspends the cards with a note that no row has and the
+    ///   old cards without a note that no row adopted.
     public static func make(rows: [SyncRow], deck: Deck, suspendMissing: Bool, now: Date) -> SyncPlan {
         var plan = SyncPlan()
         var byKey: [String: Card] = [:]
@@ -66,9 +67,13 @@ public struct SyncPlan: Sendable {
         }
 
         if suspendMissing {
+            // Cards the table no longer has: a note no row names, or an old card without a
+            // note that no row adopted (its text predates the table and may give answers away).
             let notes = Set(rows.map { SyncRow.normalized($0.note) })
+            let adoptedIDs = Set(plan.adopted.map(\.card.id))
             plan.suspended = deck.cards.filter { card in
-                guard let note = card.note, !card.isSuspended else { return false }
+                guard !card.isSuspended else { return false }
+                guard let note = card.note else { return !adoptedIDs.contains(card.id) }
                 return !notes.contains(SyncRow.normalized(note))
             }
         }

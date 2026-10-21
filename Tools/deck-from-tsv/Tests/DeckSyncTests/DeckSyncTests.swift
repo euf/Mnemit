@@ -132,13 +132,14 @@ struct SyncPlanTests {
         #expect(result.added.count == 1)
     }
 
-    @Test func suspendMissingTouchesOnlyCardsWithAMissingNote() throws {
+    @Test func suspendMissingTouchesCardsWithAMissingNoteAndUnadoptedOldCards() throws {
         let kept = Card(id: UUID(), text: CardText(question: "a", answer: "b")!, note: "kept", kind: .production, created: now)
         let gone = Card(id: UUID(), text: CardText(question: "c", answer: "d")!, note: "gone", kind: .recognition, created: now)
         let plain = old("e", "f")
-        let rows = [row("kept", .production, "a", "b")]
-        #expect(try plan(rows, [kept, gone, plain]).suspended.isEmpty)
-        #expect(try plan(rows, [kept, gone, plain], suspendMissing: true).suspended.map(\.id) == [gone.id])
+        let adoptable = old("g", "h")
+        let rows = [row("kept", .production, "a", "b"), row("new", .production, "g2", "h")]
+        #expect(try plan(rows, [kept, gone, plain, adoptable]).suspended.isEmpty)
+        #expect(try plan(rows, [kept, gone, plain, adoptable], suspendMissing: true).suspended.map(\.id) == [gone.id, plain.id])
     }
 }
 
