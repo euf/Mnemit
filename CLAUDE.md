@@ -17,8 +17,18 @@
 - iPhone: `Scripts/install-iphone.sh` — Release без подписи, переподпись сертификатом iApps,
   `devicectl` на iPhone 13 mini. Bundle id берётся из профиля. Телефон должен быть
   разблокирован.
-- Колода из TSV: `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.voctrain> [новых за сессию]`;
-  повторный прогон добавляет только новые вопросы.
+- Синхронизация колоды с TSV на месте, без потери прогресса:
+  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--new-order deck|newest]`.
+  TSV с шапкой `note⇥kind⇥question⇥answer⇥hint` (kind — `recognition` или `production`,
+  `\n` в полях — перенос строки). Карточка находится по (note, kind); старая карточка без
+  note усыновляется (id и повторения остаются), если её ответ равен первой строке ответа
+  строки или, для production, этой строке без окончаний и артикля; иначе создаётся новая с
+  id UUID v5 от `note|kind`. Текст правится на месте, удалений нет, `--suspend-missing`
+  замораживает карточки с note, которого в TSV нет. Перед записью копия колоды уходит в
+  `<каталог колоды>/.backups` (10 свежих). TSV без шапки (вопрос, ответ, подсказка) работает
+  как раньше: добавляются только новые вопросы. Модель и правила выбора карточек
+  (разблокировка production, прятание сиблингов) — в VocabCore: `Card.note`/`kind`,
+  `LearningOptions.productionUnlockDays` и соседние, `StudySession.selectCards`.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
 

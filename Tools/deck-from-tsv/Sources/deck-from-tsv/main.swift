@@ -1,41 +1,27 @@
+import DeckSync
 import Foundation
-import VocabCore
 
-// deck-from-tsv <cards.tsv> <deck.voctrain> [new-cards-per-session]
+// deck-from-tsv <cards.tsv> <deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR]
+//               [--new-per-session N|none] [--new-production-per-session N|none]
+//               [--unlock-days N] [--new-order deck|newest]
 //
-// Rows are question, answer, optional hint, as for File → Import Cards in the Mac app.
-// An existing deck keeps its cards, reviews and options; only rows whose question it
-// lacks are added, so the tool can run again whenever the TSV grows.
+// Syncs a deck with a TSV in place and never loses progress; see `SyncPlan` and
+// `SyncOptions.usage`.
 
-let arguments = CommandLine.arguments
-guard arguments.count == 3 || arguments.count == 4 else {
-    FileHandle.standardError.write(Data("usage: deck-from-tsv <cards.tsv> <deck.voctrain> [new-cards-per-session]\n".utf8))
-    exit(2)
-}
-let input = URL(fileURLWithPath: arguments[1])
-let output = URL(fileURLWithPath: arguments[2])
-let now = Date()
-let calendar = StudyCalendar()
-
-var deck = Deck()
-if FileManager.default.fileExists(atPath: output.path) {
-    deck = try DeckFile.decode(FileWrapper(url: output))
-}
-let before = deck.cards.count
-
-let (rows, _) = DelimitedText.decode(try Data(contentsOf: input))
-let result = CardImporter.candidates(from: rows, existing: deck.cards, isHeader: { _ in false }, created: now)
-let fresh = result.candidates.filter { $0.duplicate == nil }.map(\.card)
-if let change = DeckChange.adding(fresh, to: deck) {
-    _ = deck.apply(change, at: now, calendar: calendar)
-}
-if arguments.count == 4, let perSession = Int(arguments[3]) {
-    var options = deck.learningOptions
-    options.newCardsPerSession = perSession
-    if let change = DeckChange.changingLearningOptions(options, in: deck, calendar: calendar) {
-        _ = deck.apply(change, at: now, calendar: calendar)
-    }
+func fail(_ message: String, usage: Bool = false) -> Never {
+    FileHandle.standardError.write(Data((message + "\n" + (usage ? SyncOptions.usage + "\n" : "")).utf8))
+    exit(usage ? 2 : 1)
 }
 
-try DeckFile.fileWrapper(for: deck).write(to: output, options: .atomic, originalContentsURL: nil)
-print("\(output.lastPathComponent): \(before) → \(deck.cards.count) cards, \(fresh.count) added, \(result.candidates.count - fresh.count) duplicates and \(result.skippedRows) empty rows skipped")
+let options: SyncOptions
+do {
+    options = try SyncOptions.parse(Array(CommandLine.arguments.dropFirst()))
+} catch {
+    fail("\(error)", usage: true)
+}
+
+do {
+    print(try SyncRun.run(options))
+} catch {
+    fail("\(error)")
+}
