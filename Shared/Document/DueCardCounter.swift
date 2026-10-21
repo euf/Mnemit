@@ -1,37 +1,46 @@
 import Combine
 import Foundation
 import Observation
+import VocabCore
 
-/// The number of cards due now, for the toolbar, the menu, the session summary and
-/// the status bar of the card list.
+/// What a study session started now would take, new, learning and review cards, for
+/// the deck screen, the toolbar, the menu, the session summary and the status bar of
+/// the card list. A card never studied counts only as far as the session would
+/// introduce it, see `StudySession.counts(for:at:calendar:)`.
 ///
 /// Counts again after every change to the deck and at the start of every minute,
 /// because cards become due as time passes. The minute is the one of
 /// `TimelineView(.everyMinute)`, so the number changes together with the due dates
-/// the views show. Observers hear of it only when the number changes, so a window
-/// that shows it isn't redrawn every minute.
+/// the views show. Observers hear of it only when the counts change, so a window
+/// that shows them isn't redrawn every minute.
 @MainActor @Observable
 final class DueCardCounter {
-    private(set) var count: Int
+    private(set) var counts: StudyCounts
+    /// The size of the next session.
+    var count: Int { counts.total }
     /// The document owns the counter.
     @ObservationIgnored private unowned let document: VocabularyDocument
     @ObservationIgnored private var subscriptions: Set<AnyCancellable> = []
 
     init(document: VocabularyDocument) {
         self.document = document
-        count = document.deck.dueCount(at: document.clock.now)
+        counts = Self.counts(of: document)
         document.deckDidChange
             .sink { [weak self] in self?.refresh() }
             .store(in: &subscriptions)
         scheduleRefresh()
     }
 
-    /// Counts the due cards at the time of the document's clock.
+    /// Counts the cards of the next session at the time of the document's clock.
     func refresh() {
-        let count = document.deck.dueCount(at: document.clock.now)
-        if count != self.count {
-            self.count = count
+        let counts = Self.counts(of: document)
+        if counts != self.counts {
+            self.counts = counts
         }
+    }
+
+    private static func counts(of document: VocabularyDocument) -> StudyCounts {
+        StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar)
     }
 
     /// The start of the minute after `date`. Every time zone is a whole number of

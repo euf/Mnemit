@@ -33,6 +33,12 @@
   как раньше: добавляются только новые вопросы. Модель и правила выбора карточек
   (разблокировка production, прятание сиблингов) — в VocabCore: `Card.note`/`kind`,
   `LearningOptions.productionUnlockDays` и соседние, `StudySession.selectCards`.
+- Числа «сегодня» (New · Learning · Review, размер сессии, ближайшая дата) — только
+  `StudySession.counts(for:at:calendar:)`: тот же отбор, что у сессии, поэтому цифры на
+  экране колоды, в тулбаре и в статусной строке совпадают с тем, что сессия возьмёт.
+  Лимиты `newCardsPerSession` и `newProductionPerSession` считаются на сессию, не на
+  день: после сессии счёт новых снова полный. `Deck.dueCount` считает каждую нетронутую
+  карточку, им кнопку «Study» и строки со счётом не кормить.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
 

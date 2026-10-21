@@ -63,7 +63,7 @@ final class VocabularyDocument: ObservableObject {
     }
     /// The time of reviews, of today's snapshot and of which cards are due.
     let clock: StudyClock
-    /// The number of cards due now, kept up to date as time passes.
+    /// The cards of the next study session, kept up to date as time passes.
     private(set) lazy var dueCards = DueCardCounter(document: self)
     /// Remembers the encoded review log between saves, so autosave stays cheap.
     /// Thread-safe on its own, as saving uses it on a background thread.

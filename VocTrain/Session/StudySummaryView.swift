@@ -8,7 +8,7 @@ struct StudySummaryView: View {
 
     var body: some View {
         let session = model.session
-        let dueCount = model.document.dueCards.count
+        let nextCount = model.document.dueCards.count
 
         List {
             Section {
@@ -28,8 +28,8 @@ struct StudySummaryView: View {
             .monospacedDigit()
 
             Section {
-                if dueCount > 0 {
-                    Button("Continue (\(dueCount) due)") {
+                if nextCount > 0 {
+                    Button("Continue (\(nextCount))") {
                         model.continueStudying()
                     }
                 }
