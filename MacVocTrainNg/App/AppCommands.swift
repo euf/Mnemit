@@ -44,6 +44,10 @@ struct AppCommands: Commands {
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
         }
 
+        CommandGroup(after: .windowList) {
+            Button("Welcome to Mnemit") { WelcomeWindow.show() }
+        }
+
         CommandGroup(after: .help) {
             Button("Keyboard Shortcuts") { actions?.showShortcuts() }
                 .disabled(actions == nil)

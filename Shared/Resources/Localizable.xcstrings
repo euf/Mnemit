@@ -820,6 +820,16 @@
         }
       }
     },
+    "Choose": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wählen"
+          }
+        }
+      }
+    },
     "Choose a CSV or TSV file with a question, an answer and an optional hint per row.": {
       "localizations": {
         "de": {
@@ -836,6 +846,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wähle ein MacVocTrain-1-Dokument (.mvt) zum Importieren."
+          }
+        }
+      }
+    },
+    "Choose the Mnemit folder, the one that holds your decks.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle den Mnemit-Ordner, in dem deine Stapel liegen."
           }
         }
       }
@@ -996,6 +1016,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stapel werden in Mnemit auf dem Mac angelegt. Öffne einen, den es gesichert hat, etwa in iCloud Drive."
+          }
+        }
+      }
+    },
+    "Decks in “%@”": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel in „%@“"
           }
         }
       }
@@ -1386,6 +1416,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bewerten: ← Vergessen, → Gut, ↑ Leicht, ↓ Schwer"
+          }
+        }
+      }
+    },
+    "Greek, every day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeden Tag Griechisch"
           }
         }
       }
@@ -1840,6 +1880,16 @@
         }
       }
     },
+    "No Decks Yet": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Stapel"
+          }
+        }
+      }
+    },
     "No Progress Yet": {
       "localizations": {
         "de": {
@@ -1856,6 +1906,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keine Auswahl"
+          }
+        }
+      }
+    },
+    "No decks in this folder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Stapel in diesem Ordner"
           }
         }
       }
@@ -1906,6 +1966,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stapel öffnen …"
+          }
+        }
+      }
+    },
+    "Open Mnemit Folder…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mnemit-Ordner öffnen …"
+          }
+        }
+      }
+    },
+    "Open your Mnemit folder to see the decks in it, or import cards from a table.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne deinen Mnemit-Ordner, um die Stapel darin zu sehen, oder importiere Karten aus einer Tabelle."
           }
         }
       }
@@ -2086,6 +2166,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gewusst"
+          }
+        }
+      }
+    },
+    "Recent Decks": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt geöffnete Stapel"
           }
         }
       }
@@ -3060,6 +3150,16 @@
         }
       }
     },
+    "Version %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@"
+          }
+        }
+      }
+    },
     "View": {
       "localizations": {
         "de": {
@@ -3076,6 +3176,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wochen"
+          }
+        }
+      }
+    },
+    "Welcome to Mnemit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommen bei Mnemit"
           }
         }
       }
@@ -3306,6 +3416,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "„%@“ konnte nicht als MacVocTrain-1-Dokument gelesen werden."
+          }
+        }
+      }
+    },
+    "“%@” holds no Mnemit decks. Choose the folder with your decks in it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ enthält keine Mnemit-Stapel. Wähle den Ordner, in dem deine Stapel liegen."
           }
         }
       }

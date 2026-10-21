@@ -2,6 +2,8 @@ import SwiftUI
 
 @main
 struct MacVocTrainApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     init() {
         Preferences.setUpDefaults(.standard, domain: Bundle.main.bundleIdentifier ?? "")
     }

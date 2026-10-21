@@ -103,6 +103,12 @@ struct DocumentView: View {
         .onChange(of: session?.studyBy == .flashcards, initial: true) { _, isFlashcards in
             shortcutsHelp.opensWithQuestionMark = isFlashcards
         }
+        .onChange(of: canEdit, initial: true) { _, canEdit in
+            // The welcome window made this document to import cards into.
+            if canEdit, WelcomeRequest.takeImportCards() {
+                Task { importCards() }
+            }
+        }
         .attachingUndoManager(to: document)
         .documentSync(document, fileURL: fileURL, isEditable: isEditable, merger: merger, isInSession: session != nil)
         .focusedSceneValue(
