@@ -45,6 +45,17 @@
   шапки (вопрос, ответ, подсказка) работает как раньше: добавляются только новые вопросы. Модель и правила выбора карточек
   (разблокировка production, прятание сиблингов) — в VocabCore: `Card.note`/`kind`,
   `LearningOptions.productionUnlockDays` и соседние, `StudySession.selectCards`.
+- Правка колоды на iPhone и Mac — одни и те же методы `VocabularyDocument+Editing` в `Shared`
+  (undo и имена действий общие; на iPhone документ сохраняет `OpenDeck` через UIDocument и
+  `SaveScheduler`). Слияние версий при правках на обоих устройствах: карточки объединяются,
+  текст/note/kind берёт версия с более поздним `Card.contentChanged` (undo штампует заново),
+  опции — с более поздним `Deck.learningOptionsChanged`, удаление помнит `Deck.deletedCards` и
+  выигрывает, только если оно позже всего, что сделали с карточкой (правка, сброс, пауза,
+  повторение); при равенстве карточка остаётся. Ключи `contentChanged`, `learningOptionsChanged`,
+  `deletedCards` в `deck.json` без смены версии формата. Файловые операции колоды на iPhone
+  (создать `<имя>.mnemit`, переименовать, в корзину) — `DeckFiles` в `Shared/Document`: через
+  `NSFileCoordinator`, `async`, не на главном потоке; корзина без поддержки места (папка
+  приложения на iPhone) переносит колоду в соседнюю папку `Deleted Decks`, насовсем не удаляет.
 - Числа «сегодня» (New · Learning · Review, размер плана, ближайшая дата) — только
   `StudySession.counts(for:at:calendar:)`: тот же отбор, что у плана дня, поэтому цифры на
   экране колоды, в тулбаре и в статусной строке совпадают с тем, что поток возьмёт.
@@ -168,10 +179,12 @@ The active developer dir may be the Command Line Tools; prefix with
   `Scheduler` applies a `Grade` to a `Card` (FSRS-6 in `FSRS.swift`, ported from py-fsrs);
   `SessionMode` runs a `StudySession` or a `Practice` and records reviews, each over
   a shared `Session` that only tracks card IDs and order.
-- `Shared/Document/VocabularyDocument.swift`: the document, a `ReferenceFileDocument`
-  on the Mac only, which also alone has the methods that edit cards and options
-  (`MacVocTrainNg/Document/VocabularyDocument+*.swift`, #297). Every change
-  must go through its `@MainActor` methods: they register undo, which is also how SwiftUI
+- `Shared/Document/VocabularyDocument.swift`: the document of both apps; only its
+  `ReferenceFileDocument` conformance is the Mac's (`MacVocTrainNg/Document/`). The methods
+  that edit cards and options (`add`, `editText`, `editCard`, `setNote`, `setKind`, `delete`,
+  `resetLearningState`, `updateLearningOptions`, `setSuspended`, the imports) are the
+  same on both, in `Shared/Document/VocabularyDocument+Editing.swift`, with the same undo
+  action names (#297). Every change must go through its `@MainActor` methods: they register undo, which is also how SwiftUI
   marks the document dirty. They register with the document's own `undoManager`, attached
   with `attachUndoManager(_:)`: on the Mac by the document's view from its environment
   (`attachingUndoManager(to:)`), on the iPhone by `OpenDeck` before it shows the document,
@@ -191,10 +204,14 @@ The active developer dir may be the Command Line Tools; prefix with
   file lacks and the versions iCloud Drive keeps in conflict, through
   `VocabularyDocument.merge(_:)`. File presenter callbacks must not ask the document
   synchronously: during another process's write, both would wait for each other. The
-  iPhone app lets go of the file in the background.
+  iPhone app lets go of the file in the background. Both apps edit cards, so a merge
+  (`DeckChange.merging`, rules in its doc comment) settles each part on its own: cards are
+  joined, a card's texts by `Card.contentChanged`, the options by
+  `Deck.learningOptionsChanged`, a deletion by `Deck.deletedCards` against the latest
+  change of the card, reviews are joined and never dropped for a deletion that is earlier.
 - The Xcode project uses synchronized folders: new files in `MacVocTrainNg/` or
   `MacVocTrainNgTests/` are picked up automatically, likewise in `VocTrain/` (the
-  iPhone app, which only studies and never edits cards) and `VocTrainTests/`.
+  iPhone app) and `VocTrainTests/`.
   `Shared/`, compiled into both apps, holds what the Mac app shares with the iPhone
   app (#254): the document and what it needs, and the one String Catalog. Code moves
   there only when the iPhone app uses it and it needs no AppKit; `VocabCore` stays the
