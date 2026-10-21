@@ -78,10 +78,19 @@
   день, наверстанный позже, засчитывается. iPhone считает по всем колодам из
   `KnownDecks` (файлы читает `DeckFileReader`), Mac — по открытым документам
   (`OpenDecks`).
+- iPhone запускается на Today (`StartScreen` держит состояние, `TodayScreen` рисует): «N due», кольцо
+  и streak по всем колодам, колоды строками. Study и строка колоды открывают поток одним касанием
+  поверх экрана (`StudyRunView`), `info.circle` в строке — лист деталей колоды (`DeckView.swift`:
+  счётчики дня, число карточек, практики, статистика). Study без колоды ведёт колоды с планом по
+  очереди (`StudyRun`: изученная последней первой, дальше по списку); пока поток колоды отдыхает,
+  кнопка «Next: …» открывает следующую. Последнюю колоду приложение само не открывает. Акцент —
+  терракота в `AccentColor` (светлый #AC5334, тёмный #B95937): заливка кнопки, кольцо, глиф, но
+  не текст; счётчики New/Learning/Review нейтральные. Спека — `references/design-spec.md`, кадры
+  Today и деталей даёт `VocTrainTests/HomeSnapshotTests` (каталог — `TEST_RUNNER_HOME_SHOTS_DIR`).
 - Последняя партия слов: `Deck.newestBatchIDs` — карточки с тем же `created` (до секунды),
   что и самая свежая в колоде, без suspended; `deck-from-tsv` ставит один `created` на
   прогон. Практика партии расписание не трогает: Mac — Study ▸ Practice Newest Words
-  (`SessionViewModel(entry: .practiceNewest)`), iPhone — кнопка на экране колоды
+  (`SessionViewModel(entry: .practiceNewest)`), iPhone — строка в листе деталей колоды
   (`StudyModel(entry: .practiceNewest)`). Карточка, добавленная руками позже, начинает свою
   партию.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
@@ -98,8 +107,8 @@
 
 ## Upstream
 
-macOS vocabulary trainer (SwiftUI, Swift 6, macOS 14+) with an iPhone app to study on
-the go (iOS 17+). The user writes German; code, comments and base UI strings are
+macOS vocabulary trainer (SwiftUI, Swift 6, macOS 26+) with an iPhone app to study on
+the go (iOS 26+). The user writes German; code, comments and base UI strings are
 English, German comes from the String Catalog.
 
 ## Commands
