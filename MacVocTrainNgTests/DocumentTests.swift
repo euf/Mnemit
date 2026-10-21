@@ -84,6 +84,27 @@ struct DocumentTests {
         #expect(document.deck.cards.map(\.question) == ["dom"])
     }
 
+    @Test func lessonWordsAreOneUndoableChange() throws {
+        let document = try VocabularyDocument(deck: Deck(cards: [Card(question: "dom", answer: "Haus")]))
+        let undoManager = makeUndoManager(for: document)
+        let entries = LessonWords.parse("κλέβω = stehlen\nη κλοπή = Diebstahl").entries
+        let plan = LessonWords.plan(for: entries, existingNotes: document.deck.cards.compactMap(\.note), created: document.clock.now)
+
+        var added = 0
+        step(undoManager) { added = document.addLessonCards(plan.cards) }
+        #expect(added == 4)
+        #expect(document.deck.cards.map(\.kind) == [nil, .recognition, .recognition, .production, .production])
+        #expect(document.deck.cards.compactMap(\.note) == ["κλέβω", "κλοπή#η", "κλέβω", "κλοπή#η"])
+        #expect(undoManager.undoActionName == "Add Lesson Words" || undoManager.undoActionName == "Lektionswörter hinzufügen")
+
+        // The same words again make nothing new.
+        let again = LessonWords.plan(for: entries, existingNotes: document.deck.cards.compactMap(\.note), created: document.clock.now)
+        #expect(again.cards.isEmpty && again.skipped.count == 2)
+
+        undoManager.undo()
+        #expect(document.deck.cards.map(\.question) == ["dom"])
+    }
+
     @Test func editingAndResettingAreUndoable() throws {
         let learningState = LearningState(phase: .review, stability: 5, difficulty: 5, lastReview: Date(), due: Date())
         let card = Card(question: "dom", answer: "Haus", learningState: learningState)

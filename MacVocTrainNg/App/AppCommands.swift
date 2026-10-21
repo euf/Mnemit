@@ -15,6 +15,8 @@ struct DeckActions {
     var showOptions: () -> Void
     var importCards: () -> Void
     var exportCards: () -> Void
+    var addLessonWords: () -> Void
+    var showShortcuts: () -> Void
 }
 
 private struct DeckActionsKey: FocusedValueKey {
@@ -39,6 +41,18 @@ struct AppCommands: Commands {
             Button("Import Cards…") { actions?.importCards() }
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
             Button("Export Cards…") { actions?.exportCards() }
+                .disabled(actions == nil)
+            Button("Add Lesson Words…") { actions?.addLessonWords() }
+                .keyboardShortcut("l", modifiers: [.command, .shift])
+                .disabled(actions?.isEditable != true || actions?.isInSession == true)
+        }
+
+        CommandGroup(after: .windowList) {
+            Button("Welcome to Mnemit") { WelcomeWindow.show() }
+        }
+
+        CommandGroup(after: .help) {
+            Button("Keyboard Shortcuts") { actions?.showShortcuts() }
                 .disabled(actions == nil)
         }
 

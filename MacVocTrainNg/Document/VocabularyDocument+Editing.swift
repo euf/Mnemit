@@ -25,6 +25,16 @@ extension VocabularyDocument {
         perform(change, actionName: String(localized: "Import Cards"))
     }
 
+    /// Appends the cards of lesson words, see `LessonWords`, as one change: one undo takes
+    /// all of them back. Returns the number of cards added, 0 while the document can't be
+    /// changed.
+    @discardableResult
+    func addLessonCards(_ cards: [Card]) -> Int {
+        guard isReadyToEdit, let change = DeckChange.adding(cards, to: deck) else { return 0 }
+        perform(change, actionName: String(localized: "Add Lesson Words"))
+        return cards.count
+    }
+
     /// Changes question, answer and hint of a card, see `DeckChange.editingText(of:to:in:)`.
     func editText(of id: Card.ID, to text: CardText) {
         guard isReadyToEdit, let change = DeckChange.editingText(of: id, to: text, in: deck) else { return }

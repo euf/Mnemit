@@ -26,6 +26,9 @@ struct DocumentView: View {
     @State private var session: SessionViewModel?
     @State private var showingOptions = false
     @State private var importPreview: CardImport.Preview?
+    @State private var addingLessonWords = false
+    @State private var toast: Toast?
+    @State private var shortcutsHelp = ShortcutsHelp()
 
     /// Whether the deck can be changed now: the file can be written, and the document
     /// has the undo manager of the window, which this view attaches (#305).
@@ -61,6 +64,15 @@ struct DocumentView: View {
                 }
                 ToolbarItem {
                     Button {
+                        addingLessonWords = true
+                    } label: {
+                        Label("Add Lesson Words", systemImage: "text.badge.plus")
+                    }
+                    .help("Add Lesson Words…")
+                    .disabled(!canEdit)
+                }
+                ToolbarItem {
+                    Button {
                         showingOptions = true
                     } label: {
                         Label("Learning Options", systemImage: "slider.horizontal.3")
@@ -76,6 +88,27 @@ struct DocumentView: View {
         .sheet(item: $importPreview) { preview in
             ImportPreviewView(document: document, preview: preview)
         }
+        .sheet(isPresented: $addingLessonWords) {
+            LessonWordsSheet(document: document, deckName: deckName) { count in
+                toast = Toast(String(localized: "Added \(count) cards. The production cards unlock after the recognition cards are learned."))
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let toast {
+                ToastView(toast: toast) { self.toast = nil }
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: toast)
+        .shortcutsHelp(shortcutsHelp)
+        .onChange(of: session?.studyBy == .flashcards, initial: true) { _, isFlashcards in
+            shortcutsHelp.opensWithQuestionMark = isFlashcards
+        }
+        .onChange(of: canEdit, initial: true) { _, canEdit in
+            // The welcome window made this document to import cards into.
+            if canEdit, WelcomeRequest.takeImportCards() {
+                Task { importCards() }
+            }
+        }
         .attachingUndoManager(to: document)
         .documentSync(document, fileURL: fileURL, isEditable: isEditable, merger: merger, isInSession: session != nil)
         .focusedSceneValue(
@@ -90,7 +123,9 @@ struct DocumentView: View {
                 show: { screen = $0 },
                 showOptions: { showingOptions = true },
                 importCards: importCards,
-                exportCards: exportCards
+                exportCards: exportCards,
+                addLessonWords: { addingLessonWords = canEdit && session == nil },
+                showShortcuts: { shortcutsHelp.isShown = true }
             )
         )
         #if DEBUG
@@ -133,11 +168,19 @@ struct DocumentView: View {
         )
     }
 
+    /// The name of the deck as the file has it, for the lesson words sheet.
+    private var deckName: String {
+        fileURL?.deletingPathExtension().lastPathComponent ?? String(localized: "this deck")
+    }
+
     private func startSession() {
         guard canEdit, session == nil else { return }
         let model = SessionViewModel(document: document, studyBy: Preferences.studyBy())
         if !model.isFinished {
             session = model
+            if model.studyBy == .flashcards {
+                shortcutsHelp.showForFirstSession()
+            }
         }
     }
 

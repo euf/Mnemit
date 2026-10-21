@@ -61,6 +61,15 @@
   начинает свою партию.
 - Версия — `VERSION`, патч бампает pre-commit-хук; после клона
   `ln -sf ~/dotfiles/claude/version-hook .git/hooks/pre-commit`.
+- Первый запуск и сценарии, спецификация — `docs/prototypes/onboarding.html`. Папка колод:
+  iPhone — `KnownDecks.chooseFolder` (закладка папки, колоды из неё в списке, `refreshFolder`
+  при pull-to-refresh и выходе на передний план), Mac — `DeckFolder` (закладка со scope,
+  entitlement `bookmarks.app-scope`). Напоминание — `Reminders`: локальные уведомления на
+  7 дней вперёд, у каждого дня свои числа `StudySession.counts(for:at:)`, число на значке;
+  пересчёт при уходе в фон, после закрытия колоды и при смене времени. Окно приветствия на
+  Mac — `AppDelegate` и `WelcomeWindow` (откат: `defaults write <bundle id> showsWelcomeWindow
+  -bool NO`). «Add Lesson Words…» (⇧⌘L) — `LessonWords` в VocabCore: `note` по `key()` из
+  `greek-lessons/vocab/merge.py`, две карточки на слово, одна отмена.
 
 ## Upstream
 

@@ -21,6 +21,12 @@ final class KnownDeckCounts {
     }
 
     nonisolated static func counts(at url: URL) -> StudyCounts? {
+        counts(at: url, on: [Date()])?.first
+    }
+
+    /// What a session would take at each of `dates`, from one read of the deck, for the
+    /// reminders: cards that come due until then count. `nil` if the deck can't be read.
+    nonisolated static func counts(at url: URL, on dates: [Date]) -> [StudyCounts]? {
         // A deck outside the app's sandbox can be read only while the app accesses it.
         let isAccessing = url.startAccessingSecurityScopedResource()
         defer {
@@ -28,14 +34,15 @@ final class KnownDeckCounts {
                 url.stopAccessingSecurityScopedResource()
             }
         }
-        var counts: StudyCounts?
+        var counts: [StudyCounts]?
         var error: NSError?
         // Coordinated, as the open deck's UIDocument and the merger write the package.
         NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { url in
             guard let data = try? Data(contentsOf: url.appendingPathComponent(DeckFile.deckFileName)),
                 let deck = try? DeckFile.decode(data)
             else { return }
-            counts = StudySession.counts(for: deck, at: Date(), calendar: StudyCalendar())
+            let calendar = StudyCalendar()
+            counts = dates.map { StudySession.counts(for: deck, at: $0, calendar: calendar) }
         }
         return counts
     }
