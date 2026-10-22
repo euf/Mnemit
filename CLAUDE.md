@@ -148,6 +148,16 @@
   (`SessionViewModel(entry: .practiceNewest)`), iPhone — строка в листе деталей колоды
   (`StudyModel(entry: .practiceNewest)`). Карточка, добавленная руками позже, начинает свою
   партию.
+- Импорт Anki (`.apkg`, `.colpkg`; VocabCore, `Import/Anki`, экранов нет): `AnkiImport.read(url)`
+  читает три раскладки (`collection.anki2`, `.anki21`, `.anki21b` под zstd с protobuf `meta`) и
+  отдаёт `notes` (front, back, `reviews`, `isSuspended`), счётчики пропусков (`skippedCloze`,
+  `skippedMediaRefs`, `skippedEmpty`) и `deckNames`; синхронный и тяжёлый, звать не с главного
+  потока. Карточки с историей — `AnkiImport.cards(from:learningOptions:calendar:created:)`: состояние
+  берётся повтором повторений через `Scheduler.replaying` с параметрами FSRS колоды (память самого
+  Anki не читается), в колоду их кладёт `DeckChange.importing(_:into:)` (`adding` берёт только новые
+  карточки без лога). Зависимость одна: `facebook/zstd` (SwiftPM, BSD, в `THIRD_PARTY_NOTICES.md`);
+  Compression zstd не знает. Фикстуры настоящих пакетов — `Tests/VocabCoreTests/Resources/Anki`,
+  скрипт их сборки лежит рядом (`uv run --with anki`).
 - Виджет (таргет `MnemitWidget`, папка `MnemitWidget/`, bundle id `com.euf.mnemit.ios.widget`,
   встроен в приложение на iPhone): home screen small и medium, lock screen circular и
   rectangular, тап ведёт по `mnemit://study` сразу в поток (`StartScreen.open`). Данные идут
