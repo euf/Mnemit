@@ -24,13 +24,22 @@ are in [`references/`](references/).
   Forgot goes straight left. On the Mac the same arrows, Space to reveal, 1–4 as in Anki.
 - **One gesture.** Touching the card shows the answer; the same swipe grades it.
 - **One haptic per grade.** A swipe is felt once, when letting go would grade; the card that
-  flies off after it is silent. A button, a key or a flick are felt once, as the card flies.
-- **Progress you can see.** When a grade sends the card to another day, the screen behind it
-  pulses briefly in the accent; a card that comes back today gets no pulse.
+  flies off after it is silent, and so is its landing in the ring. A button, a key or a flick
+  are felt once, as the card flies.
+- **Progress you can see.** The card shows where the grade sent it. A card that goes to another
+  day flies, shrinking, into the small ring in the bar, with "in 8 days" on it, and the ring steps
+  and glows; a card that comes back today slides under the bottom of the stack of the cards
+  still waiting in the round. The card under it rises into place and can be swiped at once,
+  while the first still flies. At the end of a round the ring comes down into the empty place of
+  the card, bursts, and the lines of the rest come in under it; the milestone of words in
+  memory bursts once. With Reduce Motion the card fades in place with its label and nothing
+  travels or bursts.
 - **No intervals on the buttons.** "4 d" under a button reads as a promise and pulls the
-  choice; the interval is shown after grading, in the undo chip.
-- **Undo everywhere.** The chip after each grade, a shake on the iPhone, Z or Esc on the
-  Mac; undo runs through the whole study stream, not only the last card.
+  choice; the interval rides on the card as it leaves, after grading.
+- **Undo everywhere.** The undo button next to the menu, a shake on the iPhone, Z or Esc on the
+  Mac; undo runs through the whole study stream, not only the last card. On the iPhone it plays
+  the grade backwards: the card comes out of the ring or up from under the stack, with its
+  answer showing, ready to be graded again.
 
 ### Studying
 

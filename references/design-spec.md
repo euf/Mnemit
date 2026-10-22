@@ -404,8 +404,7 @@ struct CountsRow: View {
 
 ```
 ┌───────────────────────────────────────┐
-│ ✕          ◔  Round 2 of 4       (…) │ nav 44: close | principal: ring 22 + subheadline | ellipsis
-│        [→ Good] in 4 days  Undo       │ UndoChip: material capsule, about 32 high, always reserved
+│ ✕          ◔  Round 2 of 4    ↶  (…) │ nav 44: close | principal: ring 30 + subheadline | undo | ellipsis
 │ ┌───────────────────────────────────┐ │
 │ │                                   │ │ card: margin 16, inner padding 24, radius 22,
 │ │         ο Άγγλος    [spk]         │ │   secondarySystemBackground (unchanged)
@@ -413,7 +412,8 @@ struct CountsRow: View {
 │ │       англичанин · Englishman     │ │ title2, regular
 │ │       Ο Τζον είναι Άγγλος.        │ │ body, secondary
 │ │                                   │ │
-│ └───────────────────────────────────┘ │ card is about 490 high on the 13 mini
+│ └───────────────────────────────────┘ │ card is about 500 high on the 13 mini
+│    ╰───────────────────────────────╯    │ the cards waiting in the round: up to 3 blank edges, 6 pt apart
 │ ╭───────────────────────────────────╮ │
 │ │            ✕ Forgot               │ │ 50, Grade.again.color
 │ ╰───────────────────────────────────╯ │
@@ -421,7 +421,7 @@ struct CountsRow: View {
 │ ╭────────╮ ╭──────────╮ ╭────────╮    │ 50 high; gaps 12; widths 98 / 123 / 98
 │ │  Hard  │ │   Good   │ │  Easy  │    │
 │ ╰────────╯ ╰──────────╯ ╰────────╯    │
-└───────────────────────────────────────┘ 12 bottom padding above the safe area; 12 between chip, card and buttons
+└───────────────────────────────────────┘ 12 bottom padding above the safe area; 8 under the bar; 12 + 18 for the edges between card and buttons
 ```
 
 Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98, Good 123, Easy 98.
@@ -430,8 +430,9 @@ Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98
 
 - Leading: `Button(role: .close)` (xmark). It replaces the `chevron.backward` End Session button; the stream has no session to end, every grade is saved. The HIG asks for the standard Close symbol and no text label [H:toolbars].
 - Principal: `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + `Text("Round 2 of 4")`, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)` with the lap as its value ("Lap 2"). The ring is empty in the middle during the first lap, shows "×2" once the goal is reached, "×3" after the second lap. Rounds done: `26 cards today`. This replaces both the 120-pt linear bar with `n / N` and the landscape `rowProgress`.
-- Trailing: `Menu("More", systemImage: "ellipsis")` with Undo, Card Info, Suspend Card, Speak toggle (as now).
-- The streak is not in the header. At the moment the goal is met, reuse the `UndoChip` slot for one line (`Goal reached · 12-day streak`, 3 s) and give `sensoryFeedback(.success)`. No new element.
+- Trailing: an icon button `arrow.uturn.backward` (Undo), enabled by the same condition as Undo in the menu (`StudyModel.canUndo`: the stream has a review or a suspension to take back), left of `Menu("More", systemImage: "ellipsis")` with Undo, Card Info, Suspend Card, Speak toggle. A shake undoes too. There is no chip under the bar: its room goes to the card.
+- The ring is where the cards go (§4.7): its frame is reported to `StudyMotion.ringHome` (global coordinates, nothing fixed), it steps and glows when a card lands in it, and it is empty of everything else but the figures beside it.
+- The streak is not in the header. The goal-met moment is the ring that closes as the last card lands and bursts at the rest of the plan (§4.7).
 - Practice stages show the word `Practice` as the principal text, without the ring.
 
 ### 4.2a Rests
@@ -440,11 +441,13 @@ The stream stops in three places, one `StreamRestView`, the same ring (96 pt) ov
 
 | Rest | Title | Figures | Buttons |
 |---|---|---|---|
-| End of a round (all but the last, inside the plan) | `Round 1 done` | `Streak kept` with a flame in the accent (first round only), `Next round ≈ 2 min`, `+4 words in memory today` when the day has added any | **Next Round** `.borderedProminent`, default action; **Done for Now** `.bordered` |
+| End of a round (all but the last, inside the plan) | `Round 1 done` | iPhone, in this order: `12 cards this round`, `+4 words in memory today` when the day has added any, `Streak kept` with a flame in the accent (first round only), `Next round ≈ 2 min`. The Mac keeps `Streak kept`, `Next round ≈ 2 min`, `+4 words in memory today` | **Next Round** `.borderedProminent`, default action; **Done for Now** `.bordered` |
 | End of the plan | `Done for today` | cards in the plan, share recalled, `Ring closed` when the ring is closed, `+N words in memory today`, catch-up or next review | **Keep Going** when there is something to go on with, `+10 new`, **Done**; `Next: <deck>` at the bottom of the cover when another deck has cards due |
 | End of a practice | `Practice complete` | cards, share recalled | **Done** |
 
-The round rest has no card on screen, so nothing is spoken and nothing is graded; the undo chip stays above it for the review that ended the round. Next Round and Done for Now are the only buttons: the screen offers no new cards, no catch-up and no next deck while the plan still has cards in the deck. The Mac's More menu keeps "+10 new", which goes on with the round.
+The round rest has no card on screen, so nothing is spoken and nothing is graded; Undo in the bar takes back the review that ended the round. Next Round and Done for Now are the only buttons: the screen offers no new cards, no catch-up and no next deck while the plan still has cards in the deck. The Mac's More menu keeps "+10 new", which goes on with the round.
+
+On the iPhone the rest is reached by the ring's way (§4.7). The place of the last card of the round stays as an empty slot, a faint rounded outline (`SlotOutline`, 10 % of the primary colour); the ring in the bar, once the card is in it, comes down into the rest's ring place at the rest's size (96 pt) as one motion (`RingTraveler`, 0.55 s, a spring with a little bounce), the burst plays on arrival, and then the title, each line and the buttons come in one after the other, 0.1 s apart, each with a fade and a 6 pt lift (`StreamRestView` with `staggers`). The rest screen holds only the ring's place (`ringPlace`); the ring itself is the one that travelled. Next Round, Keep Going and "+10 new" take the ring back up (the lines fade, the stream moves on, and 0.3 s later the cards are dealt, the stack spreading out from under the top card edge by edge), so the card area is back while the ring is still on its way. With Reduce Motion the rest crossfades in and out with its own ring, the lines come in together, and nothing travels or bursts.
 
 ### 4.3 Grade area
 
@@ -583,7 +586,24 @@ Forgot is the only "no", and Easy given for a forgotten card is the costly slip,
 - **Visual pull.** From the dead zone on, the card moves along the normalized average of the finger's unit direction and the target direction of the recognized grade, at the finger's distance (`GradeSwipe.pull`). Targets: Good east (0°), Easy north-east (45°), Forgot west (180°), Hard south-east (-45°). A finger straight up moves the card at 67.5°, between north and north-east; a finger straight down at -67.5°. Every "yes" leans right; Forgot's target is due west. No sector lies 90° or more from its target, so the average is always defined. Rotation and pivot are computed from the card's own offset. Tint, the lit button and the commit follow the recognized grade. Under the dead zone the card goes with the finger one to one.
 - **Easing.** When the finger crosses into another zone or a gap, the card's way jumps. For 300 ms after a crossing the card eases with an interactive spring (response 0.12 s, damping 0.85, `CardFlight.glide`); the rest of the swipe is one to one.
 - **Fly-off** goes along the target: Good and Forgot 640 pt horizontally, Easy up and Hard down 560 pt right and 560 pt up or down (`GradeSwipe.exit`).
-- **Progress pulse.** A grade that sends the card to another day (the receipt's interval is `.days`; not learning, not practice, not a suspended leech) flashes the screen background behind the card and the buttons in `Color.appAccent`: 0.12 opacity in light, 0.18 in dark, up in 0.08 s, down in 0.4 s (`StudyView` `keyframeAnimator` on `StudyModel.progressPulses`, once per grade by swipe, button or key; Reduce Motion keeps it, nothing moves).
+- **Where the card goes.** A grade is applied at once, and the card that was graded leaves as a card of its own (`Departure`, `DepartingCard`, drawn above the bar) from the pose it was let go in, while the next card is already on top and takes the next touch: nothing waits for a flight. Where it goes follows from the receipt (`GradeReceipt.destination`):
+
+  | Receipt | Destination | Motion |
+  |---|---|---|
+  | interval `.days(n)`, not a leech | ring | flies into the small ring in the bar, shrinking to 0.08, fading over the last 0.2 s |
+  | interval `.learning` (Forgot, a learning step) | stack | slides down and shrinks under the bottom of the stack of the cards waiting in the round (the pose of level n + 1); with no stack it slides down and fades |
+  | no interval (practice) or a leech | away | flies off in the direction of the grade as before (`GradeSwipe.exit`) |
+
+  The ring's frame comes from the header (`onGeometryChange` in global coordinates, `StudyMotion.ringHome`), the card's place from the card (`cardSlot`); nothing is a constant of the screen.
+- **Velocity.** A swipe's flight starts with the finger's release velocity (`DragGesture.Value.velocity`): each axis is a spring (`interpolatingSpring`, 0.45 s, no bounce) whose initial velocity is the finger's on that axis as a share of the distance left, so the card does not stop where it is let go and curves into the ring (an axis with no distance left, or no velocity, eases). A button or a key has none: x eases in and out, y eases in, 0.45 s (`PathCurves`). The card turns back to straight on the way. The flight is the same four numbers (across, down, smaller, faded), each by its own curve, so Undo can play it backwards and a test can freeze any instant.
+- **The ring steps.** 0.42 s after the card set off it is in the ring: the ring steps its fraction (ahead of the figures, which wait for the card that speaks: `StudyMotion.shownDone`, caught up when the figures change) and bumps: scale 1.0 to 1.15 and back with a soft glow in the accent (`ringBump`, a shadow of 8 pt at 60 %, 0.12 s up and 0.18 s down). A card that lands after the figures have already counted it does not step the ring twice. No haptic on landing.
+- **The label.** The interval rides on the card, a capsule of the card's surface colour with the label in the primary colour, at the bottom of the card, fading in over 0.12 s as it sets off and shrinking with it (`FlightBadge`): "tomorrow" for 1 day (`GradeReceipt.flightLabel`), `Format.interval` for the rest ("in 8 days", "in 3 months"), "again today" for a learning interval, "suspended · leech" for a leech. VoiceOver is told the same, since the label is gone in a moment: "Good, in 8 days", posted as an `AccessibilityNotification.Announcement` (`GradeReceipt.announcement`).
+- **The stack.** The cards of the current round that wait behind the one asked (`StudyModel.cardsBehind`: the cards the round still asks less the one on top, those that come back today included) show under the card as up to 3 blank edges (`CardStack`): each a rounded rectangle of the card's surface and border, 4 % smaller and 6 pt lower than the one above (4 pt in landscape), in the room reserved under the card (3 × 6 pt, always, so the card keeps its size); none when 0 are left, without rounds, and in practice. When the card on top leaves, the next one rises into its place from the pose of the first edge (scale 0.96 to 1.0 with a spring of 0.3 s, a few points lower to level) while its words fade in over 0.15 s; that is when the card has settled for the speech delay. When a round begins the edges spread out from under the top card one after the other.
+- **Undo is the same motion backwards.** `StudyModel.undoReturn` says where the last step sent its card (`GradeReceipt.Destination`, one entry per step of the stream) and whether the stream rests. From the ring: the ring takes its step back and the card flies out of it growing to its place; from under the stack: it slides back up; the card returns with its answer showing (`returnedByUndo`), ready to be graded again, and nothing is spoken. Across the end of a round the ring goes back up to the bar first, then the card returns. After a grade that went nowhere (practice, a leech) the card rises in from the stack.
+- **Round end.** The ring comes down to the rest and the rest's lines come in (§4.2a); after the last round the ring closes as the card lands and bursts on arrival. The burst (`RingBurst`) is the ring swelling 1.0, 1.12, 1.0 in 0.4 s and 12 specks of the accent, 2.5 to 4 pt, flying out from the ring's edge by a third to two thirds of its diameter and fading in 0.8 s (a `Canvas` in a `TimelineView`, drawn from the elapsed time alone). The glyph of the words-in-memory milestone line on Today bursts once, the first time the line shows for a milestone (`MilestoneCelebration`).
+- **Reduce Motion.** No flight: the card stays where it is and fades out over 0.6 s with its label on it (the label does not fade with the card), the ring steps without the bump or the glow, the stack count changes, the next card comes without rising, Undo's card is simply there, the rest crossfades without the ring's way, and there are no particles and no swell.
+- **One haptic per grade, unchanged.** The grade's haptic is felt as before, once, and nothing is felt as the card lands.
+- **Heavy work.** The flights are transforms of cards that are drawn once: a view modifier per frame and nothing else on the main thread. The grade's own work is what it was, and the work that waits for the voice still waits (`GreekSpeech.whenQuiet()`), so the window of 0.3 to 2 s after a grade holds none of it.
 - **Onboarding** asks for ← Forgot, ↑ Easy, ↓ Hard, → Good in that order (`SwipePractice.order`). The idle hint plays the finger's step along the sector's axis through `CardFlight.drag`, so the card shows the way a real swipe would move it (Easy at 67.5°).
 
 ## 5. Accent and colour roles
@@ -609,7 +629,7 @@ System blue for comparison: light `#007AFF` 4.02 with white and 3.60 on `#F2F2F7
 
 A single colour cannot give 4.5:1 for a white label (luminance at most 0.183) and 4.5:1 as text on `#1C1C1E` (at least 0.228). Indigo has luminance 0.136 (light and dark), so its label is 5.65 and its contrast as text on `#1C1C1E` is 3.01. In light the same value reaches 4.5 as text (5.65 on white, 5.06 on `#F2F2F7`); in dark it does not (3.72 on black). The accent is never small text in either appearance. It is a button fill (label 4.5 or more), a ring, a flame, a glyph (3.0 or more, WCAG non-text) [H:accessibility]. The Increase Contrast variants move the accent away from the surface it sits on, darker on light (`#3634A3`, 8.64 on `#F2F2F7`) and lighter on dark (`#6563E6`, 3.63 on `#1C1C1E`), as [H:color] advises for increased-contrast variants; the dark one lowers the white label from 5.65 to 4.69, still above 4.5.
 
-Roles of the accent: prominent button fill (Study, Show Answer, Study in the details sheet), ring, flame when the goal is met, `info.circle`, selection, and the progress pulse of §4.7 (a flash of the screen background at 0.12 opacity in light and 0.18 in dark). Nothing else: no text, no resting backgrounds, no card face.
+Roles of the accent: prominent button fill (Study, Show Answer, Study in the details sheet), ring, flame when the goal is met, `info.circle`, selection, the glow of the ring when a card lands in it and the specks of the burst (§4.7). Nothing else: no text, no resting backgrounds, no card face.
 
 In code the accent is `Color.appAccent` (`Shared/Support/Presentation.swift`): on the iPhone and in the widget the named asset `Color("AccentColor")` (in a widget `Color.accentColor` is the system tint), on the Mac `Color.accentColor`, so the system accent setting applies (§5.6). `Color.dailyRing` is `appAccent`; `Color.dailyRingTail` is the tail of the ring's gradient (§5.7).
 
