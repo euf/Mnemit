@@ -14,7 +14,7 @@ struct AnkiCollection {
         var answerFormats: [Int: String] = [:]
     }
 
-    /// A field of a note, as plain text.
+    /// One side of a card as plain text, and whether an image or a sound was stripped from it.
     typealias Side = (text: String, hadMedia: Bool)
 
     /// A deck: its name, and the number of its preset if it names one.

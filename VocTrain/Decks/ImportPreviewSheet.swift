@@ -111,10 +111,10 @@ struct ImportPreviewSheet: View {
                         ContentUnavailableView {
                             Label("No Cards", systemImage: "tray")
                         } description: {
-                            if preview.anki == nil {
-                                Text("“\(file.name)” contains no rows with a question and an answer.")
+                            if let anki = preview.anki {
+                                Text(anki.noCardsMessage(fileName: file.name))
                             } else {
-                                Text("“\(file.name)” has no cards Mnemit can import.")
+                                Text("“\(file.name)” contains no rows with a question and an answer.")
                             }
                         }
                     } else {

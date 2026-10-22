@@ -34,9 +34,8 @@ extension CardImport {
         }
         guard !preview.candidates.isEmpty else {
             showError(
-                url.isAnkiPackage
-                    ? String(localized: "“\(name)” has no cards Mnemit can import.")
-                    : String(localized: "“\(name)” contains no rows with a question and an answer."))
+                preview.anki?.noCardsMessage(fileName: name)
+                    ?? String(localized: "“\(name)” contains no rows with a question and an answer."))
             return nil
         }
         return preview
