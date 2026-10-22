@@ -139,7 +139,7 @@ struct SummaryRow: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
             : AnyLayout(HStackLayout(spacing: 16))
         layout {
-            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 96))
+            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 96), center: RingCenter(progress, inStream: false))
             VStack(alignment: .leading, spacing: 2) {
                 headline
                     .font(.title2.weight(.semibold))

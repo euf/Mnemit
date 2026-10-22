@@ -230,8 +230,11 @@ extension Color {
     /// accent shows instead unless it is Multicolor.
     static var dailyRing: Color { Color.accentColor }
 
-    /// The second and later laps of `DailyRingView`: the accent, lighter.
-    static var dailyRingLap: Color { Color.accentColor.opacity(0.55) }
+    /// The tail of the ring's gradient (`ProgressRing`): the accent mixed with a quarter of white
+    /// in device RGB. It follows the accent in all four appearances. A quarter is the most that
+    /// keeps 3:1 on the light grouped grey (a third does not); `AccentContrastTests` holds the
+    /// tail to 3:1 on the surfaces and to 1.3:1 against the accent.
+    static var dailyRingTail: Color { Color.accentColor.mix(with: .white, by: 0.25, in: .device) }
 
     /// The face of a flash card: a little off the background, so the card stands out
     /// from the screen it is swiped across. On iOS the grouped pair, as on the Today screen:

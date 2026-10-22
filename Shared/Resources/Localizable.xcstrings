@@ -1282,6 +1282,46 @@
         }
       }
     },
+    "Day streak: %lld days": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie: %lld Tag"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie: %lld Tage"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Day streak: %lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Day streak: %lld days"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Days": {
       "localizations": {
         "de": {
@@ -1968,6 +2008,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Art"
+          }
+        }
+      }
+    },
+    "Lap": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runde"
+          }
+        }
+      }
+    },
+    "Lap %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runde %lld"
           }
         }
       }
@@ -4288,6 +4348,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "und %lld weitere"
+          }
+        }
+      }
+    },
+    "day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag"
+          }
+        }
+      }
+    },
+    "days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tage"
           }
         }
       }
