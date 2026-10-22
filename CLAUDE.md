@@ -274,6 +274,18 @@
   «50 words in memory!» с глифом в акценте (текст в акцент не красится, `references/design-spec.md`),
   экран конца раунда и «Done for today» — «+N words in memory today», medium-виджет и подсказка кольца
   на Mac — число слов (`MemoryEstimate.line`, `DayLines.swift`).
+- Экран «How Today Works» (`HowTodayWorks` и `HowTodayWorksView` в `Shared/Statistics`): числа и правила под кольцом
+  для тех, кто знает Anki и FSRS, только чтение, без ручек и графиков, правило секции в её футере. Секции по порядку:
+  план дня (части плана на начало дня, взятая доля хвоста, допуск и потолок каждой колоды, цель, раунды, сделано,
+  осталось, catch-up), ёмкость (14 дней: раунды, кольцо замкнуто или открыто, шаг), темп (цена новой и прочей, источник
+  цены: длительности, промежутки или значение по умолчанию, оценок на сделанную карточку), streak, слова в памяти,
+  FSRS по колодам (запоминаемость, 21 параметр, подгонка, шаги, наибольший интервал). Числа берутся из `DailyProgress`,
+  `MemoryEstimate`, настроек колод и `DayBreakdown` (VocabCore, `Statistics/DayBreakdown.swift`): его цикл по дням
+  повторяет `DailyProgress.evaluate`, и `DayBreakdownTests` держит их вместе; `StudyCounts.backlogTaken` — доля хвоста,
+  которую взял план. iPhone: кнопка info слева в панели Today (`HowTodayWorksButton` и лист `HowTodayWorksSheet`,
+  `VocTrain/Views/HowTodayWorksSheet.swift`), колоды читаются из файлов при открытии листа; Mac: Study ▸ How Today Works
+  (`HowTodayWorksWindow`), колоды открытых документов, без имён («Deck 1», «Deck 2»). Данные строк —
+  `VocTrainTests/HowTodayWorksTests`, кадр листа — оттуда же (каталог `TEST_RUNNER_HOME_SHOTS_DIR`).
 - iPhone запускается на Today (`StartScreen` держит состояние, `TodayScreen` рисует): заголовок — раунд
   дня (до первого раунда «≈ 2 min to keep your streak», потом «Round 2 of 4 · ≈ 2 min», после последнего
   «Ring closed», без карточек «All done» или «Nothing due», пока раунды не посчитаны — «N cards left»);

@@ -89,6 +89,9 @@ struct TodayScreen: View {
         }
         .navigationTitle("Today")
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                HowTodayWorksButton(decks: decks, now: now)
+            }
             ToolbarItemGroup(placement: .primaryAction) {
                 Menu("Add", systemImage: "plus") {
                     Button("Add Cards", systemImage: "plus.rectangle.on.rectangle", action: addCards)

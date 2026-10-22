@@ -82,6 +82,11 @@ struct AppCommands: Commands {
 
             Button("Learning Options…") { actions?.showOptions() }
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
+
+            Divider()
+
+            Button("How Today Works") { HowTodayWorksWindow.show() }
+                .disabled(actions == nil)
         }
     }
 }

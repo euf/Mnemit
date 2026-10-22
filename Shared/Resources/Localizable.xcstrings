@@ -533,6 +533,16 @@
         }
       }
     },
+    "%lld min": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Min."
+          }
+        }
+      }
+    },
     "%lld new · %lld learning · %lld review": {
       "localizations": {
         "de": {
@@ -659,6 +669,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%lld s": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld s"
           }
         }
       }
@@ -939,6 +959,16 @@
         }
       }
     },
+    "A card is due again when its chance of recall falls to the target. The 21 FSRS-6 parameters model your memory; the app fits them to the deck's review log and keeps a fit only if it predicts your newest reviews better.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte ist wieder fällig, wenn ihre Abrufwahrscheinlichkeit auf das Ziel sinkt. Die 21 FSRS-6-Parameter bilden dein Gedächtnis ab; die App passt sie an den Verlauf des Stapels an und behält eine Anpassung nur, wenn sie deine neuesten Abfragen besser vorhersagt."
+          }
+        }
+      }
+    },
     "A card you forget this many times, and again after every further multiple of it, is suspended as a leech. Resume it in the card list. Off never suspends.": {
       "localizations": {
         "de": {
@@ -985,6 +1015,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eine Produktionskarte (Muttersprache zu Fremdsprache) bleibt gesperrt, bis die Erkennungskarte ihres Wortes (Fremdsprache zu Muttersprache) ein so langes Intervall hat. Eine Sitzung fragt von den Karten eines Wortes nur eine pro Tag ab. „Neue Karten pro Tag“ zählt alle anderen neuen Karten."
+          }
+        }
+      }
+    },
+    "A round is two minutes of work. A day takes one step from the day before: one round more if the ring was closed on each of the two days before, one fewer if the day before ended open, else the same.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Runde sind zwei Minuten Arbeit. Ein Tag macht einen Schritt vom Vortag: eine Runde mehr, wenn der Ring an jedem der zwei Tage davor geschlossen war, eine weniger, wenn der Vortag mit offenem Ring endete, sonst gleich viele."
           }
         }
       }
@@ -1429,6 +1469,26 @@
         }
       }
     },
+    "Answers per new card": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antworten pro neuer Karte"
+          }
+        }
+      }
+    },
+    "Answers per other card": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antworten pro anderer Karte"
+          }
+        }
+      }
+    },
     "Any key closes this help.": {
       "localizations": {
         "de": {
@@ -1445,6 +1505,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Diese Karten wieder in Lernsitzungen abfragen"
+          }
+        }
+      }
+    },
+    "At the start of the day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zu Tagesbeginn"
           }
         }
       }
@@ -1522,6 +1592,26 @@
         }
       }
     },
+    "Capacity": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapazität"
+          }
+        }
+      }
+    },
+    "Capacity (rounds)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapazität (Runden)"
+          }
+        }
+      }
+    },
     "Card": {
       "localizations": {
         "de": {
@@ -1572,6 +1662,16 @@
         }
       }
     },
+    "Cards done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erledigte Karten"
+          }
+        }
+      }
+    },
     "Cards due and your progress toward today's goal.": {
       "localizations": {
         "de": {
@@ -1592,6 +1692,16 @@
         }
       }
     },
+    "Cards in learning": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernende Karten"
+          }
+        }
+      }
+    },
     "Cards in the review phase are asked again when their recall probability drops to this value. Higher means more reviews but fewer lapses; 90 % is a good balance.": {
       "localizations": {
         "de": {
@@ -1608,6 +1718,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten in der Wiederholungsphase, die du bei der erneuten Abfrage gewusst hast (Schwer, Gut oder Leicht)."
+          }
+        }
+      }
+    },
+    "Cards left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbleibende Karten"
           }
         }
       }
@@ -1662,6 +1782,16 @@
         }
       }
     },
+    "Cards to repair yesterday": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten, um gestern auszugleichen"
+          }
+        }
+      }
+    },
     "Cards with the same word key belong to one word, like the two directions of a translation.": {
       "localizations": {
         "de": {
@@ -1698,6 +1828,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nachholen"
+          }
+        }
+      }
+    },
+    "Catch-up beyond the plan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachholen über den Plan hinaus"
+          }
+        }
+      }
+    },
+    "Ceiling %lld (limits %@ new / %@ production)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obergrenze %1$lld (Limits %2$@ neu / %3$@ Produktion)"
           }
         }
       }
@@ -1818,6 +1968,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schließe den Stapel, bevor du ihn ersetzt, oder wähle einen anderen Namen."
+          }
+        }
+      }
+    },
+    "Closed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschlossen"
           }
         }
       }
@@ -1962,6 +2122,16 @@
         }
       }
     },
+    "Daily goal (cards)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tagesziel (Karten)"
+          }
+        }
+      }
+    },
     "Date": {
       "localizations": {
         "de": {
@@ -2028,6 +2198,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tage"
+          }
+        }
+      }
+    },
+    "Deck %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel %lld"
           }
         }
       }
@@ -2442,6 +2622,16 @@
         }
       }
     },
+    "Durations (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeiten (%lld)"
+          }
+        }
+      }
+    },
     "Easy": {
       "localizations": {
         "de": {
@@ -2622,6 +2812,16 @@
         }
       }
     },
+    "Fitted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angepasst"
+          }
+        }
+      }
+    },
     "Fix this card without leaving the stream": {
       "localizations": {
         "de": {
@@ -2728,6 +2928,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aus einer Liste"
+          }
+        }
+      }
+    },
+    "Gain today": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuwachs heute"
+          }
+        }
+      }
+    },
+    "Gaps (%lld)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abstände (%lld)"
           }
         }
       }
@@ -2848,6 +3068,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verlauf"
+          }
+        }
+      }
+    },
+    "How Today Works": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So funktioniert Heute"
           }
         }
       }
@@ -3012,6 +3242,16 @@
         }
       }
     },
+    "In memory now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt im Gedächtnis"
+          }
+        }
+      }
+    },
     "Include learning state": {
       "localizations": {
         "de": {
@@ -3038,6 +3278,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Weitermachen"
+          }
+        }
+      }
+    },
+    "Kept": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesichert"
           }
         }
       }
@@ -3128,6 +3378,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Letzte Abfrage"
+          }
+        }
+      }
+    },
+    "Last automatic fit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte automatische Anpassung"
           }
         }
       }
@@ -3462,6 +3722,16 @@
         }
       }
     },
+    "New cards admitted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugelassene neue Karten"
+          }
+        }
+      }
+    },
     "New cards and cards after a lapse come back within the session until they have been graded Good this many times. Hard keeps a card on its step, Again resets it, Easy moves it to the review phase at once.": {
       "localizations": {
         "de": {
@@ -3538,6 +3808,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nächste Runde"
+          }
+        }
+      }
+    },
+    "Next milestone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächster Meilenstein"
           }
         }
       }
@@ -3742,12 +4022,32 @@
         }
       }
     },
+    "None yet": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine"
+          }
+        }
+      }
+    },
     "Not Now": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Nicht jetzt"
+          }
+        }
+      }
+    },
+    "Not yet": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch nicht"
           }
         }
       }
@@ -3852,6 +4152,16 @@
         }
       }
     },
+    "Open": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offen"
+          }
+        }
+      }
+    },
     "Open Deck…": {
       "localizations": {
         "de": {
@@ -3922,12 +4232,52 @@
         }
       }
     },
+    "Other card": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Andere Karte"
+          }
+        }
+      }
+    },
     "Other direction": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Andere Richtung"
+          }
+        }
+      }
+    },
+    "Overdue cards taken": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überfällige Karten im Plan"
+          }
+        }
+      }
+    },
+    "Pace": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tempo"
+          }
+        }
+      }
+    },
+    "Parameters": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parameter"
           }
         }
       }
@@ -4632,6 +4982,26 @@
         }
       }
     },
+    "Reviews due today": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute fällige Abfragen"
+          }
+        }
+      }
+    },
+    "Ring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ring"
+          }
+        }
+      }
+    },
     "Ring closed": {
       "localizations": {
         "de": {
@@ -4658,6 +5028,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Runde %1$lld von %2$lld"
+          }
+        }
+      }
+    },
+    "Round ends (cards)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ende der Runden (Karten)"
+          }
+        }
+      }
+    },
+    "Rounds": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runden"
           }
         }
       }
@@ -4758,6 +5148,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten durchsuchen"
+          }
+        }
+      }
+    },
+    "Seconds a done card takes: the typical seconds of an answer, from its logged durations or else the gaps between answers, times the answers each done card took, over the last %lld study days and today. With fewer than %lld timed answers or %lld done cards a kind keeps the default, %lld s for new and %lld s for other.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sekunden, die eine erledigte Karte braucht: die typischen Sekunden einer Antwort, aus ihren gemessenen Zeiten oder sonst den Abständen zwischen den Antworten, mal die Antworten, die jede erledigte Karte brauchte, über die letzten %1$lld Lerntage und heute. Mit weniger als %2$lld gemessenen Antworten oder %3$lld erledigten Karten bleibt es beim Standard: %4$lld s für neue, %5$lld s für andere Karten."
           }
         }
       }
@@ -5082,6 +5482,16 @@
         }
       }
     },
+    "Step": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schritt"
+          }
+        }
+      }
+    },
     "Steps per card": {
       "localizations": {
         "de": {
@@ -5372,6 +5782,16 @@
         }
       }
     },
+    "The first round of a day keeps the streak. One missed day is repaired when the next day closes its ring; two missed days in a row end it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die erste Runde eines Tages sichert die Serie. Ein verpasster Tag wird ausgeglichen, wenn der nächste Tag seinen Ring schließt; zwei verpasste Tage hintereinander beenden sie."
+          }
+        }
+      }
+    },
     "The package holds no collection Mnemit can read.": {
       "localizations": {
         "de": {
@@ -5398,6 +5818,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Die Parameter ließen sich nicht berechnen."
+          }
+        }
+      }
+    },
+    "The plan is what FSRS sets for the day: the reviews due and the cards in learning. Of the overdue cards it takes a share, at least a seventh and at least what a normal day asks. New cards fill what the day's capacity leaves after reviews, up to each deck's ceiling. The rest of the overdue cards is catch-up.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Plan ist, was FSRS für den Tag ansetzt: die fälligen Abfragen und die lernenden Karten. Von den überfälligen Karten übernimmt er einen Anteil, mindestens ein Siebtel und mindestens so viele, wie ein normaler Tag verlangt. Neue Karten füllen, was die Kapazität des Tages nach den Abfragen übrig lässt, bis zur Obergrenze jedes Stapels. Der Rest der überfälligen Karten ist Nachholen."
           }
         }
       }
@@ -5468,6 +5898,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Die Lernsitzung wurde beendet"
+          }
+        }
+      }
+    },
+    "The sum of the FSRS recall probabilities of the learned recognition cards, as of now.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Summe der FSRS-Abrufwahrscheinlichkeiten der gelernten Erkennungskarten, Stand jetzt."
           }
         }
       }
@@ -5572,6 +6012,16 @@
         }
       }
     },
+    "Time of the day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeit des Tages"
+          }
+        }
+      }
+    },
     "Time to study": {
       "localizations": {
         "de": {
@@ -5598,6 +6048,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Heute (inkl. überfällige)"
+          }
+        }
+      }
+    },
+    "Today's Plan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heutiger Plan"
           }
         }
       }
@@ -6018,6 +6478,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wortschlüssel (optional)"
+          }
+        }
+      }
+    },
+    "Words in Memory": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wörter im Gedächtnis"
           }
         }
       }
