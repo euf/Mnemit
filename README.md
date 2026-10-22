@@ -1,265 +1,152 @@
-# MacVocTrain NG
+# Mnemit
 
-Vokabeltrainer für macOS, Neuentwicklung von MacVocTrain (2013–2016) in Swift und SwiftUI.
+Flashcards with FSRS for iPhone and Mac. Decks are files in iCloud Drive: no account, no
+server, no in-app purchases. A personal fork of
+[MacVocTrain NG](https://github.com/Fluch-IT-Consulting/MacVocTrainNg) by Martin Fluch,
+built to learn Greek vocabulary; nothing in the app is tied to Greek.
 
-Du tippst deine Eingabe, die App prüft sie und schlägt eine Bewertung vor. Danach plant
-[FSRS](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm),
-ein moderner Spaced-Repetition-Algorithmus, die nächste Abfrage: Karten kommen genau dann
-wieder, wenn du sie sonst vergessen würdest.
+## Design choices
 
-## Funktionen
+What Mnemit does differently from Anki and most FSRS apps, and why. Sources and measurements
+are in [`references/`](references/).
 
-- **Stapel**: einer pro Datei (`.mnemit`; `.voctrain`-Dateien öffnen weiterhin), lesbares JSON, Autosave, Versionen
-- **Kartenliste**: schnelles Erfassen (Frage ↩ Antwort ↩ Hinweis ↩), Bearbeiten in einem
-  Blatt (Doppelklick auf die Karte, ↩ sichert), Suche (ignoriert Akzente: „dzien“ findet
-  „dzień“), Inspektor mit Lernstand und Verlauf, Undo für alles
-- **Lernen**: Eingabe tippen, ↩. Alternativen einer Antwort mit `/` trennen
-  (`Haus / Gebäude`); wer nur einen Teil nennt, ist „unvollständig“, ein Tippfehler ergibt
-  „fast richtig“ und wird markiert. Bewertung mit 1–4 (Nochmal/Schwer/Gut/Leicht), ⌘Z
-  nimmt die letzte Abfrage zurück. Karten mit „Nochmal“ kommen in der Sitzung wieder, bis
-  sie in der Wiederholungsphase sind; danach lassen sich die Fehler üben.
-- **Statistik**: Fortschritt nach Reifegrad (Tag/Woche/Monat), Prognose der nächsten 30 Tage
-- **Eigene FSRS-Parameter**: Ab 400 verwertbaren Abfragen berechnen die Lernoptionen die
-  Parameter aus dem Verlauf des Stapels und vergleichen ihre Vorhersage mit den aktuellen
-- **Import** von MacVocTrain-1-Dateien (`.mvt`) über *Ablage → MacVocTrain-1-Dokument
-  importieren …*, inklusive Fortschritt
-- **CSV und TSV**: *Ablage → Karten importieren …* hängt Karten (Frage, Antwort, optional
-  Hinweis) an den offenen Stapel an; Trennzeichen und Kodierung werden erkannt, eine
-  Vorschau markiert doppelte Fragen. *Ablage → Karten exportieren …* schreibt die Karten,
-  wahlweise mit Reifegrad, Fälligkeit und Zahl der Abfragen
-- Deutsch und Englisch (folgt der Systemsprache)
+### Grading
 
-## Installation
+- **One "no", three "yes".** Forgot is red and set apart; Hard, Good and Easy are three greens
+  under "Recalled". FSRS works as well or better with consistent grading as with four
+  free choices, and its costliest input is Hard on a forgotten card, which still grows the
+  interval ([`fsrs-research.md`](references/fsrs-research.md) §1).
+- **Swipes with dead zones.** ← Forgot, → Good, ↑ Easy, ↓ Hard. The recognised sectors are
+  asymmetric: Good −55°…55°, Easy 55°…120°, Forgot 150°…210°, Hard 240°…305°, and nothing
+  between the "no" and the "yes" sectors (120°…150°, 210°…240°): a swipe there springs back
+  however far or fast it goes. The card does not follow the raw finger: it moves halfway
+  between the finger and the grade's target (E, NE, W, SE), so every "yes" leans right and
+  Forgot goes straight left. On the Mac the same arrows, Space to reveal, 1–4 as in Anki.
+- **One gesture.** Touching the card shows the answer; the same swipe grades it.
+- **No intervals on the buttons.** "4 d" under a button reads as a promise and pulls the
+  choice; the interval is shown after grading, in the undo chip.
+- **Undo everywhere.** The chip after each grade, a shake on the iPhone, Z or Esc on the
+  Mac; undo runs through the whole study stream, not only the last card.
 
-Mit [Homebrew](https://brew.sh), macOS 26 oder neuer:
+### Studying
 
-```bash
-brew install --cask fluch-it-consulting/tap/macvoctrain
-```
+- **No sessions.** Study is one stream: due learning cards, then reviews (lowest recall
+  probability first), then new cards within the day's limits. When the plan is done the
+  stream rests ("Done for today") and offers reviewing ahead, practice that does not touch
+  the schedule, and "+10 new" with an estimate of the extra daily load next week.
+- **Rings instead of a session count.** A ring in the manner of Apple Fitness fills to the
+  day's goal (20 answers, or the whole plan if smaller) and keeps going round after it;
+  during study its centre shows ×2, ×3 for the laps, elsewhere the streak in days. The
+  streak counts days that met the goal; a missed day is repaired by 40 answers the next day.
+  Everything is computed from the review logs; nothing extra is stored. A study day starts
+  at 4:00.
+- **Two directions per word, one after the other.** Each word has a recognition card
+  (Greek → meaning) and a production card (meaning → Greek). Production cards unlock only
+  after the recognition card has an interval of 21 days, have their own daily limit, and
+  siblings are buried for the day so one card does not answer the other.
+- **Difficult cards** (leeches) after 8 lapses, as a filter in the browser.
 
-`brew upgrade` hält die App aktuell. Jede Version liegt außerdem als DMG unter
-[Releases](https://github.com/Fluch-IT-Consulting/MacVocTrainNg/releases): öffnen und
-MacVocTrain in den Ordner *Programme* ziehen.
+### Scheduling
 
-Die App ist signiert, aber nicht notarisiert. Beim ersten Start blockiert macOS sie;
-erlauben lässt sie sich einmal unter *Systemeinstellungen → Datenschutz & Sicherheit →
-Dennoch öffnen*. Nach `brew upgrade` startet die neue Version ohne Rückfrage, eine neu
-geladene DMG muss dagegen jedes Mal erlaubt werden.
+- **FSRS-6, fitted per deck.** Each deck starts with the default parameters; from 400
+  answers the optimizer (a Swift port of fsrs-rs 6.6.2, checked against it and against
+  py-fsrs reference values) fits them to the learner's own history. Fitted FSRS-6 beats
+  Anki's SM-2 for 99.6 % of users and SuperMemo's SM-17 in 16 of 19 collections; FSRS-7 is
+  ahead of FSRS-6 by a small margin and comes in when fsrs-rs releases it
+  ([`fsrs-vs-sm17.md`](references/fsrs-vs-sm17.md)).
+- **Same dates on every device.** Fuzz is seeded by the card and the moment of the review,
+  so replaying a review log on the iPhone and on the Mac gives the same due dates. This is
+  why features that pick a due date from other cards (load balancing, Easy Days,
+  dispersing siblings) wait until the chosen date can be stored in the log.
 
-## Projektstruktur
+### Storage and sync
 
-```
-MacVocTrainNg/              Mac-App (SwiftUI): Ansichten, Import und Export
-MacVocTrainNgTests/         Tests der App-Schicht (Undo, Lernablauf)
-VocTrain/                   iPhone-App zum Lernen unterwegs, bearbeitet keine Karten
-VocTrainTests/              Tests der iPhone-App
-Shared/                     In beiden Apps: `VocabularyDocument`, Zusammenführen über
-                            iCloud Drive, Lokalisierung
-Packages/VocabCore/         Plattformunabhängige Logik als Swift Package
-  Model/                    Card, Deck, Dateiformat
-  Scheduling/               FSRS-6, Scheduler (Lernschritte, Fälligkeit), Lerntage
-  Optimization/             FSRS-Parameter aus dem Verlauf (Port von fsrs-rs)
-  Check/                    Prüfung der Eingabe, Zeichen-Diff
-  Session/                  Sitzung (Lernsitzung oder Üben), Abfragereihenfolge
-  Statistics/               Reifegrad-Histogramme, Fortschritt, Prognose
-  Import/                   Import von MacVocTrain 1
-  Exchange/                 CSV/TSV lesen und schreiben, Karten aus Tabellenzeilen
-  Search/                   Suche nach Karten, ohne Rücksicht auf Akzente
-  Support/                  Kalenderdatum ohne Zeitzone, Zufallsgenerator mit Startwert
-```
+- **A deck is a package of text files, not a database.** `Deck.mnemit` holds `deck.json`
+  (cards and their state) and `reviews.jsonl` (one line per answer, only ever appended).
+  iCloud Drive syncs it like any document; only the changed pieces upload. A SQLite file
+  in a sync folder is what Anki's own manual warns against
+  ([`deck-formats-and-sources.md`](references/deck-formats-and-sources.md)).
+- **Merging per card, never losing an answer.** When two devices edit offline, the review
+  logs are joined, the later edit of a card wins, a deletion wins only if it is later than
+  every change on the other device, and options keep the later change. A randomized test
+  plays 200 histories on two devices and checks that both sides converge.
+- **Old `.voctrain` decks** from MacVocTrain NG open and save in place.
 
-Die App-Schicht ist bewusst dünn; alles Fachliche steckt in `VocabCore` und ist ohne
-UI testbar. Die iPhone-App nutzt das Paket und das Dokument aus `Shared/` mit.
+### Import and export
 
-## Bauen und testen
+- **Anki packages with their history.** `.apkg` in all three layouts (including the
+  zstd-compressed current one) is read without Anki; review history is replayed through
+  Mnemit's FSRS. HTML is reduced to text; images, sounds and cloze cards are counted and
+  left out. On the iPhone "Open in Mnemit" works from Files, Safari and Mail; on the Mac an
+  `.apkg` opened from the Finder becomes a new deck.
+- **CSV/TSV that Anki reads as it is.** Exports start with Anki's `#separator`, `#html` and
+  `#columns` lines and carry the word key and the card kind; imports accept them back.
+- **Ready-made decks come from AnkiWeb.** Mnemit ships no content: the good shared decks
+  are licensed for personal study and cannot be bundled. "Shared Decks on AnkiWeb" opens the
+  site; the downloaded `.apkg` comes back through the import.
 
-Voraussetzung: Xcode 26.3, dieselbe Version wie die CI; es läuft ab macOS 15.6. Die App
-selbst läuft ab macOS 26.
+### Look
 
-- In Xcode: `MacVocTrainNg.xcodeproj` öffnen, ⌘R startet die App, ⌘U führt alle Tests aus.
-  Das Schema `VocTrain` baut und testet die iPhone-App, im Simulator oder auf einem
-  iPhone; dafür braucht es das Team in `Config/Signing.local.xcconfig` (siehe unten).
-- Nur den Kern testen (schnell, ohne Xcode-Projekt):
+- **A system accent, semantic colours.** Indigo for the app; red only for "no", greens only
+  for "yes"; counts are neutral.
+- **Rings drawn as Fitness draws them.** The drawing is MKRingProgressView's Core Graphics
+  code transcribed into a SwiftUI `Canvas`: gradient to the head, solid laps underneath, the
+  head's shadow on the ring it overlaps.
+- **An introduction that teaches the swipes.** Four practice cards in four languages, one
+  per direction, before anything about folders; then where to keep the decks (iCloud Drive
+  or this iPhone only).
+
+### Constraints that shaped the above
+
+- Mnemit is signed with a free Apple ID team. Such a team gets no iCloud container, so the
+  app cannot create its own iCloud folder: the learner picks one once. The home-screen
+  widget gets its numbers from the app through a shared keychain item, since App Groups
+  are not relied on for free teams.
+
+## Platforms
+
+- **iPhone** (iOS 26): study, browse and edit cards, add words after a lesson (one card or
+  a pasted `word = translation` list), decks, options, import and export, reminders, widget.
+- **Mac** (macOS 26): the same plus the card table with filters and inspector, statistics,
+  the optimizer, study by typing.
+
+## Build and test
+
+Xcode 27; the project is `MacVocTrainNg.xcodeproj` (schemes `MacVocTrainNg` for the Mac,
+`VocTrain` for the iPhone).
 
 ```bash
 cd Packages/VocabCore && swift test
 ```
 
-Falls `swift test` oder `xcodebuild` meldet, dass nur die Command Line Tools aktiv
-sind, entweder einmalig Xcode als Entwicklerverzeichnis setzen:
+```bash
+xcodebuild test -project MacVocTrainNg.xcodeproj -scheme MacVocTrainNg
+```
 
 ```bash
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+xcodebuild test -project MacVocTrainNg.xcodeproj -scheme VocTrain -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
-oder pro Aufruf `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` voranstellen.
+- Mac install: `Scripts/install-mac.sh` builds a Release into `~/Applications/Mnemit.app`.
+- iPhone install: the free-team build and nightly re-signing are described in
+  [`HANDOFF.md`](HANDOFF.md).
+- Updating a deck from a word list without losing progress: `Tools/deck-from-tsv`.
 
-Ohne weitere Einrichtung signiert Xcode App und Tests ad hoc. Diese Signatur ändert
-sich mit jedem Build, deshalb fragt macOS vor jedem Start, ob die neue Version auf die
-Daten der vorigen zugreifen darf; die App-Tests starten die App jedes Mal. Abhilfe ist
-ein Apple-Development-Zertifikat (Xcode → Settings → Accounts, ein kostenloses Personal
-Team reicht) und daneben eine lokale, nicht eingecheckte `Config/Signing.local.xcconfig`:
+## Documentation
 
-```
-CODE_SIGN_IDENTITY = Apple Development
-DEVELOPMENT_TEAM = <Team-ID>
-```
+- [`references/flows.md`](references/flows.md): the screens and flows on both platforms.
+- [`references/design-spec.md`](references/design-spec.md): layout, colour, type, swipe
+  sectors, rings.
+- [`references/fsrs-research.md`](references/fsrs-research.md),
+  [`references/fsrs-vs-sm17.md`](references/fsrs-vs-sm17.md): grading and algorithm research.
+- [`references/deck-formats-and-sources.md`](references/deck-formats-and-sources.md):
+  `.apkg` and other formats, deck sources.
+- [`docs/adr/`](docs/adr/): architecture decisions inherited from MacVocTrain NG and made
+  in the fork.
 
-Die Team-ID steht im Zertifikat (Schlüsselbundverwaltung, Feld „Organisationseinheit“).
-Nach dem Wechsel fragt macOS ein letztes Mal.
+## Credits and licence
 
-Den Import mit einer echten alten Datei prüfen:
-
-```bash
-cd Packages/VocabCore && MVT_SAMPLE=~/Vokabeln/Beispiel.mvt swift test --filter importsRealDocument
-```
-
-Formatierung mit swift-format (liegt Xcode bei, Einstellungen in `.swift-format`);
-`lint --strict` prüft, `format -i` statt `lint --strict` korrigiert:
-
-```bash
-xcrun swift-format lint --strict -r MacVocTrainNg MacVocTrainNgTests VocTrain VocTrainTests Shared Packages/VocabCore/Sources Packages/VocabCore/Tests Packages/VocabCore/Package.swift Tools
-```
-
-Ob jeder Text der App im String Catalog steht und jeder Schlüssel dort eine deutsche
-Übersetzung hat, prüft nach einem Build mit `-derivedDataPath build/DerivedData`:
-
-```bash
-swift Tools/check-localizations.swift
-```
-
-Die CI (`.github/workflows/ci.yml`, macOS-Runner mit Xcode 26.3) läuft bei jedem Pull
-Request und nach jedem Push auf `main`. Sie prüft swift-format, baut und testet mit
-Warnungen als Fehlern, die iPhone-App im Simulator ebenso, prüft die Übersetzungen
-wie oben und baut mit
-`Tools/make-release.sh --build-only` die Release-Konfiguration für Apple Silicon und
-Intel. Der Schalter baut nur, mit Warnungen als Fehlern, und hört vor dem Signieren und
-dem Disk-Image auf. Sonst bleiben Warnungen lokal Warnungen.
-
-Commits, die nur umformatieren, stehen in `.git-blame-ignore-revs`. GitHub blendet sie in
-der Blame-Ansicht aus; damit `git blame` sie lokal auch überspringt, einmalig:
-
-```bash
-git config blame.ignoreRevsFile .git-blame-ignore-revs
-```
-
-Neue Swift-Dateien einfach in `MacVocTrainNg/` anlegen: Der Ordner ist mit dem Target
-synchronisiert, die Projektdatei muss nicht angepasst werden.
-
-## Weitergeben
-
-```bash
-Tools/make-release.sh
-```
-
-erzeugt `build/release/MacVocTrain-<Version>.dmg`: ein Universal Binary (Apple Silicon und
-Intel) für macOS 26 oder neuer. Signiert wird mit dem Zertifikat aus
-`Config/Signing.local.xcconfig`, ohne die Datei ad hoc. Empfänger müssen die App beim
-ersten Start einmal erlauben (siehe Installation), ad hoc signiert nach jedem Update
-erneut. Mit einer Developer ID (Apple Developer Program) signiert und notarisiert das
-Skript die App, dann startet sie ohne Warnung. Die Variablen dafür stehen im Kopf des
-Skripts.
-
-Ein Release:
-
-1. `MARKETING_VERSION` anheben und per Pull Request nach `main` bringen.
-2. Auf dem aktuellen `main` hängt `Tools/make-release.sh --draft` die DMG an einen
-   Release-Entwurf `v<Version>`. Ad hoc signiert es dafür nicht.
-3. Den Entwurf auf GitHub prüfen und veröffentlichen. Das legt den Tag an, und der
-   Workflow `tap-bump.yml` hebt die Cask im Tap
-   [`fluch-it-consulting/tap`](https://github.com/Fluch-IT-Consulting/homebrew-tap) an.
-   Scheitert er, lässt er sich unter *Actions* mit dem Tag von Hand nachholen. Er braucht
-   einmalig einen Deploy Key, die Befehle stehen in seinem Kopf.
-
-Die Signatur eines Releases ist öffentlich: `codesign -dvv` zeigt Apple-ID und Team-ID
-des Zertifikats, mit dem es signiert ist.
-
-## Lernalgorithmus
-
-- **FSRS-6**; jeder Stapel beginnt mit den Standardparametern von open-spaced-repetition.
-  Das Speichermodell ist gegen die Referenzwerte von py-fsrs getestet.
-- Neue Karten und Karten nach einem Vergessen brauchen in der Sitzung *n* Lernschritte,
-  also *n*-mal „Gut“ (einstellbar, Standard 2), bevor sie in die Wiederholungsphase kommen
-  und einen Abstand in Lerntagen bekommen.
-- Ein Lerntag beginnt um 4 Uhr; fällige Karten stehen den ganzen Lerntag zur Verfügung.
-- Jede Abfrage wird mit Zeitpunkt und Bewertung im Verlauf der Karte gespeichert. Daraus
-  berechnet ein Swift-Port des Optimierers von fsrs-rs 6.6.2 eigene FSRS-Parameter
-  (ADR 0002); Tests vergleichen ihn mit fsrs-rs, die Vergleichswerte erzeugt
-  `Tools/fsrs-reference`. Neue Parameter berechnen Stabilität und Schwierigkeit jeder
-  Karte mit vollständigem Verlauf neu, Fälligkeiten bleiben.
-
-### Import aus MacVocTrain 1
-
-Das alte Level-System wird so übersetzt, dass jede Karte genau dann fällig wird, wann
-MacVocTrain 1 sie abgefragt hätte: Die FSRS-Stabilität entspricht dem alten Abstand des
-Levels (0,7 Tage bei Level 1 bis 22 Tage bei Level 12, danach +3,52 Tage je Level).
-Level 0 wird zu „Erneut lernen“, nie abgefragte Karten zu neuen Karten. Die Schwierigkeit
-ist unbekannt und startet neutral bei 5. FSRS passt sie mit den ersten Abfragen an.
-
-## Dateiformat
-
-Ein Stapel ist ein Paket, also ein Ordner, den der Finder als eine Datei zeigt:
-
-```
-Stapel.mnemit/
-  deck.json       Lernoptionen, Karten mit Lernstand, Fortschritt
-  reviews.jsonl   Verlauf, eine Zeile je Abfrage
-```
-
-`deck.json`:
-
-```json
-{
-  "format": "de.fluch-it-consulting.voctrain.deck",
-  "version": 3,
-  "learningOptions": { "targetRecall": 0.9, "steps": 2, "cardsPerSession": 100, "…": "…" },
-  "cards": [
-    {
-      "id": "…", "question": "der Gruß", "answer": "pozdrowienie", "hint": "…",
-      "learningState": { "phase": "review", "stability": 12.3, "difficulty": 5.1, "due": "…", "reviews": 4, "…": "…" }
-    }
-  ],
-  "progress": [ { "day": "2026-10-05", "bins": [0, 12, 40, "…"] } ]
-}
-```
-
-`reviews.jsonl`, nach Karten gruppiert, `date` in Sekunden seit 1970, `grade` 1–4:
-
-```
-{"card":"6F9619FF-8B86-D011-B42D-00C04FC964FF","date":1791216000,"grade":3}
-```
-
-Der Verlauf liegt getrennt, weil er mit jeder Abfrage wächst: Die App kodiert beim
-Sichern nur, was sich seit dem letzten Mal geändert hat. Das Kodieren kostet deshalb
-gleich viel, egal wie lang der Verlauf ist; Zusammenfügen und Schreiben von
-`reviews.jsonl` wachsen mit ihm, bleiben aber billig. `progress` hält den Fortschritt,
-einen Tagesstand je Lerntag: wie viele Karten neu waren und wie viele eine Stabilität
-von unter 1, 1–2, 2–4, 4–8 … Tagen hatten. Fehlende Felder werden mit Standardwerten
-ergänzt.
-
-Die Schlüssel heißen wie die Begriffe im Glossar (`GLOSSARY.md`). Die Versionen 1 (eine
-einzelne JSON-Datei mit dem Verlauf in jeder Karte) und 2 (das Paket mit den Schlüsseln
-von vor dem Glossar) stammen aus der Zeit vor der ersten Veröffentlichung; die App öffnet
-sie nicht mehr.
-
-## Entwicklungshilfen
-
-Das App-Icon wird per Code gezeichnet. Nach Änderungen an `Tools/make-app-icon.swift`
-neu erzeugen:
-
-```bash
-swift Tools/make-app-icon.swift
-```
-
-Im Debug-Build öffnet das Startargument `-debugScreen statistics|study|options` direkt
-die jeweilige Ansicht (praktisch für Screenshots), `-debugSave YES` sichert alle
-geöffneten Stapel kurz nach dem Öffnen (prüft den echten Speicherweg).
-
-## Lizenz
-
-MIT, siehe [`LICENSE`](LICENSE). Das FSRS-Modell ist aus
-[py-fsrs](https://github.com/open-spaced-repetition/py-fsrs) (MIT) portiert, der Optimierer
-aus [fsrs-rs](https://github.com/open-spaced-repetition/fsrs-rs) (BSD 3-Clause); ihre
-Lizenztexte stehen in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Die App zeigt alle
-drei im Über-Fenster (`MacVocTrainNg/Resources/Credits.html`); wer dort Code von außen
-ergänzt, trägt seine Lizenz in beiden Dateien nach.
+MIT, see [`LICENSE`](LICENSE). Based on MacVocTrain NG by Martin Fluch (MIT). Includes code
+ported from MKRingProgressView by Max Konovalov (MIT) and uses zstd by Meta (BSD); notices in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). FSRS is by
+[open-spaced-repetition](https://github.com/open-spaced-repetition).
