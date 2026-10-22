@@ -76,6 +76,16 @@ struct WordIndexTests {
         #expect(match.answer == "driver")
     }
 
+    @Test func onlyTheFirstLineOfAnAnswerIsShown() throws {
+        let card = Card(question: "ο Άγγλος", answer: "Englishman\nΟ Τζον είναι Άγγλος.", note: "άγγλος#ο", kind: .recognition)
+        let index = try index(("X", [card]))
+        guard case let .same(match)? = index.match(candidate("ο άγγλος", note: "άγγλος#ο")) else {
+            Issue.record("not found")
+            return
+        }
+        #expect(match.answer == "Englishman")
+    }
+
     @Test func theFirstDeckAnswers() throws {
         let index = try index(("First", word("νερό", "water", note: "νερό")), ("Second", word("νερό", "H2O", note: "νερό")))
         guard case let .same(match)? = index.match(candidate("νερό", note: "νερό")) else {

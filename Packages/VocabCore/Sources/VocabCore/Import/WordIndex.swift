@@ -57,10 +57,11 @@ public struct WordIndex: Sendable {
             }
             let index = words.count
             indexOfNote[key.note] = index
-            // A production card asks the translation: the word is on its answer's first line.
+            // A production card asks the translation: the word is on its answer's first line, as
+            // the rest of an answer is an example.
             let isProduction = card.kind == .production
-            let greek = isProduction ? CardText.trimmed(String(card.answer.prefix { !$0.isNewline })) : card.question
-            words.append(Match(deck: name, question: greek, answer: isProduction ? card.question : card.answer, cards: [card.id]))
+            let greek = isProduction ? Self.firstLine(card.answer) : card.question
+            words.append(Match(deck: name, question: greek, answer: isProduction ? card.question : Self.firstLine(card.answer), cards: [card.id]))
             for string in key.sameKeys {
                 bySame[string, default: []].append(index)
             }
@@ -68,6 +69,10 @@ public struct WordIndex: Sendable {
                 byLoose[string, default: []].append(index)
             }
         }
+    }
+
+    private static func firstLine(_ text: String) -> String {
+        CardText.trimmed(String(text.prefix { !$0.isNewline }))
     }
 
     /// The word of the first deck that is the same as `key`, else the first that looks like it.
