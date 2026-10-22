@@ -59,49 +59,78 @@ public enum DailyGoal {
 
     /// The study days before today whose reviews set the pace (`pace(days:newDone:otherDone:)`).
     public static let paceDays = 7
-    /// A pause between two reviews longer than this is a break, not study time.
-    public static let paceBreak: TimeInterval = 120
-    /// The cards of a kind that must be done in the window for the learner's own pace with them to count.
+    /// The gaps between reviews a category needs in the window for the learner's own time per review to count.
+    public static let paceMinimumGaps = 20
+    /// The cards of a category that must be done in the window for the learner's own pace with them to count.
     public static let paceMinimumCards = 10
     /// What a card that was new when its study day began takes until there is a pace: seconds.
     public static let fallbackNewCardSeconds: Double = 30
     /// What any other card takes until there is a pace: seconds.
     public static let fallbackOtherCardSeconds: Double = 10
+    /// The interquartile range of a standard normal distribution: the spread of the logged gaps is
+    /// their IQR over it.
+    private static let normalIQR = 1.349
+    /// A gap is at least this long before its logarithm is taken: seconds.
+    private static let shortestGap: TimeInterval = 1
 
     /// One review of a study day, for the pace: when, and whether its card was new when the
     /// day began (`Card.wasNew(before:)`).
     public typealias PacedReview = (date: Date, isNew: Bool)
 
     /// The pace, how long a done card takes this learner, for the cards that were new when their
-    /// study day began and for all others. The seconds between consecutive reviews of a study
-    /// day, pauses over `paceBreak` left out, go to the card of the later review, the one the
-    /// swipe was spent on; a card's category holds for all its reviews of the day, so the
-    /// learning steps of a new card are in the price of new cards, and an Again on a review card
-    /// and its relearning in the price of the others. Each category's seconds are divided by the
-    /// cards it had done (`newDone`, `otherDone`) on those days. `days` holds the reviews of each
-    /// study day of the window, today and the `paceDays` before it, across all decks.
-    /// `fallbackNewCardSeconds` and `fallbackOtherCardSeconds` for a category with fewer than
-    /// `paceMinimumCards` done, or with no time between its reviews.
-    // ponytail: the gap between reviews stands for the time spent, the log holds no durations: a
-    // pause shorter than `paceBreak` counts as work, a card read for longer is cut short. Store
-    // the time each review took (a `reviews.jsonl` field) and sum it, if the estimate misleads.
+    /// study day began and for all others. `days` holds the reviews of each study day of the window,
+    /// today and the `paceDays` before it, across all decks. The gaps between consecutive reviews
+    /// of a study day, none left out, go to the card of the later review, the one the swipe was
+    /// spent on; a card's category holds for all its reviews of the day, so the learning steps of a
+    /// new card are in the price of new cards, and an Again on a review card and its relearning in
+    /// the price of the others.
+    ///
+    /// A category's price is the typical seconds a review takes times the reviews each of its done
+    /// cards needed (`newDone`, `otherDone`). The typical seconds are the mean of the lognormal
+    /// that the logged gaps follow, worked out from the median and the interquartile range of their
+    /// logarithms, which a few long gaps (a break, a phone call) don't move: exp(m + s² / 2), with m
+    /// the median and s the IQR over 1.349. The reviews are all of the category in the window, the
+    /// first review of each study day, which has no gap, included. A category with fewer than
+    /// `paceMinimumGaps` gaps or `paceMinimumCards` done cards gets `fallbackNewCardSeconds` or
+    /// `fallbackOtherCardSeconds`.
+    // ponytail: a gap stands for the time spent, the log holds no durations: it also holds the time
+    // between cards (a menu, the rest screen), and a break goes unnoticed only while breaks are fewer
+    // than a quarter of the gaps. Store the time from showing a card to its grade in `reviews.jsonl`,
+    // capped like Anki's maximum answer seconds (60 s by default), and sum that, if the estimate misleads.
     public static func pace(days: [[PacedReview]], newDone: Int, otherDone: Int) -> Pace {
-        var newSeconds: TimeInterval = 0
-        var otherSeconds: TimeInterval = 0
+        var newGaps: [Double] = []
+        var otherGaps: [Double] = []
+        var newReviews = 0
+        var otherReviews = 0
         for day in days {
             let reviews = day.sorted { $0.date < $1.date }
+            newReviews += reviews.filter(\.isNew).count
+            otherReviews += reviews.filter { !$0.isNew }.count
             for (earlier, later) in zip(reviews, reviews.dropFirst()) {
-                let gap = later.date.timeIntervalSince(earlier.date)
-                guard gap <= paceBreak else { continue }
-                if later.isNew { newSeconds += gap } else { otherSeconds += gap }
+                let gap = log(max(shortestGap, later.date.timeIntervalSince(earlier.date)))
+                if later.isNew { newGaps.append(gap) } else { otherGaps.append(gap) }
             }
         }
-        func price(_ seconds: TimeInterval, done: Int, fallback: Double) -> Double {
-            done >= paceMinimumCards && seconds > 0 ? seconds / Double(done) : fallback
+        func price(_ gaps: [Double], reviews: Int, done: Int, fallback: Double) -> Double {
+            guard gaps.count >= paceMinimumGaps, done >= paceMinimumCards else { return fallback }
+            return lognormalMean(ofLogs: gaps) * Double(reviews) / Double(done)
         }
         return Pace(
-            newCard: price(newSeconds, done: newDone, fallback: fallbackNewCardSeconds),
-            otherCard: price(otherSeconds, done: otherDone, fallback: fallbackOtherCardSeconds))
+            newCard: price(newGaps, reviews: newReviews, done: newDone, fallback: fallbackNewCardSeconds),
+            otherCard: price(otherGaps, reviews: otherReviews, done: otherDone, fallback: fallbackOtherCardSeconds))
+    }
+
+    /// The mean of the lognormal whose logarithms are `logs`, from their median and IQR: exp(m + s² / 2).
+    private static func lognormalMean(ofLogs logs: [Double]) -> Double {
+        let sorted = logs.sorted()
+        func quantile(_ p: Double) -> Double {
+            let position = p * Double(sorted.count - 1)
+            let lower = Int(position.rounded(.down))
+            let upper = min(lower + 1, sorted.count - 1)
+            return sorted[lower] + (sorted[upper] - sorted[lower]) * (position - Double(lower))
+        }
+        let spread = (quantile(0.75) - quantile(0.25)) / normalIQR
+        return exp(quantile(0.5) + spread * spread / 2)
     }
 
     /// The minutes the cards still to do take at `pace`, rounded up; 0 for less than a minute
