@@ -39,9 +39,12 @@ public enum DailyGoal {
     /// cards that are added or reviewed beyond it, catching up and review ahead, don't move it,
     /// so the ring goes on in laps. The one exception is a plan that has nothing left though
     /// fewer cards than planned are done (cards that were suspended or deleted during the
-    /// day): it is met at those, so the ring never stands open next to "0 cards left".
+    /// day): it is met at those, so the ring never stands open next to "0 cards left". A day
+    /// that began with an empty plan (a first deck, filled in the afternoon) takes the plan as
+    /// it stands, `done + owed`, so the first day has a goal and its ring doesn't count laps.
     public static func goal(done: Int, owed: Int, plan: Int) -> Int {
-        owed > 0 ? plan : min(plan, done)
+        guard plan > 0 else { return done + owed }
+        return owed > 0 ? plan : min(plan, done)
     }
 
     /// The first study day (2026-10-23) on which a day counts for the streak only when its plan

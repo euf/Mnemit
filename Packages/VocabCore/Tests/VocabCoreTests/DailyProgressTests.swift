@@ -20,11 +20,13 @@ struct DailyGoalTests {
         #expect(DailyGoal.goal(done: 45, owed: 0, plan: 8) == 8)
     }
 
-    @Test func anEmptyPlanIsAGoalOfNothing() {
+    /// A day that began with nothing planned (a first deck filled in the afternoon, a day with
+    /// nothing due) takes the plan as it stands: the first day gets a goal, not laps.
+    @Test func anEmptyPlanAtDayStartTakesThePlanAsItStands() {
         #expect(DailyGoal.goal(done: 0, owed: 0, plan: 0) == 0)
-        #expect(DailyGoal.goal(done: 12, owed: 0, plan: 0) == 0)
-        // Cards that turned up during the day, new ones that were added, are laps, not a plan.
-        #expect(DailyGoal.goal(done: 0, owed: 3, plan: 0) == 0)
+        #expect(DailyGoal.goal(done: 12, owed: 0, plan: 0) == 12)
+        #expect(DailyGoal.goal(done: 0, owed: 10, plan: 0) == 10)
+        #expect(DailyGoal.goal(done: 4, owed: 6, plan: 0) == 10)
     }
 
     @Test func aPlanThatIsDoneWithFewerCardsThanPlannedIsMetAtThoseCards() {
