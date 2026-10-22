@@ -165,7 +165,7 @@ extension DailyProgressTests {
         // Ten new cards were created this afternoon: the day began without them, and they are admitted, up to the
         // time of the day, without being part of the goal.
         let late = (0..<10).map { Card(id: UUID(), question: "n\($0)", answer: "x", created: now.addingTimeInterval(-3600)) }
-        let deck = try Deck(learningOptions: options(), cards: (0..<5).map { waiting("r\($0)" ) } + late)
+        let deck = try Deck(learningOptions: options(), cards: (0..<5).map { waiting("r\($0)") } + late)
         let progress = evaluate([deck])
         // Five reviews take 50 s of 240: 190 s are six new cards.
         #expect(progress.newCardAllowances == [6])

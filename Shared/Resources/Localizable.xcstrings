@@ -1469,26 +1469,6 @@
         }
       }
     },
-    "Answers per new card": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Antworten pro neuer Karte"
-          }
-        }
-      }
-    },
-    "Answers per other card": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Antworten pro anderer Karte"
-          }
-        }
-      }
-    },
     "Any key closes this help.": {
       "localizations": {
         "de": {
@@ -4992,6 +4972,26 @@
         }
       }
     },
+    "Reviews per new card": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abfragen pro neuer Karte"
+          }
+        }
+      }
+    },
+    "Reviews per other card": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abfragen pro anderer Karte"
+          }
+        }
+      }
+    },
     "Ring": {
       "localizations": {
         "de": {
@@ -5152,12 +5152,12 @@
         }
       }
     },
-    "Seconds a done card takes: the typical seconds of an answer, from its logged durations or else the gaps between answers, times the answers each done card took, over the last %lld study days and today. With fewer than %lld timed answers or %lld done cards a kind keeps the default, %lld s for new and %lld s for other.": {
+    "Seconds a done card takes: the typical seconds of a review, from its logged durations or else the gaps between reviews, times the reviews each done card took, over the last %lld study days and today. With fewer than %lld timed reviews or %lld done cards a kind keeps the default, %lld s for new and %lld s for other.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sekunden, die eine erledigte Karte braucht: die typischen Sekunden einer Antwort, aus ihren gemessenen Zeiten oder sonst den Abständen zwischen den Antworten, mal die Antworten, die jede erledigte Karte brauchte, über die letzten %1$lld Lerntage und heute. Mit weniger als %2$lld gemessenen Antworten oder %3$lld erledigten Karten bleibt es beim Standard: %4$lld s für neue, %5$lld s für andere Karten."
+            "value": "Sekunden, die eine erledigte Karte braucht: die typischen Sekunden einer Abfrage, aus ihren gemessenen Zeiten oder sonst den Abständen zwischen den Abfragen, mal die Abfragen, die jede erledigte Karte brauchte, über die letzten %1$lld Lerntage und heute. Mit weniger als %2$lld gemessenen Abfragen oder %3$lld erledigten Karten bleibt es beim Standard: %4$lld s für neue, %5$lld s für andere Karten."
           }
         }
       }

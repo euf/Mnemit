@@ -84,10 +84,10 @@ struct HowTodayWorksTests {
 
         let pace = content.sections[2].rows
         #expect(pace[0] == .value(label: "New card", value: "31 s", note: "Durations (214)"))
-        #expect(pace[1] == .value(label: "Answers per new card", value: (2.5).formatted(.number.precision(.fractionLength(2)))))
+        #expect(pace[1] == .value(label: "Reviews per new card", value: (2.5).formatted(.number.precision(.fractionLength(2)))))
         // Five timed answers and twelve gaps are under twenty: the price is the default.
         #expect(pace[2] == .value(label: "Other card", value: "9 s", note: "Default"))
-        #expect(pace[3] == .value(label: "Answers per other card", value: (1.0).formatted(.number.precision(.fractionLength(2)))))
+        #expect(pace[3] == .value(label: "Reviews per other card", value: (1.0).formatted(.number.precision(.fractionLength(2)))))
 
         #expect(values(content.sections[3]) == ["Days": "12", "Today": "Kept"])
 

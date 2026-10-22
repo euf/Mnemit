@@ -116,11 +116,11 @@ struct HowTodayWorks: Equatable, Sendable {
             ]
         }
         let rows =
-            kindRows(String(localized: "New card"), seconds: progress.pace.newCard, breakdown.newCards, reviewsLabel: String(localized: "Answers per new card"))
-            + kindRows(String(localized: "Other card"), seconds: progress.pace.otherCard, breakdown.otherCards, reviewsLabel: String(localized: "Answers per other card"))
+            kindRows(String(localized: "New card"), seconds: progress.pace.newCard, breakdown.newCards, reviewsLabel: String(localized: "Reviews per new card"))
+            + kindRows(String(localized: "Other card"), seconds: progress.pace.otherCard, breakdown.otherCards, reviewsLabel: String(localized: "Reviews per other card"))
         let footer = String(
             localized:
-                "Seconds a done card takes: the typical seconds of an answer, from its logged durations or else the gaps between answers, times the answers each done card took, over the last \(DailyGoal.paceDays) study days and today. With fewer than \(DailyGoal.paceMinimumGaps) timed answers or \(DailyGoal.paceMinimumCards) done cards a kind keeps the default, \(Int(DailyGoal.fallbackNewCardSeconds)) s for new and \(Int(DailyGoal.fallbackOtherCardSeconds)) s for other."
+                "Seconds a done card takes: the typical seconds of a review, from its logged durations or else the gaps between reviews, times the reviews each done card took, over the last \(DailyGoal.paceDays) study days and today. With fewer than \(DailyGoal.paceMinimumGaps) timed reviews or \(DailyGoal.paceMinimumCards) done cards a kind keeps the default, \(Int(DailyGoal.fallbackNewCardSeconds)) s for new and \(Int(DailyGoal.fallbackOtherCardSeconds)) s for other."
         )
         return Section(title: String(localized: "Pace"), rows: rows, footer: footer)
     }
