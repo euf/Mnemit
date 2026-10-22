@@ -26,6 +26,13 @@ The deck of the four packages above uses the preset "Greek FSRS": 21 FSRS-6 para
                       card)" note (a reverse pair), a note type with three templates (Word to Meaning,
                       Meaning to Word, Sentence to Word), and "Basic (optional reversed card)" once with
                       the reverse and once without.
+  media-files-latest.apkg, media-files-legacy2.apkg
+                      Notes whose images and sounds come along, with generated media: a 1x1 PNG (twice,
+                      under two names, and once more with another pixel), a silent WAV (twice, with other
+                      samples). The vocabulary note type of the shared deck (word, image, audio, meaning,
+                      examples, frequency), a note type that asks with its audio, and Basic notes with
+                      an image on the front, an image on the back, a file name with a space, a file the package lacks, and a back with several images
+                      and sounds.
 """
 
 import json
@@ -218,6 +225,68 @@ for model, fields in [
     col.add_note(note, siblings_deck)
 col.export_anki_package(out_path=os.path.join(out_dir, "siblings-latest.apkg"), options=options(False), limit=DeckIdLimit(siblings_deck))
 col.export_anki_package(out_path=os.path.join(out_dir, "siblings-legacy2.apkg"), options=options(True), limit=DeckIdLimit(siblings_deck))
+col.close()
+
+# Notes with images and sounds that come along with their media.
+import struct
+import wave
+import zlib
+
+
+def png(pixel):
+    """A 1x1 PNG of one RGB pixel."""
+    def chunk(kind, data):
+        body = kind + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(b"\x00" + bytes(pixel))) + chunk(b"IEND", b""))
+
+
+def wav(samples):
+    """A silent mono 8 kHz WAV of `samples` samples."""
+    path = os.path.join(work, "silence.wav")
+    with wave.open(path, "wb") as sound:
+        sound.setnchannels(1)
+        sound.setsampwidth(1)
+        sound.setframerate(8000)
+        sound.writeframes(b"\x80" * samples)
+    with open(path, "rb") as source:
+        return source.read()
+
+
+col = Collection(os.path.join(work, "media-files.anki2"))
+files_deck = col.decks.id("Files")
+col.media.write_data("pic.png", png((255, 0, 0)))
+col.media.write_data("copy.png", png((255, 0, 0)))  # the same bytes under another name
+col.media.write_data("pic2.png", png((0, 0, 255)))
+col.media.write_data("my pic.png", png((0, 255, 0)))
+col.media.write_data("word.wav", wav(400))
+col.media.write_data("example.wav", wav(800))
+
+vocabulary = make_note_type(
+    "Vocabulary Files",
+    ["Front", "Image", "Audio", "Back", "ExamplesBlock", "FrequencyBlock"],
+    '<div class="word">{{Front}}</div>\n{{{Image}}',
+    '{{FrontSide}}\n\n<hr class="divider">\n\n<div class="translation">{{Back}}</div>\n{{{ExamplesBlock}}\n{{{FrequencyBlock}}')
+listening = make_note_type("Listening Files", ["Audio", "Text"], "{{Audio}}", '{{FrontSide}}<hr id="answer">{{Text}}')
+basic = col.models.by_name("Basic")
+examples = '<div class="examples"><div>Παίρνω τον καφέ μου στις οκτώ.</div>[sound:example.wav]<div>I get my coffee at eight.</div></div>'
+for model, fields in [
+    (vocabulary, ["παίρνω", '<img src="pic.png">', "[sound:word.wav]", "get", examples, '<div class="frequency">1243</div>']),
+    (vocabulary, ["χρόνος", '<img src="copy.png">', "", "time", "", "Frequency rank: 88"]),
+    (listening, ["[sound:word.wav]", "ακούω"]),
+    (basic, ['<img src="pic.png">', "picture"]),
+    (basic, ["εικόνα", '<img src="pic2.png">']),
+    (basic, ["χαμένο", '<img src="missing.png">']),
+    (basic, ["με κενό", '<img src="my pic.png">']),
+    (basic, ["δύο", 'two <img src="pic.png"> <img src="pic2.png"> [sound:word.wav] [sound:example.wav]']),
+]:
+    note = col.new_note(model)
+    for index, value in enumerate(fields):
+        note.fields[index] = value
+    col.add_note(note, files_deck)
+col.export_anki_package(out_path=os.path.join(out_dir, "media-files-latest.apkg"), options=options(False), limit=DeckIdLimit(files_deck))
+col.export_anki_package(out_path=os.path.join(out_dir, "media-files-legacy2.apkg"), options=options(True), limit=DeckIdLimit(files_deck))
 col.close()
 
 # Legacy 1: the schema-11 collection of Legacy 2 under the old name, without meta.

@@ -7,7 +7,7 @@ import Foundation
 ///   already.
 /// - Entities are decoded: the common named ones and every numeric one.
 /// - `<img>` and `[sound:…]` are removed and reported, so the caller can count fields that
-///   lose media.
+///   lose media; `mediaReferences(in:)` lists the files they name.
 /// - Non-breaking spaces become spaces; the result has no surrounding whitespace.
 enum AnkiText {
     static func plain(_ html: String) -> (text: String, hadMedia: Bool) {
@@ -50,6 +50,53 @@ enum AnkiText {
         }
         let text = String(output).replacingOccurrences(of: "\u{00A0}", with: " ")
         return (CardText.trimmed(text), hadMedia)
+    }
+
+    /// A file a field refers to: the `src` of an `<img>`, or the name in `[sound:…]`.
+    struct MediaReference: Equatable {
+        enum Kind { case image, sound }
+        var kind: Kind
+        /// As the field has it, with the entities of HTML decoded; Anki may have percent-encoded it.
+        var name: String
+    }
+
+    private static let tag = try! NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: .caseInsensitive)
+    private static let source = try! NSRegularExpression(pattern: #"\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))"#, options: .caseInsensitive)
+    private static let sound = try! NSRegularExpression(pattern: #"\[sound:([^\]]*)\]"#)
+
+    /// The images and sounds `html` refers to, in the order they stand.
+    static func mediaReferences(in html: String) -> [MediaReference] {
+        let whole = NSRange(html.startIndex..., in: html)
+        var found: [(position: Int, reference: MediaReference)] = []
+        for match in tag.matches(in: html, range: whole) {
+            guard let source = source.firstMatch(in: html, range: match.range),
+                let name = (1...3).lazy.compactMap({ Range(source.range(at: $0), in: html) }).first.map({ String(html[$0]) })
+            else { continue }
+            found.append((match.range.location, MediaReference(kind: .image, name: decoded(name))))
+        }
+        for match in sound.matches(in: html, range: whole) {
+            guard let range = Range(match.range(at: 1), in: html) else { continue }
+            found.append((match.range.location, MediaReference(kind: .sound, name: decoded(String(html[range])))))
+        }
+        return found.sorted { $0.position < $1.position }.map(\.reference)
+    }
+
+    /// `text` with the entities of HTML decoded, as in a field.
+    private static func decoded(_ text: String) -> String {
+        guard text.contains("&") else { return text }
+        let input = Array(text.unicodeScalars)
+        var output = String.UnicodeScalarView()
+        var index = 0
+        while index < input.count {
+            if input[index] == "&", let (scalar, end) = entity(in: input, at: index) {
+                output.append(scalar)
+                index = end
+            } else {
+                output.append(input[index])
+                index += 1
+            }
+        }
+        return String(output)
     }
 
     /// The index after `[sound:…]` starting at `index`, if there is one.

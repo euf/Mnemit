@@ -86,11 +86,11 @@ public enum CardImporter {
     /// card of `cards` has, is marked as a duplicate. The cards of an Anki package come
     /// this way, see `AnkiImport.cards(from:learningOptions:calendar:created:)`.
     public static func candidates(of cards: [Card], existing: [Card]) -> [Candidate] {
-        let inDeck = Set(existing.map { CardText.key(forQuestion: $0.question) })
+        let inDeck = Set(existing.map(\.questionKey))
         // The first card of each question in the file.
         var inFile: [String: Card] = [:]
         return cards.map { card in
-            let key = CardText.key(forQuestion: card.question)
+            let key = card.questionKey
             let duplicate: Duplicate? = inDeck.contains(key) ? .inDeck : inFile[key].map { .inFile(question: $0.question, answer: $0.answer) }
             inFile[key] = inFile[key] ?? card
             return Candidate(card: card, duplicate: duplicate)

@@ -158,9 +158,9 @@ struct AnkiImportTests {
         let result = try read(noteTypes: types, notes: notes, current: current)
         #expect(
             result.notes.map { [$0.front, $0.back] } == [
-                ["παίρνω", "get"],
+                ["παίρνω", "get\nΠαίρνω καφέ."],
                 ["νερό", "water"],
-                ["ψωμί", "bread"],
+                ["ψωμί", "bread\nwith butter"],
                 ["σκύλος", "dog"],
                 ["σπίτι", "house"],
             ])
@@ -168,7 +168,7 @@ struct AnkiImportTests {
     }
 
     @Test(arguments: [false, true])
-    func saysWhySidesWithOnlyMediaAreLeftOut(current: Bool) throws {
+    func saysWhySidesWhoseMediaIsLostAreLeftOut(current: Bool) throws {
         let types = [
             Fixtures.RawNoteType(id: 1, name: "Listening", fields: ["Audio", "Text"], templates: ["{{Audio}}"], answers: ["{{FrontSide}}{{Text}}"]),
             Fixtures.RawNoteType(id: 2, name: "Basic"),
@@ -205,13 +205,22 @@ struct AnkiImportTests {
     @Test(arguments: ["media-fields-latest", "media-fields-legacy2"])
     func readsADeckWhoseSecondFieldIsAnImage(name: String) throws {
         let result = try Self.package(name)
-        #expect(result.notes.map { [$0.front, $0.back] } == [["παίρνω", "get"], ["χρόνος", "time"]])
+        // The note with no word has its picture to ask with, and the one that asks with its audio has
+        // that; the meaning is the first field the answer adds, then the example, not the frequency.
+        #expect(
+            result.notes.map { [$0.front, $0.back] } == [
+                ["παίρνω", "get\nΠαίρνω τον καφέ μου στις οκτώ.\nI get my coffee at eight."], ["χρόνος", "time"], ["", "no word"], ["", "ακούω"],
+            ])
         #expect(result.deckNames == ["Media"])
         #expect(result.skippedCloze == 0)
-        #expect(result.skippedEmpty == 3)
-        // The note with no word, and the one that asks with its audio only; the one with no translation is empty.
-        #expect(result.skippedMediaOnly == 2)
-        #expect(result.skippedMediaRefs == 2)
+        // The note with no translation is empty, and says nothing of media.
+        #expect(result.skippedEmpty == 1)
+        #expect(result.skippedMediaOnly == 0)
+        #expect(result.skippedMediaRefs == 0)
+        #expect(result.notes.map(\.media.hasQuestionMedia) == [true, true, true, true])
+        #expect(result.notes.map(\.media.hasAnswerMedia) == [true, false, false, false])
+        #expect(result.media.count == 2)
+        #expect(result.mediaSummary.images == 1 && result.mediaSummary.sounds == 1)
     }
 
     @Test func aNoteWithTooFewFieldsIsEmpty() throws {
@@ -327,15 +336,19 @@ struct AnkiImportTests {
             result.notes.map { [$0.front, $0.back] } == [
                 ["γάτα", "cat"],
                 ["σπίτι\nτο", "house & home"],
+                ["εικόνα", ""],  // its picture is the back
                 ["ήχος", "sound"],
                 ["νερό", "water"],
                 ["water", "νερό"],
                 ["σκύλος", "dog"],
             ])
-        #expect(result.notes.map(\.isSuspended) == [false, false, false, false, false, true])
+        #expect(result.notes.map(\.isSuspended) == [false, false, false, false, false, false, true])
         #expect(result.skippedCloze == 2)
-        #expect(result.skippedMediaRefs == 2)
-        #expect(result.skippedEmpty == 1)
+        // The picture is in the package, the sound of "ήχος" is not.
+        #expect(result.skippedMediaRefs == 1)
+        #expect(result.skippedEmpty == 0)
+        #expect(result.notes[2].media.answerImage != nil && result.notes[3].media.isEmpty)
+        #expect(result.media.count == 1)
         #expect(result.deckNames == ["Greek::Lesson 1"])
 
         let base = 1_768_000_000_000
@@ -347,8 +360,8 @@ struct AnkiImportTests {
         #expect(cat.map(\.duration) == [Duration](repeating: .milliseconds(3_000), count: 5))
         #expect(result.notes[1].reviews.map(\.duration) == [.milliseconds(3_000)])
         #expect(result.notes[1].reviews.map(\.grade) == [.easy])
-        #expect(result.notes[3].reviews.map(\.grade) == [.good])
-        #expect(result.notes[4].reviews.map(\.grade) == [.hard])
-        #expect(result.notes[2].reviews.isEmpty && result.notes[5].reviews.isEmpty)
+        #expect(result.notes[4].reviews.map(\.grade) == [.good])
+        #expect(result.notes[5].reviews.map(\.grade) == [.hard])
+        #expect(result.notes[2].reviews.isEmpty && result.notes[3].reviews.isEmpty && result.notes[6].reviews.isEmpty)
     }
 }

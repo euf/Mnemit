@@ -269,6 +269,16 @@ public struct Card: Identifiable, Hashable, Sendable {
         threshold > 0 && (learningState?.lapses ?? 0) >= threshold
     }
 
+    /// What makes two cards ask the same, for finding duplicates: the key of the question text
+    /// (`CardText.key(forQuestion:)`), or, for a question without a text, which an image or a
+    /// sound can make up, the names of those files: every such question would be the same
+    /// otherwise.
+    var questionKey: String {
+        let key = CardText.key(forQuestion: question)
+        guard key.isEmpty else { return key }
+        return "\u{0}" + [questionImage, questionAudio].compactMap { $0 }.joined(separator: "|")
+    }
+
     /// Whether the texts, the media, the note or the kind differ from those of `other`.
     func hasOtherContent(than other: Card) -> Bool {
         question != other.question || answer != other.answer || hint != other.hint || note != other.note || kind != other.kind || media != other.media

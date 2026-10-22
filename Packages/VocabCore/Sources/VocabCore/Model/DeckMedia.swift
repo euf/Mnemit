@@ -23,6 +23,10 @@ public struct CardMedia: Hashable, Sendable {
     }
 
     public var isEmpty: Bool { names.isEmpty }
+    /// Whether the question has an image or a sound.
+    public var hasQuestionMedia: Bool { questionImage != nil || questionAudio != nil }
+    /// Whether the answer has an image or a sound.
+    public var hasAnswerMedia: Bool { answerImage != nil || answerAudio != nil }
 
     /// The same slots, with every name that doesn't name a file (`DeckMedia.isValidName`) left out.
     var checked: CardMedia {

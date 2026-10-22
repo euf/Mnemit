@@ -16,12 +16,19 @@ extension AnkiImport {
     ///   - learningOptions: Those of the deck the cards go to.
     ///   - calendar: The one the deck is studied with, which dates the due days.
     ///   - created: The creation date of the cards, which is also when suspended ones were suspended.
-    /// - Returns: A card per note whose front and back aren't empty; every card has an ID of its own.
+    /// - Returns: A card per note that has a text, an image or a sound on each side; every card has an
+    ///   ID of its own, and a side with media only has an empty text.
     public static func cards(from notes: [Note], learningOptions: LearningOptions, calendar: StudyCalendar, created: Date) -> [Card] {
         let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
         return notes.compactMap { note in
-            guard let text = CardText(question: note.front, answer: note.back) else { return nil }
-            var card = scheduler.replaying(note.reviews, of: Card(text: text, note: note.note, kind: note.kind, created: created))
+            let question = CardText.trimmed(note.front)
+            let answer = CardText.trimmed(note.back)
+            guard !question.isEmpty || note.media.hasQuestionMedia, !answer.isEmpty || note.media.hasAnswerMedia else { return nil }
+            // A side may have no text but an image or a sound, which `CardText` doesn't allow.
+            let start = Card(
+                question: question, answer: answer, note: Card.normalized(note.note), kind: note.kind, media: note.media.checked,
+                created: created, learningState: nil)
+            var card = scheduler.replaying(note.reviews, of: start)
             if note.isSuspended {
                 card.suspend(at: created)
             }

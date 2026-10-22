@@ -36,8 +36,20 @@ struct AnkiCollection {
         }
     }
 
-    /// One side of a card as plain text, and whether an image or a sound was stripped from it.
-    typealias Side = (text: String, hadMedia: Bool)
+    /// One side of a card: its text, and the first image and the first sound of the fields the
+    /// side shows, by their names in Anki. Without a text, an image and a sound it is empty.
+    struct Side {
+        var text = ""
+        var image: String?
+        var audio: String?
+        /// Whether a field the side shows referred to an image or a sound at all.
+        var referencesMedia = false
+        /// Whether one of them is left out: the package lacks the file, or the side already has
+        /// another image or sound.
+        var leavesMediaOut = false
+
+        var isEmpty: Bool { text.isEmpty && image == nil && audio == nil }
+    }
 
     /// A deck: its name, and the number of its preset if it names one.
     struct Deck {
@@ -46,6 +58,8 @@ struct AnkiCollection {
     }
 
     let database: AnkiDatabase
+    /// The files the package holds, which a card's image or sound has to be among.
+    var media = AnkiMedia()
 
     func imported() throws -> AnkiImport {
         let isCurrent = try database.hasTable("notetypes")
@@ -75,10 +89,10 @@ struct AnkiCollection {
             }
             let values = fields.split(separator: "\u{1F}", omittingEmptySubsequences: false).map(String.init)
             let (question, answer) = sides(ofCardAt: ord, in: type, values: values)
-            result.skippedMediaRefs += (question.hadMedia ? 1 : 0) + (answer.hadMedia ? 1 : 0)
-            guard !question.text.isEmpty, !answer.text.isEmpty else {
+            result.skippedMediaRefs += (question.leavesMediaOut ? 1 : 0) + (answer.leavesMediaOut ? 1 : 0)
+            guard !question.isEmpty, !answer.isEmpty else {
                 result.skippedEmpty += 1
-                if (question.text.isEmpty && question.hadMedia) || (answer.text.isEmpty && answer.hadMedia) {
+                if (question.isEmpty && question.referencesMedia) || (answer.isEmpty && answer.referencesMedia) {
                     result.skippedMediaOnly += 1
                 }
                 continue
@@ -90,7 +104,8 @@ struct AnkiCollection {
             result.notes.append(
                 AnkiImport.Note(
                     front: question.text, back: answer.text, reviews: log.removeValue(forKey: id) ?? [], isSuspended: queue == -1, preset: preset,
-                    note: sibling.note, kind: sibling.kind))
+                    note: sibling.note, kind: sibling.kind,
+                    media: CardMedia(questionImage: question.image, questionAudio: question.audio, answerImage: answer.image, answerAudio: answer.audio)))
         }
         result.deckNames = usedDecks.compactMap { decks[$0]?.name }.sorted()
         let presetNumbers = Set(result.notes.compactMap(\.preset)).sorted()
@@ -103,28 +118,77 @@ struct AnkiCollection {
 
     /// What a card asks and answers with, from the fields of its note (`values`, in the order of
     /// the note type). The front is the first field with text that the question template shows;
-    /// the back is the first with text that the answer template adds to those. A field of an
-    /// image or a sound has no text, so the next one is taken: "Front, Image, Audio, Back" gives
-    /// the front and the back, not the image. Without a template to read, or one that shows no
-    /// field, the first and the second field with text stand in for what it would have named.
-    /// A side that no field gives text for is empty, and remembers if a field it looked at held media.
+    /// the back is the first with text that the answer template adds to those, and then, each on a
+    /// line of its own and in the order of the template, the other fields the answer adds that have
+    /// text (`isExtra(fieldNamed:text:)` leaves out those that are no words: frequency, rank, ids and the like). So
+    /// a card with an example sentence in a field of its own has it on the back after the meaning.
+    /// A field of an image or a sound has no text, so the next one is taken: "Front, Image, Audio,
+    /// Back" gives the front and the back, not the image. Without a template to read, or one that
+    /// shows no field, the first and the second field with text stand in for what it would have named.
+    ///
+    /// The image and the sound of a side are the first of each in the fields its template shows, text
+    /// or not: the question of the vocabulary note type has its picture in a field of its own. Without
+    /// a template, the fields the text was looked for in. The package has to hold the file; a side whose
+    /// every reference is lost is empty if it has no text, and remembers that it had references.
     private func sides(ofCardAt ord: Int, in type: NoteType, values: [String]) -> (front: Side, back: Side) {
-        func firstWithText(_ indices: [Int]) -> (index: Int?, side: Side) {
-            var hadMedia = false
+        func firstWithText(_ indices: [Int]) -> (index: Int?, text: String) {
             for index in indices where index < values.count {
-                let side = AnkiText.plain(values[index])
-                if !side.text.isEmpty { return (index, side) }
-                hadMedia = hadMedia || side.hadMedia
+                let text = AnkiText.plain(values[index]).text
+                if !text.isEmpty { return (index, text) }
             }
-            return (nil, ("", hadMedia))
+            return (nil, "")
         }
         let all = Array(values.indices)
         let asked = type.questionFormats[ord].map { Self.fields(shownBy: $0, in: type.fieldNames, showsTyped: false) } ?? []
         let answered = type.answerFormats[ord].map { Self.fields(shownBy: $0, in: type.fieldNames, showsTyped: true) } ?? []
         let front = firstWithText(asked.isEmpty ? all : asked)
         let added = answered.filter { !asked.contains($0) }
-        let back = firstWithText((added.isEmpty ? all : added).filter { $0 != front.index })
-        return (front.side, back.side)
+        let candidates = (added.isEmpty ? all : added).filter { $0 != front.index }
+        let back = firstWithText(candidates)
+
+        var backText = back.text
+        if !added.isEmpty, let first = back.index, let position = candidates.firstIndex(of: first) {
+            for index in candidates[candidates.index(after: position)...] where index < values.count {
+                let text = AnkiText.plain(values[index]).text
+                if !text.isEmpty, !Self.isExtra(fieldNamed: index < type.fieldNames.count ? type.fieldNames[index] : "", text: text) {
+                    backText += "\n" + text
+                }
+            }
+        }
+        // The fields a side shows hold its media. With no template, those the text was looked for in,
+        // up to the one it came from.
+        func shown(_ indices: [Int], upTo chosen: Int?, byTemplate: Bool) -> [Int] {
+            guard !byTemplate, let chosen, let end = indices.firstIndex(of: chosen) else { return indices }
+            return Array(indices[...end])
+        }
+        let frontShown = shown(asked.isEmpty ? all : asked, upTo: front.index, byTemplate: !asked.isEmpty)
+        let backShown = shown(candidates, upTo: back.index, byTemplate: !added.isEmpty)
+        return (side(front.text, shown: frontShown, values: values), side(backText, shown: backShown, values: values))
+    }
+
+    /// Whether a field that is not the first the answer adds is left off the back of a card:
+    /// a field named for a frequency, a rank or an ID, or one whose text has no letter in it.
+    static func isExtra(fieldNamed name: String, text: String) -> Bool {
+        let name = name.lowercased()
+        return ["freq", "rank", "id"].contains { name.contains($0) } || !text.contains { $0.isLetter }
+    }
+
+    /// The side with `text`, and the first image and the first sound the fields `shown` refer to
+    /// that the package holds.
+    private func side(_ text: String, shown: [Int], values: [String]) -> Side {
+        var side = Side(text: text)
+        for index in shown where index < values.count {
+            for reference in AnkiText.mediaReferences(in: values[index]) {
+                side.referencesMedia = true
+                let file = media.name(for: reference.name)
+                switch reference.kind {
+                case .image where file != nil && (side.image == nil || side.image == file): side.image = file
+                case .sound where file != nil && (side.audio == nil || side.audio == file): side.audio = file
+                default: side.leavesMediaOut = true
+                }
+            }
+        }
+        return side
     }
 
     /// The indices of the fields a template shows, in order, each once. Conditions (`{{#Field}}`,
