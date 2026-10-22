@@ -252,6 +252,18 @@
   (`Scheduler.recallProbability`) по изученным, не приостановленным карточкам recognition (карточка без kind тоже слово,
   production не считается), на начало учебного дня (04:00) — по состоянию карточек до сегодняшних оценок; ничего не
   хранится, слова показываются округлёнными вниз, прирост дня — до целого, вехи 50…5000 (`MemoryEstimate.milestones`).
+- Экран «How Today Works» (`HowTodayWorks` и `HowTodayWorksView` в `Shared/Statistics`): числа и правила под кольцом
+  для тех, кто знает Anki и FSRS, только чтение, без ручек и графиков, правило секции в её футере. Секции по порядку:
+  план дня (части плана на начало дня, взятая доля хвоста, допуск и потолок каждой колоды, цель, раунды, сделано,
+  осталось, catch-up), ёмкость (14 дней: раунды, кольцо замкнуто или открыто, шаг), темп (цена новой и прочей, источник
+  цены: длительности, промежутки или значение по умолчанию, оценок на сделанную карточку), streak, слова в памяти,
+  FSRS по колодам (запоминаемость, 21 параметр, подгонка, шаги, наибольший интервал). Числа берутся из `DailyProgress`,
+  `MemoryEstimate`, настроек колод и `DayBreakdown` (VocabCore, `Statistics/DayBreakdown.swift`): его цикл по дням
+  повторяет `DailyProgress.evaluate`, и `DayBreakdownTests` держит их вместе; `StudyCounts.backlogTaken` — доля хвоста,
+  которую взял план. iPhone: кнопка info слева в панели Today (`HowTodayWorksButton` и лист `HowTodayWorksSheet`,
+  `VocTrain/Views/HowTodayWorksSheet.swift`), колоды читаются из файлов при открытии листа; Mac: Study ▸ How Today Works
+  (`HowTodayWorksWindow`), колоды открытых документов, без имён («Deck 1», «Deck 2»). Данные строк —
+  `VocTrainTests/HowTodayWorksTests`, кадр листа — оттуда же (каталог `TEST_RUNNER_HOME_SHOTS_DIR`).
 - iPhone запускается на Today (`StartScreen` держит состояние, `TodayScreen` рисует): «N cards left» (карточки плана, ещё
   не сделанные, не сырой due) и «M of K cards» (сделанные карточки против цели дня: M, N и K в одной
   единице, M + N ≥ K, равно, пока план влезает во время дня и в него ничего не добавили; Forgot его не нарушает), «+N to catch up this week» при хвосте, кольцо

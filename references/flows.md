@@ -39,6 +39,24 @@ Root is a `NavigationStack` on Today.
 - **Empty state** (no decks): New Deck, Import Cards, Use iCloud Drive Folder. No mention of
   the Mac.
 
+**How Today Works** (sheet; the info button at the leading edge of Today's toolbar. On the Mac the window of
+Study ▸ How Today Works, over the open decks, which it names Deck 1, Deck 2.)
+- For the learner who knows Anki and FSRS: the numbers and rules under the ring and the rounds, as they are
+  now. Read-only: no controls, no charts. A grouped form; each section's footer holds its rule.
+- **Today's Plan**: reviews due today; overdue cards taken, of the backlog; cards in learning; new cards admitted,
+  and each deck's ceiling with its limits (new / production); the daily goal in cards; the rounds and where each
+  ends, in cards; cards done; cards left; catch-up beyond the plan.
+- **Capacity**: the rounds of today and their time; the last 14 days, newest first, with rounds, ring
+  (Closed or Open) and step (+1, 0, −1).
+- **Pace**: seconds for a new card and for another card, each with its source (Durations (n), Gaps (n) or
+  Default) and the answers each done card took.
+- **Streak**: days, whether today is kept, the cards that would repair yesterday.
+- **Words in Memory**: the value to two decimals, at the start of the day, the gain, the next milestone.
+- **FSRS**, one section per deck: target recall, default or fitted parameters with the 21 values (monospaced,
+  four decimals, wrapped), the last automatic fit, steps per card, longest interval.
+- Code: `HowTodayWorks` (the rows) and `HowTodayWorksView` in `Shared/Statistics`; `DayBreakdown` in VocabCore
+  holds what `DailyProgress` does not: the parts of the plan, the decks' shares, the days, the base of the pace.
+
 **Deck** (pushed; replaces the details sheet)
 - Header: what today's plan takes from the deck (new, learning, review) and "+N to catch up
   this week"; **Study This Deck**.

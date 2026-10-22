@@ -145,6 +145,8 @@ are in [`references/`](references/).
   a pasted `word = translation` list), decks, options, import and export, reminders, widget.
 - **Mac** (macOS 26): the same plus the card table with filters and inspector, statistics,
   the optimizer, study by typing.
+- **How Today Works** (a sheet from Today on the iPhone, a window in the Study menu on the Mac): the numbers
+  and rules under the ring, read-only: the plan, capacity, pace, streak, words in memory and each deck's FSRS settings.
 
 ## Build and test
 
