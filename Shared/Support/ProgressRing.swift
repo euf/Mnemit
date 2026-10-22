@@ -50,7 +50,7 @@ enum RingCenter: Equatable {
     }
 }
 
-/// Today's reviews against the goal as an `ActivityRing` from a lighter tint of the accent to the
+/// Today's cards done against the goal as an `ActivityRing` from a lighter tint of the accent to the
 /// accent, with the figure of `RingCenter` in the middle.
 ///
 /// Decoration only, the text beside it says the figures; the caller combines them for

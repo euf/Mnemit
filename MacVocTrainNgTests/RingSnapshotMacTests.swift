@@ -23,7 +23,7 @@ struct RingSnapshotMacTests {
     }
 
     private func progress(_ fraction: Double) -> DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: Int((fraction * 20).rounded()), goal: 20), streak: Streak(days: 12, repairCards: nil))
+        DailyProgress(ring: DailyRing(done: Int((fraction * 20).rounded()), goal: 20), streak: Streak(days: 12, repairCards: nil))
     }
 
     private func write<Content: View>(_ content: Content, name: String, dark: Bool) throws {
@@ -55,7 +55,7 @@ struct RingSnapshotMacTests {
                 let progress = progress(fraction)
                 HStack(spacing: 6) {
                     ProgressRing(fraction: progress.ring.fraction, diameter: 24, center: RingCenter(progress, inStream: false))
-                    Text(verbatim: "\(progress.ring.reviews)/\(progress.ring.goal)")
+                    Text(verbatim: "\(progress.ring.done)/\(progress.ring.goal)")
                         .monospacedDigit()
                 }
             }

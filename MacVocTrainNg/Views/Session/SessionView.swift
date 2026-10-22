@@ -5,7 +5,7 @@ import VocabCore
 /// Today's plan comes first; when it is done the stream rests for a moment
 /// (`StreamRestView`) and then goes on with review ahead and practice. Every grade is saved
 /// at once, so "Done" leaves at any time and loses nothing. The ring in the header shows
-/// today's reviews against the goal (`DailyRingView`).
+/// today's cards done against the goal (`DailyRingView`).
 ///
 /// Keyboard flow: type the response and press Return. A correct response moves on
 /// directly (unless disabled in the preferences). Otherwise the answer is shown

@@ -25,8 +25,8 @@ struct HomeSnapshotTests {
         StudyCounts(newProduction: 0, newOther: new, learning: learning, review: review, nextDue: nextDue)
     }
 
-    static func progress(reviews: Int, goal: Int, streak: Int) -> DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streak, repairCards: nil))
+    static func progress(done: Int, goal: Int, streak: Int) -> DailyProgress {
+        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil))
     }
 
     func today(
@@ -148,21 +148,21 @@ struct HomeSnapshotTests {
     // MARK: Tests
 
     @Test func todayWithCardsDue() async throws {
-        try await shoot("today-due", today(counts: dueCounts, progress: Self.progress(reviews: 14, goal: 20, streak: 12)))
+        try await shoot("today-due", today(counts: dueCounts, progress: Self.progress(done: 14, goal: 20, streak: 12)))
     }
 
     @Test func todayWithCardsDueAtLargeTypeSizes() async throws {
         try await shoot(
-            "today-due", today(counts: dueCounts, progress: Self.progress(reviews: 14, goal: 20, streak: 12)),
+            "today-due", today(counts: dueCounts, progress: Self.progress(done: 14, goal: 20, streak: 12)),
             types: [.xxxLarge, .accessibility3])
     }
 
     @Test func todayWithNothingDueAfterReviews() async throws {
-        try await shoot("today-done", today(counts: doneCounts, progress: Self.progress(reviews: 26, goal: 20, streak: 13)))
+        try await shoot("today-done", today(counts: doneCounts, progress: Self.progress(done: 26, goal: 20, streak: 13)))
     }
 
     @Test func todayWithNothingDueAndNoReviews() async throws {
-        try await shoot("today-nothing", today(counts: doneCounts, progress: Self.progress(reviews: 0, goal: 1, streak: 0)))
+        try await shoot("today-nothing", today(counts: doneCounts, progress: Self.progress(done: 0, goal: 1, streak: 0)))
     }
 
     @Test func todayBeforeTheDecksAreRead() async throws {

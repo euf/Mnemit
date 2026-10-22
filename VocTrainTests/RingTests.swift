@@ -6,30 +6,30 @@ import UIKit
 @testable import VocTrain
 @testable import VocabCore
 
-private func progress(reviews: Int, goal: Int = 20, streak: Int = 0) -> DailyProgress {
-    DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streak, repairCards: nil))
+private func progress(done: Int, goal: Int = 20, streak: Int = 0) -> DailyProgress {
+    DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil))
 }
 
 /// What stands in the middle of the ring: the streak outside the study stream, the lap inside it.
 struct RingCenterTests {
     @Test func streakOutsideTheStream() {
         #expect(RingCenter(nil, inStream: false) == .none)
-        #expect(RingCenter(progress(reviews: 5, streak: 0), inStream: false) == .none, "a streak of 0 shows nothing")
-        #expect(RingCenter(progress(reviews: 5, streak: 1), inStream: false) == .streak(days: 1))
-        #expect(RingCenter(progress(reviews: 5, streak: 12), inStream: false) == .streak(days: 12))
+        #expect(RingCenter(progress(done: 5, streak: 0), inStream: false) == .none, "a streak of 0 shows nothing")
+        #expect(RingCenter(progress(done: 5, streak: 1), inStream: false) == .streak(days: 1))
+        #expect(RingCenter(progress(done: 5, streak: 12), inStream: false) == .streak(days: 12))
         // The laps do not show outside the stream, however far the ring has gone.
-        #expect(RingCenter(progress(reviews: 70, streak: 12), inStream: false) == .streak(days: 12))
+        #expect(RingCenter(progress(done: 70, streak: 12), inStream: false) == .streak(days: 12))
     }
 
     @Test func lapInTheStream() {
         #expect(RingCenter(nil, inStream: true) == .none)
-        #expect(RingCenter(progress(reviews: 0, streak: 9), inStream: true) == .none)
-        #expect(RingCenter(progress(reviews: 19, streak: 9), inStream: true) == .none, "the first lap is empty")
-        #expect(RingCenter(progress(reviews: 20, streak: 9), inStream: true) == .lap(2), "×2 once the goal is reached")
-        #expect(RingCenter(progress(reviews: 39, streak: 9), inStream: true) == .lap(2))
-        #expect(RingCenter(progress(reviews: 40, streak: 9), inStream: true) == .lap(3), "×3 after the second lap")
+        #expect(RingCenter(progress(done: 0, streak: 9), inStream: true) == .none)
+        #expect(RingCenter(progress(done: 19, streak: 9), inStream: true) == .none, "the first lap is empty")
+        #expect(RingCenter(progress(done: 20, streak: 9), inStream: true) == .lap(2), "×2 once the goal is reached")
+        #expect(RingCenter(progress(done: 39, streak: 9), inStream: true) == .lap(2))
+        #expect(RingCenter(progress(done: 40, streak: 9), inStream: true) == .lap(3), "×3 after the second lap")
         // A small plan: the goal is the plan.
-        #expect(RingCenter(progress(reviews: 6, goal: 6), inStream: true) == .lap(2))
+        #expect(RingCenter(progress(done: 6, goal: 6), inStream: true) == .lap(2))
     }
 
     @Test func texts() {
@@ -73,7 +73,7 @@ struct RingSnapshotTests {
 
     /// The figures at `fraction` of the goal, with a streak of 12 days.
     static func progress(_ fraction: Double) -> DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: Int((fraction * Double(goal)).rounded()), goal: goal), streak: Streak(days: 12, repairCards: nil))
+        DailyProgress(ring: DailyRing(done: Int((fraction * Double(goal)).rounded()), goal: goal), streak: Streak(days: 12, repairCards: nil))
     }
 
     /// `view` in a window of `size`, drawn once the run loop has laid it out.
@@ -131,7 +131,7 @@ struct RingSnapshotTests {
         let view = row(spacing: 16) { progress in
             HStack(spacing: 8) {
                 StreamRing(progress: progress)
-                Text(verbatim: "\(progress.ring.reviews) of \(progress.ring.goal)")
+                Text(verbatim: "\(progress.ring.done) of \(progress.ring.goal)")
                     .font(.subheadline)
                     .monospacedDigit()
             }
@@ -148,7 +148,7 @@ struct RingSnapshotTests {
         let view = row(spacing: 16) { progress in
             HStack(spacing: 6) {
                 ProgressRing(fraction: progress.ring.fraction, diameter: 24, center: RingCenter(progress, inStream: false))
-                Text(verbatim: "\(progress.ring.reviews)/\(progress.ring.goal)")
+                Text(verbatim: "\(progress.ring.done)/\(progress.ring.goal)")
                     .monospacedDigit()
             }
         }

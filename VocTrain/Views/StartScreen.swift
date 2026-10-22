@@ -19,7 +19,7 @@ struct StartScreen: View {
     @State private var knownDecks = KnownDecks()
     @State private var deckCounts = KnownDeckCounts()
     @State private var reminders = Reminders()
-    /// Today's reviews against the goal and the streak, over all known decks.
+    /// Today's cards done against the goal and the streak, over all known decks.
     @State private var ring = DailyRingModel()
     /// Keeps what the home-screen widget shows up to date, see `WidgetSync`.
     @State private var widget = WidgetSync()

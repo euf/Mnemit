@@ -180,9 +180,9 @@ struct StudyView: View {
             if let daily {
                 Group {
                     if daily.isGoalMet {
-                        Text("\(daily.reviews) reviews today")
+                        Text("\(daily.done) cards today")
                     } else {
-                        Text("\(daily.reviews) of \(daily.goal) reviews")
+                        Text("\(daily.done) of \(daily.goal) cards")
                     }
                 }
                 .font(.subheadline)

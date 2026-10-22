@@ -64,8 +64,8 @@ enum WidgetFixtures {
         return try! Deck(cards: cards)
     }
 
-    static func progress(reviews: Int, goal: Int, streak: Int) -> DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streak, repairCards: nil))
+    static func progress(done: Int, goal: Int, streak: Int) -> DailyProgress {
+        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil))
     }
 
     /// A snapshot made at `now` whose due count is `count(date)`, hourly for two days.
@@ -152,7 +152,7 @@ struct WidgetSnapshotTests {
         let now = Fixtures.date(22, 10, 20)
         let dates = Array(WidgetSnapshot.forecastDates(from: now, calendar: Fixtures.calendar).prefix(3))
         let snapshot = WidgetSnapshot(
-            now: now, progress: Fixtures.progress(reviews: 12, goal: 20, streak: 7), dates: dates, dueByDeck: [[7, 7, 8], [1, 2, 3]], nextReminder: nil)
+            now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7), dates: dates, dueByDeck: [[7, 7, 8], [1, 2, 3]], nextReminder: nil)
         #expect(snapshot.due.map(\.count) == [8, 9, 11])
         #expect(snapshot.due.map(\.date) == dates)
         #expect(snapshot.reviews == 12 && snapshot.goal == 20 && snapshot.streakDays == 7 && !snapshot.isGoalMet)
@@ -162,7 +162,7 @@ struct WidgetSnapshotTests {
         let now = Fixtures.date(22, 10, 20)
         let deck = Fixtures.deck(now: now)
         let inputs = WidgetSync.Inputs(
-            progress: Fixtures.progress(reviews: 20, goal: 20, streak: 3), decks: [.open(deck, Fixtures.studyCalendar)],
+            progress: Fixtures.progress(done: 20, goal: 20, streak: 3), decks: [.open(deck, Fixtures.studyCalendar)],
             nextReminder: Fixtures.date(23, 9))
         let snapshot = WidgetSync.snapshot(from: inputs, at: now, calendar: Fixtures.calendar)
         #expect(snapshot.date == now)
@@ -260,7 +260,7 @@ struct WidgetSnapshotTests {
         let dates = WidgetSnapshot.forecastDates(from: now, calendar: Fixtures.calendar)
         let counts = WidgetSnapshot.dueCounts(of: [deck], at: dates, calendar: Fixtures.studyCalendar)
         let snapshot = WidgetSnapshot(
-            now: now, progress: Fixtures.progress(reviews: 12, goal: 20, streak: 7), dates: dates, dueByDeck: [counts], nextReminder: nil)
+            now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7), dates: dates, dueByDeck: [counts], nextReminder: nil)
         let entries = snapshot.timeline(from: now, calendar: Fixtures.studyCalendar)
         // Now (7 in the plan), 12:00 (8), 16:00 (10), and the next study day, which resets the
         // reviews and makes the five reviews of the 22nd backlog: a seventh of it, one card.

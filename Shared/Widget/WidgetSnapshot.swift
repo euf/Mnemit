@@ -28,8 +28,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
 
     /// When the snapshot was made.
     var date: Date
-    /// Graded reviews today (the study day), and the goal of the day: its plan as FSRS sets
-    /// it (`DailyGoal`).
+    /// The cards done today (the study day), and the goal of the day: the cards of its plan
+    /// as FSRS set it when the day began (`DailyGoal`). The unit of both is the card.
     var reviews: Int
     var goal: Int
     /// Days in the streak, today's included once its goal is met.
@@ -62,7 +62,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     init(now: Date, progress: DailyProgress, dates: [Date], dueByDeck: [[Int]], nextReminder: Date?) {
         let totals = dates.indices.map { index in dueByDeck.reduce(0) { $0 + ($1.indices.contains(index) ? $1[index] : 0) } }
         self.init(
-            date: now, reviews: progress.ring.reviews, goal: progress.ring.goal, streakDays: progress.streak.days,
+            date: now, reviews: progress.ring.done, goal: progress.ring.goal, streakDays: progress.streak.days,
             isGoalMet: progress.ring.isGoalMet, due: zip(dates, totals).map { Due(date: $0, count: $1) }, nextReminder: nextReminder)
     }
 
@@ -120,7 +120,7 @@ struct WidgetState: Equatable, Sendable {
 
     /// The ring and the streak as `DailyRingView` takes them.
     var progress: DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streakDays, repairCards: nil))
+        DailyProgress(ring: DailyRing(done: reviews, goal: goal), streak: Streak(days: streakDays, repairCards: nil))
     }
 
     /// The same figures at another moment of the timeline.
@@ -135,7 +135,7 @@ extension WidgetSnapshot {
     /// How the figures stand at `moment`, `date` or later.
     ///
     /// On the study day of the snapshot they are the snapshot's, with the due count that was
-    /// forecast for the hour. Once a study day has begun, today's reviews are 0 and its goal
+    /// forecast for the hour. Once a study day has begun, today's cards done are 0 and its goal
     /// is the plan, as forecast for the moment; a day whose plan is empty is met, and counts
     /// for the streak. The streak holds through one missed day, which the plan of the next
     /// makes up for, and ends with a second one, as in `Streak.evaluate`; a day on which the

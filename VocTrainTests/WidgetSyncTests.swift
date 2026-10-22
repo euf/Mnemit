@@ -17,7 +17,7 @@ struct WidgetSyncTests {
 
     private func inputs(reviews: Int) -> WidgetSync.Inputs {
         WidgetSync.Inputs(
-            progress: Fixtures.progress(reviews: reviews, goal: 20, streak: 3), decks: [.open(Fixtures.deck(), Fixtures.studyCalendar)], nextReminder: nil)
+            progress: Fixtures.progress(done: reviews, goal: 20, streak: 3), decks: [.open(Fixtures.deck(), Fixtures.studyCalendar)], nextReminder: nil)
     }
 
     private func sync(_ store: FakeSnapshotStore, _ reloads: Reloads, isEnabled: Bool = true) -> WidgetSync {

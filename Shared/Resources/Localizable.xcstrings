@@ -263,6 +263,46 @@
         }
       }
     },
+    "%lld cards today": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte heute"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten heute"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld card today"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld cards today"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld cards with an empty side are left out.": {
       "localizations": {
         "de": {
@@ -553,62 +593,12 @@
         }
       }
     },
-    "%lld of %lld reviews": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld von %2$lld Abfragen"
-          }
-        }
-      }
-    },
     "%lld or ↩": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld oder ↩"
-          }
-        }
-      }
-    },
-    "%lld reviews today": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Abfrage heute"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Abfragen heute"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld review today"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld reviews today"
-                }
-              }
-            }
           }
         }
       }

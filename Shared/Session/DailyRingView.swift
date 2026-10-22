@@ -1,7 +1,7 @@
 import SwiftUI
 import VocabCore
 
-/// The daily ring: today's reviews against the goal (`ProgressRing`). After the goal the ring
+/// The daily ring: today's cards done against the goal (`ProgressRing`). After the goal the ring
 /// goes on in laps, the way the Fitness rings do. In its middle the streak in days, or, with
 /// `inStream`, the lap from the second on ("×2"). A tap shows the figures in a popover: today,
 /// the lap, the streak, and the repair of a missed day when one is open.
@@ -27,7 +27,7 @@ struct DailyRingView: View {
         .buttonStyle(.plain)
         .popover(isPresented: $isShowingDetails) { details }
         .accessibilityLabel(center.spokenLabel.map { Text(verbatim: $0) } ?? Text("Daily Goal"))
-        .accessibilityValue(progress.map { Text("\($0.ring.reviews) / \($0.ring.goal)") } ?? Text(verbatim: ""))
+        .accessibilityValue(progress.map { Text("\($0.ring.done) / \($0.ring.goal)") } ?? Text(verbatim: ""))
     }
 
     private var center: RingCenter { RingCenter(progress, inStream: inStream) }
@@ -58,7 +58,7 @@ private struct DailyRingDetails: View {
                 GridRow {
                     Text("Today")
                         .foregroundStyle(.secondary)
-                    Text("\(ring.reviews) / \(ring.goal)")
+                    Text("\(ring.done) / \(ring.goal)")
                 }
                 if ring.laps >= 1 {
                     GridRow {

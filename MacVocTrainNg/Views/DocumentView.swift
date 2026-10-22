@@ -32,7 +32,7 @@ struct DocumentView: View {
     @State private var addingLessonWords = false
     @State private var toast: Toast?
     @State private var shortcutsHelp = ShortcutsHelp()
-    /// Today's reviews against the goal and the streak, over all decks open in the app.
+    /// Today's cards done against the goal and the streak, over all decks open in the app.
     @State private var ring = DailyRingModel()
     @Environment(\.controlActiveState) private var controlActiveState
 
@@ -280,7 +280,7 @@ private struct StartStudyButton: View {
     }
 }
 
-/// Today's reviews against the goal as a ring with the streak in its middle and "14/20", beside
+/// Today's cards done against the goal as a ring with the streak in its middle and "14/20", beside
 /// the Study button. An indicator, no button: it takes no background in the toolbar.
 private struct RingChip: View {
     var progress: DailyProgress?
@@ -289,7 +289,7 @@ private struct RingChip: View {
         HStack(spacing: 6) {
             ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: 24, center: RingCenter(progress, inStream: false))
             if let ring = progress?.ring {
-                Text(verbatim: "\(ring.reviews)/\(ring.goal)")
+                Text(verbatim: "\(ring.done)/\(ring.goal)")
                     .monospacedDigit()
             }
         }
@@ -299,10 +299,10 @@ private struct RingChip: View {
         .accessibilityValue(help)
     }
 
-    /// "14 of 20 reviews", and "· 12-day streak" when there is one.
+    /// "14 of 20 cards", and "· 12-day streak" when there is one.
     private var help: String {
         guard let progress else { return "" }
-        let today = String(localized: "\(progress.ring.reviews) of \(progress.ring.goal) reviews")
+        let today = String(localized: "\(progress.ring.done) of \(progress.ring.goal) cards")
         guard progress.streak.days > 0 else { return today }
         return today + " · " + String(localized: "\(progress.streak.days)-day streak")
     }

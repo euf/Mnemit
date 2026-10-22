@@ -254,7 +254,7 @@ struct SummaryRow: View {
     private var headline: some View {
         if due > 0 {
             Text("\(due) cards left")
-        } else if let ring = progress?.ring, ring.reviews > 0 {
+        } else if let ring = progress?.ring, ring.done > 0 {
             Text("All done")
         } else {
             Text("Nothing due")
@@ -263,11 +263,11 @@ struct SummaryRow: View {
 
     @ViewBuilder
     private var detail: some View {
-        if let ring = progress?.ring, ring.reviews > 0 {
+        if let ring = progress?.ring, ring.done > 0 {
             if due > 0 {
-                Text("\(ring.reviews) of \(ring.goal) reviews")
+                Text("\(ring.done) of \(ring.goal) cards")
             } else {
-                Text("\(ring.reviews) reviews today")
+                Text("\(ring.done) cards today")
             }
         } else if due == 0, let nextDue {
             Text("Next review \(Format.due(nextDue, now: now))")
