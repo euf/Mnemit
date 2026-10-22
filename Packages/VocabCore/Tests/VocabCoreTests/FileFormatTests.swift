@@ -210,7 +210,7 @@ struct DeckFileTests {
         #expect(old.cards[0].note == nil)
         #expect(old.cards[0].kind == nil)
         #expect(old.learningOptions.newProductionPerSession == 7)
-        #expect(old.learningOptions.productionUnlockDays == 21)
+        #expect(old.learningOptions.productionUnlockDays == 7)
         #expect(old.learningOptions.newCardOrder == .deckOrder)
 
         let odd = Data(
@@ -241,7 +241,7 @@ struct DeckFileTests {
             .replacingOccurrences(of: "com.mfluch.voctrain.deck", with: DeckFile.format)
             // The options added since take their defaults.
             .replacingOccurrences(of: "\"newCardsPerSession\" : 15,", with: "\"newCardOrder\" : \"deckOrder\",\n    \"newCardsPerSession\" : 15,\n    \"newProductionPerSession\" : 7,")
-            .replacingOccurrences(of: "    \"steps\" : 2,", with: "    \"productionUnlockDays\" : 21,\n    \"revealedRecallWeight\" : 1,\n    \"steps\" : 2,")
+            .replacingOccurrences(of: "    \"steps\" : 2,", with: "    \"productionUnlockDays\" : 7,\n    \"revealedRecallWeight\" : 1,\n    \"steps\" : 2,")
             .replacingOccurrences(of: "    \"parameters\" : [", with: "    \"optimizeFromRevealed\" : true,\n    \"parameters\" : [")
             .replacingOccurrences(of: "    \"maximumInterval\" :", with: "    \"leechThreshold\" : 8,\n    \"maximumInterval\" :")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)

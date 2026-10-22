@@ -75,7 +75,7 @@ struct StudyCountsTests {
     @Test func lockedProductionCardsAreNotCounted() throws {
         let production = fresh("p", note: "n", kind: .production)
         // The interval of the recognition card is still short: not due, production locked.
-        var counts = try taken([review("r", note: "n", kind: .recognition, interval: 20, dueInDays: 10), production])
+        var counts = try taken([review("r", note: "n", kind: .recognition, interval: 6, dueInDays: 3), production])
         #expect(counts.total == 0)
         // A new recognition card is asked instead, and the production card still waits.
         counts = try taken([fresh("r", note: "n", kind: .recognition), production])
