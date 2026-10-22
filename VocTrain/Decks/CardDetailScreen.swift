@@ -68,6 +68,14 @@ private struct CardDetailList: View {
     var card: Card
     var isEditable: Bool
     var canEdit: Bool
+    @Environment(\.knownDeckFiles) private var knownDeckFiles
+    /// The words of the other decks, once they are read.
+    @State private var elsewhere = WordIndex()
+
+    /// The same word in another deck, if there is one: a separate card there, with its own progress.
+    private var otherCopy: WordIndex.Match? {
+        if case let .same(match)? = elsewhere.match(card) { match } else { nil }
+    }
 
     /// The card of the same word that asks the other way round, if the word has one.
     private var sibling: Card? {
@@ -82,7 +90,7 @@ private struct CardDetailList: View {
             Section {
                 CardTexts(card: card)
             }
-            if card.kind != nil || card.note != nil {
+            if card.kind != nil || card.note != nil || otherCopy != nil {
                 kindSection
             }
             memorySection(now: now)
@@ -109,6 +117,7 @@ private struct CardDetailList: View {
             .disabled(!isEditable)
         }
         .listStyle(.insetGrouped)
+        .task { elsewhere = await knownDeckFiles.wordIndex(excluding: document.packageURL) }
     }
 
     private var kindSection: some View {
@@ -126,6 +135,14 @@ private struct CardDetailList: View {
                             .foregroundStyle(.secondary)
                         Text(sibling.question)
                     }
+                }
+            }
+            if let otherCopy {
+                VStack(alignment: .leading, spacing: Spacing.hairline) {
+                    Text("Also in \(otherCopy.deck)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Text(verbatim: "\(otherCopy.question) → \(otherCopy.answer)")
                 }
             }
             if let note = card.note {

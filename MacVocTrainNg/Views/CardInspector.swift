@@ -17,11 +17,13 @@ struct CardInspector: View {
     var onDelete: (Set<Card.ID>) -> Void
     /// Selects a card in the table, which belongs to the card list: the link to a sibling.
     var onSelect: (Card.ID) -> Void
+    /// The words of the other open decks, read when the inspector appears.
+    @State private var elsewhere = WordIndex()
 
     var body: some View {
         Group {
             if selection.count == 1, let id = selection.first, let card = document.card(withID: id) {
-                CardDetail(document: document, card: card, isEditable: isEditable, onEdit: onEdit, onDelete: onDelete, onSelect: onSelect)
+                CardDetail(document: document, card: card, isEditable: isEditable, onEdit: onEdit, onDelete: onDelete, onSelect: onSelect, elsewhere: elsewhere)
                     .id(card.id)
             } else if selection.count > 1 {
                 VStack(spacing: 12) {
@@ -43,6 +45,7 @@ struct CardInspector: View {
                 ContentUnavailableView("No Selection", systemImage: "rectangle.on.rectangle.slash", description: Text("Select a card to see its details."))
             }
         }
+        .task { elsewhere = await OpenDecks.shared.wordIndex(excluding: document) }
     }
 }
 
@@ -53,6 +56,8 @@ private struct CardDetail: View {
     let onEdit: (Card.ID) -> Void
     let onDelete: (Set<Card.ID>) -> Void
     let onSelect: (Card.ID) -> Void
+    /// The words of the other open decks, for the line that says the word is in another deck.
+    let elsewhere: WordIndex
 
     var body: some View {
         Form {
@@ -74,6 +79,9 @@ private struct CardDetail: View {
                             .buttonStyle(.link)
                             .help("Show the sibling card in the list")
                     }
+                }
+                if case let .same(match)? = elsewhere.match(card) {
+                    LabeledContent("Also in \(match.deck)") { Text(verbatim: "\(match.question) → \(match.answer)").textSelection(.enabled) }
                 }
                 Button("Edit…") { onEdit(card.id) }
                     .disabled(!isEditable)

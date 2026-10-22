@@ -113,6 +113,46 @@
         }
       }
     },
+    "%lld cards are also in %@ and start unticked.": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte ist auch in %@ und startet abgewählt."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten sind auch in %@ und starten abgewählt."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld card is also in %@ and starts unticked."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld cards are also in %@ and start unticked."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld cards in today's plan": {
       "localizations": {
         "de": {
@@ -833,6 +873,46 @@
         }
       }
     },
+    "%lld words are in other decks, and are left out.": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wort ist in einem anderen Stapel und wird ausgelassen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wörter sind in anderen Stapeln und werden ausgelassen."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld word is in another deck, and is left out."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld words are in other decks, and are left out."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld words are in the deck already, or earlier in the list, and are left out.": {
       "localizations": {
         "de": {
@@ -1319,6 +1399,16 @@
         }
       }
     },
+    "Add the words other decks have, too": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auch Wörter hinzufügen, die andere Stapel haben"
+          }
+        }
+      }
+    },
     "Add the words you are learning.": {
       "localizations": {
         "de": {
@@ -1555,6 +1645,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Berechnet die Parameter auch aus Abfragen, die du nach dem Aufdecken der Antwort bewertet hast: auf dem iPhone und am Mac mit Karteikarten jede. Aus nutzt nur getippte Abfragen."
+          }
+        }
+      }
+    },
+    "Also in %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auch in %@"
+          }
+        }
+      }
+    },
+    "Also in %@: %@ → %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auch in %1$@: %2$@ → %3$@"
           }
         }
       }
@@ -5558,6 +5668,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Geschwisterkarte"
+          }
+        }
+      }
+    },
+    "Similar to %@ in %@: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ähnlich wie %1$@ in %2$@: %3$@"
           }
         }
       }

@@ -96,6 +96,7 @@ struct ImportPreviewSheet: View {
     /// Why the file could not be read.
     @State private var failure: String?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.knownDeckFiles) private var knownDeckFiles
 
     init(document: VocabularyDocument, file: ImportedFile, preview: CardImport.Preview? = nil) {
         self.document = document
@@ -159,9 +160,10 @@ struct ImportPreviewSheet: View {
 
     private func load() async {
         guard preview == nil else { return }
+        let elsewhere = await knownDeckFiles.wordIndex(excluding: document.packageURL)
         switch file.content {
         case let .table(data):
-            preview = CardImport.preview(of: data, fileName: file.name, existing: document.deck.cards, created: document.clock.now)
+            preview = CardImport.preview(of: data, fileName: file.name, existing: document.deck.cards, elsewhere: elsewhere, created: document.clock.now)
         case let .anki(url, known):
             do {
                 let package: AnkiImport
@@ -170,7 +172,7 @@ struct ImportPreviewSheet: View {
                 } else {
                     package = try await CardImport.loadAnki(at: url)
                 }
-                preview = await CardImport.ankiPreview(of: package, fileName: file.name, for: document, isNewDeck: file.isNewDeck)
+                preview = await CardImport.ankiPreview(of: package, fileName: file.name, for: document, isNewDeck: file.isNewDeck, elsewhere: elsewhere)
             } catch {
                 failure = CardImport.failureMessage(error)
             }
@@ -196,6 +198,9 @@ private struct PreviewList: View {
                     }
                     Text("\(preview.candidates.count) cards in “\(preview.fileName)”")
                     ForEach(preview.anki?.lines ?? [], id: \.self) { line in
+                        Text(line)
+                    }
+                    ForEach(preview.otherDeckLines, id: \.self) { line in
                         Text(line)
                     }
                     if preview.skippedRows > 0 {
@@ -238,9 +243,19 @@ private struct PreviewList: View {
                                 Text("Already in this deck")
                             case let .inFile(question, answer):
                                 Text("Already earlier in the file: \(question) → \(answer)")
+                            case let .inOtherDeck(match):
+                                Text(match.alsoInLine)
                             }
                         } icon: {
                             Image(systemName: "exclamationmark.triangle")
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    } else if let similar = candidate.similar {
+                        Label {
+                            Text(similar.similarLine)
+                        } icon: {
+                            Image(systemName: "info.circle")
                         }
                         .font(.footnote)
                         .foregroundStyle(.secondary)

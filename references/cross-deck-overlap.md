@@ -200,7 +200,7 @@ No study of near-duplicate cards, or of one word held by two decks, was found: s
 3. A second gloss for the same word (plain; simple) is the redundancy of rule 17 and Nielsen's
    variants. Nothing in the sources argues for removing it.
 
-## 3. What Mnemit does today
+## 3. Mnemit before the word key
 
 **Unit.** A deck is one package file. `Deck`, `StudySession.selection`, `notesReviewed`,
 `notesAwaitingRecognition`, `Deck.siblings(of:)`, `CardImporter.candidates(of:existing:)` and
@@ -315,7 +315,11 @@ Probe pairs and the verdict of `same`:
 | πώς | πως | no (step 6) |
 | άπλος | απλός, -ή, -ό | no (step 6); 4.2 flags it |
 
-Measured on the owner's decks: this key joins 6 pairs and no different word (section 3).
+Measured on the owner's decks (22.10.2026, the built key, both directions): 10 words are joined and no different
+word. Six differ by the article only, `ο/η` in one deck and `ο` in the other (αστυνομικός, διπλωμάτης, οδηγός,
+παραγωγός, συγγενής, χορτοφάγος); four differ by what follows the lemma, the ` / ` and `, ` cuts of step 2
+(ο καθηγητής and ο καθηγητής / η καθηγήτρια, ο σερβιτόρος, ο ταξιτζής, πουλάω and πουλάω / πουλώ (πούλησα)). The
+five different words of section 3 stay apart.
 
 ### 4.2 The loose key (`WordKey.looksLike`)
 
@@ -417,20 +421,28 @@ in a deck-per-file design.
 
 ### 4.9 Where in code
 
+Built (22.10.2026):
+
 | Piece | Place |
 |---|---|
-| `WordKey` (`same`, `looksLike`, `normalizing` a note), tests with the 11 probe pairs of section 3 and the table of 4.1 | new `Packages/VocabCore/Sources/VocabCore/Import/WordKey.swift`, `Tests/VocabCoreTests/WordKeyTests.swift` |
-| `WordIndex`: key → (deck name, question, answer, due) over `[DeckSummary]`, `match(card) -> .same(…) \| .looksLike(…) \| nil` | same folder |
-| `CardImporter.Duplicate.inOtherDeck(deck:question:answer:)`, `Candidate.similar`, an `elsewhere: WordIndex` parameter | `Exchange/CardImporter.swift`; default selection in `Shared/Support/CardImport.swift` (`Preview.selection`) |
-| `LessonWords.plan(for:existingNotes:created:)` gains the index; `Plan.skipped` gets the deck name | `Import/LessonWords.swift`; sheets `MacVocTrainNg/Views/LessonWordsSheet.swift:18`, `VocTrain/Decks/AddCardsSheet.swift` (`notesInDeck`) |
-| `note(forGreek:)` cuts at ` / `, `;`, ` · `, ` -`, trailing hyphen endings, indefinite articles | `Import/LessonWords.swift`; the same cut in `merge.py` `key()` so that the generator stops producing `ο/η`/`ο` pairs |
-| Building the index from other decks | iPhone: `KnownDecks.byName` and `DeckFileReader`, as `StudyRun.swift:183` and `AllCardsSearch` read other decks; Mac: open documents plus the deck folder; built off the main thread when the sheet opens, cached by file date |
-| Words in memory once | `MemoryEstimate(deck:)` also returns per-key probabilities, `MemoryEstimate.total` merges by key (`DailyProgress.swift:521,910`); the comment "a word is in one deck" goes |
-| "Also in" line | `CardDetailScreen` and the Mac inspector, beside `Deck.siblings(of:)` (`Model/CardFilter.swift:59`) |
-| Burying across decks, when built | `StudySession.selection` and `DayIndex`, `StudyCounts`, `DailyProgress.evaluate`, `DayBreakdown` |
+| `WordKey`: `init?(_ text:)` for a note or typed Greek, `init?(card:)`, `same(as:)`, `looksLike(_:)`, `note`, `sameKeys`, `groups(of:)`; tests with the probe pairs of section 3 and the table of 4.1 | `Packages/VocabCore/Sources/VocabCore/Import/WordKey.swift`, `Tests/VocabCoreTests/WordKeyTests.swift` |
+| `WordIndex`: key → word of one deck (`Match`: deck name, Greek question, answer's first line, card IDs) over `[(name, Deck)]`; `match(_:) -> Hit?` (`.same` or `.looksLike`) | `Import/WordIndex.swift` |
+| `CardImporter.Duplicate.inOtherDeck(WordIndex.Match)`, `Candidate.similar`, the `elsewhere:` parameter; the first two checks are the deck's and the file's | `Exchange/CardImporter.swift`; unticked by default through `Preview.selection` (only a candidate without a duplicate is ticked), lines and the per-deck summary in `Shared/Support/OtherDecks.swift` |
+| `LessonWords.plan(for:existingNotes:elsewhere:created:)`: notes compare as keys, `Plan.skippedElsewhere`, `Plan.similar`; `note(forGreek:)` is `WordKey(…).note` | `Import/LessonWords.swift`; sheets `MacVocTrainNg/Views/LessonWordsSheet.swift` (a toggle adds the words of other decks), `VocTrain/Decks/AddCardsSheet.swift` (`WordListPreview`, the notice under One Card) |
+| Index of the other decks | iPhone: `KnownDeckFiles` (`VocTrain/Decks/KnownDeckFiles.swift`) in the environment, set by `StartScreen`, read with `DeckFileReader` off the main thread; Mac: `OpenDecks.wordIndex(excluding:)` over the open documents; paused decks included, the deck of the sheet left out, built at each sheet or screen, no cache |
+| Words in memory once | `MemoryEstimate.recalls` (the learned recognition cards with a key), `MemoryEstimate.total(_:)` |
+| "Also in" line | `VocTrain/Decks/CardDetailScreen.swift` and `MacVocTrainNg/Views/CardInspector.swift`, beside the sibling (`Deck.siblings(of:)`, `Model/CardFilter.swift:59`) |
 
-The detection is advisory: it only sets default ticks and adds lines of text, so removing the
-index parameter restores today's behaviour.
+The key is Greek only: a card gets one from its note, or from its question when the note has no Greek letters (the
+note of an Anki card is a random string); a card with neither has none.
+
+Not built: the same cut in `merge.py` `key()` of `greek-lessons`, so that the generator stops producing `ο/η` and `ο`
+pairs; the next due date and a tap on the other copy in the "Also in" line; a cache of the index by file date;
+burying across decks, whose pieces are `StudySession.selection` and `DayIndex`, `StudyCounts`,
+`DailyProgress.evaluate`, `DayBreakdown`.
+
+The detection is advisory: it only sets default ticks and adds lines of text, so removing the index parameter restores
+the behaviour of one deck.
 
 ### 4.10 What would change the verdict
 

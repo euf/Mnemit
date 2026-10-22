@@ -74,7 +74,7 @@ public struct WordKey: Hashable, Sendable {
 
     /// The strings under which the word is looked up: two keys are one word when they share
     /// one. `ο/η` has the keys of `ο` and `η`.
-    var sameKeys: [String] { Self.keys(lemma, article) }
+    public var sameKeys: [String] { Self.keys(lemma, article) }
 
     /// The same without accents and diacritics.
     var looseKeys: [String] { Self.keys(CardSearchIndex.fold(lemma), article) }

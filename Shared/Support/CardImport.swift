@@ -26,8 +26,10 @@ enum CardImport {
         /// The images and sounds of the package that the cards name; the deck takes those of the cards
         /// that are added (`VocabularyDocument.importCards(_:learningOptions:media:)`).
         let media: DeckMedia
-        /// The cards to add; duplicates start out unselected.
+        /// The cards to add; duplicates, those whose word is in another deck included, start out unselected.
         var selection: Set<Card.ID>
+        /// What the other decks hold of the file, one line per deck: see `[Candidate].otherDeckSummary`.
+        let otherDeckLines: [String]
 
         init(
             fileName: String, candidates: [CardImporter.Candidate], skippedRows: Int, anki: AnkiSummary? = nil, learningOptions: LearningOptions? = nil,
@@ -40,6 +42,7 @@ enum CardImport {
             self.learningOptions = learningOptions
             self.media = media
             selection = Set(candidates.filter { $0.duplicate == nil }.map(\.id))
+            otherDeckLines = candidates.otherDeckSummary
         }
 
         convenience init(fileName: String, result: CardImporter.Result) {
@@ -52,9 +55,11 @@ enum CardImport {
         }
     }
 
-    static func preview(of data: Data, fileName: String, existing: [Card], created: Date) -> Preview {
+    /// The preview of a table: `existing` are the cards of the deck, `elsewhere` the words of the other decks.
+    static func preview(of data: Data, fileName: String, existing: [Card], elsewhere: WordIndex = WordIndex(), created: Date) -> Preview {
         let table = DelimitedText.decode(data)
-        let result = CardImporter.candidates(from: table.rows, existing: existing, isHeader: isHeader, created: created, columns: table.columns)
+        let result = CardImporter.candidates(
+            from: table.rows, existing: existing, elsewhere: elsewhere, isHeader: isHeader, created: created, columns: table.columns)
         return Preview(fileName: fileName, result: result)
     }
 
