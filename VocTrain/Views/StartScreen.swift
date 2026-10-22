@@ -55,6 +55,10 @@ struct StartScreen: View {
     @State private var choosesFolder = false
     @State private var showsSettings = false
     @State private var showsIntroduction = false
+    /// The month's screen, shown on the first open of a new month; `shownMonthRecap` holds the month it showed last.
+    @State private var monthRecap: MonthRecap?
+    @State private var showsProgressAfterRecap = false
+    @AppStorage("shownMonthRecap") private var shownMonthRecap = ""
     @State private var wantsIntroduction = false
     /// Whether the decks were checked for a new fit of their FSRS parameters since launch.
     @State private var hasCheckedParameters = false
@@ -70,8 +74,8 @@ struct StartScreen: View {
                 forget: { knownDecks.forget($0.url) }, setPaused: setPaused, addCards: { openLastDeck(importing: nil) },
                 newDeck: { showsNewDeck = true },
                 chooseFolder: { choose(folder: true) }, openDeck: { choose(folder: false) },
-                showSettings: { showsSettings = true }, refresh: refreshAll, importCards: { isChoosingImport = true },
-                showAnkiWeb: showWeb
+                showSettings: { showsSettings = true }, showProgress: { path.append(.progress) }, refresh: refreshAll,
+                importCards: { isChoosingImport = true }, showAnkiWeb: showWeb
             )
             // Not on the stack, which has the deck picker: two file pickers on a view cancel each other.
             .cardFileImporter(isPresented: $isChoosingImport) { openLastDeck(importing: $0) }
@@ -89,6 +93,14 @@ struct StartScreen: View {
         // The introduction covers the screen once the sheet has gone.
         .sheet(isPresented: $showsSettings, onDismiss: showIntroductionAfterSettings) {
             SettingsView(reminders: reminders) { wantsIntroduction = true }
+        }
+        .sheet(item: $monthRecap, onDismiss: showProgressAfterRecap) { recap in
+            MonthRecapSheet(recap: recap) {
+                showsProgressAfterRecap = true
+                monthRecap = nil
+            } done: {
+                monthRecap = nil
+            }
         }
         .sheet(isPresented: $showsNewDeck, onDismiss: openNewDeck) {
             NewDeckSheet(onCreate: createDeck)
@@ -152,7 +164,7 @@ struct StartScreen: View {
         .onChange(of: path) {
             Task {
                 // What has left the path saves and closes; back on Today, the lists read the files.
-                await pushed.close(except: Set(path.map(\.slot)))
+                await pushed.close(except: Set(path.compactMap(\.slot)))
                 if path.isEmpty {
                     search.invalidate()
                     await refreshAll()
@@ -208,6 +220,12 @@ struct StartScreen: View {
         .task(id: canRefitParameters) {
             if canRefitParameters { await refitParameters() }
         }
+        // The first open of a new month, after a month with study: the month's screen, once.
+        .task(id: pendingMonthRecap) {
+            guard let recap = pendingMonthRecap else { return }
+            shownMonthRecap = MonthRecapPlan.key(year: recap.year, month: recap.month)
+            monthRecap = recap
+        }
     }
 
     // MARK: Parameters
@@ -215,7 +233,20 @@ struct StartScreen: View {
     /// Whether nothing is open or asked for: no stream, no deck, no sheet, no introduction.
     private var isIdle: Bool {
         hasSeenIntroduction && !showsIntroduction && run == nil && path.isEmpty && addingCards == nil && !showsSettings && !showsNewDeck
-            && !isChoosing && !isChoosingImport && incomingAnki == nil && waitingAnki == nil && chosenAnki == nil
+            && monthRecap == nil && !isChoosing && !isChoosingImport && incomingAnki == nil && waitingAnki == nil && chosenAnki == nil
+    }
+
+    /// The recap of last month while nothing is open, and never in a test run.
+    private var pendingMonthRecap: MonthRecap? {
+        guard isIdle, !GreekSpeech.isUnderTest, let progress = ring.progress else { return nil }
+        return MonthRecapPlan.pending(records: progress.records, calendar: StudyCalendar(), shown: shownMonthRecap)
+    }
+
+    /// "See All Progress" on the month's screen: Progress is pushed once the sheet is gone.
+    private func showProgressAfterRecap() {
+        guard showsProgressAfterRecap else { return }
+        showsProgressAfterRecap = false
+        path.append(.progress)
     }
 
     private var canRefitParameters: Bool {
@@ -231,15 +262,21 @@ struct StartScreen: View {
 
     @ViewBuilder
     private func destination(_ route: DeckRoute) -> some View {
-        PushedDeckView(pushed: pushed, slot: route.slot) { deck in
-            switch route {
-            case let .deck(slot):
+        switch route {
+        case let .deck(slot):
+            PushedDeckView(pushed: pushed, slot: slot) { deck in
                 DeckScreen(
                     deck: deck, knownCounts: deckCounts.counts[deck.url], start: { studyDeck(deck, entry: $0) },
                     rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) }, showAnkiWeb: showWeb,
                     didChangePause: { refreshRing(withOpen: deck) })
-            case let .card(_, id):
+            }
+        case let .card(slot, id):
+            PushedDeckView(pushed: pushed, slot: slot) { deck in
                 CardHost(deck: deck, id: id)
+            }
+        case .progress:
+            if let progress = ring.progress {
+                ProgressScreen(progress: progress)
             }
         }
     }

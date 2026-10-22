@@ -28,6 +28,27 @@ The screens around Study. The contract of every screen: `references/flows.md`; t
   when no sheet is open).
 - The card from the stream (`CardInfoSheet`) is the same `CardDetailScreen`.
 
+## Progress (iPhone)
+
+- The header of Today (ring, headline, streak, words, ladder) is a button with a chevron; it pushes
+  `ProgressScreen` (`DeckRoute.progress`, no deck). `learning-flow.md` has the contract; everything comes
+  from `DailyProgress.records` and `.achievements`.
+- Sections in an inset-grouped list: the streak large with "Longest: N days"; "Last 13 weeks" (`WeeksGrid`: a
+  column per week, a row per weekday of the locale, today last; closed full, kept at its share of the goal,
+  a missed day an empty track, before the first study day nothing); Memory (`LadderBar` and a row per step);
+  Achievements; Records (most cards and laps in a day, rings closed, days studied, cards done).
+- Achievements: one row per line (`AchievementLine`), its earned medals in order, then the next as a grey medal
+  with "12 of 14 days" (`NextTier.of`, the best day on record for laps and the big day); a line that repeats
+  (perfect week, comeback) is one medal with "×3". `Medal` (`Shared/Session`) is 44 pt, 36 on the rests.
+  Names, faces and symbols are in `Presentation.swift`; no emoji anywhere else.
+- True retention of the last 30 days is not here: no model computes it across decks, the deck statistics do per deck.
+- Today at risk (`streak.repairCards`, ring open): "Close the ring to save your streak" and "12-day streak ·
+  at risk" with a grey flame. The Streak kept rest takes a milestone's name as its title, the Ring closed rest
+  "Streak saved"; both show the medals earned today, three at most, under the title.
+- The month's screen (`MonthRecapSheet`) shows once on the first open of a month after a month with study:
+  `StartScreen` presents it while idle, `MonthRecapPlan.pending` decides, `UserDefaults` key `shownMonthRecap`
+  holds "2026-10". Never in a test run. See All Progress dismisses it and pushes Progress.
+
 ## Study across decks
 
 - Study without a deck is one stream over all active decks with a plan. `StudyRun` opens them all,

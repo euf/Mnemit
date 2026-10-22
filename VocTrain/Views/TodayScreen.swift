@@ -47,6 +47,8 @@ struct TodayScreen: View {
     var chooseFolder: () -> Void
     var openDeck: () -> Void
     var showSettings: () -> Void
+    /// Pushes the Progress screen: the header of the day is its button.
+    var showProgress: () -> Void = {}
     var refresh: () async -> Void
     var importCards: () -> Void = {}
     /// Opens the browser of the shared decks.
@@ -126,9 +128,23 @@ struct TodayScreen: View {
     private var list: some View {
         List {
             Section {
-                SummaryRow(
-                    due: due, newDue: newDue, catchUp: catchUp, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(),
-                    now: now, isLoaded: isRead)
+                // A button with the chevron of the deck rows, which draw it by hand too.
+                Button(action: showProgress) {
+                    HStack(spacing: 12) {
+                        SummaryRow(
+                            due: due, newDue: newDue, catchUp: catchUp, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(),
+                            now: now, isLoaded: isRead
+                        )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        Image(systemName: "chevron.forward")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(progress == nil)
             }
             let sections = TodayDecks(decks, paused: paused)
             if !sections.active.isEmpty {
@@ -302,9 +318,11 @@ struct SummaryRow: View {
                             // Not a Label: in a list it puts its icon in a column of its own.
                             HStack(spacing: 4) {
                                 Image(systemName: "flame.fill")
-                                    .foregroundStyle(progress.streakKeptToday ? Color.accentColor : Color.secondary)
+                                    .foregroundStyle(progress.streakKeptToday && !isAtRisk ? Color.accentColor : Color.secondary)
                                 Group {
-                                    if progress.streakKeptToday {
+                                    if isAtRisk {
+                                        Text("\(progress.streak.days)-day streak · at risk")
+                                    } else if progress.streakKeptToday {
                                         Text("\(progress.streak.days)-day streak · kept today")
                                     } else {
                                         Text("\(progress.streak.days)-day streak")
@@ -357,11 +375,19 @@ struct SummaryRow: View {
         return Format.timeLeft(minutes: minutes)
     }
 
+    /// The day after a missed day, until the ring closes: the streak survives only if it does.
+    private var isAtRisk: Bool {
+        guard let progress else { return false }
+        return progress.streak.repairCards != nil && !progress.ring.isGoalMet
+    }
+
     /// What the day asks next: "≈ 2 min to keep your streak" before the first round, then the cards left with
-    /// their time, "Ring closed" once the ring is; nothing at all once no card is left.
+    /// their time, "Ring closed" once the ring is, "Close the ring to save your streak" while a missed day waits for it; nothing at all once no card is left.
     @ViewBuilder
     private var headline: some View {
-        if due > 0, let title = progress.flatMap({ RoundStatus($0).title }) {
+        if isAtRisk {
+            Text("Close the ring to save your streak")
+        } else if due > 0, let title = progress.flatMap({ RoundStatus($0).title }) {
             Text(title)
         } else if due > 0 {
             let cardsLeft = Text("\(due) cards left")

@@ -53,6 +53,194 @@ extension MaturityCategory {
     }
 }
 
+extension AchievementKind {
+    /// "A week in a row", "First ring", "Ring ×3", "50 cards in a day": a streak is named in words, never in days.
+    var title: String {
+        switch self {
+        case let .streak(days):
+            switch days {
+            case 7: String(localized: "A week in a row")
+            case 14: String(localized: "2 weeks in a row")
+            case 30: String(localized: "A month in a row")
+            case 61: String(localized: "2 months in a row")
+            case 91: String(localized: "3 months in a row")
+            case 183: String(localized: "Half a year in a row")
+            case 365: String(localized: "A year in a row")
+            case 548: String(localized: "A year and a half in a row")
+            case 730: String(localized: "2 years in a row")
+            default: String(localized: "\(days) days in a row")
+            }
+        case .firstRing: String(localized: "First ring")
+        case .perfectWeek: String(localized: "Perfect week")
+        case let .laps(times): String(localized: "Ring ×\(times)")
+        case let .bigDay(cards): String(localized: "\(cards) cards in a day")
+        case .comeback: String(localized: "Comeback")
+        }
+    }
+
+    /// What it took, for the line under a medal; `nil` where the title says it.
+    var detail: String? {
+        switch self {
+        case .streak, .bigDay: nil
+        case .firstRing: String(localized: "Closed the ring for the first time")
+        case .perfectWeek: String(localized: "Seven rings in a row")
+        case let .laps(times): times == 2 ? String(localized: "Twice the day's goal") : String(localized: "\(times) times the day's goal")
+        case .comeback: String(localized: "Saved your streak after a missed day")
+        }
+    }
+
+    /// The emoji of an earned medal (`references/learning-flow.md`, "Emoji or SF Symbols"): the only emoji of the app.
+    var face: String {
+        switch self {
+        case let .streak(days):
+            switch days {
+            case 7: "\u{2B50}\u{FE0F}"
+            case 14: "\u{1F31F}"
+            case 30: "\u{1F319}"
+            case 61: "\u{1F33F}"
+            case 91: "\u{1F333}"
+            case 183: "\u{26F0}\u{FE0F}"
+            case 365: "\u{1F3C6}"
+            case 548: "\u{1F48E}"
+            case 730: "\u{1F451}"
+            default: "\u{1F525}"
+            }
+        case .firstRing: "\u{1F3AF}"
+        case .perfectWeek: "\u{1F308}"
+        case let .laps(times):
+            switch times {
+            case 2: "\u{26A1}\u{FE0F}"
+            case 3: "\u{1F680}"
+            case 5: "\u{1F30B}"
+            default: "\u{1FA90}"
+            }
+        case let .bigDay(cards):
+            switch cards {
+            case 50: "\u{1F4DA}"
+            case 100: "\u{1F9E0}"
+            case 200: "\u{1F989}"
+            default: "\u{1F418}"
+            }
+        case .comeback: "\u{1F426}\u{200D}\u{1F525}"
+        }
+    }
+
+    /// The SF Symbol of the line, which the grey medal of the next tier shows while its emoji stays a surprise.
+    var symbol: String { line.symbol }
+
+    var line: AchievementLine {
+        switch self {
+        case .streak: .streak
+        case .firstRing: .firstRing
+        case .perfectWeek: .perfectWeek
+        case .laps: .laps
+        case .bigDay: .bigDay
+        case .comeback: .comeback
+        }
+    }
+}
+
+/// The lines of achievements, in the order of the Progress screen.
+enum AchievementLine: CaseIterable, Hashable {
+    case streak, firstRing, perfectWeek, laps, bigDay, comeback
+
+    var symbol: String {
+        switch self {
+        case .streak: "flame"
+        case .firstRing: "circle.circle"
+        case .perfectWeek: "calendar"
+        case .laps: "repeat"
+        case .bigDay: "rectangle.stack"
+        case .comeback: "arrow.uturn.up"
+        }
+    }
+
+    /// Earned again and again: one medal with a count, not a tier after tier.
+    var repeats: Bool { self == .perfectWeek || self == .comeback }
+}
+
+/// A medal earned, once or more: of a line that repeats, the count and the day of the last time.
+struct EarnedMedal: Hashable {
+    var kind: AchievementKind
+    var day: Int
+    var count: Int
+}
+
+extension Array where Element == Achievement {
+    /// One medal per kind, in the order each was first earned.
+    var medals: [EarnedMedal] {
+        var medals: [EarnedMedal] = []
+        for achievement in self {
+            if let index = medals.firstIndex(where: { $0.kind == achievement.kind }) {
+                medals[index].count += 1
+                medals[index].day = achievement.day
+            } else {
+                medals.append(EarnedMedal(kind: achievement.kind, day: achievement.day, count: 1))
+            }
+        }
+        return medals
+    }
+}
+
+/// The tier a line offers next and how far the learner is from it: the grey medal of the Progress screen.
+struct NextTier: Hashable {
+    var kind: AchievementKind
+    /// Where the learner stands: the streak's days, the rings of the run, the best lap or the cards of the best day.
+    var value = 0
+    /// What the tier asks; `nil` for a tier with no count to work toward.
+    var goal: Int?
+
+    /// "12 of 14 days", "×2 of ×3", "76 of 100 cards"; `nil` without a goal.
+    var hint: String? {
+        guard let goal else { return nil }
+        switch kind {
+        case .streak: return String(localized: "\(value) of \(goal) days")
+        case .perfectWeek: return String(localized: "\(value) of \(goal) rings")
+        case .laps: return String(localized: "×\(value) of ×\(goal)")
+        case .bigDay: return String(localized: "\(value) of \(goal) cards")
+        case .firstRing, .comeback: return nil
+        }
+    }
+
+    /// The next unearned tier of `line`, `nil` once all are earned. A line that repeats always has one: the
+    /// comeback, which can't be worked toward, and the perfect week, whose run of rings counts. Laps and the big
+    /// day count the best day on record, as a tier is reached in one day, never added up over days.
+    static func of(_ line: AchievementLine, earned: [Achievement], records: [DayRecord], streak: Int) -> NextTier? {
+        let kinds = Set(earned.map(\.kind))
+        switch line {
+        case .streak:
+            return Achievements.streakMilestones.first { !kinds.contains(.streak(days: $0)) }
+                .map { NextTier(kind: .streak(days: $0), value: streak, goal: $0) }
+        case .firstRing:
+            return kinds.contains(.firstRing) ? nil : NextTier(kind: .firstRing)
+        case .perfectWeek:
+            return NextTier(kind: .perfectWeek, value: ringRun(records) % 7, goal: 7)
+        case .laps:
+            let best = records.map { $0.goal > 0 ? $0.done / $0.goal : 0 }.max() ?? 0
+            return Achievements.lapTiers.first { !kinds.contains(.laps($0)) }.map { NextTier(kind: .laps($0), value: best, goal: $0) }
+        case .bigDay:
+            let best = records.map(\.done).max() ?? 0
+            return Achievements.bigDayTiers.first { !kinds.contains(.bigDay(cards: $0)) }.map { NextTier(kind: .bigDay(cards: $0), value: best, goal: $0) }
+        case .comeback:
+            return NextTier(kind: .comeback)
+        }
+    }
+
+    /// The days in a row up to now whose ring closed with work in it; today, while its ring is open, doesn't end the
+    /// run, as it can still close.
+    private static func ringRun(_ records: [DayRecord]) -> Int {
+        var run = 0
+        for (index, record) in records.reversed().enumerated() {
+            if record.closed && record.done > 0 {
+                run += 1
+            } else if index > 0 {
+                break
+            }
+        }
+        return run
+    }
+}
+
 extension Grade {
     var title: String {
         switch self {

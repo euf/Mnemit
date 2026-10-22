@@ -139,14 +139,46 @@ struct StreamRestView: View {
             if rest.isPracticeOnly {
                 Text("Practice complete")
             } else if let end = rest.roundEnd, !end.closesRing {
-                Text("Streak kept")
+                if let milestone = milestoneToday {
+                    Text(verbatim: milestone.title)
+                } else {
+                    Text("Streak kept")
+                }
             } else if progress?.ring.isGoalMet == true {
-                Text("Ring closed")
+                if progress?.records.last?.savedStreak == true {
+                    Text("Streak saved")
+                } else {
+                    Text("Ring closed")
+                }
             } else {
                 Text("Done for today")
             }
         }
         .font(.title.weight(.semibold))
+        .multilineTextAlignment(.center)
+    }
+
+    /// What was earned today, oldest first: the achievements of the last day of `DailyProgress.records`.
+    private var earnedToday: [Achievement] {
+        guard let progress, let today = progress.records.last?.day else { return [] }
+        return progress.achievements.filter { $0.day == today }
+    }
+
+    /// The streak milestone reached today, which gives the Streak kept rest its title.
+    private var milestoneToday: AchievementKind? {
+        earnedToday.last { $0.kind.line == .streak }?.kind
+    }
+
+    /// The medals earned today, at most three, the newest.
+    private var medalsLine: Line? {
+        let medals = earnedToday.medals.suffix(3)
+        guard !medals.isEmpty else { return nil }
+        return Line("medals") {
+            HStack(alignment: .top, spacing: Spacing.tight) {
+                ForEach(Array(medals), id: \.kind) { Medal(kind: $0.kind, count: $0.count, size: 36) }
+            }
+            .padding(.vertical, Spacing.tight)
+        }
     }
 
     @ViewBuilder
@@ -172,7 +204,7 @@ struct StreamRestView: View {
 
     private var lines: [Line] {
         if rest.isPracticeOnly { return practiceLines }
-        if let end = rest.roundEnd, !end.closesRing { return [streakLine, gainLine, leftLine].compactMap { $0 } }
+        if let end = rest.roundEnd, !end.closesRing { return [medalsLine, streakLine, gainLine, leftLine].compactMap { $0 } }
         return dayLines
     }
 
@@ -191,6 +223,7 @@ struct StreamRestView: View {
     /// week's rings, and the catch-up or when cards come back.
     private var dayLines: [Line] {
         var lines: [Line] = []
+        if let medalsLine { lines.append(medalsLine) }
         if rest.recap.cards > 0 {
             let cards = [String(localized: "\(rest.recap.cards) cards"), String(localized: "\(rest.recap.reviews) answers")]
             lines.append(Line("cards") { Text(verbatim: cards.joined(separator: " · ")) })

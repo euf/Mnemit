@@ -8,10 +8,13 @@ enum DeckRoute: Hashable {
     case deck(PushedDecks.Slot)
     /// A card found by the search of Today.
     case card(PushedDecks.Slot, Card.ID)
+    /// The Progress screen, from the header of Today: it holds no deck.
+    case progress
 
-    var slot: PushedDecks.Slot {
+    var slot: PushedDecks.Slot? {
         switch self {
         case let .deck(slot), let .card(slot, _): slot
+        case .progress: nil
         }
     }
 }
