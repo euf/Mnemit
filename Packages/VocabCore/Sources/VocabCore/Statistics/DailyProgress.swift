@@ -429,6 +429,12 @@ public struct Streak: Hashable, Sendable {
 /// Holds the deck, which is a value that shares its storage.
 public struct DeckActivity: Sendable {
     private let deck: Deck
+    /// The last `history(from:at:calendar:)` this activity worked out: the deck of an activity doesn't change, so
+    /// a deck read from its file once is replayed once a study day, however often the progress is evaluated.
+    // ponytail: only for an activity that lives on, the decks read from files; the open document makes a
+    // new activity at every change and replays its log each time, 0.3 s on 3,000 cards and 400 days. Keep the
+    // days before today across changes, by a fingerprint of the log before today, if that costs too much.
+    private let cachedHistory = HistoryCache()
     /// The reviews by study day, one for each entry of a card's log. They tell on which
     /// days the learner studied and nothing more: the ring counts cards
     /// (`done(onDayOf:calendar:)`).
@@ -587,6 +593,26 @@ public struct DeckActivity: Sendable {
         var done: Int { newDone + otherDone }
     }
 
+    /// The one history an activity keeps.
+    private final class HistoryCache: @unchecked Sendable {
+        struct Key: Hashable {
+            var first: Int
+            var today: Int
+            var calendar: StudyCalendar
+        }
+
+        private let lock = NSLock()
+        private var kept: (key: Key, history: History)?
+
+        func history(for key: Key) -> History? {
+            lock.withLock { kept.flatMap { $0.key == key ? $0.history : nil } }
+        }
+
+        func keep(_ history: History, for key: Key) {
+            lock.withLock { kept = (key, history) }
+        }
+    }
+
     /// The plan of a study day when it began, in cards that are not new and in new cards.
     struct DayStart: Hashable {
         var other = 0
@@ -613,6 +639,14 @@ public struct DeckActivity: Sendable {
     func history(from first: Int, at now: Date, calendar: StudyCalendar) -> History {
         let today = calendar.dayNumber(for: now)
         let first = min(first, today)
+        let key = HistoryCache.Key(first: first, today: today, calendar: calendar)
+        if let known = cachedHistory.history(for: key) { return known }
+        let history = replayHistory(from: first, through: today, calendar: calendar)
+        cachedHistory.keep(history, for: key)
+        return history
+    }
+
+    private func replayHistory(from first: Int, through today: Int, calendar: StudyCalendar) -> History {
         let paced = replayLog(from: first, through: today, calendar: calendar, keepsStates: true)
         var stood = deck
         for index in stood.cards.indices {

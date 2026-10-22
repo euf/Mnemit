@@ -332,6 +332,23 @@ extension DailyProgressTests {
         #expect(history.starts[today] == .init(other: plan.learning + plan.review, new: plan.new))
     }
 
+    @Test func anActivityKeepsItsHistoryForTheDayAndWorksItOutAnewForAnother() throws {
+        var deck = try Deck(learningOptions: options(), cards: (0..<30).map { fresh("n\($0)") })
+        for offset in 0..<3 { study(&deck, onDay: today - 3 + offset) }
+        let activity = DeckActivity(deck: deck, calendar: calendar)
+        let first = today - 3
+        let morning = activity.history(from: first, at: at(day: today, hour: 6), calendar: calendar)
+        let evening = activity.history(from: first, at: at(day: today, hour: 22), calendar: calendar)
+        #expect(morning.starts == evening.starts)
+        #expect(morning.paced.days.mapValues(\.count) == evening.paced.days.mapValues(\.count))
+        let tomorrow = activity.history(from: first, at: at(day: today + 1, hour: 6), calendar: calendar)
+        #expect(tomorrow.starts[today + 1] != nil)
+        #expect(morning.starts[today + 1] == nil)
+        // The same evaluation twice is the same figures.
+        let figures = DailyProgress.evaluate([activity], at: at(day: today, hour: 12), calendar: calendar)
+        #expect(DailyProgress.evaluate([activity], at: at(day: today, hour: 12), calendar: calendar) == figures)
+    }
+
     @Test func theLocksOfTheProductionCardsFollowTheStateOfTheRecognitionCardsLikeTheSession() throws {
         var options = options()
         options.productionUnlockDays = 4
