@@ -30,6 +30,10 @@ struct StartScreen: View {
     @State private var query = ""
     /// The deck whose Add Cards sheet is up, from the + menu.
     @State private var addingCards: OpenDeck?
+    /// The file the + menu's Import… picked, which the sheet of `addingCards` shows the cards of;
+    /// `nil` for Add Cards.
+    @State private var fileToImport: ImportedFile?
+    @State private var isChoosingImport = false
     @State private var showsNewDeck = false
     /// The deck a new deck's sheet leaves to push once it has gone.
     @State private var openAfterSheet: PushedDecks.Slot?
@@ -49,10 +53,12 @@ struct StartScreen: View {
                 decks: knownDecks.byName, counts: deckCounts.counts, progress: ring.progress, now: Date(), query: $query,
                 hits: search.hits(for: query), isSearching: !search.isLoaded,
                 canForget: { !knownDecks.isInFolder($0.url) }, study: study, showDeck: showDeck, showCard: showCard,
-                forget: { knownDecks.forget($0.url) }, addCards: addCardsToLastDeck, newDeck: { showsNewDeck = true },
+                forget: { knownDecks.forget($0.url) }, addCards: { openLastDeck(importing: nil) }, newDeck: { showsNewDeck = true },
                 chooseFolder: { choose(folder: true) }, openDeck: { choose(folder: false) },
-                showSettings: { showsSettings = true }, refresh: refreshAll
+                showSettings: { showsSettings = true }, refresh: refreshAll, importCards: { isChoosingImport = true }
             )
+            // Not on the stack, which has the deck picker: two file pickers on a view cancel each other.
+            .cardFileImporter(isPresented: $isChoosingImport) { openLastDeck(importing: $0) }
             .navigationDestination(for: DeckRoute.self, destination: destination)
         }
         .deckPicker(isPresented: $isChoosing, choosesFolder: choosesFolder) { url in
@@ -70,7 +76,7 @@ struct StartScreen: View {
             NewDeckSheet(onCreate: createDeck)
         }
         .sheet(item: $addingCards) { deck in
-            AddCardsHost(deck: deck)
+            AddCardsHost(deck: deck, file: fileToImport)
         }
         .fullScreenCover(item: $run) { run in
             StudyRunView(run: run, ring: ring, knownDecks: knownDecks, counts: deckCounts.counts) { self.run = nil }
@@ -238,12 +244,14 @@ struct StartScreen: View {
 
     // MARK: Adding and creating
 
-    /// Opens the sheet that adds cards to the deck used last, or to the first of the list.
-    private func addCardsToLastDeck() {
+    /// Opens the sheet that adds cards to the deck used last, or to the first of the list: the
+    /// sheet of Add Cards, or the preview of the `file` to import.
+    private func openLastDeck(importing file: ImportedFile?) {
         guard run == nil, addingCards == nil, path.isEmpty else { return }
         let urls = knownDecks.byName.map(\.url)
         guard let url = lastUsed(in: urls) ?? urls.first else { return }
         knownDecks.remember(url)
+        fileToImport = file
         addingCards = OpenDeck(url: url)
     }
 

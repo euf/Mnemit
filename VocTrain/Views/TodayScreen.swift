@@ -40,6 +40,7 @@ struct TodayScreen: View {
     var openDeck: () -> Void
     var showSettings: () -> Void
     var refresh: () async -> Void
+    var importCards: () -> Void = {}
 
     private var due: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) }
@@ -76,6 +77,8 @@ struct TodayScreen: View {
             ToolbarItemGroup(placement: .primaryAction) {
                 Menu("Add", systemImage: "plus") {
                     Button("Add Cards", systemImage: "plus.rectangle.on.rectangle", action: addCards)
+                        .disabled(decks.isEmpty)
+                    Button("Import…", systemImage: "square.and.arrow.down", action: importCards)
                         .disabled(decks.isEmpty)
                     Button("New Deck", systemImage: "rectangle.stack.badge.plus", action: newDeck)
                 }

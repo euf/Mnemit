@@ -1,9 +1,14 @@
-import AppKit
-import UniformTypeIdentifiers
+import Foundation
+import Observation
 import VocabCore
 
-/// "Import Cards…": reads cards from a CSV or TSV file into a preview, from which
-/// the chosen cards are appended to the open deck.
+/// "Import Cards…" on both platforms: reads cards from a CSV or TSV file into a preview, from
+/// which the chosen cards are appended to the open deck. The Mac asks for the file with an open
+/// panel, the iPhone with the file picker; the preview and its rules are the same.
+///
+/// A file of our own export, or one that Anki wrote, starts with header lines (see
+/// `DelimitedText.decode(_:)`) that name the columns: `CardImporter` finds the word key and
+/// the kind among them.
 @MainActor
 enum CardImport {
     /// The cards of a file, before they are added to the deck.
@@ -28,33 +33,9 @@ enum CardImport {
         }
     }
 
-    /// Asks for a file and reads it; `nil` if the user cancels or the file has no cards.
-    static func chooseFile(existing: [Card], created: Date) -> Preview? {
-        let openPanel = NSOpenPanel()
-        openPanel.allowedContentTypes = [.delimitedText, .plainText]
-        openPanel.allowsMultipleSelection = false
-        openPanel.message = String(localized: "Choose a CSV or TSV file with a question, an answer and an optional hint per row.")
-        openPanel.prompt = String(localized: "Import")
-        guard openPanel.runModal() == .OK, let source = openPanel.url else { return nil }
-
-        let data: Data
-        do {
-            data = try Data(contentsOf: source)
-        } catch {
-            showError(error.localizedDescription)
-            return nil
-        }
-        let preview = preview(of: data, fileName: source.lastPathComponent, existing: existing, created: created)
-        guard !preview.candidates.isEmpty else {
-            showError(String(localized: "“\(source.lastPathComponent)” contains no rows with a question and an answer."))
-            return nil
-        }
-        return preview
-    }
-
     static func preview(of data: Data, fileName: String, existing: [Card], created: Date) -> Preview {
-        let rows = DelimitedText.decode(data).rows
-        let result = CardImporter.candidates(from: rows, existing: existing, isHeader: isHeader, created: created)
+        let table = DelimitedText.decode(data)
+        let result = CardImporter.candidates(from: table.rows, existing: existing, isHeader: isHeader, created: created, columns: table.columns)
         return Preview(fileName: fileName, result: result)
     }
 
@@ -76,9 +57,5 @@ enum CardImport {
         }
         .map { $0.localizedString(forKey: key, value: key, table: nil) }
         return [key] + translations
-    }
-
-    private static func showError(_ message: String) {
-        NSAlert.showWarning(String(localized: "Import failed"), message: message)
     }
 }
