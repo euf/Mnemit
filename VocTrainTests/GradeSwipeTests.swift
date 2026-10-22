@@ -282,19 +282,29 @@ struct CardFlightSwipeTests {
         #expect(!flight.isInGap)
     }
 
-    @Test func aLightTickWhenAFingerEntersAZoneOrAGapFromOne() {
+    /// One haptic per grade: at the commit distance for a swipe, none again when the committed
+    /// card flies; at the flight for a grade given without a commit (button, key, flick).
+    @Test func oneHapticPerGrade() {
         let flight = CardFlight()
-        // Into a zone from nothing, and from another zone.
-        flight.drag(swipe(0), isRevealed: true)
-        #expect(flight.isTick(from: nil, to: .good))
-        #expect(flight.isTick(from: .good, to: .easy))
-        // Into a gap from a zone.
-        flight.drag(swipe(135), isRevealed: true)
-        #expect(flight.isTick(from: .easy, to: nil))
-        // Back into the dead zone, nothing to feel; and out of nothing into nothing.
-        flight.drag(swipe(90, length: 10), isRevealed: true)
-        #expect(!flight.isTick(from: .easy, to: nil))
-        #expect(!flight.isTick(from: nil, to: nil))
+        flight.drag(swipe(0, length: 50), isRevealed: true)
+        #expect(flight.gradeFeedback == 0)
+        flight.drag(swipe(0, length: 130), isRevealed: true)
+        #expect(flight.gradeFeedback == 1)
+        flight.drag(swipe(5, length: 140), isRevealed: true)
+        #expect(flight.gradeFeedback == 1)
+        // Another grade at the commit distance is felt; a gap is not.
+        flight.drag(swipe(90, length: 130), isRevealed: true)
+        #expect(flight.gradeFeedback == 2)
+        flight.drag(swipe(135, length: 130), isRevealed: true)
+        #expect(flight.gradeFeedback == 2)
+        flight.drag(swipe(90, length: 130), isRevealed: true)
+        #expect(flight.gradeFeedback == 3)
+        flight.fly(.easy, reduceMotion: true) {}
+        #expect(flight.gradeFeedback == 3)
+
+        let button = CardFlight()
+        button.fly(.good, reduceMotion: true) {}
+        #expect(button.gradeFeedback == 1)
     }
 
     @Test func beforeTheAnswerTheCardOnlyGivesWay() {

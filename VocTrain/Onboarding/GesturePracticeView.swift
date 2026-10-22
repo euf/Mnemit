@@ -234,9 +234,8 @@ struct GesturePracticeView: View {
         .onChange(of: isDragging) { _, isDragging in
             if !isDragging { flight.springBack() }
         }
-        // The ticks of `swipeHaptics`, but only under a finger: a hint is not a touch.
-        .sensoryFeedback(.impact(weight: .light), trigger: flight.zone) { old, new in isDragging && flight.isTick(from: old, to: new) }
-        .sensoryFeedback(.impact(weight: .medium), trigger: flight.isFlying) { _, isFlying in isFlying }
+        // The haptic of `swipeHaptics`, but only from a finger: a hint is not a touch.
+        .sensoryFeedback(.impact(weight: .medium), trigger: flight.gradeFeedback) { _, _ in isDragging || flight.isFlying }
         // VoiceOver can't swipe: the action does what the swipe does.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Sample card: \(sample.question), \(sample.answer)"))

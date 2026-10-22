@@ -49,6 +49,10 @@ final class CardFlight {
     private(set) var committing: Grade?
     /// A grade has been given: the card is on its way out, and takes no more input.
     private(set) var isFlying = false
+    /// One step for each haptic of grading, one per grade: when a drag reaches the commit
+    /// distance of a grade (letting go now would give it), or, for a grade given without that
+    /// (button, key, flick), when the card flies. Letting go of a committed card adds none.
+    private(set) var gradeFeedback = 0
     /// The size of the card, which `FlightCard` reports: the point where the card was grabbed
     /// is a share of it.
     var size = CGSize.zero
@@ -104,7 +108,9 @@ final class CardFlight {
         zone = grade
         isInGap = gap
         if let grade { tint = grade }
-        committing = grade.flatMap { distance >= GradeSwipe.commitDistance ? $0 : nil }
+        let commit = grade.flatMap { distance >= GradeSwipe.commitDistance ? $0 : nil }
+        if let commit, commit != committing { gradeFeedback += 1 }
+        committing = commit
         let strength = grade == nil ? 0 : min(Self.fullTint, Double(distance / Self.tintDistance))
         let follow = {
             self.offset = moved
@@ -116,11 +122,6 @@ final class CardFlight {
         } else {
             follow()
         }
-    }
-
-    /// Whether a change of `zone` is felt as a light tick: entering a zone, or a gap from a zone.
-    func isTick(from old: Grade?, to new: Grade?) -> Bool {
-        new != nil || (old != nil && isInGap)
     }
 
     /// Springs back, with a little bounce, and fades the tint out with it.
@@ -143,6 +144,7 @@ final class CardFlight {
     func fly(_ grade: Grade, reduceMotion: Bool, then finish: @escaping @MainActor () -> Void) {
         guard !isFlying else { return }
         isFlying = true
+        if committing != grade { gradeFeedback += 1 }
         committing = nil
         zone = nil
         isInGap = false
@@ -244,11 +246,10 @@ struct FlightCard<Content: View>: View {
 
 #if os(iOS)
 extension View {
-    /// The haptics of a swipe: a light tick whenever the finger enters another grade's zone or a
-    /// gap from one, and a medium one when the card is graded, whether by swipe or by button.
+    /// The haptic of grading, one per grade (`CardFlight.gradeFeedback`): a swipe feels it
+    /// when letting go would grade, a button or key when the card flies.
     func swipeHaptics(_ flight: CardFlight) -> some View {
-        sensoryFeedback(.impact(weight: .light), trigger: flight.zone) { old, new in flight.isTick(from: old, to: new) }
-            .sensoryFeedback(.impact(weight: .medium), trigger: flight.isFlying) { _, isFlying in isFlying }
+        sensoryFeedback(.impact(weight: .medium), trigger: flight.gradeFeedback)
     }
 }
 #endif
