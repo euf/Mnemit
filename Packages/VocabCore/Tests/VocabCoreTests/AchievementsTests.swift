@@ -18,6 +18,13 @@ struct AchievementsTests {
         earned.filter { $0.kind == kind }.map(\.day)
     }
 
+    @Test func daysWithAnEmptyPlanEarnNoRing() {
+        let records = (0..<7).map { DayRecord(day: 100 + $0, done: 0, goal: 0, kept: true, closed: true, streak: $0 + 1) }
+        let kinds = Achievements.earned(over: records).map(\.kind)
+        #expect(!kinds.contains(.firstRing))
+        #expect(!kinds.contains(.perfectWeek))
+    }
+
     @Test func theFirstRingIsEarnedOnceOnTheFirstDayItCloses() {
         let records = [day(100, done: 5, goal: 20), day(101, done: 20), day(102, done: 20)]
         #expect(days(of: .firstRing, in: Achievements.earned(over: records)) == [101])

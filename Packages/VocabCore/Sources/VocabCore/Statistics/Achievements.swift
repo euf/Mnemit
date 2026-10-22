@@ -86,10 +86,12 @@ public enum Achievements {
             func earn(_ kind: AchievementKind) { earned.append(Achievement(kind: kind, day: record.day)) }
             func earnOnce(_ kind: AchievementKind) { if tiers.insert(kind).inserted { earn(kind) } }
             for days in streakMilestones where record.streak >= days { earnOnce(.streak(days: days)) }
-            if record.closed { earnOnce(.firstRing) }
+            // A ring closed with work in it: a day whose plan was empty closes its ring, but earns nothing.
+            let worked = record.closed && record.done > 0
+            if worked { earnOnce(.firstRing) }
             if let last = previous, record.day != last + 1 { run = 0 }
             previous = record.day
-            run = record.closed ? run + 1 : 0
+            run = worked ? run + 1 : 0
             if run > 0, run % 7 == 0 { earn(.perfectWeek) }
             if record.goal > 0 { for n in lapTiers where record.done >= n * record.goal { earnOnce(.laps(n)) } }
             for cards in bigDayTiers where record.done >= cards { earnOnce(.bigDay(cards: cards)) }
