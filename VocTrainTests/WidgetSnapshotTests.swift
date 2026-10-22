@@ -65,7 +65,7 @@ enum WidgetFixtures {
     }
 
     static func progress(reviews: Int, goal: Int, streak: Int) -> DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streak, repairReviews: nil))
+        DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streak, repairCards: nil))
     }
 
     /// A snapshot made at `now` whose due count is `count(date)`, hourly for two days.

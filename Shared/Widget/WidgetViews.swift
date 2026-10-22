@@ -49,7 +49,7 @@ extension WidgetState {
     /// For the circular widget, whose middle holds the due count: no streak number, and one lap
     /// at most, as the badge of the laps would hang out of the circle the system cuts.
     fileprivate var ringWithoutStreak: DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: min(reviews, goal), goal: goal), streak: Streak(days: 0, repairReviews: nil))
+        DailyProgress(ring: DailyRing(reviews: min(reviews, goal), goal: goal), streak: Streak(days: 0, repairCards: nil))
     }
 }
 

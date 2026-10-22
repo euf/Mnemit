@@ -120,7 +120,7 @@ struct WidgetState: Equatable, Sendable {
 
     /// The ring and the streak as `DailyRingView` takes them.
     var progress: DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streakDays, repairReviews: nil))
+        DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streakDays, repairCards: nil))
     }
 
     /// The same figures at another moment of the timeline.

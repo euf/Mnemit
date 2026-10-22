@@ -70,36 +70,36 @@ struct StreakTests {
 
     @Test func daysInARowCountAndTodayCountsOnceItsPlanIsDone() {
         let days = Dictionary(uniqueKeysWithValues: (100...104).map { ($0, 12) })
-        #expect(streak(days, today: 105, owed: [105: 10]) == Streak(days: 5, repairReviews: nil))
+        #expect(streak(days, today: 105, owed: [105: 10]) == Streak(days: 5, repairCards: nil))
         // Ten cards of today's plan left: the day is not met yet, the streak is not broken.
         var withToday = days
         withToday[105] = 5
-        #expect(streak(withToday, today: 105, owed: [105: 10]) == Streak(days: 5, repairReviews: nil))
+        #expect(streak(withToday, today: 105, owed: [105: 10]) == Streak(days: 5, repairCards: nil))
         // The plan of today is done.
-        #expect(streak(withToday, today: 105) == Streak(days: 6, repairReviews: nil))
+        #expect(streak(withToday, today: 105) == Streak(days: 6, repairCards: nil))
     }
 
     @Test func theStreakStartsWithTheFirstReview() {
-        #expect(streak([:], today: 100) == Streak(days: 0, repairReviews: nil))
-        #expect(streak([:], today: 100, owed: [100: 4]) == Streak(days: 0, repairReviews: nil))
+        #expect(streak([:], today: 100) == Streak(days: 0, repairCards: nil))
+        #expect(streak([:], today: 100, owed: [100: 4]) == Streak(days: 0, repairCards: nil))
         // The first day counts once its plan is done; days before it are nobody's.
-        #expect(streak([100: 3], today: 100) == Streak(days: 1, repairReviews: nil))
-        #expect(streak([100: 3], today: 100, owed: [100: 2]) == Streak(days: 0, repairReviews: nil))
+        #expect(streak([100: 3], today: 100) == Streak(days: 1, repairCards: nil))
+        #expect(streak([100: 3], today: 100, owed: [100: 2]) == Streak(days: 0, repairCards: nil))
     }
 
     @Test func aDayWithAnEmptyPlanCounts() {
         // Reviews on 100 only, then two days on which nothing was due, and today.
-        #expect(streak([100: 5], today: 103) == Streak(days: 4, repairReviews: nil))
+        #expect(streak([100: 5], today: 103) == Streak(days: 4, repairCards: nil))
         // Nothing was due today yet, nothing was reviewed: the day is met.
-        #expect(streak([100: 5], today: 101) == Streak(days: 2, repairReviews: nil))
+        #expect(streak([100: 5], today: 101) == Streak(days: 2, repairCards: nil))
     }
 
     @Test func aDayIsJudgedByWhatItOwedAtItsEnd() {
         // 101 owed three cards at its end, whatever was reviewed on it.
-        #expect(streak([100: 20, 101: 20, 102: 20], today: 103, owed: [101: 3]) == Streak(days: 4, repairReviews: nil))
-        #expect(streak([100: 20, 101: 20, 102: 20], today: 103, owed: [101: 3, 102: 1]) == Streak(days: 1, repairReviews: nil))
+        #expect(streak([100: 20, 101: 20, 102: 20], today: 103, owed: [101: 3]) == Streak(days: 4, repairCards: nil))
+        #expect(streak([100: 20, 101: 20, 102: 20], today: 103, owed: [101: 3, 102: 1]) == Streak(days: 1, repairCards: nil))
         // Reviews don't make a day: nothing reviewed on 101, but nothing owed either.
-        #expect(streak([100: 20, 102: 20], today: 103) == Streak(days: 4, repairReviews: nil))
+        #expect(streak([100: 20, 102: 20], today: 103) == Streak(days: 4, repairCards: nil))
     }
 
     @Test func theOwedPlanIsAskedForEveryDayFromTheFirstReviewToToday() {
@@ -114,42 +114,42 @@ struct StreakTests {
     @Test func aMissedDayIsRepairedByCompletingThePlanOfTheNextDay() {
         let days = Dictionary(uniqueKeysWithValues: (100...102).map { ($0, 20) })
         // 103 is missed: its plan was not done. 104 completes its own plan, which holds what 103 left.
-        #expect(streak(days, today: 105, owed: [103: 6, 105: 4]) == Streak(days: 5, repairReviews: nil))
-        #expect(streak(days, today: 105, owed: [103: 6]) == Streak(days: 6, repairReviews: nil))
-        #expect(streak(days, today: 106, owed: [103: 6]) == Streak(days: 7, repairReviews: nil))
+        #expect(streak(days, today: 105, owed: [103: 6, 105: 4]) == Streak(days: 5, repairCards: nil))
+        #expect(streak(days, today: 105, owed: [103: 6]) == Streak(days: 6, repairCards: nil))
+        #expect(streak(days, today: 106, owed: [103: 6]) == Streak(days: 7, repairCards: nil))
     }
 
     @Test func todayStillCanRepairYesterday() {
         let days = Dictionary(uniqueKeysWithValues: (100...102).map { ($0, 20) })
         // 103 is missed, today is 104: the streak stands as it was, with the cards of the plan that repair it.
-        #expect(streak(days, today: 104, owed: [103: 6, 104: 9]) == Streak(days: 3, repairReviews: 9))
+        #expect(streak(days, today: 104, owed: [103: 6, 104: 9]) == Streak(days: 3, repairCards: 9))
         // Fewer cards left of the plan, fewer to do.
-        #expect(streak(days, today: 104, owed: [103: 6, 104: 2]) == Streak(days: 3, repairReviews: 2))
+        #expect(streak(days, today: 104, owed: [103: 6, 104: 2]) == Streak(days: 3, repairCards: 2))
         // The plan done: repaired, both days count.
-        #expect(streak(days, today: 104, owed: [103: 6]) == Streak(days: 5, repairReviews: nil))
+        #expect(streak(days, today: 104, owed: [103: 6]) == Streak(days: 5, repairCards: nil))
     }
 
     @Test func twoMissedDaysInARowBreakTheStreakWhateverComesAfter() {
         let days = Dictionary(uniqueKeysWithValues: (100...102).map { ($0, 20) })
         let missed = [103: 6, 104: 8]
         // 105 completes its plan, which doesn't bring the two days back.
-        #expect(streak(days, today: 105, owed: missed) == Streak(days: 1, repairReviews: nil))
-        #expect(streak(days, today: 106, owed: missed) == Streak(days: 2, repairReviews: nil))
+        #expect(streak(days, today: 105, owed: missed) == Streak(days: 1, repairCards: nil))
+        #expect(streak(days, today: 106, owed: missed) == Streak(days: 2, repairCards: nil))
         // Today not done either: the streak is over, not waiting for a repair.
-        #expect(streak(days, today: 105, owed: missed.merging([105: 3]) { $1 }) == Streak(days: 0, repairReviews: nil))
+        #expect(streak(days, today: 105, owed: missed.merging([105: 3]) { $1 }) == Streak(days: 0, repairCards: nil))
     }
 
     @Test func aRepairedStreakCanBeRepairedAgain() {
         let days: [Int: Int] = [100: 20, 102: 20, 104: 20]
         // 100 counts one, 101 is made up by 102 (3), 103 by 104 (5).
-        #expect(streak(days, today: 104, owed: [101: 5, 103: 5]) == Streak(days: 5, repairReviews: nil))
-        #expect(streak(days, today: 102, owed: [101: 5]) == Streak(days: 3, repairReviews: nil))
+        #expect(streak(days, today: 104, owed: [101: 5, 103: 5]) == Streak(days: 5, repairCards: nil))
+        #expect(streak(days, today: 102, owed: [101: 5]) == Streak(days: 3, repairCards: nil))
     }
 
     @Test func aMissedDayBeforeAnyStreakHasNothingToRepair() {
         // The first day is missed, the second made up for nothing: the streak starts with the second.
-        #expect(streak([101: 3], today: 103, owed: [101: 5]) == Streak(days: 2, repairReviews: nil))
-        #expect(streak([101: 3], today: 102, owed: [101: 5, 102: 4]) == Streak(days: 0, repairReviews: nil))
+        #expect(streak([101: 3], today: 103, owed: [101: 5]) == Streak(days: 2, repairCards: nil))
+        #expect(streak([101: 3], today: 102, owed: [101: 5, 102: 4]) == Streak(days: 0, repairCards: nil))
     }
 }
 
@@ -252,7 +252,7 @@ struct DailyProgressTests {
         progress = evaluate([deck])
         #expect(progress.ring == DailyRing(reviews: 8, goal: 8))
         #expect(progress.ring.isGoalMet)
-        #expect(progress.streak.repairReviews == nil)
+        #expect(progress.streak.repairCards == nil)
     }
 
     @Test func aBigPlanIsTheGoalAsItIsAndLapsComeAfterIt() throws {
@@ -298,7 +298,7 @@ struct DailyProgressTests {
         #expect(progress.ring == DailyRing(reviews: 0, goal: 0))
         #expect(progress.ring.isGoalMet)
         // The days since the learning asked nothing, and each counts, today's too.
-        #expect(progress.streak == Streak(days: interval, repairReviews: nil))
+        #expect(progress.streak == Streak(days: interval, repairCards: nil))
     }
 
     @Test func aMissedDayIsRepairedByCompletingTheNextPlan() throws {
@@ -309,24 +309,24 @@ struct DailyProgressTests {
         // is missed, today is open with the plan, whose share of the eight cards left over is two.
         var progress = evaluate([deck])
         #expect(progress.ring == DailyRing(reviews: 0, goal: 2))
-        #expect(progress.streak == Streak(days: before, repairReviews: 2))
+        #expect(progress.streak == Streak(days: before, repairCards: 2))
         review(1, of: &deck, at: now)
         progress = evaluate([deck])
-        #expect(progress.streak == Streak(days: before, repairReviews: 1))
+        #expect(progress.streak == Streak(days: before, repairCards: 1))
         // The plan of today done: yesterday counts, too.
         review(1, of: &deck, at: now)
         progress = evaluate([deck])
         #expect(progress.ring == DailyRing(reviews: 2, goal: 2))
-        #expect(progress.streak == Streak(days: before + 2, repairReviews: nil))
+        #expect(progress.streak == Streak(days: before + 2, repairCards: nil))
     }
 
     @Test func twoMissedDaysInARowBreakTheStreak() throws {
         // Eight cards were due the day before yesterday; yesterday and the day before were missed.
         var deck = try Deck(learningOptions: options(), cards: (0..<8).map { due("c\($0)", onDay: today - 2) })
-        #expect(evaluate([deck]).streak == Streak(days: 0, repairReviews: nil))
+        #expect(evaluate([deck]).streak == Streak(days: 0, repairCards: nil))
         reviewPlan(of: &deck, at: now)
         // Today's plan is done, and the two days before it still are missed: today is a streak of one.
-        #expect(evaluate([deck]).streak == Streak(days: 1, repairReviews: nil))
+        #expect(evaluate([deck]).streak == Streak(days: 1, repairCards: nil))
     }
 
     @Test func aPastDayIsJudgedByWhatItOwedAtItsEnd() throws {
@@ -337,12 +337,12 @@ struct DailyProgressTests {
         #expect(activity().owed(onDayOf: today - 2, now: now, calendar: calendar).total == 1)
         #expect(activity().owed(onDayOf: today - 1, now: now, calendar: calendar).total == 1)
         // Two missed days in a row, and the plan of today, which is a share of one card, is done.
-        #expect(evaluate([deck]).streak == Streak(days: 1, repairReviews: nil))
+        #expect(evaluate([deck]).streak == Streak(days: 1, repairCards: nil))
         // The last one done, a day late: both days owe nothing now, so they count.
         review(1, of: &deck, at: now, all: true)
         #expect(activity().owed(onDayOf: today - 2, now: now, calendar: calendar).total == 0)
         #expect(activity().owed(onDayOf: today - 1, now: now, calendar: calendar).total == 0)
-        #expect(evaluate([deck]).streak == Streak(days: interval + 3, repairReviews: nil))
+        #expect(evaluate([deck]).streak == Streak(days: interval + 3, repairCards: nil))
     }
 
     @Test func aCardThatDidNotExistYetWasNotInThePlanOfThatDay() throws {
@@ -393,7 +393,7 @@ struct DailyProgressTests {
             #expect(evaluate([deck], at: date).ring == DailyRing(reviews: share, goal: share), "day \(day) done")
             // Every day's plan was done, so the streak runs from the learning on: the day the cards were
             // due was missed, which the plan of the day after it repaired.
-            #expect(evaluate([deck], at: date).streak == Streak(days: today + day - first + 1, repairReviews: nil), "day \(day) streak")
+            #expect(evaluate([deck], at: date).streak == Streak(days: today + day - first + 1, repairCards: nil), "day \(day) streak")
             remaining -= share
         }
         #expect(remaining == 74)
@@ -414,13 +414,13 @@ struct DailyProgressTests {
         progress = evaluate([deck])
         #expect(progress.ring == DailyRing(reviews: 10, goal: 10))
         #expect(progress.ring.isGoalMet)
-        #expect(progress.streak == Streak(days: 1, repairReviews: nil))
+        #expect(progress.streak == Streak(days: 1, repairCards: nil))
         // Catching up beyond the goal fills the laps and changes neither the goal nor the streak.
         review(20, of: &deck, at: now, all: true)
         progress = evaluate([deck])
         #expect(progress.ring == DailyRing(reviews: 30, goal: 10))
         #expect(progress.ring.laps == 3)
-        #expect(progress.streak == Streak(days: 1, repairReviews: nil))
+        #expect(progress.streak == Streak(days: 1, repairCards: nil))
     }
 
     @Test func decksAddUp() throws {

@@ -67,11 +67,11 @@ public struct Streak: Hashable, Sendable {
     /// yesterday and keep the streak; `nil` if no day is missed or the plan is done. The
     /// plan already holds what the missed day left over. The streak ends if today ends
     /// without them.
-    public var repairReviews: Int?
+    public var repairCards: Int?
 
-    public init(days: Int, repairReviews: Int?) {
+    public init(days: Int, repairCards: Int?) {
         self.days = days
-        self.repairReviews = repairReviews
+        self.repairCards = repairCards
     }
 
     /// How the streak stands. A day is met when nothing of its plan was left at its end
@@ -86,7 +86,7 @@ public struct Streak: Hashable, Sendable {
     ///   - owed: The cards of the plan that were left at the end of a study day, for today
     ///     the plan now.
     public static func evaluate(reviews: [Int: Int], today: Int, owed: (Int) -> Int) -> Streak {
-        guard let first = reviews.filter({ $0.value > 0 }).keys.min() else { return Streak(days: 0, repairReviews: nil) }
+        guard let first = reviews.filter({ $0.value > 0 }).keys.min() else { return Streak(days: 0, repairCards: nil) }
 
         enum State {
             case idle
@@ -113,14 +113,14 @@ public struct Streak: Hashable, Sendable {
         let owedToday = owed(today)
         switch state {
         case .idle:
-            return Streak(days: owedToday == 0 ? 1 : 0, repairReviews: nil)
+            return Streak(days: owedToday == 0 ? 1 : 0, repairCards: nil)
         case let .counting(days):
-            return Streak(days: days + (owedToday == 0 ? 1 : 0), repairReviews: nil)
+            return Streak(days: days + (owedToday == 0 ? 1 : 0), repairCards: nil)
         case let .missedOnce(daysBefore):
             if owedToday == 0 {
-                return Streak(days: daysBefore + 2, repairReviews: nil)
+                return Streak(days: daysBefore + 2, repairCards: nil)
             }
-            return Streak(days: daysBefore, repairReviews: owedToday)
+            return Streak(days: daysBefore, repairCards: owedToday)
         }
     }
 }

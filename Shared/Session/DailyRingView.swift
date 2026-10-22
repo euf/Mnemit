@@ -79,7 +79,7 @@ private struct DailyRingDetails: View {
                 }
             }
             .monospacedDigit()
-            if let repair = progress.streak.repairReviews {
+            if let repair = progress.streak.repairCards {
                 Text("Repair: \(repair) today")
                     .font(.footnote)
                     .foregroundStyle(.secondary)

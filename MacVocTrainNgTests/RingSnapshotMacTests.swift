@@ -23,7 +23,7 @@ struct RingSnapshotMacTests {
     }
 
     private func progress(_ fraction: Double) -> DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: Int((fraction * 20).rounded()), goal: 20), streak: Streak(days: 12, repairReviews: nil))
+        DailyProgress(ring: DailyRing(reviews: Int((fraction * 20).rounded()), goal: 20), streak: Streak(days: 12, repairCards: nil))
     }
 
     private func write<Content: View>(_ content: Content, name: String, dark: Bool) throws {
