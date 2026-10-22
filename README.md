@@ -45,8 +45,10 @@ are in [`references/`](references/).
 
 ### Studying
 
-- **No sessions.** Study is one stream: the day's plan (cards in learning, then review cards
-  with the lowest recall probability first, then new cards within the day's limits). When the
+- **No sessions, one stream over all decks.** Study is one stream over every active deck: the day's
+  plan (cards in learning, then review cards with the lowest recall probability first, then new
+  cards within the day's limits, taken from the decks in turn), each card from the deck whose next
+  card is most urgent and graded into that deck. Study This Deck runs it over one deck. When the
   plan is done the stream rests ("Done for today") and offers catch-up on the backlog, review
   ahead, practice that does not touch the schedule, and "+10 new" with the extra cards a day it
   adds next week.
@@ -107,7 +109,7 @@ are in [`references/`](references/).
 - **Pause a deck.** A deck can be paused, from its row on Today (swipe or long press), from the menu of
   its screen, or on the Mac in Study ▸ Pause Deck. A paused deck takes no part in the day: not in the
   plan, the goal, the rounds, the new cards the day admits (they go to the other decks), the streak,
-  the words in memory, the widget, the reminders, Study or the "Next" after a stream. Today lists it
+  the words in memory, the widget, the reminders or Study. Today lists it
   under "Paused", with no counts. It stays open: you can browse it, add cards and study it with Study
   This Deck, and what you review there fills the ring only through the cards of the other decks.
   When you resume it, its overdue reviews are a backlog like any other and come back a seventh a day.

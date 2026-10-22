@@ -106,7 +106,7 @@ The ring and every line beside it count cards; reviews do not enter. The daily g
 
 ### 2.5 Scope of Study
 
-Order for `StudyScope.all`: decks with `total > 0`, last studied first (`KnownDecks.last`), then list order. Each deck runs its own `StudyStream`. When a stream reaches `rest` and another deck has cards due, the rest screen puts **Next: <deck> · <n> due** first, above its own Keep Going and Add New Cards. Leaving anywhere loses nothing, every grade is saved. No mixing of decks inside one stream in this version: A1–A2 and B1 differ in level, and interleaving needs two open documents.
+Study on Today opens every active deck with `total > 0` and runs one stream over them (`StudyModel` with a `SessionDriver` per deck): each card comes from the deck whose next card is most urgent (a card in learning, then the review with the lowest recall probability, then a new card from the deck that has given the fewest), so a round always does the day's most urgent work whatever deck it is in. The grade goes to the card's deck; Card Info and Undo follow the card. The plan's rest comes when no deck has plan cards left. Leaving anywhere loses nothing, every grade is saved.
 
 ### 2.6 Code (typechecked)
 
@@ -442,7 +442,7 @@ The stream stops in three places, one `StreamRestView`, the same ring (96 pt) ov
 | Rest | Title | Figures | Buttons |
 |---|---|---|---|
 | End of a round (all but the last, inside the plan) | `Round 1 done` | iPhone, in this order: `12 cards this round`, `+4 words in memory today` when the day has added any, `Streak kept` with a flame in the accent (first round only), `Next round ≈ 2 min`. The Mac keeps `Streak kept`, `Next round ≈ 2 min`, `+4 words in memory today` | **Next Round** `.borderedProminent`, default action; **Done for Now** `.bordered` |
-| End of the plan | `Done for today` | cards in the plan, share recalled, `Ring closed` when the ring is closed, `+N words in memory today`, catch-up or next review | **Keep Going** when there is something to go on with, `+10 new`, **Done**; `Next: <deck>` at the bottom of the cover when another deck has cards due |
+| End of the plan | `Done for today` | cards in the plan, share recalled, `Ring closed` when the ring is closed, `+N words in memory today`, catch-up or next review | **Keep Going** when there is something to go on with, `+10 new`, **Done** |
 | End of a practice | `Practice complete` | cards, share recalled | **Done** |
 
 The round rest has no card on screen, so nothing is spoken and nothing is graded; Undo in the bar takes back the review that ended the round. Next Round and Done for Now are the only buttons: the screen offers no new cards, no catch-up and no next deck while the plan still has cards in the deck. The Mac's More menu keeps "+10 new", which goes on with the round.

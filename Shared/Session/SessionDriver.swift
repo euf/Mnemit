@@ -107,6 +107,17 @@ final class SessionDriver {
         cardsLeftInRound = guide.cardsLeft(cardsDone: done)
     }
 
+    /// The cards done today in the other decks of a run changed: the rounds count them from now on, and
+    /// a round they have ended is not rested for again here.
+    func setDoneElsewhere(_ count: Int) {
+        guard var guide = rounds, guide.doneElsewhere != count else { return }
+        guide.doneElsewhere = max(0, count)
+        rounds = guide
+        let done = guide.cardsDone(in: document)
+        stream.startRounds(at: max(stream.roundsPassed, guide.roundsDone(cardsDone: done)))
+        cardsLeftInRound = guide.cardsLeft(cardsDone: done)
+    }
+
     /// The app became active or stopped being: the time while it isn't active is not on any
     /// card's account (`ReviewLogEntry.duration`). It starts out active; the model reports
     /// the changes: the scene phase on the iPhone, the application on the Mac.

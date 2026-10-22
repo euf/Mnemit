@@ -42,13 +42,13 @@ Root is a `NavigationStack` on Today.
   **Pause Deck** (`pause.circle`); a swipe also offers Remove from List where the list may forget the deck.
 - **Paused** section at the bottom, only when a deck is paused: its rows in the secondary colour, no counts,
   the subtitle "Paused"; swipe and context menu **Resume Deck** (`play.circle`). A paused deck is no part of the
-  day: the ring, the rounds, Study and the "Next: …" leave it out. With every deck paused, Study is disabled.
+  day: the ring, the rounds and Study leave it out. With every deck paused, Study is disabled.
 - Toolbar **+** menu: Add Cards (to the last deck used), New Deck, Import.
 - `.searchable` over every card of every deck; a result pushes Card Detail.
 - **Empty state** (no decks): New Deck, Import Cards, Use iCloud Drive Folder. No mention of
   the Mac.
 
-**Study stream** (covers the screen; one deck at a time, the decks with cards due one after the other)
+**Study stream** (covers the screen; one stream over every active deck with cards today, each card from the deck whose next card is most urgent; Study This Deck runs it over one deck)
 - Header: the close button, the small ring with "Round 2 of 4" while rounds remain, "36 cards
   today" after them, the menu. Catch-up and review ahead name their stage before the ring;
   practice names itself and has no ring.
@@ -61,7 +61,7 @@ Root is a `NavigationStack` on Today.
   out of it); redo brings it back.
 - *Rest at the end of the plan* ("Done for today"): the size of the plan, the share recalled,
   "Ring closed" when the ring is closed, "+N words in memory today", the catch-up or the next
-  review; **Keep Going**, "+10 new", **Done**, and **Next: <deck>** when another deck has cards due.
+  review; **Keep Going**, "+10 new", **Done**. It comes when no deck has plan cards left.
 - *Rest of a practice* ("Practice complete"): its figures and **Done**.
 
 **How Today Works** (sheet; the info button at the leading edge of Today's toolbar. On the Mac the window of

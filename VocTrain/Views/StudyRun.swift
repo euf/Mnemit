@@ -1,46 +1,31 @@
 import SwiftUI
 import VocabCore
 
-/// One go at studying that covers the screen: a stream on one deck, or on several decks one
-/// after the other when the learner starts Study. The stream knows one deck only (`StudyModel`),
-/// so the queue lives here: when a deck's stream rests and another deck has cards due, the cover
-/// offers "Next", and the deck of the next stream is opened then, the one before it closed.
+/// One go at studying that covers the screen: one stream over the decks of the run. Study on
+/// Today opens every deck with cards today and the stream takes each card from the deck whose next
+/// card is most urgent (`StudyModel`); Study This Deck runs over one deck.
 @MainActor @Observable
 final class StudyRun {
-    /// What the first stream starts with; the streams after it are always the plan.
+    /// What the stream starts with; a practice takes the first deck only.
     let entry: StudyModel.Entry
-    /// The deck the stream runs on now.
-    private(set) var deck: OpenDeck
-    /// The decks that follow, in order.
-    private(set) var upcoming: [URL]
-    /// Whether the stream on `deck` starts with `entry`: only the first one does.
-    private(set) var isFirst = true
+    /// The decks of the run: the one it starts with, then the others with cards today.
+    let decks: [OpenDeck]
     /// Whether the run closes the deck it starts with. A run started from a Deck screen
     /// studies the deck the screen holds open, which the screen closes.
     let ownsDeck: Bool
 
     init(deck: OpenDeck, entry: StudyModel.Entry = .study, upcoming: [URL] = [], ownsDeck: Bool = true) {
-        self.deck = deck
+        decks = [deck] + upcoming.map { OpenDeck(url: $0) }
         self.entry = entry
-        self.upcoming = upcoming
         self.ownsDeck = ownsDeck
     }
 
-    /// The deck the next stream would run on.
-    var next: URL? { upcoming.first }
+    /// The deck the run starts with.
+    var deck: OpenDeck { decks[0] }
 
-    /// Goes on with the next deck; the one before it saves and closes in the background.
-    func advance() {
-        guard !upcoming.isEmpty else { return }
-        let previous = deck
-        deck = OpenDeck(url: upcoming.removeFirst())
-        isFirst = false
-        Task { await previous.close() }
-    }
-
-    /// Saves what is unsaved and lets go of the deck, if the run owns it.
+    /// Saves what is unsaved and lets go of the decks the run owns.
     func close() async {
-        if ownsDeck {
+        for (index, deck) in decks.enumerated() where index > 0 || ownsDeck {
             await deck.close()
         }
     }
@@ -60,35 +45,18 @@ extension OpenDeck: Identifiable {
     nonisolated var id: ObjectIdentifier { ObjectIdentifier(self) }
 }
 
-/// What covers the screen while the learner studies: the deck's stream once the deck is
-/// read, before it a spinner, or why the deck could not be opened.
+/// What covers the screen while the learner studies: the stream once the decks are read, before
+/// it a spinner, or why no deck could be opened.
 struct StudyRunView: View {
     var run: StudyRun
     var ring: DailyRingModel
     var knownDecks: KnownDecks
-    /// What today's plan takes from each deck, for what "Next" says.
+    /// What today's plan takes from each deck.
     var counts: [URL: StudyCounts]
     var onClose: () -> Void
 
     var body: some View {
-        let deck = run.deck
-        Group {
-            if let document = deck.document {
-                DeckStream(
-                    deck: deck, document: document, entry: run.isFirst ? run.entry : .study, ring: ring,
-                    knownDecks: knownDecks, next: next, onNext: run.advance, onClose: onClose)
-            } else {
-                StudyPlaceholder(failure: deck.failure, onClose: onClose)
-            }
-        }
-        // A new deck, a new stream: the state of the one before must not carry over.
-        .id(deck.id)
-    }
-
-    private var next: (name: String, due: Int)? {
-        guard let url = run.next else { return nil }
-        let name = url.deletingPathExtension().lastPathComponent
-        return (name, counts[url]?.total ?? 0)
+        RunStream(run: run, ring: ring, knownDecks: knownDecks, onClose: onClose)
     }
 }
 
@@ -119,51 +87,51 @@ struct StudyPlaceholder: View {
     }
 }
 
-/// The stream of one open deck, and what it needs around it: the deck's document attached to
-/// the merger, the ring that follows the reviews, and "Next" while the stream rests.
-private struct DeckStream: View {
-    var deck: OpenDeck
-    @ObservedObject var document: VocabularyDocument
-    var entry: StudyModel.Entry
+/// The stream over the decks of the run, and what it needs around it: each deck's document attached
+/// to its merger, and the ring that follows the reviews of all of them.
+private struct RunStream: View {
+    var run: StudyRun
     var ring: DailyRingModel
     var knownDecks: KnownDecks
-    var next: (name: String, due: Int)?
-    var onNext: () -> Void
     var onClose: () -> Void
     @State private var model: StudyModel?
     @Environment(\.scenePhase) private var scenePhase
 
-    /// Whether a study stream may change the deck: the file can be written, and `OpenDeck`
-    /// attached the undo manager of the UIDocument (#305).
-    private var canEdit: Bool {
-        deck.isEditable && document.isReadyToEdit
+    /// The decks a stream may change: read, writable, with the undo manager of the UIDocument
+    /// attached (#305).
+    private var ready: [VocabularyDocument] {
+        run.decks.compactMap { deck in
+            deck.document.flatMap { deck.isEditable && $0.isReadyToEdit ? $0 : nil }
+        }
+    }
+
+    /// Every deck is ready or could not be opened.
+    private var settled: Bool {
+        run.decks.allSatisfy { deck in
+            deck.failure != nil || (deck.document.map { deck.isEditable && $0.isReadyToEdit } ?? false)
+        }
     }
 
     var body: some View {
         Group {
             if let model {
                 StudyView(model: model, ring: ring, onClose: onClose)
-                    .safeAreaInset(edge: .bottom) {
-                        if model.isResting, !model.isRoundRest, let next {
-                            NextButton(name: next.name, due: next.due, action: onNext)
-                        }
-                    }
             } else {
-                StudyPlaceholder(failure: nil, onClose: onClose)
+                StudyPlaceholder(failure: settled && ready.isEmpty ? run.decks.compactMap(\.failure).first : nil, onClose: onClose)
             }
         }
-        .documentSync(document, fileURL: deck.url, isEditable: deck.isEditable, merger: deck.merger, isInSession: model != nil)
-        .onChange(of: canEdit, initial: true) {
-            if canEdit, model == nil {
-                model = StudyModel(document: document, entry: entry, ring: ring)
-                model?.setActive(scenePhase == .active)
+        .background {
+            ForEach(run.decks) { deck in
+                if let document = deck.document {
+                    DeckSync(deck: deck, document: document, isInSession: model != nil, onReady: start, onChange: { refreshRing() })
+                }
             }
         }
+        .onChange(of: run.decks.compactMap(\.failure).count, initial: true) { start() }
         .onAppear {
-            knownDecks.remember(deck.url)
+            knownDecks.remember(run.deck.url)
             refreshRing(reload: true)
         }
-        .onReceive(document.deckDidChange) { refreshRing() }
         .onChange(of: scenePhase) { _, phase in
             model?.setActive(phase == .active)
             if phase == .active { refreshRing(reload: true) }
@@ -177,28 +145,33 @@ private struct DeckStream: View {
         }
     }
 
-    /// Evaluates the ring over this deck, as it is now, and the other known ones, as their files
-    /// are. `reload` reads those files again.
+    /// Opens the stream once every deck is ready or failed.
+    private func start() {
+        guard model == nil, settled, !ready.isEmpty else { return }
+        model = StudyModel(documents: ready, entry: run.entry, ring: ring)
+        model?.setActive(scenePhase == .active)
+    }
+
+    /// Evaluates the ring over the decks of the run, as they are now, and the other known ones, as their
+    /// files are. `reload` reads those files again.
     private func refreshRing(reload: Bool = false) {
-        let others = knownDecks.byName.map(\.url).filter { !KnownDecks.isSameFile($0, deck.url) }
-        ring.refresh(documents: [document], files: others, reloadFiles: reload)
+        let others = knownDecks.byName.map(\.url).filter { url in !run.decks.contains { KnownDecks.isSameFile($0.url, url) } }
+        ring.refresh(documents: run.decks.compactMap(\.document), files: others, reloadFiles: reload)
     }
 }
 
-/// Goes on with the next deck, at the bottom of the cover while the stream of this deck rests.
-private struct NextButton: View {
-    var name: String
-    var due: Int
-    var action: () -> Void
+/// Keeps one deck of the run in step with its file, says when it is ready, and when it changes.
+private struct DeckSync: View {
+    var deck: OpenDeck
+    @ObservedObject var document: VocabularyDocument
+    var isInSession: Bool
+    var onReady: () -> Void
+    var onChange: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text("Next: \(name) · \(Text("\(due) due"))")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.glassProminent)
-        .controlSize(.large)
-        .padding(.horizontal, Spacing.margin)
-        .padding(.bottom, Spacing.gap)
+        Color.clear
+            .documentSync(document, fileURL: deck.url, isEditable: deck.isEditable, merger: deck.merger, isInSession: isInSession)
+            .onChange(of: deck.isEditable && document.isReadyToEdit, initial: true) { onReady() }
+            .onReceive(document.deckDidChange) { onChange() }
     }
 }
