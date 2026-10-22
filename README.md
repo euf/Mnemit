@@ -16,12 +16,13 @@ are in [`references/`](references/).
   under "Recalled". FSRS works as well or better with consistent grading as with four
   free choices, and its costliest input is Hard on a forgotten card, which still grows the
   interval ([`fsrs-research.md`](references/fsrs-research.md) §1).
-- **Swipes with dead zones.** ← Forgot, → Good, ↑ Easy, ↓ Hard. The recognised sectors are
-  asymmetric: Good −55°…55°, Easy 55°…120°, Forgot 150°…210°, Hard 240°…305°, and nothing
-  between the "no" and the "yes" sectors (120°…150°, 210°…240°): a swipe there springs back
-  however far or fast it goes. The card does not follow the raw finger: it moves halfway
-  between the finger and the grade's target (E, NE, W, SE), so every "yes" leans right and
-  Forgot goes straight left. On the Mac the same arrows, Space to reveal, 1–4 as in Anki.
+- **Swipes with dead zones.** ← Forgot, → Good, ↑ Easy, ↓ Hard. The recognised sectors follow a
+  clock face, 0 at the top, clockwise: Easy 345°…45°, Good 45°…135°, Hard 135°…195°, Forgot
+  225°…315°, and nothing in the two gaps between the "no" and the "yes" sectors (195°…225°,
+  315°…345°): a swipe there springs back however far or fast it goes. The card does not follow
+  the raw finger: it moves halfway between the finger and the grade's reference direction (Easy
+  15°, Good 90°, Hard 165°, Forgot 270°), so a finger straight up moves it a little to the right
+  of up and Forgot goes straight left. On the Mac the same arrows, Space to reveal, 1–4 as in Anki.
 - **One gesture.** Touching the card shows the answer; the same swipe grades it.
 - **One haptic per grade.** A swipe is felt once, when letting go would grade; the card that
   flies off after it is silent. A button, a key or a flick are felt once, as the card flies.
