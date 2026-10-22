@@ -89,7 +89,7 @@ struct StudyView: View {
                 }
                 ToolbarItem(placement: .principal) {
                     if !model.isResting {
-                        header
+                        StudyHeader(model: model, ring: ring)
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -155,58 +155,6 @@ struct StudyView: View {
     /// under the bar. It keeps its place when empty, so nothing below it moves.
     private var chip: some View {
         UndoChip(receipt: model.receipt, onUndo: model.undoLast, onExpire: model.dismissReceipt)
-    }
-
-    /// The middle of the bar: today's ring with its figures, and the stage before it when the
-    /// learner is not at today's plan: catch-up and review ahead don't change the plan but
-    /// fill the ring's laps, and practice changes neither the plan nor the schedule, so it
-    /// shows no ring.
-    private var header: some View {
-        HStack(spacing: 8) {
-            switch model.streamStage {
-            case .practiceMistakes, .practiceNewest:
-                Text("Practice")
-                    .font(.subheadline.weight(.semibold))
-            case .catchUp:
-                Text("Catch Up")
-                    .font(.subheadline.weight(.semibold))
-                ringAndFigures
-            case .reviewAhead:
-                Text("Review Ahead")
-                    .font(.subheadline.weight(.semibold))
-                ringAndFigures
-            case .plan, .rest:
-                ringAndFigures
-            }
-        }
-    }
-
-    /// "Round 2 of 4" while rounds remain, "36 cards today" after them, beside a small ring.
-    @ViewBuilder
-    private var ringAndFigures: some View {
-        let daily = ring.progress?.ring
-        HStack(spacing: 8) {
-            StreamRing(progress: ring.progress)
-            if let daily {
-                HStack(spacing: 4) {
-                    if let round = ring.progress.flatMap({ RoundStatus($0).round }) {
-                        Text(round)
-                    } else if daily.isGoalMet {
-                        Text("\(daily.done) cards today")
-                    } else {
-                        Text("\(daily.done) of \(daily.goal) cards")
-                        if let minutes = ring.progress?.minutesLeft {
-                            Text(verbatim: "· " + Format.timeLeft(minutes: minutes))
-                        }
-                    }
-                }
-                .font(.subheadline)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 
     /// In portrait the buttons sit below the card. In landscape the iPhone is too low for the
@@ -352,6 +300,66 @@ struct StudyView: View {
     private static let pulseDark = 0.18
     private static let pulseRise = 0.08
     private static let pulseFade = 0.4
+}
+
+/// The middle of the bar: today's ring with its figures, and the stage before it when the
+/// learner is not at today's plan: catch-up and review ahead don't change the plan but
+/// fill the ring's laps, and practice changes neither the plan nor the schedule, so it
+/// shows no ring.
+///
+/// A view of its own, so a new figure of the ring, which comes a moment after each grade, redraws
+/// the bar and not the whole screen with its card.
+private struct StudyHeader: View {
+    var model: StudyModel
+    var ring: DailyRingModel
+
+    var body: some View {
+        HStack(spacing: 8) {
+            switch model.streamStage {
+            case .practiceMistakes, .practiceNewest:
+                Text("Practice")
+                    .font(.subheadline.weight(.semibold))
+            case .catchUp:
+                Text("Catch Up")
+                    .font(.subheadline.weight(.semibold))
+                ringAndFigures
+            case .reviewAhead:
+                Text("Review Ahead")
+                    .font(.subheadline.weight(.semibold))
+                ringAndFigures
+            case .plan, .rest:
+                ringAndFigures
+            }
+        }
+    }
+
+    /// "Round 2 of 4" while rounds remain, "36 cards today" after them, beside a small ring.
+    @ViewBuilder
+    private var ringAndFigures: some View {
+        let daily = ring.progress?.ring
+        HStack(spacing: 8) {
+            StreamRing(progress: ring.progress)
+            if let daily {
+                HStack(spacing: 4) {
+                    if let round = ring.progress.flatMap({ RoundStatus($0).round }) {
+                        Text(round)
+                    } else if daily.isGoalMet {
+                        Text("\(daily.done) cards today")
+                    } else {
+                        Text("\(daily.done) of \(daily.goal) cards")
+                        if let minutes = ring.progress?.minutesLeft {
+                            Text(verbatim: "· " + Format.timeLeft(minutes: minutes))
+                        }
+                    }
+                }
+                .font(.subheadline)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
 }
 
 /// Today's done cards against the daily goal as a ring in the bar (`ProgressRing`), with the

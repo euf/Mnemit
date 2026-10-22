@@ -229,7 +229,8 @@ enum RingDrawing {
 }
 
 /// MK's `GradientGenerator`: a conic gradient rendered pixel by pixel. The image depends on the size
-/// and colours, not on the progress, so the last one is kept while a ring animates.
+/// and colours, not on the progress, so the last few are kept while a ring animates: the study screen's
+/// small ring and the big one of its rest alternate, and each costs the main thread a moment to make.
 enum GradientGenerator {
     private struct Key: Equatable {
         var scale: CGFloat
@@ -239,16 +240,17 @@ enum GradientGenerator {
         var endPoint: CGPoint
     }
 
-    // ponytail: one cached image; a dictionary if several ring sizes animate at once.
-    nonisolated(unsafe) private static var cached: (Key, CGImage)?
+    /// The images made last, the newest at the end; a handful of ring sizes are on screen in a session.
+    nonisolated(unsafe) private static var cached: [(Key, CGImage)] = []
+    private static let cacheSize = 4
     private static let lock = NSLock()
 
     static func image(scale: CGFloat, size: CGSize, colors: [CGColor], locations: [Float], startPoint: CGPoint = CGPoint(x: 0.5, y: 0.5), endPoint: CGPoint) -> CGImage? {
         let key = Key(scale: scale, size: size, colors: colors, locations: locations, endPoint: endPoint)
         lock.lock()
         defer { lock.unlock() }
-        if let cached, cached.0 == key {
-            return cached.1
+        if let hit = cached.first(where: { $0.0 == key }) {
+            return hit.1
         }
 
         let w = Int(size.width * scale)
@@ -265,13 +267,16 @@ enum GradientGenerator {
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
 
         var data = [ARGB]()
+        data.reserveCapacity(w * h)
+        // Converted once: a conversion per pixel took a second at the size of a big ring.
+        let converted = colors.map(ARGB.init)
 
         for y in 0..<h {
             for x in 0..<w {
                 let c = pixelDataForGradient(
                     at: CGPoint(x: x, y: y),
                     size: CGSize(width: w, height: h),
-                    colors: colors,
+                    colors: converted,
                     locations: locations,
                     startPoint: startPoint,
                     endPoint: endPoint
@@ -281,15 +286,17 @@ enum GradientGenerator {
         }
 
         let image: CGImage? = data.withUnsafeMutableBytes { buffer -> CGImage? in
-            guard let ctx = CGContext(
-                data: buffer.baseAddress,
-                width: w,
-                height: h,
-                bitsPerComponent: bitsPerComponent,
-                bytesPerRow: w * bytesPerPixel,
-                space: colorSpace,
-                bitmapInfo: bitmapInfo.rawValue
-            ) else {
+            guard
+                let ctx = CGContext(
+                    data: buffer.baseAddress,
+                    width: w,
+                    height: h,
+                    bitsPerComponent: bitsPerComponent,
+                    bytesPerRow: w * bytesPerPixel,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo.rawValue
+                )
+            else {
                 return nil
             }
             ctx.interpolationQuality = .none
@@ -299,12 +306,13 @@ enum GradientGenerator {
         }
 
         if let image {
-            cached = (key, image)
+            cached.append((key, image))
+            if cached.count > cacheSize { cached.removeFirst() }
         }
         return image
     }
 
-    private static func pixelDataForGradient(at point: CGPoint, size: CGSize, colors: [CGColor], locations: [Float], startPoint: CGPoint, endPoint: CGPoint) -> ARGB {
+    private static func pixelDataForGradient(at point: CGPoint, size: CGSize, colors: [ARGB], locations: [Float], startPoint: CGPoint, endPoint: CGPoint) -> ARGB {
         let t = conicalGradientStop(point, size, startPoint, endPoint)
         return interpolatedColor(t, colors, locations)
     }
@@ -322,7 +330,7 @@ enum GradientGenerator {
         return Float(t)
     }
 
-    private static func interpolatedColor(_ t: Float, _ colors: [CGColor], _ locations: [Float]) -> ARGB {
+    private static func interpolatedColor(_ t: Float, _ colors: [ARGB], _ locations: [Float]) -> ARGB {
         assert(!colors.isEmpty)
         assert(colors.count == locations.count)
 
@@ -350,10 +358,7 @@ enum GradientGenerator {
             p = lerp(t, inRange: p0...p1, outRange: 0...1)
         }
 
-        let color0 = ARGB(c0)
-        let color1 = ARGB(c1)
-
-        return color0.interpolateTo(color1, p)
+        return c0.interpolateTo(c1, p)
     }
 }
 
