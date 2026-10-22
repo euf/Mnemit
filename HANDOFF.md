@@ -36,9 +36,10 @@
 
 ## Открыто
 
-- Волна 3 по `references/flows.md`: импорт `.apkg` с историей, CSV/TSV на iPhone, экспорт с
-  заголовками Anki, ссылка на общие колоды AnkiWeb.
-- Живьём не проверены: виджет на телефоне (снимок через keychain, тап → учёба), «Compute from
-  Review Log» на iPhone, клавиатура и фокус в Add Cards.
+- Живьём не проверены на телефоне: виджет (снимок через keychain, тап → учёба), «Open in Mnemit»
+  для `.apkg` из Files/Safari/Mail, «Compute from Review Log», клавиатура и фокус в Add Cards.
+- Mac: новая колода из `.apkg` до сохранения называется в заголовке окна «Untitled», хотя Save As
+  предлагает имя колоды Anki; `.colpkg` пикер не предлагает, хотя `AnkiImport.read` его читает.
 - Mac: тест `CardListViewTests.firstClickIntoTableSelectsRow` падает, когда тестовое приложение
-  не на переднем плане; сам клик и фокус проверены вживую (`vqa`).
+  не на переднем плане; клик и фокус проверены вживую (`vqa`).
+- Позже по `references/flows.md`: примеры предложений из Tatoeba в Add Cards и на экране карточки.
