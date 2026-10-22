@@ -110,6 +110,8 @@ final class WidgetSync {
         let dueByDeck = inputs.decks.compactMap { source -> [Int]? in
             switch source {
             case let .open(deck, studyCalendar, allowance):
+                // A paused deck asks nothing of the day.
+                guard !deck.learningOptions.isPaused else { return nil }
                 return WidgetSnapshot.dueCounts(of: [deck], at: dates, calendar: studyCalendar, newCardAllowance: allowance)
             case let .file(url, allowance):
                 return KnownDeckCounts.counts(at: url, on: dates, allowance: allowance)?.map(\.total)

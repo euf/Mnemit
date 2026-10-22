@@ -16,6 +16,10 @@ struct DeckActions {
     var practiceNewest: () -> Void
     var show: (DocumentView.Screen) -> Void
     var showOptions: () -> Void
+    /// Whether the deck is paused (`LearningOptions.isPaused`): the menu then offers to resume it.
+    var isPaused: Bool
+    /// Pauses the deck, or resumes it.
+    var setPaused: (Bool) -> Void
     var importCards: () -> Void
     var exportCards: () -> Void
     var addLessonWords: () -> Void
@@ -82,6 +86,13 @@ struct AppCommands: Commands {
 
             Button("Learning Options…") { actions?.showOptions() }
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
+            if actions?.isPaused == true {
+                Button("Resume Deck") { actions?.setPaused(false) }
+                    .disabled(actions?.isEditable != true || actions?.isInSession == true)
+            } else {
+                Button("Pause Deck") { actions?.setPaused(true) }
+                    .disabled(actions?.isEditable != true || actions?.isInSession == true)
+            }
 
             Divider()
 

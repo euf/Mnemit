@@ -124,6 +124,25 @@ struct HowTodayWorksTests {
         #expect(values(content.sections[6])["Last automatic fit"] == "None yet")
     }
 
+    /// A paused deck is named in the plan as "Paused: <name>", with no share of the new cards, and the figures are
+    /// those of the decks that take part; its FSRS settings are still shown.
+    @Test func aPausedDeckIsNamedInThePlanAndLeftOutOfTheFigures() throws {
+        let cards = (0..<10).map { Card(text: CardText(question: "n\($0)", answer: "x")!, created: Self.day.addingTimeInterval(-86_400)) }
+        var pausedOptions = LearningOptions()
+        pausedOptions.isPaused = true
+        let taking = HowTodayWorks.Source(name: "Greek B1", deck: try Deck(cards: cards))
+        let paused = HowTodayWorks.Source(name: "Greek B2", deck: try Deck(learningOptions: pausedOptions, cards: cards))
+        let content = HowTodayWorks.make([taking, paused], at: Self.day, calendar: StudyCalendar())
+        let alone = HowTodayWorks.make([taking], at: Self.day, calendar: StudyCalendar())
+
+        let pausedRow = HowTodayWorks.Row.value(label: "Paused: Greek B2", value: "–")
+        #expect(content.sections[0].rows.contains(pausedRow))
+        #expect(values(content.sections[0])["Greek B2"] == nil)
+        #expect(content.sections[0].rows.filter { $0 != pausedRow } == alone.sections[0].rows)
+        #expect(content.sections[1...4] == alone.sections[1...4])
+        #expect(content.sections.suffix(2).map(\.title) == ["FSRS · Greek B1", "FSRS · Greek B2"])
+    }
+
     /// A drawing of the whole sheet in one, 6,400 pixels tall, came out blank: it is drawn in two, the plan, the
     /// capacity and the pace, then the rest.
     @Test func theSheetIsDrawnToAPNG() async throws {

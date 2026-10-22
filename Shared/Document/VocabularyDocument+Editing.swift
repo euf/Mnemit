@@ -112,6 +112,15 @@ extension VocabularyDocument {
         perform(change, actionName: String(localized: "Change Learning Options"))
     }
 
+    /// Pauses the deck or resumes it (`LearningOptions.isPaused`): a paused deck takes no part in the
+    /// day. A change of the options like any, so it merges and syncs with them; one undo step.
+    func setPaused(_ isPaused: Bool) {
+        var options = deck.learningOptions
+        options.isPaused = isPaused
+        guard isReadyToEdit, let change = DeckChange.changingLearningOptions(options, in: deck, calendar: calendar) else { return }
+        perform(change, actionName: isPaused ? String(localized: "Pause Deck") : String(localized: "Resume Deck"))
+    }
+
     /// Applies what the automatic refit found, see `ParameterRefit`: the new parameters, if
     /// they are kept, and the note of the attempt, to the learning options as they are now.
     /// One undo step, named like the change of the parameters it is. A deck that has moved on

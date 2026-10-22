@@ -56,6 +56,11 @@ struct HowTodayWorks: Equatable, Sendable {
             .value(label: String(localized: "New cards admitted"), value: plan.newAdmitted.formatted()),
         ]
         for (index, deck) in decks.enumerated() where breakdown.decks.indices.contains(index) {
+            // A paused deck is no part of the plan: it is named, with no share.
+            if deck.options.isPaused {
+                rows.append(.value(label: String(localized: "Paused: \(name(of: deck, at: index, of: decks.count))"), value: "–"))
+                continue
+            }
             let share = breakdown.decks[index]
             let new = deck.options.newCardsPerSession.map { $0.formatted() } ?? "∞"
             let production = deck.options.newProductionPerSession.map { $0.formatted() } ?? "∞"
@@ -197,14 +202,15 @@ extension HowTodayWorks {
     }
 
     /// Works the screen out of `decks` at `now`, the way the daily ring does: from the decks and their logs alone,
-    /// so it shows what Today shows. Replays the logs: call it off the main actor.
+    /// so it shows what Today shows; a paused deck is left out of the figures and named in the plan. Replays the
+    /// logs: call it off the main actor.
     nonisolated static func make(_ decks: [Source], at now: Date, calendar: StudyCalendar) -> HowTodayWorks {
         let activities = decks.map { DeckActivity(deck: $0.deck, calendar: calendar) }
         let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar)
         return HowTodayWorks(
             progress: progress,
             breakdown: DayBreakdown(activities, progress: progress, at: now, calendar: calendar),
-            memory: .total(decks.map { MemoryEstimate(deck: $0.deck, at: now, calendar: calendar) }),
+            memory: progress.memory,
             decks: decks.map { DeckInfo(name: $0.name, options: $0.deck.learningOptions) })
     }
 

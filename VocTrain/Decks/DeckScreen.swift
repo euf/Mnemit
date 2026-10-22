@@ -17,11 +17,13 @@ struct DeckScreen: View {
     var delete: () async throws -> Void
     /// Opens the browser of the shared decks.
     var showAnkiWeb: () -> Void = {}
+    /// The deck was paused or resumed from its menu.
+    var didChangePause: () -> Void = {}
 
     var body: some View {
         DeckContent(
             name: deck.name, knownCounts: knownCounts, document: deck.document, failure: deck.failure, merger: deck.merger,
-            canEdit: deck.isEditable, start: start, rename: rename, delete: delete, showAnkiWeb: showAnkiWeb
+            canEdit: deck.isEditable, start: start, rename: rename, delete: delete, showAnkiWeb: showAnkiWeb, didChangePause: didChangePause
         )
         .background {
             if let document = deck.document {
@@ -58,6 +60,7 @@ struct DeckContent: View {
     var rename: (String) async throws -> Void
     var delete: () async throws -> Void
     var showAnkiWeb: () -> Void = {}
+    var didChangePause: () -> Void = {}
 
     @State private var showsRename = false
     @State private var confirmsDelete = false
@@ -97,6 +100,7 @@ struct DeckContent: View {
                 Menu("More", systemImage: "ellipsis") {
                     Button("Rename…", systemImage: "pencil") { showsRename = true }
                     if let document {
+                        PauseDeckButton(document: document, canEdit: canEdit, didChange: didChangePause)
                         ExportLink(document: document, name: name)
                     }
                     Button("Delete Deck", systemImage: "trash", role: .destructive) { confirmsDelete = true }
@@ -155,6 +159,31 @@ struct DeckContent: View {
     private var studyIsDue: Bool { counts.map { $0.total > 0 } ?? true }
 }
 
+/// "Pause Deck" or, for a paused deck, "Resume Deck", in the menu of the deck screen. Watches the document,
+/// so the item turns over as soon as the deck is paused.
+private struct PauseDeckButton: View {
+    @ObservedObject var document: VocabularyDocument
+    var canEdit: Bool
+    var didChange: () -> Void
+
+    var body: some View {
+        let isPaused = document.deck.learningOptions.isPaused
+        Group {
+            if isPaused {
+                Button("Resume Deck", systemImage: "play.circle", action: toggle)
+            } else {
+                Button("Pause Deck", systemImage: "pause.circle", action: toggle)
+            }
+        }
+        .disabled(!canEdit || !document.isReadyToEdit)
+    }
+
+    private func toggle() {
+        document.setPaused(!document.deck.learningOptions.isPaused)
+        didChange()
+    }
+}
+
 /// The sections that need the deck itself.
 private struct LoadedSections: View {
     @ObservedObject var document: VocabularyDocument
@@ -184,14 +213,16 @@ private struct LoadedSections: View {
             Text("Today")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
-                if counts.total == 0, counts.catchUp > 0 {
+                if document.deck.learningOptions.isPaused {
+                    Text("Paused. Today's plan leaves this deck out.")
+                } else if counts.total == 0, counts.catchUp > 0 {
                     Text("Done for today")
                 } else if counts.total == 0, let nextDue = counts.nextDue {
                     Text("Nothing due. Next review \(Format.due(nextDue, now: now))")
                 } else {
                     Text("What today's plan takes from this deck.")
                 }
-                if counts.catchUp > 0 {
+                if counts.catchUp > 0, !document.deck.learningOptions.isPaused {
                     Text("+\(counts.catchUp) to catch up this week")
                 }
             }

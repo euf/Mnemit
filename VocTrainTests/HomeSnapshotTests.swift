@@ -38,12 +38,12 @@ struct HomeSnapshotTests {
     }
 
     func today(
-        decks: [KnownDeck] = [greekA1, greekB1], counts: [URL: StudyCounts], progress: DailyProgress?, query: String = "",
+        decks: [KnownDeck] = [greekA1, greekB1], counts: [URL: StudyCounts], paused: Set<URL> = [], progress: DailyProgress?, query: String = "",
         hits: [AllCardsSearch.Hit] = []
     ) -> some View {
         NavigationStack {
             TodayScreen(
-                decks: decks, counts: counts, progress: progress, now: Self.now, query: .constant(query), hits: hits,
+                decks: decks, counts: counts, paused: paused, progress: progress, now: Self.now, query: .constant(query), hits: hits,
                 isSearching: false, canForget: { _ in true }, study: { _ in }, showDeck: { _ in }, showCard: { _ in },
                 forget: { _ in }, addCards: {}, newDeck: {}, chooseFolder: {}, openDeck: {}, showSettings: {}, refresh: {})
         }
@@ -172,6 +172,17 @@ struct HomeSnapshotTests {
 
     @Test func todayWithCardsDueAtLargeTypeSizes() async throws {
         try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)), types: [.xxxLarge, .accessibility3])
+    }
+
+    /// A deck paused: it moves to a "Paused" section at the bottom, in the secondary colour, with no counts, and the
+    /// day is the other decks'.
+    @Test func todayWithAPausedDeck() async throws {
+        let paused = KnownDeck(url: URL(filePath: "/Decks/Greek B2.mnemit"))
+        try await shoot(
+            "today-paused",
+            today(
+                decks: [Self.greekA1, paused, Self.greekB1], counts: leftCounts(done: 10), paused: [paused.url],
+                progress: Self.roundsProgress(done: 10, streak: 12)))
     }
 
     /// Before the first round: the time it takes to keep the streak, which is not kept yet.

@@ -162,6 +162,8 @@ final class Reminders {
 
     private func counts(of deck: KnownDeck, on dates: [Date], open: OpenDeck?) async -> [StudyCounts]? {
         if let open, KnownDecks.isSameFile(open.url, deck.url), let document = open.document {
+            // A paused deck asks nothing of the day.
+            guard !document.deck.learningOptions.isPaused else { return nil }
             let allowance = document.newCardAllowance
             return dates.map { StudySession.counts(for: document.deck, at: $0, calendar: document.calendar, newCardAllowance: allowance) }
         }
