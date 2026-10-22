@@ -204,6 +204,43 @@ struct StudyModelTests {
         #expect(model.questionNumber == 2)
     }
 
+    /// The view pulses its background when this grows: for a grade that sends a card to another
+    /// day, once, and not for one that keeps it today, for practice, or for undo.
+    @Test func progressPulsesOnlyWhenACardGoesToAnotherDay() throws {
+        // A due review card: Good lets it go to another day.
+        let lastReview = created.addingTimeInterval(-10 * 86400)
+        let state = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: created.addingTimeInterval(-86400), reviews: 1)
+        let due = Card(question: "due", answer: "x", created: created, learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
+        let reviewDocument = try VocabularyDocument(deck: Deck(cards: [due]), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+        let reviewUndo = UndoManager()
+        reviewUndo.groupsByEvent = false
+        reviewDocument.attachUndoManager(reviewUndo)
+        let review = StudyModel(document: reviewDocument)
+        #expect(review.progressPulses == 0)
+        review.reveal()
+        grade(review, .good, undoManager: reviewUndo)
+        #expect(review.progressPulses == 1)
+        reviewUndo.undo()
+        reviewUndo.redo()
+        #expect(review.progressPulses == 1)
+
+        // A new card: Forgot keeps it today, Easy sends it to another day.
+        let (document, undoManager) = try makeDocument(questions: ["dom"])
+        let model = StudyModel(document: document)
+        model.reveal()
+        grade(model, .again, undoManager: undoManager)
+        #expect(model.progressPulses == 0)
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.progressPulses == 1)
+
+        // Practice schedules nothing.
+        let practice = StudyModel(document: document, entry: .practiceMistakes)
+        practice.reveal()
+        grade(practice, .good, undoManager: undoManager)
+        #expect(practice.progressPulses == 0)
+    }
+
     @Test func streamWithoutCardsRests() throws {
         let (document, _) = try makeDocument(questions: [])
         let model = StudyModel(document: document)

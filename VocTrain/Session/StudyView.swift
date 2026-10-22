@@ -33,6 +33,7 @@ struct StudyView: View {
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage(GreekSpeech.autoSpeakKey) private var autoSpeak = true
     @State private var flight: CardFlight
     /// The card whose info shows in a sheet.
@@ -72,6 +73,14 @@ struct StudyView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Behind the card and the buttons, above the screen's own grey: the flash of a card
+            // that went to another day. It moves nothing, so Reduce Motion keeps it.
+            .keyframeAnimator(initialValue: 0.0, trigger: model.progressPulses) { content, level in
+                content.background(Color.appAccent.opacity(max(0, level) * (colorScheme == .dark ? Self.pulseDark : Self.pulseLight)))
+            } keyframes: { _ in
+                LinearKeyframe(1, duration: Self.pulseRise)
+                CubicKeyframe(0, duration: Self.pulseFade, startVelocity: 0)
+            }
             .background(Color(.systemGroupedBackground))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -329,6 +338,12 @@ struct StudyView: View {
     private static let forgotWidth: CGFloat = 170
     /// How far a finger moves before it swipes the card, in points.
     private static let swipeStartDistance: CGFloat = 6
+    /// The background pulse for a card sent to another day: the accent at this opacity at the
+    /// peak, reached in `pulseRise` seconds and gone `pulseFade` seconds later.
+    private static let pulseLight = 0.12
+    private static let pulseDark = 0.18
+    private static let pulseRise = 0.08
+    private static let pulseFade = 0.4
 }
 
 /// Today's reviews against the goal as a ring in the bar (`ProgressRing`), with the lap in its

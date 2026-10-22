@@ -38,6 +38,9 @@ final class StudyModel: Identifiable {
     /// Counts the questions asked: one more with every move to another card, also back
     /// after an undo, and to rest. The view speaks a Greek question when it changes.
     private(set) var questionNumber = 0
+    /// Counts the grades that sent a card to another day: the view pulses its background when
+    /// it grows, once per grade, however the grade was given. Undo and redo don't count.
+    private(set) var progressPulses = 0
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
     /// same study day.
@@ -93,8 +96,12 @@ final class StudyModel: Identifiable {
     }
 
     func grade(_ grade: Grade) {
-        guard stage == .revealed else { return }
-        driver.grade(grade)
+        guard stage == .revealed, driver.grade(grade) else { return }
+        // FSRS let the card go to another day: progress the learner can feel. Not a card that
+        // comes back today, a practice (no interval) or a leech that was suspended.
+        if let receipt = driver.lastReceipt, !receipt.isLeech, case .days = receipt.interval {
+            progressPulses += 1
+        }
     }
 
     /// Suspends the card being asked, so no session asks it until the learner resumes
