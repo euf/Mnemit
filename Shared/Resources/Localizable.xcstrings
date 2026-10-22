@@ -5096,12 +5096,12 @@
         }
       }
     },
-    "The parameters are fitted again at %@ reviews, then every %lld days or after %@ more reviews, and replace the current ones only if they predict your newest reviews at least %@ better.": {
+    "The parameters are fitted again at %@ reviews, then every %lld days or after %@ more reviews, and replace the current ones only if they predict your newest reviews better.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Parameter werden bei %@ Abfragen, danach alle %lld Tage oder nach %@ weiteren Abfragen neu angepasst und ersetzen die aktuellen nur, wenn sie deine neuesten Abfragen um mindestens %@ besser vorhersagen."
+            "value": "Die Parameter werden bei %@ Abfragen, danach alle %lld Tage oder nach %@ weiteren Abfragen neu angepasst und ersetzen die aktuellen nur, wenn sie deine neuesten Abfragen besser vorhersagen."
           }
         }
       }

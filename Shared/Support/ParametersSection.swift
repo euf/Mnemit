@@ -85,8 +85,7 @@ struct ParametersSection: View {
         let second = ParameterRefit.secondFitReviewCount.formatted()
         let days = ParameterRefit.intervalDays
         let step = ParameterRefit.reviewStep.formatted()
-        let gain = Format.percent(ParameterRefit.requiredImprovement)
-        return Text("The parameters are fitted again at \(second) reviews, then every \(days) days or after \(step) more reviews, and replace the current ones only if they predict your newest reviews at least \(gain) better.")
+        return Text("The parameters are fitted again at \(second) reviews, then every \(days) days or after \(step) more reviews, and replace the current ones only if they predict your newest reviews better.")
     }
 
     private func resetComputation() {

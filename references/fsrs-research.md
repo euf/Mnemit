@@ -64,7 +64,8 @@ Adopt (decided 22.10.2026):
    ones only if they fit better. **[I]** A learner who never opens Options would keep default
    parameters forever. Built: `ParameterRefit` (CLAUDE.md, fork section): fits at 400 and 1,500
    reviews, then every 30 days or 1,000 reviews; kept when the log loss on the newest 20 % of
-   the log, which the fit did not train on, is 1 % lower.
+   the log, which the fit did not train on, is lower at all (as Anki keeps fitted parameters only
+   when they beat the current ones; the holdout guards against overfitting).
 2. **Anki preset parameters and desired retention on `.apkg` import.** Loudwalk and StudyDaily
    read each Anki deck preset's FSRS parameters and desired retention; Avorio fits parameters
    to the imported log. **[I]** Without this an imported deck is replayed under Mnemit's

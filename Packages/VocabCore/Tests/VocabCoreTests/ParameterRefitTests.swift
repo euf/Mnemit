@@ -13,7 +13,7 @@ struct ParameterRefitTests {
 
     /// A learner who forgets fast and along a steep curve. Next to the defaults the fit gains
     /// about 4 % of log loss on its reviews; `SyntheticLearner.unusual` gains less than 1 %, which
-    /// the 1 % rule keeps out.
+    /// is still kept: any gain on the holdout counts.
     static let forgetful: FSRSParameters = {
         var w = SyntheticLearner.unusual.weights
         w[0] = 0.1
@@ -95,11 +95,10 @@ struct ParameterRefitTests {
             computed: .init(logLoss: computed, rmse: 0.05))
     }
 
-    @Test func aFitIsKeptOnlyWhenOnePercentLower() {
-        #expect(ParameterRefit.requiredImprovement == 0.01)
-        #expect(ParameterRefit.keeps(comparison(current: 0.5, computed: 0.4949)))
+    @Test func aFitIsKeptWhenLowerOnTheHoldout() {
+        #expect(ParameterRefit.requiredImprovement == 0)
+        #expect(ParameterRefit.keeps(comparison(current: 0.5, computed: 0.4999)))
         #expect(ParameterRefit.keeps(comparison(current: 0.5, computed: 0.3)))
-        #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.4951)))
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.5)))
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.52)))
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: .nan)))

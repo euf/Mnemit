@@ -24,7 +24,7 @@ public enum ParameterRefit {
     public static let holdoutShare = 0.2
     /// By how much, relative to the log loss of the current parameters on those reviews, the
     /// fitted ones must be lower to be kept.
-    public static let requiredImprovement = 0.01
+    public static let requiredImprovement = 0.0
 
     /// Whether a deck with `reviewCount` usable reviews is due for a fit at `now`.
     ///
@@ -46,7 +46,7 @@ public enum ParameterRefit {
     /// Whether to keep fitted parameters: their log loss on the newest reviews is lower than
     /// that of the current ones by at least `requiredImprovement`, relative to it.
     public static func keeps(_ comparison: FSRSOptimizer.Comparison) -> Bool {
-        comparison.computed.logLoss <= comparison.current.logLoss * (1 - requiredImprovement)
+        comparison.computed.logLoss < comparison.current.logLoss * (1 - requiredImprovement)
     }
 
     /// What a fit found, to apply to the learning options of the deck as they are then.
