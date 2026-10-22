@@ -43,9 +43,7 @@ struct DeckWebBrowserView: View {
                     }
                 }
                 .navigationTitle(browser.pageTitle.isEmpty ? Text("Shared Decks") : Text(verbatim: browser.pageTitle))
-                #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                #endif
+                .inlineTitle()
                 .toolbar { toolbar }
         }
         .alert(
@@ -110,6 +108,17 @@ struct DeckWebBrowserView: View {
         Menu("More", systemImage: "ellipsis") {
             Button("Open in Safari", systemImage: "safari", action: browser.openInSafari)
         }
+    }
+}
+
+extension View {
+    /// The small title of the iPhone's bar; the Mac's window has its own.
+    fileprivate func inlineTitle() -> some View {
+        #if os(iOS)
+        navigationBarTitleDisplayMode(.inline)
+        #else
+        self
+        #endif
     }
 }
 
