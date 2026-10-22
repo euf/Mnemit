@@ -62,10 +62,11 @@ struct StartScreen: View {
     var body: some View {
         NavigationStack(path: $path) {
             TodayScreen(
-                decks: knownDecks.byName, counts: deckCounts.counts, progress: ring.progress, now: Date(), query: $query,
+                decks: knownDecks.byName, counts: deckCounts.counts, paused: deckCounts.paused, progress: ring.progress, now: Date(), query: $query,
                 hits: search.hits(for: query), isSearching: !search.isLoaded,
                 canForget: { !knownDecks.isInFolder($0.url) }, study: study, showDeck: showDeck, showCard: showCard,
-                forget: { knownDecks.forget($0.url) }, addCards: { openLastDeck(importing: nil) }, newDeck: { showsNewDeck = true },
+                forget: { knownDecks.forget($0.url) }, setPaused: setPaused, addCards: { openLastDeck(importing: nil) },
+                newDeck: { showsNewDeck = true },
                 chooseFolder: { choose(folder: true) }, openDeck: { choose(folder: false) },
                 showSettings: { showsSettings = true }, refresh: refreshAll, importCards: { isChoosingImport = true },
                 showAnkiWeb: showWeb
@@ -226,7 +227,8 @@ struct StartScreen: View {
             case let .deck(slot):
                 DeckScreen(
                     deck: deck, knownCounts: deckCounts.counts[deck.url], start: { studyDeck(deck, entry: $0) },
-                    rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) }, showAnkiWeb: showWeb)
+                    rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) }, showAnkiWeb: showWeb,
+                    didChangePause: { refreshRing(withOpen: deck) })
             case let .card(_, id):
                 CardHost(deck: deck, id: id)
             }
@@ -272,21 +274,34 @@ struct StartScreen: View {
         run = StudyRun(deck: deck, entry: entry, ownsDeck: false)
     }
 
-    /// The decks with cards due, the one studied last first and the others in the order of the
-    /// list. With nothing due, the deck studied last alone: its stream rests at once and offers
-    /// to go on. Before the decks are read every deck counts as due.
+    /// The decks of the day with cards due, see `TodayDecks.studyQueue(counts:isRead:last:)`: a paused deck is
+    /// not in it.
     private func queue() -> [URL] {
-        let urls = knownDecks.byName.map(\.url)
-        let isRead = !deckCounts.counts.isEmpty
-        var due = urls.filter { deckCounts.counts[$0].map { $0.total > 0 } ?? !isRead }
-        let last = lastUsed(in: urls)
-        if let last, let index = due.firstIndex(of: last) {
-            due.insert(due.remove(at: index), at: 0)
+        let decks = knownDecks.byName
+        return TodayDecks(decks, paused: deckCounts.paused)
+            .studyQueue(counts: deckCounts.counts, isRead: deckCounts.isRead, last: lastUsed(in: decks.map(\.url)))
+    }
+
+    /// Pauses the deck or resumes it from its row on Today: the file is opened, changed, saved and closed,
+    /// and Today reads the decks again.
+    private func setPaused(_ deck: KnownDeck, _ isPaused: Bool) {
+        guard run == nil, path.isEmpty else { return }
+        Task {
+            let open = OpenDeck(url: deck.url)
+            if let document = await open.editableDocument() {
+                document.setPaused(isPaused)
+                await open.settleChanges()
+            }
+            await open.close()
+            await refreshAll()
         }
-        if due.isEmpty, let rest = last ?? urls.first {
-            return [rest]
-        }
-        return due
+    }
+
+    /// The deck on the screen was paused or resumed: the ring and the new cards of the decks are worked out
+    /// again, with this one as the document has it.
+    private func refreshRing(withOpen deck: OpenDeck) {
+        let others = knownDecks.byName.map(\.url).filter { !KnownDecks.isSameFile($0, deck.url) }
+        ring.refresh(documents: deck.document.map { [$0] } ?? [], files: others)
     }
 
     /// The deck used last, as the list spells its file.
@@ -520,7 +535,7 @@ struct StartScreen: View {
         if isCovered {
             try? await Task.sleep(for: .milliseconds(600))
         }
-        if deckCounts.counts.isEmpty {
+        if !deckCounts.isRead {
             await refreshAll()
         }
         study(.all)

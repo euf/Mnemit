@@ -4322,6 +4322,46 @@
         }
       }
     },
+    "Pause Deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel pausieren"
+          }
+        }
+      }
+    },
+    "Paused": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausiert"
+          }
+        }
+      }
+    },
+    "Paused. Today's plan leaves this deck out.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausiert. Der heutige Plan lässt diesen Stapel aus."
+          }
+        }
+      }
+    },
+    "Paused: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausiert: %@"
+          }
+        }
+      }
+    },
     "Period": {
       "localizations": {
         "de": {
@@ -4918,6 +4958,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Karten wieder aufnehmen"
+          }
+        }
+      }
+    },
+    "Resume Deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel fortsetzen"
           }
         }
       }

@@ -166,6 +166,8 @@ struct DocumentView: View {
                 practiceNewest: practiceNewestWords,
                 show: { screen = $0 },
                 showOptions: { showingOptions = true },
+                isPaused: document.deck.learningOptions.isPaused,
+                setPaused: { document.setPaused($0) },
                 importCards: { importCards() },
                 exportCards: exportCards,
                 addLessonWords: { addingLessonWords = canEdit && session == nil },

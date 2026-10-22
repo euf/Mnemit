@@ -269,7 +269,8 @@
   лога (35 000 оценок): 0,31 с в release на Mac, 2,4 с в debug
   (`DailyProgressPerformanceTests`, `MNEMIT_PERF=1`).
   iPhone считает по всем колодам из `KnownDecks` (файлы читает `DeckFileReader`), Mac — по
-  открытым документам (`OpenDecks`). Снимок виджета (`WidgetSnapshot.done`, `.goal`) держит
+  открытым документам (`OpenDecks`); колоды на паузе (`LearningOptions.isPaused`) не входят ни в
+  одно из этих чисел. Снимок виджета (`WidgetSnapshot.done`, `.goal`) держит
   сделанные карточки и цель; ключ JSON остался `reviews` через `CodingKeys`, чтобы сохранённый
   снимок читался.
 - Слова в памяти (`MemoryEstimate` в VocabCore, на экране «≈ N words in memory») — сумма вероятностей вспомнить
@@ -320,7 +321,20 @@
   не открыт лист). Карточка из потока (`CardInfoSheet`) — тот же `CardDetailScreen`. Study без
   колоды ведёт колоды с планом по очереди (`StudyRun`: использованная последней первой, дальше по
   списку); пока поток колоды отдыхает, кнопка «Next: …» открывает следующую. Последнюю колоду
-  приложение само не открывает. Акцент — системный индиго `#5856D6` в `AccentColor` (все три каталога ассетов:
+  приложение само не открывает. Колоду можно поставить на паузу (`LearningOptions.isPaused`, ключ `paused` в
+  `deck.json` пишется только при true, версия формата та же: старая сборка роняет ключ, и колода снова в деле;
+  ключ едет с опциями и сливается по `learningOptionsChanged`, позднее побеждает). Колода на паузе не входит в
+  план, цель, раунды, ёмкость, допуск (его делят остальные колоды), streak, слова в памяти, виджет, напоминания,
+  Study и «Next: …»: `DailyProgress.evaluate` и `DayBreakdown` пропускают `DeckActivity.isPaused` (место такой
+  колоды в `newCardAllowances` занимает 0; `DailyRingModel` не даёт ей допуска, и её план — по её лимитам),
+  `KnownDeckCounts` не считает ей карточек и держит её в `paused`, `TodayDecks` разводит секции Today и очередь
+  Study (`studyQueue`), `RoundGuide` для её потока нет. Колода открывается: экран, браузер и Study This Deck
+  работают, оценки пишутся как всегда, но в кольцо идут только через карточки колод в деле. Строка Today:
+  свайп и контекстное меню «Pause Deck» / «Resume Deck» (`pause.circle` / `play.circle`; файл открывает
+  `OpenDeck`, меняет `VocabularyDocument.setPaused`, закрывает), колоды на паузе — секция «Paused» внизу, серым, без
+  счётов, подзаголовок «Paused»; то же пункт меню экрана колоды. Mac: Study ▸ Pause Deck / Resume Deck, кольцо и
+  подсказка считают открытые документы без пауз. «How Today Works» называет её в плане строкой «Paused: <имя>».
+  После возобновления её просроченные карточки — хвост по `DailyGoal.backlogShare`, без особых правил. Акцент — системный индиго `#5856D6` в `AccentColor` (все три каталога ассетов:
   iPhone, Mac, виджет): заливка кнопки, кольцо, глиф, но не текст; счётчики New/Learning/Review нейтральные. Спека —
   `references/design-spec.md`, контракт экранов — `references/flows.md`. Кадры: Today и экран колоды —
   `VocTrainTests/HomeSnapshotTests` (каталог — `TEST_RUNNER_HOME_SHOTS_DIR`), браузер, карточка и

@@ -13,12 +13,17 @@ enum StudyScope: Hashable {
 /// each, and Study. A tap on Study shows the
 /// first card at once; a tap on a deck opens its screen. The search finds a card in any deck.
 ///
+/// A paused deck (`LearningOptions.isPaused`) is no part of the day: it sits in a section of its own at the
+/// bottom, without counts, and Study leaves it out.
+///
 /// Shows what it is given and holds no state but the search text it is bound to, so the
 /// snapshot test can render it, see `StartScreen` for where the figures come from.
 struct TodayScreen: View {
     var decks: [KnownDeck]
-    /// What today's plan takes from each deck; a deck missing here is not read yet, or can't be.
+    /// What today's plan takes from each deck; a deck missing here is not read yet, or can't be, or is paused.
     var counts: [URL: StudyCounts]
+    /// The decks that were read as paused.
+    var paused: Set<URL> = []
     /// `nil` until evaluated.
     var progress: DailyProgress?
     var now: Date
@@ -35,6 +40,8 @@ struct TodayScreen: View {
     var showDeck: (KnownDeck) -> Void
     var showCard: (AllCardsSearch.Hit) -> Void
     var forget: (KnownDeck) -> Void
+    /// Pauses the deck, or resumes it.
+    var setPaused: (KnownDeck, Bool) -> Void = { _, _ in }
     var addCards: () -> Void
     var newDeck: () -> Void
     var chooseFolder: () -> Void
@@ -44,6 +51,11 @@ struct TodayScreen: View {
     var importCards: () -> Void = {}
     /// Opens the browser of the shared decks.
     var showAnkiWeb: () -> Void = {}
+
+    /// Whether the decks were read: until then the figures are placeholders.
+    private var isRead: Bool {
+        !counts.isEmpty || !paused.isEmpty
+    }
 
     /// The cards left of today's plan, all decks: its share of the backlog included, never the backlog.
     private var due: Int {
@@ -116,23 +128,58 @@ struct TodayScreen: View {
             Section {
                 SummaryRow(
                     due: due, newDue: newDue, catchUp: catchUp, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(),
-                    now: now, isLoaded: !counts.isEmpty)
+                    now: now, isLoaded: isRead)
             }
-            Section("Decks") {
-                ForEach(decks) { deck in
-                    DeckRow(name: deck.name, counts: counts[deck.url], now: now) { showDeck(deck) }
-                        .swipeActions {
-                            if canForget(deck) {
-                                Button("Remove from List", systemImage: "minus.circle", role: .destructive) { forget(deck) }
+            let sections = TodayDecks(decks, paused: paused)
+            if !sections.active.isEmpty {
+                Section("Decks") {
+                    ForEach(sections.active) { deck in
+                        DeckRow(name: deck.name, counts: counts[deck.url], now: now) { showDeck(deck) }
+                            .swipeActions(allowsFullSwipe: !canForget(deck)) {
+                                pauseButton(deck, pausing: true)
+                                removeButton(deck)
                             }
-                        }
+                            .contextMenu { pauseButton(deck, pausing: true) }
+                    }
+                }
+            }
+            if !sections.paused.isEmpty {
+                Section("Paused") {
+                    ForEach(sections.paused) { deck in
+                        DeckRow(name: deck.name, counts: nil, now: now, isPaused: true) { showDeck(deck) }
+                            .swipeActions(allowsFullSwipe: !canForget(deck)) {
+                                pauseButton(deck, pausing: false)
+                                removeButton(deck)
+                            }
+                            .contextMenu { pauseButton(deck, pausing: false) }
+                    }
                 }
             }
         }
         .listStyle(.insetGrouped)
         .refreshable { await refresh() }
         .safeAreaBar(edge: .bottom) {
-            StudyButton(isDue: due > 0 || counts.isEmpty, due: due) { study(.all) }
+            StudyButton(isDue: due > 0 || !isRead, due: due) { study(.all) }
+                .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
+        }
+    }
+
+    /// "Pause Deck", or "Resume Deck" for a deck that is paused.
+    @ViewBuilder
+    private func pauseButton(_ deck: KnownDeck, pausing: Bool) -> some View {
+        if pausing {
+            Button("Pause Deck", systemImage: "pause.circle") { setPaused(deck, true) }
+                .tint(.indigo)
+        } else {
+            Button("Resume Deck", systemImage: "play.circle") { setPaused(deck, false) }
+                .tint(.indigo)
+        }
+    }
+
+    @ViewBuilder
+    private func removeButton(_ deck: KnownDeck) -> some View {
+        if canForget(deck) {
+            Button("Remove from List", systemImage: "minus.circle", role: .destructive) { forget(deck) }
         }
     }
 
@@ -374,10 +421,13 @@ struct SummaryRow: View {
 /// leaves for the days after; a tap opens its screen.
 /// The chevron is drawn by hand, as the row is a button, not a `NavigationLink`: the deck has
 /// to be opened before the push, see `PushedDecks`.
+///
+/// A paused deck has no counts: its name and "Paused" in the secondary colour.
 struct DeckRow: View {
     var name: String
     var counts: StudyCounts?
     var now: Date
+    var isPaused = false
     var open: () -> Void
 
     var body: some View {
@@ -385,6 +435,7 @@ struct DeckRow: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(name)
+                        .foregroundStyle(isPaused ? .secondary : .primary)
                     if let subtitle {
                         subtitle
                             .font(.subheadline)
@@ -419,6 +470,7 @@ struct DeckRow: View {
     }
 
     private var subtitle: Text? {
+        if isPaused { return Text("Paused") }
         guard let counts else { return nil }
         if counts.total > 0 {
             return Text("\(counts.new) new · \(counts.learning) learning · \(counts.review) review")

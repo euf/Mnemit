@@ -17,6 +17,9 @@ import VocabCore
 /// for a deck read from its file in `NewCardAllowances.today`, where whoever builds the plan of a
 /// deck from its file finds it.
 ///
+/// A paused deck (`LearningOptions.isPaused`) is in none of it: the evaluation leaves it out, and it gets no
+/// allowance, so its own plan is the one of its limits, which "Study This Deck" takes.
+///
 /// The work runs off the main actor, after a short pause that later calls replace, so a
 /// grade doesn't wait for it, and a quick run of grades costs one evaluation. It waits for a card
 /// that speaks to be through (`GreekSpeech.whenQuiet()`): the figures change a moment later, and the
@@ -50,7 +53,7 @@ final class DailyRingModel {
             try? await Task.sleep(for: delay)
             await GreekSpeech.shared.whenQuiet()
             guard !Task.isCancelled else { return }
-            let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity], NewCardAllowances) in
+            let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity], NewCardAllowances, [URL]) in
                 var fileActivities = known
                 if mustRead {
                     fileActivities = [:]
@@ -63,20 +66,29 @@ final class DailyRingModel {
                 let read = files.filter { fileActivities[$0] != nil }
                 let activities = decks.map { DeckActivity(deck: $0, calendar: calendar) } + read.compactMap { fileActivities[$0] }
                 let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar)
-                // In the order of the activities: the documents, then the files that were read.
+                // In the order of the activities: the documents, then the files that were read. A paused deck has
+                // none, and the allowance of its file from before it was paused goes with it.
                 var allowances = NewCardAllowances()
+                var paused: [URL] = []
                 for (url, allowance) in zip(read, progress.newCardAllowances.dropFirst(decks.count)) {
-                    allowances[url] = allowance
+                    if fileActivities[url]?.isPaused == true {
+                        paused.append(url)
+                    } else {
+                        allowances[url] = allowance
+                    }
                 }
-                return (progress, fileActivities, allowances)
+                return (progress, fileActivities, allowances, paused)
             }.value
             guard !Task.isCancelled, let self else { return }
             StallTrace.measure("ringApply") {
                 fileActivities = result.1
                 progress = result.0
                 NewCardAllowances.today.merge(result.2)
-                for (document, allowance) in zip(documents, result.0.newCardAllowances) {
-                    document.newCardAllowance = allowance
+                for url in result.3 {
+                    NewCardAllowances.today[url] = nil
+                }
+                for ((document, deck), allowance) in zip(zip(documents, decks), result.0.newCardAllowances) {
+                    document.newCardAllowance = deck.learningOptions.isPaused ? nil : allowance
                 }
             }
         }

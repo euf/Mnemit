@@ -401,3 +401,16 @@ as `DeckActivity.plan` does) and is rounded to the nearest word. **Milestones** 
 500, 1000, 1500, 2000, 3000 and 5000: the next one above the number now, and the one crossed
 today (the number at 04:00 below it, now at or above it). The decks add up (`MemoryEstimate.total`).
 _Avoid_: words learned, vocabulary size, «выученные слова»
+
+**Paused deck** (on screen: "Pause Deck", "Resume Deck", "Paused" / „Stapel pausieren“, „Stapel fortsetzen“,
+„Pausiert“; RU «колода на паузе»):
+A deck the learner paused (`LearningOptions.isPaused`, the key `paused` in `deck.json`, written only while
+true): it takes no part in the day. It is left out of the plan, the goal, the rounds, the capacity, the
+admission of new cards (the allowance is split over the other decks), the streak, the words in memory, the
+widget, the reminders, Study on Today and the "Next: …" after a stream (`DailyProgress.evaluate`,
+`DeckActivity.isPaused`). It stays open: its screen, the card browser and "Study This Deck" work, and the
+reviews written there fill the ring only through the cards of the decks that take part. On resume its overdue
+reviews are a backlog like any, spread by `DailyGoal.backlogShare`. The pause travels with the options: a
+merge takes it from the version that changed them last, and an older app version drops the key, so the deck is
+no longer paused there.
+_Avoid_: suspended deck (a card is suspended, `Card.isSuspended`), archived deck, «заморозка»

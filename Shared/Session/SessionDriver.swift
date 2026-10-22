@@ -337,10 +337,11 @@ struct RoundGuide: Equatable, Sendable {
     }
 
     /// The guide for a stream over `document`, from the progress the app showed when the stream was
-    /// opened; `nil` before there is one, and for a day without rounds.
+    /// opened; `nil` before there is one, for a day without rounds, and for a paused deck: it is no
+    /// part of the day's rounds, so its stream has none to rest at.
     @MainActor
     init?(progress: DailyProgress?, document: VocabularyDocument) {
-        guard let progress, progress.rounds > 0 else { return nil }
+        guard let progress, progress.rounds > 0, !document.deck.learningOptions.isPaused else { return nil }
         let here = document.deck.doneCards(onDayOf: document.clock.now, calendar: document.calendar)
         self.init(ends: progress.roundEnds, doneElsewhere: progress.ring.done - here)
     }

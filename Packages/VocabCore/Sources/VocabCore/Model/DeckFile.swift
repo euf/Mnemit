@@ -37,7 +37,9 @@ import Foundation
 /// bring back a card deleted on the other device. `updatesParametersAutomatically` and
 /// `lastAutoFit` of the options (`ParameterRefit`) came without one too, and are left out
 /// of the file while they hold their defaults: an older app version drops them, fits
-/// nothing by itself and forgets when the newer one last did.
+/// nothing by itself and forgets when the newer one last did. `paused` of the options, left
+/// out while the deck is not paused, came the same way: an older app version drops it, and
+/// the deck is no longer paused.
 ///
 /// When `currentVersion` goes up: a missing key takes its default, so a newer app
 /// version reads an older deck of the same version. The other way round, an older
@@ -254,6 +256,8 @@ extension DeckFile {
         var updatesParametersAutomatically: Bool?
         /// Left out until the app first fits the parameters by itself.
         var lastAutoFit: AutoFitRecord?
+        /// Left out while the deck is not paused.
+        var paused: Bool?
 
         init(_ options: LearningOptions) {
             targetRecall = options.targetRecall
@@ -272,6 +276,7 @@ extension DeckFile {
             leechThreshold = options.leechThreshold
             updatesParametersAutomatically = options.updatesParametersAutomatically ? nil : false
             lastAutoFit = options.lastAutoFit.map(AutoFitRecord.init)
+            paused = options.isPaused ? true : nil
         }
 
         func learningOptions() throws -> LearningOptions {
@@ -298,6 +303,7 @@ extension DeckFile {
             options.leechThreshold = leechThreshold
             options.updatesParametersAutomatically = updatesParametersAutomatically ?? options.updatesParametersAutomatically
             options.lastAutoFit = lastAutoFit?.autoFit
+            options.isPaused = paused ?? false
             return options
         }
 
@@ -305,7 +311,7 @@ extension DeckFile {
             case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
             case newProductionPerSession, productionUnlockDays, newCardOrder
             case caseSensitive, fuzzing, parameters, revealedRecallWeight, optimizeFromRevealed, leechThreshold
-            case updatesParametersAutomatically, lastAutoFit
+            case updatesParametersAutomatically, lastAutoFit, paused
         }
 
         init(from decoder: Decoder) throws {
@@ -338,6 +344,7 @@ extension DeckFile {
             updatesParametersAutomatically = try container.decodeIfPresent(Bool.self, forKey: .updatesParametersAutomatically)
             // A damaged record costs the deck one more fit, not its readability.
             lastAutoFit = try? container.decodeIfPresent(AutoFitRecord.self, forKey: .lastAutoFit)
+            paused = try? container.decodeIfPresent(Bool.self, forKey: .paused)
         }
 
         func encode(to encoder: Encoder) throws {
@@ -359,6 +366,7 @@ extension DeckFile {
             try container.encode(leechThreshold, forKey: .leechThreshold)
             try container.encodeIfPresent(updatesParametersAutomatically, forKey: .updatesParametersAutomatically)
             try container.encodeIfPresent(lastAutoFit, forKey: .lastAutoFit)
+            try container.encodeIfPresent(paused, forKey: .paused)
         }
     }
 

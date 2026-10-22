@@ -93,7 +93,11 @@ public struct DayBreakdown: Hashable, Sendable {
 extension DayBreakdown {
     /// Takes apart the `progress` of `decks` at `now`, which `DailyProgress.evaluate(_:at:calendar:)` gave for
     /// the same decks: `lastDays` study days of capacity and rings are kept.
-    public init(_ decks: [DeckActivity], progress: DailyProgress, at now: Date, calendar: StudyCalendar, lastDays: Int = 14) {
+    ///
+    /// A paused deck (`DeckActivity.isPaused`) is left out, as `evaluate` leaves it: its entry in `decks` is
+    /// all zeros.
+    public init(_ given: [DeckActivity], progress: DailyProgress, at now: Date, calendar: StudyCalendar, lastDays: Int = 14) {
+        let decks = given.filter { !$0.isPaused }
         let today = calendar.dayNumber(for: now)
         var reviews: [Int: Int] = [:]
         for deck in decks { reviews.merge(deck.reviewsByDay, uniquingKeysWith: +) }
@@ -141,16 +145,23 @@ extension DayBreakdown {
         var plan = Plan()
         var shares: [DeckNewCards] = []
         var catchUp = 0
-        for (index, deck) in decks.enumerated() {
+        var taking = 0
+        for (index, deck) in given.enumerated() {
+            guard !deck.isPaused else {
+                shares.append(DeckNewCards(allowance: 0, ceiling: 0, admitted: 0))
+                continue
+            }
+            let history = histories[taking]
+            taking += 1
             let atStart = deck.plan(onDayOf: now, calendar: calendar)
             plan.reviewsDue += atStart.review - atStart.backlogTaken
             plan.backlogTaken += atStart.backlogTaken
             plan.backlog += atStart.backlogTaken + atStart.catchUp
             plan.learning += atStart.learning
             let allowance = progress.newCardAllowances.indices.contains(index) ? progress.newCardAllowances[index] : 0
-            let admitted = min(allowance, histories[index].starts[today]?.new ?? 0)
+            let admitted = min(allowance, history.starts[today]?.new ?? 0)
             plan.newAdmitted += admitted
-            shares.append(DeckNewCards(allowance: allowance, ceiling: histories[index].newCeilingToday, admitted: admitted))
+            shares.append(DeckNewCards(allowance: allowance, ceiling: history.newCeilingToday, admitted: admitted))
             catchUp += deck.owed(now: now, calendar: calendar, newCardAllowance: allowance).catchUp
         }
         self.plan = plan
