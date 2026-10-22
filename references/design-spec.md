@@ -78,7 +78,7 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + summary 88 + 
 | Title | `.navigationTitle("Today")` | Large, automatic. German `Heute` already in the catalog. |
 | Toolbar | one `ToolbarItem(.primaryAction)` | `Menu("More", systemImage: "ellipsis")`: Choose Mnemit Folder…, Open Deck…, Settings. The HIG prefers symbols without borders in toolbars [H:toolbars]: `ellipsis` without the circle. "Show Introduction" leaves the menu; Settings has it. |
 | Summary | `Section { SummaryRow }` | Ring 72 (`@ScaledMetric(relativeTo: .title2)`), gap 16, row `.padding(.vertical, 8)`. Lines: `.title2.weight(.semibold)` / `.subheadline` secondary / `.subheadline` secondary. One `.monospacedDigit()` on the text column. `.accessibilityElement(children: .combine)`. |
-| Ring | `Circle().stroke` + `trim` | Line = 14 % of diameter, round cap, track `.fill.tertiary`, progress `Color.accentColor`, `checkmark` bold at 34 % when full. Single ring, no gradient, no head glyph, no black backing: the HIG forbids imitating Activity rings and asks other rings to look different [H:activity-rings]. |
+| Ring | `ProgressRing` | A Fitness-style ring, drawing and sources in §5.7: line 15 % of the diameter, gradient along the stroke from a lighter tint of the accent to the accent, round caps, dim track, laps past 100 % on top of a full ring with a shadow at the head. In the middle the streak in days (bold rounded number, the word "days" under it from 56 pt), nothing at 0 days. The owner asked for Fitness quality on 22.10.2026; [H:activity-rings] advises against imitating the Activity rings, the ring here follows the owner. |
 | Streak line | `Label` | `flame.fill`; accent when today's goal is met, secondary when it is not yet met. Hidden at 0 days. Text colour stays secondary. |
 | Section header | `Section("Decks")` | System. |
 | Deck row | `HStack` with two buttons | Button 1 (name block, trailing total) `.buttonStyle(.plain)`, `contentShape(Rectangle())`, starts the deck. Button 2 `info.circle`, `.imageScale(.large)`, `frame(minWidth: 44, minHeight: 44)`, `.buttonStyle(.borderless)`, opens details. Both need an explicit non-automatic style, otherwise a tap anywhere fires both [U:nilcoalescing]. Name `.body`; subtitle `.subheadline` secondary. Total `.body`, `.monospacedDigit()`, trailing. |
@@ -110,32 +110,11 @@ Order for `StudyScope.all`: decks with `total > 0`, last studied first (`KnownDe
 ```swift
 import SwiftUI
 
-/// Today's ring: one ring in the accent colour. Not an Activity ring ([H:activity-rings]).
+/// Drawn by `ActivityRing` in `Shared/Support/ActivityRing.swift`, with the middle from `ProgressRing.swift` (§5.7); the stub gives the blocks below their type.
 struct ProgressRing: View {
     var fraction: Double
     var diameter: CGFloat
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        let line = diameter * 0.14
-        ZStack {
-            Circle().stroke(.fill.tertiary, lineWidth: line)
-            if fraction > 0 {
-                Circle()
-                    .trim(from: 0, to: min(fraction, 1))
-                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: line, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-            }
-            if fraction >= 1 {
-                Image(systemName: "checkmark")
-                    .font(.system(size: diameter * 0.34, weight: .bold))
-                    .foregroundStyle(Color.accentColor)
-            }
-        }
-        .frame(width: diameter, height: diameter)
-        .animation(reduceMotion ? nil : .smooth, value: fraction)
-        .accessibilityHidden(true)
-    }
+    var body: some View { EmptyView() }
 }
 
 struct TodayScreen: View {
@@ -447,7 +426,7 @@ Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98
 ### 4.2 Header
 
 - Leading: `Button(role: .close)` (xmark). It replaces the `chevron.backward` End Session button; the stream has no session to end, every grade is saved. The HIG asks for the standard Close symbol and no text label [H:toolbars].
-- Principal: `ProgressRing(diameter: 22)` (line 3) + `Text("14 of 20")`, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)`. Goal met: `26 today` with a full ring. This replaces both the 120-pt linear bar with `n / N` and the landscape `rowProgress`.
+- Principal: `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + `Text("14 of 20")`, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)` with the lap as its value ("Lap 2"). The ring is empty in the middle during the first lap, shows "×2" once the goal is reached, "×3" after the second lap. Goal met: `26 today`. This replaces both the 120-pt linear bar with `n / N` and the landscape `rowProgress`.
 - Trailing: `Menu("More", systemImage: "ellipsis")` with Undo, Card Info, Suspend Card, Speak toggle (as now).
 - The streak is not in the header. At the moment the goal is met, reuse the `UndoChip` slot for one line (`Goal reached · 12-day streak`, 3 s) and give `sensoryFeedback(.success)`. No new element.
 - Practice stages show the word `Practice` as the principal text, without the ring.
@@ -674,6 +653,36 @@ func contrast(_ a: Double, _ b: Double) -> Double {
 
 On macOS `AccentColor` applies only when the system accent is Multicolor, and selection and sidebar icons follow the user's choice [G §12][H:sidebars]. No `.tint(...)` override on the Mac. Ring and prominent buttons use `Color.accentColor` and `.borderedProminent`, so a Graphite machine shows them gray by the owner's choice.
 
+### 5.7 Rings: drawing, middle, sources
+
+The owner asked on 22.10.2026 for rings in the manner of the Fitness rings, taken from open-source rings and without a dependency. The drawing is `Shared/Support/ActivityRing.swift`, ported from [WolfActivityRing](https://github.com/wolfmcnally/WolfActivityRing) (`WolfActivityRing.swift`, Wolf McNally). The repository has no LICENSE file; the source file carries an MIT permission notice without a copyright line, which the port keeps in its header, and `THIRD_PARTY_NOTICES.md` and `Credits.html` list it.
+
+| What | Taken from WolfActivityRing | Changed here |
+|---|---|---|
+| The stroke | `Circle().trim` with an `AngularGradient` from the start colour to the tip colour, round caps, `rotationEffect(-90)` | the gradient runs over the lap the head is in, so it ends in the tip colour at the head; `color` is `Color.dailyRingTail`, `tipColor` the accent |
+| The tip | `RingCap` (a half disc on the head), `RingClipShape` (the annulus that cuts the shadow to the stroke), the shadow offset along the way the ring runs, the same-colour hairline that hides the seam | shown only past 100 % (the original from 95 %) and not at a whole number of laps, where the head is at the top; shadow radius, offset and the hairline scale with the stroke (the original: radius 2.5 pt, black 30 %) |
+| Laps | the original stretches the gradient over `360 × progress` on one full ring, so the head colour is not the tip colour past 100 % | a full ring in the tip colour under, and on it the gradient arc of `progress mod 1`: the lap starts light and ends in the accent at the head, as in the Fitness rings |
+| Track | `backgroundColor` | the tip colour at 25 % |
+| Dropped | the options struct, the outline hairlines, the content closure and `ActivityRingPercent`, the `.animation(.easeOut)` inside | the view is `Animatable`, so the gradient, the tip and the lap move together when the progress changes; the caller animates it with `.smooth`, and not at all under Reduce Motion (`ProgressRing`) |
+
+Read for comparison and not used as code: [MKRingProgressView](https://github.com/maxkonovalov/MKRingProgressView) (the first lap solid under the one on top, the shadow clipped to the stroke, a track at 15 % of the start colour), [HarshilShah/ActivityRings](https://github.com/HarshilShah/ActivityRings) (by its README a SpriteKit port of MKRingProgressView, not SwiftUI) and [etaletovic/ActivityRings](https://github.com/etaletovic/ActivityRings) (`AngularGradient` on a trimmed circle, `rotationEffect` for laps, circles as caps). The layering in the Laps row is MKRingProgressView's.
+
+**Colour.** Head: the accent. Tail: the accent mixed with 25 % white in device RGB. `AccentContrastTests.ringGradientHoldsItsContrastInEveryAppearance` reads both ends from the pixels of a view in each appearance and holds the tail to 3:1 on the four surfaces and to 1.3:1 against the accent, in light, dark and both increased-contrast variants. The test reads pixels because `Color.accentColor` is the asset's accent only inside a view: `UIColor(Color.accentColor)` gives the system blue. Line width 15 % of the diameter, at least 3 pt.
+
+**Middle.** Outside the stream, the streak in days: bold rounded number, 34 % of the diameter, and the word "days" (9 pt at least, 14 %) under it from a diameter of 56 pt; nothing at 0 days. Inside the stream (`StreamRing`, the Mac session's `DailyRingView(inStream: true)`): empty in the first lap, "×2" once the goal is reached (`DailyRing.laps` is 1), "×3" after the second lap. The lap shown is `laps + 1`. The pure choice is `RingCenter(_:inStream:)`.
+
+| Place | Ring | Middle |
+|---|---|---|
+| Today (`SummaryRow`) | 72 pt, `@ScaledMetric(relativeTo: .title2)`, at most 96 | streak and "days" |
+| Rest screen (`StreamRestView`) | 96 pt | streak and "days" |
+| Study bar (`StreamRing`) | 30 pt, `@ScaledMetric(relativeTo: .subheadline)`, at most 44; inner width 21 pt holds "×2" at 11 pt (three characters shrink to 0.5) | lap |
+| Mac toolbar chip (`RingChip`) | 24 pt | streak, number only |
+| Mac session header (`DailyRingView`) | 28 pt, a button with a popover | lap |
+
+VoiceOver: `DailyRingView` reads "Day streak: 5 days" or "Lap 2" as its label and "14 / 20" as its value, "Daily Goal" while the middle is empty; in the study bar `StreamRing` passes `speaksCenter: true`, so "Lap 2" joins "14 of 20" in the bar's combined element. `ProgressRing` is otherwise hidden from accessibility, as the text beside it says the figures. The popover shows "Goal reached" with a check mark and "Lap ×N" from the second lap.
+
+Pictures: `VocTrainTests/RingTests.swift` (`TEST_RUNNER_STUDY_SHOTS_DIR`) writes `ring-1-today`, `ring-2-study-bar`, `ring-3-chip`, `ring-4-rest` in light and dark at 0, 40, 100, 160 and 230 % (46 of 20 reviews), and `ring-5-edges` at 5, 95, 100, 105, 150, 200 and 300 %; `MacVocTrainNgTests/RingSnapshotMacTests.swift` writes the Mac chip and the session ring.
+
 ## 6. Mac
 
 ### 6.1 Hierarchy
@@ -684,9 +693,9 @@ Level 0 Today (all decks) → level 1 deck (details) → level 2 the deck docume
 
 Toolbar order, left to right: segmented `Cards | Statistics` (principal, as now) · ring chip · **Study** (`.borderedProminent`) · fixed space · Add Lesson Words · Learning Options.
 
-- Ring chip: `ProgressRing(diameter: 16)` + `Text("14/20")` monospaced, `.help("14 of 20 reviews today · 12-day streak")`, `.sharedBackgroundVisibility(.hidden)` (an indicator takes no button background).
+- Ring chip: `ProgressRing(diameter: 24)` with the streak in the middle (number only, 24 pt is too small for the word) + `Text("14/20")` monospaced, `.help("14 of 20 reviews today · 12-day streak")`, `.sharedBackgroundVisibility(.hidden)` (an indicator takes no button background).
 - Study: `Button("Study")` without count and without the `graduationcap` label. `ToolbarSpacer(.fixed)` between it and the symbol buttons: a text button next to symbol buttons reads as one control [H:toolbars]. The menu command Study ▸ Start Session (⌘L) exists, so the toolbar item has its menu twin [H:toolbars]; rename the item `Start Studying`.
-- Session header (`SessionView.header`): replace the 320-pt `ProgressView` and `n / N` with the ring chip; keep the mistakes counter and Edit Card…; End Session becomes Done.
+- Session header (`SessionView.header`): replace the 320-pt `ProgressView` and `n / N` with `DailyRingView(progress:, inStream: true)`, the lap in the middle as on the iPhone; keep the mistakes counter and Edit Card…; End Session becomes Done.
 - Spacing: `GradeChoice` gap 12 on Mac too; height stays 38 (HIG default Mac control 28, minimum 20 [H:accessibility]).
 - Settings: the `Settings` scene and ⌘, stay; no settings button in the toolbar [H:settings]. A daily-goal setting, if one is added, becomes a pane there.
 - Status bar (`CardListView.StatusBar`) keeps its Today counts line, neutral, as now.

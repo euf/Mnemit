@@ -178,7 +178,7 @@ struct StudyView: View {
     private var ringAndFigures: some View {
         let daily = ring.progress?.ring
         HStack(spacing: 8) {
-            StreamRing(fraction: daily?.fraction ?? 0)
+            StreamRing(progress: ring.progress)
             if let daily {
                 Group {
                     if daily.isGoalMet {
@@ -333,31 +333,17 @@ struct StudyView: View {
     private static let swipeStartDistance: CGFloat = 6
 }
 
-/// Today's reviews against the goal as a small ring in the bar; the laps after the goal go on
-/// in a lighter arc, as `DailyRingView` does. It has no streak and no popover: the bar is calm.
-private struct StreamRing: View {
-    var fraction: Double
-    private let lineWidth: CGFloat = 3
+/// Today's reviews against the goal as a ring in the bar (`ProgressRing`), with the lap in its
+/// middle from the second on: "×2" once the goal is reached. No streak and no popover: the bar
+/// is calm. As big as the figures beside it need for "×2", and it grows with the text size up
+/// to a ceiling, as the bar has only so much height. VoiceOver reads the lap ("Lap 2") with the
+/// figures beside it, which the bar combines into one element.
+struct StreamRing: View {
+    var progress: DailyProgress?
+    @ScaledMetric(relativeTo: .subheadline) private var diameter: CGFloat = 30
 
     var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.primary.opacity(0.12), lineWidth: lineWidth)
-            if fraction > 0 {
-                arc(min(fraction, 1), color: .dailyRing)
-            }
-            if fraction > 1 {
-                arc(min(fraction - 1, 1), color: .dailyRingLap)
-            }
-        }
-        .frame(width: 22, height: 22)
-        .animation(.easeOut(duration: 0.4), value: fraction)
-    }
-
-    private func arc(_ fraction: Double, color: Color) -> some View {
-        Circle()
-            .trim(from: 0, to: fraction)
-            .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-            .rotationEffect(.degrees(-90))
+        ProgressRing(
+            fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 44), center: RingCenter(progress, inStream: true), speaksCenter: true)
     }
 }

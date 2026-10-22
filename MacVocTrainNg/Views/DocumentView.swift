@@ -252,14 +252,14 @@ private struct StartStudyButton: View {
     }
 }
 
-/// Today's reviews against the goal as a small ring and "14/20", beside the Study button. An
-/// indicator, no button: it takes no background in the toolbar.
+/// Today's reviews against the goal as a ring with the streak in its middle and "14/20", beside
+/// the Study button. An indicator, no button: it takes no background in the toolbar.
 private struct RingChip: View {
     var progress: DailyProgress?
 
     var body: some View {
         HStack(spacing: 6) {
-            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: 16)
+            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: 24, center: RingCenter(progress, inStream: false))
             if let ring = progress?.ring {
                 Text(verbatim: "\(ring.reviews)/\(ring.goal)")
                     .monospacedDigit()
