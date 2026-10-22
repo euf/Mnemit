@@ -197,10 +197,11 @@ public struct StudySession: Sendable {
     ) -> StudyCounts {
         // The seed is arbitrary: the session this counts has a random of its own.
         var random = SeededRandom(seed: 0)
-        let (selected, catchUp) = selection(
+        let (selected, catchUp, backlogTaken) = selection(
             from: deck, at: now, calendar: calendar, extraNew: extraNew, newCardAllowance: newCardAllowance, capsSize: false, past: past, using: &random)
         var counts = StudyCounts()
         counts.catchUp = catchUp
+        counts.backlogTaken = backlogTaken
         let startOfDay = calendar.start(ofDay: calendar.dayNumber(for: now))
         for candidate in selected {
             switch candidate.urgency {
@@ -231,7 +232,7 @@ public struct StudySession: Sendable {
     private static func selection(
         from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, includingBacklog: Bool = false, newCardAllowance: Int? = nil,
         capsSize: Bool = true, past: DayIndex? = nil, using random: inout SeededRandom
-    ) -> (cards: [Candidate], catchUp: Int) {
+    ) -> (cards: [Candidate], catchUp: Int, backlogTaken: Int) {
         let options = deck.learningOptions
         let scheduler = Scheduler(learningOptions: options, calendar: calendar)
         let day = calendar.dayNumber(for: now)
@@ -319,7 +320,7 @@ public struct StudySession: Sendable {
         }
 
         let ordered = selected.sorted { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
-        return (ordered, includingBacklog ? 0 : overdue - backlogTaken)
+        return (ordered, includingBacklog ? 0 : overdue - backlogTaken, backlogTaken)
     }
 
     private struct Candidate {
@@ -469,6 +470,9 @@ public struct StudyCounts: Hashable, Sendable {
     /// what is beyond the share the backlog asks of a day (`DailyGoal.backlogShare(of:onTime:)`). The
     /// stream goes on with them once the plan is done (`StudyStream.Stage.catchUp`).
     public internal(set) var catchUp = 0
+    /// Of `review`, the overdue cards: the share of the backlog the plan takes. The backlog is
+    /// this and `catchUp`.
+    public internal(set) var backlogTaken = 0
     /// When something comes back that today's counts leave out: the first learning or
     /// review date after now, or the next study day for a card that is due but buried.
     /// `nil` if no card has been studied. Meant for `total == 0`.
