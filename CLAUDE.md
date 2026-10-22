@@ -42,7 +42,8 @@
   копии обоих расширений). Колода с `.voctrain` пишется на месте под своим именем. TSV без
   шапки (вопрос, ответ, подсказка) работает как раньше: добавляются только новые вопросы. Модель и правила выбора карточек
   (разблокировка production, прятание сиблингов) — в VocabCore: `Card.note`/`kind`,
-  `LearningOptions.productionUnlockDays` и соседние, `StudySession.selectCards`.
+  `LearningOptions.productionUnlockDays` и соседние, `StudySession.selectCards`. Источники,
+  расчёт порога разблокировки и что изменит вердикт — `references/production-cards-research.md`.
 - Правка колоды на iPhone и Mac — одни и те же методы `VocabularyDocument+Editing` в `Shared`
   (undo и имена действий общие; на iPhone документ сохраняет `OpenDeck` через UIDocument и
   `SaveScheduler`). Слияние версий при правках на обоих устройствах: карточки объединяются,

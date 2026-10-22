@@ -82,10 +82,16 @@ are in [`references/`](references/).
   plan. "Keep Going" after "Done for today" works through the rest, the catch-up; those cards are
   due, so their reviews are ordinary ones and the cards done fill the laps. The size of a study session
   in the deck options is the size of one segment of the stream and does not cut the plan.
-- **Two directions per word, one after the other.** Each word has a recognition card
-  (Greek → meaning) and a production card (meaning → Greek). Production cards unlock only
-  after the recognition card has an interval of 21 days, have their own daily limit, and
-  siblings are buried for the day so one card does not answer the other.
+- **Two directions per word, production one spaced review behind.** Each word has a
+  recognition card (Greek → meaning) and a production card (meaning → Greek). Production is the
+  harder direction (about half the recall of recognition after two weeks in the one experiment
+  that measured both), recognition study yields little of it, and adding it does not lower
+  recognition. A word's production card therefore unlocks once its recognition card has an
+  interval of 7 days, which on the default parameters is after the first spaced review passed
+  (the lock is a deck option; 0 turns it off for words already known). Production cards have
+  their own daily limit, and siblings are buried for the day so one card does not answer the
+  other. No study compares introducing the second direction later with introducing it together;
+  the numbers and sources are in [references/production-cards-research.md](references/production-cards-research.md).
 - **Difficult cards** (leeches) after 8 lapses, as a filter in the browser.
 
 ### Scheduling
