@@ -166,6 +166,20 @@ title is "Streak saved", and Comeback is earned. Two missed days in a row end th
 dates, the next tier as a grey medal with a hint and how far there is to go ("12 of 14 days"), and
 nothing of the tiers after it: there is always one more to find.
 
+**Emoji or SF Symbols.** An earned medal's face is an emoji, for colour and the moment of joy; it is
+seen only once earned, so the next tier, a grey medal, shows the line's SF Symbol and keeps its emoji a
+surprise. Everything else is SF Symbols: the streak's flame on Today and in the widget, the rows of
+records and figures, the lines of the rests. The faces:
+
+| Line | Faces, tier by tier | Next tier's symbol |
+|---|---|---|
+| Streak | 🔥 3 days · ⭐️ a week · 🌟 2 weeks · 🌙 a month · 🌿 2 months · 🌳 3 months · ⛰️ half a year · 🏆 a year · 💎 a year and a half · 👑 2 years | `flame` |
+| First ring | 🎯 | `circle.circle` |
+| Perfect week | 🌈 | `calendar` |
+| Laps | ⚡️ ×2 · 🚀 ×3 · 🌋 ×5 · 🪐 ×10 | `repeat` |
+| Big day | 📚 50 · 🧠 100 · 🦉 200 · 🐘 500 | `rectangle.stack` |
+| Comeback | 🐦‍🔥 | `arrow.uturn.up` |
+
 **The Progress screen**, from Today (a tap on the ring's panel, which gets a chevron): the streak large,
 with the longest; the rings of the last 13 weeks as a calendar of small rings (closed, kept, missed); the
 ladder of memory with the count of each step; the achievements; the records: most cards in a day, most
