@@ -281,33 +281,39 @@ struct SummaryRow: View {
         // would not fit on the line of the words.
         VStack(alignment: .leading, spacing: 8) {
             layout {
-                ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 96), center: RingCenter(progress, inStream: false))
+                ProgressRing(
+                    fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 96), center: RingCenter(progress, inStream: false),
+                    filling: .smooth(duration: 1.4))
                 VStack(alignment: .leading, spacing: 2) {
-                    headline
-                        .font(.title2.weight(.semibold))
-                    detail
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    if catchUp > 0 {
-                        Text("+\(catchUp) to catch up this week")
+                    if !isLoaded {
+                        placeholderLines
+                    } else {
+                        headline
+                            .font(.title2.weight(.semibold))
+                        detail
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                    }
-                    if let progress, progress.streak.days > 0 {
-                        // Not a Label: in a list it puts its icon in a column of its own.
-                        HStack(spacing: 4) {
-                            Image(systemName: "flame.fill")
-                                .foregroundStyle(progress.streakKeptToday ? Color.accentColor : Color.secondary)
-                            Group {
-                                if progress.streakKeptToday {
-                                    Text("\(progress.streak.days)-day streak · kept today")
-                                } else {
-                                    Text("\(progress.streak.days)-day streak")
-                                }
-                            }
-                            .foregroundStyle(.secondary)
+                        if catchUp > 0 {
+                            Text("+\(catchUp) to catch up this week")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
-                        .font(.subheadline)
+                        if let progress, progress.streak.days > 0 {
+                            // Not a Label: in a list it puts its icon in a column of its own.
+                            HStack(spacing: 4) {
+                                Image(systemName: "flame.fill")
+                                    .foregroundStyle(progress.streakKeptToday ? Color.accentColor : Color.secondary)
+                                Group {
+                                    if progress.streakKeptToday {
+                                        Text("\(progress.streak.days)-day streak · kept today")
+                                    } else {
+                                        Text("\(progress.streak.days)-day streak")
+                                    }
+                                }
+                                .foregroundStyle(.secondary)
+                            }
+                            .font(.subheadline)
+                        }
                     }
                 }
                 .monospacedDigit()
@@ -316,10 +322,32 @@ struct SummaryRow: View {
                 MemoryLine(memory: memory)
                     .font(.subheadline)
                     .monospacedDigit()
+            } else if !isLoaded {
+                Text("≈ \(0) words in memory")
+                    .font(.subheadline)
+            }
+            // The ladder of memory, thin: the shape of the collection, filling to the right over the weeks.
+            if let progress, progress.ladder.reduce(0, +) > 0 {
+                LadderBar(ladder: progress.ladder, height: 4)
+            } else if !isLoaded {
+                Capsule()
+                    .frame(height: 4)
             }
         }
         .padding(.vertical, 8)
         .redacted(reason: isLoaded ? [] : .placeholder)
+    }
+
+    /// Until the decks are read, the lines the day will have, as placeholders: the headline, the cards and the
+    /// streak take their room, so nothing below moves when the figures come.
+    @ViewBuilder
+    private var placeholderLines: some View {
+        Text("Ring closed")
+            .font(.title2.weight(.semibold))
+        Text(verbatim: [String(localized: "\(12) of \(24) cards"), String(localized: "\(12) left")].joined(separator: " · "))
+            .font(.subheadline)
+        Text("\(0)-day streak")
+            .font(.subheadline)
         .accessibilityElement(children: .combine)
     }
 
@@ -362,11 +390,13 @@ struct SummaryRow: View {
         }
     }
 
-    /// "12 of 24 cards · 12 left": the done cards against the goal, and what is left of the plan.
+    /// "12 of 24 cards · 12 left": the done cards against the goal, and what is left of the plan; once the ring is
+    /// closed, "49 cards today · 3 left", as the goal is behind and the ring shows the laps.
     @ViewBuilder
     private var detail: some View {
         if let ring = progress?.ring, due > 0 {
-            Text(verbatim: [String(localized: "\(ring.done) of \(ring.goal) cards"), String(localized: "\(due) left")].joined(separator: " · "))
+            let done = ring.isGoalMet ? String(localized: "\(ring.done) cards today") : String(localized: "\(ring.done) of \(ring.goal) cards")
+            Text(verbatim: [done, String(localized: "\(due) left")].joined(separator: " · "))
         } else if let ring = progress?.ring, ring.done > 0 {
             Text("\(ring.done) cards today")
         } else if due == 0, let nextDue {
@@ -420,6 +450,11 @@ struct DeckRow: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
+                    } else if counts == nil {
+                        // Until the deck is read: the line it will have, so the row doesn't grow and the list jump.
+                        Text("\(0) new · \(0) learning · \(0) review")
+                            .font(.subheadline)
+                            .redacted(reason: .placeholder)
                     }
                     if let catchUp = counts?.catchUp, catchUp > 0 {
                         Text("+\(catchUp) to catch up this week")

@@ -72,6 +72,8 @@ struct ProgressRing: View {
     /// Whether VoiceOver reads what is in the middle ("Lap 2") as part of the element this ring
     /// sits in, for a caller that combines the ring with its figures. Otherwise the ring is hidden.
     var speaksCenter = false
+    /// How the ring fills to a new fraction: quick in the study bar, slow enough to watch on Today.
+    var filling: Animation = .smooth
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The thickness of the stroke: as much as the Fitness rings take, at least 3 pt.
@@ -83,7 +85,7 @@ struct ProgressRing: View {
         let lineWidth = Self.lineWidth(diameter: diameter)
         let ring = ZStack {
             ActivityRing(progress: max(0, fraction), color: .dailyRing, tipColor: .dailyRingTail, lineWidth: lineWidth)
-                .animation(reduceMotion ? nil : .smooth, value: fraction)
+                .animation(reduceMotion ? nil : filling, value: fraction)
             RingCenterLabel(center: center, diameter: diameter, lineWidth: lineWidth)
         }
         .frame(width: diameter, height: diameter)

@@ -210,10 +210,10 @@ struct StudyMotionTests {
     /// The edges of the stack: 3 pt lower and 2 pt narrower on each side than the one above, five at most, fainter with
     /// depth, and the room under the card is the same whether or not there are any.
     @Test func theEdgesAreLowerAndNarrowerWithDepth() {
-        #expect(StackPose.maxEdges == 5)
+        #expect(StackPose.maxEdges == 4)
         for level in 1...StackPose.maxEdges {
-            #expect(StackPose.drop(level) == 3 * CGFloat(level))
-            #expect(StackPose.width(level, cardWidth: 343) == 343 - 4 * CGFloat(level))
+            #expect(StackPose.drop(level) == 6 * CGFloat(level))
+            #expect(StackPose.width(level, cardWidth: 343) == 343 - 12 * CGFloat(level))
             #expect(StackPose.faintness(level) > 0 && StackPose.faintness(level) <= 1)
             if level > 1 { #expect(StackPose.faintness(level) < StackPose.faintness(level - 1)) }
         }

@@ -207,6 +207,18 @@ struct StreamRestView: View {
         if let progress, progress.week.count == 7 {
             lines.append(Line("week") { WeekRings(week: progress.week, today: progress.ring.fraction, now: rest.now).padding(.vertical, Spacing.tight) })
         }
+        if let progress, progress.ladder.reduce(0, +) > 0 {
+            lines.append(
+                Line("ladder") {
+                    VStack(spacing: Spacing.hairline) {
+                        LadderBar(ladder: progress.ladder)
+                            .frame(maxWidth: 240)
+                        if progress.climbedToday > 0 {
+                            Text("+\(progress.climbedToday) climbed today")
+                        }
+                    }
+                })
+        }
         if rest.catchUp > 0 {
             lines.append(Line("catchup") { Text("+\(rest.catchUp) to catch up this week") })
         } else if let nextDue = rest.nextDue {
@@ -346,5 +358,33 @@ struct WeekRings: View {
         let calendar = Calendar.current
         let day = calendar.date(byAdding: .day, value: index - (week.count - 1), to: now.addingTimeInterval(-4 * 3600)) ?? now
         return calendar.veryShortWeekdaySymbols[calendar.component(.weekday, from: day) - 1]
+    }
+}
+
+/// The ladder of memory: the cards by step of `MaturityCategory`, new on the left to mastered on the right, as
+/// one bar of segments in the ramp's colours (`references/learning-flow.md`, "Progression").
+struct LadderBar: View {
+    var ladder: [Int]
+    var height: CGFloat = 8
+
+    private var steps: [(step: MaturityCategory, count: Int)] {
+        MaturityCategory.allCases.map { ($0, $0.rawValue < ladder.count ? ladder[$0.rawValue] : 0) }.filter { $0.count > 0 }
+    }
+
+    var body: some View {
+        let total = CGFloat(max(1, ladder.reduce(0, +)))
+        GeometryReader { proxy in
+            HStack(spacing: 1) {
+                ForEach(steps, id: \.step) { part in
+                    Rectangle()
+                        .fill(part.step.color)
+                        .frame(width: max(2, (proxy.size.width - CGFloat(steps.count - 1)) * CGFloat(part.count) / total))
+                }
+            }
+        }
+        .frame(height: height)
+        .clipShape(Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: steps.map { "\($0.step.title) \($0.count)" }.joined(separator: ", ")))
     }
 }

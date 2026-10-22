@@ -523,6 +523,29 @@ public struct DeckActivity: Sendable {
         deck.doneCards(onDayOf: now, calendar: calendar)
     }
 
+    /// The cards that are not suspended, by step of `MaturityCategory`, in the order of `allCases`.
+    public func ladder() -> [Int] {
+        var steps = [Int](repeating: 0, count: MaturityCategory.allCases.count)
+        for card in deck.cards where !card.isSuspended {
+            steps[MaturityCategory(card: card).rawValue] += 1
+        }
+        return steps
+    }
+
+    /// How many cards the reviews of the study day of `now` lifted to a higher step of `MaturityCategory`
+    /// than they stood on when the day began: a new card learned, a card whose stability passed 4, 16, 64 or
+    /// 256 days. A card whose log doesn't reach back to its first review is left out.
+    public func climbs(onDayOf now: Date, calendar: StudyCalendar) -> Int {
+        let start = calendar.start(ofDay: calendar.dayNumber(for: now))
+        let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
+        return deck.cards.reduce(0) { count, card in
+            guard !card.isSuspended, let state = card.learningState, state.lastReview >= start, card.hasCompleteLog else { return count }
+            let before = card.log.prefix { $0.date < start }
+            let then = before.isEmpty ? MaturityCategory.new : MaturityCategory(card: scheduler.replaying(Array(before), of: card))
+            return MaturityCategory(card: card) > then ? count + 1 : count
+        }
+    }
+
     /// The cards on their way to done on the study day of `now`, as parts of a card,
     /// `Deck.cardsUnderway(onDayOf:calendar:)`.
     public func underway(onDayOf now: Date, calendar: StudyCalendar) -> Double {
@@ -1037,13 +1060,20 @@ public struct DailyProgress: Hashable, Sendable {
     /// The rings of the last seven study days, today last: closed or not, `nil` before the first study day.
     /// Today's is closed once its ring is.
     public var week: [Bool?]
+    /// The cards of the decks by step of `MaturityCategory`, in the order of `allCases`: the ladder of memory.
+    public var ladder: [Int]
+    /// The cards today's reviews lifted a step up the ladder (`DeckActivity.climbs(onDayOf:calendar:)`).
+    public var climbedToday: Int
 
     public init(
         ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace(), capacity: Int = DailyGoal.initialCapacity,
         roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), capacity: DailyGoal.initialCapacity), streakKeptToday: Bool = false,
-        newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0), week: [Bool?] = []
+        newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
+        ladder: [Int] = [], climbedToday: Int = 0
     ) {
         self.week = week
+        self.ladder = ladder
+        self.climbedToday = climbedToday
         self.ring = ring
         self.streak = streak
         self.cardsLeft = cardsLeft
@@ -1198,6 +1228,10 @@ public struct DailyProgress: Hashable, Sendable {
             ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: pace(over: (today - DailyGoal.paceDays)...today), capacity: capacity,
             roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: givenAllowances,
             memory: MemoryEstimate.total(decks.map { $0.memory(at: now, calendar: calendar) }),
-            week: (today - 6...today).map { $0 < first ? nil : closed[$0] ?? false })
+            week: (today - 6...today).map { $0 < first ? nil : closed[$0] ?? false },
+            ladder: decks.map { $0.ladder() }.reduce(into: [Int](repeating: 0, count: MaturityCategory.allCases.count)) { sum, steps in
+                for index in sum.indices { sum[index] += steps[index] }
+            },
+            climbedToday: decks.reduce(0) { $0 + $1.climbs(onDayOf: now, calendar: calendar) })
     }
 }

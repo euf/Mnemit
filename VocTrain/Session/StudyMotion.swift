@@ -1,17 +1,17 @@
 import SwiftUI
 import VocabCore
 
-/// The edges of the stack under the card on top, drawn as the edges of a book's pages: hairline outlines with
-/// the card's corner radius under its bottom edge, each `step` lower and `side` narrower on each side than the
-/// one above, and fainter with depth. A level is how deep an edge lies: 0 the top card, 1 the card that rises
+/// The cards of the stack under the card on top: blank sheets with the card's corner radius under its bottom
+/// edge, each `step` lower and `side` narrower on each side than the one above, a shade darker and with a
+/// fainter outline the deeper it lies, so the stack reads as a stack at a glance and thins out sheet by sheet. A level is how deep an edge lies: 0 the top card, 1 the card that rises
 /// next, which takes the pose of level 1 before it does.
 enum StackPose {
     /// The edges that show under the top card, however many cards wait.
-    static let maxEdges = 5
+    static let maxEdges = 4
     /// How much lower each edge lies than the one above.
-    static let step: CGFloat = 3
+    static let step: CGFloat = 6
     /// How much narrower, on each side.
-    static let side: CGFloat = 2
+    static let side: CGFloat = 6
 
     /// How far the edge of `level` lies below the place of the top card.
     static func drop(_ level: Int) -> CGFloat { step * CGFloat(level) }
@@ -19,7 +19,10 @@ enum StackPose {
     static func width(_ level: Int, cardWidth: CGFloat) -> CGFloat { max(0, cardWidth - 2 * side * CGFloat(level)) }
 
     /// How much of the outline's colour an edge keeps: all of the first, less with depth.
-    static func faintness(_ level: Int) -> Double { 1 - 0.15 * Double(level - 1) }
+    static func faintness(_ level: Int) -> Double { 1 - 0.2 * Double(level - 1) }
+
+    /// How much darker than the card's surface the sheet of `level` is (lighter in dark mode).
+    static func shade(_ level: Double) -> Double { 0.035 * level }
 
     /// The room the edges take under the top card, the same whether or not there are any, so the card never
     /// changes its size with the number of cards behind it. The edges' step is fixed: the parameter is the
@@ -78,6 +81,8 @@ struct Sheet: Identifiable {
     var from: CGSize
     /// The depth of the edge it becomes.
     var level: Int
+    /// The grade that sent it back: it comes in tinted with the grade's colour, which fades as it settles.
+    var grade: Grade = .good
 }
 
 /// What moves on the iPhone's study screen apart from the card under the finger: the cards that
@@ -97,7 +102,7 @@ final class StudyMotion {
         /// The ring comes down to the rest this long after the last card has set off: as it goes past the edge.
         static let exit = 0.25
         /// A card that went back today slides under the stack for this long.
-        static let sheet = 0.4
+        static let sheet = 0.6
         /// What a done card's interval says beside the ring stays this long.
         static let interval = 1.5
         /// The ring takes this long between the bar and the rest.
@@ -209,7 +214,7 @@ final class StudyMotion {
         if destination == .ring {
             landings += 1
             if !reduceMotion { barBurstAt = .now }
-            showInterval(receipt.flightLabel)
+            showInterval(receipt.caption)
         }
         let slot = cardSlot
         guard slot.width > 0 else { return }
@@ -229,7 +234,7 @@ final class StudyMotion {
             slot: slot)
         departures.append(departure)
         // A card that went back today comes in again by the edge it left by, once it is past it.
-        let sheet = destination == .stack && !reduceMotion ? path.map { Sheet(from: $0.end, level: max(1, min(behind, StackPose.maxEdges))) } : nil
+        let sheet = destination == .stack && !reduceMotion ? path.map { Sheet(from: $0.end, level: max(1, min(behind, StackPose.maxEdges)), grade: receipt.grade) } : nil
         if let sheet {
             sheetsAway += 1
             if frozen?.sheet != nil { sheets.append(sheet) }

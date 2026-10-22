@@ -15,6 +15,16 @@ struct GradeReceipt: Equatable {
     /// The part of a card the grade added to the ring, 0 to 1 (`Card.credit(onDayOf:calendar:steps:)`):
     /// what was left of it for a card the grade let go, a step's share for one in its steps, 0 for Forgot.
     var gain = 0.0
+    /// The step of the ladder of memory the grade lifted the card to, from Young up; `nil` for the many grades
+    /// that lift it nowhere, and for a new card learned, which every new card is.
+    var climb: MaturityCategory?
+
+    /// What shows beside the ring as a done card leaves: its interval, and the step it climbed to,
+    /// "in 25 days · Maturing".
+    var caption: String? {
+        guard let flightLabel else { return nil }
+        return climb.map { "\(flightLabel) · \($0.title)" } ?? flightLabel
+    }
 
     /// The grade by the name its button has: "Forgot", not the scheduler's "Again".
     var title: String {

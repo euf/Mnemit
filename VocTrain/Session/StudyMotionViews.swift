@@ -264,18 +264,24 @@ struct CardStack: View {
 
     /// The edge of `level`: a blank page the width and place its level gives it.
     private func page(_ level: Int, size: CGSize, spread: Bool) -> some View {
-        Self.page(width: spread ? StackPose.width(level, cardWidth: size.width) : size.width, height: size.height, faintness: StackPose.faintness(level))
+        Self.page(
+            width: spread ? StackPose.width(level, cardWidth: size.width) : size.width, height: size.height, faintness: StackPose.faintness(level),
+            shade: StackPose.shade(Double(level)))
             .offset(y: spread ? StackPose.drop(level) : 0)
             .animation(.spring(duration: 0.4, bounce: 0.2).delay(0.05 * Double(level)), value: spread)
     }
 
-    /// A blank sheet: the card's shape, its surface, a hairline round it.
-    static func page(width: CGFloat, height: CGFloat, faintness: Double) -> some View {
+    /// A blank sheet: the card's shape, its surface a `shade` darker (lighter in dark mode), a hairline round it
+    /// and a soft shadow under it, `tint` over it.
+    static func page(width: CGFloat, height: CGFloat, faintness: Double, shade: Double, tint: Color = .clear) -> some View {
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         return
             shape
             .fill(Color.cardSurface)
+            .overlay { shape.fill(Color.primary.opacity(shade)) }
+            .overlay { shape.fill(tint) }
             .overlay { shape.strokeBorder(Color(.opaqueSeparator).opacity(faintness), lineWidth: 1) }
+            .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
             .frame(width: width, height: height)
     }
 }
@@ -298,7 +304,8 @@ private struct SheetOnItsWay: View {
     var body: some View {
         CardStack.page(
             width: size.width + (StackPose.width(sheet.level, cardWidth: size.width) - size.width) * along, height: size.height,
-            faintness: 1 - (1 - StackPose.faintness(sheet.level)) * along
+            faintness: 1 - (1 - StackPose.faintness(sheet.level)) * along, shade: StackPose.shade(Double(sheet.level) * along),
+            tint: sheet.grade.color.opacity(0.45 * (1 - along))
         )
         .offset(x: sheet.from.width * (1 - along), y: sheet.from.height * (1 - along) + StackPose.drop(sheet.level) * along)
         .animation(.spring(duration: StudyMotion.Timing.sheet, bounce: 0.1), value: along)
@@ -317,7 +324,7 @@ struct SlotOutline: View {
     }
 }
 
-/// The ring steps: it swells to 1.15 and back, and glows in the accent for 0.3 s. A step is a card
+/// The ring steps: it swells to 1.35 and back with a little overshoot, and glows in the accent for 0.45 s. A step is a card
 /// landing in it; with Reduce Motion the ring only steps.
 private struct RingBump: ViewModifier {
     var landings: Int
@@ -328,17 +335,17 @@ private struct RingBump: ViewModifier {
         content.keyframeAnimator(initialValue: 0.0, trigger: landings) { content, level in
             content
                 .scaleEffect(1 + swell * level)
-                .shadow(color: Color("AccentColor").opacity(glow * level), radius: 8 * level)
+                .shadow(color: Color("AccentColor").opacity(glow * min(1, level)), radius: 14 * min(1, level))
         } keyframes: { _ in
-            CubicKeyframe(1, duration: 0.12)
-            CubicKeyframe(0, duration: 0.18)
+            CubicKeyframe(1, duration: 0.14)
+            SpringKeyframe(0, duration: 0.31, spring: .bouncy(duration: 0.31, extraBounce: 0.15))
         }
     }
 }
 
 extension View {
     func ringBump(_ landings: Int, reduceMotion: Bool) -> some View {
-        modifier(RingBump(landings: landings, swell: reduceMotion ? 0 : 0.15, glow: reduceMotion ? 0 : 0.6))
+        modifier(RingBump(landings: landings, swell: reduceMotion ? 0 : 0.35, glow: reduceMotion ? 0 : 0.9))
     }
 }
 

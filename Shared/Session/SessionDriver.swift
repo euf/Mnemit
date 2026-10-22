@@ -81,6 +81,7 @@ final class SessionDriver {
         let before = stream
         let graded = session.currentCardID
         let creditBefore = graded.map(credit(of:)) ?? 0
+        let stepBefore = graded.flatMap { document.card(withID: $0) }.map(MaturityCategory.init(card:))
         let interval = gradeIntervals?[grade]
         let duration = stopwatch.elapsed
         guard let outcome = StallTrace.measure("stream.grade", { stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar, duration: duration) }) else { return false }
@@ -93,9 +94,16 @@ final class SessionDriver {
         }
         lastReceipt = GradeReceipt(
             grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count,
-            gain: max(0, (graded.map(credit(of:)) ?? 0) - creditBefore))
+            gain: max(0, (graded.map(credit(of:)) ?? 0) - creditBefore), climb: climb(of: graded, from: stepBefore))
         moveOn()
         return true
+    }
+
+    /// The step the card with `id` stands on now, if it is Young or higher and higher than `before`.
+    private func climb(of id: Card.ID?, from before: MaturityCategory?) -> MaturityCategory? {
+        guard let id, let before, let card = document.card(withID: id) else { return nil }
+        let now = MaturityCategory(card: card)
+        return now > before && now >= .young ? now : nil
     }
 
     /// How far today's reviews brought the card with `id` toward done, for the ring.

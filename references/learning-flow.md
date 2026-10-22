@@ -104,6 +104,35 @@ else **Practice**; and **Done**. The week is seven small rings, today last, with
 **How Today Works** keeps everything for the learner who knows FSRS: the plan and its parts, the
 rounds and the day's time, pace, the streak's repair, FSRS parameters.
 
+## Progression: the ladder of memory
+
+The stack shows today, the ring the day, the streak the habit, words in memory the sum. What a learner
+of a month, or an Anki user of years, misses is the path of a word: that today's swipes move words
+up. FSRS has that path already: a card's stability, the days until its recall falls to 90 %, which
+`MaturityCategory` cuts into steps with the validated colour ramp, and each deck keeps a histogram of
+them per day (`DailySnapshot`). No points, no levels of our own: the steps are FSRS's numbers.
+
+| Step | Stability | Colour |
+|---|---|---|
+| New | never studied | grey |
+| Shaky | under 4 days | lightest blue |
+| Young | 4–16 days | |
+| Maturing | 16–64 days | |
+| Mature | 64–256 days | |
+| Mastered | 256 days and more | darkest blue |
+
+- **Seconds.** A grade that lifts a card to Young or above says so where the interval shows, beside the
+  ring: "in 25 days · Maturing", in the step's colour. Most grades lift nothing, so the moment stays rare.
+- **The day.** The Ring closed screen shows the ladder of all cards as one segmented bar in the ramp's
+  colours, and "+6 climbed today": the cards whose step rose today.
+- **Today.** The same bar, thin, under the words in memory: the shape of the collection, filling to
+  the right over weeks.
+- **For the Anki user**, How Today Works keeps the numbers: the cards per step and the true retention of
+  the last 30 days against the target.
+
+Not added, as they reward volume over memory and pull against FSRS: points, leagues, hearts, reviewing
+ahead for a bigger number.
+
 ## What goes, and why
 
 | In 4.0 | Now | Why |

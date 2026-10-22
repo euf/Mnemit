@@ -48,7 +48,7 @@ extension WidgetState {
     }
 
     fileprivate var progressLine: Text {
-        Text("\(done) of \(goal) cards")
+        done >= goal ? Text("\(done) cards today") : Text("\(done) of \(goal) cards")
     }
 
     /// What the day asks next (`RoundStatus.title`), "≈ 2 min to keep your streak", while cards are left and the
