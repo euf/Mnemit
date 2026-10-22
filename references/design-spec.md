@@ -17,7 +17,7 @@ Spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on mac
 | 2 | The primary button **Study** runs all decks that have cards due, one deck stream after the other: last studied deck first, then list order. A tap on a deck row studies that deck only. | The ring and the streak are one value over all decks (`DailyProgress.evaluate` takes `[DeckActivity]`), so one button must be able to finish them. The user studies two decks daily. | `StudyScope.all` falls back to the last studied deck (`knownDecks.last`), label unchanged. |
 | 3 | Deck details open from a trailing `info.circle` button as a **sheet**. No chevron, no context menu. | A tap on the row starts studying, so a chevron would promise navigation the row does not do. The HIG gives the info button the job of revealing more about a row's content and the disclosure indicator the job of drilling down [H:lists-and-tables]. A context menu is hidden and would repeat the button [H:context-menus]. | – |
 | 4 | New / Learning / Review are **neutral**: number in primary label colour (0 in secondary), label in secondary. | Blue/red/green reuse the meanings of Forgot (red), Good (green) and the maturity ramp (blue); the HIG asks for one colour per meaning [H:color]. The owner dislikes the coloured counts. | `StudyCount.color` stays in git history. |
-| 5 | One accent, **terracotta**: light `#AC5334`, dark `#B95937`. | It is the bottom stop of the icon tile. Numbers in §5. | Change two values in `AccentColor.colorset`. |
+| 5 | One accent, **system indigo** `#5856D6` in light and dark; Increase Contrast `#3634A3` (light) and `#6563E6` (dark). | Red means Forgot and the greens mean recalled, so the accent is neither; green reads as Excel and terracotta as Claude (owner, 21.10.2026). The icon tile is indigo too. Numbers in §5. | Change the values in the three `AccentColor.colorset` files (iPhone, Mac, widget). |
 | 6 | Raise the deployment targets to **iOS 26 / macOS 26**. | Only the owner's devices run the app: iOS 27, macOS 27, built with Xcode 26.3. `safeAreaBar`, `.glassProminent`, `Button(role: .close)`, `ToolbarSpacer` need 26. | Keep 17 / 14, wrap five call sites in `#available` with `.safeAreaInset` and `.borderedProminent`. |
 | 7 | Large title **Today**. The app name appears nowhere on the screen. | The HIG advises against naming a window after the app and asks for titles under 15 characters; large titles are the iOS pattern [H:toolbars]. | `.navigationBarTitleDisplayMode(.inline)`. |
 | 8 | Mac: toolbar gets the ring chip and a prominent Study (phase A); a **Today window with a sidebar of decks** replaces the Welcome window (phase B). Settings stay in the app menu. | A document window shows one deck, so a deck sidebar can only live in a window of its own. | Phase A alone is complete. |
@@ -573,41 +573,47 @@ Forgot is the only "no", and Easy given for a forgotten card is the costly slip,
 
 ## 5. Accent and colour roles
 
-### 5.1 Accent: terracotta
+### 5.1 Accent: system indigo
 
-Icon colours, sampled from `icon_1024x1024.png`: tile top `#CA714F`, middle `#BF6645`, bottom `#AC5334`, left card `#F3E6D3`, right card `#FCF3E6`. Dark icon: tile `#5D2E1F` to `#3B1B11`, cards `#CDB69C` and `#E9D8C0`.
+Icon colours, sampled from `icon_1024x1024.png`: tile top `#6C6AE4`, middle `#5A58D3`, bottom `#4846C2`, left card `#E4E3FA`, right card `#F8F7FF`. Dark icon: tile `#2C2B6E` to `#161546`, cards `#B4B2EC` and `#DAD9FA`.
+
+The accent is `AccentColor.colorset`, the same four colours in the iPhone (`VocTrain/Resources`), Mac (`MacVocTrainNg/Resources`) and widget (`MnemitWidget`) asset catalogs. Contrast is the WCAG 2.x ratio of relative luminances of the 8-bit sRGB values, two decimals:
 
 | Appearance | Value | White label on it | On surface |
 |---|---|---|---|
-| Light | `#AC5334` (icon tile, bottom stop) | 5.20 | 5.20 on white, 4.66 on `#F2F2F7` |
-| Light, Increase Contrast | `#8C3A1F` | 7.66 | 7.66 on white, 6.87 on `#F2F2F7` |
-| Dark | `#B95937` | 4.62 | 4.55 on black, 3.68 on `#1C1C1E`, 3.02 on `#2C2C2E` |
-| Dark, Increase Contrast | `#B95937` (same) | 4.62 | as above |
+| Light | `#5856D6` | 5.65 | 5.65 on white, 5.06 on `#F2F2F7` |
+| Light, Increase Contrast | `#3634A3` | 9.65 | 9.65 on white, 8.64 on `#F2F2F7` |
+| Dark | `#5856D6` (the light value) | 5.65 | 3.72 on black, 3.01 on `#1C1C1E`, 2.47 on `#2C2C2E` |
+| Dark, Increase Contrast | `#6563E6` | 4.69 | 4.48 on black, 3.63 on `#1C1C1E`, 2.97 on `#2C2C2E` |
 
-For comparison, system blue: light `#007AFF` 4.02 with white and 3.60 on `#F2F2F7`; dark `#0A84FF` 3.65 with white, 5.76 on black, 4.66 on `#1C1C1E`. Terracotta beats blue on the label in both appearances and on light surfaces; it is lower on dark grouped rows (3.68 against 4.66).
+Surfaces: in light white is `systemBackground` and `secondarySystemGroupedBackground`, `#F2F2F7` is `systemGroupedBackground` and `secondarySystemBackground`; in dark black is `systemBackground` and `systemGroupedBackground`, `#1C1C1E` is `secondarySystemGroupedBackground` and `secondarySystemBackground`, `#2C2C2E` is `tertiarySystemBackground` and the secondary grouped level of an elevated sheet. The surface hex values are the UIKit defaults from memory (UNVERIFIED; the HIG swatches are images and the JSON feed of [H:color] carries no hex values for them), and the table uses them in the Increase Contrast rows too. The gate test below reads the real ones.
 
-The colorset above compiled with `actool` (iphoneos, 26.0) without warnings, and `assetutil` lists the four variants with the values in the table. Surface hex values are the UIKit defaults from memory (UNVERIFIED; the HIG swatches are images). The gate test below reads the real ones.
+Against the gate thresholds of §5.5: white on the accent is AA for text (4.5 or more) in all four rows, lowest 4.69 (dark, Increase Contrast). The accent holds 3.0 or more on the four gate surfaces in all four rows, lowest 3.01 (dark, on `#1C1C1E`). On `#2C2C2E` the accent is under 3.0 in dark (2.47) and in dark Increase Contrast (2.97); the gate test does not include that level.
 
-Why one dark value and not a lighter accent with a dark label: a single colour cannot give 4.5:1 for a white label (luminance at most 0.183) and 4.5:1 as text on `#1C1C1E` (at least 0.227). The accent therefore is never small text. It is a button fill (label 4.5 or more), a ring, a flame, a glyph (3.0 or more, WCAG non-text) [H:accessibility]. Dark Increase Contrast keeps the normal value because raising the ring contrast would lower the label contrast; this is a deliberate gap in the HIG advice for increased-contrast variants [H:color].
+System blue for comparison: light `#007AFF` 4.02 with white and 3.60 on `#F2F2F7`; dark `#0A84FF` 3.65 with white, 5.76 on black, 4.66 on `#1C1C1E`, 3.82 on `#2C2C2E`. Indigo is higher on the label in both appearances and on light surfaces (5.06 against 3.60 on `#F2F2F7`); it is lower on dark surfaces (3.01 against 4.66 on `#1C1C1E`).
 
-Roles of the accent: prominent button fill (Study, Show Answer, Study in the details sheet), ring, flame when the goal is met, `info.circle`, selection. Nothing else: no text, no backgrounds, no card face.
+A single colour cannot give 4.5:1 for a white label (luminance at most 0.183) and 4.5:1 as text on `#1C1C1E` (at least 0.228). Indigo has luminance 0.136 (light and dark), so its label is 5.65 and its contrast as text on `#1C1C1E` is 3.01. In light the same value reaches 4.5 as text (5.65 on white, 5.06 on `#F2F2F7`); in dark it does not (3.72 on black). The accent is never small text in either appearance. It is a button fill (label 4.5 or more), a ring, a flame, a glyph (3.0 or more, WCAG non-text) [H:accessibility]. The Increase Contrast variants move the accent away from the surface it sits on, darker on light (`#3634A3`, 8.64 on `#F2F2F7`) and lighter on dark (`#6563E6`, 3.63 on `#1C1C1E`), as [H:color] advises for increased-contrast variants; the dark one lowers the white label from 5.65 to 4.69, still above 4.5.
 
-`AccentColor.colorset` for both targets (the build setting `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor` is already set; the files today hold no colour, so the app is system blue):
+Roles of the accent: prominent button fill (Study, Show Answer, Study in the details sheet), ring, flame when the goal is met, `info.circle`, selection, and the progress pulse of §4.7 (a flash of the screen background at 0.12 opacity in light and 0.18 in dark). Nothing else: no text, no resting backgrounds, no card face.
+
+In code the accent is `Color.appAccent` (`Shared/Support/Presentation.swift`): on the iPhone and in the widget the named asset `Color("AccentColor")` (in a widget `Color.accentColor` is the system tint), on the Mac `Color.accentColor`, so the system accent setting applies (§5.6). `Color.dailyRing` is `appAccent`; `Color.dailyRingTail` is the tail of the ring's gradient (§5.7).
+
+`AccentColor.colorset` (the build setting `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor` is set):
 
 ```json
 {
   "colors" : [
     { "idiom" : "universal",
-      "color" : { "color-space" : "srgb", "components" : { "red" : "0xAC", "green" : "0x53", "blue" : "0x34", "alpha" : "1.000" } } },
+      "color" : { "color-space" : "srgb", "components" : { "red" : "0x58", "green" : "0x56", "blue" : "0xD6", "alpha" : "1.000" } } },
     { "idiom" : "universal",
       "appearances" : [ { "appearance" : "luminosity", "value" : "dark" } ],
-      "color" : { "color-space" : "srgb", "components" : { "red" : "0xB9", "green" : "0x59", "blue" : "0x37", "alpha" : "1.000" } } },
+      "color" : { "color-space" : "srgb", "components" : { "red" : "0x58", "green" : "0x56", "blue" : "0xD6", "alpha" : "1.000" } } },
     { "idiom" : "universal",
       "appearances" : [ { "appearance" : "contrast", "value" : "high" } ],
-      "color" : { "color-space" : "srgb", "components" : { "red" : "0x8C", "green" : "0x3A", "blue" : "0x1F", "alpha" : "1.000" } } },
+      "color" : { "color-space" : "srgb", "components" : { "red" : "0x36", "green" : "0x34", "blue" : "0xA3", "alpha" : "1.000" } } },
     { "idiom" : "universal",
       "appearances" : [ { "appearance" : "luminosity", "value" : "dark" }, { "appearance" : "contrast", "value" : "high" } ],
-      "color" : { "color-space" : "srgb", "components" : { "red" : "0xB9", "green" : "0x59", "blue" : "0x37", "alpha" : "1.000" } } }
+      "color" : { "color-space" : "srgb", "components" : { "red" : "0x65", "green" : "0x63", "blue" : "0xE6", "alpha" : "1.000" } } }
   ],
   "info" : { "author" : "xcode", "version" : 1 }
 }
@@ -615,10 +621,12 @@ Roles of the accent: prominent button fill (Study, Show Answer, Study in the det
 
 ### 5.2 Neighbours of the accent
 
-- **Forgot red** (`#D70015` light, `#D93A30` dark) has a luminance ratio of 1.04 (light) and 1.01 (dark) against the accent. In OKLCH the hues are 39.5° (accent) and 27° / 28° (red), 12° apart, chroma 0.13 against 0.20 to 0.22; hue and chroma are the only separators, and some colour-vision deficiencies may merge them. Forgot always carries `xmark` and its word, and the accent never means "wrong". On the stream screen the accent is a 22-pt ring and the Show Answer button, which the grade buttons replace. Fallback if the owner finds them too close: the same lightness and chroma at hue 50°, light `#A95722` (white 5.16), dark `#B65E24` (white 4.55); only the colorset changes.
-- **Greens** (`#149D7B`, `#0A6E56`, `#044333`, unchanged) lie far from terracotta on the colour wheel (OKLCH hue 170° against 39.5°). Luminance ratio to the accent is 1.2 to 2.5, so Hard and Good rely on hue for the separation; the grade buttons are labelled, and the accent is never next to them as a peer.
-- **Maturity ramp** stays blue (`Presentation.swift`, CLAUDE.md asks to keep it). Chart colours are data colours and differ from the interactive accent, which keeps accent = "tap or progress".
-- **Card face** stays `secondarySystemBackground`. `CardFlight.textColor` records contrast numbers for the grade tint measured on a neutral face (Hard text 2.3 to 2.9 on a light card); a warm face would move all of them. The icon's off-white cards are not reused in the UI.
+Hues and chroma are OKLCH; ΔE is 100 times the distance in OKLab; ratios are WCAG luminance ratios against the accent `#5856D6` (L 0.53, C 0.191, hue 278°). Neighbour colours are the ones in `Presentation.swift`.
+
+- **Forgot red** (`Grade.again`, `#CE0E1A` light, `#C4111A` dark) has a luminance ratio of 1.00 (light) and 1.08 (dark) against the accent and an OKLCH lightness within 0.01 of the accent's (0.54 and 0.52). The hues are 27° (red) and 278° (accent), 109° apart; chroma is 0.215 and 0.205 against 0.191; ΔE is 33.0 and 32.2. Hue is the separator. Forgot always carries `xmark` and its word, and the accent never means "wrong". On the stream screen the accent is a 30-pt ring (`StreamRing`, §5.7) and the Show Answer button, which the grade buttons replace.
+- **Greens** (`Grade.hard` `#63736D` light and `#5E6D67` dark, `Grade.good` `#467B69` and `#437464`, `Grade.easy` `#0D8265` and `#0C7B60`) lie at OKLCH hue 170°, 107° to 109° from the accent. The luminance ratio to the accent is 1.04 to 1.18 and ΔE 19.9 to 24.6, so Hard, Good and Easy rely on hue and chroma (Hard 0.02, Good 0.06, Easy 0.10 against 0.191); the grade buttons are labelled, and the accent is never next to them as a peer.
+- **Maturity ramp** stays blue (`Presentation.swift`, CLAUDE.md asks to keep it). Its hues are 253° to 257°, 20° to 26° from the accent: it is the accent's nearest neighbour. The closest pairs are `#5856D6` with the ramp's `#2A78D6` (ΔE 8.8, ratio 1.28), `#3634A3` with `#104281` (ΔE 7.6, ratio 1.03) and `#6563E6` with `#2A78D6` (ΔE 7.9, ratio 1.06). Chart colours are data colours and differ from the interactive accent, which keeps accent = "tap or progress".
+- **Card face** stays `secondarySystemBackground`. `CardFlight.textColor` records contrast numbers for the grade tint measured on a neutral face (Hard text 2.3 to 2.9 on a light card); a tinted face would move all of them. The icon's cards (`#E4E3FA`, `#F8F7FF`) are not reused in the UI.
 
 ### 5.3 New / Learning / Review
 
@@ -637,7 +645,7 @@ Neutral, decided in §1. Number `.primary`, 0 in `.secondary`; label `.secondary
 
 ### 5.5 Gate test (spec)
 
-`AccentContrastTests` in `VocTrainTests`: for appearance in light, dark, light + high contrast, dark + high contrast resolve `UIColor(named: "AccentColor")` and the surfaces `systemBackground`, `systemGroupedBackground`, `secondarySystemGroupedBackground`, `secondarySystemBackground` with `UITraitCollection`; compute WCAG relative luminance; print the table; fail below 4.5 for the white label and below 3.0 for every surface. Same on the Mac with `NSAppearance` pinned (`performAsCurrentDrawingAppearance`) [G §12]. Resolve system colours at run time; do not hard-code them.
+`AccentContrastTests` in `VocTrainTests`: for appearance in light, dark, light + high contrast, dark + high contrast resolve `UIColor(named: "AccentColor")` and the surfaces `systemBackground`, `systemGroupedBackground`, `secondarySystemGroupedBackground`, `secondarySystemBackground` with `UITraitCollection`; compute WCAG relative luminance; print the table; fail below 4.5 for the white label and below 3.0 for every surface. Same on the Mac with `NSAppearance` pinned (`performAsCurrentDrawingAppearance`) [G §12]. Resolve system colours at run time; do not hard-code them. The four surfaces do not include `#2C2C2E`, where the accent is 2.47 in dark and 2.97 in dark Increase Contrast (§5.1).
 
 ```swift
 func relativeLuminance(_ r: Double, _ g: Double, _ b: Double) -> Double {
@@ -659,6 +667,17 @@ On macOS `AccentColor` applies only when the system accent is Multicolor, and se
 The owner asked on 22.10.2026 for rings in the manner of the Fitness rings, taken from open-source rings and without a dependency. The drawing is `Shared/Support/ActivityRing.swift`: [MKRingProgressView](https://github.com/maxkonovalov/MKRingProgressView) by Max Konovalov (MIT) transcribed line for line — `RingProgressLayer.drawContent(in:)` as `RingDrawing.draw`, `GradientGenerator` as it is — inside a SwiftUI `Canvas` (`withCGContext`), so the same drawing runs on iOS, macOS and in the widget. The order is MK's: a backdrop circle in the start colour at 15 %; past one lap a solid arc in the start colour, then the context rotated so the gradient arc ends at the head; the end circle in the start colour with a shadow (`w/3` blur, offset `w/10` along the way the ring runs, opacity 1) clipped to the ring; the gradient arc on top, a conic gradient image clipped to the stroked arc. Options: MK's defaults, except `hidesRingForZeroProgress` on (an empty ring shows only the backdrop) and the gradient image at the display's scale. `UIBezierPath(arcCenter:…, clockwise: true)` became `CGMutablePath.addArc(…, clockwise: false)`; colours resolved from SwiftUI are converted to device RGB before the generator reads their components. The gradient image depends on size and colours only, so the last one is cached while a ring animates.
 
 **Colour.** Head: the accent. Tail: the accent mixed with 25 % white in device RGB. `AccentContrastTests.ringGradientHoldsItsContrastInEveryAppearance` reads both ends from the pixels of a view in each appearance and holds the tail to 3:1 on the four surfaces and to 1.3:1 against the accent, in light, dark and both increased-contrast variants. The test reads pixels because `Color.accentColor` is the asset's accent only inside a view: `UIColor(Color.accentColor)` gives the system blue. Line width 15 % of the diameter, at least 3 pt.
+
+The tail and its WCAG ratios, computed from the 8-bit values (surfaces as in §5.1):
+
+| Appearance | Tail | Against the accent (1.3 or more) | On surface (3.0 or more) |
+|---|---|---|---|
+| Light | `#8280E0` | 1.64 | 3.44 on white, 3.08 on `#F2F2F7` |
+| Light, Increase Contrast | `#6867BA` | 1.95 | 4.96 on white, 4.44 on `#F2F2F7` |
+| Dark | `#8280E0` | 1.64 | 6.11 on black, 4.95 on `#1C1C1E`, 4.06 on `#2C2C2E` |
+| Dark, Increase Contrast | `#8C8AEC` | 1.55 | 6.96 on black, 5.64 on `#1C1C1E`, 4.62 on `#2C2C2E` |
+
+Every tail ratio meets the test's thresholds; the lowest on a surface is 3.08 (light, on `#F2F2F7`). A third of white instead of a quarter gives 2.62 there (`#908EE4`).
 
 **Middle.** Outside the stream, the streak in days: bold rounded number, 34 % of the diameter, and the word "days" (9 pt at least, 14 %) under it from a diameter of 56 pt; nothing at 0 days. Inside the stream (`StreamRing`, the Mac session's `DailyRingView(inStream: true)`): empty in the first lap, "×2" once the goal is reached (`DailyRing.laps` is 1), "×3" after the second lap. The lap shown is `laps + 1`. The pure choice is `RingCenter(_:inStream:)`.
 
@@ -781,7 +800,7 @@ struct MacHome: View {
 
 ### 7.1 Order
 
-1. `AccentColor.colorset` in both targets, remove `StudyCount.color` (S).
+1. `AccentColor.colorset` in the iPhone, Mac and widget targets, remove `StudyCount.color` (S).
 2. `ProgressRing`, `SummaryRow`, `DeckRow`, `TodayScreen`, launch change, deployment targets (M). Needs `DailyProgress` from the stream agent.
 3. `DeckDetails` sheet (S).
 4. Stream header, grade area, card fonts (S–M). Needs the stream view model.
