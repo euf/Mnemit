@@ -29,7 +29,7 @@ struct StudyScreenSnapshotTests {
         ("υπεύθυνος, -η, -ο", "ответственный · responsible", "adjective"),
         ("ο ταχυδρόμος", "почтальон · the postman\nΟ ταχυδρόμος έρχεται κάθε πρωί.", ""),
     ]
-    /// The card that goes before the one a picture is about, so its grade leaves the chip.
+    /// The card that goes before the one a picture is about, so a grade has been given before it.
     static let filler: Texts = ("το σπίτι", "дом · the house", "")
     /// A Greek word that wraps to two lines at the default text size, as the question.
     static let wrappingQuestion: Texts = ("απαντάω (απάντησα)", "отвечать · to answer\nΑπάντησα στο γράμμα του Γιάννη.", "verb")
@@ -81,8 +81,8 @@ struct StudyScreenSnapshotTests {
         return window
     }
 
-    private func host(_ model: StudyModel, ring: DailyRingModel, flight: CardFlight, dark: Bool, textSize: DynamicTypeSize? = nil) async throws -> UIWindow {
-        try await host(StudyView(model: model, ring: ring, flight: flight, onClose: {}), dark: dark, textSize: textSize)
+    private func host(_ model: StudyModel, ring: DailyRingModel, flight: CardFlight, motion: StudyMotion? = nil, dark: Bool, textSize: DynamicTypeSize? = nil) async throws -> UIWindow {
+        try await host(StudyView(model: model, ring: ring, flight: flight, motion: motion, onClose: {}), dark: dark, textSize: textSize)
     }
 
     private func snapshot(_ window: UIWindow) -> UIImage {
@@ -172,16 +172,13 @@ struct StudyScreenSnapshotTests {
         }
     }
 
-    /// The rest, with the chip of the last grade and a moment after it has gone.
+    /// The rest, at the end of the plan.
     @Test(arguments: [false, true])
     func rest(dark: Bool) async throws {
         let (model, ring) = try await prepare(reviews: 6)
         #expect(model.isResting)
         let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
         try write(window, name: "7-rest", dark: dark)
-        model.dismissReceipt()
-        try await Task.sleep(for: .milliseconds(400))
-        try write(window, name: "7b-rest-nochip", dark: dark)
         window.isHidden = true
     }
 
@@ -227,68 +224,22 @@ struct StudyScreenSnapshotTests {
     }
 
     /// A word that wraps to two lines, as the question and as the head of the answer, with an
-    /// example sentence: with the chip, and without it.
+    /// example sentence.
     @Test(arguments: [false, true])
     func wrappingWords(dark: Bool) async throws {
         let (model, ring) = try await prepare(target: Self.wrappingQuestion)
         let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
-        try write(window, name: "8-wrap-question-chip", dark: dark)
+        try write(window, name: "8-wrap-question", dark: dark)
         model.reveal()
         try await Task.sleep(for: .milliseconds(400))
-        try write(window, name: "9-wrap-revealed-chip", dark: dark)
-        model.dismissReceipt()
-        try await Task.sleep(for: .milliseconds(400))
-        try write(window, name: "10-wrap-revealed-nochip", dark: dark)
+        try write(window, name: "9-wrap-revealed", dark: dark)
         window.isHidden = true
 
         let (answerModel, answerRing) = try await prepare(target: Self.wrappingAnswer)
-        answerModel.dismissReceipt()
         answerModel.reveal()
         let answerWindow = try await host(answerModel, ring: answerRing, flight: CardFlight(), dark: dark)
         try write(answerWindow, name: "11-wrap-answer-head", dark: dark)
         answerWindow.isHidden = true
-    }
-
-    /// The chip after each kind of grade: it names the grade in its colour with its arrow.
-    @Test(arguments: [false, true])
-    func chips(dark: Bool) async throws {
-        for (name, grade) in [("12-chip-forgot", Grade.again), ("13-chip-hard", .hard), ("14-chip-good", .good), ("15-chip-easy", .easy)] {
-            let (model, ring) = try await prepare(target: Self.defaultTexts[3], after: grade)
-            let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
-            try write(window, name: name, dark: dark)
-            window.isHidden = true
-        }
-    }
-
-    /// The chip comes and goes without the card, or anything below it, moving: the picture with the
-    /// chip and the one without differ only above the card's top edge, which is found in a column
-    /// the chip never reaches.
-    @Test(arguments: [false, true])
-    func chipLeavesTheCardWhereItIs(dark: Bool) async throws {
-        let (model, ring) = try await prepare(target: Self.wrappingQuestion)
-        let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
-        let shownImage = snapshot(window)
-        let shown = PixelBitmap(shownImage)
-        model.dismissReceipt()
-        try await Task.sleep(for: .milliseconds(500))
-        let hiddenImage = snapshot(window)
-        let hidden = PixelBitmap(hiddenImage)
-        window.isHidden = true
-        try shownImage.pngData()?.write(to: directory.appendingPathComponent("chip-shown-\(dark ? "dark" : "light").png"))
-        try hiddenImage.pngData()?.write(to: directory.appendingPathComponent("chip-hidden-\(dark ? "dark" : "light").png"))
-
-        let scale = Int(hidden.scale)
-        // From under the chip: higher up, the shadow of the bar's glass buttons is in the column.
-        let cardTop = try #require(hidden.firstChange(inColumn: 40 * scale, from: 150 * scale))
-        var above = 0
-        var below = 0
-        for y in 0..<hidden.height {
-            for x in 0..<hidden.width where shown.differs(x, y, from: hidden) {
-                if y < cardTop { above += 1 } else { below += 1 }
-            }
-        }
-        #expect(above > 0, "the chip shows nothing above the card")
-        #expect(below == 0, "\(below) pixels at or below the top of the card (row \(cardTop)) changed with the chip")
     }
 
     /// While the deck is read: the grey of the study page, not white.
@@ -300,7 +251,7 @@ struct StudyScreenSnapshotTests {
         window.isHidden = true
     }
 
-    /// Larger text: the chip stays one line and the card keeps its place.
+    /// Larger text: the bar keeps its line and the card keeps its place.
     @Test(arguments: [false, true])
     func largerText(dark: Bool) async throws {
         for (name, size) in [("17-text-xxxl", DynamicTypeSize.xxxLarge), ("18-text-ax1", .accessibility1), ("19-text-ax5", .accessibility5)] {
@@ -312,5 +263,168 @@ struct StudyScreenSnapshotTests {
             try write(window, name: name + "-revealed", dark: dark)
             window.isHidden = true
         }
+    }
+
+    // MARK: What moves
+
+    /// A model with six new cards cut into rounds of four and two, `done` of them graded Easy, so the
+    /// stack under the card holds the rest of the round, and the ring evaluated for them.
+    private func prepareRound(done: Int) async throws -> (StudyModel, DailyRingModel, VocabularyDocument, UndoManager) {
+        try beSilent()
+        let (document, undoManager) = try makeDocument()
+        let ring = DailyRingModel()
+        ring.refresh(documents: [document], delay: .zero)
+        try await Task.sleep(for: .milliseconds(300))
+        let guide = try #require(RoundGuide(progress: ring.progress, document: document))
+        #expect(guide.ends == [4, 6])
+        let model = StudyModel(document: document, rounds: guide)
+        for _ in 0..<done {
+            grade(model, .easy, undoManager: undoManager)
+        }
+        ring.refresh(documents: [document], delay: .zero)
+        try await Task.sleep(for: .milliseconds(300))
+        return (model, ring, document, undoManager)
+    }
+
+    /// The bar with Undo next to the menu: dimmed before there is a grade to take back, lit after one.
+    @Test(arguments: [false, true])
+    func undoButton(dark: Bool) async throws {
+        let (fresh, freshRing) = try await prepare(reviews: 0)
+        #expect(!fresh.canUndo)
+        let before = try await host(fresh, ring: freshRing, flight: CardFlight(), dark: dark)
+        try write(before, name: "20-undo-disabled", dark: dark)
+        before.isHidden = true
+
+        // The undo manager is the caller's: the document holds it weakly.
+        let (graded, gradedRing, _, undoManager) = try await prepareRound(done: 2)
+        #expect(graded.canUndo)
+        let after = try await host(graded, ring: gradedRing, flight: CardFlight(), dark: dark)
+        try write(after, name: "21-undo-enabled", dark: dark)
+        withExtendedLifetime(undoManager) {}
+        after.isHidden = true
+    }
+
+    /// The card in the air with its label on it, `progress` of the way along: into the ring in the bar
+    /// (the ring's place and the card's are the ones the views report), under the stack, off to the side
+    /// for a leech, and with Reduce Motion where it was, half faded. The next card is on top already.
+    @Test(arguments: [false, true])
+    func theCardInTheAir(dark: Bool) async throws {
+        let cases: [(name: String, receipt: GradeReceipt, progress: Double, reduceMotion: Bool, drag: CGSize)] = [
+            ("22-flight-ring", GradeReceipt(grade: .good, interval: .days(8)), 0.5, false, CGSize(width: 130, height: -20)),
+            ("23-flight-ring-late", GradeReceipt(grade: .easy, interval: .days(95)), 0.8, false, CGSize(width: 25, height: -120)),
+            ("24-flight-stack", GradeReceipt(grade: .again, interval: .learning), 0.55, false, CGSize(width: -110, height: 15)),
+            ("25-flight-leech", GradeReceipt(grade: .again, interval: .days(3), isLeech: true), 0.35, false, CGSize(width: -110, height: 15)),
+            ("26-flight-reduced", GradeReceipt(grade: .good, interval: .days(1)), 0.5, true, .zero),
+        ]
+        for item in cases {
+            let (model, ring, _, _) = try await prepareRound(done: 1)
+            model.reveal()
+            let flight = CardFlight()
+            let motion = StudyMotion(ring: ring)
+            motion.frozen = StudyMotion.Frozen(departure: item.progress)
+            let window = try await host(model, ring: ring, flight: flight, motion: motion, dark: dark)
+            #expect(motion.ringHome.width > 0, "the ring in the bar reports its place")
+            #expect(motion.cardSlot.width > 0, "the card reports its place")
+            if item.drag != .zero {
+                let start = CGPoint(x: 0.5 * flight.size.width, y: 0.3 * flight.size.height)
+                flight.drag(item.drag, from: start, isRevealed: true)
+            }
+            let card = try #require(model.currentCard)
+            motion.depart(card, receipt: item.receipt, release: flight.release, velocity: .zero, behind: model.cardsBehind, peek: 6, reduceMotion: item.reduceMotion)
+            flight.didRelease(item.receipt.grade)
+            try await Task.sleep(for: .milliseconds(800))
+            try write(window, name: item.name, dark: dark)
+            window.isHidden = true
+        }
+    }
+
+    /// The stack: three cards left in the round show as three blank edges under the card, one as one.
+    @Test(arguments: [false, true])
+    func theStackOfTheRound(dark: Bool) async throws {
+        for (name, done) in [("27-stack-3", 0), ("28-stack-1", 2)] {
+            let (model, ring, _, _) = try await prepareRound(done: done)
+            #expect(model.cardsBehind == 3 - done)
+            let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
+            try await Task.sleep(for: .milliseconds(700))
+            try write(window, name: name, dark: dark)
+            window.isHidden = true
+        }
+    }
+
+    /// The next card on its way up from the stack, the cards under it blank: a few points low and a little
+    /// small, its words half in.
+    @Test(arguments: [false, true])
+    func theNextCardRises(dark: Bool) async throws {
+        let (model, ring, _, _) = try await prepareRound(done: 1)
+        let motion = StudyMotion(ring: ring)
+        motion.arrival = .rises
+        motion.frozen = StudyMotion.Frozen(rise: 0.4)
+        let window = try await host(model, ring: ring, flight: CardFlight(), motion: motion, dark: dark)
+        try await Task.sleep(for: .milliseconds(700))
+        try write(window, name: "29-next-card-rises", dark: dark)
+        window.isHidden = true
+    }
+
+    /// The end of a round with the ring on its way down: the empty place of the card as a faint outline, the ring
+    /// half way, scaled up from the bar's size toward the rest's, and none of the lines in yet.
+    @Test(arguments: [false, true])
+    func theRingComesDown(dark: Bool) async throws {
+        let (model, ring, document, undoManager) = try await prepareRound(done: 3)
+        let motion = StudyMotion(ring: ring)
+        // The card's place is known from the card that left.
+        let cards = try await host(model, ring: ring, flight: CardFlight(), motion: motion, dark: dark)
+        try await Task.sleep(for: .milliseconds(200))
+        cards.isHidden = true
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        ring.refresh(documents: [document], delay: .zero)
+        try await Task.sleep(for: .milliseconds(300))
+
+        for (name, travel, lines) in [("30-rest-travel-half", 0.5, 0), ("31-rest-travel-end", 1.0, 0)] {
+            motion.freezeRest(travel: travel, lines: lines)
+            let window = try await host(model, ring: ring, flight: CardFlight(), motion: motion, dark: dark)
+            #expect(motion.ringRest.width > 0, "the rest reports where its ring goes")
+            try await Task.sleep(for: .milliseconds(300))
+            try write(window, name: name, dark: dark)
+            window.isHidden = true
+        }
+    }
+
+    /// The lines of the rest coming in one after the other: the title, then each line, then the buttons.
+    @Test(arguments: [false, true])
+    func theLinesComeInOneByOne(dark: Bool) async throws {
+        let (model, ring, document, undoManager) = try await prepareRound(done: 3)
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        ring.refresh(documents: [document], delay: .zero)
+        try await Task.sleep(for: .milliseconds(300))
+        for (name, lines) in [("32-lines-1", 1), ("33-lines-3", 3), ("34-lines-all", 9)] {
+            let motion = StudyMotion(ring: ring)
+            motion.freezeRest(travel: 1, lines: lines)
+            let window = try await host(model, ring: ring, flight: CardFlight(), motion: motion, dark: dark)
+            try await Task.sleep(for: .milliseconds(300))
+            try write(window, name: name, dark: dark)
+            window.isHidden = true
+        }
+    }
+
+    /// The burst at its peak, as a still from a fixed time: the ring swollen to 1.12 and the specks half way out.
+    @Test(arguments: [false, true])
+    func theBurstAtItsPeak(dark: Bool) async throws {
+        let (_, ring) = try await prepare(reviews: 2)
+        let still = VStack(spacing: Spacing.margin) {
+            RingBurstFrame(elapsed: RingBurstTiming.swell / 2, diameter: 96) {
+                DailyRingView(progress: ring.progress, diameter: 96)
+            }
+            Text("Round 1 done")
+                .font(.title.weight(.semibold))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground))
+        let window = try await host(still, dark: dark)
+        try write(window, name: "35-burst-peak", dark: dark)
+        window.isHidden = true
     }
 }

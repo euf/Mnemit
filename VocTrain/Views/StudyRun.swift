@@ -155,7 +155,7 @@ private struct DeckStream: View {
         .documentSync(document, fileURL: deck.url, isEditable: deck.isEditable, merger: deck.merger, isInSession: model != nil)
         .onChange(of: canEdit, initial: true) {
             if canEdit, model == nil {
-                model = StudyModel(document: document, entry: entry, rounds: RoundGuide(progress: ring.progress, document: document))
+                model = StudyModel(document: document, entry: entry, ring: ring)
                 model?.setActive(scenePhase == .active)
             }
         }

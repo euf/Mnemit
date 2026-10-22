@@ -13,10 +13,17 @@ import VocabCore
 /// between Forgot and the two grades next to it where no grade is given). The card goes with
 /// the finger, bent toward the grade's target (a swipe up moves it up and to the right),
 /// turning about the point it was grabbed at, and takes the colour of the grade the swipe would
-/// give; letting go far enough, or flicking, grades and sends the card off in the direction of
-/// the grade. The buttons stay for VoiceOver and as a legend: during a swipe the button of the
-/// grade it would give stands out and the others step back. A line under the bar offers Undo
-/// for a few seconds after each grade, and a shake undoes too.
+/// give; letting go far enough, or flicking, grades. The buttons stay for VoiceOver and as a legend:
+/// during a swipe the button of the grade it would give stands out and the others step back.
+///
+/// A grade is applied at once, and the card shows where it went (`StudyMotion`, `DepartingCard`): a
+/// card that FSRS lets go to another day flies, shrinking, into the small ring in the bar and steps it,
+/// with "in 8 days" on it; a card that comes back today slides under the bottom of the stack of the
+/// cards still waiting in the round; a practice or a leech flies off in the direction of the grade. The
+/// card under it rises into its place and takes the next touch while the first still flies. Undo, the
+/// button next to the menu or a shake, plays it backwards, and the card returns with its answer showing.
+/// At the end of a round the ring comes down from the bar into the empty place of the card, bursts, and the
+/// rest's lines come in under it one by one; Next Round takes it back up and deals the stack again.
 ///
 /// The card and the grade area keep their size from the question to the answer: the grade
 /// buttons are in the layout all the time and fade in, and Show Answer sits on top of them.
@@ -34,9 +41,10 @@ struct StudyView: View {
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.colorScheme) private var colorScheme
     @AppStorage(GreekSpeech.autoSpeakKey) private var autoSpeak = true
     @State private var flight: CardFlight
+    /// What moves besides the card under the finger: the cards that leave, the ring, the stack.
+    @State private var motion: StudyMotion
     /// The card whose info shows in a sheet.
     @State private var info: Card?
     /// Whether a finger is down; a drag the system cancels still springs the card back.
@@ -47,50 +55,51 @@ struct StudyView: View {
     /// not the card's.
     @State private var speakers = SpeakerPlaces()
 
-    /// - Parameter flight: The card's movement; a test passes one it has moved.
-    init(model: StudyModel, ring: DailyRingModel, flight: CardFlight? = nil, onClose: @escaping () -> Void) {
+    /// - Parameters:
+    ///   - flight: The card's movement; a test passes one it has moved.
+    ///   - motion: What moves around it; a test passes one it has frozen.
+    init(model: StudyModel, ring: DailyRingModel, flight: CardFlight? = nil, motion: StudyMotion? = nil, onClose: @escaping () -> Void) {
         self.model = model
         self.ring = ring
         self.onClose = onClose
         _flight = State(initialValue: flight ?? CardFlight())
+        let motion = motion ?? StudyMotion(ring: ring)
+        if model.isResting, motion.frozen == nil { motion.snapRest(true) }
+        _motion = State(initialValue: motion)
     }
 
     private var isCompact: Bool { verticalSizeClass == .compact }
 
     private var isRevealed: Bool { model.stage == .revealed }
 
+    /// How far each edge of the stack shows below the one above it.
+    private var peek: CGFloat { isCompact ? 4 : 6 }
+
     var body: some View {
         NavigationStack {
             Group {
-                if model.isResting {
-                    VStack(spacing: 0) {
-                        chip
-                        StreamRestView(
-                            rest: model.rest, progress: ring.progress,
-                            onKeepGoing: model.keepGoing, onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose)
-                    }
+                if motion.showsRest {
+                    restLayer
                 } else if let card = model.currentCard {
                     cardArea(card)
                 }
             }
+            // Reduce Motion: the rest comes with a crossfade, not by the ring's way.
+            .animation(reduceMotion ? .easeInOut(duration: 0.25) : nil, value: motion.showsRest)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // Behind the card and the buttons, above the screen's own grey: the flash of a card
-            // that went to another day. It moves nothing, so Reduce Motion keeps it.
-            .keyframeAnimator(initialValue: 0.0, trigger: model.progressPulses) { content, level in
-                content.background(Color.appAccent.opacity(max(0, level) * (colorScheme == .dark ? Self.pulseDark : Self.pulseLight)))
-            } keyframes: { _ in
-                LinearKeyframe(1, duration: Self.pulseRise)
-                CubicKeyframe(0, duration: Self.pulseFade, startVelocity: 0)
-            }
             .background(Color(.systemGroupedBackground))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     closeButton
                 }
                 ToolbarItem(placement: .principal) {
-                    if !model.isResting {
-                        StudyHeader(model: model, ring: ring)
-                    }
+                    StudyHeader(model: model, ring: ring, motion: motion)
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    // Next to the menu, which holds it too: the same condition for both.
+                    Button("Undo", systemImage: "arrow.uturn.backward", action: undo)
+                        .labelStyle(.iconOnly)
+                        .disabled(!canUndo)
                 }
                 ToolbarItem(placement: .primaryAction) {
                     // In a menu, so a stray tap doesn't suspend the card; Undo comes first
@@ -99,16 +108,14 @@ struct StudyView: View {
                     Menu("More", systemImage: "ellipsis") {
                         // Only reviews and suspensions of this stream: undo beyond them
                         // would change cards the stream doesn't show.
-                        Button("Undo", systemImage: "arrow.uturn.backward") {
-                            model.document.undoManager?.undo()
-                        }
-                        .disabled(!model.hasUndoableSteps || model.document.undoManager?.canUndo != true)
+                        Button("Undo", systemImage: "arrow.uturn.backward", action: undo)
+                            .disabled(!canUndo)
                         if !model.isResting {
                             Button("Card Info", systemImage: "info.circle") {
                                 info = model.currentCard
                             }
                             Button("Suspend Card", systemImage: "pause.circle") {
-                                model.suspendCurrentCard()
+                                suspend()
                             }
                         }
                         if GreekSpeech.shared.voice != nil {
@@ -122,8 +129,10 @@ struct StudyView: View {
             // iOS 26 adds a back button of its own; the close button takes its place.
             .navigationBarBackButtonHidden()
         }
+        // Above the bar too: the cards that leave fly into the ring in it, and the ring comes down from it.
+        .overlay { motionLayer }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
-            model.undoLast()
+            undo()
         }
         .sheet(item: $info) { card in
             CardInfoSheet(document: model.document, card: card)
@@ -131,12 +140,20 @@ struct StudyView: View {
         // After the card has flown out: the question changes when the grade is given. The
         // speech waits until the new card has settled.
         .onChange(of: model.questionNumber, initial: true) {
-            GreekSpeech.shared.cardAppeared(model.currentCard)
+            if !motion.showsRest { motion.arrival = .still }
+            speakCurrentCard()
         }
         .onChange(of: model.stage) { _, stage in
-            if stage == .revealed, let card = model.currentCard {
+            if stage == .revealed, !model.returnedByUndo, let card = model.currentCard {
                 GreekSpeech.shared.answerRevealed(of: card)
             }
+        }
+        // A rest nobody sent for, say a card gone from the deck: the screen follows without a show.
+        .onChange(of: model.isResting) { _, isResting in
+            if isResting != motion.showsRest, !motion.isChoreographing { motion.snapRest(isResting) }
+        }
+        .onChange(of: ring.progress?.ring.done) {
+            motion.figuresChanged()
         }
         .onDisappear { GreekSpeech.shared.close() }
     }
@@ -151,36 +168,58 @@ struct StudyView: View {
         }
     }
 
-    /// Names the last grade and offers Undo for a few seconds, at the top of the screen,
-    /// under the bar. It keeps its place when empty, so nothing below it moves.
-    private var chip: some View {
-        UndoChip(receipt: model.receipt, onUndo: model.undoLast, onExpire: model.dismissReceipt)
+    /// The cards that have been graded and fly on, and the ring that comes down to the rest.
+    private var motionLayer: some View {
+        ZStack {
+            GeometryReader { proxy in
+                let origin = proxy.frame(in: .global).origin
+                ForEach(motion.departures) { departure in
+                    DepartingCard(departure: departure, frozen: motion.frozen?.departure)
+                        .frame(width: departure.slot.width, height: departure.slot.height)
+                        .position(x: departure.slot.midX - origin.x, y: departure.slot.midY - origin.y)
+                }
+            }
+            .allowsHitTesting(false)
+            RingTraveler(motion: motion, progress: ring.progress, reduceMotion: reduceMotion)
+        }
     }
+
+    // MARK: The cards
 
     /// In portrait the buttons sit below the card. In landscape the iPhone is too low for the
     /// two rows: Forgot and the three others share one row. The gaps are from `Spacing`: 12
-    /// between the chip, the card and the buttons (8 in landscape), 12 under the buttons, above
-    /// the safe area, and the 16 of the side margins.
+    /// between the card and the buttons (8 in landscape), with the room for the stack's edges
+    /// in it, 12 under the buttons, above the safe area, and the 16 of the side margins.
     private func cardArea(_ card: Card) -> some View {
         VStack(spacing: isCompact ? Spacing.tight : Spacing.gap) {
-            chip
             cardView(card)
+                .padding(.bottom, StackPose.reserve(peek: peek))
             gradeArea
         }
         .padding(.horizontal, Spacing.margin)
+        .padding(.top, Spacing.tight)
         .padding(.bottom, Spacing.gap)
     }
 
     /// The card, which the learner touches to show the answer and swipes to grade it. The
     /// gestures sit on a place that stays put, as the card moves away under the finger; it is
-    /// also the space the speaker buttons report their places in (`SpeakerPlaces`).
+    /// also the space the speaker buttons report their places in (`SpeakerPlaces`). Behind it
+    /// the cards of the round that wait, as a stack of blank edges.
     private func cardView(_ card: Card) -> some View {
-        FlightCard(flight: flight) {
+        TopCard(flight: flight, arrival: motion.arrival, peek: peek, frozenRise: motion.frozen?.rise) {
             CardFace(card: card, isRevealed: model.stage == .revealed)
         }
+        // A card of its own for each question: the one under rises into place from the stack.
+        .id(model.questionNumber)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background { CardStack(edges: min(model.cardsBehind, StackPose.maxEdges), peek: peek, dealt: false) }
         .environment(\.speakerPlaces, speakers)
         .coordinateSpace(name: SpeakerPlaces.space)
+        .onGeometryChange(for: CGRect.self) {
+            $0.frame(in: .global)
+        } action: {
+            motion.cardSlot = $0
+        }
         .contentShape(Rectangle())
         // Next to the buttons inside the card, not instead of them: a touch on a speaker goes
         // to both, and `touch` is the one that lets it go.
@@ -232,16 +271,102 @@ struct StudyView: View {
                     flight.springBack()
                     return
                 }
-                commit(grade)
+                commit(grade, velocity: value.velocity)
             }
     }
 
-    /// Flies the card out in the direction of `grade`, then grades. A swipe, a button and
-    /// VoiceOver all come here. What the card was saying stops with it.
-    private func commit(_ grade: Grade) {
-        guard model.stage == .revealed, !flight.isFlying else { return }
+    // MARK: Grading and Undo
+
+    /// Gives `grade` and sends the card off, from where it was let go with the speed of the finger. The
+    /// grade is applied at once, so the next card is on top and takes the next touch while this one flies;
+    /// where the card goes follows from what the grade did (`GradeReceipt.destination`). A swipe, a button
+    /// and VoiceOver all come here. What the card was saying stops with it.
+    private func commit(_ grade: Grade, velocity: CGSize = .zero) {
+        guard model.stage == .revealed, let card = model.currentCard else { return }
         GreekSpeech.shared.stop()
-        flight.fly(grade, reduceMotion: reduceMotion) { model.grade(grade) }
+        let release = flight.release
+        let behind = model.cardsBehind
+        motion.arrival = .rises
+        guard let receipt = model.grade(grade) else {
+            motion.arrival = .still
+            flight.springBack()
+            return
+        }
+        flight.didRelease(grade)
+        motion.depart(card, receipt: receipt, release: release, velocity: velocity, behind: behind, peek: peek, reduceMotion: reduceMotion)
+        // The label is gone in a moment.
+        AccessibilityNotification.Announcement(receipt.announcement).post()
+        if model.isResting {
+            motion.restBegan(afterLanding: receipt.destination == .ring, reduceMotion: reduceMotion)
+        }
+    }
+
+    private func suspend() {
+        motion.arrival = .rises
+        model.suspendCurrentCard()
+    }
+
+    private var canUndo: Bool { model.canUndo && !motion.isChoreographing }
+
+    /// Takes back the last grade the way it went: the card comes back out of the ring, which gives its step
+    /// back, or up from under the stack, with its answer showing. From the rest the ring goes up to the bar first.
+    private func undo() {
+        guard canUndo, let target = model.undoReturn else { return }
+        let behind = model.cardsBehind
+        let arrival = motion.returnArrival(from: target.from, behind: behind, peek: peek, reduceMotion: reduceMotion)
+        let retracts = target.from == .ring
+        if target.fromRest {
+            motion.leaveRest(
+                snapshot: model.rest, reduceMotion: reduceMotion, cardsAfter: StudyMotion.Timing.travel, arrival: arrival,
+                apply: { model.undoLast() }, didLeave: { !model.isResting },
+                then: { if retracts { motion.retractStep() } })
+        } else {
+            motion.arrival = arrival
+            model.undoLast()
+            if retracts { motion.retractStep() }
+        }
+    }
+
+    /// Goes on from the rest: the ring goes back up to the bar and the cards are dealt.
+    private func leaveRest(_ action: @escaping () -> Void) {
+        guard !motion.isChoreographing else { return }
+        motion.leaveRest(
+            snapshot: model.rest, reduceMotion: reduceMotion, cardsAfter: 0.3, arrival: .rises, apply: action, didLeave: { !model.isResting },
+            then: { speakCurrentCard() })
+    }
+
+    /// A card that came by a move of the stream speaks once it has settled; one that came back by Undo
+    /// was heard, and the rest has no card.
+    private func speakCurrentCard() {
+        guard !motion.showsRest, !model.returnedByUndo else { return }
+        GreekSpeech.shared.cardAppeared(model.currentCard)
+    }
+
+    // MARK: The rest
+
+    /// The stop at the end of a round or of the plan. The ring is the one that came down from the bar: this
+    /// only leaves it its place and, until it has come, the empty place of the card.
+    private var restLayer: some View {
+        StreamRestView(
+            rest: motion.restSnapshot ?? model.rest, progress: ring.progress,
+            onKeepGoing: { leaveRest(model.keepGoing) }, onAddNewCards: { leaveRest(model.addNewCards) },
+            onNextRound: { leaveRest(model.continueRound) }, onDone: onClose,
+            ringPlace: reduceMotion ? nil : { motion.ringRest = $0 }, staggers: !reduceMotion, arrived: motion.hasArrived || reduceMotion,
+            frozenStep: motion.frozen?.lines
+        )
+        .background {
+            GeometryReader { proxy in
+                let slot = motion.cardSlot
+                let origin = proxy.frame(in: .global).origin
+                if slot.width > 0 {
+                    SlotOutline()
+                        .frame(width: slot.width, height: slot.height)
+                        .position(x: slot.midX - origin.x, y: slot.midY - origin.y)
+                        .opacity(motion.showsSlot ? 1 : 0)
+                        .animation(.easeOut(duration: 0.2), value: motion.showsSlot)
+                }
+            }
+        }
     }
 
     /// The same space for Show Answer and for the grade buttons: both are in the layout, one
@@ -264,12 +389,12 @@ struct StudyView: View {
     private var grades: some View {
         if isCompact {
             HStack(spacing: 12) {
-                GradeChoice(part: .forgot, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
+                GradeChoice(part: .forgot, isCompact: true, highlighted: flight.highlighted, onGrade: { commit($0) })
                     .frame(maxWidth: Self.forgotWidth)
-                GradeChoice(part: .recalled, isCompact: true, highlighted: flight.highlighted, onGrade: commit)
+                GradeChoice(part: .recalled, isCompact: true, highlighted: flight.highlighted, onGrade: { commit($0) })
             }
         } else {
-            GradeChoice(highlighted: flight.highlighted, onGrade: commit)
+            GradeChoice(highlighted: flight.highlighted, onGrade: { commit($0) })
         }
     }
 
@@ -294,12 +419,6 @@ struct StudyView: View {
     private static let forgotWidth: CGFloat = 170
     /// How far a finger moves before it swipes the card, in points.
     private static let swipeStartDistance: CGFloat = 6
-    /// The background pulse for a card sent to another day: the accent at this opacity at the
-    /// peak, reached in `pulseRise` seconds and gone `pulseFade` seconds later.
-    private static let pulseLight = 0.12
-    private static let pulseDark = 0.18
-    private static let pulseRise = 0.08
-    private static let pulseFade = 0.4
 }
 
 /// The middle of the bar: today's ring with its figures, and the stage before it when the
@@ -308,10 +427,14 @@ struct StudyView: View {
 /// shows no ring.
 ///
 /// A view of its own, so a new figure of the ring, which comes a moment after each grade, redraws
-/// the bar and not the whole screen with its card.
+/// the bar and not the whole screen with its card. The ring is where the cards go: it reports its
+/// place (`StudyMotion.ringHome`), steps when a card lands in it, and gives way to the ring that
+/// comes down to the rest (`RingTraveler`) while that is away. The bar is empty while the rest has the ring.
 private struct StudyHeader: View {
     var model: StudyModel
     var ring: DailyRingModel
+    var motion: StudyMotion
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 8) {
@@ -331,6 +454,8 @@ private struct StudyHeader: View {
                 ringAndFigures
             }
         }
+        .opacity(motion.showsRest && motion.travel >= 1 ? 0 : 1)
+        .animation(.easeOut(duration: 0.2), value: motion.showsRest && motion.travel >= 1)
     }
 
     /// "Round 2 of 4" while rounds remain, "36 cards today" after them, beside a small ring.
@@ -338,7 +463,14 @@ private struct StudyHeader: View {
     private var ringAndFigures: some View {
         let daily = ring.progress?.ring
         HStack(spacing: 8) {
-            StreamRing(progress: ring.progress)
+            StreamRing(progress: ring.progress, shownDone: motion.shownDone)
+                .ringBump(motion.landings, reduceMotion: reduceMotion)
+                .opacity(motion.travels ? 0 : 1)
+                .onGeometryChange(for: CGRect.self) {
+                    $0.frame(in: .global)
+                } action: {
+                    motion.ringHome = $0
+                }
             if let daily {
                 HStack(spacing: 4) {
                     if let round = ring.progress.flatMap({ RoundStatus($0).round }) {
@@ -366,13 +498,16 @@ private struct StudyHeader: View {
 /// lap in its middle from the second on: "×2" once the goal is reached. No streak and no popover: the bar
 /// is calm. As big as the figures beside it need for "×2", and it grows with the text size up
 /// to a ceiling, as the bar has only so much height. VoiceOver reads the lap ("Lap 2") with the
-/// figures beside it, which the bar combines into one element.
+/// figures beside it, which the bar combines into one element. `shownDone` is what the ring shows as
+/// done when it is ahead of the figures, a card having landed in it.
 struct StreamRing: View {
     var progress: DailyProgress?
+    var shownDone: Int?
     @ScaledMetric(relativeTo: .subheadline) private var diameter: CGFloat = 30
 
     var body: some View {
         ProgressRing(
-            fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 44), center: RingCenter(progress, inStream: true), speaksCenter: true)
+            fraction: DailyRingFigure.fraction(progress, shownDone: shownDone), diameter: min(diameter, 44), center: RingCenter(progress, inStream: true),
+            speaksCenter: true)
     }
 }

@@ -22,13 +22,16 @@ final class SessionDriver {
     /// What the last grade did, until the learner has seen it, undone it or moved on; see
     /// `UndoChip`. Practice and study alike leave one.
     private(set) var lastReceipt: GradeReceipt?
+    /// How many cards the round of the day the stream is in still holds, the card being asked and the
+    /// ones that come back today included; `nil` without a guide to the rounds, and once the goal is met.
+    private(set) var cardsLeftInRound: Int?
     @ObservationIgnored weak var delegate: (any SessionDriverDelegate)?
     @ObservationIgnored private var deckObservation: AnyCancellable?
     /// Times the card being asked, from the moment `moveOn()` shows it.
     @ObservationIgnored private var stopwatch: ActiveStopwatch
     /// Where the rounds of the day end, so the stream rests at each; `nil` for a stream that doesn't:
-    /// practice, and a day whose rounds are not known.
-    let rounds: RoundGuide?
+    /// practice, and a day whose rounds are not known, which `adoptRounds(_:)` may yet bring.
+    private(set) var rounds: RoundGuide?
 
     /// Starts with the current card of `stream`, or at rest. Tells the delegate of no
     /// move: it isn't set yet. `now` is the monotonic clock that times the cards; a test
@@ -89,6 +92,19 @@ final class SessionDriver {
         lastReceipt = GradeReceipt(grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count)
         moveOn()
         return true
+    }
+
+    /// Takes the rounds of the day from a progress that arrived, or changed, while the stream is open: the
+    /// ring is evaluated after the stream was, say. It counts from the next card on: the rounds the cards
+    /// done by now have ended are passed, and the stream does not rest for them, nor turn back to one.
+    /// Rounds that end where the ones it has end are the same rounds: the figures of the ring lag a card
+    /// or two behind the stream, so they would only move the count of the cards done elsewhere.
+    func adoptRounds(_ guide: RoundGuide?) {
+        guard let guide, guide.ends != rounds?.ends else { return }
+        rounds = guide
+        let done = guide.cardsDone(in: document)
+        stream.startRounds(at: max(stream.roundsPassed, guide.roundsDone(cardsDone: done)))
+        cardsLeftInRound = guide.cardsLeft(cardsDone: done)
     }
 
     /// The app became active or stopped being: the time while it isn't active is not on any
@@ -194,9 +210,14 @@ final class SessionDriver {
     /// the learner has not been through. Asked every time the stream moves on, so redo finds the rest
     /// again and undo, which brings back a stream from before it, finds none.
     private func restAtRoundEnd() {
-        guard let rounds else { return }
+        guard let rounds else {
+            cardsLeftInRound = nil
+            return
+        }
         StallTrace.measure("roundGuide") {
-            stream.restAtRoundEnd(roundsDone: rounds.roundsDone(cardsDone: rounds.cardsDone(in: document)), rounds: rounds.rounds)
+            let done = rounds.cardsDone(in: document)
+            stream.restAtRoundEnd(roundsDone: rounds.roundsDone(cardsDone: done), rounds: rounds.rounds)
+            cardsLeftInRound = rounds.cardsLeft(cardsDone: done)
         }
     }
 
@@ -349,6 +370,12 @@ struct RoundGuide: Equatable, Sendable {
 
     /// How many rounds `cardsDone` cards have ended.
     func roundsDone(cardsDone: Int) -> Int { ends.filter { $0 <= cardsDone }.count }
+
+    /// How many cards the round that `cardsDone` cards have reached still asks; `nil` once the last
+    /// round, the goal, is done.
+    func cardsLeft(cardsDone: Int) -> Int? {
+        ends.first { $0 > cardsDone }.map { $0 - cardsDone }
+    }
 
     /// The cards done today across the decks, with `document` as it is.
     @MainActor

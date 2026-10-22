@@ -50,6 +50,14 @@ enum RingCenter: Equatable {
     }
 }
 
+enum DailyRingFigure {
+    /// The ring's fraction: the figures', or `shownDone` of the goal while the ring is ahead of them.
+    static func fraction(_ progress: DailyProgress?, shownDone: Int?) -> Double {
+        guard let ring = progress?.ring else { return 0 }
+        return shownDone.map { Double($0) / Double(max(1, ring.goal)) } ?? ring.fraction
+    }
+}
+
 /// Today's cards done against the goal as an `ActivityRing` from a lighter tint of the accent to the
 /// accent, with the figure of `RingCenter` in the middle.
 ///
