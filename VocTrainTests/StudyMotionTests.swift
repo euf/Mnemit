@@ -217,7 +217,7 @@ struct StudyMotionTests {
             #expect(StackPose.faintness(level) > 0 && StackPose.faintness(level) <= 1)
             if level > 1 { #expect(StackPose.faintness(level) < StackPose.faintness(level - 1)) }
         }
-        #expect(StackPose.reserve(peek: 6) == StackPose.drop(StackPose.maxEdges))
+        #expect(StackPose.reserve == StackPose.drop(StackPose.maxEdges))
     }
 
     @Test func theBurstSwellsAndFades() {

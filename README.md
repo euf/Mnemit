@@ -81,7 +81,7 @@ are in [`references/`](references/).
   in neither count. Older logs without times are priced from the pauses between reviews, by their
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
-  cards added later and "+10 new" fill laps, as do catch-up and review ahead. The ring keeps
+  cards added later and "+10 new" fill laps, as does catch-up. The ring keeps
   going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
   streak in days. A missed day is repaired when the next day closes its ring, the first round
   is not enough then; two missed days in a row end the streak. Everything is computed

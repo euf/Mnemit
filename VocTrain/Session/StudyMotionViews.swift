@@ -160,8 +160,7 @@ struct TopCard<Face: View>: View {
     @State private var q: Double
     @State private var o: Double
 
-    /// `peek` is the old step of the edges, which they no longer take from the screen (`StackPose.step`).
-    init(flight: CardFlight, arrival: CardArrival, peek _: CGFloat, frozenRise: Double? = nil, @ViewBuilder face: () -> Face) {
+    init(flight: CardFlight, arrival: CardArrival, frozenRise: Double? = nil, @ViewBuilder face: () -> Face) {
         self.flight = flight
         self.arrival = arrival
         self.frozenRise = frozenRise
@@ -276,7 +275,7 @@ struct CardStack: View {
         return
             shape
             .fill(Color.cardSurface)
-            .overlay { shape.strokeBorder(Color(.separator).opacity(faintness), lineWidth: 1) }
+            .overlay { shape.strokeBorder(Color(.opaqueSeparator).opacity(faintness), lineWidth: 1) }
             .frame(width: width, height: height)
     }
 }

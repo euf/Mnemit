@@ -30,9 +30,9 @@ code today is mapped in the inventory of 21.10.2026 (anchors in the commit that 
 Root is a `NavigationStack` on Today.
 
 **Today**
-- Ring, then the day in rounds: the headline is "≈ 2 min to keep your streak" before the first
-  round, "Round 2 of 4 · ≈ 2 min" after it and "Ring closed" after the last (without cards,
-  "All done" or "Nothing due"); under it "M of K cards · N left", the done cards against the
+- Ring, then the day (`learning-flow.md`): the headline is "≈ 2 min to keep your streak" before the
+  first round, then "12 cards left · ≈ 4 min", and "Ring closed" once it is (without cards, "All
+  done" or "Nothing due"); under it "M of K cards · N left", the done cards against the
   daily goal and the cards of today's plan not done yet (not the raw due count); "+N to catch
   up this week" when a backlog is left; the streak, "12-day streak", with "· kept today" once
   the first round is done; under the ring, over the width of the row, "≈ 28 words in memory ·
@@ -49,19 +49,19 @@ Root is a `NavigationStack` on Today.
   the Mac.
 
 **Study stream** (covers the screen; one stream over every active deck with cards today, each card from the deck whose next card is most urgent; Study This Deck runs it over one deck)
-- Header: the close button, the small ring with "Round 2 of 4" while rounds remain, "36 cards
-  today" after them, the menu. Catch-up and review ahead name their stage before the ring;
-  practice names itself and has no ring.
-- *Rest at the end of a round* (every round but the last, inside the plan): the ring, "Round 1
-  done", for the first round "Streak kept", "Next round ≈ 2 min", "+4 words in memory today"
-  when the day has added any. **Next Round** (default) goes on with the cards that were left;
-  **Done for Now** closes the stream. No new cards, catch-up or next deck is offered here.
-  Undo, from the button in the bar, the menu or a shake, takes back the review that ended the round
-  and the rest with it (on the iPhone the ring goes up to the bar first, then the card comes back
-  out of it); redo brings it back.
-- *Rest at the end of the plan* ("Done for today"): the size of the plan, the share recalled,
-  "Ring closed" when the ring is closed, "+N words in memory today", the catch-up or the next
-  review; **Keep Going**, "+10 new", **Done**. It comes when no deck has plan cards left.
+- Header: the close button, the small ring with "≈ 4 min" while the goal is open (after a done card,
+  for 1.5 s, its interval: "tomorrow", "in 8 days"), "36 cards today" after it, the menu. Catch-up
+  names its stage before the ring; practice names itself and has no ring.
+- The card lies on a stack drawn as a book's page edges; how cards leave it and come back is in
+  `learning-flow.md`, section "The stack".
+- *Streak kept* (once a day, after the first round): the ring, the streak, "+4 words in memory
+  today" when the day has added any, the cards left to the ring with their time. **Keep Going**
+  (default) or **Done for Now**. Undo, from the button in the bar, the menu or a shake, takes back
+  the review that ended the round and the rest with it; redo brings it back.
+- *Ring closed* (when today's cards are done; "Done for today" when the plan ran out with the ring
+  open): "10 cards · 22 answers", the share recalled, the words or their milestone, the streak, the
+  rings of the last seven days, the catch-up or the next review; **Catch Up** when due cards are
+  left, else **+10 new** with its cost, else **Practice**; **Done**.
 - *Rest of a practice* ("Practice complete"): its figures and **Done**.
 
 **How Today Works** (sheet; the info button at the leading edge of Today's toolbar. On the Mac the window of

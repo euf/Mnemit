@@ -73,7 +73,6 @@ struct StudyView: View {
     private var isRevealed: Bool { model.stage == .revealed }
 
     /// How far each edge of the stack shows below the one above it.
-    private var peek: CGFloat { isCompact ? 4 : 6 }
 
     var body: some View {
         NavigationStack {
@@ -193,7 +192,7 @@ struct StudyView: View {
     private func cardArea(_ card: Card) -> some View {
         VStack(spacing: isCompact ? Spacing.tight : Spacing.gap) {
             cardView(card)
-                .padding(.bottom, StackPose.reserve(peek: peek))
+                .padding(.bottom, StackPose.reserve)
             gradeArea
         }
         .padding(.horizontal, Spacing.margin)
@@ -206,7 +205,7 @@ struct StudyView: View {
     /// also the space the speaker buttons report their places in (`SpeakerPlaces`). Behind it
     /// the cards of the round that wait, as a stack of blank edges.
     private func cardView(_ card: Card) -> some View {
-        TopCard(flight: flight, arrival: motion.arrival, peek: peek, frozenRise: motion.frozen?.rise) {
+        TopCard(flight: flight, arrival: motion.arrival, frozenRise: motion.frozen?.rise) {
             CardFace(card: card, isRevealed: model.stage == .revealed)
         }
         // A card of its own for each question: the one under rises into place from the stack.

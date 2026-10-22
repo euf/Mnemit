@@ -50,9 +50,10 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   the pace the day started with), `minutes(ofRound:)` (a round's minutes by number, for the round-end
   screen), `memory` (`MemoryEstimate` over the decks), `streakKeptToday` (first round done or the plan
   empty).
-- Rounds show in the day lines: `RoundStatus` (`Shared/Session/DayLines.swift`): before the first
-  round "≈ 2 min to keep your streak", then "Round 2 of 4" with the round's time, after the last
-  "Ring closed". Today, the stream header, the widget and the Mac ring tooltip take it from there.
+- Rounds never show by number (`learning-flow.md`). `RoundStatus` (`Shared/Session/DayLines.swift`)
+  gives the day's headline: before the first round "≈ 2 min to keep your streak", after the last "Ring
+  closed", in between none, and the screens say the cards left. Today, the widget and the Mac ring
+  tooltip take it from there.
 - In a day that started with an empty plan, rounds cut the cards as they are.
 
 ## Capacity
@@ -89,9 +90,14 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   Easy is done at once; a new card after its last learning step; Forgot when the card leaves learning.
   It counts once a day, however many reviews it took. Reviews per day (`reviewsByDay`) are needed only
   for the start of the streak and for the days before `planRuleStart`.
-- A card is done in any mode, including catch-up and review ahead.
+- A card is done in any mode, including catch-up.
+- **Partial credit**: the ring also shows the cards on their way (`DailyRing.underway`,
+  `Deck.cardsUnderway`): each reviewed today and still due today counts the answers recalled today
+  (Hard, Good, Easy) over those plus the learning steps it still needs, at its best moment of the day
+  (`Card.credit(onDayOf:calendar:steps:)`). Every answer recalled moves the ring; Forgot moves nothing
+  and takes nothing back. The counts ("M of K cards", "N left") stay in whole cards.
 - **Ring**: done cards against the day's goal. Done cards beyond the goal go into laps (in the stream,
-  ×2 in the centre on the second lap, ×3 on the third): catch-up, review ahead and "+10 new" fill the
+  ×2 in the centre on the second lap, ×3 on the third): catch-up and "+10 new" fill the
   laps.
 - **Cards left**: the plan's cards not done yet: `StudySession.counts(...).total` now, the line "N
   cards left". Done + left = plan, which is the goal or more (review cards beyond the day's time are

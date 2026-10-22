@@ -24,7 +24,7 @@ enum StackPose {
     /// The room the edges take under the top card, the same whether or not there are any, so the card never
     /// changes its size with the number of cards behind it. The edges' step is fixed: the parameter is the
     /// old one, which the screen still passes.
-    static func reserve(peek _: CGFloat) -> CGFloat { step * CGFloat(maxEdges) }
+    static var reserve: CGFloat { step * CGFloat(maxEdges) }
 }
 
 /// The way of a card between its place and the edge of the screen, past which it leaves and from which Undo

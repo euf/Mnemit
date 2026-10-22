@@ -6,9 +6,9 @@ The screens around Study. The contract of every screen: `references/flows.md`; t
 ## Today (iPhone)
 
 - The iPhone starts on Today (`StartScreen` holds the state, `TodayScreen` draws).
-- Title: the day's round. Before the first round "≈ 2 min to keep your streak", then "Round 2 of 4 · ≈ 2
-  min", after the last "Ring closed"; without cards "All done" or "Nothing due"; while rounds aren't
-  counted yet "N cards left".
+- Title: the day's next goal. Before the first round "≈ 2 min to keep your streak", then "N cards left ·
+  ≈ M min", once the ring is closed "Ring closed"; without cards "All done" or "Nothing due". Rounds never
+  show (`learning-flow.md`).
 - Second line "M of K cards · N left": done cards against the day's goal, and the plan's cards not done
   yet, not raw due. M, N and K are one unit, M + N ≥ K, equal while the plan fits the day's time and
   nothing was added to it; Forgot doesn't break it.

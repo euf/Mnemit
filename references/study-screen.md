@@ -46,7 +46,7 @@
   under the stack takes its deepest edge with it for a moment.
 - At a round's end, as the last card goes past the edge, the ring descends from the bar into the card's
   empty place (`RingTraveler`, `ringPlace` on `StreamRestView`), bursts on arrival, and the rest lines come in
-  one by one, 0.1 s apart. Next Round sends the ring back up and deals the stack again.
+  one by one, 0.1 s apart. Keep Going sends the ring back up and deals the stack again.
 - The burst (`RingBurst`: swell 1.0 → 1.12 → 1.0 and 12 grains over 0.8 s) also plays for a words-in-
   memory milestone on Today, once per milestone (`MilestoneCelebration`).
 - Reduce Motion: the card fades in place over 0.6 s, the ring steps without swelling, the

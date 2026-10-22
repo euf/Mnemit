@@ -65,11 +65,11 @@ stream and its practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
 
 - Study opens an endless stream; there are no sessions (`StudyStream` in VocabCore, driven by
   `SessionDriver` in both apps). Every review is written at once, and leaving loses nothing.
-- Within the plan the stream rests at the end of each round of the day except the last
-  (`StudyStream.roundRest`, `restAtRoundEnd(roundsDone:rounds:)`, `continueRound()`). The segment stays
-  in place; the screen shows "Round 1 done" (the first also "Streak kept"), "Next round ≈ 2 min",
-  "+N words in memory today", and the buttons "Next Round" (continues the segment) and "Done for Now"
-  (closes the stream).
+- Within the plan the stream rests twice a day at most (`StudyStream.roundRest`,
+  `restAtRoundEnd(roundsDone:rounds:)`, `continueRound()`): at the end of the first round ("Streak
+  kept", Keep Going or Done for Now) and at the end of the last while the plan has cards beyond the
+  goal ("Ring closed", Catch Up or Done). The segment stays in place.
+  `StudyStream.restsAtEveryRound = true` brings back a rest after every round but the last.
 - The rest is a state of the same stream: `isResting` is true on it, `StreamRest.roundEnd` carries the
   round, `roundsPassed` holds the rounds passed, all inside the value. So Undo across a round boundary
   brings the card back and lifts the rest, and Redo finds it again.

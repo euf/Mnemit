@@ -270,7 +270,8 @@ cost reaches k × 120 s, and the last round ends at the goal; a card that costs 
 ends the rounds it spans (`DayRounds.ends`). The first round keeps the streak
 (`DailyProgress.streakKeptToday`). `DailyProgress` holds `rounds`, `roundsDone`, `roundEnds`,
 `cardsToNextRound` and `minutesToNextRound`, at the pace the day began with. A day that began with
-an empty plan cuts the cards as they stand into rounds.
+an empty plan cuts the cards as they stand into rounds. No screen names a round but How Today Works:
+it is the unit the day's time is learned in (`references/learning-flow.md`).
 _Avoid_: session, lap, segment
 
 **Capacity** (RU «ёмкость дня»):
@@ -322,8 +323,11 @@ asks, never more than the backlog (`DailyGoal.backlogShare`). The rest is **catc
 off after the plan.
 
 **Ring** (RU «кольцо»):
-Done cards against the daily goal. Done cards beyond the goal fill **laps** (×2, ×3): catch-up,
-review ahead and extra new cards. The ring is closed at done ≥ goal.
+Done cards against the daily goal, with the **cards underway**: a card reviewed today and still due
+today counts as the part of a card its answers recalled made, recalled answers over those plus the
+steps it still needs (`Card.credit`), so every answer recalled moves the ring and Forgot moves
+nothing. Done cards beyond the goal fill **laps** (×2, ×3): catch-up and extra new cards. The ring is
+closed at done ≥ goal, in whole cards.
 
 **Streak** (RU «стрик»):
 Study days in a row that kept it. A day keeps it with its first round done (done ≥ the end of
@@ -365,8 +369,9 @@ how many cards are left, and keeps one price: the time left over the cards left.
 _Avoid_: seconds per review, seconds per answer
 
 **Stream** (Study; RU «поток»):
-Study without sessions: the plan, then a rest ("Done for today"), then catch-up, review ahead
-and practice (`StudyStream`).
+Study without sessions: the plan, with a rest after its first round ("Streak kept"), then a rest
+at the ring ("Ring closed"), then catch-up and practice (`StudyStream`). A card is never reviewed
+before it is due.
 _Avoid_: session (except for the upstream types that still carry the name)
 
 **Extra new cards** ("+10 new"; RU «новые сверх лимита»):
