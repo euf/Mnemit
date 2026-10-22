@@ -59,6 +59,13 @@ struct TodayScreen: View {
         !counts.isEmpty || !paused.isEmpty
     }
 
+    /// Whether the day can be told at once: every deck read and the ring evaluated. They come in on their
+    /// own, so until both are there the header holds its placeholders, and it changes once instead of
+    /// going from "All done" to "Ring closed · 3 left" as each figure arrives.
+    private var isDayReady: Bool {
+        progress != nil && decks.allSatisfy { counts[$0.url] != nil } && (!decks.isEmpty || !paused.isEmpty)
+    }
+
     /// The cards left of today's plan, all decks: its share of the backlog included, never the backlog.
     private var due: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) }
@@ -132,8 +139,8 @@ struct TodayScreen: View {
                 Button(action: showProgress) {
                     HStack(spacing: 12) {
                         SummaryRow(
-                            due: due, newDue: newDue, catchUp: catchUp, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(),
-                            now: now, isLoaded: isRead
+                            due: due, newDue: newDue, catchUp: catchUp, progress: isDayReady ? progress : nil,
+                            nextDue: counts.values.compactMap(\.nextDue).min(), now: now, isLoaded: isDayReady
                         )
                         .frame(maxWidth: .infinity, alignment: .leading)
                         Image(systemName: "chevron.forward")
@@ -175,7 +182,7 @@ struct TodayScreen: View {
         .listStyle(.insetGrouped)
         .refreshable { await refresh() }
         .safeAreaBar(edge: .bottom) {
-            StudyButton(isDue: due > 0 || !isRead, due: due) { study(.all) }
+            StudyButton(isDue: due > 0 || !isDayReady, due: due) { study(.all) }
                 .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
         }
     }
@@ -349,6 +356,7 @@ struct SummaryRow: View {
                 LadderBar(ladder: progress.ladder, height: 4)
             } else if !isLoaded {
                 Capsule()
+                    .fill(Color.secondary.opacity(0.25))
                     .frame(height: 4)
             }
         }
