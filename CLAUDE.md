@@ -78,6 +78,26 @@
   из сессии, `GradeReceipt` говорит «leech, suspended». Флага в файле нет: `Card.isLeech(
   threshold:)` выводится из `lapses`, поэтому фильтр Difficult показывает и возобновлённые
   карточки, а слияния нового правила не требуют.
+- Автоподгонка параметров FSRS (`ParameterRefit` в VocabCore, `ParameterRefitter` в
+  `Shared/Document`). Срок: первая подгонка, когда в колоде набралось
+  `FSRSOptimizer.minimumReviewCount` (400) годных повторений, вторая на 1500, дальше не чаще
+  чем раз в 30 дней или через 1000 новых повторений, что раньше; колода, пришедшая с длинным
+  логом, подгоняется один раз сразу. Судит холдаут по времени: оптимизатор учится на старых
+  80 % повторений, а текущие и новые параметры оцениваются по log loss на новых 20 %
+  (`FSRSOptimizer.compareOnNewest`); новые остаются, только если их log loss ниже текущего не
+  меньше чем на 1 % относительно, иначе параметры целы, а попытка записывается. Ручное
+  «Compute from Review Log» сравнивает по всему логу (`compare(with:)`) и решает человек.
+  Состояние в `LearningOptions`: `lastAutoFit` (дата, число годных повторений, принята ли) и
+  `updatesParametersAutomatically` (по умолчанию да); в `deck.json` оба ключа без смены
+  версии и пишутся, только когда не по умолчанию. Оптимизатор идёт вне главного потока с
+  приоритетом background, по одной колоде на всё приложение (`ParameterRefitter.run`);
+  результат применяет `VocabularyDocument.applyParameterRefit` одним шагом Undo «Update
+  Parameters» и бросает его, если выключатель снят или чужая подгонка новее. Mac: при
+  открытии документа (`DocumentView`), не при потоке Study. iPhone: после запуска, когда
+  Today прочитан и ничего не открыто (`StartScreen.canRefitParameters`), `DeckRefits` читает
+  файл каждой известной колоды, готовую открывает через `OpenDeck`, применяет и закрывает.
+  Выключатель и строка о последней подгонке — в `ParametersSection` (iPhone: Options →
+  Advanced, Mac: лист Learning Options).
 - Браузер карточек: фильтры **All · Due · New · Learning · Suspended · Difficult** — одни и
   те же имена на обоих приложениях, правила в `CardFilter` (VocabCore: `matches`,
   `Deck.filterCounts(at:)`; Due, New и Learning не берут suspended, Difficult берёт),
