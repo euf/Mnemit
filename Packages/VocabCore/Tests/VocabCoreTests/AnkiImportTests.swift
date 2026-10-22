@@ -119,6 +119,101 @@ struct AnkiImportTests {
         #expect(result.notes.map(\.front) == ["a"])
     }
 
+    // MARK: Front and back from the templates
+
+    private func read(noteTypes: [Fixtures.RawNoteType], notes: [Fixtures.RawNote], current: Bool) throws -> AnkiImport {
+        let cards = notes.map { Fixtures.RawCard(id: $0.id * 10, note: $0.id) }
+        let collection =
+            current
+            ? Fixtures.currentCollection(noteTypes: noteTypes, notes: notes, cards: cards)
+            : Fixtures.legacyCollection(noteTypes: noteTypes, notes: notes, cards: cards)
+        return try AnkiImport.read(Fixtures.zip([("collection.anki2", collection)]))
+    }
+
+    /// The deck that imported with no card: the second field is an image, and the question
+    /// template shows the word and the image, the answer template the translation and more.
+    @Test(arguments: [false, true])
+    func theFrontAndTheBackComeFromTheTemplates(current: Bool) throws {
+        let types = [
+            Fixtures.RawNoteType(
+                id: 1, name: "Vocabulary", fields: ["Front", "Image", "Audio", "Back", "Examples"],
+                templates: ["<div>{{Front}}</div>{{{Image}}"], answers: ["{{FrontSide}}<hr>{{Back}}{{{Examples}}"]),
+            Fixtures.RawNoteType(id: 2, name: "Reordered", fields: ["Note", "Word", "Meaning"], templates: ["{{Word}}"], answers: ["{{FrontSide}}{{Meaning}}"]),
+            // The typing box is no part of the question: it is the answer, with the line after it.
+            Fixtures.RawNoteType(
+                id: 3, name: "Type", fields: ["Front", "Back", "Extra"], templates: ["{{Front}}{{type:Back}}"],
+                answers: ["{{FrontSide}}<hr>{{type:Back}}{{Extra}}"]),
+            // Neither template names a field.
+            Fixtures.RawNoteType(id: 4, name: "Unreadable", fields: ["A", "B", "C"], templates: ["{{FrontSide}}"], answers: ["no fields"]),
+            // The question starts with an image.
+            Fixtures.RawNoteType(id: 5, name: "Image first", fields: ["Image", "Word", "Meaning"], templates: ["{{Image}}{{Word}}"], answers: ["{{FrontSide}}{{Meaning}}"]),
+        ]
+        let notes = [
+            Fixtures.RawNote(id: 1, model: 1, fields: ["παίρνω", "<img src=\"a.jpg\">", "[sound:a.mp3]", "get", "<div>Παίρνω καφέ.</div>"]),
+            Fixtures.RawNote(id: 2, model: 2, fields: ["n", "νερό", "water"]),
+            Fixtures.RawNote(id: 3, model: 3, fields: ["ψωμί", "bread", "with butter"]),
+            Fixtures.RawNote(id: 4, model: 4, fields: ["", "σκύλος", "dog"]),
+            Fixtures.RawNote(id: 5, model: 5, fields: ["<img src=\"a.jpg\">", "σπίτι", "house"]),
+        ]
+        let result = try read(noteTypes: types, notes: notes, current: current)
+        #expect(
+            result.notes.map { [$0.front, $0.back] } == [
+                ["παίρνω", "get"],
+                ["νερό", "water"],
+                ["ψωμί", "bread"],
+                ["σκύλος", "dog"],
+                ["σπίτι", "house"],
+            ])
+        #expect(result.skippedEmpty == 0)
+    }
+
+    @Test(arguments: [false, true])
+    func saysWhySidesWithOnlyMediaAreLeftOut(current: Bool) throws {
+        let types = [
+            Fixtures.RawNoteType(id: 1, name: "Listening", fields: ["Audio", "Text"], templates: ["{{Audio}}"], answers: ["{{FrontSide}}{{Text}}"]),
+            Fixtures.RawNoteType(id: 2, name: "Basic"),
+        ]
+        let notes = [
+            Fixtures.RawNote(id: 1, model: 1, fields: ["[sound:a.mp3]", "ακούω"]),
+            Fixtures.RawNote(id: 2, model: 2, fields: ["εικόνα", "<img src=\"a.jpg\">"]),
+            Fixtures.RawNote(id: 3, model: 2, fields: ["τίποτα", ""]),
+            Fixtures.RawNote(id: 4, model: 2, fields: ["γάτα", "cat"]),
+        ]
+        let result = try read(noteTypes: types, notes: notes, current: current)
+        #expect(result.notes.map(\.front) == ["γάτα"])
+        #expect(result.skippedEmpty == 3)
+        #expect(result.skippedMediaOnly == 2)
+        #expect(result.skippedMediaRefs == 2)
+    }
+
+    @Test func aTemplateShowsAFieldOnceAndIgnoresWhatShowsNone() {
+        let names = ["Front", "Image", "Back", "Extra"]
+        func shown(_ format: String, typed: Bool = false) -> [Int] {
+            AnkiCollection.fields(shownBy: format, in: names, showsTyped: typed)
+        }
+        #expect(shown("{{Front}}<br>{{Front}}{{FrontSide}}{{Tags}}") == [0])
+        #expect(shown("{{{Image}}") == [1])  // a stray brace
+        #expect(shown("{{{Image}}}{{Back}}") == [1, 2])
+        #expect(shown("{{#Extra}}{{Back}}{{/Extra}}{{^Image}}x{{/Image}}{{! Front }}") == [2])
+        #expect(shown("{{hint:Extra}}{{tts en_US:Back}}{{text:Front}}") == [3, 2, 0])
+        #expect(shown("{{Front}}{{type:Back}}") == [0])
+        #expect(shown("{{Front}}{{type:Back}}", typed: true) == [0, 2])
+        #expect(shown("{{Missing}} {{ Front }} {{") == [0])
+        #expect(shown("").isEmpty)
+    }
+
+    @Test(arguments: ["media-fields-latest", "media-fields-legacy2"])
+    func readsADeckWhoseSecondFieldIsAnImage(name: String) throws {
+        let result = try Self.package(name)
+        #expect(result.notes.map { [$0.front, $0.back] } == [["παίρνω", "get"], ["χρόνος", "time"]])
+        #expect(result.deckNames == ["Media"])
+        #expect(result.skippedCloze == 0)
+        #expect(result.skippedEmpty == 3)
+        // The note with no word, and the one that asks with its audio only; the one with no translation is empty.
+        #expect(result.skippedMediaOnly == 2)
+        #expect(result.skippedMediaRefs == 2)
+    }
+
     @Test func aNoteWithTooFewFieldsIsEmpty() throws {
         let collection = Fixtures.legacyCollection(notes: [.init(id: 1, model: 1, fields: ["only one"])], cards: [.init(id: 2, note: 1)])
         let result = try AnkiImport.read(Fixtures.zip([("collection.anki2", collection)]))

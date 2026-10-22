@@ -16,6 +16,11 @@ The deck of the four packages above uses the preset "Greek FSRS": 21 FSRS-6 para
                       with 19 FSRS-5 parameters (`fsrsParams5`) and a retention of 0.95, "Mix::B" (one
                       card) with 17 FSRS-4.5 parameters (`fsrsWeights`) and 0.8. A card in no deck of
                       its own preset has none: "Mix::C" uses the stock "Default" preset.
+  media-fields-latest.apkg, media-fields-legacy2.apkg
+                      The shape of a shared deck that imported with no card: the note type "Front, Image,
+                      Audio, Back, ExamplesBlock, FrequencyBlock", whose question template shows Front and
+                      Image (with a stray brace, "{{{Image}}") and whose answer template adds Back and the
+                      blocks; a note type that asks with its audio only; a note with no word and one with no translation.
 """
 
 import json
@@ -134,6 +139,46 @@ for deck_name, words in [("Mix::A", [("ένα", "one"), ("δύο", "two")]), ("M
         col.add_note(note, col.decks.id(deck_name))
 col.export_anki_package(out_path=os.path.join(out_dir, "presets-latest.apkg"), options=options(False), limit=DeckIdLimit(mix))
 col.export_anki_package(out_path=os.path.join(out_dir, "presets-legacy2.apkg"), options=options(True), limit=DeckIdLimit(mix))
+col.close()
+
+# A shared deck whose first two fields are not the front and the back: the image sits in the second.
+col = Collection(os.path.join(work, "media-fields.anki2"))
+media_deck = col.decks.id("Media")
+col.media.write_data("15.jpg", b"\xff\xd8\xff\xd9")
+col.media.write_data("15.mp3", b"ID3")
+
+
+def make_note_type(name, fields, question, answer):
+    notetype = col.models.new(name)
+    for field in fields:
+        col.models.add_field(notetype, col.models.new_field(field))
+    template = col.models.new_template("Card 1")
+    template["qfmt"], template["afmt"] = question, answer
+    col.models.add_template(notetype, template)
+    col.models.add_dict(notetype)
+    return col.models.by_name(name)
+
+
+vocabulary = make_note_type(
+    "Front, Image, Audio, Back, ExamplesBlock, FrequencyBlock",
+    ["Front", "Image", "Audio", "Back", "ExamplesBlock", "FrequencyBlock"],
+    '<div class="word">{{Front}}</div>\n{{{Image}}',
+    '{{FrontSide}}\n\n<hr class="divider">\n\n<div class="translation">{{Back}}</div>\n{{{ExamplesBlock}}\n{{{FrequencyBlock}}')
+listening = make_note_type("Audio, Text", ["Audio", "Text"], "{{Audio}}", '{{FrontSide}}<hr id="answer">{{Text}}')
+image = '<div class="image-wrapper"><img class="card-image" src="15.jpg"></div>'
+for model, fields in [
+    (vocabulary, ["παίρνω", image, "[sound:15.mp3]", "get", '<div class="examples"><div>Παίρνω τον καφέ μου στις οκτώ.</div>[sound:15.mp3]<div>I get my coffee at eight.</div></div>', ""]),
+    (vocabulary, ["χρόνος", image, "[sound:15.mp3]", "time", "", "<b>1</b>"]),
+    (vocabulary, ["", image, "[sound:15.mp3]", "no word", "", ""]),
+    (vocabulary, ["κανένα", image, "[sound:15.mp3]", "", "", ""]),
+    (listening, ["[sound:15.mp3]", "ακούω"]),
+]:
+    note = col.new_note(model)
+    for index, value in enumerate(fields):
+        note.fields[index] = value
+    col.add_note(note, media_deck)
+col.export_anki_package(out_path=os.path.join(out_dir, "media-fields-latest.apkg"), options=options(False), limit=DeckIdLimit(media_deck))
+col.export_anki_package(out_path=os.path.join(out_dir, "media-fields-legacy2.apkg"), options=options(True), limit=DeckIdLimit(media_deck))
 col.close()
 
 # Legacy 1: the schema-11 collection of Legacy 2 under the old name, without meta.

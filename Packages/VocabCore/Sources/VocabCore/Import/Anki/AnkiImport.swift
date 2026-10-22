@@ -16,14 +16,17 @@ import Foundation
 /// other collection settings are left. Of a preset the FSRS parameters and the desired
 /// retention are read (`AnkiPreset`), which a new deck takes (`learningOptions(applyingTo:)`). Cards come out in the order the notes were created.
 ///
-/// - Front and back are the first and second field of the note type, unless the card's
-///   question template shows another field first: the second card of "Basic (and reversed
-///   card)" asks from the second field, so its front is that one.
+/// - Front and back come from the card templates: the front is the first field with text
+///   that the question template shows, the back the first with text that the answer template
+///   adds. The second card of "Basic (and reversed card)" asks from the second field, so its
+///   front is that one; a note type "Front, Image, Audio, Back" with the image on the question
+///   gives the front and the back, as an image has no text. Where a template can't be read or
+///   shows no field, the first and the second field with text stand in.
 /// - HTML is reduced to plain text (`AnkiText`). A field with an image or a sound loses it,
 ///   and counts in `skippedMediaRefs`.
 /// - Cards of cloze note types are left out, counted in `skippedCloze`. A card whose front
-///   or back is empty is left out as well (`skippedEmpty`), often because it held only an
-///   image.
+///   or back is empty is left out as well (`skippedEmpty`); `skippedMediaOnly` counts those
+///   where the side held only an image or a sound.
 /// - A review of the log is a rating of 1 to 4 (Again, Hard, Good, Easy) at the time the
 ///   entry's `id` gives. Manual entries, and cramming that Anki did not count, are skipped.
 ///
@@ -69,18 +72,22 @@ public struct AnkiImport: Sendable {
     public var skippedMediaRefs: Int
     /// Cards left out because their front or back is empty, once stripped.
     public var skippedEmpty: Int
+    /// Of `skippedEmpty`, the cards where a side that is empty held an image or a sound.
+    public var skippedMediaOnly: Int
     /// The decks the notes belong to, as "Parent::Child", sorted.
     public var deckNames: [String]
     /// The deck presets the notes use, by their number in Anki (see `Note.preset`).
     public var presets: [AnkiPreset]
 
     public init(
-        notes: [Note] = [], skippedCloze: Int = 0, skippedMediaRefs: Int = 0, skippedEmpty: Int = 0, deckNames: [String] = [], presets: [AnkiPreset] = []
+        notes: [Note] = [], skippedCloze: Int = 0, skippedMediaRefs: Int = 0, skippedEmpty: Int = 0, skippedMediaOnly: Int = 0, deckNames: [String] = [],
+        presets: [AnkiPreset] = []
     ) {
         self.notes = notes
         self.skippedCloze = skippedCloze
         self.skippedMediaRefs = skippedMediaRefs
         self.skippedEmpty = skippedEmpty
+        self.skippedMediaOnly = skippedMediaOnly
         self.deckNames = deckNames
         self.presets = presets
     }
