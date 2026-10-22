@@ -34,7 +34,7 @@ struct StudyMotionTests {
 
     /// Waits for `condition`, which a timer on the main actor makes true; the full run keeps the main actor busy
     /// with other tests, so a fixed sleep would be a guess.
-    private func wait(for condition: () -> Bool, seconds: Double = 5) async throws {
+    private func wait(for condition: () -> Bool, seconds: Double = 30) async throws {
         let deadline = ContinuousClock.now + .seconds(seconds)
         while !condition(), ContinuousClock.now < deadline {
             try await Task.sleep(for: .milliseconds(20))
