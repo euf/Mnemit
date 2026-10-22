@@ -2,10 +2,7 @@
 
 ## Состояние
 
-- Версия 1.6 в `main`; на iPhone стоит 1.4.7 (5f6be2d). 1.6 не поставилась 22.10: в Xcode 27.1
-  (`/Applications/Xcode-27.1.0.app`) нет Apple ID, `xcodebuild` отвечает «No Accounts». После входа
-  EF в Xcode → Settings → Accounts ночной `ios-renew` (04:30) соберёт `main` сам, сразу —
-  `~/dotfiles/ios-renew --force`. Подпись текущей сборки истекает 29.10, FicTypeApp там же. Что умеет приложение и почему так — README, раздел
+- Версия 1.6 в `main`, на iPhone стоит 1.6.1 (e24e433), подпись до 29.10. Что умеет приложение и почему так — README, раздел
   «Design choices»; экраны обоих приложений — `references/flows.md`; исследования FSRS —
   `references/fsrs-research.md` и `references/fsrs-vs-sm17.md`. Задание суб-агенту писать по
   `references/agent-lessons-rings.md`: один источник, потолок, правило остановки, базовая линия тестов.
