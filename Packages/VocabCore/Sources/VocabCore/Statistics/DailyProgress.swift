@@ -40,6 +40,14 @@ public enum DailyGoal {
     public static func goal(reviews: Int, owed: Int, plan: Int) -> Int {
         owed > 0 ? max(plan, reviews + owed) : min(plan, reviews)
     }
+
+    /// The first study day (2026-10-23) on which a day counts for the streak only when its plan
+    /// was done. A day before it counts with a single answer, which is the rule streaks were
+    /// started under (a fixed number of answers a day), so a streak that reaches back past the
+    /// change is not cut by it.
+    // ponytail: a cutover date and a clause in `Streak.evaluate`, no per-learner migration;
+    // delete both once no streak can reach back past the day.
+    public static let planRuleStart = CivilDate(year: 2026, month: 10, day: 23).dayNumber
 }
 
 /// The ring of a study day: reviews against the goal. The ring is full at the goal and goes
@@ -83,15 +91,20 @@ public struct Streak: Hashable, Sendable {
     /// (`owed(day) == 0`), an empty plan included. One day missed between two met days is
     /// made up by the plan of the day after it: both days count. Two missed days in a row
     /// end the streak. Today is only judged by its own plan, so a day still going never breaks
-    /// the streak. The streak starts with the first review.
+    /// the streak. The streak starts with the first review. A day before
+    /// `DailyGoal.planRuleStart` is met with a single answer, too.
     ///
     /// - Parameters:
-    ///   - reviews: Graded reviews by study day: only the first day with one matters.
+    ///   - reviews: Graded reviews by study day.
     ///   - today: The study day now.
+    ///   - planRuleStart: The first study day judged by its plan alone; the tests move it.
     ///   - owed: The cards of the plan that were left at the end of a study day, for today
-    ///     the plan now.
-    public static func evaluate(reviews: [Int: Int], today: Int, owed: (Int) -> Int) -> Streak {
+    ///     the plan now. Not asked for a day before `planRuleStart` that has an answer.
+    public static func evaluate(reviews: [Int: Int], today: Int, planRuleStart: Int = DailyGoal.planRuleStart, owed: (Int) -> Int) -> Streak {
         guard let first = reviews.filter({ $0.value > 0 }).keys.min() else { return Streak(days: 0, repairCards: nil) }
+        func isMet(_ day: Int) -> Bool {
+            (day < planRuleStart && (reviews[day] ?? 0) > 0) || owed(day) == 0
+        }
 
         enum State {
             case idle
@@ -101,7 +114,7 @@ public struct Streak: Hashable, Sendable {
         }
         var state = State.idle
         for day in first..<max(first, today) {
-            if owed(day) == 0 {
+            if isMet(day) {
                 switch state {
                 case let .counting(days): state = .counting(days: days + 1)
                 case let .missedOnce(daysBefore): state = .counting(days: daysBefore + 2)
@@ -115,17 +128,17 @@ public struct Streak: Hashable, Sendable {
             }
         }
 
-        let owedToday = owed(today)
+        let isTodayMet = isMet(today)
         switch state {
         case .idle:
-            return Streak(days: owedToday == 0 ? 1 : 0, repairCards: nil)
+            return Streak(days: isTodayMet ? 1 : 0, repairCards: nil)
         case let .counting(days):
-            return Streak(days: days + (owedToday == 0 ? 1 : 0), repairCards: nil)
+            return Streak(days: days + (isTodayMet ? 1 : 0), repairCards: nil)
         case let .missedOnce(daysBefore):
-            if owedToday == 0 {
+            if isTodayMet {
                 return Streak(days: daysBefore + 2, repairCards: nil)
             }
-            return Streak(days: daysBefore, repairCards: owedToday)
+            return Streak(days: daysBefore, repairCards: owed(today))
         }
     }
 }
@@ -220,7 +233,9 @@ public struct DailyProgress: Hashable, Sendable {
 
     /// Adds up the reviews and the plans of all `decks`: one ring and one streak for the
     /// learner, however many decks they study.
-    public static func evaluate(_ decks: [DeckActivity], at now: Date, calendar: StudyCalendar) -> DailyProgress {
+    public static func evaluate(
+        _ decks: [DeckActivity], at now: Date, calendar: StudyCalendar, planRuleStart: Int = DailyGoal.planRuleStart
+    ) -> DailyProgress {
         let today = calendar.dayNumber(for: now)
         var reviews: [Int: Int] = [:]
         for deck in decks {
@@ -239,7 +254,7 @@ public struct DailyProgress: Hashable, Sendable {
             return total
         }
 
-        let streak = Streak.evaluate(reviews: reviews, today: today) { owed($0).cards }
+        let streak = Streak.evaluate(reviews: reviews, today: today, planRuleStart: planRuleStart) { owed($0).cards }
         let count = reviews[today] ?? 0
         let plan = decks.reduce(0) { $0 + $1.plan(onDayOf: now, calendar: calendar).answers }
         return DailyProgress(ring: DailyRing(reviews: count, goal: DailyGoal.goal(reviews: count, owed: owed(today).answers, plan: plan)), streak: streak)

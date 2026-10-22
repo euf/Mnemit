@@ -79,8 +79,9 @@ struct DailyGoalTests {
 }
 
 struct StreakTests {
-    func streak(_ reviews: [Int: Int], today: Int, owed: [Int: Int] = [:]) -> Streak {
-        Streak.evaluate(reviews: reviews, today: today, owed: { owed[$0] ?? 0 })
+    /// By default every day is judged by its plan alone: the days of these tests are numbered from 100.
+    func streak(_ reviews: [Int: Int], today: Int, planRuleStart: Int = .min, owed: [Int: Int] = [:]) -> Streak {
+        Streak.evaluate(reviews: reviews, today: today, planRuleStart: planRuleStart, owed: { owed[$0] ?? 0 })
     }
 
     @Test func daysInARowCountAndTodayCountsOnceItsPlanIsDone() {
@@ -117,9 +118,46 @@ struct StreakTests {
         #expect(streak([100: 20, 102: 20], today: 103) == Streak(days: 4, repairCards: nil))
     }
 
+    @Test func aDayBeforeThePlanRuleCountsWithASingleAnswerAndTheSameDayAfterItDoesNot() {
+        // 101 and 102 had answers and left cards of their plan over.
+        let days = [100: 20, 101: 3, 102: 1]
+        let owed = [101: 4, 102: 2]
+        // Before the cutover they count, as under the rule of a fixed number of answers a day.
+        #expect(streak(days, today: 103, planRuleStart: 103, owed: owed) == Streak(days: 4, repairCards: nil))
+        // From the cutover on the same days are two missed days in a row, and break the streak.
+        #expect(streak(days, today: 103, planRuleStart: 101, owed: owed) == Streak(days: 1, repairCards: nil))
+        #expect(streak(days, today: 103, planRuleStart: .min, owed: owed) == Streak(days: 1, repairCards: nil))
+        // The cutover day itself is already judged by its plan: 101 counts, 102 is missed once and today repairs it.
+        #expect(streak(days, today: 103, planRuleStart: 102, owed: owed) == Streak(days: 4, repairCards: nil))
+        // Today counts too before the cutover, once it has an answer.
+        #expect(streak([100: 5, 101: 1], today: 101, planRuleStart: 102, owed: [101: 3]) == Streak(days: 2, repairCards: nil))
+        #expect(streak([100: 5, 101: 1], today: 101, planRuleStart: 101, owed: [101: 3]) == Streak(days: 1, repairCards: nil))
+    }
+
+    @Test func aDayBeforeThePlanRuleWithoutAnAnswerIsJudgedByItsPlanAndTheLegacyDaysAreNotAskedAbout() {
+        // 101 had no answer and owed something: it is missed, and 102 repairs it.
+        #expect(streak([100: 5, 102: 5], today: 103, planRuleStart: 200, owed: [101: 2]) == Streak(days: 4, repairCards: nil))
+        var asked: [Int] = []
+        _ = Streak.evaluate(reviews: [100: 5, 101: 5], today: 103, planRuleStart: 102) { day in
+            asked.append(day)
+            return 0
+        }
+        // The plan of a day with an answer before the cutover isn't looked at: it is not needed.
+        #expect(asked == [102, 103])
+    }
+
+    @Test func theCutoverIsTheStudyDayOfTheTwentyThirdOfOctober() {
+        #expect(DailyGoal.planRuleStart == CivilDate(year: 2026, month: 10, day: 23).dayNumber)
+        let calendar = StudyCalendar.testing
+        // A study day starts at 04:00: the 23rd at 03:59 still belongs to the 22nd.
+        let start = calendar.start(ofDay: DailyGoal.planRuleStart)
+        #expect(calendar.dayNumber(for: start) == DailyGoal.planRuleStart)
+        #expect(calendar.dayNumber(for: start.addingTimeInterval(-1)) == DailyGoal.planRuleStart - 1)
+    }
+
     @Test func theOwedPlanIsAskedForEveryDayFromTheFirstReviewToToday() {
         var asked: [Int] = []
-        _ = Streak.evaluate(reviews: [100: 5, 103: 5, 90: 0], today: 105) { day in
+        _ = Streak.evaluate(reviews: [100: 5, 103: 5, 90: 0], today: 105, planRuleStart: .min) { day in
             asked.append(day)
             return 0
         }
@@ -225,8 +263,9 @@ struct DailyProgressTests {
         }
     }
 
-    func evaluate(_ decks: [Deck], at date: Date? = nil) -> DailyProgress {
-        DailyProgress.evaluate(decks.map { DeckActivity(deck: $0, calendar: calendar) }, at: date ?? now, calendar: calendar)
+    /// By default every day is judged by its plan alone, whatever date the test is set on.
+    func evaluate(_ decks: [Deck], at date: Date? = nil, planRuleStart: Int = .min) -> DailyProgress {
+        DailyProgress.evaluate(decks.map { DeckActivity(deck: $0, calendar: calendar) }, at: date ?? now, calendar: calendar, planRuleStart: planRuleStart)
     }
 
     @Test func reviewsAreCountedByStudyDayWithTheRolloverAtFourInTheMorning() throws {
@@ -358,6 +397,21 @@ struct DailyProgressTests {
         #expect(activity().owed(onDayOf: today - 2, now: now, calendar: calendar).total == 0)
         #expect(activity().owed(onDayOf: today - 1, now: now, calendar: calendar).total == 0)
         #expect(evaluate([deck]).streak == Streak(days: interval + 3, repairCards: nil))
+    }
+
+    @Test func aPastDayWithAnswersAndAnUnfinishedPlanCountsBeforeThePlanRuleAndNotAfterIt() throws {
+        // Eight cards were due yesterday, three of them were reviewed that day, five were left; nothing is new.
+        var deck = try Deck(learningOptions: options(), cards: (0..<8).map { due("c\($0)", onDay: today - 1) })
+        review(3, of: &deck, at: now.addingTimeInterval(-86400))
+        // Before the cutover yesterday counts with its answers. Today's plan is open: a seventh of the five left over, one card.
+        let legacy = evaluate([deck], planRuleStart: today)
+        #expect(legacy.streak == Streak(days: interval + 1, repairCards: nil))
+        // From the cutover on the same day is missed, and today can still repair it.
+        let planned = evaluate([deck], planRuleStart: today - 1)
+        #expect(planned.streak == Streak(days: interval, repairCards: 1))
+        // The ring is the plan of today either way.
+        #expect(legacy.ring == planned.ring)
+        #expect(planned.ring == DailyRing(reviews: 0, goal: 1))
     }
 
     @Test func aCardThatDidNotExistYetWasNotInThePlanOfThatDay() throws {
