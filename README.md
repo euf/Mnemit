@@ -61,9 +61,13 @@ are in [`references/`](references/).
 
 ### Scheduling
 
-- **FSRS-6, fitted per deck.** Each deck starts with the default parameters; from 400
-  answers the optimizer (a Swift port of fsrs-rs 6.6.2, checked against it and against
-  py-fsrs reference values) fits them to the learner's own history. Fitted FSRS-6 beats
+- **FSRS-6, fitted per deck, without a button.** Each deck starts with the default
+  parameters, or with the FSRS settings of the Anki preset it was imported from. The
+  optimizer (a Swift port of fsrs-rs 6.6.2, checked against it and against py-fsrs reference
+  values) fits them in the background at 400 answers, again at 1,500, then every 30 days or
+  1,000 answers. It trains on the older 80 % of the log; the new parameters replace the
+  current ones only if they predict the newest 20 %, which it did not see, better. Fitted
+  FSRS-6 beats
   Anki's SM-2 for 99.6 % of users and SuperMemo's SM-17 in 16 of 19 collections; FSRS-7 is
   ahead of FSRS-6 by a small margin and comes in when fsrs-rs releases it
   ([`fsrs-vs-sm17.md`](references/fsrs-vs-sm17.md)).
@@ -95,8 +99,10 @@ are in [`references/`](references/).
 - **CSV/TSV that Anki reads as it is.** Exports start with Anki's `#separator`, `#html` and
   `#columns` lines and carry the word key and the card kind; imports accept them back.
 - **Ready-made decks come from AnkiWeb.** Mnemit ships no content: the good shared decks
-  are licensed for personal study and cannot be bundled. "Shared Decks on AnkiWeb" opens the
-  site; the downloaded `.apkg` comes back through the import.
+  are licensed for personal study and cannot be bundled. "Shared Decks on AnkiWeb" opens
+  AnkiWeb (and MintDeck) in a plain web view inside the app; a deck the learner downloads
+  there goes straight into the import, links to other sites open in Safari. Nothing is
+  injected into the pages or read from them.
 
 ### Look
 
