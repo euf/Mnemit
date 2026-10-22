@@ -11,7 +11,8 @@
   в ручную работу: проект `MacVocTrainNg.xcodeproj`, схемы и таргеты `MacVocTrainNg` и
   `VocTrain`, каталоги исходников, модули `MacVocTrain`/`VocTrain` (`PRODUCT_MODULE_NAME`),
   ключ `format` внутри `deck.json` (`de.fluch-it-consulting.voctrain.deck`).
-- Колода — пакет `X.mnemit` (`deck.json` + `reviews.jsonl`). Тип `com.euf.mnemit.deck`
+- Колода — пакет `X.mnemit` (`deck.json`, `reviews.jsonl` и папка `media/`, когда у карточек есть
+  картинки или звуки). Тип `com.euf.mnemit.deck`
   экспортируется из обоих `Info.plist` и объявлен в `Shared/Document/ContentTypes.swift`
   (`UTType.vocabularyDeck`). Расширение и проверку имени держит VocabCore:
   `DeckFile.fileExtension`, `DeckFile.isDeckName`; остальной код расширения не пишет.
@@ -60,6 +61,34 @@
   (создать `<имя>.mnemit`, переименовать, в корзину) — `DeckFiles` в `Shared/Document`: через
   `NSFileCoordinator`, `async`, не на главном потоке; корзина без поддержки места (папка
   приложения на iPhone) переносит колоду в соседнюю папку `Deleted Decks`, насовсем не удаляет.
+- Медиа карточек (`CardMedia` и `DeckMedia` в VocabCore, `Deck.media`): у `Card` четыре необязательных
+  имени файла, `questionImage`, `questionAudio`, `answerImage`, `answerAudio`; в `deck.json` те же ключи,
+  у стороны без файла их нет. Файлы лежат в `X.mnemit/media/`, имя — первые 16 hex-знаков SHA-256
+  содержимого и расширение в нижнем регистре (`3f2a9c0b7d1e4a58.jpg`, `DeckMedia.name(for:fileExtension:)`).
+  Файл под своим именем не меняется, одинаковые файлы хранятся один раз, iCloud Drive синхронизирует каждый
+  отдельно. Имя в `deck.json` другого вида (`DeckMedia.isValidName`) читается как «файла нет», и в путь оно не
+  попадает. Формат версии 5 (`DeckFile.currentVersion`): старое приложение сохранило бы колоду без папки
+  `media/` и потеряло бы файлы, поэтому оно колоду отвергает; версии 3 и 4 читаются.
+  Медиа — содержимое карточки: правятся через `DeckChange.settingMedia` (undo, штамп `contentChanged`),
+  при слиянии идут вместе с текстами, а файлы обеих версий объединяются: `DeckChange.merging` берёт из
+  чужой версии файлы, которых нет у этой и которые называет карточка слитой колоды.
+  Колода держит файлы как `FileWrapper` и байтов не читает (`DeckMedia.contents(of:)` читает по запросу).
+  Чтение пакета (`DeckFile.decode(_:withMedia:at:)`) оставляет файлы, которые называет хоть одна карточка;
+  файл, которого не называет никто, в колоду не попадает и со следующим сохранением уходит из пакета.
+  Пока колода открыта, файлы только прибавляются: удаление карточки и правка её медиа ничего не вынимают,
+  поэтому Undo находит файл на месте. Вынимает Undo изменения, которое файл принесло (импорт, слияние), и
+  только если его не называет ни одна карточка. Имя на карточке, чьего файла в пакете нет (iCloud Drive его
+  ещё не принёс), остаётся на ней, и версия с файлом принесёт его слиянием. Запись
+  (`DeckFile.fileWrapper(for:reviewLog:original:)`) кладёт папку `media` из `Deck.media`; файл, который уже
+  лежит в пакете `original`, клонируется оттуда (`MediaFileWrapper`: `FileManager.copyItem`, на APFS клон
+  делит блоки, байты не пишутся). `FileWrapper.write(to:options:originalContentsURL:)` ничего не линкует
+  (замер на macOS 27: 400 МБ записываются за 0,3 с, клон за 2 мс). `original` даёт iPhone из
+  `originalContentsURL` UIDocument, Mac из `VocabularyDocument.packageURL`, который ставит
+  `VersionMerger.attach`: `ReadConfiguration` и `WriteConfiguration` SwiftUI URL не несут. Читателям, которым
+  нужны одни карточки, медиа не нужны: `DeckFileReader` берёт колоду через `DeckFile.read(at:withMedia: false)`
+  и её не сохраняет; версии в конфликте читает `DeckFile.read(at:)`, их файлы остаются на диске до первого
+  сохранения. Чтение через `FileWrapper(url:options: .immediate)` тянет в память все медиа, поэтому
+  приложения им не читают. Показ, запись своего звука и выбор своих картинок в приложениях ещё не сделаны.
 - Числа «сегодня» (New · Learning · Review, размер плана, ближайшая дата) — только
   `StudySession.counts(for:at:calendar:)`: тот же отбор, что у плана дня, поэтому цифры на
   экране колоды, в тулбаре и в статусной строке совпадают с тем, что поток возьмёт: с планом целиком, `cardsPerSession` в счёт не идёт.
@@ -347,16 +376,31 @@
   партию.
 - Импорт Anki (`.apkg`, `.colpkg`; VocabCore, `Import/Anki`, экраны — следующий пункт): `AnkiImport.read(url)`
   читает три раскладки (`collection.anki2`, `.anki21`, `.anki21b` под zstd с protobuf `meta`) и
-  отдаёт `notes` (front, back, `reviews`, `isSuspended`, `preset`), счётчики пропусков (`skippedCloze`,
-  `skippedMediaRefs`, `skippedEmpty`, из него `skippedMediaOnly` — сторона из одной картинки или
-  звука), `deckNames` и `presets`; синхронный и тяжёлый, звать не с главного
+  отдаёт `notes` (front, back, `media`, `reviews`, `isSuspended`, `preset`), счётчики пропусков
+  (`skippedCloze`, `skippedMediaRefs`, `skippedEmpty`, из него `skippedMediaOnly` — сторона, чьей картинки
+  или звука в пакете нет), `deckNames`, `presets` и `media`; синхронный и тяжёлый, звать не с главного
   потока. Front и back берутся из шаблонов карточки (`AnkiCollection.sides(ofCardAt:…)`): front — первое
   поле с текстом из тех, что показывает вопрос (`qfmt`), back — первое с текстом из тех, что ответ
   (`afmt`) добавляет к вопросу (`{{FrontSide}}` не поле, `{{type:Поле}}` — окно ввода, оно
   показывает поле только в ответе, лишняя `{` у `{{{Поле}}` отбрасывается). Поле из одной картинки
   или звука текста не имеет, поэтому берётся следующее: у типа заметки «Front, Image, Audio, Back»
-  front — слово, back — перевод; остальные поля ответа (примеры, частотность) не импортируются.
-  Шаблон не читается или не показывает полей — берутся первые два поля с текстом. Карточки одной
+  front — слово, back — перевод. Back несёт весь текст, который добавляет ответ: первое поле с текстом,
+  затем каждое следующее поле ответа с текстом отдельной строкой, в порядке шаблона (значение, затем
+  пример). Поле с именем, содержащим `freq`, `rank` или `id` (без учёта регистра), и поле, в чьём тексте нет
+  ни одной буквы, в back не идёт (`AnkiCollection.isExtra`); к первому полю это не относится. Шаблон не
+  читается или не показывает полей — берутся первые два поля с текстом, back из одного поля.
+  Медиа стороны — первая картинка (`<img src>`) и первый звук (`[sound:…]`) из полей, которые показывает
+  шаблон этой стороны, с текстом поле или без: у типа «Front, Image, …» картинка стоит в поле вопроса.
+  Ссылка может быть процентно закодирована или нести сущности HTML (`AnkiText.mediaReferences`). Сторона,
+  у которой нет текста, но есть картинка или звук, не пропускается: карточке нужен текст, картинка или звук
+  на каждой стороне, а текст пустой стороны пуст. Картинки и звуки, которым нет места (файла нет в
+  пакете, вторая картинка стороны), считает `skippedMediaRefs`. Список медиа каждой раскладки читает
+  `AnkiMedia`: JSON «номер → имя» в Legacy 1 и 2, protobuf `MediaEntries` под zstd в Latest (запись — место в
+  списке или поле 255 `legacy_zip_filename`), файл Latest тоже под zstd. Распаковываются только файлы,
+  которые называют карточки, во временную папку, под именем по содержимому (`DeckMedia`); папка живёт, пока
+  жив хоть один файл `AnkiImport.media`. `AnkiImport.mediaSummary` даёт число картинок, звуков и байт для
+  предпросмотра. Карточки без текста вопроса различает по файлам `Card.questionKey`, он ведёт поиск
+  дубликатов. Карточки одной
   заметки Anki остаются сиблингами (`AnkiCollection.NoteType.sibling(ofCardAt:guid:)`): у типа заметки с
   несколькими шаблонами каждая карточка получает `note` = `guid` заметки, а `kind` — `recognition`, кроме
   второй карточки пары «прямая и обратная» (два шаблона, вопрос второго — поле, которым отвечает первый,
@@ -364,8 +408,9 @@
   дубликат при повторном импорте по-прежнему определяется по вопросу. Карточки с
   историей — `AnkiImport.cards(from:learningOptions:calendar:created:)`: состояние
   берётся повтором повторений через `Scheduler.replaying` с параметрами FSRS колоды (память самого
-  Anki не читается), в колоду их кладёт `DeckChange.importing(_:into:learningOptions:)` (`adding` берёт
-  только новые карточки без лога). Пресеты (`AnkiPreset`: имя, `parameters`, `desiredRetention`) идут
+  Anki не читается), в колоду их кладёт `DeckChange.importing(_:into:learningOptions:media:)` вместе с
+  файлами, которые они называют (`adding` берёт только новые карточки без лога); один Undo уносит карточки и
+  файлы, что были новыми для колоды. Пресеты (`AnkiPreset`: имя, `parameters`, `desiredRetention`) идут
   из `col.dconf` схемы 11 (ключи `fsrsWeights`, `fsrsParams5`, `fsrsParams6`, `desiredRetention`) и
   таблицы `deck_config` схемы 18 (protobuf-поля 3, 5, 6 и 37; `decks.kind` ведёт к пресету колоды);
   берётся самый новый непустой список, как в `DeckConfig::fsrs_params` rslib. `fsrsParameters` даёт
@@ -383,8 +428,10 @@
   `com.euf.mnemit.anki-package` (расширение `apkg`, conforms `public.zip-archive` и `public.data`),
   в обоих `Info.plist` — тип документа Viewer, `LSHandlerRank` Alternate. Предпросмотр тот же, что у
   CSV (`CardImport.Preview`, у пакета `anki: AnkiSummary` — названия колод Anki, сколько карточек с
-  историей, пропуски cloze, медиа, пустых; `skipLines` называет причины со счётом: cloze, «только
-  картинка или звук на стороне», «пустая сторона»); дубликаты по вопросу против целевой колоды без галки
+  историей, пропуски cloze, медиа, пустых; `skipLines` называет причины со счётом: cloze, «картинки или
+  звука стороны нет в пакете», «пустая сторона»; `mediaLine` — «75 images, 75 sounds, 3.4 MB»:
+  `AnkiImport.mediaSummary`; файлы идут в `Preview.media`, «Add N Cards» отдаёт их `importCards(_:learningOptions:media:)`);
+  дубликаты по вопросу против целевой колоды без галки
   (`CardImporter.candidates(of:existing:)`, общий с CSV). Пакет без карточек не пуст молча: «No Cards»
   на iPhone и окно ошибки на Mac берут `AnkiSummary.noCardsMessage(fileName:)`, имя файла и те же
   причины со счётом. Пакет читает `CardImport.loadAnki(at:)`
@@ -439,7 +486,7 @@
   из строки-шапки), kind без word key отбрасывается. Выгрузки со строкой-шапкой на языке
   приложения, как писались раньше, читаются через `CardImport.isHeader`. Что из Anki не
   читается: колонки `#guid column`, `#notetype column`, `#deck column`, `#tags column` и
-  `#html:true` (HTML остаётся в тексте). iPhone: «Import Cards…» на экране колоды и «Import…»
+  `#html:true` (HTML остаётся в тексте). Картинки и звуки карточек экспорт не несёт: таблица их не знает. iPhone: «Import Cards…» на экране колоды и «Import…»
   в меню «+» Today (в колоду, использованную последней) ведут через `cardFileImporter` в
   `ImportPreviewSheet` (дубликаты без галки, «Add N Cards» — один `importCards`, один Undo);
   «Export…» в меню экрана колоды — `ShareLink` с `DeckExport` (TSV во временном файле
@@ -604,9 +651,10 @@ The active developer dir may be the Command Line Tools; prefix with
   synchronously: during another process's write, both would wait for each other. The
   iPhone app lets go of the file in the background. Both apps edit cards, so a merge
   (`DeckChange.merging`, rules in its doc comment) settles each part on its own: cards are
-  joined, a card's texts by `Card.contentChanged`, the options by
+  joined, a card's texts and media by `Card.contentChanged`, the options by
   `Deck.learningOptionsChanged`, a deletion by `Deck.deletedCards` against the latest
   change of the card, reviews are joined and never dropped for a deletion that is earlier.
+  The media files of both versions are joined by name, as a file never changes under its name.
 - The Xcode project uses synchronized folders: new files in `MacVocTrainNg/` or
   `MacVocTrainNgTests/` are picked up automatically, likewise in `VocTrain/` (the
   iPhone app) and `VocTrainTests/`.
@@ -625,15 +673,16 @@ The active developer dir may be the Command Line Tools; prefix with
   `MacVocTrainNg/Resources/Credits.html` (the About window).
 - Chart/status colours live in `Shared/Support/Presentation.swift`; the maturity ramp is a
   validated one-hue ordinal ramp, keep it that way.
-- A deck is a package (`deck.json` + `reviews.jsonl`, see `DeckFile`); its keys are the
-  glossary terms. Only the private records in `DeckFile` know its keys; domain types
+- A deck is a package (`deck.json`, `reviews.jsonl` and a folder `media/` of files named by
+  their content, see `DeckFile` and `DeckMedia`); its keys are the glossary terms. Only the private records in `DeckFile` know its keys; domain types
   are not `Codable`. Versions 1 and 2 predate the first release and are no longer read.
   Missing keys decode with defaults, so newer app versions read older decks. Older app
   versions read newer decks of the same version too, but drop unknown keys and files
   on save. So a new field (in `deck.json` or `reviews.jsonl`) or file in the package
   comes without a bump of `DeckFile.currentVersion` only if losing it that way is
   acceptable; otherwise, and for incompatible changes, bump it: older app versions
-  then reject the deck. The review log is encoded incrementally by `ReviewLogEncoder`:
+  then reject the deck: version 5 added the media keys of a card and the folder `media/`, which an
+  older app version would drop on save. The review log is encoded incrementally by `ReviewLogEncoder`:
   logs may only grow at the end or be replaced as a whole.
   A line of `reviews.jsonl` has the keys `card`, `date`, `grade` and, when set, `mode` and `ms`
   (the milliseconds the card was on screen, `ReviewLogEntry.duration`); an older app version
