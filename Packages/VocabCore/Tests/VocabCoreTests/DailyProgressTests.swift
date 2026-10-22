@@ -84,7 +84,7 @@ struct DailyGoalTests {
 
     /// Reviews `seconds` after a start, of cards that were new when their study day began or of others.
     func reviews(_ seconds: [Double], new isNew: Bool = false) -> [DailyGoal.PacedReview] {
-        seconds.map { (Date(timeIntervalSince1970: 1_791_216_000 + $0), isNew, nil) }
+        seconds.map { (Date(timeIntervalSince1970: 1_791_216_000 + $0), isNew, nil, true) }
     }
 
     /// A review at `start` and one after each of `gaps`, seconds apart.
@@ -120,7 +120,7 @@ struct DailyGoalTests {
 
     /// Reviews of `durations` seconds each, `spacing` seconds apart, of new cards or of others.
     func timed(_ durations: [Double], spacing: Double = 100, new isNew: Bool = false, from start: Double = 0) -> [DailyGoal.PacedReview] {
-        durations.enumerated().map { (Date(timeIntervalSince1970: 1_791_216_000 + start + Double($0.offset) * spacing), isNew, .seconds($0.element)) }
+        durations.enumerated().map { (Date(timeIntervalSince1970: 1_791_216_000 + start + Double($0.offset) * spacing), isNew, .seconds($0.element), true) }
     }
 
     /// The other price of a day of `gaps`, one review each and one done card for each review.
@@ -147,14 +147,36 @@ struct DailyGoalTests {
         #expect(abs(otherPrice(withBreaks(steady)) - 5) < 1e-9)
         let varied = lognormalGaps(400, mu: log(5), sigma: 0.3)
         let clean = otherPrice(varied)
-        #expect(abs(clean - 5 * exp(0.3 * 0.3 / 2)) < 0.5)
+        #expect(abs(clean - 5) < 0.5)
         #expect(abs(otherPrice(withBreaks(varied)) / clean - 1) < 0.1)
     }
 
-    @Test func theMeanOfLognormalGapsIsFoundWithoutTheirTail() {
+    @Test func aThirdOfTheGapsBeingBreaksOfAnHourLeavesThePriceWithinATenth() {
+        // 30 % of the gaps are breaks of an hour. The median is then the 0.5 / 0.7 quantile of the gaps
+        // between cards, not their median, which a spread of 0.15 in the logarithm moves by 9 %.
+        let gaps = lognormalGaps(400, mu: log(9), sigma: 0.15)
+        let withBreaks = gaps.enumerated().map { $0.offset % 10 < 3 ? 3600 : $0.element }
+        let clean = otherPrice(gaps)
+        #expect(abs(clean - 9) < 0.5)
+        #expect(abs(otherPrice(withBreaks) / clean - 1) < 0.1)
+        // The mean of the lognormal that these gaps follow, which is what the median replaced, runs away.
+        let logs = withBreaks.map { log($0) }.sorted()
+        let iqr = logs[logs.count * 3 / 4] - logs[logs.count / 4]
+        #expect(exp(logs[logs.count / 2] + pow(iqr / 1.349, 2) / 2) > 3 * clean)
+    }
+
+    @Test func theGapPriceIsTheMedianGapNotTheMeanOfTheirLognormal() {
         let mu = log(6.0)
         let sigma = 0.6
         let price = otherPrice(lognormalGaps(400, mu: mu, sigma: sigma))
+        #expect(abs(price / exp(mu) - 1) < 0.1)
+    }
+
+    @Test func theMeanOfLognormalDurationsIsFoundWithoutTheirTail() {
+        let mu = log(6.0)
+        let sigma = 0.6
+        let durations = lognormalGaps(400, mu: mu, sigma: sigma)
+        let price = DailyGoal.pace(days: [timed(durations)], newDone: 0, otherDone: 400).otherCard
         let mean = exp(mu + sigma * sigma / 2)
         #expect(abs(price / mean - 1) < 0.1)
     }
@@ -173,6 +195,19 @@ struct DailyGoalTests {
         #expect(abs(DailyGoal.pace(days: [spaced(withAgains)], newDone: 0, otherDone: 100).otherCard - 6) < 1e-9)
     }
 
+    @Test func reviewsOfCardsNotDoneThatDayDoNotChangeTheReviewsPerDoneCard() {
+        // Twenty new cards done by two reviews each, 5 s apart: 10 s a card.
+        let done = spaced([Double](repeating: 5, count: 39), new: true)
+        #expect(abs(DailyGoal.pace(days: [done], newDone: 20, otherDone: 0).newCard - 10) < 1e-9)
+        // Fifteen new cards begun and left open, six reviews each (the Agains among them), at the same 5 s
+        // a review: they are in no price, as their cards are in none.
+        let open = spaced([Double](repeating: 5, count: 90), new: true, from: 1000).map { (date: $0.date, isNew: true, duration: $0.duration, isDone: false) }
+        #expect(abs(DailyGoal.pace(days: [done + open], newDone: 20, otherDone: 0).newCard - 10) < 1e-9)
+        // The same reviews of cards that were done would price a card higher.
+        let doneToo = open.map { (date: $0.date, isNew: $0.isNew, duration: $0.duration, isDone: true) }
+        #expect(abs(DailyGoal.pace(days: [done + doneToo], newDone: 35, otherDone: 0).newCard - 5 * 131.0 / 35) < 1e-9)
+    }
+
     @Test func theFirstReviewOfEachDayIsAReviewWithoutAGap() {
         // Two days of 11 reviews, 5 s apart: 20 gaps and 22 reviews over 11 done cards.
         let day = spaced([Double](repeating: 5, count: 10))
@@ -184,7 +219,7 @@ struct DailyGoalTests {
         // others 6 s after the new: the gaps before a review are its card's.
         var times: [Double] = [0]
         for _ in 0..<25 { times += [times.last! + 10, times.last! + 16] }
-        let day: [DailyGoal.PacedReview] = reviews(times).enumerated().map { (date: $0.element.date, isNew: $0.offset % 2 == 1, duration: nil) }
+        let day: [DailyGoal.PacedReview] = reviews(times).enumerated().map { (date: $0.element.date, isNew: $0.offset % 2 == 1, duration: nil, isDone: true) }
         // 25 new reviews of 10 s, one per done card; 26 others of 6 s, the first with no gap, two per done card.
         let pace = DailyGoal.pace(days: [day], newDone: 25, otherDone: 13)
         #expect(abs(pace.newCard - 10) < 1e-9)
@@ -236,10 +271,10 @@ struct DailyGoalTests {
 
     @Test func fewerThanTwentyDurationsLeaveThePriceToTheGaps() {
         // 25 reviews 5 s apart: 24 gaps of 5 s. Nineteen of them have a duration of 2 s, which is too few.
-        let day = spaced([Double](repeating: 5, count: 24)).enumerated().map { (date: $0.element.date, isNew: false, duration: $0.offset < 19 ? Duration.seconds(2) : nil) }
+        let day = spaced([Double](repeating: 5, count: 24)).enumerated().map { (date: $0.element.date, isNew: false, duration: $0.offset < 19 ? Duration.seconds(2) : nil, isDone: true) }
         #expect(abs(DailyGoal.pace(days: [day], newDone: 0, otherDone: 25).otherCard - 5) < 1e-9)
         // With a twentieth, the durations take over; the reviews without one stay in the count of reviews.
-        let more = day.enumerated().map { (date: $0.element.date, isNew: false, duration: $0.offset < 20 ? Duration.seconds(2) : nil) }
+        let more = day.enumerated().map { (date: $0.element.date, isNew: false, duration: $0.offset < 20 ? Duration.seconds(2) : nil, isDone: true) }
         #expect(abs(DailyGoal.pace(days: [more], newDone: 0, otherDone: 25).otherCard - 2) < 1e-9)
         // Durations don't excuse a kind with fewer than ten done cards.
         #expect(DailyGoal.pace(days: [timed([Double](repeating: 4, count: 30))], newDone: 0, otherDone: 9) == Pace())
@@ -558,6 +593,7 @@ struct DailyProgressTests {
         // The three reviews and the done card of a card that was new when the day began are new.
         #expect(pace.newDone == 1 && pace.otherDone == 0)
         #expect(pace.days[today]?.map(\.isNew) == [true, true, true])
+        #expect(pace.days[today]?.map(\.isDone) == [true, true, true])
     }
 
     @Test func aCardStillInLearningAtTheDaysEndIsNotDone() throws {
@@ -568,6 +604,34 @@ struct DailyProgressTests {
         let pace = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
         #expect(pace.done == 0)
         #expect(pace.days[today]?.count == 2)
+        // Its reviews are in the log for the time between them, but are those of no done card.
+        #expect(pace.days[today]?.map(\.isDone) == [false, false])
+    }
+
+    @Test func theReviewsOfAnOpenCardAreNotThoseOfADoneCardEvenWithManyAgains() throws {
+        var options = options()
+        options.steps = 3
+        // Ten new cards, each learned by three Goods 8 s apart, and ten more begun with Again, Again, Again, Good
+        // and left in their steps. A card of the first ten is done at its third review.
+        let morning = at(0, 9)
+        let doneCards = (0..<10).map { index in
+            let first = morning.addingTimeInterval(Double(index) * 100)
+            return answered("d\(index)", [.good, .good, .good], at: [first, first.addingTimeInterval(8), first.addingTimeInterval(16)], options: options)
+        }
+        let openCards = (0..<10).map { index in
+            let first = morning.addingTimeInterval(2000 + Double(index) * 100)
+            return answered("o\(index)", [.again, .again, .again, .good], at: (0..<4).map { first.addingTimeInterval(Double($0) * 8) }, options: options)
+        }
+        let all = try Deck(learningOptions: options, cards: doneCards + openCards)
+        let log = DeckActivity(deck: all, calendar: calendar).paceLog(at: now, calendar: calendar)
+        #expect(log.newDone == 10 && log.otherDone == 0)
+        let reviews = log.days[today] ?? []
+        #expect(reviews.count == 70)
+        // Only the thirty reviews of the done cards are those of a done card: three each, whatever else was begun.
+        #expect(reviews.filter(\.isDone).count == 30)
+        let alone = DeckActivity(deck: try Deck(learningOptions: options, cards: doneCards), calendar: calendar).paceLog(at: now, calendar: calendar)
+        #expect(alone.newDone == 10 && alone.days[today]?.count == 30)
+        #expect(alone.days[today]?.allSatisfy(\.isDone) == true)
     }
 
     @Test func aCardIsDoneOnEachDayItWasLetGoAndTheWindowIsTheSevenDaysBeforeToday() throws {
@@ -647,8 +711,8 @@ struct DailyProgressTests {
         // A review card that goes wrong at 09:00:00 and stays in relearning: a first review with no
         // time before it, and no card done.
         var cards = [answered("lead", [.good, .good, .good, .again], at: learnedLongAgo + [morning], options: options)]
-        // Twenty review cards, one Good each 6 s after the other: 20 gaps of 6 s, and with the review
-        // of the card in relearning 21 reviews over 20 done cards.
+        // Twenty review cards, one Good each 6 s after the other: 20 gaps of 6 s, and 20 reviews over
+        // 20 done cards: the review of the card in relearning is a review of no done card.
         cards += (0..<20).map { index in
             answered("r\(index)", [.good, .good, .good, .good], at: learnedLongAgo + [morning.addingTimeInterval(6 + 6 * Double(index))], options: options)
         }
@@ -663,7 +727,7 @@ struct DailyProgressTests {
         #expect(log.newDone == 10 && log.otherDone == 20)
         let progress = evaluate([deck])
         #expect(abs(progress.pace.newCard - 24) < 1e-9)
-        #expect(abs(progress.pace.otherCard - 6.3) < 1e-9)
+        #expect(abs(progress.pace.otherCard - 6) < 1e-9)
         // The card in relearning is the one card left, and it was not new when the day began.
         #expect(progress.cardsLeft == 1 && progress.newCardsLeft == 0)
         #expect(progress.minutesLeft == 0)

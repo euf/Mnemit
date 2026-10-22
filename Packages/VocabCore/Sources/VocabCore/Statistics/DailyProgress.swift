@@ -75,8 +75,9 @@ public enum DailyGoal {
     private static let shortestTime: TimeInterval = 1
 
     /// One review of a study day, for the pace: when, whether its card was new when the day began
-    /// (`Card.wasNew(before:)`), and how long the card was on screen if that was logged.
-    public typealias PacedReview = (date: Date, isNew: Bool, duration: Duration?)
+    /// (`Card.wasNew(before:)`), how long the card was on screen if that was logged, and whether the
+    /// card was done that day (its last review of the day left it due on a later one).
+    public typealias PacedReview = (date: Date, isNew: Bool, duration: Duration?, isDone: Bool)
 
     /// The pace, how long a done card takes this learner, for the cards that were new when their
     /// study day began and for all others. `days` holds the reviews of each study day of the window,
@@ -90,18 +91,24 @@ public enum DailyGoal {
     ///
     /// A category's price is the typical seconds a review takes times the reviews each of its done
     /// cards needed (`newDone`, `otherDone`). The typical seconds are the mean of the lognormal
-    /// that the logged durations follow if the category has `paceMinimumGaps` of them, else the
-    /// gaps, worked out from the median and the interquartile range of their logarithms, which a
-    /// few long times (a break, a phone call) don't move: exp(m + s² / 2), with m the median and s
-    /// the IQR over 1.349. The reviews are all of the category in the window, the first review of
-    /// each study day, which has no gap, included. A category with fewer than `paceMinimumGaps`
-    /// times or `paceMinimumCards` done cards gets `fallbackNewCardSeconds` or
-    /// `fallbackOtherCardSeconds`.
-    // ponytail: the durations are the primary source and the gaps the fallback for old logs. A gap
-    // also holds the time between cards (a menu, the rest screen), so a price from gaps runs high; a
-    // break goes unnoticed in either source only while breaks are fewer than a quarter of the times.
-    // A duration is not capped (the learner may be away from the phone with the app open); cap it
-    // like Anki's maximum answer seconds (60 s by default) if the median misleads.
+    /// that the logged durations follow if the category has `paceMinimumGaps` of them, worked out
+    /// from the median and the interquartile range of their logarithms: exp(m + s² / 2), with m the
+    /// median and s the IQR over 1.349; else the median of the gaps. The reviews are those of the
+    /// category's cards that were done on the day they were reviewed: the reviews of a card still
+    /// open at the end of its day are in no price, as the card is in none, so a day's Agains on
+    /// cards left for the next day don't raise it. The first review of each study day, which has no
+    /// gap, is included. A category with fewer than `paceMinimumGaps` times or `paceMinimumCards`
+    /// done cards gets `fallbackNewCardSeconds` or `fallbackOtherCardSeconds`.
+    // ponytail: the durations are the primary source and the gaps the fallback for old logs. Breaks
+    // (4 minutes to hours) fall in the gaps, over a quarter of them on some days, and spread their
+    // logarithms so far that exp(m + s² / 2) runs away from the typical time; the median ignores
+    // them while they are under half, and with a share p of breaks it is the 0.5 / (1 - p) quantile
+    // of the work gaps, so it runs a little high. A duration has no breaks, as the time in the
+    // background is not recorded, so the lognormal mean stands: it prices the long right tail that
+    // real times have, which a median leaves out. A gap also holds the time between cards (a menu,
+    // the rest screen), so a price from gaps runs high. A duration is not capped (the learner may be
+    // away from the phone with the app open); cap it like Anki's maximum answer seconds (60 s by
+    // default) if the mean misleads.
     public static func pace(days: [[PacedReview]], newDone: Int, otherDone: Int) -> Pace {
         var newGaps: [Double] = []
         var otherGaps: [Double] = []
@@ -111,39 +118,48 @@ public enum DailyGoal {
         var otherReviews = 0
         for day in days {
             let reviews = day.sorted { $0.date < $1.date }
-            newReviews += reviews.filter(\.isNew).count
-            otherReviews += reviews.filter { !$0.isNew }.count
+            newReviews += reviews.filter { $0.isNew && $0.isDone }.count
+            otherReviews += reviews.filter { !$0.isNew && $0.isDone }.count
             for (earlier, later) in zip(reviews, reviews.dropFirst()) {
-                let gap = log(max(shortestTime, later.date.timeIntervalSince(earlier.date)))
+                let gap = max(shortestTime, later.date.timeIntervalSince(earlier.date))
                 if later.isNew { newGaps.append(gap) } else { otherGaps.append(gap) }
             }
             for review in reviews {
                 guard let duration = review.duration else { continue }
-                let time = log(max(shortestTime, duration / .seconds(1)))
+                let time = max(shortestTime, duration / .seconds(1))
                 if review.isNew { newDurations.append(time) } else { otherDurations.append(time) }
             }
         }
         func price(_ gaps: [Double], _ durations: [Double], reviews: Int, done: Int, fallback: Double) -> Double {
-            let times = durations.count >= paceMinimumGaps ? durations : gaps
-            guard times.count >= paceMinimumGaps, done >= paceMinimumCards else { return fallback }
-            return lognormalMean(ofLogs: times) * Double(reviews) / Double(done)
+            guard done >= paceMinimumCards else { return fallback }
+            let seconds: Double
+            if durations.count >= paceMinimumGaps {
+                seconds = lognormalMean(of: durations)
+            } else if gaps.count >= paceMinimumGaps {
+                seconds = quantile(0.5, of: gaps.sorted())
+            } else {
+                return fallback
+            }
+            return seconds * Double(reviews) / Double(done)
         }
         return Pace(
             newCard: price(newGaps, newDurations, reviews: newReviews, done: newDone, fallback: fallbackNewCardSeconds),
             otherCard: price(otherGaps, otherDurations, reviews: otherReviews, done: otherDone, fallback: fallbackOtherCardSeconds))
     }
 
-    /// The mean of the lognormal whose logarithms are `logs`, from their median and IQR: exp(m + s² / 2).
-    private static func lognormalMean(ofLogs logs: [Double]) -> Double {
-        let sorted = logs.sorted()
-        func quantile(_ p: Double) -> Double {
-            let position = p * Double(sorted.count - 1)
-            let lower = Int(position.rounded(.down))
-            let upper = min(lower + 1, sorted.count - 1)
-            return sorted[lower] + (sorted[upper] - sorted[lower]) * (position - Double(lower))
-        }
-        let spread = (quantile(0.75) - quantile(0.25)) / normalIQR
-        return exp(quantile(0.5) + spread * spread / 2)
+    /// The mean of the lognormal whose logarithms are those of `times`, from their median and IQR: exp(m + s² / 2).
+    private static func lognormalMean(of times: [Double]) -> Double {
+        let sorted = times.map { log($0) }.sorted()
+        let spread = (quantile(0.75, of: sorted) - quantile(0.25, of: sorted)) / normalIQR
+        return exp(quantile(0.5, of: sorted) + spread * spread / 2)
+    }
+
+    /// The `p` quantile of `sorted`, between the two values it falls between.
+    private static func quantile(_ p: Double, of sorted: [Double]) -> Double {
+        let position = p * Double(sorted.count - 1)
+        let lower = Int(position.rounded(.down))
+        let upper = min(lower + 1, sorted.count - 1)
+        return sorted[lower] + (sorted[upper] - sorted[lower]) * (position - Double(lower))
     }
 
     /// The minutes the cards still to do take at `pace`, rounded up; 0 for less than a minute
@@ -396,7 +412,9 @@ public struct DeckActivity: Sendable {
     /// and reviewed again since is still done on that day. A card whose log doesn't reach back to
     /// its first review (`Card.hasCompleteLog`) can't be replayed and counts as done on each day it
     /// was reviewed. On a day a card is new if it had no review before the day began
-    /// (`Card.wasNew(before:)`), and all its reviews and its done card of that day are new.
+    /// (`Card.wasNew(before:)`), and all its reviews and its done card of that day are new. Each
+    /// review says whether its card was done that day: the reviews of a card left open at the day's
+    /// end are in the log, for the time between reviews, but in no price of a done card.
     func paceLog(at now: Date, calendar: StudyCalendar) -> PaceLog {
         let today = calendar.dayNumber(for: now)
         let start = calendar.start(ofDay: today - DailyGoal.paceDays)
@@ -407,6 +425,8 @@ public struct DeckActivity: Sendable {
             guard let latest = card.log.last, latest.date >= start else { continue }
             var replayed = card
             replayed.resetLearningState()
+            // The card's reviews of the day so far: whether it was done is known at the last of them.
+            var ofDay: [(date: Date, duration: Duration?)] = []
             for (index, entry) in card.log.enumerated() {
                 guard entry.date < end else { break }
                 if card.hasCompleteLog {
@@ -414,12 +434,15 @@ public struct DeckActivity: Sendable {
                     replayed = scheduler.review(replayed, grade: entry.grade, at: entry.date, mode: entry.mode, using: &random)
                 }
                 guard entry.date >= start else { continue }
+                ofDay.append((entry.date, entry.duration))
                 let day = calendar.dayNumber(for: entry.date)
                 let endOfDay = calendar.start(ofDay: day + 1)
+                guard !(card.log.indices.contains(index + 1) && card.log[index + 1].date < endOfDay) else { continue }
                 let isNew = card.wasNew(before: calendar.start(ofDay: day))
-                log.days[day, default: []].append((entry.date, isNew, entry.duration))
-                let isLastOfDay = !(card.log.indices.contains(index + 1) && card.log[index + 1].date < endOfDay)
-                if isLastOfDay, !card.hasCompleteLog || (replayed.learningState?.due ?? .distantPast) >= endOfDay {
+                let isDone = !card.hasCompleteLog || (replayed.learningState?.due ?? .distantPast) >= endOfDay
+                log.days[day, default: []] += ofDay.map { ($0.date, isNew, $0.duration, isDone) }
+                ofDay.removeAll()
+                if isDone {
                     if isNew { log.newDone += 1 } else { log.otherDone += 1 }
                 }
             }
