@@ -27,9 +27,6 @@ public struct WordKey: Hashable, Sendable {
     /// ones are those `LegacyAnswer.articles` of `deck-from-tsv` knows.
     private static let articles = ["ο/η", "η/ο", "ο", "η", "το", "οι", "τα", "ένας", "μια", "μία", "ένα"]
     private static let commonGender: Set = ["ο/η", "η/ο"]
-    /// Where the lemma ends, the first of them.
-    private static let cuts = [",", "; ", " / ", " · ", "(", " -"]
-
     /// The key of `text`: a word key as `Card.note` has it (`lemma#article`, from older decks
     /// also with endings and alternatives after the lemma, or with an article in front), or
     /// Greek as typed ("η παρέα", "απλός, -ή, -ό"). `nil` if no lemma is left.
@@ -46,8 +43,7 @@ public struct WordKey: Hashable, Sendable {
             article = leading
             word.removeFirst(leading.count + 1)
         }
-        let end = Self.cuts.compactMap { word.range(of: $0)?.lowerBound }.min() ?? word.endIndex
-        let lemma = Self.withoutEndings(word[..<end].trimmingCharacters(in: .whitespacesAndNewlines))
+        let lemma = Self.withoutEndings(word[..<Self.lemmaEnd(in: word)].trimmingCharacters(in: .whitespacesAndNewlines))
         guard !lemma.isEmpty else { return nil }
         self.lemma = lemma
         self.article = article
@@ -85,6 +81,34 @@ public struct WordKey: Hashable, Sendable {
 
     private static func keys(_ lemma: String, _ article: String) -> [String] {
         commonGender.contains(article) ? [lemma + "#ο", lemma + "#η"] : [lemma + "#" + article]
+    }
+
+    /// Where the lemma of `word` ends: at the first `,` or `(`, `; `, ` -`, ` / ` or ` · `. One pass over
+    /// the scalars: a search for each of them costs three times the rest of the key.
+    private static func lemmaEnd(in word: String) -> String.Index {
+        let scalars = word.unicodeScalars
+        func scalar(after index: String.Index) -> (next: String.Index, scalar: Unicode.Scalar?) {
+            let next = scalars.index(after: index)
+            return (next, next < scalars.endIndex ? scalars[next] : nil)
+        }
+        var index = scalars.startIndex
+        while index < scalars.endIndex {
+            let (next, following) = scalar(after: index)
+            switch scalars[index] {
+            case ",", "(":
+                return index
+            case ";" where following == " ":
+                return index
+            case " " where following == "-":
+                return index
+            case " " where following == "/" || following == "·":
+                if scalar(after: next).scalar == " " { return index }
+            default:
+                break
+            }
+            index = next
+        }
+        return scalars.endIndex
     }
 
     /// `lemma` without a trailing group of endings: "απλός-ή-ό" is "απλός". A hyphen inside a
