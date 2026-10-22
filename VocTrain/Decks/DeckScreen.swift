@@ -179,10 +179,17 @@ private struct LoadedSections: View {
         } header: {
             Text("Today")
         } footer: {
-            if counts.total == 0, let nextDue = counts.nextDue {
-                Text("Nothing due. Next review \(Format.due(nextDue, now: now))")
-            } else {
-                Text("What today's plan takes from this deck.")
+            VStack(alignment: .leading, spacing: 4) {
+                if counts.total == 0, counts.catchUp > 0 {
+                    Text("Done for today")
+                } else if counts.total == 0, let nextDue = counts.nextDue {
+                    Text("Nothing due. Next review \(Format.due(nextDue, now: now))")
+                } else {
+                    Text("What today's plan takes from this deck.")
+                }
+                if counts.catchUp > 0 {
+                    Text("+\(counts.catchUp) to catch up this week")
+                }
             }
         }
 

@@ -18,8 +18,9 @@ enum WidgetLink {
 /// Stored as JSON in a keychain item both targets share (`SnapshotStore`). A snapshot is
 /// small, a few kilobytes.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
-    /// The cards due across all known decks at `date`, as the plan of a study session counts
-    /// them (`StudySession.counts(for:at:calendar:)`).
+    /// The cards of the plan across all known decks at `date`, as a study session counts
+    /// them (`StudySession.counts(for:at:calendar:)`): the share of the backlog included, the
+    /// rest of it not.
     struct Due: Codable, Equatable, Sendable {
         var date: Date
         var count: Int
@@ -27,8 +28,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
 
     /// When the snapshot was made.
     var date: Date
-    /// Graded reviews today (the study day), and the goal of the day: 20, or the plan if it
-    /// is smaller (`DailyGoal`).
+    /// Graded reviews today (the study day), and the goal of the day: its plan as FSRS sets
+    /// it (`DailyGoal`).
     var reviews: Int
     var goal: Int
     /// Days in the streak, today's included once its goal is met.
@@ -135,9 +136,10 @@ extension WidgetSnapshot {
     ///
     /// On the study day of the snapshot they are the snapshot's, with the due count that was
     /// forecast for the hour. Once a study day has begun, today's reviews are 0 and its goal
-    /// is the plan, as forecast for the moment, up to 20. The streak holds through one missed
-    /// day, which the reviews of the next make up for, and ends with a second one, as in
-    /// `Streak.evaluate`; a day on which the goal was not met counts as missed.
+    /// is the plan, as forecast for the moment; a day whose plan is empty is met, and counts
+    /// for the streak. The streak holds through one missed day, which the plan of the next
+    /// makes up for, and ends with a second one, as in `Streak.evaluate`; a day on which the
+    /// goal was not met counts as missed.
     func state(at moment: Date, calendar: StudyCalendar = StudyCalendar()) -> WidgetState {
         let count = dueCount(at: moment)
         let reminder = nextReminder.flatMap { $0 > moment ? $0 : nil }
@@ -147,9 +149,10 @@ extension WidgetSnapshot {
                 date: moment, reviews: reviews, goal: goal, streakDays: streakDays, isGoalMet: isGoalMet, due: count, nextReminder: reminder)
         }
         let missed = days - (isGoalMet ? 1 : 0)
+        let isEmptyPlanMet = count == 0 && missed == 0
         return WidgetState(
-            date: moment, reviews: 0, goal: min(DailyGoal.reviewsPerDay, max(1, count)), streakDays: missed >= 2 ? 0 : streakDays,
-            isGoalMet: false, due: count, nextReminder: reminder)
+            date: moment, reviews: 0, goal: count, streakDays: missed >= 2 ? 0 : streakDays + (isEmptyPlanMet ? 1 : 0),
+            isGoalMet: count == 0, due: count, nextReminder: reminder)
     }
 
     /// The cards due at `moment`: the last forecast at or before it, the first one if none is.

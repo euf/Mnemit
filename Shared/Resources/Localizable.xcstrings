@@ -733,6 +733,16 @@
         }
       }
     },
+    "+%lld to catch up this week": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld zum Nachholen in dieser Woche"
+          }
+        }
+      }
+    },
     "A Translation → Greek card stays locked until its Greek → translation card has an interval this long. A word is asked in one direction per day.": {
       "localizations": {
         "de": {
@@ -1426,6 +1436,16 @@
         }
       }
     },
+    "Cards that were due before today, beyond today's share of them": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten, die vor heute fällig waren, über den heutigen Anteil hinaus"
+          }
+        }
+      }
+    },
     "Cards with the same word key belong to one word, like the two directions of a translation.": {
       "localizations": {
         "de": {
@@ -1452,6 +1472,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Groß-/Kleinschreibung beachten"
+          }
+        }
+      }
+    },
+    "Catch Up": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachholen"
           }
         }
       }

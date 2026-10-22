@@ -5,7 +5,7 @@ import VocabCore
 /// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stream has
 /// no end of its own: today's plan, a short rest (`StreamRestView`), then review ahead and
 /// practice. Every grade is saved at once, so leaving loses nothing. The bar shows the close
-/// button, today's reviews against the goal as a small ring with "14 of 20", and the menu.
+/// button, today's reviews against the goal as a small ring with "14 of 30 today", and the menu.
 ///
 /// Once the answer shows, the card can be swiped instead of the buttons: left is Forgot,
 /// right Good, up Easy, down Hard (`GradeSwipe`, four sectors around the axes, with a gap
@@ -155,14 +155,19 @@ struct StudyView: View {
     }
 
     /// The middle of the bar: today's ring with its figures, and the stage before it when the
-    /// learner is not at today's plan: review ahead doesn't change the plan, and practice
-    /// changes neither the plan nor the schedule, so it shows no ring.
+    /// learner is not at today's plan: catching up and review ahead don't change the plan but
+    /// fill the ring's laps, and practice changes neither the plan nor the schedule, so it
+    /// shows no ring.
     private var header: some View {
         HStack(spacing: 8) {
             switch model.streamStage {
             case .practiceMistakes, .practiceNewest:
                 Text("Practice")
                     .font(.subheadline.weight(.semibold))
+            case .catchUp:
+                Text("Catch Up")
+                    .font(.subheadline.weight(.semibold))
+                ringAndFigures
             case .reviewAhead:
                 Text("Review Ahead")
                     .font(.subheadline.weight(.semibold))
@@ -173,7 +178,7 @@ struct StudyView: View {
         }
     }
 
-    /// "14 of 20", or "26 today" once the goal is met, beside a small ring.
+    /// "14 of 30 today", or "36 today" once the goal is met, beside a small ring.
     @ViewBuilder
     private var ringAndFigures: some View {
         let daily = ring.progress?.ring
@@ -184,7 +189,7 @@ struct StudyView: View {
                     if daily.isGoalMet {
                         Text("\(daily.reviews) today")
                     } else {
-                        Text("\(daily.reviews) of \(daily.goal)")
+                        Text("\(daily.reviews) of \(daily.goal) today")
                     }
                 }
                 .font(.subheadline)
