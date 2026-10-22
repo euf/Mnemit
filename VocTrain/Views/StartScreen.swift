@@ -41,6 +41,8 @@ struct StartScreen: View {
     @State private var incomingAnki: IncomingPackage?
     /// What the sheet chose, which `importChosenAnki` takes up once the sheet has gone.
     @State private var chosenAnki: (file: ImportedFile, destination: AnkiDestinationSheet.Destination)?
+    /// The browser of the shared decks, while its sheet is up.
+    @State private var webBrowser: DeckWebBrowser?
     @State private var importFailure: String?
     @State private var showsNewDeck = false
     /// The deck a new deck's sheet leaves to push once it has gone.
@@ -63,7 +65,8 @@ struct StartScreen: View {
                 canForget: { !knownDecks.isInFolder($0.url) }, study: study, showDeck: showDeck, showCard: showCard,
                 forget: { knownDecks.forget($0.url) }, addCards: { openLastDeck(importing: nil) }, newDeck: { showsNewDeck = true },
                 chooseFolder: { choose(folder: true) }, openDeck: { choose(folder: false) },
-                showSettings: { showsSettings = true }, refresh: refreshAll, importCards: { isChoosingImport = true }
+                showSettings: { showsSettings = true }, refresh: refreshAll, importCards: { isChoosingImport = true },
+                showAnkiWeb: showWeb
             )
             // Not on the stack, which has the deck picker: two file pickers on a view cancel each other.
             .cardFileImporter(isPresented: $isChoosingImport) { openLastDeck(importing: $0) }
@@ -91,6 +94,9 @@ struct StartScreen: View {
                 chosenAnki = (file, destination)
                 incomingAnki = nil
             }
+        }
+        .sheet(item: $webBrowser) { browser in
+            DeckWebBrowserView(browser: browser) { webBrowser = nil }
         }
         .fullScreenCover(item: $run) { run in
             StudyRunView(run: run, ring: ring, knownDecks: knownDecks, counts: deckCounts.counts) { self.run = nil }
@@ -195,7 +201,7 @@ struct StartScreen: View {
             case let .deck(slot):
                 DeckScreen(
                     deck: deck, knownCounts: deckCounts.counts[deck.url], start: { studyDeck(deck, entry: $0) },
-                    rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) })
+                    rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) }, showAnkiWeb: showWeb)
             case let .card(_, id):
                 CardHost(deck: deck, id: id)
             }
@@ -396,19 +402,66 @@ struct StartScreen: View {
     /// introduction and a study stream finish first, the sheets and the decks of the stack close.
     private func presentIncomingAnki() async {
         guard waitingAnki != nil, hasSeenIntroduction, !showsIntroduction, run == nil else { return }
-        let isCovered = showsSettings || showsNewDeck || isChoosing || isChoosingImport || addingCards != nil || !path.isEmpty
+        await uncoverToday()
+        guard let package = waitingAnki, run == nil, !showsIntroduction else { return }
+        waitingAnki = nil
+        incomingAnki = package
+    }
+
+    /// Closes the sheets, the browser and the decks of the stack that cover Today, and waits for
+    /// them to be gone: a sheet can't come up while another is leaving.
+    private func uncoverToday() async {
+        let isCovered =
+            showsSettings || showsNewDeck || isChoosing || isChoosingImport || addingCards != nil || webBrowser != nil
+            || !path.isEmpty
         showsSettings = false
         showsNewDeck = false
         isChoosing = false
         isChoosingImport = false
         addingCards = nil
+        webBrowser = nil
         path = []
         if isCovered {
             try? await Task.sleep(for: .milliseconds(600))
         }
-        guard let package = waitingAnki, run == nil, !showsIntroduction else { return }
-        waitingAnki = nil
-        incomingAnki = package
+    }
+
+    // MARK: The browser of the shared decks
+
+    /// Opens the browser at the shared decks of AnkiWeb.
+    private func showWeb() {
+        guard webBrowser == nil else { return }
+        let browser = DeckWebBrowser()
+        browser.onFile = receiveDownload
+        webBrowser = browser
+    }
+
+    /// A file the learner downloaded in the browser goes the way a file of "Open in Mnemit" or of
+    /// the picker does: a package asks where its cards go, a table shows its preview.
+    private func receiveDownload(_ url: URL) {
+        if url.isAnkiPackage {
+            Task { await receiveAnki(url) }
+        } else {
+            Task { await receiveTable(url) }
+        }
+    }
+
+    /// The preview of a downloaded CSV or TSV table, over the deck used last as the import of the
+    /// "+" menu is; with no deck yet, a new one named after the file takes the cards.
+    private func receiveTable(_ url: URL) async {
+        await uncoverToday()
+        do {
+            let file = try ImportedFile(contentsOf: url)
+            let urls = knownDecks.byName.map(\.url)
+            if let deck = lastUsed(in: urls) ?? urls.first {
+                showAddCards(to: deck, importing: file)
+            } else {
+                let name = CardImport.deckName(forDecks: [], fileName: file.name)
+                showAddCards(to: try await makeDeck(named: name, numbered: true), importing: file)
+            }
+        } catch {
+            importFailure = error.localizedDescription
+        }
     }
 
     /// The sheet of the destination has gone: the cards go to a new deck, named after the Anki
