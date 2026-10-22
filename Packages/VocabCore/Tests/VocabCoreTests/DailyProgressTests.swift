@@ -340,8 +340,17 @@ struct DailyGoalTests {
 
 struct StreakTests {
     /// By default every day is judged by its plan alone: the days of these tests are numbered from 100.
+    /// `owed` is what each day left of its plan: a day with cards owed missed its first round and left its ring
+    /// open, a day without has both done.
     func streak(_ reviews: [Int: Int], today: Int, planRuleStart: Int = .min, owed: [Int: Int] = [:]) -> Streak {
-        Streak.evaluate(reviews: reviews, today: today, planRuleStart: planRuleStart, owed: { owed[$0] ?? 0 })
+        Streak.evaluate(
+            reviews: reviews, today: today, planRuleStart: planRuleStart, isKept: { (owed[$0] ?? 0) == 0 }, isClosed: { (owed[$0] ?? 0) == 0 },
+            repairCards: owed[today] ?? 0)
+    }
+
+    /// The days whose first round was done (`kept`) and whose ring was closed (`closed`, a subset).
+    func streak(_ reviews: [Int: Int], today: Int, kept: Set<Int>, closed: Set<Int>, repairCards: Int = 0) -> Streak {
+        Streak.evaluate(reviews: reviews, today: today, planRuleStart: .min, isKept: { kept.contains($0) }, isClosed: { closed.contains($0) }, repairCards: repairCards)
     }
 
     @Test func daysInARowCountAndTodayCountsOnceItsPlanIsDone() {
@@ -398,11 +407,9 @@ struct StreakTests {
         // 101 had no answer and owed something: it is missed, and 102 repairs it.
         #expect(streak([100: 5, 102: 5], today: 103, planRuleStart: 200, owed: [101: 2]) == Streak(days: 4, repairCards: nil))
         var asked: [Int] = []
-        _ = Streak.evaluate(reviews: [100: 5, 101: 5], today: 103, planRuleStart: 102) { day in
-            asked.append(day)
-            return 0
-        }
-        // The plan of a day with an answer before the cutover isn't looked at: it is not needed.
+        _ = Streak.evaluate(
+            reviews: [100: 5, 101: 5], today: 103, planRuleStart: 102, isKept: { asked.append($0); return true }, isClosed: { asked.append($0); return true }, repairCards: 0)
+        // A day with an answer before the cutover isn't looked at: it counts as it is.
         #expect(asked == [102, 103])
     }
 
@@ -415,12 +422,11 @@ struct StreakTests {
         #expect(calendar.dayNumber(for: start.addingTimeInterval(-1)) == DailyGoal.planRuleStart - 1)
     }
 
-    @Test func theOwedPlanIsAskedForEveryDayFromTheFirstReviewToToday() {
+    @Test func everyDayFromTheFirstReviewToTodayIsJudged() {
         var asked: [Int] = []
-        _ = Streak.evaluate(reviews: [100: 5, 103: 5, 90: 0], today: 105, planRuleStart: .min) { day in
-            asked.append(day)
-            return 0
-        }
+        _ = Streak.evaluate(
+            reviews: [100: 5, 103: 5, 90: 0], today: 105, planRuleStart: .min, isKept: { asked.append($0); return true }, isClosed: { asked.append($0); return true },
+            repairCards: 0)
         #expect(asked == [100, 101, 102, 103, 104, 105])
     }
 
@@ -457,6 +463,34 @@ struct StreakTests {
         // 100 counts one, 101 is made up by 102 (3), 103 by 104 (5).
         #expect(streak(days, today: 104, owed: [101: 5, 103: 5]) == Streak(days: 5, repairCards: nil))
         #expect(streak(days, today: 102, owed: [101: 5]) == Streak(days: 3, repairCards: nil))
+    }
+
+    @Test func aDayCountsOnItsFirstRoundWithTheRingStillOpen() {
+        let days = Dictionary(uniqueKeysWithValues: (100...102).map { ($0, 12) })
+        #expect(streak(days, today: 103, kept: [100, 101, 102, 103], closed: []) == Streak(days: 4, repairCards: nil))
+        // Today's first round is not done yet: the streak is as it was, not broken.
+        #expect(streak(days, today: 103, kept: [100, 101, 102], closed: []) == Streak(days: 3, repairCards: nil))
+    }
+
+    @Test func aMissedDayIsRepairedOnlyByTheNextDayClosingItsRing() {
+        // 101 is missed. 102 is closed: both count.
+        #expect(streak([100: 5, 102: 5], today: 103, kept: [100, 102, 103], closed: [102]) == Streak(days: 4, repairCards: nil))
+        // 102 only did its first round: 101 stays missed and the streak starts anew with 102.
+        #expect(streak([100: 5, 102: 5], today: 103, kept: [100, 102, 103], closed: []) == Streak(days: 2, repairCards: nil))
+    }
+
+    @Test func todayRepairsYesterdayOnlyOnceItsRingIsClosed() {
+        let days = [100: 5, 101: 5]
+        // 102 is missed; today's first round is done, the ring is not: the old streak stands, with the cards that close it.
+        #expect(streak(days, today: 103, kept: [100, 101, 103], closed: [], repairCards: 7) == Streak(days: 2, repairCards: 7))
+        #expect(streak(days, today: 103, kept: [100, 101], closed: [], repairCards: 9) == Streak(days: 2, repairCards: 9))
+        #expect(streak(days, today: 103, kept: [100, 101, 103], closed: [103]) == Streak(days: 4, repairCards: nil))
+    }
+
+    @Test func twoMissedDaysEndTheStreakWhateverCloses() {
+        let days = [100: 5, 101: 5]
+        #expect(streak(days, today: 104, kept: [100, 101, 104], closed: [104]) == Streak(days: 1, repairCards: nil))
+        #expect(streak(days, today: 104, kept: [100, 101], closed: []) == Streak(days: 0, repairCards: nil))
     }
 
     @Test func aMissedDayBeforeAnyStreakHasNothingToRepair() {
@@ -794,11 +828,15 @@ struct DailyProgressTests {
         #expect(progress.streak.repairCards == nil)
     }
 
-    @Test func aBigPlanIsTheGoalAsItIsAndLapsComeAfterIt() throws {
+    @Test func aBigPlanKeepsAllItsCardsAndTheGoalIsTheOnesThatFitTheDayAndLapsComeAfterIt() throws {
         var deck = try Deck(learningOptions: options(), cards: (0..<50).map { due("c\($0)", onDay: today) })
-        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 50))
+        let progress = evaluate([deck])
+        // Three rounds of two minutes hold 36 reviews of 10 s; the plan, and the cards left, are 50.
+        #expect(progress.capacity == 3)
+        #expect(progress.ring == DailyRing(done: 0, goal: 36))
+        #expect(progress.cardsLeft == 50)
         reviewPlan(of: &deck, at: now)
-        #expect(evaluate([deck]).ring == DailyRing(done: 50, goal: 50))
+        #expect(evaluate([deck]).ring == DailyRing(done: 50, goal: 36))
     }
 
     @Test func newCardsWithinTheLimitsAreInTheGoalOneCardEach() throws {
@@ -959,20 +997,15 @@ struct DailyProgressTests {
         #expect(evaluate([deck]).streak == Streak(days: 1, repairCards: nil))
     }
 
-    @Test func aPastDayIsJudgedByWhatItOwedAtItsEnd() throws {
-        // Eight cards fell due the day before yesterday: that day and the one after it owe them while any waits.
+    @Test func aPastDayIsJudgedByWhatWasDoneOnIt() throws {
+        // Eight cards fell due the day before yesterday and nobody studied until today.
         var deck = try Deck(learningOptions: options(), cards: (0..<8).map { due("c\($0)", onDay: today - 2) })
-        let activity: () -> DeckActivity = { DeckActivity(deck: deck, calendar: calendar) }
         review(7, of: &deck, at: now, all: true)
-        #expect(activity().owed(onDayOf: today - 2, now: now, calendar: calendar).total == 1)
-        #expect(activity().owed(onDayOf: today - 1, now: now, calendar: calendar).total == 1)
-        // Two missed days in a row, and the plan of today, which is a share of one card, is done.
+        // Two missed days in a row, and the plan of today, which is a share of the cards left, is done.
         #expect(evaluate([deck]).streak == Streak(days: 1, repairCards: nil))
-        // The last one done, a day late: both days owe nothing now, so they count.
+        // The last one done, a day late: the two days stay missed, as nothing was done on them.
         review(1, of: &deck, at: now, all: true)
-        #expect(activity().owed(onDayOf: today - 2, now: now, calendar: calendar).total == 0)
-        #expect(activity().owed(onDayOf: today - 1, now: now, calendar: calendar).total == 0)
-        #expect(evaluate([deck]).streak == Streak(days: interval + 3, repairCards: nil))
+        #expect(evaluate([deck]).streak == Streak(days: 1, repairCards: nil))
     }
 
     @Test func aPastDayWithAnswersAndAnUnfinishedPlanCountsBeforeThePlanRuleAndNotAfterIt() throws {
@@ -998,42 +1031,54 @@ struct DailyProgressTests {
         cards += (0..<10).map { Card(id: UUID(), question: "n\($0)", answer: "x", created: now.addingTimeInterval(-3600)) }
         let deck = try Deck(learningOptions: options, cards: cards)
         let activity = DeckActivity(deck: deck, calendar: calendar)
-        #expect(activity.owed(onDayOf: today - 1, now: now, calendar: calendar).total == 0)
-        #expect(activity.owed(onDayOf: today, now: now, calendar: calendar).total == 5)
+        let history = activity.history(from: today - 1, at: now, calendar: calendar)
+        #expect(history.starts[today - 1] == .init(other: 0, new: 0))
+        // Today began without them, so they are no part of its plan; the ceiling of the new cards a day
+        // that began now would take counts them.
+        #expect(history.starts[today] == .init(other: 0, new: 0))
+        #expect(history.newCeilingToday == 5)
+        #expect(activity.owed(now: now, calendar: calendar).total == 5)
+        #expect(activity.owed(now: now, calendar: calendar, newCardAllowance: 2).total == 2)
     }
 
-    @Test func aBacklogOfFifteenHundredAsksTheOnTimeCardsAndTwoHundredFifteen() throws {
+    @Test func aBacklogOfFifteenHundredIsAPlanOfTheOnTimeCardsAndTwoHundredFifteenWhoseGoalIsTwoRounds() throws {
         let onTime = (0..<12).map { due("t\($0)", onDay: today) }
         let backlog = (0..<1500).map { due("b\($0)", onDay: today - 1 - $0 % 5) }
         var deck = try Deck(learningOptions: options(), cards: onTime + backlog)
         let progress = evaluate([deck])
-        #expect(progress.ring == DailyRing(done: 0, goal: 12 + 215))
+        // The plan is the on-time cards and the share of the backlog; the goal is the 48 reviews of four rounds.
+        #expect(progress.capacity == 4)
+        #expect(progress.ring == DailyRing(done: 0, goal: 48))
+        #expect(progress.cardsLeft == 12 + 215)
         let counts = StudySession.counts(for: deck, at: now, calendar: calendar)
         #expect(counts.total == 12 + 215)
         #expect(counts.catchUp == 1500 - 215)
         // The most forgotten of the backlog come first, and all the on-time cards, which are less forgotten, come too.
         reviewPlan(of: &deck, at: now)
-        #expect(evaluate([deck]).ring == DailyRing(done: 12 + 215, goal: 12 + 215))
+        #expect(evaluate([deck]).ring == DailyRing(done: 12 + 215, goal: 48))
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 0)
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).catchUp == 1500 - 215)
     }
 
-    @Test func aBacklogOfFifteenHundredWithTwelveOnTimeAndNewCardsAsksTheirSum() throws {
+    @Test func aBacklogOfFifteenHundredWithTwelveOnTimeAndNewCardsLeavesNoTimeForTheNewOnes() throws {
         var options = options()
         options.newCardsPerSession = 7
         let onTime = (0..<12).map { due("t\($0)", onDay: today) }
         let backlog = (0..<1500).map { due("b\($0)", onDay: today - 1 - $0 % 5) }
         var deck = try Deck(learningOptions: options, cards: onTime + backlog + (0..<30).map { new("n\($0)") })
         // Twelve on time, a seventh of the backlog rounded up, and the new cards of the day.
-        let goal = 12 + 215 + 7
-        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == goal)
-        #expect(DeckActivity(deck: deck, calendar: calendar).plan(onDayOf: now, calendar: calendar).total == goal)
-        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: goal))
+        let plan = 12 + 215 + 7
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == plan)
+        #expect(DeckActivity(deck: deck, calendar: calendar).plan(onDayOf: now, calendar: calendar).total == plan)
+        // The reviews fill the four rounds of the day, so no new card is admitted and the goal is those 48.
+        let progress = evaluate([deck])
+        #expect(progress.newCardAllowances == [0])
+        #expect(progress.ring == DailyRing(done: 0, goal: 48))
         reviewPlan(of: &deck, at: now)
-        #expect(evaluate([deck]).ring == DailyRing(done: goal, goal: goal))
+        #expect(evaluate([deck]).ring == DailyRing(done: plan, goal: 48))
         // The rest of the backlog is catching up: laps, and the goal stays.
         review(100, of: &deck, at: now, all: true)
-        #expect(evaluate([deck]).ring == DailyRing(done: goal + 100, goal: goal))
+        #expect(evaluate([deck]).ring == DailyRing(done: plan + 100, goal: 48))
     }
 
     @Test func aSmallBacklogIsDoneInADayAsLongAsTheDaysOwnCardsAreMore() throws {
@@ -1042,21 +1087,23 @@ struct DailyProgressTests {
         var counts = StudySession.counts(for: deck, at: now, calendar: calendar)
         #expect(counts.total == 35)
         #expect(counts.catchUp == 0)
-        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 35))
+        // Yesterday's five cards were missed, which takes a round from today: two rounds hold 24 reviews.
+        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 24))
         // Nothing of the plan is left over once it is done.
         reviewPlan(of: &deck, at: now)
         counts = StudySession.counts(for: deck, at: now, calendar: calendar)
         #expect(counts.total == 0)
         #expect(counts.catchUp == 0)
-        #expect(evaluate([deck]).ring == DailyRing(done: 35, goal: 35))
+        #expect(evaluate([deck]).ring == DailyRing(done: 35, goal: 24))
     }
 
-    @Test func theBacklogShareGoesBySeventhsWhileTheDaysOwnCardsAreFewer() throws {
+    @Test func theBacklogShareGoesBySeventhsWhileTheDaysOwnCardsAreFewerAndTheGoalIsTheRoundsOfTheDay() throws {
         // 1500 overdue and 50 due today: the share is 215, not the 50 of a normal day.
         let deck = try Deck(
             learningOptions: options(), cards: (0..<50).map { due("t\($0)", onDay: today) } + (0..<1500).map { due("b\($0)", onDay: today - 1 - $0 % 5) })
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 50 + 215)
-        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 50 + 215))
+        #expect(evaluate([deck]).cardsLeft == 50 + 215)
+        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 48))
     }
 
     @Test func aBacklogAsBigAsTheDaysOwnCardsIsDoneInADayAndTheShareStaysAsItIsWorkedOff() throws {
@@ -1069,19 +1116,20 @@ struct DailyProgressTests {
         for step in [10, 30, 5, 35] {
             review(step, of: &deck, at: now)
             done += step
-            #expect(evaluate([deck]).ring == DailyRing(done: done, goal: 80), "after \(done)")
+            #expect(evaluate([deck]).ring == DailyRing(done: done, goal: 24), "after \(done)")
             #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 80 - done, "after \(done)")
         }
         #expect(evaluate([deck]).ring.isGoalMet)
     }
 
-    @Test func sixHundredOverdueAndNothingDueAsksEightySix() throws {
+    @Test func sixHundredOverdueAndNothingDueAsksEightySixWhichTheGoalCutsToTwoRounds() throws {
         let deck = try Deck(learningOptions: options(), cards: (0..<600).map { due("b\($0)", onDay: today - 1 - $0 % 3) })
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 86)
-        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 86))
+        #expect(evaluate([deck]).cardsLeft == 86)
+        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 24))
     }
 
-    @Test func theSizeOfASessionCapsNeitherTheGoalNorWhatIsShown() throws {
+    @Test func theSizeOfASessionCapsNeitherThePlanNorWhatIsShown() throws {
         // The default size of a session, 100, is the size of a segment of the stream, no cap on the plan.
         var options = options()
         options.cardsPerSession = LearningOptions().cardsPerSession
@@ -1089,9 +1137,9 @@ struct DailyProgressTests {
         let onTime = (0..<12).map { due("t\($0)", onDay: today) }
         let backlog = (0..<1500).map { due("b\($0)", onDay: today - 1 - $0 % 5) }
         var deck = try Deck(learningOptions: options, cards: onTime + backlog)
-        let goal = 12 + 215
-        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == goal)
-        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: goal))
+        let plan = 12 + 215
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == plan)
+        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 48))
         // The stream takes the plan in segments of a hundred, and the goal doesn't grow with them.
         #expect(StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: 1)).session.totalCount == 100)
         var done = 0
@@ -1100,10 +1148,10 @@ struct DailyProgressTests {
             review(segment, of: &deck, at: now)
             done += segment
             let ring = evaluate([deck]).ring
-            #expect(ring == DailyRing(done: done, goal: goal))
-            #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == goal - done)
+            #expect(ring == DailyRing(done: done, goal: 48))
+            #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == plan - done)
         }
-        #expect(done == goal)
+        #expect(done == plan)
         #expect(evaluate([deck]).ring.isGoalMet)
     }
 

@@ -1,24 +1,28 @@
 import Foundation
 
-/// The daily goal behind the rings and the streak, derived from review logs alone:
+/// The daily goal behind the rings, the rounds and the streak, derived from review logs alone:
 /// nothing is stored, so every device that reads the deck files shows the same.
 ///
-/// The unit is the card. The goal of a study day is the number of cards in its plan as FSRS
-/// set it when the day began, what `StudySession.counts(for:at:calendar:)` reports: the cards
-/// due that day, overdue ones included, and the new cards within the day's limits. Only the
-/// backlog, the review cards that were already due before the day, asks a share of itself
-/// (`backlogShare(of:onTime:)`), so an import or a long break doesn't pile a thousand cards
-/// on one day. The goal stays for the day: cards added later are no part of it. A card is
-/// done once its last review of the day left it due on a later day, which is that FSRS let it
-/// go (`DeckActivity.done`): it counts once, however many reviews it took. Reviews, the
-/// grades in the logs, count for the streak's first day and for the pace
-/// (`pace(days:newDone:otherDone:)`), never for the goal or the ring. A day is met when its ring
-/// is closed, an empty plan included: nothing was due, so memory is where FSRS wants it. Cards
-/// done count in every mode: the plan, catch-up, review ahead and anything else the study
-/// stream asks. Practice changes no card and writes no review, so it doesn't count.
+/// The unit is the card, and the day is cut into rounds of two minutes of work at the learner's own
+/// pace (`roundSeconds`, `Pace`). How many rounds a day holds is its capacity, which the logs teach
+/// (`nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`); new cards are admitted only up to the
+/// time the capacity leaves after the day's reviews (`newCardsAllowed(capacity:otherCards:pace:)`).
+/// The plan of a study day is what FSRS sets when the day begins, `StudySession.counts(for:at:calendar:)`
+/// with those allowances: the cards due that day, overdue ones included, and the new cards within the day's
+/// limits and allowance. Only the backlog, the review cards that were already due before the day, asks a
+/// share of itself (`backlogShare(of:onTime:)`), so an import or a long break doesn't pile a thousand cards
+/// on one day. The goal of the day is the cards of that plan that fit its time (`DayRounds`): reviews beyond
+/// it stay in the plan and what is done beyond the goal fills laps. The goal stays for the day: cards added
+/// later are no part of it. A card is done once its last review of the day left it due on a later day,
+/// which is that FSRS let it go (`DeckActivity.done`): it counts once, however many reviews it took.
+/// Reviews, the grades in the logs, count for the streak's first day and for the pace
+/// (`pace(days:newDone:otherDone:)`), never for the goal or the ring. A day keeps the streak when its first
+/// round is done, an empty plan included: nothing was due, so memory is where FSRS wants it; a day closes
+/// its ring when its goal is done. Cards done count in every mode: the plan, catch-up, review ahead and
+/// anything else the study stream asks. Practice changes no card and writes no review, so it doesn't count.
 ///
-/// Everything that sets the size of a day is here: a cap on the goal, or another spread of
-/// the backlog, is a change of this type.
+/// Everything that sets the size of a day is here: a cap on the goal, the length of a round, or another
+/// spread of the backlog, is a change of this type.
 public enum DailyGoal {
     /// The days over which a backlog is spread: each day asks one part of it.
     public static let backlogSpreadDays = 7
@@ -35,9 +39,10 @@ public enum DailyGoal {
     }
 
     /// The goal of a study day on which `done` cards are done, `owed` cards of its plan still
-    /// wait (`StudyCounts.total`), and the plan held `plan` cards when the day began.
+    /// wait (`StudyCounts.total`), and the cards of its plan that fit its time were `plan` when the
+    /// day began (`DayRounds.goal`).
     ///
-    /// The goal is the plan, whatever happens to it after: an Again keeps its card in the plan,
+    /// The goal is those cards, whatever happens to the plan after: an Again keeps its card in the plan,
     /// cards that are added, and cards done beyond it in catch-up and review ahead, don't move
     /// it, so the ring goes on in laps. The one exception is a plan that has nothing left though
     /// fewer cards than planned are done (cards that were suspended or deleted during the
@@ -49,8 +54,8 @@ public enum DailyGoal {
         return owed > 0 ? plan : min(plan, done)
     }
 
-    /// The first study day (2026-10-23) on which a day counts for the streak only when its plan
-    /// was done. A day before it counts with a single review, which is the rule streaks were
+    /// The first study day (2026-10-23) on which a day counts for the streak only when its first
+    /// round was done. A day before it counts with a single review, which is the rule streaks were
     /// started under (a fixed number of reviews a day), so a streak that reaches back past the
     /// change is not cut by it.
     // ponytail: a cutover date and a clause in `Streak.evaluate`, no per-learner migration;
@@ -349,15 +354,14 @@ public struct DailyRing: Hashable, Sendable {
     public var laps: Int { done / max(1, goal) }
 }
 
-/// The days in a row on which the day's cards were done.
+/// The days in a row on which the learner kept their streak: a day counts once its first round is done.
 public struct Streak: Hashable, Sendable {
-    /// Study days in the streak, today's included once its plan is done. Counts a single
-    /// missed day that the plan of the day after it made up for.
+    /// Study days in the streak, today's included once its first round is done. Counts a single
+    /// missed day that the next day made up for.
     public var days: Int
-    /// The cards of today's plan still to do that would make up for the single day missed
-    /// yesterday and keep the streak; `nil` if no day is missed or today is met. The plan
-    /// already holds what the missed day left over. The streak ends if today ends without
-    /// them.
+    /// The cards of today's plan still to do that would close the ring and so make up for the single
+    /// day missed yesterday and keep the streak; `nil` if no day is missed or today is closed. The
+    /// streak ends if today ends without them.
     public var repairCards: Int?
 
     public init(days: Int, repairCards: Int?) {
@@ -365,26 +369,30 @@ public struct Streak: Hashable, Sendable {
         self.repairCards = repairCards
     }
 
-    /// How the streak stands. A day is met when no card of its plan was left at its end
-    /// (`owed(day) == 0`), an empty plan included. One day missed between two met days is
-    /// made up by the plan of the day after it: both days count. Two missed days in a row
-    /// end the streak. Today is only judged by its own plan, so a day still going never breaks
-    /// the streak. The streak starts with the first review. A day before
-    /// `DailyGoal.planRuleStart` is met with a single review, too.
+    /// How the streak stands. A day is kept when its first round is done, or when its plan was empty
+    /// (`isKept`). One day missed between two kept days is made up when the day after it closes its
+    /// ring (`isClosed`): both days count. A day that is only kept leaves the missed day before it
+    /// missed, and starts the streak anew. Two missed days in a row end the streak. Today is only
+    /// judged by what it did, so a day still going never breaks the streak. The streak starts with
+    /// the first review. A day before `DailyGoal.planRuleStart` is kept and closed with a single review.
     ///
     /// - Parameters:
     ///   - reviews: The reviews by study day: they tell the first day and the days before
     ///     `planRuleStart` that count with one, nothing else.
     ///   - today: The study day now.
-    ///   - planRuleStart: The first study day judged by its plan alone; the tests move it.
-    ///   - owed: The cards of the plan that were left at the end of a study day, for today
-    ///     the cards still to do, 0 once today's ring is closed (`DailyProgress.evaluate`).
-    ///     Not asked for a day before `planRuleStart` that has a review.
-    public static func evaluate(reviews: [Int: Int], today: Int, planRuleStart: Int = DailyGoal.planRuleStart, owed: (Int) -> Int) -> Streak {
+    ///   - planRuleStart: The first study day judged by its rounds alone; the tests move it.
+    ///   - isKept: Whether a study day's first round was done, or its plan empty. Not asked for a
+    ///     day before `planRuleStart` that has a review.
+    ///   - isClosed: Whether a study day's ring was closed, done ≥ its goal. Not asked for a day
+    ///     before `planRuleStart` that has a review.
+    ///   - repairCards: The cards that close today's ring, what today still owes.
+    public static func evaluate(
+        reviews: [Int: Int], today: Int, planRuleStart: Int = DailyGoal.planRuleStart, isKept: (Int) -> Bool, isClosed: (Int) -> Bool, repairCards: Int
+    ) -> Streak {
         guard let first = reviews.filter({ $0.value > 0 }).keys.min() else { return Streak(days: 0, repairCards: nil) }
-        func isMet(_ day: Int) -> Bool {
-            (day < planRuleStart && (reviews[day] ?? 0) > 0) || owed(day) == 0
-        }
+        func isLegacy(_ day: Int) -> Bool { day < planRuleStart && (reviews[day] ?? 0) > 0 }
+        func kept(_ day: Int) -> Bool { isLegacy(day) || isKept(day) }
+        func closed(_ day: Int) -> Bool { isLegacy(day) || isClosed(day) }
 
         enum State {
             case idle
@@ -394,31 +402,23 @@ public struct Streak: Hashable, Sendable {
         }
         var state = State.idle
         for day in first..<max(first, today) {
-            if isMet(day) {
-                switch state {
-                case let .counting(days): state = .counting(days: days + 1)
-                case let .missedOnce(daysBefore): state = .counting(days: daysBefore + 2)
-                case .idle: state = .counting(days: 1)
-                }
-            } else {
-                switch state {
-                case let .counting(days): state = .missedOnce(daysBefore: days)
-                case .missedOnce, .idle: state = .idle
-                }
+            switch state {
+            case let .counting(days):
+                state = kept(day) ? .counting(days: days + 1) : .missedOnce(daysBefore: days)
+            case let .missedOnce(daysBefore):
+                state = closed(day) ? .counting(days: daysBefore + 2) : kept(day) ? .counting(days: 1) : .idle
+            case .idle:
+                state = kept(day) ? .counting(days: 1) : .idle
             }
         }
 
-        let isTodayMet = isMet(today)
         switch state {
         case .idle:
-            return Streak(days: isTodayMet ? 1 : 0, repairCards: nil)
+            return Streak(days: kept(today) ? 1 : 0, repairCards: nil)
         case let .counting(days):
-            return Streak(days: days + (isTodayMet ? 1 : 0), repairCards: nil)
+            return Streak(days: days + (kept(today) ? 1 : 0), repairCards: nil)
         case let .missedOnce(daysBefore):
-            if isTodayMet {
-                return Streak(days: daysBefore + 2, repairCards: nil)
-            }
-            return Streak(days: daysBefore, repairCards: owed(today))
+            return closed(today) ? Streak(days: daysBefore + 2, repairCards: nil) : Streak(days: daysBefore, repairCards: repairCards)
         }
     }
 }
@@ -429,13 +429,6 @@ public struct Streak: Hashable, Sendable {
 /// Holds the deck, which is a value that shares its storage.
 public struct DeckActivity: Sendable {
     private let deck: Deck
-    /// The study days of the cards, asked once: the streak counts the plan of every day of the
-    /// history, which would ask the calendar about every card for each of them.
-    private let index: StudySession.DayIndex
-    /// The first moment from which a card of the deck can be in a plan: the earliest due date of a
-    /// card that was studied, or the earliest creation of one that wasn't. Before it, no day
-    /// asks anything, whatever the deck's history was.
-    private let firstPlanned: Date
     /// The reviews by study day, one for each entry of a card's log. They tell on which
     /// days the learner studied and nothing more: the ring counts cards
     /// (`done(onDayOf:calendar:)`).
@@ -443,9 +436,7 @@ public struct DeckActivity: Sendable {
 
     public init(deck: Deck, calendar: StudyCalendar) {
         self.deck = deck
-        index = StudySession.DayIndex(deck: deck, calendar: calendar)
         reviewsByDay = Self.reviewsByDay(of: deck, calendar: calendar)
-        firstPlanned = deck.cards.lazy.filter { !$0.isSuspended }.map { $0.learningState?.due ?? $0.created }.min() ?? .distantFuture
     }
 
     /// Counts the entries of every card's log. A day is looked up once per quarter of an
@@ -471,17 +462,11 @@ public struct DeckActivity: Sendable {
         return counts
     }
 
-    /// What the plan still waited for at the end of study day `day`, or now for the day of
-    /// `now`: `StudySession.counts(for:at:calendar:)`, so burying, limits, the lock and the
-    /// share of the backlog count as they did that day. It looks at the deck as it is now: a
-    /// card that was due on `day` and has been reviewed since no longer shows as left over,
-    /// and a day left unfinished counts as done once its cards are caught up. A card that
-    /// did not exist yet on `day` was not in its plan.
-    public func owed(onDayOf day: Int, now: Date, calendar: StudyCalendar) -> StudyCounts {
-        let endOfDay = calendar.start(ofDay: day + 1).addingTimeInterval(-1)
-        guard endOfDay < now else { return StudySession.counts(for: deck, at: now, calendar: calendar) }
-        guard endOfDay >= firstPlanned else { return StudyCounts() }
-        return StudySession.counts(for: deck, at: endOfDay, calendar: calendar, past: index)
+    /// What the plan still waits for now, on the study day of `now`: `StudySession.counts(for:at:calendar:)`,
+    /// so burying, limits, the lock and the share of the backlog count as the stream takes them, and
+    /// `newCardAllowance` is the deck's share of the day's new cards (`DailyProgress.newCardAllowances`).
+    public func owed(now: Date, calendar: StudyCalendar, newCardAllowance: Int? = nil) -> StudyCounts {
+        StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: newCardAllowance)
     }
 
     /// The plan of the study day of `now` when the day began: what the deck had to do then,
@@ -521,21 +506,38 @@ public struct DeckActivity: Sendable {
 
     /// The reviews of the study days that set the learner's pace, and the cards done on them
     /// (`DailyGoal.pace(days:newDone:otherDone:)`): the study day of `now` and the `DailyGoal.paceDays`
-    /// before it. A card is done on a day when its last review of that day left it due on a later
-    /// one, which the scheduler replays from its log: a card that was done on an earlier day
-    /// and reviewed again since is still done on that day. A card whose log doesn't reach back to
-    /// its first review (`Card.hasCompleteLog`) can't be replayed and counts as done on each day it
-    /// was reviewed. On a day a card is new if it had no review before the day began
-    /// (`Card.wasNew(before:)`), and all its reviews and its done card of that day are new. Each
-    /// review says whether its card was done that day: the reviews of a card left open at the day's
-    /// end are in the log, for the time between reviews, but in no price of a done card.
+    /// before it, see `replayLog(from:through:calendar:keepsStates:)`.
     func paceLog(at now: Date, calendar: StudyCalendar) -> PaceLog {
         let today = calendar.dayNumber(for: now)
-        let start = calendar.start(ofDay: today - DailyGoal.paceDays)
+        return replayLog(from: today - DailyGoal.paceDays, through: today, calendar: calendar)
+    }
+
+    /// The reviews of the study days `firstDay` to `today` and the cards done on them. A card is done
+    /// on a day when its last review of that day left it due on a later one, which the scheduler
+    /// replays from its log: a card that was done on an earlier day and reviewed again since is still
+    /// done on that day. A card whose log doesn't reach back to its first review
+    /// (`Card.hasCompleteLog`) can't be replayed and counts as done on each day it was reviewed. On a
+    /// day a card is new if it had no review before the day began (`Card.wasNew(before:)`), and all its
+    /// reviews and its done card of that day are new. Each review says whether its card was done that
+    /// day: the reviews of a card left open at the day's end are in the log, for the time between
+    /// reviews, but in no price of a done card.
+    ///
+    /// With `keepsStates` the log also holds the state of each replayed card at the end of each day it
+    /// was reviewed on (`PaceLog.statesAfter`), which is how a deck is seen as it stood on a past day.
+    func replayLog(from firstDay: Int, through today: Int, calendar: StudyCalendar, keepsStates: Bool = false) -> PaceLog {
+        let start = calendar.start(ofDay: firstDay)
         let end = calendar.start(ofDay: today + 1)
         let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
         var log = PaceLog()
-        for card in deck.cards {
+        // The starts of the days, asked of the calendar once each.
+        var starts: [Int: Date] = [:]
+        func startOfDay(_ day: Int) -> Date {
+            if let known = starts[day] { return known }
+            let date = calendar.start(ofDay: day)
+            starts[day] = date
+            return date
+        }
+        for (cardIndex, card) in deck.cards.enumerated() {
             guard let latest = card.log.last, latest.date >= start else { continue }
             var replayed = card
             replayed.resetLearningState()
@@ -550,14 +552,21 @@ public struct DeckActivity: Sendable {
                 guard entry.date >= start else { continue }
                 ofDay.append((entry.date, entry.duration))
                 let day = calendar.dayNumber(for: entry.date)
-                let endOfDay = calendar.start(ofDay: day + 1)
+                let endOfDay = startOfDay(day + 1)
                 guard !(card.log.indices.contains(index + 1) && card.log[index + 1].date < endOfDay) else { continue }
-                let isNew = card.wasNew(before: calendar.start(ofDay: day))
+                let isNew = card.wasNew(before: startOfDay(day))
                 let isDone = !card.hasCompleteLog || (replayed.learningState?.due ?? .distantPast) >= endOfDay
                 log.days[day, default: []] += ofDay.map { ($0.date, isNew, $0.duration, isDone) }
                 ofDay.removeAll()
+                if keepsStates, card.hasCompleteLog { log.statesAfter[day, default: []].append((cardIndex, replayed.learningState)) }
                 if isDone {
-                    if isNew { log.newDone += 1 } else { log.otherDone += 1 }
+                    if isNew {
+                        log.newDone += 1
+                        log.newDoneByDay[day, default: 0] += 1
+                    } else {
+                        log.otherDone += 1
+                        log.otherDoneByDay[day, default: 0] += 1
+                    }
                 }
             }
         }
@@ -565,16 +574,120 @@ public struct DeckActivity: Sendable {
     }
 
     /// What a deck gives `DailyGoal.pace(days:newDone:otherDone:)`: reviews by study day, and
-    /// the cards done, new and other.
+    /// the cards done, new and other, in all and by study day.
     struct PaceLog {
         var days: [Int: [DailyGoal.PacedReview]] = [:]
         var newDone = 0
         var otherDone = 0
+        var newDoneByDay: [Int: Int] = [:]
+        var otherDoneByDay: [Int: Int] = [:]
+        /// The state of each card replayed from its log at the end of each study day it was reviewed
+        /// on: the index of the card in the deck, and its state. Only with `keepsStates`.
+        var statesAfter: [Int: [(card: Int, state: LearningState?)]] = [:]
         var done: Int { newDone + otherDone }
+    }
+
+    /// The plan of a study day when it began, in cards that are not new and in new cards.
+    struct DayStart: Hashable {
+        var other = 0
+        var new = 0
+    }
+
+    /// The deck on each study day from `first` to the day of `now`, as the log tells it, for the capacity and
+    /// the goal of every day (`DailyProgress.evaluate`): the reviews of each day and the cards done
+    /// (`paced`), and the plan at its start (`starts`).
+    struct History {
+        var paced: PaceLog
+        var starts: [Int: DayStart]
+        /// The new cards the deck's own limits take on the study day of `now` if it began now: the
+        /// cards created since it began are in this plan, which `starts` leaves them out of.
+        var newCeilingToday: Int
+    }
+
+    /// Replays the log forward, once, instead of looking back from today at every day: the cards go
+    /// through their reviews in `replayLog(from:through:calendar:keepsStates:)`, and a copy of the deck
+    /// takes the state each card had at the end of the day before, so the plan of each day is
+    /// `StudySession.counts(for:at:calendar:)` of the deck as it stood when that day began. For the day
+    /// of `now` this is the plan of `plan(onDayOf:calendar:)`. A card whose log doesn't reach back to
+    /// its first review can't be replayed and stays as it is on every day, as in that plan.
+    func history(from first: Int, at now: Date, calendar: StudyCalendar) -> History {
+        let today = calendar.dayNumber(for: now)
+        let first = min(first, today)
+        let paced = replayLog(from: first, through: today, calendar: calendar, keepsStates: true)
+        var stood = deck
+        for index in stood.cards.indices {
+            if stood.cards[index].hasCompleteLog { stood.cards[index].learningState = nil }
+            // Without the log, the day's start has no first review and no share of the backlog to take back.
+            stood.cards[index].log = []
+        }
+        var locks = ProductionLocks(of: stood, calendar: calendar)
+        var starts: [Int: DayStart] = [:]
+        var newCeilingToday = 0
+        for day in first...today {
+            for change in paced.statesAfter[day - 1] ?? [] {
+                stood.cards[change.card].learningState = change.state
+                locks.update(stood.cards[change.card], at: change.card)
+            }
+            let start = calendar.start(ofDay: day)
+            let counts = StudySession.counts(for: stood, at: start, calendar: calendar, past: StudySession.DayIndex(lockedNotes: locks.notes))
+            starts[day] = DayStart(other: counts.learning + counts.review, new: counts.new)
+            if day == today {
+                let later = StudySession.DayIndex(lockedNotes: locks.notes, countsCardsCreatedLater: true)
+                newCeilingToday = StudySession.counts(for: stood, at: start, calendar: calendar, past: later).new
+            }
+        }
+        return History(paced: paced, starts: starts, newCeilingToday: newCeilingToday)
     }
 }
 
-/// The ring and the streak of a learner over some decks, see `evaluate(_:at:calendar:)`.
+/// The notes whose production cards are held back, as `StudySession` finds them
+/// (`LearningOptions.productionUnlockDays`), kept up to date card by card: a note is locked while one of its
+/// recognition cards isn't learned, which a history of hundreds of days would otherwise look up for every card on
+/// every day.
+struct ProductionLocks {
+    private let unlockDays: Int
+    private let calendar: StudyCalendar
+    private var isLearned: [Bool]
+    private var unlearned: [String: Int] = [:]
+    /// The notes with a recognition card that isn't learned.
+    private(set) var notes: Set<String> = []
+
+    init(of deck: Deck, calendar: StudyCalendar) {
+        unlockDays = deck.learningOptions.productionUnlockDays
+        self.calendar = calendar
+        isLearned = Array(repeating: true, count: deck.cards.count)
+        for (index, card) in deck.cards.enumerated() where Self.isLockable(card, unlockDays: unlockDays) {
+            // Counted as learned until `update` finds it isn't, which is what a card that is learned doesn't need.
+            isLearned[index] = true
+            update(card, at: index)
+        }
+    }
+
+    private static func isLockable(_ card: Card, unlockDays: Int) -> Bool {
+        unlockDays > 0 && card.kind == .recognition && card.note != nil
+    }
+
+    /// Takes in the state of `card`, the one at `index` of the deck, as it stands now.
+    mutating func update(_ card: Card, at index: Int) {
+        guard Self.isLockable(card, unlockDays: unlockDays), let note = card.note else { return }
+        let learned = Self.isLearned(card.learningState, unlockDays: unlockDays, calendar: calendar)
+        guard learned != isLearned[index] else { return }
+        isLearned[index] = learned
+        let count = (unlearned[note] ?? 0) + (learned ? -1 : 1)
+        unlearned[note] = count > 0 ? count : nil
+        if count > 0 { notes.insert(note) } else { notes.remove(note) }
+    }
+
+    /// Whether a card in this state is learned: in the review phase with an interval of `unlockDays` or more.
+    private static func isLearned(_ state: LearningState?, unlockDays: Int, calendar: StudyCalendar) -> Bool {
+        guard let state, state.phase == .review else { return false }
+        // An interval of that many study days is more than one day less of time, an hour of daylight saving time aside.
+        guard state.due.timeIntervalSince(state.lastReview) > Double(unlockDays - 1) * 86400 - 7200 else { return false }
+        return calendar.days(from: state.lastReview, to: state.due) >= unlockDays
+    }
+}
+
+/// The ring, the rounds and the streak of a learner over some decks, see `evaluate(_:at:calendar:)`.
 public struct DailyProgress: Hashable, Sendable {
     public var ring: DailyRing
     public var streak: Streak
@@ -585,13 +698,31 @@ public struct DailyProgress: Hashable, Sendable {
     public var newCardsLeft: Int
     /// What one done card takes this learner, new cards and others, `DailyGoal.pace(days:newDone:otherDone:)`.
     public var pace: Pace
+    /// How many rounds the learner takes in a day, worked out from their logs: the time the day admits
+    /// new cards up to (`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`).
+    public var capacity: Int
+    /// Today's cards cut into rounds, as the plan stood when the day began.
+    public var roundPlan: DayRounds
+    /// Whether today keeps the streak: its first round is done, or its plan was empty.
+    public var streakKeptToday: Bool
+    /// How many new cards each deck may introduce today, in the order of the decks given to
+    /// `evaluate(_:at:calendar:)`: the plan takes them as `newCardAllowance`.
+    public var newCardAllowances: [Int]
 
-    public init(ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace()) {
+    public init(
+        ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace(), capacity: Int = DailyGoal.initialCapacity,
+        roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), capacity: DailyGoal.initialCapacity), streakKeptToday: Bool = false,
+        newCardAllowances: [Int] = []
+    ) {
         self.ring = ring
         self.streak = streak
         self.cardsLeft = cardsLeft
         self.newCardsLeft = min(max(0, newCardsLeft), max(0, cardsLeft))
         self.pace = pace
+        self.capacity = capacity
+        self.roundPlan = roundPlan
+        self.streakKeptToday = streakKeptToday
+        self.newCardAllowances = newCardAllowances
     }
 
     /// The cards left that were not new when the day began.
@@ -603,8 +734,32 @@ public struct DailyProgress: Hashable, Sendable {
     /// The one price of a card left, for the widget, whose forecast counts cards and not their kinds.
     public var secondsPerCardLeft: Double { pace.secondsPerCard(newCards: newCardsLeft, otherCards: otherCardsLeft) }
 
-    /// Adds up the cards done and the plans of all `decks`: one ring and one streak for the
-    /// learner, however many decks they study.
+    /// How many rounds today holds.
+    public var rounds: Int { roundPlan.rounds }
+
+    /// How many of them are done.
+    public var roundsDone: Int { roundPlan.roundsDone(cardsDone: ring.done) }
+
+    /// The card counts at which the rounds end; the last is the goal.
+    public var roundEnds: [Int] { roundPlan.ends }
+
+    /// The cards to the end of the round the learner is in; `nil` once the rounds are done.
+    public var cardsToNextRound: Int? { roundPlan.cardsToNextRound(cardsDone: ring.done) }
+
+    /// The minutes to the end of the round the learner is in, at the pace the day began with, as
+    /// `DailyGoal.minutesLeft(newCards:otherCards:pace:)`; `nil` once the rounds are done.
+    public var minutesToNextRound: Int? { roundPlan.minutesToNextRound(cardsDone: ring.done) }
+
+    /// Adds up the cards done and the plans of all `decks`: one ring, one set of rounds and one streak
+    /// for the learner, however many decks they study.
+    ///
+    /// The logs are replayed forward from the first study day (`DeckActivity.history(from:at:calendar:)`).
+    /// Each day has a capacity (`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`), which
+    /// sets the time of the day: the cards of its plan that were not new, at the pace the day began with
+    /// (the seven study days before it), leave the rest to new cards (`DailyGoal.newCardsAllowed`). The
+    /// goal of the day is the plan that fits (`DayRounds`); the ring is closed at the goal, and the first
+    /// round keeps the streak. Today's new cards are shared among the decks, by their own limits, as
+    /// `newCardAllowances`.
     public static func evaluate(
         _ decks: [DeckActivity], at now: Date, calendar: StudyCalendar, planRuleStart: Int = DailyGoal.planRuleStart
     ) -> DailyProgress {
@@ -613,32 +768,68 @@ public struct DailyProgress: Hashable, Sendable {
         for deck in decks {
             reviews.merge(deck.reviewsByDay, uniquingKeysWith: +)
         }
-        var owedByDay: [Int: (total: Int, new: Int)] = [:]
-        func owedCards(_ day: Int) -> (total: Int, new: Int) {
-            if let known = owedByDay[day] { return known }
-            let counts = decks.map { $0.owed(onDayOf: day, now: now, calendar: calendar) }
-            let owed = (total: counts.reduce(0) { $0 + $1.total }, new: counts.reduce(0) { $0 + $1.newAtDayStart })
-            owedByDay[day] = owed
-            return owed
-        }
-        func owed(_ day: Int) -> Int { owedCards(day).total }
-
-        let plan = decks.reduce(0) { $0 + $1.plan(onDayOf: now, calendar: calendar).total }
-        let done = decks.reduce(0) { $0 + $1.done(onDayOf: now, calendar: calendar) }
-        let ring = DailyRing(done: done, goal: DailyGoal.goal(done: done, owed: owed(today), plan: plan))
+        let first = min(reviews.filter { $0.value > 0 }.keys.min() ?? today, today)
+        let histories = decks.map { $0.history(from: first, at: now, calendar: calendar) }
         var paced: [Int: [DailyGoal.PacedReview]] = [:]
-        var newDone = 0
-        var otherDone = 0
-        for deck in decks {
-            let log = deck.paceLog(at: now, calendar: calendar)
-            paced.merge(log.days, uniquingKeysWith: +)
-            newDone += log.newDone
-            otherDone += log.otherDone
+        var newDoneByDay: [Int: Int] = [:]
+        var otherDoneByDay: [Int: Int] = [:]
+        for history in histories {
+            paced.merge(history.paced.days, uniquingKeysWith: +)
+            newDoneByDay.merge(history.paced.newDoneByDay, uniquingKeysWith: +)
+            otherDoneByDay.merge(history.paced.otherDoneByDay, uniquingKeysWith: +)
         }
-        // Today is met by its ring: cards added after the day began are laps, not debt.
-        let streak = Streak.evaluate(reviews: reviews, today: today, planRuleStart: planRuleStart) { $0 == today && ring.isGoalMet ? 0 : owed($0) }
+        /// The pace over the study days `days`, as `DailyGoal.pace(days:newDone:otherDone:)` takes them.
+        func pace(over days: ClosedRange<Int>) -> Pace {
+            DailyGoal.pace(
+                days: days.compactMap { paced[$0] }, newDone: days.reduce(0) { $0 + (newDoneByDay[$1] ?? 0) },
+                otherDone: days.reduce(0) { $0 + (otherDoneByDay[$1] ?? 0) })
+        }
+
+        var capacity = DailyGoal.initialCapacity
+        var kept: [Int: Bool] = [:]
+        var closed: [Int: Bool] = [:]
+        var startRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), capacity: capacity)
+        var startPace = Pace()
+        var allowances = decks.map { _ in 0 }
+        for day in first...today {
+            if day > first {
+                capacity = DailyGoal.nextCapacity(after: capacity, yesterdayClosed: closed[day - 1] ?? false, dayBeforeClosed: closed[day - 2] ?? false)
+            }
+            let pace = pace(over: (day - DailyGoal.paceDays)...(day - 1))
+            let other = histories.reduce(0) { $0 + ($1.starts[day]?.other ?? 0) }
+            let allowed = DailyGoal.newCardsAllowed(capacity: capacity, otherCards: other, pace: pace)
+            if day < today {
+                let rounds = DayRounds(otherCards: other, newCards: min(allowed, histories.reduce(0) { $0 + ($1.starts[day]?.new ?? 0) }), pace: pace, capacity: capacity)
+                let done = (newDoneByDay[day] ?? 0) + (otherDoneByDay[day] ?? 0)
+                closed[day] = done >= rounds.goal
+                kept[day] = rounds.ends.first.map { done >= $0 } ?? true
+            } else {
+                allowances = DailyGoal.split(allowed, overCeilings: histories.map(\.newCeilingToday))
+                let new = zip(allowances, histories).reduce(0) { $0 + min($1.0, $1.1.starts[day]?.new ?? 0) }
+                startRounds = DayRounds(otherCards: other, newCards: new, pace: pace, capacity: capacity)
+                startPace = pace
+            }
+        }
+
+        let counts = decks.indices.map { decks[$0].owed(now: now, calendar: calendar, newCardAllowance: allowances[$0]) }
+        let owed = counts.reduce(0) { $0 + $1.total }
+        let owedNew = counts.reduce(0) { $0 + $1.newAtDayStart }
+        let done = decks.reduce(0) { $0 + $1.done(onDayOf: now, calendar: calendar) }
+        let ring = DailyRing(done: done, goal: DailyGoal.goal(done: done, owed: owed, plan: startRounds.goal))
+        // A day that began with an empty plan has the plan as it stands, which is new cards the learner
+        // is doing: they are its rounds.
+        let roundPlan =
+            startRounds.goal > 0
+            ? startRounds : DayRounds(otherCards: owed - owedNew, newCards: done + owedNew, pace: startPace, capacity: capacity)
+        let isKeptToday = startRounds.ends.first.map { done >= $0 } ?? true
+        // Today is closed by its ring: cards added after the day began are laps, not debt.
+        kept[today] = isKeptToday
+        closed[today] = ring.isGoalMet
+        let streak = Streak.evaluate(
+            reviews: reviews, today: today, planRuleStart: planRuleStart, isKept: { kept[$0] ?? false }, isClosed: { closed[$0] ?? false },
+            repairCards: max(0, ring.goal - ring.done))
         return DailyProgress(
-            ring: ring, streak: streak, cardsLeft: owed(today), newCardsLeft: owedCards(today).new,
-            pace: DailyGoal.pace(days: Array(paced.values), newDone: newDone, otherDone: otherDone))
+            ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: pace(over: (today - DailyGoal.paceDays)...today), capacity: capacity,
+            roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: allowances)
     }
 }

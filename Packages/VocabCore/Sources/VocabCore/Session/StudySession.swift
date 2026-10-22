@@ -364,7 +364,7 @@ public struct StudySession: Sendable {
     /// stay locked; none if `productionUnlockDays` is 0. A card is learned in the review
     /// phase once its scheduled interval, from the last review to the due date, has
     /// reached `productionUnlockDays`.
-    private static func notesAwaitingRecognition(in deck: Deck, calendar: StudyCalendar) -> Set<String> {
+    static func notesAwaitingRecognition(in deck: Deck, calendar: StudyCalendar) -> Set<String> {
         let unlockDays = deck.learningOptions.productionUnlockDays
         guard unlockDays > 0 else { return [] }
         var notes = Set<String>()
@@ -419,9 +419,9 @@ public struct StudySession: Sendable {
         let countsCardsCreatedLater: Bool
 
         /// The index of a deck at the start of a study day: nothing was introduced or reviewed on the
-        /// day yet, and the locks are those of the deck as it stands.
-        init(startOfDayIn deck: Deck, calendar: StudyCalendar, countsCardsCreatedLater: Bool = false) {
-            lockedNotes = StudySession.notesAwaitingRecognition(in: deck, calendar: calendar)
+        /// day yet, and `lockedNotes` are the notes whose production cards are held back.
+        init(lockedNotes: Set<String>, countsCardsCreatedLater: Bool = false) {
+            self.lockedNotes = lockedNotes
             introduced = [:]
             reviewedNotes = [:]
             self.countsCardsCreatedLater = countsCardsCreatedLater
