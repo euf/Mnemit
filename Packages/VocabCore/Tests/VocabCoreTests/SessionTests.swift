@@ -68,7 +68,7 @@ struct SessionTests {
                 stability: 5,
                 difficulty: 5,
                 lastReview: now.addingTimeInterval(-Double(5 + index) * 86400),
-                due: now.addingTimeInterval(-86400)
+                due: now.addingTimeInterval(-3600)
             )
             cards.append(card)
         }
@@ -270,7 +270,7 @@ struct SessionTests {
                     stability: 5,
                     difficulty: 5,
                     lastReview: now.addingTimeInterval(-days * 86400),
-                    due: now.addingTimeInterval(-86400)
+                    due: now.addingTimeInterval(-3600)
                 )
                 return card
             }

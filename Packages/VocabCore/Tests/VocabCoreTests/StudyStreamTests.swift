@@ -123,6 +123,68 @@ struct StudyStreamTests {
         #expect(run.stream.recap.cards == 2)
     }
 
+    // MARK: Backlog
+
+    /// A review card that fell due yesterday, learned with two Goods as the scheduler replays them, so
+    /// the card is what its log says.
+    func overdue(_ question: String) -> Card {
+        let scheduler = Scheduler(learningOptions: options(), calendar: calendar)
+        func learned(onDay day: Int) -> Card {
+            let first = calendar.start(ofDay: day).addingTimeInterval(10 * 3600)
+            let log = [ReviewLogEntry(date: first, grade: .good, mode: .revealed), ReviewLogEntry(date: first.addingTimeInterval(60), grade: .good, mode: .revealed)]
+            return scheduler.replaying(log, of: Card(question: question, answer: question))
+        }
+        let today = calendar.dayNumber(for: now)
+        let interval = calendar.dayNumber(for: learned(onDay: today).learningState!.due) - today
+        return learned(onDay: today - 1 - interval)
+    }
+
+    @Test func aBacklogTakesOnlyItsShareOfThePlanAndTheRestWaitsForKeepGoing() throws {
+        // Fourteen cards fell due yesterday: today asks two of them, a seventh.
+        var run = try run((0..<14).map { overdue("b\($0)") })
+        var counts = StudySession.counts(for: run.deck, at: now, calendar: calendar)
+        #expect(counts.total == 2)
+        #expect(counts.catchUp == 12)
+        #expect(run.stream.stage == .plan)
+        #expect(run.stream.session.totalCount == 2)
+
+        // The share doesn't shrink as it is worked off: one done, one left.
+        run.grade(.good)
+        counts = StudySession.counts(for: run.deck, at: now, calendar: calendar)
+        #expect(counts.total == 1)
+        #expect(counts.catchUp == 12)
+        _ = run.play(whileIn: .plan)
+        // The goal is met: the stream rests, with the rest of the backlog still due.
+        #expect(run.stream.stage == .rest)
+        #expect(run.stream.recap.cards == 2)
+        counts = StudySession.counts(for: run.deck, at: now, calendar: calendar)
+        #expect(counts.total == 0)
+        #expect(counts.catchUp == 12)
+        #expect(run.stream.canKeepGoing(in: run.deck, at: now, calendar: calendar))
+
+        // Keep going continues into the backlog, not into review ahead: these cards are due.
+        let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
+        #expect(keptGoing)
+        #expect(run.stream.stage == .catchUp)
+        #expect(run.stream.session.totalCount == 12)
+        let caughtUp = run.play(whileIn: .catchUp)
+        #expect(caughtUp == 12)
+        #expect(run.stream.stage != .catchUp)
+        #expect(run.deck.cards.allSatisfy { $0.log.count == 3 })
+        counts = StudySession.counts(for: run.deck, at: now, calendar: calendar)
+        #expect(counts.total == 0)
+        #expect(counts.catchUp == 0)
+    }
+
+    @Test func withoutABacklogKeepGoingGoesStraightToReviewAhead() throws {
+        var run = try run([review("r1"), review("ahead", interval: 20, dueInDays: 10)])
+        _ = run.play(whileIn: .plan)
+        #expect(run.stream.stage == .rest)
+        let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
+        #expect(keptGoing)
+        #expect(run.stream.stage == .reviewAhead)
+    }
+
     // MARK: Review ahead
 
     @Test func reviewAheadTakesTheLowestRecallFirstAndOnlyReviewCardsNotDue() throws {
