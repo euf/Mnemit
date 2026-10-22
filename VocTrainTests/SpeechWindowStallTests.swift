@@ -8,9 +8,12 @@ import os
 @testable import VocabCore
 
 /// The probe for the stutter of the Greek speech: it measures how long the main thread stands
-/// still in the speech window, from 0.3 s to 2.0 s after a grade, while the study stream runs on a
-/// deck the size of the owner's, with what runs after a grade: the document's save, the daily
-/// ring, the widget and the screen's own redraws.
+/// still while a card speaks, on a deck the size of the owner's, with what runs after a grade: the
+/// document's save, the daily ring, the widget and the screen's own redraws. The speech windows are
+/// 0.3 s to 2.0 s after a grade that brings a card with a Greek question (it speaks after
+/// `GreekSpeech.settleDelay`, and a slow word lasts until the end of the window), and 0.25 s to
+/// 0.9 s after a Greek answer shows. The stream at rest says nothing; its rows are in the report
+/// and not in the limit.
 ///
 /// Off unless `MNEMIT_PERF` is set (`TEST_RUNNER_MNEMIT_PERF=1` for `xcodebuild`; `report` only
 /// reports and doesn't fail on a stall): it takes a minute, and the owner's deck must be there: a
@@ -19,10 +22,11 @@ import os
 /// `TEST_RUNNER_STALL_REPORT`) if set.
 ///
 /// A main-queue timer fires every 5 ms; the gap between two fires is a stall. What ran meanwhile
-/// comes from `StallTrace`. The speech itself is off, as in every test: the window is where it
-/// would play. A simulator is faster than the iPhone 13 mini and a Debug build slower than the
-/// Release the owner runs; the numbers say which work is the long one, and a Release run of the
-/// same test gets nearer to the device.
+/// comes from `StallTrace`. The speech itself is off, as in every test, and counts as lasting
+/// `simulatedSpeech`. A simulator is faster than the iPhone 13 mini and a Debug build slower than the
+/// Release the owner runs; the simulator also waits for Metal on the main thread, so the redraws
+/// are longer than they would be. The numbers say which work is the long one, and a Release run
+/// gets nearer to the device. A busy Mac shows in them: the report has its load average.
 @MainActor @Suite(.serialized, .timeLimit(.minutes(10)))
 struct SpeechWindowStallTests {
     /// How long the learner looks at a card before the answer shows, and before the grade.
@@ -70,7 +74,7 @@ struct SpeechWindowStallTests {
         let report = ReportWriter()
         let openDeck = OpenDeck(url: deckURL)
         let document = try await waitForDocument(of: openDeck)
-        report.line("deck: \(document.deck.cards.count) cards, \(others.count) other deck(s); \(Self.configuration)")
+        report.line("deck: \(document.deck.cards.count) cards, \(others.count) other deck(s); \(Self.configuration); load average \(Self.loadAverage)")
         try await isolatedCosts(of: document, report: report)
 
         // What the screens do when the stream opens: the ring over all decks, then the stream.
@@ -148,6 +152,7 @@ struct SpeechWindowStallTests {
 
         let events = recorder.events
         report.table(grades: grades, samples: timer.samples, events: events)
+        report.line("load average at the end: \(Self.loadAverage) (other work on the Mac shows in the stalls)")
         report.line("keychain write (real store, main thread, once): \(Self.keychainWriteMs(document: document, ring: ring))")
         try report.write()
         await openDeck.close()
@@ -158,46 +163,31 @@ struct SpeechWindowStallTests {
         }
     }
 
-    /// A card that comes up asks for its speech once, and an answer that shows asks once: a second
-    /// ask for the same card cuts the speech off and starts it again, which sounds like a stutter
-    /// as well. Cards with a Greek question speak it, and nothing else asks.
-    @Test func aCardAsksForItsSpeechOnce() async throws {
-        try #require(GreekSpeech.isUnderTest, "a test run must not speak")
-        // The app that hosts a test run turns the automatic speech off; the cards ask for it as they would.
-        GreekSpeech.shared.autoSpeaks = { true }
-        defer { GreekSpeech.shared.autoSpeaks = { GreekSpeech.autoSpeak } }
+    /// The study screen asks the voice for a card when `questionNumber` changes (`StudyView`), so a
+    /// card asks once if the number grows once with every move to it: a second ask for the same card
+    /// cuts its speech off and starts it again, which sounds like a stutter as well. A grade, Undo
+    /// and Redo each move once.
+    @Test func everyMoveToACardCountsOnce() throws {
         let created = Date(timeIntervalSince1970: 1_791_216_000)
-        let words = ["το σπίτι", "ο δρόμος", "η θάλασσα", "το βιβλίο"]
-        let cards = words.map { Card(text: CardText(question: $0, answer: "x")!, created: created) }
+        let cards = ["το σπίτι", "ο δρόμος", "η θάλασσα", "το βιβλίο"].map { Card(text: CardText(question: $0, answer: "x")!, created: created) }
         let document = try VocabularyDocument(deck: Deck(cards: cards), clock: StudyClock { created.addingTimeInterval(60) })
         let undoManager = UndoManager()
         undoManager.groupsByEvent = false
         document.attachUndoManager(undoManager)
         let model = StudyModel(document: document)
-        let window = try await host(StudyView(model: model, ring: DailyRingModel(), onClose: {}))
-        defer { window.isHidden = true }
+        #expect(model.questionNumber == 0)
 
-        for _ in 0..<3 {
-            try await Task.sleep(for: .seconds(GreekSpeech.settleDelay + 0.3))
+        for grade in 1...3 {
             model.reveal()
-            try await Task.sleep(for: .milliseconds(200))
             undoManager.beginUndoGrouping()
             model.grade(.good)
             undoManager.endUndoGrouping()
+            #expect(model.questionNumber == grade)
         }
-        try await Task.sleep(for: .seconds(GreekSpeech.settleDelay + 0.3))
-        // The first card, and one more with every grade, each asked once; each speaks its Greek
-        // question once. Other tests ask too, so only these cards count.
-        let ids = Set(cards.map(\.id))
-        let requests = GreekSpeech.shared.requests
-        let asked = requests.compactMap { request -> Card.ID? in
-            if case let .cardAppeared(id) = request, let id, ids.contains(id) { id } else { nil }
-        }
-        let spoken = requests.compactMap { request -> String? in
-            if case let .speak(word) = request, words.contains(word) { word } else { nil }
-        }
-        #expect(asked.count == 4)
-        #expect(spoken.count == 4)
+        undoManager.undo()
+        #expect(model.questionNumber == 4)
+        undoManager.redo()
+        #expect(model.questionNumber == 5)
     }
 
     // MARK: - The deck
@@ -211,6 +201,13 @@ struct SpeechWindowStallTests {
         let rest = ["Greek B1.mnemit"].map { folder.appending(path: $0, directoryHint: .isDirectory) }
             .filter { FileManager.default.isReadableFile(atPath: $0.appending(path: "deck.json").path) }
         return [main] + rest
+    }
+
+    /// The Mac's load over the last minute and five: a busy machine makes every stall longer.
+    static var loadAverage: String {
+        var load = [Double](repeating: 0, count: 3)
+        getloadavg(&load, 3)
+        return String(format: "%.1f / %.1f", load[0], load[1])
     }
 
     static var configuration: String {

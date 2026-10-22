@@ -81,6 +81,9 @@ final class GreekSpeech {
     /// as the preference is read by every test that runs.
     var autoSpeaks: () -> Bool = { GreekSpeech.autoSpeak }
 
+    /// How long `whenQuiet()` waits at most; a test sets its own.
+    var quietLimit = GreekSpeech.quietLimit
+
     /// For a test, which never speaks: how long a speech counts as lasting, so that what waits
     /// for the quiet does wait. `nil`, and then a test run is never busy.
     var simulatedSpeechDuration: Duration?
@@ -241,7 +244,7 @@ final class GreekSpeech {
     /// daily ring after a grade, the save of the deck, the widget. After `quietLimit` at most, and
     /// at once for a task that is cancelled.
     func whenQuiet() async {
-        let deadline = ContinuousClock.now + Self.quietLimit
+        let deadline = ContinuousClock.now + quietLimit
         while isBusy, !Task.isCancelled, ContinuousClock.now < deadline {
             try? await Task.sleep(for: .milliseconds(50))
         }

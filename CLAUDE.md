@@ -465,6 +465,24 @@
   `VocTrainTests/StudyScreenSnapshotTests` (путь — переменная окружения
   `TEST_RUNNER_STUDY_SHOTS_DIR` у процесса xcodebuild, аргументом она не доходит), замеры по
   пикселям — `SpeakerAlignmentTests` и `PixelBitmap`.
+  Окно речи: карточка с греческим вопросом говорит через `GreekSpeech.settleDelay` (0,4 с) после
+  появления, греческий ответ — через `revealDelay` (0,25 с) после показа; слово идёт около секунды,
+  и пока оно идёт или готовится, главный поток и процессор принадлежат голосу. Что может подождать,
+  ждёт `GreekSpeech.whenQuiet()` (`isBusy`: карточка в ожидании или реплика в полёте, по
+  `didFinish`/`didCancel` синтезатора; не дольше `quietLimit`, 4 с): расчёт кольца после оценки
+  (`DailyRingModel.refresh`), сохранение (`SaveScheduler`), снимок виджета (`WidgetSync`), уход чипа
+  Undo (`UndoChip`). Новая работа после оценки либо встаёт в этот список, либо занимает главный
+  поток меньше 16 мс. Вне главного потока: кодирование колоды при сохранении (`DeckFileDocument`
+  отдаёт снимок из `contents(forType:)`, пишет `writeContents`) и запись снимка виджета в keychain.
+  К `AVSpeechSynthesizer` обращаются, только когда в полёте своя реплика: его `isSpeaking` и
+  `stopSpeaking` ждут речевой поток процесса. `cardAppeared` приходит один раз на карточку: `questionNumber`
+  растёт на один с каждым ходом (`everyMoveToACardCountsOnce`), в замере это колонка asks. Градиент кольца (`GradientGenerator`)
+  считается один раз на размер и цвета и держит четыре изображения: рядом лежат малое кольцо
+  панели и большое на экране отдыха. Замер — `SpeechWindowStallTests`: копия колоды из iCloud Drive,
+  таймер 5 мс на главной очереди, окна 0,3–2,0 с после оценки и 0,25–0,9 с после показа ответа,
+  бюджет 16 мс; `TEST_RUNNER_MNEMIT_PERF=1` (`report` не падает, `TEST_RUNNER_STALL_REPORT` —
+  файл отчёта), `StallTrace` называет работу, шедшую во время остановки. Симулятор быстрее iPhone
+  13 mini, Release ближе к устройству, чем Debug; звук самого синтезатора замером не виден.
 - Свайп карточки (`GradeSwipe`, `CardFlight`): четыре стороны, те же, что стрелки на Mac:
   ← Forgot, → Good, ↑ Easy, ↓ Hard. Угол пальца считается против часовой от востока, y экрана
   вверх, сектора — константы `GradeSwipe` (`goodReach` 55, `easyEnd` 120, `forgotStart` 150,
