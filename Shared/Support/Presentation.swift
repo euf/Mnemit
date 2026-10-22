@@ -250,6 +250,11 @@ enum Format {
         return String(localized: "in \(years) years")
     }
 
+    /// What the cards left take, "≈ 7 min", or "< 1 min" for no whole minute (`DailyGoal.minutesLeft`).
+    static func timeLeft(minutes: Int) -> String {
+        minutes == 0 ? String(localized: "< 1 min") : String(localized: "≈ \(minutes) min")
+    }
+
     static func percent(_ value: Double) -> String {
         value.formatted(.percent.precision(.fractionLength(0)))
     }

@@ -42,6 +42,11 @@ extension WidgetState {
         return reviews > 0 ? Text("All done") : Text("Nothing due")
     }
 
+    /// "≈ 7 min", the time the cards left take; `nil` when there is nothing to price.
+    fileprivate var timeLeft: String? {
+        minutesLeft.map { Format.timeLeft(minutes: $0) }
+    }
+
     fileprivate var progressLine: Text {
         Text("\(reviews) of \(goal) cards")
     }
@@ -50,6 +55,41 @@ extension WidgetState {
     /// at most, as the badge of the laps would hang out of the circle the system cuts.
     fileprivate var ringWithoutStreak: DailyProgress {
         DailyProgress(ring: DailyRing(done: min(reviews, goal), goal: goal), streak: Streak(days: 0, repairCards: nil))
+    }
+}
+
+/// The headline, "42 cards left", with the time they take after it: on the same line where the
+/// two fit side by side at the headline's size, else on the line under it. The small widget
+/// (155 pt wide at the least) has no width for three digits and the time, so it always stacks.
+private struct HeadlineLine: View {
+    var state: WidgetState
+    var font: Font
+
+    var body: some View {
+        if let timeLeft = state.timeLeft {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    state.headline
+                        .font(font)
+                    Text(verbatim: "· " + timeLeft)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    state.headline
+                        .font(font)
+                        .minimumScaleFactor(0.7)
+                    Text(verbatim: timeLeft)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .lineLimit(1)
+        } else {
+            state.headline
+                .font(font)
+                .minimumScaleFactor(0.7)
+        }
     }
 }
 
@@ -73,14 +113,14 @@ private struct SmallWidget: View {
     var state: WidgetState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            DailyRingView(progress: state.progress, diameter: 64)
+        // With the time under the headline there are three lines of text, and the ring gives up 8 pt.
+        let hasTime = state.timeLeft != nil
+        VStack(alignment: .leading, spacing: hasTime ? 6 : 8) {
+            DailyRingView(progress: state.progress, diameter: hasTime ? 56 : 64)
                 .widgetAccentable()
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: 0) {
-                state.headline
-                    .font(.title3.weight(.semibold))
-                    .minimumScaleFactor(0.7)
+                HeadlineLine(state: state, font: .title3.weight(.semibold))
                 state.progressLine
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -101,8 +141,7 @@ private struct MediumWidget: View {
             DailyRingView(progress: state.progress, diameter: 76)
                 .widgetAccentable()
             VStack(alignment: .leading, spacing: 2) {
-                state.headline
-                    .font(.title2.weight(.semibold))
+                HeadlineLine(state: state, font: .title2.weight(.semibold))
                 state.progressLine
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

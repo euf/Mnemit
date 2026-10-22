@@ -39,7 +39,7 @@ struct MnemitProvider: TimelineProvider {
         let now = Date()
         return MnemitEntry(
             date: now,
-            state: WidgetState(date: now, reviews: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: nil))
+            state: WidgetState(date: now, reviews: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: nil, secondsPerCard: 10))
     }
 }
 
