@@ -147,6 +147,52 @@ public enum DailyGoal {
             otherCard: price(otherGaps, otherDurations, reviews: otherReviews, done: otherDone, fallback: fallbackOtherCardSeconds))
     }
 
+    /// A round: the stretch of a day the learner is asked to do at a time, in seconds of work at their own
+    /// pace. The day is cut into rounds; the first one keeps the streak.
+    public static let roundSeconds: Double = 120
+
+    /// The rounds a day holds on the first study day.
+    public static let initialCapacity = 2
+    /// The rounds a day can hold, whatever the learner did.
+    public static let capacityRange = 1...15
+
+    /// The capacity of a study day, in rounds, one step from the day before: one more if the ring was
+    /// closed on each of the two days before (`yesterdayClosed`, `dayBeforeClosed`), one fewer if it was
+    /// open on the day before, a day without study included, and the same otherwise. Within `capacityRange`.
+    public static func nextCapacity(after capacity: Int, yesterdayClosed: Bool, dayBeforeClosed: Bool) -> Int {
+        let step = yesterdayClosed ? (dayBeforeClosed ? 1 : 0) : -1
+        return min(max(capacity + step, capacityRange.lowerBound), capacityRange.upperBound)
+    }
+
+    /// How many new cards a day admits: what is left of `capacity` rounds once the `otherCards` of the
+    /// plan, the learning cards and the reviews, are taken at their price, in new cards at theirs. Never
+    /// negative: a day with more reviews than rounds admits none.
+    public static func newCardsAllowed(capacity: Int, otherCards: Int, pace: Pace) -> Int {
+        let left = Double(capacity) * roundSeconds - Double(max(0, otherCards)) * pace.otherCard
+        // A sliver is added so that exact multiples of the price don't fall short in the last digit.
+        return max(0, Int((left / pace.newCard + 1e-9).rounded(.down)))
+    }
+
+    /// `total` new cards shared among decks in proportion to their `ceilings`, the new cards each deck's own
+    /// limits let it introduce: each part is its share rounded down, and the cards that are left go to the
+    /// largest remainders, the earlier deck first among equals. No deck gets more than its ceiling; with
+    /// `total` at the sum of the ceilings or more, each gets its ceiling.
+    public static func split(_ total: Int, overCeilings ceilings: [Int]) -> [Int] {
+        let ceilings = ceilings.map { max(0, $0) }
+        let sum = ceilings.reduce(0, +)
+        guard total < sum else { return ceilings }
+        let total = max(0, total)
+        var parts = ceilings.map { total * $0 / sum }
+        let remainders = ceilings.map { total * $0 % sum }
+        let order = ceilings.indices.sorted { remainders[$0] != remainders[$1] ? remainders[$0] > remainders[$1] : $0 < $1 }
+        var left = total - parts.reduce(0, +)
+        for index in order where left > 0 {
+            parts[index] += 1
+            left -= 1
+        }
+        return parts
+    }
+
     /// The mean of the lognormal whose logarithms are those of `times`, from their median and IQR: exp(m + s² / 2).
     private static func lognormalMean(of times: [Double]) -> Double {
         let sorted = times.map { log($0) }.sorted()
@@ -181,9 +227,76 @@ public enum DailyGoal {
     /// Whole minutes, up; the seconds are taken to the millisecond first, so that cards priced
     /// by one price that was worked out from the sum (`Pace.secondsPerCard(newCards:otherCards:)`)
     /// give the minutes of the sum, whatever the floating point leaves in the last digit.
-    private static func minutes(seconds: Double) -> Int {
+    fileprivate static func minutes(seconds: Double) -> Int {
         let seconds = (seconds * 1000).rounded() / 1000
         return seconds < 60 ? 0 : Int((seconds / 60).rounded(.up))
+    }
+}
+
+/// The cards of a study day cut into rounds, as the plan stood when the day began.
+///
+/// The plan is `otherCards`, learning cards and reviews, then `newCards`, in the order the stream takes
+/// them; a card costs the pace of its kind. The goal is the cards of the plan that fit the day's time,
+/// `capacity` rounds of `DailyGoal.roundSeconds`, at least one card if the plan has any: what is more
+/// stays in the plan, and what is done beyond the goal fills laps. Round k ends at the first card where
+/// the cost reaches k rounds, and the last one at the goal. A card that costs more than a round ends the
+/// rounds it spans.
+public struct DayRounds: Hashable, Sendable {
+    /// The card counts at which the rounds end, increasing; the last is the goal. Empty without a goal.
+    public let ends: [Int]
+    private let otherCards: Int
+    private let pace: Pace
+
+    public init(otherCards: Int, newCards: Int, pace: Pace, capacity: Int) {
+        let otherCards = max(0, otherCards)
+        let newCards = max(0, newCards)
+        self.otherCards = otherCards
+        self.pace = pace
+        let budget = Double(capacity) * DailyGoal.roundSeconds
+        let fitting: Int
+        if Double(otherCards) * pace.otherCard > budget {
+            fitting = Int((budget / pace.otherCard + 1e-9).rounded(.down))
+        } else {
+            fitting = otherCards + min(newCards, Int(((budget - Double(otherCards) * pace.otherCard) / pace.newCard + 1e-9).rounded(.down)))
+        }
+        let goal = otherCards + newCards > 0 ? max(1, fitting) : 0
+        var ends: [Int] = []
+        var seconds = 0.0
+        var next = DailyGoal.roundSeconds
+        for card in stride(from: 1, through: goal, by: 1) {
+            seconds += card <= otherCards ? pace.otherCard : pace.newCard
+            if seconds + 1e-9 >= next {
+                ends.append(card)
+                next = (seconds / DailyGoal.roundSeconds + 1e-9).rounded(.down) * DailyGoal.roundSeconds + DailyGoal.roundSeconds
+            }
+        }
+        if goal > 0, ends.last != goal { ends.append(goal) }
+        self.ends = ends
+    }
+
+    /// The cards of the goal; 0 for a plan without cards.
+    public var goal: Int { ends.last ?? 0 }
+
+    public var rounds: Int { ends.count }
+
+    /// How many rounds `done` cards have ended.
+    public func roundsDone(cardsDone done: Int) -> Int { ends.filter { $0 <= done }.count }
+
+    /// The cards from `done` to the end of the round it is in; `nil` once the rounds are done.
+    public func cardsToNextRound(cardsDone done: Int) -> Int? {
+        ends.first { $0 > done }.map { $0 - done }
+    }
+
+    /// The minutes from `done` cards to the end of the round it is in, in whole minutes up and 0 for under
+    /// one, as `DailyGoal.minutesLeft(newCards:otherCards:pace:)`; `nil` once the rounds are done.
+    public func minutesToNextRound(cardsDone done: Int) -> Int? {
+        guard let end = ends.first(where: { $0 > done }) else { return nil }
+        return DailyGoal.minutes(seconds: seconds(ofFirst: end) - seconds(ofFirst: done))
+    }
+
+    /// What the first `cards` cards of the plan cost, in seconds.
+    private func seconds(ofFirst cards: Int) -> Double {
+        Double(min(cards, otherCards)) * pace.otherCard + Double(max(0, cards - otherCards)) * pace.newCard
     }
 }
 
@@ -195,9 +308,10 @@ public struct Pace: Hashable, Sendable {
     /// Any other card: review, relearning, learning carried over from an earlier day.
     public var otherCard: Double
 
+    /// A card takes at least a second, as a logged time does (`DailyGoal.pace(days:newDone:otherDone:)`).
     public init(newCard: Double = DailyGoal.fallbackNewCardSeconds, otherCard: Double = DailyGoal.fallbackOtherCardSeconds) {
-        self.newCard = newCard
-        self.otherCard = otherCard
+        self.newCard = max(1, newCard)
+        self.otherCard = max(1, otherCard)
     }
 
     /// What `newCards` and `otherCards` take, in seconds.
