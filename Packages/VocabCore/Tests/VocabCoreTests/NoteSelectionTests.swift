@@ -50,11 +50,11 @@ struct NoteSelectionTests {
     // MARK: Locked production cards
 
     @Test func productionStaysLockedUntilTheRecognitionIntervalIsLongEnough() throws {
-        // Last reviewed 10 days ago, so due in 10 or 11 days: only the production card is due.
+        // Last reviewed a day ago, so due in 5 or 6 days: only the production card is due.
         let production = fresh("p", note: "n", kind: .production)
-        let short = review("r", note: "n", kind: .recognition, interval: 20, daysAgo: 10)
+        let short = review("r", note: "n", kind: .recognition, interval: 6, daysAgo: 1)
         #expect(try selected([short, production]) == [])
-        let long = review("r", note: "n", kind: .recognition, interval: 21, daysAgo: 10)
+        let long = review("r", note: "n", kind: .recognition, interval: 7, daysAgo: 1)
         #expect(try selected([long, production]) == ["p"])
     }
 
@@ -72,6 +72,10 @@ struct NoteSelectionTests {
 
         // A new recognition card is asked instead, and holds the production card back.
         #expect(try selected([fresh("r", note: "n", kind: .recognition), production]) == ["r"])
+    }
+
+    @Test func productionUnlocksAfterSevenDaysByDefault() {
+        #expect(LearningOptions().productionUnlockDays == 7)
     }
 
     @Test func unlockDaysZeroNeverLocks() throws {
@@ -275,20 +279,20 @@ struct NoteSelectionTests {
         var study = StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: 3))
         #expect(study.session.totalCount == 1)
         #expect(study.session.currentCardID == recognition.id)
-        let reviewed = study.review(.easy, of: recognition, with: deck.learningOptions, at: now, calendar: calendar)
+        let reviewed = study.review(.good, of: recognition, with: deck.learningOptions, at: now, calendar: calendar)
         let scheduled = try #require(reviewed)
         _ = deck.apply(DeckChange(upserts: [scheduled], contentStamp: .keep), at: now, calendar: calendar)
         #expect(scheduled.learningState?.phase == .review)
 
-        // The first interval is under 21 days: the production card waits, and the
+        // The first interval is under 7 days: the production card waits, and the
         // recognition card isn't due.
         let interval = calendar.days(from: now, to: scheduled.learningState!.due)
         #expect(interval < deck.learningOptions.productionUnlockDays)
         #expect(StudySession(deck: deck, at: now, calendar: calendar).session.isFinished)
 
-        // With an interval of 25 days the production card is unlocked, but the sibling
+        // With an interval of 7 days the production card is unlocked, but the sibling
         // was reviewed today: it comes on the next study day.
-        deck.cards[0].learningState?.due = calendar.start(ofDay: calendar.dayNumber(for: now) + 25)
+        deck.cards[0].learningState?.due = calendar.start(ofDay: calendar.dayNumber(for: now) + 7)
         #expect(StudySession(deck: deck, at: now, calendar: calendar).session.isFinished)
         let tomorrow = StudySession(deck: deck, at: now.addingTimeInterval(86400), calendar: calendar)
         #expect(tomorrow.session.totalCount == 1)

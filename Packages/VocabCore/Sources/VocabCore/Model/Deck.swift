@@ -28,7 +28,7 @@ public struct LearningOptions: Hashable, Sendable {
     public var newProductionPerSession: Int? = 7
     /// Days the interval of a note's recognition card must have reached before its
     /// production card is introduced; 0 never holds production cards back.
-    public var productionUnlockDays: Int = 21
+    public var productionUnlockDays: Int = 7
     /// In which order a session introduces new cards when it can't take all of them.
     public var newCardOrder: NewCardOrder = .deckOrder
     public var caseSensitive: Bool = true
