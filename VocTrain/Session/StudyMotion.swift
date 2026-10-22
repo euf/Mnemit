@@ -301,6 +301,12 @@ final class StudyMotion {
         }
     }
 
+    /// A medal is celebrated: the ring in the bar bumps and bursts, as for a card that lands in it, without a card.
+    func celebrate() {
+        landings += 1
+        barBurstAt = .now
+    }
+
     /// The figures of the ring changed: the ring shows them, unless a card is still leaving.
     func figuresChanged() {
         guard departures.isEmpty else {

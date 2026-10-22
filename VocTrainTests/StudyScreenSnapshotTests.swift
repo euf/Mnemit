@@ -429,4 +429,14 @@ struct StudyScreenSnapshotTests {
         try write(window, name: "35-burst-peak", dark: dark)
         window.isHidden = true
     }
+
+    /// The toast of a medal fully in, under the bar and over the card, as a still.
+    @Test(arguments: [false, true])
+    func medalToast(dark: Bool) async throws {
+        let (model, ring) = try await prepare(reviews: 2)
+        let toasts = MedalToasts(store: CelebratedMedals(defaults: nil), frozen: Achievement(kind: .comeback, day: 0))
+        let window = try await host(StudyView(model: model, ring: ring, flight: CardFlight(), toasts: toasts, onClose: {}), dark: dark)
+        try write(window, name: "40-medal-toast", dark: dark)
+        window.isHidden = true
+    }
 }

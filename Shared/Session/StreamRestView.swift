@@ -64,6 +64,9 @@ struct StreamRestView: View {
     /// A picture's instant: how many steps of the stagger have run.
     var frozenStep: Int?
 
+    /// Where the medals shown here are marked as celebrated.
+    var medals: CelebratedMedals = .shared
+
     @State private var step = 0
 
     /// The title is the first step, each line one more, and the buttons the last.
@@ -102,6 +105,10 @@ struct StreamRestView: View {
         }
         .padding(Spacing.margin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The medals of today are shown here, so they are celebrated.
+        .onChange(of: earnedToday, initial: true) {
+            if let today = progress?.records.last?.day, let all = progress?.achievements { medals.markToday(in: all, today: today) }
+        }
         .task(id: Stagger(arrived: arrived, staggers: staggers)) {
             guard staggers, frozenStep == nil else { return }
             step = 0
@@ -394,18 +401,19 @@ struct WeekRings: View {
     }
 }
 
-/// The ladder of memory: the cards by step of `MaturityCategory`, new on the left to mastered on the right, as
-/// one bar of segments in the ramp's colours (`references/learning-flow.md`, "Progression").
+/// The ladder of memory: the cards started by step of `MaturityCategory`, the youngest on the left to mastered on
+/// the right, as one bar of segments in the ramp's colours (`references/learning-flow.md`, "Progression"). The
+/// cards not started are not in it, as they would drown the cards studied; with none started the bar is one empty track.
 struct LadderBar: View {
     var ladder: [Int]
     var height: CGFloat = 8
 
     private var steps: [(step: MaturityCategory, count: Int)] {
-        MaturityCategory.allCases.map { ($0, $0.rawValue < ladder.count ? ladder[$0.rawValue] : 0) }.filter { $0.count > 0 }
+        MaturityCategory.allCases.filter { $0 != .new }.map { ($0, $0.rawValue < ladder.count ? ladder[$0.rawValue] : 0) }.filter { $0.count > 0 }
     }
 
     var body: some View {
-        let total = CGFloat(max(1, ladder.reduce(0, +)))
+        let total = CGFloat(max(1, steps.reduce(0) { $0 + $1.count }))
         GeometryReader { proxy in
             HStack(spacing: 1) {
                 ForEach(steps, id: \.step) { part in
@@ -416,8 +424,10 @@ struct LadderBar: View {
             }
         }
         .frame(height: height)
+        .background(Color.secondary.opacity(0.15))
         .clipShape(Capsule())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: steps.map { "\($0.step.title) \($0.count)" }.joined(separator: ", ")))
+        .accessibilityHidden(steps.isEmpty)
     }
 }

@@ -45,12 +45,21 @@ struct AchievementPresentationTests {
     }
 
     @Test func lapsAndBigDaysNameTheirTier() {
-        #expect(AchievementKind.laps(3).title == "Ring ×3")
+        #expect(AchievementKind.laps(3).title == "3 rings in a day")
+        #expect(AchievementKind.laps(10).title == "10 rings in a day")
         #expect(AchievementKind.laps(2).detail == "Twice the day's goal")
         #expect(AchievementKind.laps(5).detail == "5 times the day's goal")
         #expect(AchievementKind.bigDay(cards: 50).title == "50 cards in a day")
         #expect(AchievementKind.perfectWeek.detail == "Seven rings in a row")
         #expect(AchievementKind.comeback.detail == "Saved your streak after a missed day")
+    }
+
+    /// What the device remembers a medal by: one key per kind, `CelebratedMedals` relies on it.
+    @Test func everyMedalHasItsOwnKey() {
+        let keys = Self.allKinds.map(\.key)
+        #expect(Set(keys).count == keys.count)
+        #expect(keys.contains("streak-7") && keys.contains("laps-3") && keys.contains("bigDay-50"))
+        #expect(AchievementKind.firstRing.key == "firstRing" && AchievementKind.comeback.key == "comeback")
     }
 
     /// The comeback's face is the phoenix, a joined sequence that a copy of the file could break.
@@ -113,7 +122,7 @@ struct AchievementPresentationTests {
         let records = [Self.day(1, done: 25), Self.day(2, done: 12)]
         let next = try #require(NextTier.of(.laps, earned: [Achievement(kind: .laps(2), day: 1)], records: records, streak: 2))
         #expect(next == NextTier(kind: .laps(3), value: 2, goal: 3))
-        #expect(next.hint == "×2 of ×3")
+        #expect(next.hint == "2 of 3 rings")
 
         let all = Achievements.lapTiers.map { Achievement(kind: .laps($0), day: 1) }
         #expect(NextTier.of(.laps, earned: all, records: records, streak: 2) == nil)
@@ -136,6 +145,19 @@ struct AchievementPresentationTests {
             #expect(next == NextTier(kind: .comeback))
             #expect(next.hint == nil)
         }
+    }
+
+    // MARK: The calendar
+
+    @Test func theCalendarRunsFromTheWeekOfTheFirstStudyDay() {
+        let monday = CivilDate(year: 2026, month: 10, day: 19).dayNumber
+        // Two days of history, Sunday and Monday: two weeks.
+        #expect(WeeksGrid.weekCount([Self.day(monday - 1, done: 5), Self.day(monday, done: 5)]) == 2)
+        // Within one week: one row.
+        #expect(WeeksGrid.weekCount([Self.day(monday, done: 5), Self.day(monday + 2, done: 5)]) == 1)
+        // A year of history: 13 rows.
+        #expect(WeeksGrid.weekCount(Self.closedDays(from: monday - 360, count: 361)) == WeeksGrid.weeks)
+        #expect(WeeksGrid.weekCount([]) == 0)
     }
 
     // MARK: The month's screen
@@ -201,7 +223,17 @@ struct AchievementPresentationTests {
     /// The Progress screen in light and dark, a window tall enough for all of it.
     @Test func progressScreen() async throws {
         let progress = Self.sampleProgress()
-        try await HomeSnapshotTests().shoot("progress", NavigationStack { ProgressScreen(progress: progress) }, height: 1900)
+        try await HomeSnapshotTests().shoot("progress", NavigationStack { ProgressScreen(progress: progress) }, height: 2500)
+    }
+
+    /// The first days: two of history, a ladder of which almost all is not started, the calendar of two weeks.
+    @Test func progressScreenOfTheFirstDays() async throws {
+        let today = StudyCalendar().dayNumber(for: Date())
+        let records = [Self.day(today - 1, done: 24, goal: 24, streak: 1), Self.day(today, done: 14, goal: 24, streak: 2)]
+        let progress = DailyProgress(
+            ring: DailyRing(done: 14, goal: 24), streak: Streak(days: 2, repairCards: nil), streakKeptToday: true, ladder: [5439, 40, 15, 0, 0, 0],
+            records: records, achievements: Achievements.earned(over: records))
+        try await HomeSnapshotTests().shoot("progress-first-days", NavigationStack { ProgressScreen(progress: progress) }, height: 1500)
     }
 
     /// The month's screen and the Ring closed rest with its medals.

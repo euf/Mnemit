@@ -1,8 +1,8 @@
 import SwiftUI
 import VocabCore
 
-/// Progress, pushed from the header of Today: the streak and its record, the rings of the last 13 weeks, the
-/// ladder of memory, the achievements and the records (`references/learning-flow.md`, "Milestones, achievements
+/// Progress, pushed from the header of Today: the streak and its record, the achievements, the calendar of the
+/// last 13 weeks, the ladder of memory and the records (`references/learning-flow.md`, "Milestones, achievements
 /// and the Progress screen"). Everything is worked out from the review logs as the ring is, `DailyProgress.records`.
 ///
 /// The true retention of the last 30 days is not here: no screen of the iPhone app reads the decks' review logs
@@ -16,14 +16,19 @@ struct ProgressScreen: View {
     var body: some View {
         List {
             Section { streak }
-            Section("Last 13 weeks") { WeeksGrid(records: records) }
+            Section("Achievements") {
+                MedalLine(lines: AchievementLine.single, progress: progress, calendar: calendar)
+                ForEach(AchievementLine.tiered, id: \.self) { line in
+                    MedalLine(lines: [line], progress: progress, calendar: calendar)
+                }
+            }
+            Section {
+                WeeksGrid(records: records)
+            } header: {
+                WeeksGrid(records: records).title
+            }
             if progress.ladder.reduce(0, +) > 0 {
                 Section("Memory") { ladder }
-            }
-            Section("Achievements") {
-                ForEach(AchievementLine.allCases, id: \.self) { line in
-                    MedalLine(line: line, progress: progress, calendar: calendar)
-                }
             }
             Section("Records") { recordRows }
         }
@@ -37,11 +42,23 @@ struct ProgressScreen: View {
         max(progress.streak.days, records.map(\.streak).max() ?? 0)
     }
 
+    private var ringsClosed: Int {
+        records.filter { $0.closed && $0.done > 0 }.count
+    }
+
     private var isAtRisk: Bool {
         progress.streak.repairCards != nil && !progress.ring.isGoalMet
     }
 
-    /// The streak large, with its record under it.
+    /// "Longest: 30 days · 24 rings closed".
+    private var recordLine: String? {
+        var parts: [String] = []
+        if longest > 0 { parts.append(String(localized: "Longest: \(longest) days")) }
+        if ringsClosed > 0 { parts.append(String(localized: "\(ringsClosed) rings closed")) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// The streak large, with its record and the rings closed under it.
     private var streak: some View {
         VStack(alignment: .leading, spacing: Spacing.hairline) {
             HStack(spacing: Spacing.tight) {
@@ -52,8 +69,8 @@ struct ProgressScreen: View {
                     .monospacedDigit()
             }
             .font(.largeTitle.weight(.bold))
-            if longest > 0 {
-                Text("Longest: \(longest) days")
+            if let recordLine {
+                Text(verbatim: recordLine)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -61,30 +78,45 @@ struct ProgressScreen: View {
         .padding(.vertical, Spacing.hairline)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("\(progress.streak.days)-day streak"))
-        .accessibilityValue(longest > 0 ? Text("Longest: \(longest) days") : Text(verbatim: ""))
+        .accessibilityValue(Text(verbatim: recordLine ?? ""))
     }
 
     // MARK: The ladder of memory
 
-    @ViewBuilder
+    /// The cards not started, which the bar leaves out.
+    private var notStarted: Int { progress.ladder.first ?? 0 }
+
+    /// The bar of the cards started, what is not started under it, and the five steps as a legend of three columns.
     private var ladder: some View {
-        LadderBar(ladder: progress.ladder, height: 12)
-            .padding(.vertical, Spacing.hairline)
-        ForEach(MaturityCategory.allCases, id: \.rawValue) { step in
-            HStack(spacing: Spacing.gap) {
-                Circle()
-                    .fill(step.color)
-                    .overlay { Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 0.5) }
-                    .frame(width: 10, height: 10)
-                    .accessibilityHidden(true)
-                Text(step.title)
-                Spacer(minLength: 0)
-                Text(step.rawValue < progress.ladder.count ? progress.ladder[step.rawValue] : 0, format: .number)
-                    .monospacedDigit()
+        VStack(alignment: .leading, spacing: Spacing.tight) {
+            LadderBar(ladder: progress.ladder, height: 12)
+            if notStarted > 0 {
+                Text("\(notStarted) not started")
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
-            .accessibilityElement(children: .combine)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.tight, alignment: .leading), count: 3), alignment: .leading, spacing: Spacing.tight) {
+                ForEach(MaturityCategory.allCases.filter { $0 != .new }, id: \.rawValue) { step in
+                    HStack(spacing: Spacing.hairline) {
+                        Circle()
+                            .fill(step.color)
+                            .overlay { Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 0.5) }
+                            .frame(width: 10, height: 10)
+                            .accessibilityHidden(true)
+                        Text(step.title)
+                        Text(step.rawValue < progress.ladder.count ? progress.ladder[step.rawValue] : 0, format: .number)
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.footnote)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .accessibilityElement(children: .combine)
+                }
+            }
         }
+        .padding(.vertical, Spacing.hairline)
     }
 
     // MARK: Records
@@ -93,8 +125,8 @@ struct ProgressScreen: View {
     private var recordRows: some View {
         let mostLaps = records.map { $0.goal > 0 ? $0.done / $0.goal : 0 }.max() ?? 0
         row("Most cards in a day", symbol: "rectangle.stack") { Text(records.map(\.done).max() ?? 0, format: .number) }
-        row("Most laps in a day", symbol: "repeat") { Text(verbatim: "×\(mostLaps)") }
-        row("Rings closed", symbol: "circle.circle") { Text(records.filter { $0.closed && $0.done > 0 }.count, format: .number) }
+        row("Most laps in a day", symbol: "repeat") { Text(mostLaps, format: .number) }
+        row("Rings closed", symbol: "circle.circle") { Text(ringsClosed, format: .number) }
         row("Days studied", symbol: "calendar") { Text(records.filter { $0.done > 0 }.count, format: .number) }
         row("Cards done", symbol: "checkmark.circle") { Text(records.reduce(0) { $0 + $1.done }, format: .number) }
     }
@@ -108,22 +140,25 @@ struct ProgressScreen: View {
     }
 }
 
-/// The medals of one line: the earned ones in order, then the next as a grey medal with how far there is to go,
-/// and nothing beyond it. A line that repeats shows one medal with its count, or the grey one before the first.
+/// The medals of some lines in one grid: of each line the earned ones in order, then the next as a grey medal
+/// with how far there is to go, and nothing beyond it. A line that repeats shows one medal with its count as a
+/// badge, or the grey one before the first.
 private struct MedalLine: View {
-    var line: AchievementLine
+    var lines: [AchievementLine]
     var progress: DailyProgress
     var calendar: StudyCalendar
 
     var body: some View {
-        let earned = progress.achievements.filter { $0.kind.line == line }.medals
-        let next = NextTier.of(line, earned: progress.achievements, records: progress.records, streak: progress.streak.days)
         LazyVGrid(columns: medalColumns, spacing: Spacing.gap) {
-            ForEach(earned, id: \.kind) { medal in
-                Medal(kind: medal.kind, date: calendar.start(ofDay: medal.day), count: medal.count)
-            }
-            if let next, !(line.repeats && !earned.isEmpty) {
-                Medal(kind: next.kind, isEarned: false, hint: next.hint)
+            ForEach(lines, id: \.self) { line in
+                let earned = progress.achievements.filter { $0.kind.line == line }.medals
+                let next = NextTier.of(line, earned: progress.achievements, records: progress.records, streak: progress.streak.days)
+                ForEach(earned, id: \.kind) { medal in
+                    Medal(kind: medal.kind, date: calendar.start(ofDay: medal.day), count: medal.count)
+                }
+                if let next, !(line.repeats && !earned.isEmpty) {
+                    Medal(kind: next.kind, isEarned: false, hint: next.hint)
+                }
             }
         }
         .padding(.vertical, Spacing.tight)
@@ -133,43 +168,73 @@ private struct MedalLine: View {
 /// Medals three to a row on an iPhone: a medal is 97 pt wide, so its title of two lines fits.
 let medalColumns = [GridItem(.adaptive(minimum: 97), spacing: Spacing.hairline, alignment: .top)]
 
-/// The rings of the last 13 weeks, a column per week and a row per weekday, today last: a closed ring is full, a day
-/// kept but not closed has its ring at the share of the goal done, a missed study day an empty track, and before the
-/// first study day, or after today, there is nothing.
+/// The calendar of the last 13 weeks: a column per weekday, Monday to Sunday, under its initial, and a row per
+/// week from the one of the first study day to this one, the oldest on top, at most 13. A closed ring is full, a
+/// day kept but not closed has its ring at the share of the goal done, a missed study day an empty track; the
+/// days of this week still to come are a faint track, and the days before the first study day are blank.
 struct WeeksGrid: View {
     var records: [DayRecord]
     static let weeks = 13
-    private let diameter: CGFloat = 18
-    private let gap: CGFloat = 5
+    private let diameter: CGFloat = 20
 
-    /// The study day of the cell in `week` (0 the oldest) and `row` (0 the first weekday of the locale).
+    /// The column of a day, 0 for Monday.
+    private static func column(_ day: Int) -> Int { (CivilDate.weekday(ofDayNumber: day) + 5) % 7 }
+
+    /// How many weeks are shown: from the week of the first study day to this one, at most 13.
+    static func weekCount(_ records: [DayRecord]) -> Int {
+        guard let first = records.first?.day, let today = records.last?.day else { return 0 }
+        return min(weeks, ((today - column(today)) - (first - column(first))) / 7 + 1)
+    }
+
+    /// "Last 13 weeks" once there are 13 of them, else "Calendar".
+    var title: Text { Self.weekCount(records) == Self.weeks ? Text("Last 13 weeks") : Text("Calendar") }
+
+    /// The study day of each cell, a row per week, the oldest first.
     private var cells: [[Int]] {
         guard let today = records.last?.day else { return [] }
-        let todayRow = (CivilDate.weekday(ofDayNumber: today) - Calendar.current.firstWeekday + 7) % 7
-        let start = today - todayRow - 7 * (Self.weeks - 1)
-        return (0..<7).map { row in (0..<Self.weeks).map { start + 7 * $0 + row } }
+        let count = Self.weekCount(records)
+        let start = today - Self.column(today) - 7 * (count - 1)
+        return (0..<count).map { week in (0..<7).map { start + 7 * week + $0 } }
+    }
+
+    /// The initial of the weekday of `column`.
+    private func initial(_ column: Int) -> String {
+        Calendar.current.veryShortWeekdaySymbols[(column + 1) % 7]
     }
 
     var body: some View {
         let byDay = Dictionary(records.map { ($0.day, $0) }, uniquingKeysWith: { first, _ in first })
         let today = records.last?.day ?? 0
-        Grid(horizontalSpacing: gap, verticalSpacing: gap) {
+        let first = records.first?.day ?? 0
+        Grid(horizontalSpacing: 0, verticalSpacing: Spacing.tight) {
+            GridRow {
+                ForEach(0..<7, id: \.self) { column in
+                    Text(verbatim: initial(column))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
             ForEach(cells.indices, id: \.self) { row in
                 GridRow {
                     ForEach(cells[row], id: \.self) { day in
-                        if day <= today, let record = byDay[day] {
-                            ProgressRing(fraction: Self.fraction(record, isToday: day == today), diameter: diameter)
-                        } else {
-                            Color.clear.frame(width: diameter, height: diameter)
+                        Group {
+                            if day > today {
+                                ProgressRing(fraction: 0, diameter: diameter).opacity(0.3)
+                            } else if day >= first, let record = byDay[day] {
+                                ProgressRing(fraction: Self.fraction(record, isToday: day == today), diameter: diameter)
+                            } else {
+                                Color.clear.frame(width: diameter, height: diameter)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
                     }
                 }
             }
         }
-        .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.tight)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Last 13 weeks"))
+        .accessibilityLabel(title)
         .accessibilityValue(Text("\(records.suffix(Self.weeks * 7).filter { $0.closed && $0.done > 0 }.count) rings closed"))
     }
 

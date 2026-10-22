@@ -54,6 +54,9 @@ struct TodayScreen: View {
     /// Opens the browser of the shared decks.
     var showAnkiWeb: () -> Void = {}
 
+    /// The medals earned on earlier days and not celebrated yet, say on the Mac: shown once, here, and marked.
+    @State private var newMedals: [Achievement] = []
+
     /// Whether the decks were read: until then the figures are placeholders.
     private var isRead: Bool {
         !counts.isEmpty || !paused.isEmpty
@@ -132,8 +135,47 @@ struct TodayScreen: View {
         }
     }
 
+    /// Takes what was earned before today and not celebrated, shows it and marks it.
+    private func collectNewMedals() {
+        guard isDayReady, let progress, let today = progress.records.last?.day else { return }
+        let pending = CelebratedMedals.shared.pending(progress.achievements, today: today).filter { $0.day < today && !newMedals.contains($0) }
+        guard !pending.isEmpty else { return }
+        newMedals += pending
+        CelebratedMedals.shared.mark(pending)
+    }
+
+    /// "New medals" with up to three of them, and the way to Progress.
+    private var newMedalsRow: some View {
+        Button {
+            newMedals = []
+            showProgress()
+        } label: {
+            HStack(spacing: Spacing.gap) {
+                VStack(alignment: .leading, spacing: Spacing.tight) {
+                    Text("New medals")
+                        .font(.headline)
+                    HStack(alignment: .top, spacing: Spacing.tight) {
+                        ForEach(Array(newMedals.medals.suffix(3)), id: \.kind) { medal in
+                            Medal(kind: medal.kind, date: StudyCalendar().start(ofDay: medal.day), count: medal.count, size: 36)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private var list: some View {
         List {
+            if !newMedals.isEmpty {
+                Section { newMedalsRow }
+            }
             Section {
                 // A button with the chevron of the deck rows, which draw it by hand too.
                 Button(action: showProgress) {
@@ -181,6 +223,8 @@ struct TodayScreen: View {
         }
         .listStyle(.insetGrouped)
         .refreshable { await refresh() }
+        .onChange(of: progress, initial: true) { collectNewMedals() }
+        .onChange(of: isDayReady) { collectNewMedals() }
         .safeAreaBar(edge: .bottom) {
             StudyButton(isDue: due > 0 || !isDayReady, due: due) { study(.all) }
                 .disabled(TodayDecks(decks, paused: paused).active.isEmpty)

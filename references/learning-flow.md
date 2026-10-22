@@ -154,7 +154,7 @@ They are named in words, never as a count of days; the widget and Today only sho
 | Streak | the milestones above | the streak reaches the tier |
 | First ring | one | the first day a ring closes |
 | Perfect week | one, then again each time | seven rings closed in a row |
-| Laps | ×2, ×3, ×5, ×10 | the cards done in a day reach that many times the day's goal |
+| Laps | 2, 3, 5, 10 rings in a day | the cards done in a day reach that many times the day's goal |
 | Big day | 50, 100, 200, 500 cards | the cards done in a day (cards FSRS sent to another day) |
 | Comeback | one, then counted | a missed day made up by closing the next day's ring: the streak survived |
 
@@ -164,8 +164,10 @@ reads "12-day streak · at risk" with a grey flame. When that ring closes, the R
 title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
 
 **Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
-dates, the next tier as a grey medal with a hint and how far there is to go ("12 of 14 days"), and
-nothing of the tiers after it: there is always one more to find.
+dates, the next tier as a grey medal (a dashed outline, the line's symbol and its hint in tertiary grey, an earned
+one on a gradient of the accent with a shadow) with how far there is to go ("12 of 14 days"), and nothing of the
+tiers after it: there is always one more to find. A line that repeats shows how often as a badge on the disc,
+never in the title.
 
 **Emoji or SF Symbols.** An earned medal's face is an emoji, for colour and the moment of joy; it is
 seen only once earned, so the next tier, a grey medal, shows the line's SF Symbol and keeps its emoji a
@@ -177,18 +179,24 @@ records and figures, the lines of the rests. The faces:
 | Streak | 🔥 3 days · ⭐️ a week · 🌟 2 weeks · 🌙 a month · 🌿 2 months · 🌳 3 months · ⛰️ half a year · 🏆 a year · 💎 a year and a half · 👑 2 years | `flame` |
 | First ring | 🎯 | `circle.circle` |
 | Perfect week | 🌈 | `calendar` |
-| Laps | ⚡️ ×2 · 🚀 ×3 · 🌋 ×5 · 🪐 ×10 | `repeat` |
+| Laps | ⚡️ 2 rings · 🚀 3 · 🌋 5 · 🪐 10 | `repeat` |
 | Big day | 📚 50 · 🧠 100 · 🦉 200 · 🐘 500 | `rectangle.stack` |
 | Comeback | 🐦‍🔥 | `arrow.uturn.up` |
 
-**The Progress screen**, from Today (a tap on the ring's panel, which gets a chevron): the streak large,
-with the longest; the rings of the last 13 weeks as a calendar of small rings (closed, kept, missed); the
-ladder of memory with the count of each step; the achievements; the records: most cards in a day, most
-laps, rings closed, days studied, cards done. For the Anki user the same screen ends with the FSRS
+**The Progress screen**, from Today (a tap on the ring's panel, which gets a chevron), top to bottom: the
+streak large, with "Longest: 30 days · 24 rings closed"; the achievements (one row for the lines of one
+medal, then a row per line of tiers); the calendar, Monday to Sunday under the weekday initials, a row per
+week from the one of the first study day, at most 13 ("Last 13 weeks" once there are 13, else "Calendar");
+the ladder of memory, a bar of the cards started with "N not started" under it and a legend of the five
+steps; the records: most cards in a day, most rings in a day, rings closed, days studied, cards done. For the Anki user the same screen ends with the FSRS
 figures: true retention of the last 30 days against the target, cards by step.
 
-**Celebrations.** Achievements earned today show on the Ring closed screen as medals under the title
-("New: ×3 laps"), at most three, with the burst. **Every month** has a screen of its own: on the first
+**Celebrations.** A medal is celebrated the moment it is earned: in the stream a toast slides down under the
+bar for 2.5 s (one after another), the ring in the bar bumps and bursts, and a success haptic plays; a rest
+shows today's medals under its title, at most three, and Today lists the medals of earlier days that this
+device never celebrated (earned on the Mac) once as "New medals". The device keeps what it has celebrated in
+`UserDefaults` (`CelebratedMedals`, `"<kind key>@<day>"`), and its first read marks everything from before
+today silently, so an update brings no flood. **Every month** has a screen of its own: on the first
 open of a new month, after a month with study, Today shows "October" as a sheet: rings closed of days,
 cards done, the best streak of the month, the achievements of the month, and See All Progress.
 

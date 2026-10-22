@@ -54,7 +54,7 @@ extension MaturityCategory {
 }
 
 extension AchievementKind {
-    /// "A week in a row", "First ring", "Ring ×3", "50 cards in a day": a streak is named in words, never in days.
+    /// "A week in a row", "First ring", "3 rings in a day", "50 cards in a day": a streak is named in words, never in days.
     var title: String {
         switch self {
         case let .streak(days):
@@ -72,7 +72,7 @@ extension AchievementKind {
             }
         case .firstRing: String(localized: "First ring")
         case .perfectWeek: String(localized: "Perfect week")
-        case let .laps(times): String(localized: "Ring ×\(times)")
+        case let .laps(times): String(localized: "\(times) rings in a day")
         case let .bigDay(cards): String(localized: "\(cards) cards in a day")
         case .comeback: String(localized: "Comeback")
         }
@@ -125,6 +125,18 @@ extension AchievementKind {
         }
     }
 
+    /// What the device remembers a medal by, `CelebratedMedals`: stable, one per kind.
+    var key: String {
+        switch self {
+        case let .streak(days): "streak-\(days)"
+        case .firstRing: "firstRing"
+        case .perfectWeek: "perfectWeek"
+        case let .laps(times): "laps-\(times)"
+        case let .bigDay(cards): "bigDay-\(cards)"
+        case .comeback: "comeback"
+        }
+    }
+
     /// The SF Symbol of the line, which the grey medal of the next tier shows while its emoji stays a surprise.
     var symbol: String { line.symbol }
 
@@ -140,9 +152,14 @@ extension AchievementKind {
     }
 }
 
-/// The lines of achievements, in the order of the Progress screen.
+/// The lines of achievements.
 enum AchievementLine: CaseIterable, Hashable {
     case streak, firstRing, perfectWeek, laps, bigDay, comeback
+
+    /// The lines of one medal each, which the Progress screen gathers in one row.
+    static let single: [AchievementLine] = [.firstRing, .perfectWeek, .comeback]
+    /// The lines of tiers, a row each.
+    static let tiered: [AchievementLine] = [.streak, .laps, .bigDay]
 
     var symbol: String {
         switch self {
@@ -155,7 +172,7 @@ enum AchievementLine: CaseIterable, Hashable {
         }
     }
 
-    /// Earned again and again: one medal with a count, not a tier after tier.
+    /// Earned again and again: one medal with its count as a badge, not a tier after tier.
     var repeats: Bool { self == .perfectWeek || self == .comeback }
 }
 
@@ -190,13 +207,13 @@ struct NextTier: Hashable {
     /// What the tier asks; `nil` for a tier with no count to work toward.
     var goal: Int?
 
-    /// "12 of 14 days", "×2 of ×3", "76 of 100 cards"; `nil` without a goal.
+    /// "12 of 14 days", "2 of 3 rings", "76 of 100 cards"; `nil` without a goal.
     var hint: String? {
         guard let goal else { return nil }
         switch kind {
         case .streak: return String(localized: "\(value) of \(goal) days")
         case .perfectWeek: return String(localized: "\(value) of \(goal) rings")
-        case .laps: return String(localized: "×\(value) of ×\(goal)")
+        case .laps: return String(localized: "\(value) of \(goal) rings")
         case .bigDay: return String(localized: "\(value) of \(goal) cards")
         case .firstRing, .comeback: return nil
         }

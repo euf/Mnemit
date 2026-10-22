@@ -45,6 +45,8 @@ struct StudyView: View {
     @State private var flight: CardFlight
     /// What moves besides the card under the finger: the cards that leave, the ring, the stack.
     @State private var motion: StudyMotion
+    /// The medals earned on the way, one toast after another.
+    @State private var toasts: MedalToasts
     /// The card whose info shows in a sheet.
     @State private var info: Card?
     /// Whether a finger is down; a drag the system cancels still springs the card back.
@@ -58,7 +60,11 @@ struct StudyView: View {
     /// - Parameters:
     ///   - flight: The card's movement; a test passes one it has moved.
     ///   - motion: What moves around it; a test passes one it has frozen.
-    init(model: StudyModel, ring: DailyRingModel, flight: CardFlight? = nil, motion: StudyMotion? = nil, onClose: @escaping () -> Void) {
+    ///   - toasts: The medals' toasts; a test passes one with its own store, or one with a toast frozen in.
+    init(
+        model: StudyModel, ring: DailyRingModel, flight: CardFlight? = nil, motion: StudyMotion? = nil, toasts: MedalToasts? = nil,
+        onClose: @escaping () -> Void
+    ) {
         self.model = model
         self.ring = ring
         self.onClose = onClose
@@ -66,6 +72,7 @@ struct StudyView: View {
         let motion = motion ?? StudyMotion(ring: ring)
         if model.isResting, motion.frozen == nil { motion.snapRest(true) }
         _motion = State(initialValue: motion)
+        _toasts = State(initialValue: toasts ?? MedalToasts())
     }
 
     private var isCompact: Bool { verticalSizeClass == .compact }
@@ -87,6 +94,8 @@ struct StudyView: View {
             .animation(reduceMotion ? .easeInOut(duration: 0.25) : nil, value: motion.showsRest)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.systemGroupedBackground))
+            // Under the bar, over the top of the card.
+            .overlay(alignment: .top) { medalToast }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     closeButton
@@ -154,7 +163,38 @@ struct StudyView: View {
         .onChange(of: ring.progress?.ring.done) {
             motion.figuresChanged()
         }
-        .onDisappear { GreekSpeech.shared.close() }
+        // A medal earned by a grade is celebrated when the ring has been evaluated; the rest does it by itself.
+        .onChange(of: ring.progress) {
+            if !motion.showsRest { toasts.offer(ring.progress) }
+        }
+        .onChange(of: motion.showsRest) { _, showsRest in
+            if showsRest { toasts.clear() }
+        }
+        .onChange(of: toasts.shown) {
+            guard let medal = toasts.current else { return }
+            motion.celebrate()
+            AccessibilityNotification.Announcement(medal.kind.title).post()
+        }
+        .sensoryFeedback(.success, trigger: toasts.shown)
+        .onDisappear {
+            GreekSpeech.shared.close()
+            toasts.clear()
+        }
+    }
+
+    /// The toast of the medal that was just earned: it slides down and fades in, and goes up and out; with
+    /// Reduce Motion it only fades.
+    private var medalToast: some View {
+        ZStack {
+            if let medal = toasts.current {
+                MedalToast(kind: medal.kind)
+                    .id(medal)
+                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(reduceMotion ? .easeInOut(duration: 0.25) : .smooth(duration: 0.4), value: toasts.current)
+        .padding(.top, Spacing.tight)
+        .allowsHitTesting(false)
     }
 
     /// The standard Close button of the platform; an `xmark` before iOS 26 has none.
