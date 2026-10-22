@@ -2,7 +2,7 @@
 
 ## Состояние
 
-- Версия 1.6 в `main`, на iPhone стоит 1.6.13 (deac612), подпись до 29.10. Что умеет приложение и почему так — README, раздел
+- Версия 2.0 в `main`, на iPhone стоит 1.6.13 (deac612), подпись до 29.10. Что умеет приложение и почему так — README, раздел
   «Design choices»; экраны обоих приложений — `references/flows.md`; исследования FSRS —
   `references/fsrs-research.md` и `references/fsrs-vs-sm17.md`. Задание суб-агенту писать по
   `references/agent-lessons-rings.md`: один источник, потолок, правило остановки, базовая линия тестов.
