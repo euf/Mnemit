@@ -54,6 +54,11 @@ public struct LearningOptions: Hashable, Sendable {
     /// The last time the app fitted the parameters by itself, `nil` before the first time.
     /// Set by `ParameterRefit.Result`; the learner's own "Compute from Review Log" leaves it.
     public var lastAutoFit: AutoFit?
+    /// Whether the learner paused the deck: it takes no part in the day (plan, goal, rounds,
+    /// capacity, admission of new cards, streak, words in memory, widget, reminders, the
+    /// Study chain) but stays open to study by itself. It travels with the options, so a merge
+    /// takes it from the version that changed them last, and resuming is the same change.
+    public var isPaused: Bool = false
 
     /// One automatic fit of the parameters, kept or not.
     public struct AutoFit: Hashable, Sendable {

@@ -453,6 +453,10 @@ public struct DeckActivity: Sendable {
         reviewsByDay = Self.reviewsByDay(of: deck, calendar: calendar)
     }
 
+    /// Whether the learner paused the deck (`LearningOptions.isPaused`): `DailyProgress.evaluate` and
+    /// `DayBreakdown` leave it out of the day.
+    public var isPaused: Bool { deck.learningOptions.isPaused }
+
     /// Counts the entries of every card's log. A day is looked up once per quarter of an
     /// hour: every time zone's offset, daylight saving time's included, is a multiple of
     /// 15 minutes, so a quarter never straddles the start of a study day, and a log of
@@ -762,7 +766,8 @@ public struct DailyProgress: Hashable, Sendable {
     /// Whether today keeps the streak: its first round is done, or its plan was empty.
     public var streakKeptToday: Bool
     /// How many new cards each deck may introduce today, in the order of the decks given to
-    /// `evaluate(_:at:calendar:)`: the plan takes them as `newCardAllowance`.
+    /// `evaluate(_:at:calendar:)`: the plan takes them as `newCardAllowance`. A paused deck has 0
+    /// here and no share of the day's new cards; whoever builds its plan leaves the allowance out.
     public var newCardAllowances: [Int]
     /// The words in memory across the decks now, and when the day began (`MemoryEstimate`).
     public var memory: MemoryEstimate
@@ -823,9 +828,14 @@ public struct DailyProgress: Hashable, Sendable {
     /// goal of the day is the plan that fits (`DayRounds`); the ring is closed at the goal, and the first
     /// round keeps the streak. Today's new cards are shared among the decks, by their own limits, as
     /// `newCardAllowances`.
+    ///
+    /// A paused deck (`DeckActivity.isPaused`) takes no part in any of it: not in the plan, the goal, the
+    /// rounds, the capacity, the admission of new cards, the streak, the words in memory or the cards done.
+    /// What is reviewed in it counts for the day through the cards of the other decks only.
     public static func evaluate(
-        _ decks: [DeckActivity], at now: Date, calendar: StudyCalendar, planRuleStart: Int = DailyGoal.planRuleStart
+        _ given: [DeckActivity], at now: Date, calendar: StudyCalendar, planRuleStart: Int = DailyGoal.planRuleStart
     ) -> DailyProgress {
+        let decks = given.filter { !$0.isPaused }
         let today = calendar.dayNumber(for: now)
         var reviews: [Int: Int] = [:]
         for deck in decks {
@@ -891,9 +901,12 @@ public struct DailyProgress: Hashable, Sendable {
         let streak = Streak.evaluate(
             reviews: reviews, today: today, planRuleStart: planRuleStart, isKept: { kept[$0] ?? false }, isClosed: { closed[$0] ?? false },
             repairCards: max(0, ring.goal - ring.done))
+        // In the order of the decks given: the shares of the decks that take part, 0 for a paused one.
+        var shares = allowances.makeIterator()
+        let givenAllowances = given.map { $0.isPaused ? 0 : shares.next() ?? 0 }
         return DailyProgress(
             ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: pace(over: (today - DailyGoal.paceDays)...today), capacity: capacity,
-            roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: allowances,
+            roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: givenAllowances,
             memory: MemoryEstimate.total(decks.map { $0.memory(at: now, calendar: calendar) }))
     }
 }

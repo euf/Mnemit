@@ -360,6 +360,33 @@ struct DeckMergeEditingTests {
         #expect(merged.card(withID: dom.id)?.answer == "Haus / Heim")
     }
 
+    /// Pausing and resuming travel with the options, so the later of the two changes wins whichever
+    /// device made it, and reviews on the other device don't undo it.
+    @Test func theLaterPauseOrResumeWins() throws {
+        func setPaused(_ isPaused: Bool, in deck: inout Deck, at date: Date) throws {
+            var options = deck.learningOptions
+            options.isPaused = isPaused
+            _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: calendar)), at: date, calendar: calendar)
+        }
+        var mac = try baseDeck()
+        try setPaused(true, in: &mac, at: day(3))
+        var phone = try baseDeck()
+        try setPaused(true, in: &phone, at: day(1))
+        try setPaused(false, in: &phone, at: day(2))
+        review(&phone, kot.id, .good, at: day(4))
+        // The pause on the Mac is the later change: the deck is paused on both.
+        #expect(expectConverged(mac, phone, at: day(5)).learningOptions.isPaused)
+
+        // Paused on the phone too, and resumed there after the pause on the Mac.
+        var resumed = try baseDeck()
+        try setPaused(true, in: &resumed, at: day(1))
+        review(&resumed, kot.id, .good, at: day(4))
+        try setPaused(false, in: &resumed, at: day(6))
+        let merged = expectConverged(mac, resumed, at: day(7))
+        #expect(!merged.learningOptions.isPaused)
+        #expect(merged.card(withID: kot.id)?.log.count == 1)
+    }
+
     @Test func undoingAMergeRestoresTheDeletedCardsToo() throws {
         var mac = try baseDeck()
         try delete(&mac, pies.id, at: day(3))

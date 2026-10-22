@@ -194,6 +194,37 @@ struct DeckFileTests {
         #expect(try DeckFile.decode(damaged).learningOptions.lastAutoFit == nil)
     }
 
+    /// A paused deck (`LearningOptions.isPaused`) is written with the key `paused` and no other deck
+    /// is: the key is left out while the deck is not paused, and a file without it reads as not paused,
+    /// which is also what an older app version leaves behind when it saves a paused deck.
+    @Test func thePausedKeyRoundTripsAndIsLeftOutWhileTheDeckIsNotPaused() throws {
+        var deck = try sampleDeck()
+        #expect(!deck.learningOptions.isPaused)
+        #expect(!String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).contains("\"paused\""))
+
+        var options = deck.learningOptions
+        options.isPaused = true
+        _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), at: date, calendar: .testing)
+        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).contains("\"paused\""))
+        let read = try DeckFile.decode(DeckFile.fileWrapper(for: deck))
+        #expect(read.learningOptions.isPaused)
+        #expect(read == deck)
+
+        options.isPaused = false
+        _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), at: date, calendar: .testing)
+        #expect(!String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).contains("\"paused\""))
+        #expect(!(try DeckFile.decode(DeckFile.fileWrapper(for: deck))).learningOptions.isPaused)
+
+        // A file from before has no such key, and a key that is not a Boolean costs the pause, not the deck.
+        #expect(!(try DeckFile.decode(deckJSON())).learningOptions.isPaused)
+        let odd = Data(
+            """
+            {"format": "de.fluch-it-consulting.voctrain.deck", "version": 4, "progress": [],
+             "learningOptions": {"paused": "yes"}, "cards": []}
+            """.utf8)
+        #expect(!(try DeckFile.decode(odd)).learningOptions.isPaused)
+    }
+
     /// The keys for notes and production cards are new: an older deck lacks them and reads
     /// with the defaults, and a value out of range or unknown is clamped or ignored.
     @Test func noteKindAndProductionOptionsRoundTripAndDefault() throws {
