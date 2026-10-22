@@ -148,6 +148,16 @@ are in [`references/`](references/).
   AnkiWeb (and MintDeck) in a plain web view inside the app; a deck the learner downloads
   there goes straight into the import, links to other sites open in Safari. Nothing is
   injected into the pages or read from them.
+- **One word in two decks.** Decks are separate files and nothing is merged. A word is
+  recognised across all decks by its key: dictionary form, case, endings (`-η, -ο`),
+  alternatives after a slash and the article, with `ο/η` matching `ο`; accents stay, so πώς and
+  πως are two words. Adding or importing a word another deck holds leaves it unticked and names
+  the deck; a match that differs only in accents (άπλος, απλός) stays ticked with a notice.
+  Glosses are shown and never compared. Each copy keeps its own FSRS state, as in Anki, and one
+  review does not move the other copy. Suspend parks the extra copy, and "words in memory"
+  counts a word once. Burying across decks waits until the overlap is measured; the sources, the
+  measurement on the Greek decks and the build rules are in
+  [`cross-deck-overlap.md`](references/cross-deck-overlap.md).
 
 ### Look
 
