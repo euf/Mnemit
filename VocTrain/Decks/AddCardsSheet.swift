@@ -10,7 +10,7 @@ import VocabCore
 /// asks first if something is typed. The fields of the two ways keep their text while the
 /// other one is shown.
 struct AddCardsSheet: View {
-    private enum Mode: Hashable {
+    private enum Mode: String {
         case oneCard, fromList
     }
 
@@ -25,7 +25,9 @@ struct AddCardsSheet: View {
     /// list by default, and a typed one is told of.
     @State private var elsewhere = WordIndex()
 
-    @State private var mode = Mode.oneCard
+    /// The way cards were added last time (`modeKey`): someone who adds the week's list comes back to the list.
+    @State private var mode: Mode
+    private static let modeKey = "AddCardsMode"
     @State private var question = ""
     @State private var answer = ""
     @State private var hint = ""
@@ -48,7 +50,8 @@ struct AddCardsSheet: View {
     ///   with the fields filled, or just after an addition of `added` cards.
     init(document: VocabularyDocument, showsList: Bool = false, question: String = "", answer: String = "", hint: String = "", list: String = "", added: Int = 0) {
         self.document = document
-        _mode = State(initialValue: showsList ? .fromList : .oneCard)
+        let last = GreekSpeech.isUnderTest ? nil : UserDefaults.standard.string(forKey: Self.modeKey).flatMap(Mode.init(rawValue:))
+        _mode = State(initialValue: showsList ? .fromList : last ?? .oneCard)
         _question = State(initialValue: question)
         _answer = State(initialValue: answer)
         _hint = State(initialValue: hint)
@@ -99,6 +102,7 @@ struct AddCardsSheet: View {
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
+                    .onChange(of: mode) { UserDefaults.standard.set(mode.rawValue, forKey: Self.modeKey) }
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())

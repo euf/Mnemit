@@ -131,7 +131,8 @@ them per day (`DailySnapshot`). No points, no levels of our own: the steps are F
   the last 30 days against the target.
 
 Not added, as they reward volume over memory and pull against FSRS: points, leagues, hearts, reviewing
-ahead for a bigger number.
+ahead for a bigger number. The laps and big-day medals count done cards, cards FSRS sent to another day,
+never answers: grading fast or reviewing early earns nothing.
 
 ## Milestones, achievements and the Progress screen
 

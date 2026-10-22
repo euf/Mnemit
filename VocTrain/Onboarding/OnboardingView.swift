@@ -123,7 +123,7 @@ private struct DayStep: View {
                 row("rectangle.stack", Text("Every day Mnemit lays out the cards due today: a few minutes' worth."))
                 row("circle.circle", Text("Recall a card and the ring moves. A new word comes back under the stack until you know it twice."))
                 row("flame.fill", Text("The first two minutes keep your streak. Close the ring, and the day is done."))
-                row("chart.bar.fill", Text("Words climb from New to Mastered as FSRS sees them stick."))
+                row("chart.bar.fill", Text("Words climb from New to Mastered as they stick."))
             }
             Spacer()
             Button(action: next) {
@@ -210,10 +210,14 @@ private struct SyncStep: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
-                    Button("Only on This iPhone") {
+                    Button {
                         knownDecks.useLocalFolder()
                         problem = nil
+                    } label: {
+                        Text("Only on This iPhone")
+                            .frame(maxWidth: .infinity, minHeight: 36)
                     }
+                    .buttonStyle(.bordered)
                 }
                 // Keeps its height, so the buttons stay where they are.
                 Text(problem ?? " ")

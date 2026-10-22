@@ -16510,24 +16510,24 @@
         }
       }
     },
-    "Words climb from New to Mastered as FSRS sees them stick.": {
+    "Words climb from New to Mastered as they stick.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wörter steigen von Neu bis Gemeistert, wenn FSRS sieht, dass sie sitzen."
+            "value": "Wörter steigen von Neu bis Gemeistert, wenn sie sitzen."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Οι λέξεις ανεβαίνουν από «Νέες» ως «Κατακτημένες» όσο το FSRS βλέπει ότι μένουν."
+            "value": "Οι λέξεις ανεβαίνουν από «Νέες» ως «Κατακτημένες» όσο εδραιώνονται."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Слова поднимаются от «Новых» до «Освоенных», когда FSRS видит, что они держатся."
+            "value": "Слова поднимаются от «Новых» до «Освоенных», когда закрепляются."
           }
         }
       }
