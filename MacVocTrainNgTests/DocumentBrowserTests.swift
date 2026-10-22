@@ -27,7 +27,8 @@ struct DocumentBrowserTests {
         undoManager.undo()
         #expect(document.card(withID: lieben.id)?.note == "agapo")
         undoManager.undo()
-        #expect(document.card(withID: lieben.id) == lieben)
+        // Undo stamps the card again, see `Card.unstamped`.
+        #expect(document.card(withID: lieben.id)?.unstamped == lieben)
     }
 
     /// Only the key changes: the card keeps its kind, texts and learning state.
@@ -40,7 +41,7 @@ struct DocumentBrowserTests {
         step(undoManager) { document.setNote("haus", of: studied.id) }
         var expected = studied
         expected.note = "haus"
-        #expect(document.card(withID: studied.id) == expected)
+        #expect(document.card(withID: studied.id)?.unstamped == expected)
     }
 
     @Test func aKeyThatStaysRegistersNothing() throws {

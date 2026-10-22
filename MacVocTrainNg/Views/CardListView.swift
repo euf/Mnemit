@@ -95,6 +95,7 @@ struct CardListView: View {
                 .disabledCustomizationBehavior([.reorder, .visibility])
             }
             .focused($tableIsFocused)
+            .background(TableClickFocus())
             // A new sort order builds a new table: diffing the old order against the
             // new one moves every row on its own, which is slow with many cards (#168).
             // The column widths live in `columnCustomization`, and the focus moves over

@@ -33,6 +33,18 @@ public enum LessonWords {
     /// The separators between the two sides of a line.
     private static let separators: Set<Character> = ["=", "–", "—", "\t"]
 
+    /// The hyphen a phone keyboard types, a separator only with a space on both sides: a
+    /// bare one belongs to a word ("ex-wife", "-η").
+    private static let spacedHyphen = " - "
+
+    /// Where the first separator of `line` is, the character or the spaced hyphen, whichever
+    /// comes first.
+    private static func separator(in line: String) -> Range<String.Index>? {
+        let character = line.firstIndex(where: separators.contains).map { $0..<line.index(after: $0) }
+        let hyphen = line.range(of: spacedHyphen)
+        return [character, hyphen].compactMap(\.self).min { $0.lowerBound < $1.lowerBound }
+    }
+
     /// The words of `text`. The first separator on a line splits it, so a translation may
     /// contain more; a line with the Greek on the right is turned round.
     public static func parse(_ text: String) -> Parsed {
@@ -40,12 +52,12 @@ public enum LessonWords {
         for (index, line) in text.components(separatedBy: .newlines).enumerated() {
             let line = line.trimmingCharacters(in: .whitespaces)
             guard !line.isEmpty else { continue }
-            guard let split = line.firstIndex(where: separators.contains) else {
+            guard let split = separator(in: line) else {
                 parsed.invalidLines.append(index + 1)
                 continue
             }
-            var greek = CardText.trimmed(String(line[..<split]))
-            var translation = CardText.trimmed(String(line[line.index(after: split)...]))
+            var greek = CardText.trimmed(String(line[..<split.lowerBound]))
+            var translation = CardText.trimmed(String(line[split.upperBound...]))
             guard !greek.isEmpty, !translation.isEmpty else {
                 parsed.invalidLines.append(index + 1)
                 continue

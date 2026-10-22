@@ -144,7 +144,7 @@ struct BrowserSnapshotTests {
 
     @Test(arguments: [false, true])
     func browserFilters(dark: Bool) async throws {
-        for filter in BrowserFilter.allCases {
+        for filter in CardFilter.allCases {
             let sample = try makeSample()
             try await shoot(
                 "browser-\(filter.rawValue)", dark: dark, CardBrowserScreen(document: sample.document, canEdit: true, filter: filter))

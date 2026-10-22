@@ -41,6 +41,23 @@ struct LessonWordsTests {
         #expect(parsed.invalidLines.isEmpty)
     }
 
+    /// A phone keyboard types the plain hyphen, with spaces around it.
+    @Test func readsASpacedHyphen() {
+        let parsed = LessonWords.parse("το σπίτι - the house\nη ώρα = Stunde - Uhrzeit\nη κλοπή - theft = Diebstahl\nthe thief - ο κλέφτης")
+        #expect(parsed.entries.map(\.greek) == ["το σπίτι", "η ώρα", "η κλοπή", "ο κλέφτης"])
+        // The first separator splits: the later ones belong to the translation.
+        #expect(parsed.entries.map(\.translation) == ["the house", "Stunde - Uhrzeit", "theft = Diebstahl", "the thief"])
+        #expect(parsed.invalidLines.isEmpty)
+    }
+
+    /// Only the spaced hyphen separates: a hyphen inside a word, or at the end of a line, doesn't.
+    @Test func aHyphenWithoutSpacesOnBothSidesIsPartOfTheWord() {
+        let parsed = LessonWords.parse("υπεύθυνος, -η, -ο = verantwortlich\nthe ex-wife\nsomething -\n- something\nτο καλό-καιρινό = summery")
+        #expect(parsed.entries.map(\.greek) == ["υπεύθυνος, -η, -ο", "το καλό-καιρινό"])
+        #expect(parsed.entries.map(\.note) == ["υπεύθυνος", "καλό-καιρινό#το"])
+        #expect(parsed.invalidLines == [2, 3, 4])
+    }
+
     @Test func turnsALineWithTheGreekOnTheRightRound() {
         let parsed = LessonWords.parse("красть = κλέβω")
         #expect(parsed.entries.map(\.greek) == ["κλέβω"])

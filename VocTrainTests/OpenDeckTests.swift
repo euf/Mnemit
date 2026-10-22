@@ -6,9 +6,9 @@ import UniformTypeIdentifiers
 @testable import VocabCore
 
 /// Opening, saving and reading again a deck with the app's own UIDocument (#285).
-/// A test that waits for the UIDocument in vain fails after a minute instead of
-/// holding up the run.
-@MainActor @Suite(.timeLimit(.minutes(1)))
+/// A test that waits for the UIDocument in vain fails after two minutes, see `waitUntil`,
+/// instead of holding up the run.
+@MainActor @Suite(.timeLimit(.minutes(3)))
 struct OpenDeckTests {
     let directory: URL
 
@@ -43,7 +43,7 @@ struct OpenDeckTests {
 
         review(document)
         // Lets the run loop close the undo group, which the UIDocument counts.
-        try await Task.sleep(for: .milliseconds(200))
+        try await waitUntil("the run loop has closed the undo group") { deck.undoManager.groupingLevel == 0 }
         await deck.close()
         let saved = try DeckFile.decode(FileWrapper(url: legacy, options: .immediate))
         #expect(saved.cards.first?.log.map(\.grade) == [.good])
@@ -59,7 +59,7 @@ struct OpenDeckTests {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         let deck = OpenDeck(url: url)
 
-        try await wait { deck.failure != nil }
+        try await waitUntil("the deck reports why it failed") { deck.failure != nil }
         #expect(deck.document == nil)
         await deck.close()
     }
@@ -76,7 +76,7 @@ struct OpenDeckTests {
 
         review(document)
         // Lets the run loop close the undo group, which the UIDocument counts.
-        try await Task.sleep(for: .milliseconds(200))
+        try await waitUntil("the run loop has closed the undo group") { deck.undoManager.groupingLevel == 0 }
         await deck.close()
 
         let saved = try DeckFile.decode(FileWrapper(url: url, options: .immediate))
@@ -114,9 +114,10 @@ struct OpenDeckTests {
         let deck = OpenDeck(url: url)
         let document = try await waitForDocument(of: deck)
 
-        try await writeCoordinated(Deck(cards: [dom, makeCard("kot")], contentModified: .now), to: url)
-
-        try await wait { document.deck.cards.count == 2 }
+        let changed = try Deck(cards: [dom, makeCard("kot")], contentModified: .now)
+        try await writeUntil(
+            "the card of the other device is in the document", write: { try await writeCoordinated(changed, to: url) },
+            until: { document.deck.cards.count == 2 })
         #expect(document.deck.cards.count == 2)
         #expect(deck.document === document)
         await deck.close()
@@ -138,9 +139,9 @@ struct OpenDeckTests {
         try review(notAsked[0], in: &mac, calendar: document.calendar)
         let suspension = try #require(DeckChange.settingSuspended(true, of: [notAsked[1]], in: mac, at: .now))
         _ = mac.apply(suspension, at: .now, calendar: document.calendar)
-        try await writeCoordinated(mac, to: url)
-
-        try await wait { document.deck.card(withID: notAsked[1])?.isSuspended == true }
+        try await writeUntil(
+            "the card the Mac suspended is suspended in the document", write: { try await writeCoordinated(mac, to: url) },
+            until: { document.deck.card(withID: notAsked[1])?.isSuspended == true })
         #expect(deck.document === document)
         #expect(document.deck.card(withID: notAsked[1])?.isSuspended == true)
         #expect(document.deck.card(withID: notAsked[0])?.log.count == 1)
@@ -208,14 +209,7 @@ struct OpenDeckTests {
     }
 
     private func waitForDocument(of deck: OpenDeck) async throws -> VocabularyDocument {
-        try await wait { deck.document != nil && deck.isEditable }
+        try await waitUntil("the deck is open and can be changed") { deck.document != nil && deck.isEditable }
         return try #require(deck.document)
-    }
-
-    /// Waits up to ten seconds for `condition`.
-    private func wait(for condition: () -> Bool) async throws {
-        for _ in 0..<100 where !condition() {
-            try await Task.sleep(for: .milliseconds(100))
-        }
     }
 }

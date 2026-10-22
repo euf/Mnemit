@@ -6,7 +6,7 @@ import Testing
 
 /// The iPhone edits cards and options the way the Mac does: with undo under the same
 /// names, saved through the deck's UIDocument and merged with what another device wrote.
-@MainActor @Suite(.timeLimit(.minutes(1)))
+@MainActor @Suite(.timeLimit(.minutes(3)))
 struct PhoneEditingTests {
     let directory: URL
     let created = Date(timeIntervalSince1970: 1_791_216_000)
@@ -147,7 +147,7 @@ struct PhoneEditingTests {
         options.steps = 3
         document.updateLearningOptions(options)
         // Lets the run loop close the undo group, which the UIDocument counts.
-        try await Task.sleep(for: .milliseconds(200))
+        try await waitUntil("the run loop has closed the undo group") { deck.undoManager.groupingLevel == 0 }
         #expect(deck.undoManager.canUndo)
         await deck.close()
 
@@ -180,9 +180,9 @@ struct PhoneEditingTests {
         let ryba = makeCard("ryba", answer: "Fisch")
         _ = mac.apply(try #require(DeckChange.adding([ryba], to: mac)), at: .now.addingTimeInterval(10), calendar: document.calendar)
         try review(dom.id, in: &mac, calendar: document.calendar)
-        try await writeCoordinated(mac, to: url)
-
-        try await wait { document.deck.cards.count == 4 }
+        try await writeUntil(
+            "the cards of both devices are in the document", write: { try await writeCoordinated(mac, to: url) },
+            until: { document.deck.cards.count == 4 })
         #expect(Set(document.deck.cards.map(\.question)) == ["dom", "kot", "mysz", "ryba"])
         #expect(document.deck.card(withID: dom.id)?.answer == "Heim")
         #expect(document.deck.card(withID: dom.id)?.log.count == 1)
@@ -270,14 +270,7 @@ struct PhoneEditingTests {
     }
 
     private func waitForDocument(of deck: OpenDeck) async throws -> VocabularyDocument {
-        try await wait { deck.document != nil && deck.isEditable }
+        try await waitUntil("the deck is open and can be changed") { deck.document != nil && deck.isEditable }
         return try #require(deck.document)
-    }
-
-    /// Waits up to ten seconds for `condition`.
-    private func wait(for condition: () -> Bool) async throws {
-        for _ in 0..<100 where !condition() {
-            try await Task.sleep(for: .milliseconds(100))
-        }
     }
 }

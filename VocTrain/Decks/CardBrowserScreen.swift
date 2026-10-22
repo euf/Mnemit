@@ -14,7 +14,7 @@ struct CardBrowserScreen: View {
     var canEdit: Bool
     var addCards: () -> Void
 
-    @State private var filter: BrowserFilter
+    @State private var filter: CardFilter
     @State private var sort: BrowserSort
     @State private var query = ""
     @State private var selection: Set<Card.ID>
@@ -29,7 +29,7 @@ struct CardBrowserScreen: View {
     ///   - filter: What the list starts with; a test chooses it.
     ///   - selecting: Starts in the mode that selects cards, with `selection` chosen.
     init(
-        document: VocabularyDocument, canEdit: Bool, addCards: @escaping () -> Void = {}, filter: BrowserFilter = .all,
+        document: VocabularyDocument, canEdit: Bool, addCards: @escaping () -> Void = {}, filter: CardFilter = .all,
         sort: BrowserSort = .due, query: String = "", selecting: Set<Card.ID>? = nil
     ) {
         self.document = document
@@ -50,8 +50,7 @@ struct CardBrowserScreen: View {
     var body: some View {
         let now = document.clock.now
         let threshold = document.deck.learningOptions.leechThreshold
-        let output = memo.output(
-            cards: document.deck.cards, filter: filter, sort: sort, query: query, leechThreshold: threshold, now: now)
+        let output = memo.output(deck: document.deck, filter: filter, sort: sort, query: query, now: now)
         Group {
             if document.deck.cards.isEmpty {
                 ContentUnavailableView {
@@ -222,14 +221,14 @@ struct CardBrowserScreen: View {
 /// The filters in a row under the bar, each with how many cards it holds. A tap chooses
 /// one; the chosen one is the prominent button.
 struct FilterBar: View {
-    @Binding var selection: BrowserFilter
-    var counts: [BrowserFilter: Int]
+    @Binding var selection: CardFilter
+    var counts: [CardFilter: Int]
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.tight) {
-                    ForEach(BrowserFilter.allCases) { filter in
+                    ForEach(CardFilter.allCases) { filter in
                         chip(filter)
                             .id(filter)
                     }
@@ -246,7 +245,7 @@ struct FilterBar: View {
     }
 
     @ViewBuilder
-    private func chip(_ filter: BrowserFilter) -> some View {
+    private func chip(_ filter: CardFilter) -> some View {
         let isSelected = selection == filter
         let count = counts[filter] ?? 0
         let label = Button {

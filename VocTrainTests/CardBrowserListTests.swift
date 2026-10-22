@@ -40,8 +40,8 @@ struct CardBrowserListTests {
         ]
     }
 
-    func questions(_ filter: BrowserFilter) -> [String] {
-        cards.filter { filter.matches($0, leechThreshold: threshold, now: now) }.map(\.question)
+    func questions(_ filter: CardFilter) -> [String] {
+        cards.filter { filter.matches($0, at: now, leechThreshold: threshold) }.map(\.question)
     }
 
     // MARK: Filters
@@ -59,24 +59,24 @@ struct CardBrowserListTests {
 
     @Test func aSuspendedCardIsInNoFilterButAllSuspendedAndDifficult() {
         let suspended = card("s", learning: state(.learning, due: -60, lapses: 9), suspended: true)
-        let holding = BrowserFilter.allCases.filter { $0.matches(suspended, leechThreshold: threshold, now: now) }
+        let holding = CardFilter.allCases.filter { $0.matches(suspended, at: now, leechThreshold: threshold) }
         #expect(holding == [.all, .suspended, .difficult])
     }
 
     @Test func aThresholdOfZeroHasNoDifficultCards() {
-        #expect(cards.filter { BrowserFilter.difficult.matches($0, leechThreshold: 0, now: now) }.isEmpty)
+        #expect(cards.filter { CardFilter.difficult.matches($0, at: now, leechThreshold: 0) }.isEmpty)
     }
 
-    @Test func theCountsAreThoseOfTheFilters() {
-        let counts = CardBrowserList.counts(of: cards, leechThreshold: threshold, now: now)
-        for filter in BrowserFilter.allCases {
+    @Test func theCountsAreThoseOfTheFilters() throws {
+        let counts = try Deck(cards: cards).filterCounts(at: now)
+        for filter in CardFilter.allCases {
             #expect(counts[filter] == questions(filter).count, "\(filter)")
         }
     }
 
     // MARK: Sorts
 
-    func shown(_ cards: [Card], filter: BrowserFilter = .all, sort: BrowserSort, positions: Set<Int>? = nil) -> [String] {
+    func shown(_ cards: [Card], filter: CardFilter = .all, sort: BrowserSort, positions: Set<Int>? = nil) -> [String] {
         CardBrowserList.shown(cards, filter: filter, sort: sort, positions: positions, leechThreshold: threshold, now: now).map(\.question)
     }
 
@@ -123,7 +123,7 @@ struct CardBrowserListTests {
             card("η μητέρα", answer: "мать", learning: state(.review, due: -60)),
         ]
         let index = CardSearchIndex(cards: list)
-        func search(_ query: String, _ filter: BrowserFilter = .all) -> [String] {
+        func search(_ query: String, _ filter: CardFilter = .all) -> [String] {
             shown(list, filter: filter, sort: .alphabetical, positions: Set(index.positions(matching: query)))
         }
         #expect(search("σπιτι") == ["the house", "το σπίτι"])
@@ -151,21 +151,21 @@ struct CardBrowserListTests {
 
     // MARK: Memo
 
-    @Test func theMemoAnswersTheSameInputOnceAndNewInputAgain() {
+    @Test func theMemoAnswersTheSameInputOnceAndNewInputAgain() throws {
         let memo = CardBrowserMemo()
         let list = cards
-        let first = memo.output(cards: list, filter: .due, sort: .alphabetical, query: "", leechThreshold: threshold, now: now)
+        let first = try memo.output(deck: Deck(cards: list), filter: .due, sort: .alphabetical, query: "", now: now)
         #expect(first.rows.map(\.question) == ["learning now", "review due"])
         #expect(first.counts[.all] == 8)
 
         // A query with blanks around it is the query without them.
-        let searched = memo.output(cards: list, filter: .all, sort: .alphabetical, query: "  LEECH ", leechThreshold: threshold, now: now)
+        let searched = try memo.output(deck: Deck(cards: list), filter: .all, sort: .alphabetical, query: "  LEECH ", now: now)
         #expect(searched.rows.map(\.question) == ["leech", "suspended leech"])
 
         // A card that changed is in the new answer, with a new index.
         var changed = list
         changed[0] = card("leech new")
-        let again = memo.output(cards: changed, filter: .all, sort: .alphabetical, query: "leech", leechThreshold: threshold, now: now)
+        let again = try memo.output(deck: Deck(cards: changed), filter: .all, sort: .alphabetical, query: "leech", now: now)
         #expect(again.rows.map(\.question) == ["leech", "leech new", "suspended leech"])
     }
 }

@@ -775,7 +775,7 @@ struct MacHome: View {
 
 ### 6.5 Remove (Mac)
 
-`DocumentView`: `StartStudyButton`'s `Label("Study (\(count))", systemImage: "graduationcap")`. `SessionView.header`: `ProgressView(...).frame(maxWidth: 320)` and `n / N`. Welcome window: the 30-pt bold "Mnemit" title and the icon block on the left, `Greek, every day`, the large prominent `Open Mnemit Folder…` (the folder choice moves to File ▸ and the empty state of the Today window), `DeckRow`'s `.fontWeight(.semibold)` and tinted `rectangle.stack` icons.
+`DocumentView`: `StartStudyButton`'s `Label("Study (\(count))", systemImage: "graduationcap")`. `SessionView.header`: `ProgressView(...).frame(maxWidth: 320)` and `n / N`. Welcome window: the 30-pt bold "Mnemit" title and the icon block on the left, `Remember a little every day`, the large prominent `Open Mnemit Folder…` (the folder choice moves to File ▸ and the empty state of the Today window), `DeckRow`'s `.fontWeight(.semibold)` and tinted `rectangle.stack` icons.
 
 ## 7. Build order, strings, checks, sources
 

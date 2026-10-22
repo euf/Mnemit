@@ -1,41 +1,6 @@
 import Foundation
 import VocabCore
 
-/// The filters of the card browser, with the names every platform uses: All, Due, New,
-/// Learning, Suspended, Difficult. A suspended card is in All, Suspended and, if it is a
-/// leech, Difficult, and in no other filter: it is never asked, so it is neither due, nor
-/// new, nor learning.
-enum BrowserFilter: String, CaseIterable, Identifiable {
-    case all, due, new, learning, suspended, difficult
-
-    var id: Self { self }
-
-    var title: String {
-        switch self {
-        case .all: String(localized: "All")
-        case .due: String(localized: "Due")
-        case .new: String(localized: "New")
-        case .learning: String(localized: "Learning")
-        case .suspended: String(localized: "Suspended")
-        case .difficult: String(localized: "Difficult")
-        }
-    }
-
-    /// - Parameter leechThreshold: `LearningOptions.leechThreshold` of the deck; Difficult
-    ///   is what `Card.isLeech(threshold:)` says, so a leech stays difficult after it has
-    ///   been resumed.
-    func matches(_ card: Card, leechThreshold: Int, now: Date) -> Bool {
-        switch self {
-        case .all: true
-        case .due: !card.isSuspended && (card.learningState.map { $0.due <= now } ?? false)
-        case .new: !card.isSuspended && card.isNew
-        case .learning: !card.isSuspended && (card.learningState.map { $0.phase != .review } ?? false)
-        case .suspended: card.isSuspended
-        case .difficult: card.isLeech(threshold: leechThreshold)
-        }
-    }
-}
-
 /// The orders of the card browser. Cards that compare equal keep the order of the deck.
 enum BrowserSort: String, CaseIterable, Identifiable {
     /// New cards, then by the day they come due, suspended cards last: the order of the
@@ -126,27 +91,19 @@ enum BrowserState: Equatable {
     }
 }
 
-/// What the browser lists: the cards of a deck through a filter, a search and a sort.
+/// What the browser lists: the cards of a deck through a filter, a search and a sort. The
+/// filters are `CardFilter` of VocabCore, the Mac's too, and their counts `Deck.filterCounts(at:)`.
 enum CardBrowserList {
-    /// How many cards each filter holds.
-    static func counts(of cards: [Card], leechThreshold: Int, now: Date) -> [BrowserFilter: Int] {
-        var counts: [BrowserFilter: Int] = [:]
-        for filter in BrowserFilter.allCases {
-            counts[filter] = cards.count { filter.matches($0, leechThreshold: leechThreshold, now: now) }
-        }
-        return counts
-    }
-
     /// The cards of `filter`, sorted by `sort`.
     ///
     /// - Parameter positions: The positions in `cards` that a search found, see
     ///   `CardSearchIndex`; `nil` for no search.
     static func shown(
-        _ cards: [Card], filter: BrowserFilter, sort: BrowserSort, positions: Set<Int>? = nil, leechThreshold: Int, now: Date
+        _ cards: [Card], filter: CardFilter, sort: BrowserSort, positions: Set<Int>? = nil, leechThreshold: Int, now: Date
     ) -> [Card] {
         cards.enumerated()
             .filter { position, card in
-                (positions?.contains(position) ?? true) && filter.matches(card, leechThreshold: leechThreshold, now: now)
+                (positions?.contains(position) ?? true) && filter.matches(card, at: now, leechThreshold: leechThreshold)
             }
             .map { (position: $0.offset, card: $0.element) }
             .sorted(by: sort.precedes)
@@ -162,18 +119,17 @@ enum CardBrowserList {
 @MainActor
 final class CardBrowserMemo {
     struct Input: Equatable {
-        var cards: [Card]
-        var filter: BrowserFilter
+        var deck: Deck
+        var filter: CardFilter
         var sort: BrowserSort
         var query: String
-        var leechThreshold: Int
         /// The minute the due cards are counted at: a card comes due while the screen is open.
         var minute: Int
     }
 
     struct Output {
         var rows: [Card]
-        var counts: [BrowserFilter: Int]
+        var counts: [CardFilter: Int]
     }
 
     private var input: Input?
@@ -181,10 +137,11 @@ final class CardBrowserMemo {
     private var indexedCards: [Card] = []
     private var index = CardSearchIndex(cards: [])
 
-    func output(cards: [Card], filter: BrowserFilter, sort: BrowserSort, query: String, leechThreshold: Int, now: Date) -> Output {
+    func output(deck: Deck, filter: CardFilter, sort: BrowserSort, query: String, now: Date) -> Output {
+        let cards = deck.cards
         let next = Input(
-            cards: cards, filter: filter, sort: sort, query: query.trimmingCharacters(in: .whitespaces),
-            leechThreshold: leechThreshold, minute: Int(now.timeIntervalSince1970 / 60))
+            deck: deck, filter: filter, sort: sort, query: query.trimmingCharacters(in: .whitespaces),
+            minute: Int(now.timeIntervalSince1970 / 60))
         // Cheap while nothing changed: arrays that share their storage compare equal at once.
         if next == input { return output }
         var positions: Set<Int>?
@@ -196,8 +153,9 @@ final class CardBrowserMemo {
             positions = Set(index.positions(matching: next.query))
         }
         output = Output(
-            rows: CardBrowserList.shown(cards, filter: filter, sort: sort, positions: positions, leechThreshold: leechThreshold, now: now),
-            counts: CardBrowserList.counts(of: cards, leechThreshold: leechThreshold, now: now))
+            rows: CardBrowserList.shown(
+                cards, filter: filter, sort: sort, positions: positions, leechThreshold: deck.learningOptions.leechThreshold, now: now),
+            counts: deck.filterCounts(at: now))
         input = next
         return output
     }

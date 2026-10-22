@@ -31,7 +31,7 @@ struct WelcomeView: View {
                 .accessibilityHidden(true)
             Text(verbatim: "Mnemit")
                 .font(.system(size: 30, weight: .bold))
-            Text("Greek, every day")
+            Text("Remember a little every day")
                 .foregroundStyle(.secondary)
             Text("Version \(version)")
                 .font(.caption)

@@ -21,7 +21,7 @@ struct LessonWordsSheet: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Add Lesson Words")
                     .font(.title2.weight(.semibold))
-                Text("One word per line: the Greek word, an equals sign or a dash, then the translation.")
+                Text("One word per line: the Greek word, an equals sign, a dash or a hyphen with spaces around it, then the translation.")
                     .foregroundStyle(.secondary)
             }
 

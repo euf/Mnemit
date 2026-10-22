@@ -132,7 +132,7 @@ extension WindowTests {
             try await settle()
 
             #expect(editor.string == "blomps")
-            #expect(deckCard == card)
+            #expect(deckCard?.unstamped == card)
             #expect(!undoManager.canUndo)
         }
 
@@ -164,17 +164,17 @@ extension WindowTests {
             let answer = try await edit(fields(of: sheet)[1], in: sheet)
             await type("ps", into: answer)
             try await settle()
-            #expect(deckCard == card)
+            #expect(deckCard?.unstamped == card)
 
             #expect(try pressReturn(in: sheet))
             try await waitUntil("the sheet is closed") { window.attachedSheet == nil }
             var saved = card.withAnswer("blomps")
             saved.note = "blim-key2"
-            #expect(deckCard == saved)
+            #expect(deckCard?.unstamped == saved)
             #expect(deckCard?.kind == .recognition)
 
             undoManager.undo()
-            #expect(deckCard == card)
+            #expect(deckCard?.unstamped == card)
             #expect(!undoManager.canUndo)
         }
 
@@ -192,7 +192,7 @@ extension WindowTests {
             #expect(deckCard?.kind == .recognition)
             #expect(deckCard?.question == "blim")
             undoManager.undo()
-            #expect(deckCard == card)
+            #expect(deckCard?.unstamped == card)
         }
 
         /// The word key of a translation card is the Greek word, its answer: the sheet of a
@@ -221,7 +221,7 @@ extension WindowTests {
             #expect(try pressEscape(in: sheet))
             try await waitUntil("the sheet is closed") { window.attachedSheet == nil }
             try await settle()
-            #expect(deckCard == card)
+            #expect(deckCard?.unstamped == card)
             #expect(!undoManager.canUndo)
         }
 
@@ -244,7 +244,7 @@ extension WindowTests {
             try await settle()
             #expect(try !pressReturn(in: sheet))
             #expect(window.attachedSheet === sheet)
-            #expect(deckCard == card)
+            #expect(deckCard?.unstamped == card)
             #expect(!undoManager.canUndo)
 
             // The negative is no accident of the test window: Save works once the text is back.

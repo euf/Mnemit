@@ -2326,16 +2326,6 @@
         }
       }
     },
-    "Greek, every day": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Griechisch, jeden Tag"
-          }
-        }
-      }
-    },
     "Hard": {
       "localizations": {
         "de": {
@@ -3276,12 +3266,12 @@
         }
       }
     },
-    "One word per line: the Greek word, an equals sign or a dash, then the translation.": {
+    "One word per line: the Greek word, an equals sign, a dash or a hyphen with spaces around it, then the translation.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ein Wort pro Zeile: das griechische Wort, ein Gleichheitszeichen oder ein Gedankenstrich, dann die Übersetzung."
+            "value": "Ein Wort pro Zeile: das griechische Wort, ein Gleichheitszeichen, ein Gedankenstrich oder ein Bindestrich mit Leerzeichen, dann die Übersetzung."
           }
         }
       }

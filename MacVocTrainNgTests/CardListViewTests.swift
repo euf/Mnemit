@@ -92,6 +92,30 @@ extension WindowTests {
             window.sendEvent(mouseDown)
         }
 
+        /// Clicks at `point` of `view` the way the mouse does: through the application, which
+        /// shows the event to the monitors before the window gets it. The mouse-up follows at
+        /// once: the view tracks the mouse until it comes.
+        private func clickThroughApplication(at point: NSPoint, in view: NSView) throws {
+            let location = view.convert(point, to: nil)
+            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                NSApp.postEvent(try mouseEvent(type, at: location), atStart: false)
+            }
+        }
+
+        private func mouseEvent(_ type: NSEvent.EventType, at location: NSPoint) throws -> NSEvent {
+            try #require(
+                NSEvent.mouseEvent(
+                    with: type, location: location, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                    windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+                )
+            )
+        }
+
+        /// The view that moves the focus into the table on a click.
+        private var clickFocus: ClickFocusView? {
+            window.contentView.flatMap { descendants(of: $0).lazy.compactMap { $0 as? ClickFocusView }.first }
+        }
+
         /// Sorts by question like a click on the header of the column: the table tells its
         /// delegate, and `Table` sets its sort order.
         private func sortByQuestion(_ table: NSTableView) throws {
@@ -146,20 +170,44 @@ extension WindowTests {
         }
 
         /// Before #171 the table lost the click that moved the focus into it: the first click,
-        /// from the field "Question", selects the row.
+        /// from the field "Question", selects the row and makes the table first responder, so
+        /// Delete, ⌘E and the arrow keys act on the selection.
         ///
-        /// It doesn't ask where the focus ends up. On macOS 27 a synthetic click selects the
-        /// row and leaves the focus in the field editor; the table becomes first responder
-        /// only through `makeFirstResponder` (measured 21.10.2026, Xcode 27.1). Whether a
-        /// click of a person moves it, only the window shows.
+        /// A click of the mouse selects the row without asking for the focus on macOS 27: the
+        /// hosting view of the cell takes it, and `NSTableView.mouseDown`, which would make the
+        /// table first responder, doesn't run (measured with a real click on 22.10.2026), see
+        /// `TableClickFocus`. This click goes through the application, as the mouse's does.
+        /// It needs a host app that is active: in one that isn't, the window takes the first
+        /// click only to become key, and the row isn't selected.
         @Test func firstClickIntoTableSelectsRow() async throws {
             defer { window.close() }
             let table = try await showList()
             _ = try await focusQuestionField(table)
 
             let rect = table.rect(ofRow: 1)
-            try click(at: NSPoint(x: rect.midX, y: rect.midY), in: table)
+            try clickThroughApplication(at: NSPoint(x: rect.midX, y: rect.midY), in: table)
             try await waitUntil("the row is selected") { table.selectedRowIndexes == [1] }
+            try await waitUntil("the table is first responder") { window.firstResponder === table }
+        }
+
+        /// What `TableClickFocus` does with a click, whether or not the window takes the click: a
+        /// click on a row moves the focus into the table, a click anywhere else leaves it where
+        /// it is.
+        @Test func aClickInTheTableMovesTheFocusIntoItAndOneOutsideDoesNot() async throws {
+            defer { window.close() }
+            let table = try await showList()
+            let field = try await focusQuestionField(table)
+            let focus = try #require(clickFocus)
+
+            let outside = field.convert(NSPoint(x: field.bounds.midX, y: field.bounds.midY), to: nil)
+            focus.mouseDown(in: try mouseEvent(.leftMouseDown, at: outside))
+            try await settle()
+            #expect(editedField === field)
+
+            let rect = table.rect(ofRow: 1)
+            let inRow = table.convert(NSPoint(x: rect.midX, y: rect.midY), to: nil)
+            focus.mouseDown(in: try mouseEvent(.leftMouseDown, at: inRow))
+            try await waitUntil("the table is first responder") { window.firstResponder === table }
         }
 
         /// A double-click on a row opens the sheet that edits its card, but only while the

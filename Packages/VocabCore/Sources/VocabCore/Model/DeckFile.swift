@@ -143,6 +143,10 @@ public enum DeckFile {
 
     /// Reads the `deck.json` of a package, without the review log.
     ///
+    /// Not for counting a day: the daily limit on new cards subtracts the cards introduced
+    /// today, which only the log knows. Read the whole package, `decode(_:)` of a
+    /// `FileWrapper`, for anything that must agree with the deck screen.
+    ///
     /// Rejects duplicate card IDs and FSRS parameters outside their ranges; clamps
     /// learning options and learning states into theirs.
     public static func decode(_ data: Data) throws -> Deck {

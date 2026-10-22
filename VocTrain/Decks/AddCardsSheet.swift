@@ -198,7 +198,7 @@ struct AddCardsSheet: View {
                 }
                 .accessibilityLabel(Text("Lesson words"))
         } footer: {
-            Text("One word per line: the Greek word, an equals sign or a dash, then the translation.")
+            Text("One word per line: the Greek word, an equals sign, a dash or a hyphen with spaces around it, then the translation.")
         }
 
         if !preview.invalidLines.isEmpty {
