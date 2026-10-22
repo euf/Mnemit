@@ -42,6 +42,8 @@ struct AnkiImportScreenTests {
         #expect(IncomingLink(URL(fileURLWithPath: "/files/Greek.apkg")) == .ankiPackage)
         // Whatever the case of the extension, and wherever the file lies.
         #expect(IncomingLink(URL(fileURLWithPath: "/private/var/mobile/Inbox/GREEK.APKG")) == .ankiPackage)
+        // A collection package is one, too.
+        #expect(IncomingLink(URL(fileURLWithPath: "/files/Collection.colpkg")) == .ankiPackage)
         #expect(IncomingLink(URL(fileURLWithPath: "/files/Greek.mnemit", isDirectory: true)) == .deck)
         #expect(IncomingLink(URL(fileURLWithPath: "/files/Greek.voctrain", isDirectory: true)) == .deck)
         // A deck whose name only mentions the extension is a deck.
@@ -52,15 +54,17 @@ struct AnkiImportScreenTests {
 
     /// What makes "Open in Mnemit" offer the package: the imported type and a document type of
     /// the viewer role with the alternate rank, in the Info.plist of the app under test.
-    @Test func theInfoPlistDeclaresThePackageForOpenIn() {
+    @Test(arguments: [(UTType.ankiPackage, "apkg"), (UTType.ankiCollection, "colpkg")])
+    func theInfoPlistDeclaresThePackageForOpenIn(type: UTType, fileExtension: String) {
         let info = Bundle.main.infoDictionary ?? [:]
-        let imported = (info["UTImportedTypeDeclarations"] as? [[String: Any]] ?? []).first { $0["UTTypeIdentifier"] as? String == UTType.ankiPackage.identifier }
+        let imported = (info["UTImportedTypeDeclarations"] as? [[String: Any]] ?? []).first { $0["UTTypeIdentifier"] as? String == type.identifier }
         #expect(imported?["UTTypeConformsTo"] as? [String] == ["public.zip-archive", "public.data"])
-        #expect((imported?["UTTypeTagSpecification"] as? [String: Any])?["public.filename-extension"] as? [String] == ["apkg"])
-        let document = (info["CFBundleDocumentTypes"] as? [[String: Any]] ?? []).first { $0["LSItemContentTypes"] as? [String] == [UTType.ankiPackage.identifier] }
+        #expect((imported?["UTTypeTagSpecification"] as? [String: Any])?["public.filename-extension"] as? [String] == [fileExtension])
+        let document = (info["CFBundleDocumentTypes"] as? [[String: Any]] ?? []).first { $0["LSItemContentTypes"] as? [String] == [type.identifier] }
         #expect(document?["CFBundleTypeRole"] as? String == "Viewer")
         #expect(document?["LSHandlerRank"] as? String == "Alternate")
-        #expect(UTType.ankiPackage.conforms(to: .zip) && UTType.ankiPackage.conforms(to: .data))
+        #expect(type.conforms(to: .zip) && type.conforms(to: .data))
+        #expect(UTType(filenameExtension: fileExtension) == type)
     }
 
     @Test func theLinkToAnkiWebIsTheListOfSharedDecks() {

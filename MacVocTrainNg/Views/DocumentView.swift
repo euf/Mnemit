@@ -211,9 +211,19 @@ struct DocumentView: View {
             defer { isReadingImport = false }
             guard let preview = await CardImport.preview(ofFileAt: url, for: document, isNewDeck: isNewDeck) else { return }
             if isNewDeck, document.deck.cards.isEmpty, let anki = preview.anki {
-                NSDocumentController.shared.currentDocument?.displayName = CardImport.deckName(forDecks: anki.deckNames, fileName: url.lastPathComponent)
+                nameWindow(CardImport.deckName(forDecks: anki.deckNames, fileName: url.lastPathComponent))
             }
             importPreview = preview
+        }
+    }
+
+    /// Names the deck that has no file yet, in the window title and in what Save As offers. A changed
+    /// `displayName` reaches the title only when the window controllers are told: until then it says "Untitled".
+    private func nameWindow(_ name: String) {
+        let named = shortcutsHelp.window.flatMap { NSDocumentController.shared.document(for: $0) } ?? NSDocumentController.shared.currentDocument
+        named?.displayName = name
+        for controller in named?.windowControllers ?? [] {
+            controller.synchronizeWindowTitleWithDocumentName()
         }
     }
 

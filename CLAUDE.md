@@ -390,10 +390,14 @@
   из `cards.data`. Зависимость одна: `facebook/zstd` (SwiftPM, BSD, в `THIRD_PARTY_NOTICES.md`);
   Compression zstd не знает. Фикстуры настоящих пакетов — `Tests/VocabCoreTests/Resources/Anki`,
   скрипт их сборки лежит рядом (`uv run --with anki`).
-- Экраны импорта Anki (`Shared/Support/CardImport+Anki.swift`, `.apkg` принимают пикер iPhone,
+- Экраны импорта Anki (`Shared/Support/CardImport+Anki.swift`, `.apkg` и `.colpkg` принимают пикер iPhone,
   панель Mac и «Open in Mnemit»): тип `UTType.ankiPackage`, импортируемый
   `com.euf.mnemit.anki-package` (расширение `apkg`, conforms `public.zip-archive` и `public.data`),
-  в обоих `Info.plist` — тип документа Viewer, `LSHandlerRank` Alternate. Предпросмотр тот же, что у
+  в обоих `Info.plist` — тип документа Viewer, `LSHandlerRank` Alternate; коллекция —
+  `UTType.ankiCollection`, `com.euf.mnemit.anki-collection` (расширение `colpkg`, те же родители и та же
+  пара записей в обоих `Info.plist`). `UTType.ankiPackages` — оба типа: пикер iPhone
+  (`cardFileImporter`) и панель Mac (`CardImport.chooseFile`) предлагают их с таблицами;
+  `URL.isAnkiPackage` — расширение `apkg` или `colpkg`. Предпросмотр тот же, что у
   CSV (`CardImport.Preview`, у пакета `anki: AnkiSummary` — названия колод Anki, сколько карточек с
   историей, пропуски cloze, медиа, пустых; `skipLines` называет причины со счётом: cloze, «только
   картинка или звук на стороне», «пустая сторона»); дубликаты по вопросу против целевой колоды без галки
@@ -417,7 +421,9 @@
   сайтов с колодами (следующий пункт). Mac: `AppDelegate.application(_:open:)` ведёт `.apkg` из
   Finder тем же путём, что «Import Cards» окна приветствия (`WelcomeRequest.importIntoNewDeck(from:)`:
   запрос и новый документ), окно нового документа зовёт `DocumentView.importCards(from:namesDeck:)` и
-  называет безымянную колоду (`displayName`) по колоде Anki и берёт настройки пресета (`isNewDeck`:
+  называет безымянную колоду по колоде Anki (`nameWindow`: `displayName` документа и
+  `synchronizeWindowTitleWithDocumentName` у его окон: AppKit берёт новый `displayName` в заголовок
+  только по этому вызову, до него там «Untitled») и берёт настройки пресета (`isNewDeck`:
   `namesDeck`, документ без файла и карточек); «Import Cards» из меню окна колоды (`namesDeck` ложь)
   оставляет настройки колоды; колоды из Finder уходят оттуда в `NSDocumentController.openDocument`.
 - Браузер сайтов с колодами (`Shared/Web/DeckWebBrowser` и `DeckWebBrowserView`, лист на iPhone,

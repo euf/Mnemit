@@ -62,7 +62,7 @@ private struct CardFileImporter: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .fileImporter(isPresented: $isPresented, allowedContentTypes: [.delimitedText, .plainText, .ankiPackage]) { result in
+            .fileImporter(isPresented: $isPresented, allowedContentTypes: [.delimitedText, .plainText] + UTType.ankiPackages) { result in
                 switch result {
                 case let .success(url):
                     do {

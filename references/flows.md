@@ -119,7 +119,7 @@ Study ▸ How Today Works, over the open decks, which it names Deck 1, Deck 2.)
 **New Deck**: a name field; creates `<name>.mnemit` in the deck folder (iCloud Drive or
 this iPhone).
 
-**Import**: a file picker (CSV, TSV or `.apkg`) → the same preview as the
+**Import**: a file picker (CSV, TSV, `.apkg` or `.colpkg`) → the same preview as the
 Mac, a list with a checkmark per card (duplicates unchecked) → Add N Cards, one undo step.
 Entry points: Import Cards… on the Deck screen, Import… in Today's + menu (into the deck used
 last). The preview of an Anki package heads with the Anki deck names, the number of cards,
@@ -141,8 +141,8 @@ lapses. Advanced: maximum interval, FSRS parameters with "Compute from Review Lo
 
 **Welcome window** is the Mac's Today: decks with their counts; Study opens a deck's stream;
 New Deck, Import Cards, Open Mnemit Folder.
-Import Cards… takes CSV, TSV and `.apkg`; an `.apkg` makes a new deck named after the Anki
-deck. Opening an `.apkg` from Finder does the same, not a document window.
+Import Cards… takes CSV, TSV, `.apkg` and `.colpkg`; a package makes a new deck named after the Anki
+deck, in the window title as well as in Save As. Opening an `.apkg` from Finder does the same, not a document window.
 
 **Deck window**: Cards | Statistics. Study ▸ **Pause Deck** / **Resume Deck** pauses the deck of the window; the
 ring in the toolbar and its help count the open decks that are not paused.
@@ -161,7 +161,7 @@ ring in the toolbar and its help count the open decks that are not paused.
 3. Import and export on both platforms (facts in `deck-formats-and-sources.md`):
    - `.apkg` import, all three layouts, with review history replayed into FSRS; text fields
      with HTML stripped; media and cloze notes skipped and counted in the preview. Mnemit
-     registers `.apkg`, so "Open in Mnemit" from Files, Safari or Mail starts the import.
+     registers `.apkg` and `.colpkg`, so "Open in Mnemit" from Files, Safari or Mail starts the import.
    - CSV/TSV import on the iPhone; export on both with Anki's `#separator` / `#columns`
      headers and the word key and kind columns, so Anki reads the file as is.
    - No in-app deck catalogue: AnkiWeb has no API and its terms allow only browser access.

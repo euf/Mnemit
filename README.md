@@ -136,7 +136,7 @@ are in [`references/`](references/).
 
 ### Import and export
 
-- **Anki packages with their history.** `.apkg` in all three layouts (including the
+- **Anki packages with their history.** `.apkg` and `.colpkg` in all three layouts (including the
   zstd-compressed current one) is read without Anki; review history is replayed through
   Mnemit's FSRS. HTML is reduced to text; images, sounds and cloze cards are counted and
   left out. On the iPhone "Open in Mnemit" works from Files, Safari and Mail; on the Mac an

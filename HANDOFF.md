@@ -72,6 +72,9 @@
      импорт. Если кнопка Download у AnkiWeb или MintDeck ведёт на хост вне `DeckSources.all`, файл
      уйдёт в Safari — добавить хост в эту константу. Как скачивает MintDeck, не проверено;
    - строка пресета Anki в предпросмотре импорта новой колоды;
+   - Mac, новая колода из `.apkg`: заголовок окна называется именем колоды Anki, не «Untitled»
+     (`DocumentView.nameWindow`; голый `NSDocument` проверен без экрана, окно SwiftUI не видели);
+   - `.colpkg` в панели Import Cards на Mac, в пикере на iPhone и в «Open in Mnemit» из Files;
    - автоподгонка параметров: колода с 400+ оценками получает строку «Updated …» или «Checked …» в
      Options → Advanced на iPhone и в Learning Options на Mac;
    - виджет (снимок через keychain, тап → учёба, цвет индиго), «Open in Mnemit» для `.apkg` из
@@ -102,8 +105,6 @@
      маркер `ponytail:`);
    - лист Learning Options на Mac сохраняет снимок опций: подгонка, пришедшая, пока он открыт,
      перезаписывается на Save, колода подгоняется снова при следующем открытии.
-6. Mac: новая колода из `.apkg` до сохранения называется в заголовке окна «Untitled», хотя Save As
-   предлагает имя колоды Anki; `.colpkg` пикер не предлагает, хотя `AnkiImport.read` его читает.
 7. В `references/design-spec.md` строка «Accent» в разделе диагноза экранов говорит, что colorset
    пуст: это снимок до форка, переписать фактом.
 8. Позже: примеры из Tatoeba в Add Cards и на экране карточки (`references/flows.md`); FSRS-7, когда

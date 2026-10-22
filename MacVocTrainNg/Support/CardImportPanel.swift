@@ -6,7 +6,7 @@ extension CardImport {
     /// Asks for a CSV or TSV file or an Anki package; `nil` if the user cancels.
     static func chooseFile() -> URL? {
         let openPanel = NSOpenPanel()
-        openPanel.allowedContentTypes = [.delimitedText, .plainText, .ankiPackage]
+        openPanel.allowedContentTypes = [.delimitedText, .plainText] + UTType.ankiPackages
         openPanel.allowsMultipleSelection = false
         openPanel.message = String(localized: "Choose an Anki package, or a CSV or TSV file with a question, an answer and an optional hint per row.")
         openPanel.prompt = String(localized: "Import")
