@@ -235,7 +235,7 @@ final class VocabularyDocument: ObservableObject {
     }
 
     /// Stores a card rescheduled after a review in a study session, with the change
-    /// `SessionMode.grade(_:in:at:calendar:)` returns. Undo and redo of the review run
+    /// `SessionMode.grade(_:in:at:calendar:duration:)` returns. Undo and redo of the review run
     /// `companion` right after the card, in the same undo action; the session brings
     /// back its place with it, see `SessionDriver.grade(_:)`, which checks
     /// `isReadyToEdit` before it grades.

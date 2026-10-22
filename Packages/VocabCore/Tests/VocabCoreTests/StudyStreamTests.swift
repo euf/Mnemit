@@ -73,6 +73,25 @@ struct StudyStreamTests {
         Run(try Deck(learningOptions: options ?? self.options(), cards: cards), now: now, calendar: calendar)
     }
 
+    @Test func aGradeWithADurationLogsItAndPracticeLogsNothing() throws {
+        var run = try run([review("r1"), review("r2")])
+        let id = try #require(run.currentID)
+        let outcome = run.stream.grade(.good, in: run.deck, at: now, calendar: calendar, duration: .milliseconds(3300))
+        guard case let .rescheduled(change)? = outcome else {
+            Issue.record("not rescheduled")
+            return
+        }
+        _ = run.deck.apply(change, at: now, calendar: calendar)
+        #expect(run.deck.card(withID: id)?.log.map(\.duration) == [.milliseconds(3300)])
+
+        var practice = StudyStream(practicingNewestWordsIn: run.deck, at: now)
+        let practiced = practice.grade(.good, in: run.deck, at: now, calendar: calendar, duration: .milliseconds(3300))
+        guard case .practiced? = practiced else {
+            Issue.record("not practiced")
+            return
+        }
+    }
+
     // MARK: Plan
 
     @Test func theStreamStartsWithTheCountedPlanAndRestsWhenItIsDone() throws {

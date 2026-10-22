@@ -6,11 +6,13 @@ import Foundation
 ///
 /// ```
 /// {"card":"6F9619FF-8B86-D011-B42D-00C04FC964FF","date":1791216000,"grade":3}
-/// {"card":"6F9619FF-8B86-D011-B42D-00C04FC964FF","date":1791302400,"grade":3,"mode":"revealed"}
+/// {"card":"6F9619FF-8B86-D011-B42D-00C04FC964FF","date":1791302400,"grade":3,"mode":"revealed","ms":4210}
 /// ```
 ///
 /// `date` is in whole seconds since 1970. `mode` is left out for a typed review, and
-/// a missing or unknown one is read as typed: every review before it came was typed. The encoder keeps the encoded lines of
+/// a missing or unknown one is read as typed: every review before it came was typed.
+/// `ms` is how long the card was on screen, in whole milliseconds (`ReviewLogEntry.duration`),
+/// left out where it wasn't measured. The encoder keeps the encoded lines of
 /// every card and on the next call only encodes what changed, so encoding costs the
 /// same however long the log gets. Joining the lines and writing `reviews.jsonl`
 /// still grow with the log, but stay cheap. A card's lines are reused while its
@@ -75,7 +77,8 @@ public final class ReviewLogEncoder: @unchecked Sendable {
         for entry in entries {
             let seconds = Int(entry.date.timeIntervalSince1970.rounded(.down))
             let mode = entry.mode == .revealed ? ",\"mode\":\"revealed\"" : ""
-            data.append(contentsOf: "{\"card\":\"\(id)\",\"date\":\(seconds),\"grade\":\(entry.grade.rawValue)\(mode)}\n".utf8)
+            let duration = entry.duration.map { ",\"ms\":\(Int(($0 / .milliseconds(1)).rounded()))" } ?? ""
+            data.append(contentsOf: "{\"card\":\"\(id)\",\"date\":\(seconds),\"grade\":\(entry.grade.rawValue)\(mode)\(duration)}\n".utf8)
         }
     }
 
@@ -84,9 +87,10 @@ public final class ReviewLogEncoder: @unchecked Sendable {
         var date: Int
         var grade: Grade
         var mode: String?
+        var ms: Int?
 
         var entry: ReviewLogEntry {
-            ReviewLogEntry(date: Date(timeIntervalSince1970: Double(date)), grade: grade, mode: mode == "revealed" ? .revealed : .typed)
+            ReviewLogEntry(date: Date(timeIntervalSince1970: Double(date)), grade: grade, mode: mode == "revealed" ? .revealed : .typed, duration: ms.map { .milliseconds($0) })
         }
     }
 

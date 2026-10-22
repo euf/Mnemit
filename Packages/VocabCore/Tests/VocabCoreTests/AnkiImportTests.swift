@@ -54,8 +54,8 @@ struct AnkiImportTests {
     ]
 
     static let reviews = [
-        Fixtures.RawReview(id: base + 3 * day, card: 1000, ease: 1, type: 1),
-        Fixtures.RawReview(id: base, card: 1000, ease: 3, type: 0),
+        Fixtures.RawReview(id: base + 3 * day, card: 1000, ease: 1, type: 1, time: 9_500),
+        Fixtures.RawReview(id: base, card: 1000, ease: 3, type: 0, time: 4_210),
         Fixtures.RawReview(id: base + day + 999, card: 1000, ease: 3, type: 1),
         Fixtures.RawReview(id: base + 600_000, card: 1000, ease: 4, type: 0),
         // Not reviews: manual and rescheduled entries, cramming without a rescheduling, a rating Anki has no button for.
@@ -101,6 +101,8 @@ struct AnkiImportTests {
         #expect(cat.map(\.grade) == [.good, .easy, .good, .again, .hard])
         #expect(cat.map(\.date) == [Self.date(Self.base), Self.date(Self.base + 600_000), Self.date(Self.base + Self.day + 999), Self.date(Self.base + 3 * Self.day), Self.date(Self.base + 5 * Self.day)])
         #expect(cat.allSatisfy { $0.mode == .revealed })
+        // The time Anki took per answer, in milliseconds; 0 is no time at all.
+        #expect(cat.map(\.duration) == [.milliseconds(4_210), nil, nil, .milliseconds(9_500), nil])
         #expect(result.notes[2].reviews.map(\.grade) == [.hard])
         #expect(result.notes[1].reviews.isEmpty)
     }
@@ -246,6 +248,9 @@ struct AnkiImportTests {
         #expect(cat.map(\.grade) == [.good, .good, .good, .again, .good])
         #expect(cat.first?.date == Self.date(base))
         #expect(cat.last?.date == Self.date(base + 5 * Self.day + 300_000))
+        // Anki's own library logs 3000 ms for each of them.
+        #expect(cat.map(\.duration) == [Duration](repeating: .milliseconds(3_000), count: 5))
+        #expect(result.notes[1].reviews.map(\.duration) == [.milliseconds(3_000)])
         #expect(result.notes[1].reviews.map(\.grade) == [.easy])
         #expect(result.notes[3].reviews.map(\.grade) == [.good])
         #expect(result.notes[4].reviews.map(\.grade) == [.hard])

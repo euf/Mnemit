@@ -65,12 +65,14 @@ public struct StudySession: Sendable {
     /// - Parameter calendar: Counts the elapsed study days and the due date. It may
     ///   differ from the one the session started with, e.g. after the machine's time
     ///   zone changed (#186).
+    /// - Parameter duration: How long the card was on screen; it goes into the review log
+    ///   and has no say in the schedule.
     /// - Returns: `card` after the review, to be stored in the deck; `nil` if `card`
     ///   isn't the current card, e.g. because the session is finished.
-    mutating func review(_ grade: Grade, of card: Card, with learningOptions: LearningOptions, at now: Date, calendar: StudyCalendar) -> Card? {
+    mutating func review(_ grade: Grade, of card: Card, with learningOptions: LearningOptions, at now: Date, calendar: StudyCalendar, duration: Duration? = nil) -> Card? {
         guard card.id == session.currentCardID else { return nil }
         let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
-        var scheduled = scheduler.review(card, grade: grade, at: now, mode: reviewMode, using: &fuzzing)
+        var scheduled = scheduler.review(card, grade: grade, at: now, mode: reviewMode, duration: duration, using: &fuzzing)
         let becameLeech = Self.isNewLeech(scheduled, after: card, threshold: learningOptions.leechThreshold)
         if becameLeech { scheduled.suspend(at: now) }
         session.record(grade, isDone: scheduled.learningState?.phase == .review, isLeech: becameLeech, at: now)

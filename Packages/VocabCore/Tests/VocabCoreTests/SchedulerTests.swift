@@ -94,6 +94,17 @@ struct SchedulerTests {
         #expect(scheduler.replaying(card.log, of: card).log == card.log)
     }
 
+    @Test func aDurationIsLoggedAndSchedulesNothing() {
+        var random = SeededRandom(seed: 0)
+        let plain = scheduler.review(Card(question: "dom", answer: "Haus"), grade: .good, at: now, using: &random)
+        random = SeededRandom(seed: 0)
+        let timed = scheduler.review(Card(question: "dom", answer: "Haus"), grade: .good, at: now, duration: .milliseconds(4210), using: &random)
+        #expect(timed.log == [ReviewLogEntry(date: now, grade: .good, duration: .milliseconds(4210))])
+        #expect(timed.learningState == plain.learningState)
+        // Replaying keeps it.
+        #expect(scheduler.replaying(timed.log, of: timed).log == timed.log)
+    }
+
     /// The scheduler with the weight for revealed recalls set to `weight`.
     func weighted(_ weight: Double) -> Scheduler {
         var scheduler = scheduler

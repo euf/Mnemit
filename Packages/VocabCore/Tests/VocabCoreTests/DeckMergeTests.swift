@@ -30,10 +30,10 @@ struct DeckMergeTests {
     }
 
     /// Reviews a card like a study session does.
-    func review(_ deck: inout Deck, _ id: Card.ID, _ grade: Grade, at date: Date, mode: ReviewMode = .typed) {
+    func review(_ deck: inout Deck, _ id: Card.ID, _ grade: Grade, at date: Date, mode: ReviewMode = .typed, duration: Duration? = nil) {
         let card = deck.card(withID: id)!
         var random = SeededRandom(seed: 1)
-        let reviewed = Scheduler(learningOptions: deck.learningOptions, calendar: calendar).review(card, grade: grade, at: date, mode: mode, using: &random)
+        let reviewed = Scheduler(learningOptions: deck.learningOptions, calendar: calendar).review(card, grade: grade, at: date, mode: mode, duration: duration, using: &random)
         _ = deck.apply(DeckChange(upserts: [reviewed], contentStamp: .keep), at: date, calendar: calendar)
     }
 
@@ -158,6 +158,41 @@ struct DeckMergeTests {
         #expect(card.log.map(\.grade) == [.good, .good, .hard, .good, .again])
         #expect(card.learningState?.reviews == 5)
         #expect(card.hasCompleteLog)
+    }
+
+    /// A version that dropped the `ms` keys (an older app saved it) and one that kept them hold the same reviews.
+    @Test func aReviewWithADurationAndTheSameWithoutCountOnceAndKeepTheDuration() throws {
+        let base = try baseDeck(fuzzing: false)
+        var timed = base
+        var plain = base
+        review(&timed, dom.id, .good, at: day(2), duration: .milliseconds(4200))
+        review(&plain, dom.id, .good, at: day(2))
+        review(&timed, kot.id, .again, at: day(2), duration: .milliseconds(1500))
+        #expect(plain.card(withID: dom.id)?.learningState == timed.card(withID: dom.id)?.learningState)
+
+        for (mine, theirs) in [(plain, timed), (timed, plain)] {
+            let merged = merging(theirs, into: mine, at: day(3))
+            let log = try #require(merged.card(withID: dom.id)).log
+            #expect(log.count == 3)
+            #expect(log.last?.duration == .milliseconds(4200))
+            #expect(merged.card(withID: dom.id)?.learningState == timed.card(withID: dom.id)?.learningState)
+            #expect(merged.card(withID: kot.id)?.log.map(\.duration) == [.milliseconds(1500)])
+        }
+        // The version that lacks the duration changes by the merge; the one that has it doesn't.
+        #expect(DeckChange.merging(timed, into: plain, calendar: calendar) != nil)
+        #expect(DeckChange.merging(plain, into: timed, calendar: calendar) == nil)
+    }
+
+    /// Each version has reviews the other lacks: the joined log is replayed and keeps every duration.
+    @Test func replayingTheJoinedLogKeepsTheDurations() throws {
+        let mac = try baseDeck(fuzzing: false)
+        var macLater = mac
+        review(&macLater, dom.id, .good, at: day(3), duration: .milliseconds(3100))
+        var phone = mac
+        review(&phone, dom.id, .good, at: day(2), mode: .revealed, duration: .milliseconds(5200))
+
+        let merged = merging(phone, into: macLater, at: day(4))
+        #expect(merged.card(withID: dom.id)?.log.suffix(2).map(\.duration) == [.milliseconds(5200), .milliseconds(3100)])
     }
 
     @Test func aReviewTwiceInOneVersionStaysTwice() throws {

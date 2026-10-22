@@ -159,6 +159,8 @@ enum AnkiFixtures {
         var ease: Int
         var type = 1
         var factor = 2500
+        /// Milliseconds the answer took; 0 where Anki didn't measure.
+        var time = 0
     }
 
     static func quoted(_ text: String) -> String { "'" + text.replacingOccurrences(of: "'", with: "''") + "'" }
@@ -166,13 +168,13 @@ enum AnkiFixtures {
     private static let commonTables = [
         "CREATE TABLE notes (id integer PRIMARY KEY, mid integer, flds text)",
         "CREATE TABLE cards (id integer PRIMARY KEY, nid integer, did integer, ord integer, queue integer, odid integer)",
-        "CREATE TABLE revlog (id integer PRIMARY KEY, cid integer, ease integer, type integer, factor integer)",
+        "CREATE TABLE revlog (id integer PRIMARY KEY, cid integer, ease integer, type integer, factor integer, time integer)",
     ]
 
     private static func rows(notes: [RawNote], cards: [RawCard], reviews: [RawReview]) -> [String] {
         notes.map { "INSERT INTO notes VALUES (\($0.id), \($0.model), \(quoted($0.fields.joined(separator: "\u{1F}"))))" }
             + cards.map { "INSERT INTO cards VALUES (\($0.id), \($0.note), \($0.deck), \($0.ord), \($0.queue), \($0.filteredFrom))" }
-            + reviews.map { "INSERT INTO revlog VALUES (\($0.id), \($0.card), \($0.ease), \($0.type), \($0.factor))" }
+            + reviews.map { "INSERT INTO revlog VALUES (\($0.id), \($0.card), \($0.ease), \($0.type), \($0.factor), \($0.time))" }
     }
 
     /// A deck preset: the FSRS lists of Anki's three versions and the desired retention

@@ -104,11 +104,16 @@ public struct ReviewLogEntry: Hashable, Sendable {
     /// A recalled revealed review may gain less stability, see
     /// `LearningOptions.revealedRecallWeight`.
     public var mode: ReviewMode
+    /// How long the card was on screen before it was graded, in whole milliseconds (the unit of
+    /// `reviews.jsonl`); `nil` where the time wasn't measured, as in every review before it was.
+    /// It only feeds the pace (`DailyGoal.pace`); scheduling never reads it.
+    public var duration: Duration?
 
-    public init(date: Date, grade: Grade, mode: ReviewMode = .typed) {
+    public init(date: Date, grade: Grade, mode: ReviewMode = .typed, duration: Duration? = nil) {
         self.date = date
         self.grade = grade
         self.mode = mode
+        self.duration = duration.map { .milliseconds(max(0, Int(($0 / .milliseconds(1)).rounded()))) }
     }
 }
 

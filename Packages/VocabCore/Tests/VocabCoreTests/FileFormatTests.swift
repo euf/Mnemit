@@ -424,6 +424,30 @@ struct DeckFileTests {
         #expect(Array(fileDeck.cards[0].log.prefix(2)) == deck.cards[0].log)
     }
 
+    /// `ms` is the duration in whole milliseconds, written only where there is one.
+    @Test func reviewDurationsRoundTripAndAreLeftOutWhenMissing() throws {
+        var deck = try sampleDeck()
+        deck.cards[0].learningState?.reviews = 4
+        deck.cards[0].log.append(ReviewLogEntry(date: date.addingTimeInterval(60), grade: .good, mode: .revealed, duration: .milliseconds(4210)))
+        deck.cards[0].log.append(ReviewLogEntry(date: date.addingTimeInterval(120), grade: .good, duration: .milliseconds(900)))
+        let wrapper = try DeckFile.fileWrapper(for: deck)
+        let lines = file(wrapper, DeckFile.reviewsFileName).split(separator: "\n").map(String.init)
+        #expect(lines.count == 4)
+        #expect(lines[0..<2].allSatisfy { !$0.contains("\"ms\"") })
+        #expect(lines[2].hasSuffix(",\"mode\":\"revealed\",\"ms\":4210}"))
+        #expect(lines[3].hasSuffix(",\"grade\":3,\"ms\":900}"))
+
+        let read = try DeckFile.decode(wrapper)
+        #expect(read.cards[0].log == deck.cards[0].log)
+        #expect(read.cards[0].log.map(\.duration) == [nil, nil, .milliseconds(4210), .milliseconds(900)])
+    }
+
+    /// A duration is kept in whole milliseconds, so what is in memory is what the file holds.
+    @Test func aDurationIsRoundedToWholeMillisecondsAndNeverNegative() {
+        #expect(ReviewLogEntry(date: date, grade: .good, duration: .seconds(4) + .microseconds(600)).duration == .milliseconds(4001))
+        #expect(ReviewLogEntry(date: date, grade: .good, duration: .milliseconds(-5)).duration == .zero)
+    }
+
     @Test func packageWithoutDeckIsRejected() {
         let wrapper = FileWrapper(directoryWithFileWrappers: [:])
         #expect(throws: DeckFile.Error.notADeck) { try DeckFile.decode(wrapper) }
@@ -555,6 +579,20 @@ struct ReviewLogEncoderTests {
         _ = encode(deck, with: encoder)
         deck[0].log[2].grade = .easy
         #expect(encode(deck, with: encoder) == 1)
+    }
+
+    /// A review with a duration is one more line at the end; the lines before it stay as they were.
+    @Test func aReviewWithADurationIsAppendedWithoutRewritingTheLines() {
+        let encoder = ReviewLogEncoder()
+        var deck = cards(3)
+        func lines(_ data: Data) -> [String] { String(decoding: data, as: UTF8.self).split(separator: "\n").map(String.init) }
+        let before = lines(encoder.encode(deck))
+        deck[1].log.append(ReviewLogEntry(date: date.addingTimeInterval(9 * 86400), grade: .good, mode: .revealed, duration: .milliseconds(2750)))
+        let after = lines(encoder.encode(deck))
+        #expect(encoder.lastEncodedCardCount == 1)
+        #expect(after.count == before.count + 1)
+        #expect(after.filter { !$0.contains("\"ms\"") } == before)
+        #expect(after[after.firstIndex { $0.contains("\"ms\":2750") } ?? 0].contains(deck[1].id.uuidString))
     }
 
     @Test func cardsWithoutReviewsWriteNothing() {

@@ -20,7 +20,7 @@ extension DeckChange {
     /// - The learning options come from the version that changed them last
     ///   (`Deck.learningOptionsChanged`), or likewise from the later `contentModified`.
     /// - The review logs of a card are joined. A review in both versions, at the same
-    ///   second with the same grade, counts once.
+    ///   second with the same grade, counts once, with the duration either version holds.
     /// - A card's reviews before its latest reset (`Card.learningStateReset`) drop out:
     ///   a version that hasn't seen the reset counts as a new card with only the
     ///   reviews since, replayed from scratch (#273).
@@ -183,8 +183,29 @@ extension DeckChange {
     }
 
     /// The card of one of both versions, with the learning state and review log the
-    /// merge gives it; its other properties don't count.
+    /// merge gives it; its other properties don't count. A review without a duration
+    /// takes the one the same review has in the other version, if it has one: the
+    /// duration plays no part in the schedule or in whether two reviews are the same.
     private static func learning(of mine: Version, and theirs: Version, scheduler: Scheduler) -> Card {
+        var card = joinedLearning(of: mine, and: theirs, scheduler: scheduler)
+        card.log = fillingDurations(of: card.log, from: mine.card.log + theirs.card.log)
+        return card
+    }
+
+    private static func fillingDurations(of log: [ReviewLogEntry], from others: [ReviewLogEntry]) -> [ReviewLogEntry] {
+        guard log.contains(where: { $0.duration == nil }) else { return log }
+        var durations: [ReviewKey: Duration] = [:]
+        for entry in others {
+            if let duration = entry.duration, durations[ReviewKey(entry)] == nil { durations[ReviewKey(entry)] = duration }
+        }
+        return log.map { entry in
+            var filled = entry
+            if filled.duration == nil { filled.duration = durations[ReviewKey(entry)] }
+            return filled
+        }
+    }
+
+    private static func joinedLearning(of mine: Version, and theirs: Version, scheduler: Scheduler) -> Card {
         let mine = resetting(mine, like: theirs.card, scheduler: scheduler)
         let theirs = resetting(theirs, like: mine.card, scheduler: scheduler)
         let onlyMine = reviews(of: mine.card.log, missingFrom: theirs.card.log)
@@ -240,7 +261,7 @@ extension DeckChange {
                 card.log.insert(entry, at: index)
             } else {
                 var random = Scheduler.random(forReviewOf: card.id, at: entry.date)
-                card = scheduler.review(card, grade: entry.grade, at: entry.date, mode: entry.mode, using: &random)
+                card = scheduler.review(card, grade: entry.grade, at: entry.date, mode: entry.mode, duration: entry.duration, using: &random)
             }
         }
         return card

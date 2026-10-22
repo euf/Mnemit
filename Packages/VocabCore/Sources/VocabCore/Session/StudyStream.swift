@@ -113,9 +113,9 @@ public struct StudyStream: Sendable {
 
     public var isResting: Bool { stage == .rest }
 
-    /// Grades the current card of the segment, see `SessionMode.grade(_:in:at:calendar:)`.
-    public mutating func grade(_ grade: Grade, in deck: Deck, at now: Date, calendar: StudyCalendar) -> SessionMode.Outcome? {
-        let outcome = mode.grade(grade, in: deck, at: now, calendar: calendar)
+    /// Grades the current card of the segment, see `SessionMode.grade(_:in:at:calendar:duration:)`.
+    public mutating func grade(_ grade: Grade, in deck: Deck, at now: Date, calendar: StudyCalendar, duration: Duration? = nil) -> SessionMode.Outcome? {
+        let outcome = mode.grade(grade, in: deck, at: now, calendar: calendar, duration: duration)
         if outcome != nil { stepCount += 1 }
         return outcome
     }

@@ -33,12 +33,14 @@ public struct Scheduler: Sendable {
     public var fsrs: FSRS { FSRS(parameters: learningOptions.parameters) }
 
     /// The card after a review with `grade`, asked in `mode`; `random` fuzzes its
-    /// interval if enabled.
+    /// interval if enabled. `duration` goes into the log entry and nowhere else: it
+    /// doesn't change the schedule.
     public func review<R: RandomNumberGenerator>(
         _ card: Card,
         grade: Grade,
         at now: Date,
         mode: ReviewMode = .typed,
+        duration: Duration? = nil,
         using random: inout R
     ) -> Card {
         let previous = card.learningState
@@ -91,7 +93,7 @@ public struct Scheduler: Sendable {
             reviews: (previous?.reviews ?? 0) + 1,
             lapses: lapses
         )
-        updated.log.append(ReviewLogEntry(date: now, grade: grade, mode: mode))
+        updated.log.append(ReviewLogEntry(date: now, grade: grade, mode: mode, duration: duration))
         return updated
     }
 
@@ -123,7 +125,7 @@ public struct Scheduler: Sendable {
         replayed.resetLearningState()
         for entry in log {
             var random = Self.random(forReviewOf: card.id, at: entry.date)
-            replayed = review(replayed, grade: entry.grade, at: entry.date, mode: entry.mode, using: &random)
+            replayed = review(replayed, grade: entry.grade, at: entry.date, mode: entry.mode, duration: entry.duration, using: &random)
         }
         return replayed
     }

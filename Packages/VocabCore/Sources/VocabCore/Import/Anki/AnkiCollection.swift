@@ -99,14 +99,16 @@ struct AnkiCollection {
     /// The reviews of the cards, by card, oldest first.
     private func reviews(threeButtons: Bool) throws -> [Int: [ReviewLogEntry]] {
         var result: [Int: [ReviewLogEntry]] = [:]
-        let entries = try database.rows("SELECT id, cid, ease, type, factor FROM revlog ORDER BY id") {
-            ($0.int(0), $0.int(1), $0.int(2), $0.int(3), $0.int(4))
+        let entries = try database.rows("SELECT id, cid, ease, type, factor, time FROM revlog ORDER BY id") {
+            ($0.int(0), $0.int(1), $0.int(2), $0.int(3), $0.int(4), $0.int(5))
         }
-        for (id, card, ease, type, factor) in entries {
+        for (id, card, ease, type, factor, time) in entries {
             guard let grade = Self.grade(ease: ease, type: type, factor: factor, threeButtons: threeButtons) else { continue }
             // `id` is the time in milliseconds; the review log of a deck counts whole seconds.
             let date = Date(timeIntervalSince1970: Double(id / 1000))
-            result[card, default: []].append(ReviewLogEntry(date: date, grade: grade, mode: .revealed))
+            // `time` is the milliseconds Anki's learner took to answer; 0 where it didn't measure.
+            let duration: Duration? = time > 0 ? .milliseconds(time) : nil
+            result[card, default: []].append(ReviewLogEntry(date: date, grade: grade, mode: .revealed, duration: duration))
         }
         return result
     }

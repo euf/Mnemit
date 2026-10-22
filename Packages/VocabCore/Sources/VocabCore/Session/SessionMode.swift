@@ -39,13 +39,15 @@ public enum SessionMode: Sendable {
     /// to them during the session applies from the next review on. Likewise, a study
     /// session counts study days with `calendar`, not with the one it started with.
     ///
+    /// - Parameter duration: How long the card was on screen, for the review log of a study
+    ///   session; practice writes no log and ignores it.
     /// - Returns: `nil`, and the mode stays as it is, if the session is finished or
     ///   `deck` doesn't hold the current card.
-    public mutating func grade(_ grade: Grade, in deck: Deck, at now: Date, calendar: StudyCalendar) -> Outcome? {
+    public mutating func grade(_ grade: Grade, in deck: Deck, at now: Date, calendar: StudyCalendar, duration: Duration? = nil) -> Outcome? {
         guard let id = session.currentCardID, let card = deck.card(withID: id) else { return nil }
         switch self {
         case var .study(study):
-            guard let scheduled = study.review(grade, of: card, with: deck.learningOptions, at: now, calendar: calendar) else { return nil }
+            guard let scheduled = study.review(grade, of: card, with: deck.learningOptions, at: now, calendar: calendar, duration: duration) else { return nil }
             self = .study(study)
             return .rescheduled(DeckChange(upserts: [scheduled], contentStamp: .keep))
         case var .practice(practice):
