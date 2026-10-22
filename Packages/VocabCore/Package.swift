@@ -11,8 +11,16 @@ let package = Package(
     products: [
         .library(name: "VocabCore", targets: ["VocabCore"])
     ],
+    dependencies: [
+        // Reads the zstd-compressed collection of a current Anki package; Apple's
+        // Compression framework has no zstd.
+        .package(url: "https://github.com/facebook/zstd", from: "1.5.7")
+    ],
     targets: [
-        .target(name: "VocabCore"),
-        .testTarget(name: "VocabCoreTests", dependencies: ["VocabCore"], resources: [.copy("Resources")]),
+        .target(name: "VocabCore", dependencies: [.product(name: "libzstd", package: "zstd")]),
+        .testTarget(
+            name: "VocabCoreTests",
+            dependencies: ["VocabCore", .product(name: "libzstd", package: "zstd")],
+            resources: [.copy("Resources")]),
     ]
 )
