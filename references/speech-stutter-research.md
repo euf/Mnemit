@@ -118,3 +118,14 @@ verify-human wall that `oc`, curl and Tavily extract do not pass (threads 737685
 - If live buffers through `AVAudioEngine` stay the plan: connect the player with the first buffer's format and reconnect (or
   convert to one Float32 mono target) when a later word differs; keep the engine running with a primed silent buffer.
 - Test on the device: simulator results for `write` and session behaviour were reported as unreliable.
+
+## Measured and decided (22.10.2026)
+
+- Mac (M-series), `com.apple.voice.compact.el-GR.Melina`: `write` gives Float32 22,050 Hz mono, 66–87 chunks of about
+  11 ms per word; the first word 0.78 s (the voice loads), then 13–19 ms per word against 0.76–1.0 s of sound.
+- iPhone 13 mini, iOS 26, 4.0.3 (`SpeechLog`): the voice is the same compact Melina (quality 1, no enhanced voice
+  installed); the first word 390 ms, then 24–25 ms per word against 0.84–1.18 s of sound; every word played from the
+  buffer, 0 ms after it was asked for. EF heard no stutter.
+- Shipped: words rendered ahead into one buffer when their card comes up, converted to standard Float32 where a voice
+  renders Int16, played through `AVAudioEngine`; live speech only where rendering gives nothing in 3 s. Not needed:
+  the session switches above, a disk cache.
