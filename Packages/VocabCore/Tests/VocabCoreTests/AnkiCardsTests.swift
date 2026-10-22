@@ -106,9 +106,12 @@ struct AnkiCardsTests {
         let url = try #require(Bundle.module.url(forResource: "Resources/Anki/greek-latest", withExtension: "apkg"))
         let result = try AnkiImport.read(url)
         let made = result.cards(learningOptions: options, calendar: calendar, created: created)
-        #expect(made.map(\.question) == ["γάτα", "σπίτι\nτο", "ήχος", "νερό", "water", "σκύλος"])
-        #expect(made.map(\.isNew) == [false, false, true, false, false, true])
-        #expect(made.map(\.isSuspended) == [false, false, false, false, false, true])
+        // The note with only a picture on its back is a card, with an empty answer text.
+        #expect(made.map(\.question) == ["γάτα", "σπίτι\nτο", "εικόνα", "ήχος", "νερό", "water", "σκύλος"])
+        #expect(made.map(\.answer)[2] == "")
+        #expect(made[2].answerImage != nil && made[3].media.isEmpty)
+        #expect(made.map(\.isNew) == [false, false, true, true, false, false, true])
+        #expect(made.map(\.isSuspended) == [false, false, false, false, false, false, true])
         #expect(made[0].log.count == 5 && made[0].learningState?.lapses == 1)
     }
 

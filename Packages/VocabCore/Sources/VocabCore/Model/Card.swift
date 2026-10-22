@@ -144,6 +144,14 @@ public struct Card: Identifiable, Hashable, Sendable {
     public internal(set) var note: String?
     /// Which direction the card asks; only means something together with a `note`.
     public internal(set) var kind: CardKind?
+    /// The image and the sound of each side, as names of files in the deck's media
+    /// (`DeckMedia`); `nil` for a side without one. Content like the texts: only
+    /// `DeckChange.settingMedia` changes them, and a merge takes them from the version that
+    /// changed the content last.
+    public internal(set) var questionImage: String?
+    public internal(set) var questionAudio: String?
+    public internal(set) var answerImage: String?
+    public internal(set) var answerAudio: String?
     public let created: Date
     /// `nil` while the card has never been studied. Only `Scheduler` and
     /// `DeckChange` change it.
@@ -154,7 +162,7 @@ public struct Card: Identifiable, Hashable, Sendable {
     /// A merge leaves out the reviews before it, which the other device may still hold
     /// (#273).
     public internal(set) var learningStateReset: Date?
-    /// When the learner last changed the texts, the note or the kind of the card, in whole
+    /// When the learner last changed the texts, the media, the note or the kind of the card, in whole
     /// seconds; `nil` if never since it was created or since an app version without this
     /// stamp saved it. `Deck.apply(_:at:calendar:)` sets it, and undoing a change sets it
     /// again, so undo reaches the other device. A merge takes the content of a card
@@ -193,6 +201,7 @@ public struct Card: Identifiable, Hashable, Sendable {
         hint: String = "",
         note: String? = nil,
         kind: CardKind? = nil,
+        media: CardMedia = CardMedia(),
         created: Date,
         learningState: LearningState?,
         log: [ReviewLogEntry] = [],
@@ -207,6 +216,10 @@ public struct Card: Identifiable, Hashable, Sendable {
         self.hint = hint
         self.note = note
         self.kind = kind
+        questionImage = media.questionImage
+        questionAudio = media.questionAudio
+        answerImage = media.answerImage
+        answerAudio = media.answerAudio
         self.created = created
         self.learningState = learningState
         self.log = log
@@ -217,6 +230,17 @@ public struct Card: Identifiable, Hashable, Sendable {
     }
 
     public var isNew: Bool { learningState == nil }
+
+    /// The media of the card, the four slots together.
+    public var media: CardMedia {
+        get { CardMedia(questionImage: questionImage, questionAudio: questionAudio, answerImage: answerImage, answerAudio: answerAudio) }
+        set {
+            questionImage = newValue.questionImage
+            questionAudio = newValue.questionAudio
+            answerImage = newValue.answerImage
+            answerAudio = newValue.answerAudio
+        }
+    }
 
     /// Whether the review log reaches back to the card's first review. Cards imported
     /// from MacVocTrain 1 with a learning state lack the reviews before the import.
@@ -245,9 +269,19 @@ public struct Card: Identifiable, Hashable, Sendable {
         threshold > 0 && (learningState?.lapses ?? 0) >= threshold
     }
 
-    /// Whether the texts, the note or the kind differ from those of `other`.
+    /// What makes two cards ask the same, for finding duplicates: the key of the question text
+    /// (`CardText.key(forQuestion:)`), or, for a question without a text, which an image or a
+    /// sound can make up, the names of those files: every such question would be the same
+    /// otherwise.
+    var questionKey: String {
+        let key = CardText.key(forQuestion: question)
+        guard key.isEmpty else { return key }
+        return "\u{0}" + [questionImage, questionAudio].compactMap { $0 }.joined(separator: "|")
+    }
+
+    /// Whether the texts, the media, the note or the kind differ from those of `other`.
     func hasOtherContent(than other: Card) -> Bool {
-        question != other.question || answer != other.answer || hint != other.hint || note != other.note || kind != other.kind
+        question != other.question || answer != other.answer || hint != other.hint || note != other.note || kind != other.kind || media != other.media
     }
 
     /// The latest time anything was done to the card: created, edited, reset, suspended or

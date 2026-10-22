@@ -124,13 +124,17 @@ are in [`references/`](references/).
 ### Storage and sync
 
 - **A deck is a package of text files, not a database.** `Deck.mnemit` holds `deck.json`
-  (cards and their state) and `reviews.jsonl` (one line per review, with its time on screen, only ever appended).
-  iCloud Drive syncs it like any document; only the changed pieces upload. A SQLite file
+  (cards and their state), `reviews.jsonl` (one line per review, with its time on screen, only ever appended)
+  and, for cards with pictures or sounds, a `media/` folder of the files, each named by its content (the
+  first 16 hex characters of its SHA-256) so identical media are stored once and a file never changes.
+  iCloud Drive syncs it like any document; only the changed pieces upload, and a save clones the media that
+  are in the package already instead of writing them again. A SQLite file
   in a sync folder is what Anki's own manual warns against
   ([`deck-formats-and-sources.md`](references/deck-formats-and-sources.md)).
 - **Merging per card, never losing a review.** When two devices edit offline, the review
-  logs are joined, the later edit of a card wins, a deletion wins only if it is later than
-  every change on the other device, and options keep the later change. A randomized test
+  logs are joined, the later edit of a card wins (its texts and its media), a deletion wins only
+  if it is later than every change on the other device, options keep the later change and the media
+  files of both devices are kept. A randomized test
   plays 200 histories on two devices and checks that both sides converge.
 - **Old `.voctrain` decks** from MacVocTrain NG open and save in place.
 
@@ -138,11 +142,13 @@ are in [`references/`](references/).
 
 - **Anki packages with their history.** `.apkg` in all three layouts (including the
   zstd-compressed current one) is read without Anki; review history is replayed through
-  Mnemit's FSRS. HTML is reduced to text; images, sounds and cloze cards are counted and
-  left out. On the iPhone "Open in Mnemit" works from Files, Safari and Mail; on the Mac an
+  Mnemit's FSRS. HTML is reduced to text; the first image and the first sound of each side
+  come along as the card's media, a back takes the meaning and then the example sentence, and cloze
+  cards are counted and left out. The preview names the images, sounds and megabytes the package brings. On the iPhone "Open in Mnemit" works from Files, Safari and Mail; on the Mac an
   `.apkg` opened from the Finder becomes a new deck.
 - **CSV/TSV that Anki reads as it is.** Exports start with Anki's `#separator`, `#html` and
-  `#columns` lines and carry the word key and the card kind; imports accept them back.
+  `#columns` lines and carry the word key and the card kind; imports accept them back. Media are
+  not part of a table and stay out of it.
 - **Ready-made decks come from AnkiWeb.** Mnemit ships no content: the good shared decks
   are licensed for personal study and cannot be bundled. "Shared Decks on AnkiWeb" opens
   AnkiWeb (and MintDeck) in a plain web view inside the app; a deck the learner downloads

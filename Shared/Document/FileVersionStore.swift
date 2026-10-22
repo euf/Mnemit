@@ -44,7 +44,7 @@ final class FileVersionStore: DeckVersionStore {
         return versions.filter(\.hasLocalContents).map { version in
             ConflictVersion(
                 id: version.url.path,
-                read: { try DeckFile.decode(FileWrapper(url: version.url, options: .immediate)) },
+                read: { try DeckFile.read(at: version.url) },
                 markResolved: { version.isResolved = true }
             )
         }

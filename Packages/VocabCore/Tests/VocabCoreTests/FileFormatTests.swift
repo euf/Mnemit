@@ -94,9 +94,9 @@ struct DeckFileTests {
         #expect(!plain.contains("deletedCards") && !plain.contains("learningOptionsChanged") && !plain.contains("contentChanged"))
     }
 
-    /// A `deck.json` of version 4 as the app writes it, with every kind of value.
+    /// A `deck.json` of the current version as the app writes it, with every kind of value.
     @Test func fixedDeckReadsAndWritesBackUnchanged() throws {
-        let url = try #require(Bundle.module.url(forResource: "Resources/deck-v4", withExtension: "json"))
+        let url = try #require(Bundle.module.url(forResource: "Resources/deck-v5", withExtension: "json"))
         let data = try Data(contentsOf: url)
         let deck = try DeckFile.decode(data)
         expectFixedDeck(deck)
@@ -119,7 +119,23 @@ struct DeckFileTests {
         #expect(!deck.learningOptions.optimizeFromRevealed)
         #expect(deck.learningOptions.leechThreshold == 6)
 
+        #expect(deck.cards[0].media == CardMedia(questionImage: "e3b0c44298fc1c14.png", questionAudio: "ba7816bf8f01cfea.mp3", answerAudio: "ba7816bf8f01cfea.mp3"))
+        #expect(deck.cards[1].media == CardMedia(answerImage: "e3b0c44298fc1c14.png"))
+        #expect(deck.cards[2].media.isEmpty)
+
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == String(decoding: data, as: UTF8.self))
+    }
+
+    /// Version 4 has no media; it is written back as version 5 and is otherwise the same.
+    @Test func fixedDeckOfVersion4IsRead() throws {
+        let url = try #require(Bundle.module.url(forResource: "Resources/deck-v4", withExtension: "json"))
+        let data = try Data(contentsOf: url)
+        let deck = try DeckFile.decode(data)
+        expectFixedDeck(deck)
+        #expect(deck.cards.allSatisfy { $0.media.isEmpty })
+        #expect(deck.media.isEmpty)
+        let written = String(decoding: data, as: UTF8.self).replacingOccurrences(of: "\"version\" : 4", with: "\"version\" : \(DeckFile.currentVersion)")
+        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 
     /// The options for revealed reviews (ADR 0005) are new: an older deck lacks them and
@@ -259,7 +275,7 @@ struct DeckFileTests {
     }
 
     /// Version 3 lacks `contentModified` and has the former `format`; it is written
-    /// back as version 4 with the current one.
+    /// back as the current version with the current `format`.
     @Test func fixedDeckOfVersion3IsRead() throws {
         let url = try #require(Bundle.module.url(forResource: "Resources/deck-v3", withExtension: "json"))
         let data = try Data(contentsOf: url)
@@ -268,7 +284,7 @@ struct DeckFileTests {
         #expect(deck.contentModified == nil)
 
         let written = String(decoding: data, as: UTF8.self)
-            .replacingOccurrences(of: "\"version\" : 3", with: "\"version\" : 4")
+            .replacingOccurrences(of: "\"version\" : 3", with: "\"version\" : \(DeckFile.currentVersion)")
             .replacingOccurrences(of: "com.mfluch.voctrain.deck", with: DeckFile.format)
             // The options added since take their defaults.
             .replacingOccurrences(of: "\"newCardsPerSession\" : 15,", with: "\"newCardOrder\" : \"deckOrder\",\n    \"newCardsPerSession\" : 15,\n    \"newProductionPerSession\" : 7,")
@@ -300,7 +316,7 @@ struct DeckFileTests {
 
         let deckJSON = file(wrapper, DeckFile.deckFileName)
         #expect(deckJSON.contains("\"format\" : \"de.fluch-it-consulting.voctrain.deck\""))
-        #expect(deckJSON.contains("\"version\" : 4"))
+        #expect(deckJSON.contains("\"version\" : \(DeckFile.currentVersion)"))
         #expect(deckJSON.contains("\"question\" : \"dom\""))
         for key in ["learningOptions", "targetRecall", "steps", "learningState", "learningStateReset", "reviews", "hint", "progress", "contentModified", "suspended", "suspensionChanged", "note", "kind", "newProductionPerSession", "productionUnlockDays", "newCardOrder"] {
             #expect(deckJSON.contains("\"\(key)\" :"), "missing key \(key)")

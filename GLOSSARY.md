@@ -414,3 +414,15 @@ reviews are a backlog like any, spread by `DailyGoal.backlogShare`. The pause tr
 merge takes it from the version that changed them last, and an older app version drops the key, so the deck is
 no longer paused there.
 _Avoid_: suspended deck (a card is suspended, `Card.isSuspended`), archived deck, «заморозка»
+
+**Media** (on screen: not shown yet; RU «медиа»):
+The images and sounds of a card: at most one image and one sound on each side (`Card.questionImage`,
+`questionAudio`, `answerImage`, `answerAudio`, together `CardMedia`), each the name of a file in the
+`media` folder of the deck's package. The name is the file's content: the first 16 hex characters of its
+SHA-256 and the original extension in lower case, so a file never changes under its name, identical media
+are stored once and two versions of a deck join by name (`DeckMedia`). The media of a card are content like
+its texts: `Card.contentChanged` stamps a change and a merge takes them from the version that changed the
+content last. A package keeps the files some card names; a file no card names is an orphan, and the next
+save leaves it out. Anki import brings the first image and the first sound of each side along; a side may
+have media and no text. Version 5 of the deck format added them (`DeckFile.currentVersion`).
+_Avoid_: attachment, asset, «вложение»

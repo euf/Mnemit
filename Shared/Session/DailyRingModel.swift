@@ -100,7 +100,8 @@ final class DailyRingModel {
 /// Reads a deck package with its review log, without opening it as a document.
 enum DeckFileReader {
     /// The deck at `url`, or `nil` if it can't be read: damaged, or not downloaded yet by
-    /// iCloud Drive.
+    /// iCloud Drive. It holds none of the media files: the readers count cards, and a deck read
+    /// like this is never saved.
     nonisolated static func deck(at url: URL) -> Deck? {
         // A deck outside the app's sandbox can be read only while the app accesses it.
         let isAccessing = url.startAccessingSecurityScopedResource()
@@ -113,8 +114,7 @@ enum DeckFileReader {
         var error: NSError?
         // Coordinated, as the open deck's document and the merger write the package.
         NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { url in
-            guard let wrapper = try? FileWrapper(url: url, options: .immediate) else { return }
-            deck = try? DeckFile.decode(wrapper)
+            deck = try? DeckFile.read(at: url, withMedia: false)
         }
         return deck
     }

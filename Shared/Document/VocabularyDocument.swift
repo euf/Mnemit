@@ -77,6 +77,15 @@ final class VocabularyDocument: ObservableObject {
     /// Remembers the encoded review log between saves, so autosave stays cheap.
     /// Thread-safe on its own, as saving uses it on a background thread.
     private let reviewLog = ReviewLogEncoder()
+    private let savedPackageURL = OSAllocatedUnfairLock<URL?>(initialState: nil)
+    /// Where the deck's package is, once it has a file: a save clones the media files that are in
+    /// it instead of writing them again (`DeckMedia`). The Mac's `DocumentGroup` gives the document
+    /// no URL when it saves, so the merger sets it (`VersionMerger.attach(_:fileURL:isEditable:)`);
+    /// the iPhone's UIDocument passes the original contents itself. May be read on any thread.
+    nonisolated var packageURL: URL? {
+        get { savedPackageURL.withLock { $0 } }
+        set { savedPackageURL.withLock { $0 = newValue } }
+    }
     /// The undo manager of the document's file; every change registers its undo action
     /// here, see `attachUndoManager(_:)`. Weak: it belongs to the NSDocument behind
     /// `DocumentGroup` on the Mac, to the app's own UIDocument on the iPhone. When it
@@ -153,8 +162,11 @@ final class VocabularyDocument: ObservableObject {
     }
 
     /// `deck` as a file, as saved on the Mac after `deckToSave`. Runs on any thread.
-    nonisolated func fileWrapper(for deck: Deck) throws -> FileWrapper {
-        try DeckFile.fileWrapper(for: deck, reviewLog: reviewLog)
+    ///
+    /// - Parameter original: The package being saved over, if the file system says; else the one
+    ///   `packageURL` names.
+    nonisolated func fileWrapper(for deck: Deck, original: URL? = nil) throws -> FileWrapper {
+        try DeckFile.fileWrapper(for: deck, reviewLog: reviewLog, original: original ?? packageURL)
     }
 
     /// The deck as a file, for the iPhone app's own UIDocument (#285). Runs on any

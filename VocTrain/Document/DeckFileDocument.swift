@@ -85,7 +85,7 @@ final class DeckFileDocument: UIDocument {
         guard let snapshot = contents as? Snapshot else {
             return try super.writeContents(contents, to: url, for: saveOperation, originalContentsURL: originalContentsURL)
         }
-        let wrapper = try StallTrace.measure("saveEncode") { try snapshot.document.fileWrapper(for: snapshot.deck) }
+        let wrapper = try StallTrace.measure("saveEncode") { try snapshot.document.fileWrapper(for: snapshot.deck, original: originalContentsURL) }
         try wrapper.write(to: url, options: [], originalContentsURL: originalContentsURL)
     }
 

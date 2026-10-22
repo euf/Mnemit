@@ -9,7 +9,8 @@ import VocabCore
 /// `DelimitedText.encode(_:delimiter:ankiColumns:)`, and has no header row. The columns are
 /// question, answer, hint, word key and kind, then optionally the learning state in readable
 /// form, which Anki has no use for. `CardImport` reads the file back, so a deck can go to
-/// Anki and come back.
+/// Anki and come back. The images and sounds of the cards (`Card.media`) are not exported: a
+/// table has no column for a file, and the package of the deck is where they live.
 enum CardExport {
     enum Format: String, CaseIterable {
         case csv, tsv

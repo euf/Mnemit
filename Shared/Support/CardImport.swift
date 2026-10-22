@@ -23,15 +23,22 @@ enum CardImport {
         /// The options the cards were made with when Anki's preset sets them, for a new deck: the
         /// deck takes them with the cards. `nil` keeps the deck's own.
         let learningOptions: LearningOptions?
+        /// The images and sounds of the package that the cards name; the deck takes those of the cards
+        /// that are added (`VocabularyDocument.importCards(_:learningOptions:media:)`).
+        let media: DeckMedia
         /// The cards to add; duplicates start out unselected.
         var selection: Set<Card.ID>
 
-        init(fileName: String, candidates: [CardImporter.Candidate], skippedRows: Int, anki: AnkiSummary? = nil, learningOptions: LearningOptions? = nil) {
+        init(
+            fileName: String, candidates: [CardImporter.Candidate], skippedRows: Int, anki: AnkiSummary? = nil, learningOptions: LearningOptions? = nil,
+            media: DeckMedia = DeckMedia()
+        ) {
             self.fileName = fileName
             self.candidates = candidates
             self.skippedRows = skippedRows
             self.anki = anki
             self.learningOptions = learningOptions
+            self.media = media
             selection = Set(candidates.filter { $0.duplicate == nil }.map(\.id))
         }
 

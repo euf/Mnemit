@@ -25,8 +25,10 @@ extension CardImport {
         /// Fields that had an image or a sound, which are left out of them.
         var skippedMediaRefs: Int
         var skippedEmpty: Int
-        /// Of `skippedEmpty`, the cards where a side held only an image or a sound.
+        /// Of `skippedEmpty`, the cards where a side held only an image or a sound that the package lacks.
         var skippedMediaOnly = 0
+        /// The images and sounds that come with the cards, and the room they take.
+        var media = AnkiImport.MediaSummary()
         /// What became of the FSRS settings of the preset most cards use.
         var settings = Settings.absent
 
@@ -44,15 +46,16 @@ extension CardImport {
             deckNames.formatted(.list(type: .and, width: .narrow))
         }
 
-        /// One line each for what was left out: cloze cards, cards with only an image or a sound on a
-        /// side, cards with an empty side. The other empty sides are those that nothing was left of.
+        /// One line each for what was left out: cloze cards, cards whose only image or sound on a side
+        /// isn't in the package, cards with an empty side. The other empty sides are those that nothing
+        /// was left of.
         var skipLines: [String] {
             var lines: [String] = []
             if skippedCloze > 0 {
                 lines.append(String(localized: "\(skippedCloze) cloze cards are left out."))
             }
             if skippedMediaOnly > 0 {
-                lines.append(String(localized: "\(skippedMediaOnly) cards with only an image or a sound on a side are left out."))
+                lines.append(String(localized: "\(skippedMediaOnly) cards whose image or sound is missing from the package are left out."))
             }
             if skippedEmpty > skippedMediaOnly {
                 lines.append(String(localized: "\(skippedEmpty - skippedMediaOnly) cards with an empty side are left out."))
@@ -65,7 +68,22 @@ extension CardImport {
             ([String(localized: "“\(fileName)” has no cards Mnemit can import.")] + skipLines).joined(separator: "\n")
         }
 
-        /// One line each: the cards with history, the settings, whatever was left out, then the media.
+        /// "75 images, 75 sounds, 3.4 MB": what the package brings along, `nil` if it brings no media.
+        var mediaLine: String? {
+            guard !media.isEmpty else { return nil }
+            var parts: [String] = []
+            if media.images > 0 {
+                parts.append(String(localized: "\(media.images) images"))
+            }
+            if media.sounds > 0 {
+                parts.append(String(localized: "\(media.sounds) sounds"))
+            }
+            parts.append(ByteCountFormatter.string(fromByteCount: Int64(media.bytes), countStyle: .file))
+            return parts.joined(separator: ", ")
+        }
+
+        /// One line each: the cards with history, the settings, the media, whatever was left out, then
+        /// the images and sounds that couldn't come.
         var lines: [String] {
             var lines = [String(localized: "\(withHistory) with review history")]
             switch settings {
@@ -78,6 +96,7 @@ extension CardImport {
             case .keptForExistingDeck:
                 lines.append(String(localized: "Anki's settings for this deck are not applied to an existing deck."))
             }
+            lines += mediaLine.map { [$0] } ?? []
             lines += skipLines
             if skippedMediaRefs > 0 {
                 lines.append(String(localized: "Images and sounds are left out of \(skippedMediaRefs) fields."))
@@ -128,7 +147,8 @@ extension CardImport {
             deckNames: package.deckNames, withHistory: cards.filter { !$0.log.isEmpty }.count,
             skippedCloze: package.skippedCloze, skippedMediaRefs: package.skippedMediaRefs,
             // The reader counts the notes with an empty side, `cards(from:…)` those that the text rules leave out.
-            skippedEmpty: package.skippedEmpty + package.notes.count - cards.count, skippedMediaOnly: package.skippedMediaOnly)
+            skippedEmpty: package.skippedEmpty + package.notes.count - cards.count, skippedMediaOnly: package.skippedMediaOnly,
+            media: package.mediaSummary)
         if let taken {
             summary.settings = .applied(target: Int((taken.targetRecall * 100).rounded()))
         } else if preset != nil {
@@ -150,7 +170,9 @@ extension CardImport {
         let made = await Task.detached {
             ankiCandidates(of: package, existing: existing, learningOptions: options, calendar: calendar, created: created, isNewDeck: isNew)
         }.value
-        return Preview(fileName: fileName, candidates: made.candidates, skippedRows: 0, anki: made.summary, learningOptions: made.learningOptions)
+        return Preview(
+            fileName: fileName, candidates: made.candidates, skippedRows: 0, anki: made.summary, learningOptions: made.learningOptions,
+            media: package.media)
     }
 
     /// The name of the deck a package makes: the Anki deck's, with its levels apart by an en

@@ -158,7 +158,7 @@ struct DeckWebBrowserTests {
         #expect(IncomingLink(file) == .ankiPackage)
         let copy = try await IncomingPackages.copy(file, into: folder.appending(path: "Incoming"))
         #expect(IncomingLink(copy) == .ankiPackage)
-        #expect(try CardImport.readAnki(at: copy).notes.count == 6)
+        #expect(try CardImport.readAnki(at: copy).notes.count == 7)
     }
 
     /// A table is read into the preview of the picker's file, with the name it was saved under.

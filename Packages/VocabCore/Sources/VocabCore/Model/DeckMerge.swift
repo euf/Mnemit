@@ -14,9 +14,13 @@ extension DeckChange {
     ///   edited, reset, suspended or resumed, reviewed (`Card.lastChange`). A card
     ///   the other version changed later than the deletion stays, so a review never
     ///   gets lost; with the same time, too.
-    /// - The texts, the note and the kind of a card come from the version that changed
-    ///   them last (`Card.contentChanged`), or, with the same stamp or none, from the
+    /// - The texts, the media, the note and the kind of a card come from the version that
+    ///   changed them last (`Card.contentChanged`), or, with the same stamp or none, from the
     ///   version with the later `contentModified`.
+    /// - The media files of both versions are joined: a file is named by its content and never
+    ///   changes, so taking the files the other `media` folder holds and this one lacks is all
+    ///   there is to it (`Deck.media`). Only those a card of the merged deck names come: a file
+    ///   whose card is gone is an orphan, as in a package, and never makes a merge change anything.
     /// - The learning options come from the version that changed them last
     ///   (`Deck.learningOptionsChanged`), or likewise from the later `contentModified`.
     /// - The review logs of a card are joined. A review in both versions, at the same
@@ -55,6 +59,7 @@ extension DeckChange {
 
         var change = DeckChange(contentStamp: .keep)
         var kept = Set<Card.ID>()
+        var named = Set<String>()
         for card in first.cards + second.cards.filter({ !inFirst.contains($0.id) }) {
             let merged: Card
             switch (mine[card.id], theirs[card.id]) {
@@ -79,8 +84,10 @@ extension DeckChange {
                 change.upserts.append((merged, kept.count))
             }
             kept.insert(card.id)
+            named.formUnion(merged.media.names)
         }
         change.removals = deck.cards.map(\.id).filter { !kept.contains($0) }
+        change.addedMedia = other.media.missing(from: deck.media).keeping(named)
 
         var deleted = deck.deletedCards
         for (id, date) in other.deletedCards {
@@ -103,7 +110,7 @@ extension DeckChange {
             change.progress = progress
         }
 
-        if case .keep = change.contentStamp, change.upserts.isEmpty, change.removals.isEmpty, change.learningOptions == nil, change.progress == nil, deleted == deck.deletedCards {
+        if case .keep = change.contentStamp, change.upserts.isEmpty, change.removals.isEmpty, change.learningOptions == nil, change.progress == nil, change.addedMedia.isEmpty, deleted == deck.deletedCards {
             return nil
         }
         // Always set: undoing a merge must restore the deleted cards, not note the cards

@@ -74,6 +74,14 @@ struct ProtobufFields {
         return nil
     }
 
+    /// The values of a repeated string, bytes or message field, in order.
+    func allBytes(_ number: Int) -> [Data] {
+        fields.compactMap { field in
+            guard field.number == number, case let .bytes(value) = field.value else { return nil }
+            return value
+        }
+    }
+
     /// The last value of a `float` field, `nil` if it is absent, which proto3 also writes for 0.
     func float(_ number: Int) -> Float? {
         for field in fields.reversed() where field.number == number {

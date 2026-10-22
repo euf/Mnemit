@@ -28,6 +28,8 @@ extension VocabularyDocument: ReferenceFileDocument {
         deckToSave
     }
 
+    /// The media of the package that are in it already are cloned from `packageURL`, not written again:
+    /// `configuration.existingFile` has no URL to clone from.
     nonisolated func fileWrapper(snapshot: Deck, configuration: WriteConfiguration) throws -> FileWrapper {
         try fileWrapper(for: snapshot)
     }
