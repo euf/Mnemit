@@ -29,9 +29,7 @@
   `project.pbxproj` (имена продуктов и bundle id) и в строках с именем приложения.
 - Mac: `Scripts/install-mac.sh` → `~/Applications/Mnemit.app`, подпись `euf-sign` с
   entitlements сборки.
-- iPhone: `Scripts/install-iphone.sh` — Release без подписи, переподпись сертификатом iApps,
-  `devicectl` на iPhone 13 mini. Bundle id берётся из профиля. Телефон должен быть
-  разблокирован.
+- iPhone: `~/dotfiles/ios-renew --force` — Personal Team, приложение и виджет; подробности в HANDOFF.md.
 - Синхронизация колоды с TSV на месте, без потери прогресса:
   `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--new-order deck|newest]`.
   TSV с шапкой `note⇥kind⇥question⇥answer⇥hint` (kind — `recognition` или `production`,
