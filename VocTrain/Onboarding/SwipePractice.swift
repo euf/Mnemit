@@ -55,18 +55,12 @@ struct SwipePractice: Equatable {
     /// takes the tint of the grade.
     static let nudgeTravel: CGFloat = 24
 
-    /// The finger's step the hint plays for `grade`: `nudgeTravel` points along the axis of the
-    /// grade's sector, which `GradeSwipe.zone` reads as the grade. The card moves by the pull of
-    /// `CardFlight.drag` like under a real finger: for Easy up and to the right, at 67.5°.
+    /// The finger's step the hint plays for `grade`: `nudgeTravel` points along the grade's
+    /// reference direction (`GradeSwipe.reference(of:)`, the middle of its sector), which
+    /// `GradeSwipe.zone` reads as the grade. The card moves by the pull of `CardFlight.drag` like
+    /// under a real finger: for Easy up and to the right, at compass 15°.
     static func nudge(for grade: Grade) -> CGSize {
-        let degrees: Double =
-            switch grade {
-            case .again: 180
-            case .good: 0
-            case .easy: 90
-            case .hard: -90
-            }
-        let radians = degrees * .pi / 180
+        let radians = GradeSwipe.reference(of: grade) * .pi / 180
         return CGSize(width: nudgeTravel * cos(radians), height: -nudgeTravel * sin(radians))
     }
 

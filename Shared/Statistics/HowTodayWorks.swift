@@ -8,7 +8,8 @@ import VocabCore
 ///
 /// Built into sections of rows that are already text, so a test can compare them and the view only lays
 /// them out. The sections come in the order of the screen: the plan, the capacity, the pace, the
-/// streak, the words in memory, then the FSRS settings of each deck. A section's footer is its rule.
+/// streak, the words in memory, the swipes (where the screen has them: the iPhone), then the FSRS
+/// settings of each deck. A section's footer is its rule.
 struct HowTodayWorks: Equatable, Sendable {
     enum Row: Equatable, Sendable {
         /// A figure, with a line under it when it needs one.
@@ -34,7 +35,8 @@ struct HowTodayWorks: Equatable, Sendable {
 
     var sections: [Section]
 
-    init(progress: DailyProgress, breakdown: DayBreakdown, memory: MemoryEstimate, decks: [DeckInfo]) {
+    /// `swipes` is what `SwipeTally` counted today; `nil` where nothing is swiped (the Mac), so there is no section.
+    init(progress: DailyProgress, breakdown: DayBreakdown, memory: MemoryEstimate, swipes: SwipeTally.Counts?, decks: [DeckInfo]) {
         sections =
             [
                 Self.plan(progress, breakdown, decks),
@@ -42,7 +44,8 @@ struct HowTodayWorks: Equatable, Sendable {
                 Self.pace(progress, breakdown),
                 Self.streak(progress),
                 Self.wordsInMemory(memory),
-            ] + decks.indices.map { Self.fsrs(decks[$0], position: $0, of: decks.count) }
+            ] + (swipes.map { [Self.swipes($0)] } ?? [])
+            + decks.indices.map { Self.fsrs(decks[$0], position: $0, of: decks.count) }
     }
 
     // MARK: Sections
@@ -151,6 +154,19 @@ struct HowTodayWorks: Equatable, Sendable {
         return Section(title: String(localized: "Words in Memory"), rows: rows, footer: footer)
     }
 
+    private static func swipes(_ counts: SwipeTally.Counts) -> Section {
+        let rows: [Row] = [
+            .value(
+                label: String(localized: "Swipes that sprang back from a gap"),
+                value: String(localized: "\(counts.gapMisses) of \(counts.total) today"))
+        ]
+        let footer = String(
+            localized:
+                "A swipe that goes \(Int(GradeSwipe.commitDistance)) points or flicks gives the grade of its direction, unless it points into a gap: 210° to 240° or 300° to 330°, where the card springs back. Clockwise from the top: Easy 330° to 45°, Good 45° to 135°, Hard 135° to 210°, Forgot 240° to 300°. Counted from when the app started, per study day."
+        )
+        return Section(title: String(localized: "Swipes"), rows: rows, footer: footer)
+    }
+
     private static func fsrs(_ deck: DeckInfo, position: Int, of count: Int) -> Section {
         let options = deck.options
         let rows: [Row] = [
@@ -198,21 +214,22 @@ extension HowTodayWorks {
 
     /// Works the screen out of `decks` at `now`, the way the daily ring does: from the decks and their logs alone,
     /// so it shows what Today shows. Replays the logs: call it off the main actor.
-    nonisolated static func make(_ decks: [Source], at now: Date, calendar: StudyCalendar) -> HowTodayWorks {
+    nonisolated static func make(_ decks: [Source], at now: Date, calendar: StudyCalendar, swipes: SwipeTally.Counts?) -> HowTodayWorks {
         let activities = decks.map { DeckActivity(deck: $0.deck, calendar: calendar) }
         let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar)
         return HowTodayWorks(
             progress: progress,
             breakdown: DayBreakdown(activities, progress: progress, at: now, calendar: calendar),
             memory: .total(decks.map { MemoryEstimate(deck: $0.deck, at: now, calendar: calendar) }),
+            swipes: swipes,
             decks: decks.map { DeckInfo(name: $0.name, options: $0.deck.learningOptions) })
     }
 
     /// The decks at `files`, which are read here: those that can't be are left out.
-    nonisolated static func read(_ files: [URL], at now: Date, calendar: StudyCalendar = StudyCalendar()) -> HowTodayWorks {
+    nonisolated static func read(_ files: [URL], at now: Date, calendar: StudyCalendar = StudyCalendar(), swipes: SwipeTally.Counts?) -> HowTodayWorks {
         let sources = files.compactMap { url in
             DeckFileReader.deck(at: url).map { Source(name: url.deletingPathExtension().lastPathComponent, deck: $0) }
         }
-        return make(sources, at: now, calendar: calendar)
+        return make(sources, at: now, calendar: calendar, swipes: swipes)
     }
 }

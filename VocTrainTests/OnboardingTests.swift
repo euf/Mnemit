@@ -98,13 +98,13 @@ struct OnboardingTests {
     }
 
     @Test func theHintPlaysTheFingerOfItsGradeAndTheCardTakesTheWayOfARealSwipe() {
-        let ways: [Grade: Double] = [.again: 180, .easy: 67.5, .hard: 292.5, .good: 0]
+        let ways: [Grade: Double] = [.again: 180, .easy: 75, .hard: 285, .good: 0]
         for grade in SwipePractice.order {
             let step = SwipePractice.nudge(for: grade)
             // The finger's axis is read as the grade, so the card takes the grade's own tint.
             #expect(GradeSwipe.zone(step) == grade)
             #expect(abs(hypot(step.width, step.height) - SwipePractice.nudgeTravel) < 0.001)
-            // The card goes as under a finger: the average of the axis and the target.
+            // The card goes as under a finger on the reference direction: along it.
             let flight = CardFlight()
             flight.drag(step, isRevealed: true)
             #expect(flight.zone == grade)
