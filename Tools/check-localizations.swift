@@ -1,7 +1,8 @@
 // Checks the String Catalog against the apps (#191): every key the compiler extracts
-// is in the catalog, and every key in the catalog has a German translation: in state
-// translated, not empty, and with the plural forms German needs. The Mac app and the
-// iPhone app share the catalog.
+// is in the catalog, and every key in the catalog has a German, a Russian and a Greek
+// translation: in state translated, not empty, and with the plural forms the language
+// needs (German and Greek one and other; Russian one, few, many and other). The Mac app
+// and the iPhone app share the catalog.
 // Usage: swift Tools/check-localizations.swift [DerivedData]   (from the repository root)
 //
 // Reads the keys from the .stringsdata files the builds of the apps leave in their
@@ -14,8 +15,12 @@ import Foundation
 let catalogPath = "Shared/Resources/Localizable.xcstrings"
 let appTargets = ["MacVocTrainNg", "VocTrain", "MnemitWidget"]
 let catalogTable = "Localizable"
-let language = "de"
-let pluralForms = ["one", "other"]
+/// The languages every key needs, with the plural forms each of them has in the catalog.
+let languages: [(code: String, pluralForms: [String])] = [
+    ("de", ["one", "other"]),
+    ("ru", ["one", "few", "many", "other"]),
+    ("el", ["one", "other"]),
+]
 
 let arguments = CommandLine.arguments.dropFirst()
 guard arguments.count <= 1 else {
@@ -140,20 +145,22 @@ func pluralVariations(in node: Any) -> [[String]] {
 
 let toTranslate = catalogStrings.filter { $0.value["shouldTranslate"] as? Bool != false }
 for (key, entry) in toTranslate.sorted(by: { $0.key < $1.key }) {
-    let localization = (entry["localizations"] as? [String: Any])?[language]
-    let units = localization.map { stringUnits(in: $0) } ?? []
-    let missingForms = (localization.map { pluralVariations(in: $0) } ?? []).flatMap { forms in
-        pluralForms.filter { !forms.contains($0) }
-    }
-    if units.isEmpty {
-        problems.append("\(catalogPath): “\(key)” has no translation into \(language).")
-    } else if units.contains(where: { $0["state"] as? String != "translated" }) {
-        problems.append("\(catalogPath): “\(key)” has a translation into \(language) that is not in state translated.")
-    } else if units.contains(where: { ($0["value"] as? String ?? "").isEmpty }) {
-        problems.append("\(catalogPath): “\(key)” has an empty translation into \(language).")
-    } else if !missingForms.isEmpty {
-        let forms = Set(missingForms).sorted().joined(separator: ", ")
-        problems.append("\(catalogPath): “\(key)” lacks the plural form \(forms) in \(language).")
+    for (language, pluralForms) in languages {
+        let localization = (entry["localizations"] as? [String: Any])?[language]
+        let units = localization.map { stringUnits(in: $0) } ?? []
+        let missingForms = (localization.map { pluralVariations(in: $0) } ?? []).flatMap { forms in
+            pluralForms.filter { !forms.contains($0) }
+        }
+        if units.isEmpty {
+            problems.append("\(catalogPath): “\(key)” has no translation into \(language).")
+        } else if units.contains(where: { $0["state"] as? String != "translated" }) {
+            problems.append("\(catalogPath): “\(key)” has a translation into \(language) that is not in state translated.")
+        } else if units.contains(where: { ($0["value"] as? String ?? "").isEmpty }) {
+            problems.append("\(catalogPath): “\(key)” has an empty translation into \(language).")
+        } else if !missingForms.isEmpty {
+            let forms = Set(missingForms).sorted().joined(separator: ", ")
+            problems.append("\(catalogPath): “\(key)” lacks the plural form \(forms) in \(language).")
+        }
     }
 }
 
@@ -164,4 +171,4 @@ if !problems.isEmpty {
     exit(1)
 }
 let keyCount = Set(extracted.map(\.tableKey)).count
-print("✓ \(keyCount) keys in \(files.count) files, all in the catalog; \(toTranslate.count) catalog entries to translate, all translated.")
+print("✓ \(keyCount) keys in \(files.count) files, all in the catalog; \(toTranslate.count) catalog entries to translate, all translated into \(languages.map(\.code).joined(separator: ", ")).")

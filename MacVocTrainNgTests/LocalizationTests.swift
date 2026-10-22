@@ -109,7 +109,22 @@ struct LocalizationTests {
             ("\(1) answers", "1 Antwort"),
             ("\(2) answers", "2 Antworten"),
         ]
-        for (language, cases) in [("en", english), ("de", german)] {
+        let russian: [(String.LocalizationValue, String)] = [
+            ("≈ +\(1) cards/day next week", "≈ +1 карточка/день на следующей неделе"),
+            ("≈ +\(2) cards/day next week", "≈ +2 карточки/день на следующей неделе"),
+            ("≈ +\(5) cards/day next week", "≈ +5 карточек/день на следующей неделе"),
+            ("\(1) answers", "1 ответ"),
+            ("\(2) answers", "2 ответа"),
+            ("\(5) answers", "5 ответов"),
+            ("\(21) answers", "21 ответ"),
+        ]
+        let greek: [(String.LocalizationValue, String)] = [
+            ("≈ +\(1) cards/day next week", "≈ +1 κάρτα/ημέρα την επόμενη εβδομάδα"),
+            ("≈ +\(2) cards/day next week", "≈ +2 κάρτες/ημέρα την επόμενη εβδομάδα"),
+            ("\(1) answers", "1 απάντηση"),
+            ("\(2) answers", "2 απαντήσεις"),
+        ]
+        for (language, cases) in [("en", english), ("de", german), ("ru", russian), ("el", greek)] {
             for (value, expected) in cases {
                 #expect(try localized(value, in: language) == expected)
             }

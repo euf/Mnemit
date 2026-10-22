@@ -6,7 +6,7 @@
 # - builds the iPhone app and runs its tests in the simulator, also with warnings as
 #   errors (#254),
 # - checks the String Catalog: every key in either app is in it, every key has a
-#   complete German translation (Tools/check-localizations.swift),
+#   complete German, Russian and Greek translation (Tools/check-localizations.swift),
 # - builds the Release configuration for Apple Silicon and Intel with
 #   `Tools/make-release.sh --build-only`, also with warnings as errors, but without
 #   signing and disk image.
