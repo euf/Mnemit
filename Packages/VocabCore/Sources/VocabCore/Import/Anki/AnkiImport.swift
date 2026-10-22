@@ -22,6 +22,12 @@ import Foundation
 ///   front is that one; a note type "Front, Image, Audio, Back" with the image on the question
 ///   gives the front and the back, as an image has no text. Where a template can't be read or
 ///   shows no field, the first and the second field with text stand in.
+/// - The cards of one note stay siblings (`Card.note`). A note type with several templates gives
+///   each of its cards the `guid` of the note as the word key; with two templates where the
+///   second asks from the field the first answers with ("Basic (and reversed card)") the first is
+///   `.recognition` and the second `.production`, so a study session holds it back until the
+///   first is learned; with any other set of templates all are `.recognition`, buried for the
+///   day but never locked. A note type with one template gives no key and no kind.
 /// - HTML is reduced to plain text (`AnkiText`). A field with an image or a sound loses it,
 ///   and counts in `skippedMediaRefs`.
 /// - Cards of cloze note types are left out, counted in `skippedCloze`. A card whose front
@@ -43,13 +49,25 @@ public struct AnkiImport: Sendable {
         /// The preset of the card's deck, as an index into `AnkiImport.presets`; `nil` if the
         /// package doesn't say.
         public var preset: Int?
+        /// The word key of the card (`Card.note`): the `guid` of its Anki note, which stays the
+        /// same when the package is read again, for a card whose note type has several templates;
+        /// `nil` for the cards of a note type with one.
+        public var note: String?
+        /// Which way the card asks (`Card.kind`), with a `note` only. The second card of a reverse
+        /// pair is `.production`, every other card of a note with several `.recognition`.
+        public var kind: CardKind?
 
-        public init(front: String, back: String, reviews: [ReviewLogEntry] = [], isSuspended: Bool = false, preset: Int? = nil) {
+        public init(
+            front: String, back: String, reviews: [ReviewLogEntry] = [], isSuspended: Bool = false, preset: Int? = nil, note: String? = nil,
+            kind: CardKind? = nil
+        ) {
             self.front = front
             self.back = back
             self.reviews = reviews
             self.isSuspended = isSuspended
             self.preset = preset
+            self.note = note
+            self.kind = kind
         }
     }
 

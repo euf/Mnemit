@@ -6,7 +6,7 @@ extension AnkiImport {
     /// replay use (`Scheduler.replaying(_:of:)`), so the deck's own FSRS parameters,
     /// steps and fuzz apply, and a card comes out as if it had been studied here. The log of
     /// the card holds the reviews. A note without reviews gives a new card, a suspended one a
-    /// suspended card.
+    /// suspended card. A card has the `note` and the `kind` of its `Note`.
     ///
     /// Anki's own memory state is not read, so stability and difficulty follow the deck's
     /// parameters rather than Anki's.
@@ -21,7 +21,7 @@ extension AnkiImport {
         let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
         return notes.compactMap { note in
             guard let text = CardText(question: note.front, answer: note.back) else { return nil }
-            var card = scheduler.replaying(note.reviews, of: Card(text: text, created: created))
+            var card = scheduler.replaying(note.reviews, of: Card(text: text, note: note.note, kind: note.kind, created: created))
             if note.isSuspended {
                 card.suspend(at: created)
             }

@@ -21,6 +21,11 @@ The deck of the four packages above uses the preset "Greek FSRS": 21 FSRS-6 para
                       Audio, Back, ExamplesBlock, FrequencyBlock", whose question template shows Front and
                       Image (with a stray brace, "{{{Image}}") and whose answer template adds Back and the
                       blocks; a note type that asks with its audio only; a note with no word and one with no translation.
+  siblings-latest.apkg, siblings-legacy2.apkg
+                      Notes that make several cards: a "Basic" note (one card), a "Basic (and reversed
+                      card)" note (a reverse pair), a note type with three templates (Word to Meaning,
+                      Meaning to Word, Sentence to Word), and "Basic (optional reversed card)" once with
+                      the reverse and once without.
 """
 
 import json
@@ -179,6 +184,40 @@ for model, fields in [
     col.add_note(note, media_deck)
 col.export_anki_package(out_path=os.path.join(out_dir, "media-fields-latest.apkg"), options=options(False), limit=DeckIdLimit(media_deck))
 col.export_anki_package(out_path=os.path.join(out_dir, "media-fields-legacy2.apkg"), options=options(True), limit=DeckIdLimit(media_deck))
+col.close()
+
+# Notes that make several cards, one per template.
+col = Collection(os.path.join(work, "siblings.anki2"))
+siblings_deck = col.decks.id("Siblings")
+basic = col.models.by_name("Basic")
+reversed_ = col.models.by_name("Basic (and reversed card)")
+optional = col.models.by_name("Basic (optional reversed card)")
+three_ways = col.models.new("Word, Meaning, Sentence")
+for field in ["Word", "Meaning", "Sentence"]:
+    col.models.add_field(three_ways, col.models.new_field(field))
+for name, question, answer in [
+    ("Card 1", "{{Word}}", '{{FrontSide}}<hr id="answer">{{Meaning}}'),
+    ("Card 2", "{{Meaning}}", '{{FrontSide}}<hr id="answer">{{Word}}'),
+    ("Card 3", "{{Sentence}}", '{{FrontSide}}<hr id="answer">{{Word}}'),
+]:
+    template = col.models.new_template(name)
+    template["qfmt"], template["afmt"] = question, answer
+    col.models.add_template(three_ways, template)
+col.models.add_dict(three_ways)
+three_ways = col.models.by_name("Word, Meaning, Sentence")
+for model, fields in [
+    (basic, ["γάτα", "cat"]),
+    (reversed_, ["νερό", "water"]),
+    (three_ways, ["σπίτι", "house", "Το σπίτι μου είναι μεγάλο."]),
+    (optional, ["dog", "σκύλος", "y"]),
+    (optional, ["bread", "ψωμί", ""]),
+]:
+    note = col.new_note(model)
+    for index, value in enumerate(fields):
+        note.fields[index] = value
+    col.add_note(note, siblings_deck)
+col.export_anki_package(out_path=os.path.join(out_dir, "siblings-latest.apkg"), options=options(False), limit=DeckIdLimit(siblings_deck))
+col.export_anki_package(out_path=os.path.join(out_dir, "siblings-legacy2.apkg"), options=options(True), limit=DeckIdLimit(siblings_deck))
 col.close()
 
 # Legacy 1: the schema-11 collection of Legacy 2 under the old name, without meta.
