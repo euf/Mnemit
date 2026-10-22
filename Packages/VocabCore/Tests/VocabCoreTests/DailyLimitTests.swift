@@ -53,6 +53,79 @@ struct DailyLimitTests {
         #expect(deck.cards.filter { !$0.isNew }.count == 5)
     }
 
+    /// Plays the plan of `time` through with Good under `allowance`, as the stream does, and returns the plan it promised.
+    @discardableResult
+    func study(_ deck: inout Deck, at time: Date, allowance: Int?) -> StudyCounts {
+        let counts = StudySession.counts(for: deck, at: time, calendar: calendar, newCardAllowance: allowance)
+        var study = StudySession(deck: deck, at: time, calendar: calendar, random: SeededRandom(seed: 1), newCardAllowance: allowance)
+        #expect(study.session.totalCount == counts.total)
+        while let id = study.session.currentCardID {
+            let card = study.review(.good, of: deck.card(withID: id)!, with: deck.learningOptions, at: time, calendar: calendar)!
+            deck.cards[deck.index(of: id)!] = card
+        }
+        return counts
+    }
+
+    @Test func withoutAnAllowanceThePlanIsTheOldOneOfTheLimits() throws {
+        let deck = try deck(fresh(12), newPerDay: 5)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: nil) == StudySession.counts(for: deck, at: now, calendar: calendar))
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).new == 5)
+        var random = SeededRandom(seed: 1)
+        let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, using: &random)
+        random = SeededRandom(seed: 1)
+        #expect(StudySession.selectCards(from: deck, at: now, calendar: calendar, newCardAllowance: nil, using: &random) == ids)
+        #expect(ids.count == 5)
+    }
+
+    @Test func anAllowanceBelowTheLimitCapsTheNewCardsAndOneAboveItLeavesThem() throws {
+        let deck = try deck(fresh(12), newPerDay: 5)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 3).new == 3)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 9).new == 5)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 0).new == 0)
+        var random = SeededRandom(seed: 1)
+        #expect(StudySession.selectCards(from: deck, at: now, calendar: calendar, newCardAllowance: 3, using: &random).count == 3)
+        #expect(StudySession(deck: deck, at: now, calendar: calendar, newCardAllowance: 2).session.totalCount == 2)
+    }
+
+    @Test func anAllowanceTakesNoReviewCardsAndAnUnlimitedDeckTakesJustTheAllowance() throws {
+        var cards = fresh(40)
+        cards.append(contentsOf: (0..<4).map { Card(question: "r\($0)", answer: "r\($0)", learningState: LearningState(phase: .review, stability: 3, difficulty: 5, lastReview: now.addingTimeInterval(-3 * 86400), due: now.addingTimeInterval(-3600))) })
+        let deck = try deck(cards)
+        let counts = StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 6)
+        #expect(counts.review == 4)
+        #expect(counts.new == 6)
+    }
+
+    @Test func theCardsIntroducedTodayCountAgainstTheAllowance() throws {
+        var deck = try deck(fresh(20))
+        #expect(study(&deck, at: now, allowance: 4).new == 4)
+        // The same day, the same allowance: nothing is left to take, nor does a later session take more.
+        #expect(study(&deck, at: now.addingTimeInterval(3600), allowance: 4).new == 0)
+        #expect(deck.cards.filter { !$0.isNew }.count == 4)
+        // A larger allowance, as the day's budget grew, lets the difference in.
+        #expect(study(&deck, at: now.addingTimeInterval(7200), allowance: 7).new == 3)
+        // The next study day starts with the allowance whole again.
+        #expect(study(&deck, at: calendar.start(ofDay: today + 1).addingTimeInterval(3600), allowance: 4).new == 4)
+    }
+
+    @Test func theAllowanceHoldsForTheProductionCardsToo() throws {
+        let deck = try deck(fresh(4) + fresh(4, kind: .production, prefix: "p"), productionPerDay: 3)
+        let counts = StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 5)
+        #expect(counts.new == 5)
+        #expect(counts.newProduction <= 3)
+    }
+
+    @Test func newCardsOnRequestComeBeyondTheAllowance() throws {
+        let deck = try deck(fresh(30))
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, extraNew: 10, newCardAllowance: 6).new == 16)
+        #expect(StudyStream.extraNewCards(in: deck, at: now, calendar: calendar, newCardAllowance: 6) == StudyStream.newCardChunk)
+        var stream = StudyStream(deck: deck, at: now, calendar: calendar, newCardAllowance: 6)
+        #expect(stream.session.totalCount == 6)
+        let added = stream.addNewCards(StudyStream.newCardChunk, in: deck, at: now, calendar: calendar)
+        #expect(added)
+        #expect(stream.session.totalCount == 16)
+    }
+
     @Test func theNextStudyDayRefillsTheLimit() throws {
         var deck = try deck(fresh(12), newPerDay: 5)
         study(&deck, at: now)

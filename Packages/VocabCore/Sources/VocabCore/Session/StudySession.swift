@@ -23,10 +23,15 @@ public struct StudySession: Sendable {
     ///   - reviewMode: How the cards are asked: typed on the Mac, revealed on the
     ///     iPhone (#258).
     ///   - extraNew: How many new cards beyond the daily limits the session adds, see
-    ///     `selectCards(from:at:calendar:extraNew:using:)`.
-    public init(deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed, extraNew: Int = 0) {
+    ///     `selectCards(from:at:calendar:extraNew:newCardAllowance:using:)`.
+    ///   - newCardAllowance: How many new cards the deck may introduce on the study day, see
+    ///     `selectCards(from:at:calendar:extraNew:newCardAllowance:using:)`.
+    public init(
+        deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed, extraNew: Int = 0,
+        newCardAllowance: Int? = nil
+    ) {
         var random = random
-        let ids = Self.selectCards(from: deck, at: now, calendar: calendar, extraNew: extraNew, using: &random)
+        let ids = Self.selectCards(from: deck, at: now, calendar: calendar, extraNew: extraNew, newCardAllowance: newCardAllowance, using: &random)
         self.init(cardIDs: ids, at: now, random: random, reviewMode: reviewMode)
     }
 
@@ -121,13 +126,20 @@ public struct StudySession: Sendable {
     /// - The backlog, the review cards that were already due before the study day, takes
     ///   only its share of the day, lowest probability of recall first: see `backlogLeft`.
     ///   `includingBacklog` lifts that.
+    /// - `newCardAllowance` is one more ceiling for the new cards of the study day, next to those
+    ///   limits: the share of the day's new cards (`DailyGoal.newCardsAllowed`) that falls to this
+    ///   deck. Cards first reviewed on the current study day count against it, too. `nil` asks only
+    ///   the limits of the deck.
     /// - `extraNew` further new cards are taken beyond those limits and beyond
     ///   `cardsPerSession`, in the same order and under the same lock and burying: the
     ///   learner asked for them, see `StudyStream.addNewCards(_:in:at:calendar:)`.
     static func selectCards(
-        from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, includingBacklog: Bool = false, using random: inout SeededRandom
+        from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, includingBacklog: Bool = false, newCardAllowance: Int? = nil,
+        using random: inout SeededRandom
     ) -> [Card.ID] {
-        selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, includingBacklog: includingBacklog, using: &random).cards.map(\.card.id)
+        selection(
+            from: deck, at: now, calendar: calendar, extraNew: extraNew, includingBacklog: includingBacklog, newCardAllowance: newCardAllowance, using: &random
+        ).cards.map(\.card.id)
     }
 
     /// The cards a review ahead asks: review cards that are not due yet, lowest probability
@@ -171,19 +183,22 @@ public struct StudySession: Sendable {
     ///
     /// Learning cards, then review cards, then new cards fill the session, so the counts
     /// don't depend on the random tie breaks, only which card of a kind is taken does.
-    public static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0) -> StudyCounts {
-        counts(for: deck, at: now, calendar: calendar, extraNew: extraNew, past: nil)
+    public static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, newCardAllowance: Int? = nil) -> StudyCounts {
+        counts(for: deck, at: now, calendar: calendar, extraNew: extraNew, newCardAllowance: newCardAllowance, past: nil)
     }
 
-    /// `counts(for:at:calendar:extraNew:)`, or with `past` the plan of a past study day, `now`
-    /// being its end: `deck` is seen as it was then, as far as it can be, which is that cards
-    /// created later didn't exist and `nextDue` is not asked. `past` is the `DayIndex` of the
-    /// same deck, so a caller that counts the plan of every day of a history doesn't go through
-    /// every card's calendar days for each of them.
-    static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, past: DayIndex?) -> StudyCounts {
+    /// `counts(for:at:calendar:extraNew:newCardAllowance:)`, or with `past` the plan of a past
+    /// study day, `now` being its end or its start: `deck` is seen as it was then, as far as it can
+    /// be, which is that cards created later didn't exist and `nextDue` is not asked. `past` is the
+    /// `DayIndex` of the same deck, so a caller that counts the plan of every day of a history
+    /// doesn't go through every card's calendar days for each of them.
+    static func counts(
+        for deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, newCardAllowance: Int? = nil, past: DayIndex?
+    ) -> StudyCounts {
         // The seed is arbitrary: the session this counts has a random of its own.
         var random = SeededRandom(seed: 0)
-        let (selected, catchUp) = selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, capsSize: false, past: past, using: &random)
+        let (selected, catchUp) = selection(
+            from: deck, at: now, calendar: calendar, extraNew: extraNew, newCardAllowance: newCardAllowance, capsSize: false, past: past, using: &random)
         var counts = StudyCounts()
         counts.catchUp = catchUp
         let startOfDay = calendar.start(ofDay: calendar.dayNumber(for: now))
@@ -214,8 +229,8 @@ public struct StudySession: Sendable {
     /// The cards of a session in the order of their `Urgency`, and how many overdue review cards the
     /// share of the backlog leaves for the days after (`StudyCounts.catchUp`).
     private static func selection(
-        from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, includingBacklog: Bool = false, capsSize: Bool = true, past: DayIndex? = nil,
-        using random: inout SeededRandom
+        from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, includingBacklog: Bool = false, newCardAllowance: Int? = nil,
+        capsSize: Bool = true, past: DayIndex? = nil, using random: inout SeededRandom
     ) -> (cards: [Candidate], catchUp: Int) {
         let options = deck.learningOptions
         let scheduler = Scheduler(learningOptions: options, calendar: calendar)
@@ -228,7 +243,7 @@ public struct StudySession: Sendable {
         var new: [Candidate] = []
         for card in deck.cards where card.isDue(at: now) {
             // A card that is created after a past day was no part of its plan.
-            if past != nil, card.isNew, card.created > now { continue }
+            if let past, !past.countsCardsCreatedLater, card.isNew, card.created > now { continue }
             let urgency: Urgency
             if let learningState = card.learningState {
                 if learningState.phase == .review {
@@ -256,6 +271,7 @@ public struct StudySession: Sendable {
         let introduced = past.map { $0.introduced[day] ?? (production: 0, other: 0) } ?? newCardsIntroduced(onDayOf: now, in: deck, calendar: calendar)
         var newLeft = max(0, (options.newCardsPerSession ?? Int.max) - introduced.other)
         var productionLeft = max(0, (options.newProductionPerSession ?? Int.max) - introduced.production)
+        var allowanceLeft = newCardAllowance.map { max(0, $0 - introduced.production - introduced.other) } ?? Int.max
         let overdue = due.reduce(0) { $0 + ($1.isBacklog ? 1 : 0) }
         let onTime = due.reduce(0) { $0 + (!$1.isBacklog && $1.urgency != .learning ? 1 : 0) }
         var backlogLeft =
@@ -274,6 +290,7 @@ public struct StudySession: Sendable {
                 backlogTaken += 1
             }
             if candidate.urgency == .new {
+                guard allowanceLeft > 0 else { continue }
                 if card.kind == .production {
                     guard productionLeft > 0 else { continue }
                     productionLeft -= 1
@@ -281,6 +298,7 @@ public struct StudySession: Sendable {
                     guard newLeft > 0 else { continue }
                     newLeft -= 1
                 }
+                allowanceLeft -= 1
             }
             selected.append(candidate)
             if let note = card.note { selectedNotes.insert(note) }
@@ -396,8 +414,21 @@ public struct StudySession: Sendable {
         let introduced: [Int: (production: Int, other: Int)]
         /// The cards of each note whose last review fell on a day.
         let reviewedNotes: [Int: [String: Set<Card.ID>]]
+        /// Whether a new card created after the day counts as one of its plan: for the new cards a
+        /// day could take if it began now (`DeckActivity.history`).
+        let countsCardsCreatedLater: Bool
+
+        /// The index of a deck at the start of a study day: nothing was introduced or reviewed on the
+        /// day yet, and the locks are those of the deck as it stands.
+        init(startOfDayIn deck: Deck, calendar: StudyCalendar, countsCardsCreatedLater: Bool = false) {
+            lockedNotes = StudySession.notesAwaitingRecognition(in: deck, calendar: calendar)
+            introduced = [:]
+            reviewedNotes = [:]
+            self.countsCardsCreatedLater = countsCardsCreatedLater
+        }
 
         init(deck: Deck, calendar: StudyCalendar) {
+            countsCardsCreatedLater = false
             lockedNotes = StudySession.notesAwaitingRecognition(in: deck, calendar: calendar)
             var introduced: [Int: (production: Int, other: Int)] = [:]
             var reviewed: [Int: [String: Set<Card.ID>]] = [:]

@@ -75,13 +75,24 @@ public struct StudyStream: Sendable {
     public let reviewMode: ReviewMode
     /// A stream of one practice, which then rests instead of going on.
     public let isPracticeOnly: Bool
+    /// How many new cards the deck may introduce on the study day at most, next to its own limits;
+    /// `nil` asks only the limits. For every segment of the plan, and for what the stream counts.
+    public let newCardAllowance: Int?
     private var random: SeededRandom
 
     /// A stream that starts with today's plan, or at rest if the plan is empty.
-    public init(deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed) {
+    ///
+    /// - Parameter newCardAllowance: The deck's share of the new cards of the day, see
+    ///   `DailyProgress.newCardAllowances`.
+    public init(
+        deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed,
+        newCardAllowance: Int? = nil
+    ) {
         var random = random
-        let plan = StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: random.next()), reviewMode: reviewMode)
+        let plan = StudySession(
+            deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: random.next()), reviewMode: reviewMode, newCardAllowance: newCardAllowance)
         self.reviewMode = reviewMode
+        self.newCardAllowance = newCardAllowance
         isPracticeOnly = false
         stage = plan.session.isFinished ? .rest : .plan
         mode = .study(plan)
@@ -103,6 +114,7 @@ public struct StudyStream: Sendable {
         let practice = Practice(practicing: cardIDs, at: now, random: SeededRandom(seed: random.next()))
         reviewMode = .typed
         isPracticeOnly = true
+        newCardAllowance = nil
         self.stage = practice.session.isFinished ? .rest : stage
         mode = .practice(practice)
         self.random = random
@@ -176,9 +188,9 @@ public struct StudyStream: Sendable {
 
     /// How many new cards beyond the daily limits `addNewCards` would add now: at most
     /// `newCardChunk`, fewer if the deck has fewer left that the lock and burying allow.
-    public static func extraNewCards(in deck: Deck, at now: Date, calendar: StudyCalendar) -> Int {
-        let planned = StudySession.counts(for: deck, at: now, calendar: calendar).new
-        return StudySession.counts(for: deck, at: now, calendar: calendar, extraNew: newCardChunk).new - planned
+    public static func extraNewCards(in deck: Deck, at now: Date, calendar: StudyCalendar, newCardAllowance: Int? = nil) -> Int {
+        let planned = StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: newCardAllowance).new
+        return StudySession.counts(for: deck, at: now, calendar: calendar, extraNew: newCardChunk, newCardAllowance: newCardAllowance).new - planned
     }
 
     /// Replaces the running segment with the plan and `count` new cards beyond the limits.
@@ -188,7 +200,9 @@ public struct StudyStream: Sendable {
     @discardableResult
     public mutating func addNewCards(_ count: Int, in deck: Deck, at now: Date, calendar: StudyCalendar) -> Bool {
         guard !isPracticeOnly, count > 0 else { return false }
-        let plan = StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: random.next()), reviewMode: reviewMode, extraNew: count)
+        let plan = StudySession(
+            deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: random.next()), reviewMode: reviewMode, extraNew: count,
+            newCardAllowance: newCardAllowance)
         guard !plan.session.isFinished else { return false }
         install(.study(plan), as: .plan)
         return true
@@ -213,7 +227,8 @@ public struct StudyStream: Sendable {
         let segment: SessionMode
         switch stage {
         case .plan:
-            segment = .study(StudySession(deck: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode))
+            segment = .study(
+                StudySession(deck: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode, newCardAllowance: newCardAllowance))
         case .catchUp:
             segment = .study(StudySession(catchingUpIn: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode))
         case .reviewAhead:

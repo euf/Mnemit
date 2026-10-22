@@ -39,11 +39,11 @@ struct StudyStreamTests {
         let now: Date
         let calendar: StudyCalendar
 
-        init(_ deck: Deck, now: Date, calendar: StudyCalendar, seed: UInt64 = 1) {
+        init(_ deck: Deck, now: Date, calendar: StudyCalendar, seed: UInt64 = 1, newCardAllowance: Int? = nil) {
             self.deck = deck
             self.now = now
             self.calendar = calendar
-            stream = StudyStream(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: seed), reviewMode: .revealed)
+            stream = StudyStream(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: seed), reviewMode: .revealed, newCardAllowance: newCardAllowance)
         }
 
         var currentID: Card.ID? { stream.session.currentCardID }
@@ -69,8 +69,8 @@ struct StudyStreamTests {
         }
     }
 
-    func run(_ cards: [Card], options: LearningOptions? = nil) throws -> Run {
-        Run(try Deck(learningOptions: options ?? self.options(), cards: cards), now: now, calendar: calendar)
+    func run(_ cards: [Card], options: LearningOptions? = nil, newCardAllowance: Int? = nil) throws -> Run {
+        Run(try Deck(learningOptions: options ?? self.options(), cards: cards), now: now, calendar: calendar, newCardAllowance: newCardAllowance)
     }
 
     @Test func aGradeWithADurationLogsItAndPracticeLogsNothing() throws {
@@ -106,6 +106,17 @@ struct StudyStreamTests {
         #expect(run.stream.recap.cards == 3)
         #expect(run.stream.recap.reviews == 2 + run.deck.learningOptions.steps)
         #expect(run.stream.recap.accuracy == 1)
+    }
+
+    @Test func aStreamKeepsItsNewCardAllowanceForEverySegmentOfThePlan() throws {
+        var run = try run((0..<20).map { fresh("n\($0)") }, newCardAllowance: 5)
+        #expect(run.stream.newCardAllowance == 5)
+        #expect(run.stream.session.totalCount == 5)
+        _ = run.play(whileIn: .plan)
+        // The plan is done at the allowance, not at the 20 cards the deck has: the stream rests.
+        #expect(run.stream.stage == .rest)
+        #expect(run.deck.cards.filter { !$0.isNew }.count == 5)
+        #expect(StudySession.counts(for: run.deck, at: now, calendar: calendar, newCardAllowance: 5).total == 0)
     }
 
     @Test func aStreamWithoutAPlanRestsAtOnce() throws {
