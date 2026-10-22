@@ -22,6 +22,17 @@ public struct FSRSOptimizer: Sendable {
         public var rmse: Double
     }
 
+    /// Parameters fitted to a deck against the ones it has: how well each predicts the same
+    /// reviews.
+    public struct Comparison: Sendable {
+        public var parameters: FSRSParameters
+        public var current: Evaluation
+        public var computed: Evaluation
+
+        /// Whether the fitted parameters predict the reviews better by log loss.
+        public var isBetter: Bool { computed.logLoss < current.logLoss }
+    }
+
     /// Hyperparameters, as in `TrainingConfig::default()` of fsrs-rs.
     struct Configuration: Sendable {
         var epochs = 5
@@ -90,6 +101,18 @@ public struct FSRSOptimizer: Sendable {
         }
         weights.replaceSubrange(0..<4, with: stabilities)
         return try Self.parameters(weights)
+    }
+
+    /// Trains parameters and evaluates them and `current` on the same reviews, as the
+    /// options screens and the automatic refit (`ParameterRefit`) both do.
+    ///
+    /// - Throws: `Error.notEnoughData` when there is nothing to evaluate, `CancellationError`.
+    public func compare(with current: FSRSParameters, progress: (Double) -> Void = { _ in }) throws -> Comparison {
+        let parameters = try computeParameters(progress: progress)
+        guard let before = evaluate(current), let after = evaluate(parameters) else {
+            throw Error.notEnoughData
+        }
+        return Comparison(parameters: parameters, current: before, computed: after)
     }
 
     private static func parameters(_ weights: [Double]) throws -> FSRSParameters {

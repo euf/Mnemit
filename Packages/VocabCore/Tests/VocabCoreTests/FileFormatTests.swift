@@ -154,6 +154,46 @@ struct DeckFileTests {
         }
     }
 
+    /// The automatic refit of the parameters (`ParameterRefit`) keeps its switch and the note of
+    /// the last fit in the options: both are left out of the file while they hold the default,
+    /// and an older deck lacks them.
+    @Test func automaticFitOptionsRoundTripAndAreLeftOutAtTheirDefaults() throws {
+        var deck = try sampleDeck()
+        #expect(deck.learningOptions.updatesParametersAutomatically)
+        #expect(deck.learningOptions.lastAutoFit == nil)
+        let plain = String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self)
+        #expect(!plain.contains("updatesParametersAutomatically"))
+        #expect(!plain.contains("lastAutoFit"))
+
+        var options = deck.learningOptions
+        options.updatesParametersAutomatically = false
+        options.lastAutoFit = LearningOptions.AutoFit(date: date, reviewCount: 2314, adopted: false)
+        _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), at: date, calendar: .testing)
+        let read = try DeckFile.decode(DeckFile.fileWrapper(for: deck))
+        #expect(!read.learningOptions.updatesParametersAutomatically)
+        #expect(read.learningOptions.lastAutoFit == LearningOptions.AutoFit(date: date, reviewCount: 2314, adopted: false))
+        #expect(read == deck)
+        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).contains("\"lastAutoFit\""))
+
+        options.updatesParametersAutomatically = true
+        options.lastAutoFit = LearningOptions.AutoFit(date: date, reviewCount: 4000, adopted: true)
+        _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), at: date, calendar: .testing)
+        #expect(try DeckFile.decode(DeckFile.fileWrapper(for: deck)).learningOptions == options)
+
+        // A file from before: the switch is on, nothing was fitted.
+        let old = try DeckFile.decode(deckJSON()).learningOptions
+        #expect(old.updatesParametersAutomatically)
+        #expect(old.lastAutoFit == nil)
+
+        // A damaged note of a fit costs one more fit, not the deck.
+        let damaged = Data(
+            """
+            {"format": "de.fluch-it-consulting.voctrain.deck", "version": 4, "progress": [],
+             "learningOptions": {"lastAutoFit": {"date": "yesterday"}}, "cards": []}
+            """.utf8)
+        #expect(try DeckFile.decode(damaged).learningOptions.lastAutoFit == nil)
+    }
+
     /// The keys for notes and production cards are new: an older deck lacks them and reads
     /// with the defaults, and a value out of range or unknown is clamped or ignored.
     @Test func noteKindAndProductionOptionsRoundTripAndDefault() throws {

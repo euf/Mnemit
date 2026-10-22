@@ -46,6 +46,30 @@ public struct LearningOptions: Hashable, Sendable {
     /// the card as a leech, and after every further multiple of it; 0 never does. A card is
     /// a leech from that many lapses on, resumed or not: `Card.isLeech(threshold:)`.
     public var leechThreshold: Int = 8
+    /// Whether the app fits `parameters` to the review log again from time to time and keeps
+    /// the fit when it predicts the reviews better, see `ParameterRefit`.
+    public var updatesParametersAutomatically: Bool = true
+    /// The last time the app fitted the parameters by itself, `nil` before the first time.
+    /// Set by `ParameterRefit.Result`; the learner's own "Compute from Review Log" leaves it.
+    public var lastAutoFit: AutoFit?
+
+    /// One automatic fit of the parameters, kept or not.
+    public struct AutoFit: Hashable, Sendable {
+        /// When the fit ran, in whole seconds as `deck.json` keeps it.
+        public var date: Date
+        /// How many usable reviews the fit saw (`FSRSOptimizer.reviewCount`); the next fit
+        /// waits for more of them.
+        public var reviewCount: Int
+        /// Whether the fitted parameters replaced the old ones; `false` when they fit
+        /// the reviews no better, or the optimizer found none.
+        public var adopted: Bool
+
+        public init(date: Date, reviewCount: Int, adopted: Bool) {
+            self.date = date
+            self.reviewCount = reviewCount
+            self.adopted = adopted
+        }
+    }
 
     public init() {}
 
@@ -100,6 +124,7 @@ extension LearningOptions {
         leechThreshold = leechThreshold.clamped(to: Self.leechThresholdRange)
         if !revealedRecallWeight.isFinite { revealedRecallWeight = LearningOptions().revealedRecallWeight }
         revealedRecallWeight = revealedRecallWeight.clamped(to: Self.revealedRecallWeightRange)
+        if let fit = lastAutoFit { lastAutoFit?.reviewCount = max(0, fit.reviewCount) }
     }
 }
 
