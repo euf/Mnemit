@@ -39,14 +39,23 @@ are in [`references/`](references/).
   plan is done the stream rests ("Done for today") and offers catch-up on the backlog, review
   ahead, practice that does not touch the schedule, and "+10 new" with the extra cards a day it
   adds next week.
-- **Rings instead of a session count.** A ring in the manner of Apple Fitness fills to the
-  daily goal: the number of cards in the day's plan as FSRS set it when the day began, the
-  review cards due, overdue ones included, and the new cards within the day's limits. The ring
-  counts cards, one unit everywhere: a card is done once its last review of the day left it due
-  on a later day, so a review card graded Hard, Good or Easy is done at once, a new card after
-  its learning steps, and a card graded Forgot when it is through relearning. A card counts
-  once, however many reviews it took. Today and the widget say "75 of 218 cards" and "143 cards
-  left", which add up, and the cards left come with "≈ 7 min". Each review records how long its
+- **Rounds, streak, ring and words in memory.** The day is cut into rounds of two minutes of
+  work at your own pace, and Today shows the next small goal: "≈ 2 min to keep your streak"
+  before the first round, "Round 2 of 4 · ≈ 2 min" after it, "Ring closed" after the last. The
+  streak is kept once the first round is done. Study rests at the end of each round but the
+  last, says how long the next one takes and how many words the day has added to your memory,
+  and offers Next Round or Done for Now. How many rounds a day holds, its capacity, comes from
+  your review logs: two on the first day, one more when the ring was closed on each of the two
+  days before, one fewer after a day that ended with the ring open. New cards are admitted up
+  to the time the capacity leaves after the day's reviews, so a break does not turn into a wall
+  of work.
+- **The ring counts cards.** A ring in the manner of Apple Fitness fills to the daily goal: the
+  cards of the day's plan as FSRS set it when the day began that fit the day's rounds, the
+  review cards due, overdue ones included, and the new cards the capacity admits. A card is done
+  once its last review of the day left it due on a later day, so a review card graded Hard,
+  Good or Easy is done at once, a new card after its learning steps, and a card graded Forgot
+  when it is through relearning. A card counts once, however many reviews it took. Today says
+  "12 of 24 cards · 12 left", which add up. Each review records how long its
   card was on screen while the app was in front. New cards and all other cards are priced apart:
   the typical time of a review (a lognormal mean from the median and the spread of the recorded
   times, so a card left open while away barely moves it) times the reviews a done card of that
@@ -56,10 +65,14 @@ are in [`references/`](references/).
   other. The daily goal does not move during the day:
   cards added later and "+10 new" fill laps, as do catch-up and review ahead. The ring keeps
   going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
-  streak in days. The streak counts the days whose ring was closed, a day with nothing due
-  included. A missed day is repaired by completing the plan of the next one, which holds what
-  the missed day left over; two missed days in a row end the streak. Everything is computed
+  streak in days. A missed day is repaired when the next day closes its ring, the first round
+  is not enough then; two missed days in a row end the streak. Everything is computed
   from the review logs; nothing extra is stored. A study day starts at 4:00.
+- **Words in memory.** "≈ 28 words in memory · +15 today" is the number of words you would
+  recall right now: FSRS's probability of recall added up over the recognition cards you have
+  studied, one card a word. It grows when you learn, falls over days without reviews, and
+  cannot be inflated by counting more cards. The number is rounded down, and the day's gain is
+  against the number at 4:00. A milestone (50, 100, 250, 500, 1,000 and on) is announced on the day it is passed.
 - **A backlog does not pile up on one day.** After an import or a break, the review cards
   that were already due before today ask a seventh of themselves, rounded up, of a day, the
   most forgotten first: 1,500 overdue cards add about 215 to the day's own cards, and the

@@ -115,9 +115,23 @@
   после клика мышью по ней; выделение, меняющееся само, фокус не трогает.
 - Study открывает поток без конца, сессий нет (`StudyStream` в VocabCore, на обоих
   приложениях его ведёт `SessionDriver`): каждая оценка пишется сразу, выход ничего не
-  теряет. Порядок: план дня (`StudySession.counts`, тот же отбор и лимиты; пока план
+  теряет. Внутри плана поток отдыхает в конце каждого раунда дня, кроме последнего
+  (`StudyStream.roundRest`, `restAtRoundEnd(roundsDone:rounds:)`, `continueRound()`): сегмент
+  остаётся на месте, экран «Round 1 done» (у первого ещё «Streak kept»), «Next round ≈ 2 min»,
+  «+N words in memory today», кнопки «Next Round» (продолжает сегмент) и «Done for Now»
+  (закрывает поток). Отдых — состояние того же потока: `isResting` на нём истинно,
+  `StreamRest.roundEnd` несёт раунд, `roundsPassed` держит пройденные раунды, всё внутри
+  значения, поэтому Undo через границу раунда возвращает карточку и снимает отдых, а Redo находит
+  его заново. Границу ищет `SessionDriver` при каждом ходе: `RoundGuide` (`DailyProgress.roundEnds`
+  и сделанные в других колодах карточки на открытие потока; приложения берут его из
+  `DailyRingModel.progress`) плюс сделанные карточки живого документа (`Deck.doneCards`). Без
+  `RoundGuide` (прогресс ещё не посчитан) и в практике поток не отдыхает. На отдыхе карточки нет
+  (`currentCard == nil`): речь не произносит скрытое слово, оценки и Suspend не принимаются, кнопка
+  «Next: …» следующей колоды не показывается (`StudyModel.isRoundRest`). Порядок: план дня
+  (`StudySession.counts`, тот же отбор и лимиты; пока план
   непуст, он пересчитывается после каждого сегмента) → пауза «Done for today» (размер
-  плана, доля вспомненных, ближайшая дата; кнопки «Keep Going» и «+10 new») → `Stage.catchUp`
+  плана, доля вспомненных, «Ring closed», если кольцо замкнуто, «+N words in memory today», ближайшая дата; кнопки
+  «Keep Going» и «+10 new») → `Stage.catchUp`
   (остаток хвоста: просроченные Review, не вошедшие в план дня, `StudyCounts.catchUp`;
   они due, поэтому оценки обычные, а сделанные карточки идут в круги) → review ahead
   (не наступившие Review по возрастанию текущей вероятности вспомнить, оценки
@@ -150,8 +164,12 @@
   **Раунд** — 120 с работы в темпе ученика (`DailyGoal.roundSeconds`), карточка стоит темп своей
   категории; раунд k кончается на первой карточке, где стоимость достигла k × 120 с, последний
   — на цели (`DayRounds.ends`). `DailyProgress`: `rounds`, `roundsDone`, `roundEnds`,
-  `cardsToNextRound`, `minutesToNextRound` (в темпе, с которым день начался),
-  `streakKeptToday` (первый раунд сделан или план пуст). У дня, начавшегося с пустым планом,
+  `cardsToNextRound`, `minutesToNextRound` (в темпе, с которым день начался), `minutes(ofRound:)`
+  (минуты раунда по номеру, для экрана конца раунда), `memory` (`MemoryEstimate` по колодам),
+  `streakKeptToday` (первый раунд сделан или план пуст). Раунды видны в строках дня:
+  `RoundStatus` (`Shared/Session/DayLines.swift`) — до первого раунда «≈ 2 min to keep your
+  streak», потом «Round 2 of 4» со временем раунда, после последнего «Ring closed»; Today, шапка
+  потока, виджет и подсказка кольца на Mac берут её оттуда. У дня, начавшегося с пустым планом,
   раунды режут карточки как они есть. **Ёмкость** — число раундов дня, 1…15
   (`DailyProgress.capacity`), из лога, вперёд от первого учебного дня, одинаково на всех
   устройствах: 2 в первый день; каждый следующий день шагает от предыдущего: +1, если кольцо
@@ -252,10 +270,18 @@
   (`Scheduler.recallProbability`) по изученным, не приостановленным карточкам recognition (карточка без kind тоже слово,
   production не считается), на начало учебного дня (04:00) — по состоянию карточек до сегодняшних оценок; ничего не
   хранится, слова показываются округлёнными вниз, прирост дня — до целого, вехи 50…5000 (`MemoryEstimate.milestones`).
-- iPhone запускается на Today (`StartScreen` держит состояние, `TodayScreen` рисует): «N cards left» (карточки плана, ещё
-  не сделанные, не сырой due) и «M of K cards» (сделанные карточки против цели дня: M, N и K в одной
-  единице, M + N ≥ K, равно, пока план влезает во время дня и в него ничего не добавили; Forgot его не нарушает), «+N to catch up this week» при хвосте, кольцо
-  и streak по всем колодам, колоды строками. Study открывает поток одним касанием поверх экрана
+  Приложения читают `DailyProgress.memory`: Today «≈ 28 words in memory · +15 today», веха дня —
+  «50 words in memory!» с глифом в акценте (текст в акцент не красится, `references/design-spec.md`),
+  экран конца раунда и «Done for today» — «+N words in memory today», medium-виджет и подсказка кольца
+  на Mac — число слов (`MemoryEstimate.line`, `DayLines.swift`).
+- iPhone запускается на Today (`StartScreen` держит состояние, `TodayScreen` рисует): заголовок — раунд
+  дня (до первого раунда «≈ 2 min to keep your streak», потом «Round 2 of 4 · ≈ 2 min», после последнего
+  «Ring closed», без карточек «All done» или «Nothing due», пока раунды не посчитаны — «N cards left»);
+  вторая строка «M of K cards · N left» (сделанные карточки против цели дня и карточки плана, ещё не
+  сделанные, не сырой due: M, N и K в одной единице, M + N ≥ K, равно, пока план влезает во время дня и в
+  него ничего не добавили; Forgot его не нарушает); «+N to catch up this week» при хвосте; streak
+  «N-day streak», с «· kept today», когда первый раунд сделан; слова в памяти. Кольцо и streak — по всем
+  колодам, колоды строками. Study открывает поток одним касанием поверх экрана
   (`StudyRunView`). Строка колоды толкает на стек Today экран колоды (`DeckScreen`/`DeckContent`:
   счётчики дня, Study This Deck, Cards → браузер, Add Cards, практики, Statistics, Options; меню:
   Rename…, Delete Deck). Колоды стека держит открытыми `PushedDecks`: открывает при пуше маршрута
@@ -373,7 +399,9 @@
   встроен в приложение на iPhone): home screen small и medium, lock screen circular и
   rectangular, тап ведёт по `mnemit://study` сразу в поток (`StartScreen.open`). Данные идут
   одним снимком `WidgetSnapshot` (`Shared/Widget`): дата, сделанные карточки и цель дня, streak и
-  замкнуто ли кольцо, цена оставшейся карточки (`secondsPerCard`), прогноз «сколько карточек в плане» на каждый час
+  замкнуто ли кольцо, раунды (`rounds`, `roundsDone`, `minutesToNextRound`), слова в памяти
+  (`wordsInMemory`, `wordsToday`; поля необязательные, снимок старого приложения читается и
+  показывает «N cards left»), цена оставшейся карточки (`secondsPerCard`), прогноз «сколько карточек в плане» на каждый час
   48 часов вперёд по всем колодам, время ближайшего напоминания (`Reminders.nextFire`). Приложение пишет его JSON
   в элемент keychain общей группы `$(AppIdentifierPrefix)com.euf.mnemit.shared`
   (`KeychainSnapshotStore`, `AfterFirstUnlock`), App Groups нет: бесплатная Personal Team

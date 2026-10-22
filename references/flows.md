@@ -30,14 +30,33 @@ code today is mapped in the inventory of 21.10.2026 (anchors in the commit that 
 Root is a `NavigationStack` on Today.
 
 **Today**
-- Ring and streak; "N cards left" with "≈ N min", the cards of today's plan not done yet (not the
-  raw due count), and "M of K cards" against the daily goal; "+N to catch up this week" when
-  a backlog is left; **Study** (all decks).
+- Ring, then the day in rounds: the headline is "≈ 2 min to keep your streak" before the first
+  round, "Round 2 of 4 · ≈ 2 min" after it and "Ring closed" after the last (without cards,
+  "All done" or "Nothing due"); under it "M of K cards · N left", the done cards against the
+  daily goal and the cards of today's plan not done yet (not the raw due count); "+N to catch
+  up this week" when a backlog is left; the streak, "12-day streak", with "· kept today" once
+  the first round is done; "≈ 28 words in memory · +15 today", and on the day a milestone is
+  passed "50 words in memory!"; **Study** (all decks).
 - Decks section: a row per deck with its counts. Tapping a row pushes the Deck screen.
 - Toolbar **+** menu: Add Cards (to the last deck used), New Deck, Import.
 - `.searchable` over every card of every deck; a result pushes Card Detail.
 - **Empty state** (no decks): New Deck, Import Cards, Use iCloud Drive Folder. No mention of
   the Mac.
+
+**Study stream** (covers the screen; one deck at a time, the decks with cards due one after the other)
+- Header: the close button, the small ring with "Round 2 of 4" while rounds remain, "36 cards
+  today" after them, the menu. Catch-up and review ahead name their stage before the ring;
+  practice names itself and has no ring.
+- *Rest at the end of a round* (every round but the last, inside the plan): the ring, "Round 1
+  done", for the first round "Streak kept", "Next round ≈ 2 min", "+4 words in memory today"
+  when the day has added any. **Next Round** (default) goes on with the cards that were left;
+  **Done for Now** closes the stream. No new cards, catch-up or next deck is offered here.
+  Undo, from the chip or the menu, takes back the review that ended the round and the rest
+  with it; redo brings it back.
+- *Rest at the end of the plan* ("Done for today"): the size of the plan, the share recalled,
+  "Ring closed" when the ring is closed, "+N words in memory today", the catch-up or the next
+  review; **Keep Going**, "+10 new", **Done**, and **Next: <deck>** when another deck has cards due.
+- *Rest of a practice* ("Practice complete"): its figures and **Done**.
 
 **Deck** (pushed; replaces the details sheet)
 - Header: what today's plan takes from the deck (new, learning, review) and "+N to catch up
