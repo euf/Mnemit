@@ -145,7 +145,7 @@ struct StudyView: View {
         }
         .onChange(of: model.stage) { _, stage in
             if stage == .revealed, !model.returnedByUndo, let card = model.currentCard {
-                GreekSpeech.shared.answerRevealed(of: card)
+                GreekSpeech.shared.answerRevealed(of: card, media: model.document.deck.media)
             }
         }
         // A rest nobody sent for, say a card gone from the deck: the screen follows without a show.
@@ -339,7 +339,7 @@ struct StudyView: View {
     /// was heard, and the rest has no card.
     private func speakCurrentCard() {
         guard !motion.showsRest, !model.returnedByUndo else { return }
-        GreekSpeech.shared.cardAppeared(model.currentCard)
+        GreekSpeech.shared.cardAppeared(model.currentCard, media: model.document.deck.media)
     }
 
     // MARK: The rest

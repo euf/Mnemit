@@ -66,11 +66,11 @@ struct SessionView: View {
         // With "Speak Greek automatically": a Greek question when its card comes up, after
         // the card has flown out and with the next one; else a Greek answer once it shows.
         .onChange(of: model.questionNumber, initial: true) {
-            GreekSpeech.shared.cardAppeared(model.currentCard)
+            GreekSpeech.shared.cardAppeared(model.currentCard, media: model.document.deck.media)
         }
         .onChange(of: isAnswerShown) { _, isShown in
             if isShown, let card = model.currentCard {
-                GreekSpeech.shared.answerRevealed(of: card)
+                GreekSpeech.shared.answerRevealed(of: card, media: model.document.deck.media)
             }
         }
         .onAppear { GreekSpeech.shared.open() }
