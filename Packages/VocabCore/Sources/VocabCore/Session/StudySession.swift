@@ -161,8 +161,11 @@ public struct StudySession: Sendable {
         return selected
     }
 
-    /// What a session over `deck` started at `now` would take, by kind: the very
-    /// selection of `selectCards`, so the counts can't drift from the session.
+    /// The plan of the study day of `now` over `deck`, by kind: the very selection of
+    /// `selectCards`, so the counts can't drift from what a stream takes, but without the
+    /// size `cardsPerSession` gives one session. That is the size of a segment of the stream,
+    /// which takes the plan segment after segment; the plan, and the goal made of it, is all
+    /// of it, so nothing the learner sees grows as the segments go.
     ///
     /// Learning cards, then reviews, then new cards fill the session, so the counts
     /// don't depend on the random tie breaks, only which card of a kind is taken does.
@@ -178,7 +181,7 @@ public struct StudySession: Sendable {
     static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, past: DayIndex?) -> StudyCounts {
         // The seed is arbitrary: the session this counts has a random of its own.
         var random = SeededRandom(seed: 0)
-        let (selected, catchUp) = selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, past: past, using: &random)
+        let (selected, catchUp) = selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, capsSize: false, past: past, using: &random)
         var counts = StudyCounts()
         counts.catchUp = catchUp
         let steps = max(1, deck.learningOptions.steps)
@@ -212,7 +215,7 @@ public struct StudySession: Sendable {
     /// The cards of a session in the order of their `Urgency`, and how many overdue reviews the
     /// share of the backlog leaves for the days after (`StudyCounts.catchUp`).
     private static func selection(
-        from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, includingBacklog: Bool = false, past: DayIndex? = nil,
+        from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, includingBacklog: Bool = false, capsSize: Bool = true, past: DayIndex? = nil,
         using random: inout SeededRandom
     ) -> (cards: [Candidate], catchUp: Int) {
         let options = deck.learningOptions
@@ -257,7 +260,8 @@ public struct StudySession: Sendable {
         let overdue = due.reduce(0) { $0 + ($1.isBacklog ? 1 : 0) }
         var backlogLeft = includingBacklog ? Int.max : backlogShareLeft(overdue: overdue, in: deck, at: now, scheduler: scheduler, calendar: calendar)
         var backlogTaken = 0
-        for candidate in due + new where selected.count < (options.cardsPerSession ?? Int.max) {
+        let sizeLimit = capsSize ? options.cardsPerSession ?? Int.max : Int.max
+        for candidate in due + new where selected.count < sizeLimit {
             let card = candidate.card
             if candidate.urgency != .learning, let note = card.note {
                 let buried = selectedNotes.contains(note) || (reviewedToday[note] ?? []).contains { $0 != card.id }
@@ -432,6 +436,7 @@ public struct StudyCounts: Hashable, Sendable {
 
     public var new: Int { newProduction + newOther }
 
-    /// The size of the session, which `cardsPerSession` has already capped.
+    /// The size of the plan. `cardsPerSession` doesn't cap it: it is the size of a segment of
+    /// the stream.
     public var total: Int { new + learning + review }
 }

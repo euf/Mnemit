@@ -12,7 +12,9 @@ public struct LearningOptions: Hashable, Sendable {
     public var maximumInterval: Int = 36500
     /// Steps (`.good` grades) a card in (re)learning needs to reach the review phase.
     public var steps: Int = 2
-    /// Maximum number of cards per session; `nil` means unlimited.
+    /// Maximum number of cards in one session, which is the size of one segment of the study
+    /// stream; `nil` means unlimited. The plan of the day, and the goal made of it, isn't
+    /// capped by it: the stream takes the plan segment after segment.
     public var cardsPerSession: Int? = 100
     /// Maximum number of never-studied cards a study day introduces, not counting new
     /// production cards (`newProductionPerSession`); `nil` means unlimited. Cards whose

@@ -6,9 +6,11 @@ import Foundation
 ///
 /// 1. `Stage.plan`: today's plan, what `StudySession.counts(for:at:calendar:)` reports,
 ///    in the order and within the limits of `StudySession`, a share of the backlog
-///    included (`DailyGoal.backlogShare(of:)`). When a segment of the plan is
-///    done, the plan is looked at again: `cardsPerSession` may have left cards out, and
-///    cards of an Again come back as learning cards.
+///    included (`DailyGoal.backlogShare(of:)`), taken in segments of at most
+///    `cardsPerSession` cards. When a segment of the plan is done, the plan is looked at
+///    again: the cards the segment left out come next, and cards of an Again come back as
+///    learning cards. The segments are the stream's business: the plan the learner sees is
+///    all of it.
 /// 2. `Stage.rest`: the plan is empty, which is the daily goal. The stream waits here for
 ///    the learner, who can `keepGoing(in:at:calendar:)` or `addNewCards(_:in:at:calendar:)`.
 /// 3. Beyond the plan, `Stage.catchUp`: the rest of the backlog. Its cards are due, so

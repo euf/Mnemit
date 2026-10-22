@@ -373,6 +373,32 @@ struct DailyProgressTests {
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).catchUp == 1500 - 215)
     }
 
+    @Test func theSizeOfASessionCapsNeitherTheGoalNorWhatIsShown() throws {
+        // The default size of a session, 100, is the size of a segment of the stream, no cap on the plan.
+        var options = options()
+        options.cardsPerSession = LearningOptions().cardsPerSession
+        #expect(options.cardsPerSession == 100)
+        let onTime = (0..<12).map { due("t\($0)", onDay: today) }
+        let backlog = (0..<1500).map { due("b\($0)", onDay: today - 1 - $0 % 5) }
+        var deck = try Deck(learningOptions: options, cards: onTime + backlog)
+        let goal = 12 + 215
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == goal)
+        #expect(evaluate([deck]).ring == DailyRing(reviews: 0, goal: goal))
+        // The stream takes the plan in segments of a hundred, and the goal doesn't grow with them.
+        #expect(StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: 1)).session.totalCount == 100)
+        var done = 0
+        while StudySession.counts(for: deck, at: now, calendar: calendar).total > 0 {
+            let segment = StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: 1)).session.totalCount
+            review(segment, of: &deck, at: now)
+            done += segment
+            let ring = evaluate([deck]).ring
+            #expect(ring == DailyRing(reviews: done, goal: goal))
+            #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == goal - done)
+        }
+        #expect(done == goal)
+        #expect(evaluate([deck]).ring.isGoalMet)
+    }
+
     @Test func withoutABacklogTheGoalIsThePlan() throws {
         let deck = try Deck(learningOptions: options(), cards: (0..<30).map { due("c\($0)", onDay: today) })
         let counts = StudySession.counts(for: deck, at: now, calendar: calendar)
