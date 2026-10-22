@@ -58,6 +58,7 @@ struct TodayScreen: View {
                         .buttonStyle(.borderedProminent)
                     Button("Use iCloud Drive Folder", action: chooseFolder)
                     Button("Open Deck…", action: openDeck)
+                    AnkiWebLink()
                 }
             } else {
                 // One view carries the search field, so it keeps its focus as the first letter
@@ -80,6 +81,7 @@ struct TodayScreen: View {
                         .disabled(decks.isEmpty)
                     Button("Import…", systemImage: "square.and.arrow.down", action: importCards)
                         .disabled(decks.isEmpty)
+                    AnkiWebLink()
                     Button("New Deck", systemImage: "rectangle.stack.badge.plus", action: newDeck)
                 }
                 Menu("More", systemImage: "ellipsis") {

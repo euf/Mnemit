@@ -2,9 +2,10 @@ import Foundation
 import Observation
 import VocabCore
 
-/// "Import Cards…" on both platforms: reads cards from a CSV or TSV file into a preview, from
-/// which the chosen cards are appended to the open deck. The Mac asks for the file with an open
-/// panel, the iPhone with the file picker; the preview and its rules are the same.
+/// "Import Cards…" on both platforms: reads cards from a CSV or TSV file, or an Anki package
+/// (`CardImport+Anki.swift`), into a preview, from which the chosen cards are appended to the
+/// open deck. The Mac asks for the file with an open panel, the iPhone with the file picker;
+/// the preview and its rules are the same.
 ///
 /// A file of our own export, or one that Anki wrote, starts with header lines (see
 /// `DelimitedText.decode(_:)`) that name the columns: `CardImporter` finds the word key and
@@ -17,14 +18,21 @@ enum CardImport {
         let fileName: String
         let candidates: [CardImporter.Candidate]
         let skippedRows: Int
+        /// What an Anki package brought and left out; `nil` for a CSV or TSV file.
+        let anki: AnkiSummary?
         /// The cards to add; duplicates start out unselected.
         var selection: Set<Card.ID>
 
-        init(fileName: String, result: CardImporter.Result) {
+        init(fileName: String, candidates: [CardImporter.Candidate], skippedRows: Int, anki: AnkiSummary? = nil) {
             self.fileName = fileName
-            candidates = result.candidates
-            skippedRows = result.skippedRows
-            selection = Set(result.candidates.filter { $0.duplicate == nil }.map(\.id))
+            self.candidates = candidates
+            self.skippedRows = skippedRows
+            self.anki = anki
+            selection = Set(candidates.filter { $0.duplicate == nil }.map(\.id))
+        }
+
+        convenience init(fileName: String, result: CardImporter.Result) {
+            self.init(fileName: fileName, candidates: result.candidates, skippedRows: result.skippedRows)
         }
 
         /// The selected cards in file order.

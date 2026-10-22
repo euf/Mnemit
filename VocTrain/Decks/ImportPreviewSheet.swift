@@ -2,29 +2,51 @@ import SwiftUI
 import UniformTypeIdentifiers
 import VocabCore
 
-/// A CSV or TSV file the learner picked, read into memory while the file picker still gives
-/// access to it.
+/// A file the learner picked or opened in Mnemit: a CSV or TSV file, read into memory while the
+/// file picker still gives access to it, or an Anki package, which stays a file and is read
+/// off the main thread by the preview, as it can be large.
 struct ImportedFile: Identifiable {
+    enum Content {
+        case table(Data)
+        /// The package at the URL; the second is the package read already, if it was.
+        case anki(URL, AnkiImport?)
+    }
+
     let id = UUID()
     var name: String
-    var data: Data
+    var content: Content
 
     init(name: String, data: Data) {
         self.name = name
-        self.data = data
+        content = .table(data)
     }
 
+    init(ankiAt url: URL, package: AnkiImport? = nil) {
+        name = url.lastPathComponent
+        content = .anki(url, package)
+    }
+
+    /// The file of the picker: a package is read later, a table now.
     init(contentsOf url: URL) throws {
-        let isScoped = url.startAccessingSecurityScopedResource()
-        defer { if isScoped { url.stopAccessingSecurityScopedResource() } }
-        self.init(name: url.lastPathComponent, data: try Data(contentsOf: url))
+        if url.isAnkiPackage {
+            self.init(ankiAt: url)
+        } else {
+            let isScoped = url.startAccessingSecurityScopedResource()
+            defer { if isScoped { url.stopAccessingSecurityScopedResource() } }
+            self.init(name: url.lastPathComponent, data: try Data(contentsOf: url))
+        }
+    }
+
+    /// The text of a table, `nil` for a package.
+    var data: Data? {
+        if case let .table(data) = content { data } else { nil }
     }
 }
 
 extension View {
-    /// The file picker of "Import Cards…": calls `onPick` with the file read, or tells the
-    /// learner why it could not be read. Present it from another view than `deckPicker`: two
-    /// `fileImporter`s on one view cancel each other.
+    /// The file picker of "Import Cards…", for a CSV or TSV file or an Anki package: calls
+    /// `onPick` with the file, or tells the learner why it could not be read. Present it from
+    /// another view than `deckPicker`: two `fileImporter`s on one view cancel each other.
     func cardFileImporter(isPresented: Binding<Bool>, onPick: @escaping (ImportedFile) -> Void) -> some View {
         modifier(CardFileImporter(isPresented: isPresented, onPick: onPick))
     }
@@ -37,7 +59,7 @@ private struct CardFileImporter: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .fileImporter(isPresented: $isPresented, allowedContentTypes: [.delimitedText, .plainText]) { result in
+            .fileImporter(isPresented: $isPresented, allowedContentTypes: [.delimitedText, .plainText, .ankiPackage]) { result in
                 switch result {
                 case let .success(url):
                     do {
@@ -61,11 +83,15 @@ private struct CardFileImporter: ViewModifier {
 
 /// The cards of an import file, to choose which ones to add to the deck: the Mac's preview as a
 /// list with a checkmark per card. A card the deck has, or an earlier one of the file, starts
-/// out unchecked and says so. "Add N Cards" adds the checked ones as one change, one Undo.
+/// out unchecked and says so. "Add N Cards" adds the checked ones as one change, one Undo; the
+/// cards of an Anki package come with their review history. A package is read while a spinner
+/// shows.
 struct ImportPreviewSheet: View {
     var document: VocabularyDocument
     var file: ImportedFile
     @State private var preview: CardImport.Preview?
+    /// Why the file could not be read.
+    @State private var failure: String?
     @Environment(\.dismiss) private var dismiss
 
     init(document: VocabularyDocument, file: ImportedFile, preview: CardImport.Preview? = nil) {
@@ -82,13 +108,23 @@ struct ImportPreviewSheet: View {
                         ContentUnavailableView {
                             Label("No Cards", systemImage: "tray")
                         } description: {
-                            Text("“\(file.name)” contains no rows with a question and an answer.")
+                            if preview.anki == nil {
+                                Text("“\(file.name)” contains no rows with a question and an answer.")
+                            } else {
+                                Text("“\(file.name)” has no cards Mnemit can import.")
+                            }
                         }
                     } else {
                         PreviewList(preview: preview)
                     }
+                } else if let failure {
+                    ContentUnavailableView {
+                        Label("Import failed", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(failure)
+                    }
                 } else {
-                    ProgressView()
+                    ProgressView("Reading “\(file.name)”…")
                 }
             }
             .navigationTitle("Import Cards")
@@ -115,9 +151,25 @@ struct ImportPreviewSheet: View {
                 }
             }
         }
-        .task {
-            if preview == nil {
-                preview = CardImport.preview(of: file.data, fileName: file.name, existing: document.deck.cards, created: document.clock.now)
+        .task { await load() }
+    }
+
+    private func load() async {
+        guard preview == nil else { return }
+        switch file.content {
+        case let .table(data):
+            preview = CardImport.preview(of: data, fileName: file.name, existing: document.deck.cards, created: document.clock.now)
+        case let .anki(url, known):
+            do {
+                let package: AnkiImport
+                if let known {
+                    package = known
+                } else {
+                    package = try await CardImport.loadAnki(at: url)
+                }
+                preview = await CardImport.ankiPreview(of: package, fileName: file.name, for: document)
+            } catch {
+                failure = CardImport.failureMessage(error)
             }
         }
     }
@@ -134,7 +186,15 @@ private struct PreviewList: View {
                 }
             } header: {
                 VStack(alignment: .leading, spacing: 2) {
+                    if let anki = preview.anki {
+                        Text(anki.deckTitle)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                    }
                     Text("\(preview.candidates.count) cards in “\(preview.fileName)”")
+                    ForEach(preview.anki?.lines ?? [], id: \.self) { line in
+                        Text(line)
+                    }
                     if preview.skippedRows > 0 {
                         Text("\(preview.skippedRows) rows without a question or an answer are left out.")
                     }

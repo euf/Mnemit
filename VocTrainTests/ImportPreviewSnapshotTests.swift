@@ -57,6 +57,31 @@ struct ImportPreviewSnapshotTests {
         window.isHidden = true
     }
 
+    /// The preview of an Anki package: its deck, the counts with review history and what was left
+    /// out, and a card the deck has already, unchecked.
+    @Test(arguments: [false, true])
+    func ankiPreviewSheet(dark: Bool) async throws {
+        let existing = Card(text: CardText(question: "νερό", answer: "water")!, created: created)
+        let document = try VocabularyDocument(deck: Deck(cards: [existing]), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+        let undoManager = UndoManager()
+        document.attachUndoManager(undoManager)
+        Self.undoManagers.append(undoManager)
+
+        let package = try await CardImport.loadAnki(at: AnkiImportScreenTests.fixture("greek-latest"))
+        let preview = await CardImport.ankiPreview(of: package, fileName: "greek-latest.apkg", for: document)
+        #expect(preview.candidates.count == 6)
+        #expect(preview.anki?.withHistory == 4)
+
+        let file = ImportedFile(ankiAt: AnkiImportScreenTests.fixture("greek-latest"), package: package)
+        let window = try await host(ImportPreviewSheet(document: document, file: file, preview: preview), dark: dark)
+        let image = UIGraphicsImageRenderer(bounds: CGRect(origin: .zero, size: Self.size)).image { _ in
+            window.drawHierarchy(in: CGRect(origin: .zero, size: Self.size), afterScreenUpdates: true)
+        }
+        let data = try #require(image.pngData())
+        try data.write(to: directory.appendingPathComponent("import-anki-preview-\(dark ? "dark" : "light").png"))
+        window.isHidden = true
+    }
+
     /// The sheet as a sheet over a plain page, with the run loop given time to lay it out.
     private func host<Root: View>(_ root: Root, dark: Bool) async throws -> UIWindow {
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)

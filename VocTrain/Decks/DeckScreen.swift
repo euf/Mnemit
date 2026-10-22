@@ -207,6 +207,10 @@ private struct LoadedSections: View {
             }
             .tint(.primary)
             .disabled(!isEditable)
+            Link(destination: AnkiWebLink.url) {
+                RowLabel(title: "Shared Decks on AnkiWeb", symbol: "safari")
+            }
+            .tint(.primary)
         }
 
         if canEdit, mistakes > 0 || newest > 0 {

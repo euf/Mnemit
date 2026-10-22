@@ -37,9 +37,11 @@ extension VocabularyDocument {
         return deck.cards.count - before
     }
 
-    /// Appends cards from an import as one change, see `DeckChange.adding(_:to:)`.
+    /// Appends cards from an import as one change, one undo, with the learning state and the
+    /// review log they come with, see `DeckChange.importing(_:into:)`: those of an Anki package
+    /// bring their history.
     func importCards(_ cards: [Card]) {
-        guard isReadyToEdit, let change = DeckChange.adding(cards, to: deck) else { return }
+        guard isReadyToEdit, let change = DeckChange.importing(cards, into: deck) else { return }
         perform(change, actionName: String(localized: "Import Cards"))
     }
 

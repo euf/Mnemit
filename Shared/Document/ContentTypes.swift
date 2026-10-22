@@ -11,4 +11,8 @@ extension UTType {
     static let deckTypes = [vocabularyDeck, legacyVocabularyDeck]
     /// Documents of MacVocTrain 1 (`.mvt`), which can be imported.
     static let legacyMacVocTrain = UTType(importedAs: "com.mfluch.MacVocTrain", conformingTo: .data)
+    /// Anki packages (`.apkg`), which both apps import cards from; the apps list them as
+    /// viewer, rank alternate, so "Open in Mnemit" starts the import. Imported, as Anki
+    /// owns the format.
+    static let ankiPackage = UTType(importedAs: "com.euf.mnemit.anki-package", conformingTo: .zip)
 }

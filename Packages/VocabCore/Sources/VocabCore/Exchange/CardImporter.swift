@@ -62,10 +62,8 @@ public enum CardImporter {
     public static func candidates(
         from rows: [[String]], existing: [Card], isHeader: ([String]) -> Bool, created: Date, columns: [String]? = nil
     ) -> Result {
-        var result = Result(candidates: [], skippedRows: 0)
-        let inDeck = Set(existing.map { CardText.key(forQuestion: $0.question) })
-        // The first card of each question in the file.
-        var inFile: [String: Card] = [:]
+        var skippedRows = 0
+        var cards: [Card] = []
         let header = columns == nil ? rows.first.flatMap { isHeader($0) ? $0 : nil } : nil
         let layout = Layout(names: columns ?? header)
 
@@ -73,18 +71,29 @@ public enum CardImporter {
             if index == 0, header != nil { continue }
             func field(_ column: Int?) -> String { column.flatMap { row.indices.contains($0) ? row[$0] : nil } ?? "" }
             guard row.count >= 2, let text = CardText(question: field(layout.question), answer: field(layout.answer), hint: field(layout.hint)) else {
-                result.skippedRows += 1
+                skippedRows += 1
                 continue
             }
             let note = Card.normalized(field(layout.note))
             // A kind belongs to a word key.
             let kind = note == nil ? nil : CardKind(rawValue: field(layout.kind).trimmingCharacters(in: .whitespaces).lowercased())
-            let card = Card(text: text, note: note, kind: kind, created: created)
+            cards.append(Card(text: text, note: note, kind: kind, created: created))
+        }
+        return Result(candidates: candidates(of: cards, existing: existing), skippedRows: skippedRows)
+    }
+
+    /// `cards` as candidates, in order: a card whose question `existing` has, or an earlier
+    /// card of `cards` has, is marked as a duplicate. The cards of an Anki package come
+    /// this way, see `AnkiImport.cards(from:learningOptions:calendar:created:)`.
+    public static func candidates(of cards: [Card], existing: [Card]) -> [Candidate] {
+        let inDeck = Set(existing.map { CardText.key(forQuestion: $0.question) })
+        // The first card of each question in the file.
+        var inFile: [String: Card] = [:]
+        return cards.map { card in
             let key = CardText.key(forQuestion: card.question)
             let duplicate: Duplicate? = inDeck.contains(key) ? .inDeck : inFile[key].map { .inFile(question: $0.question, answer: $0.answer) }
             inFile[key] = inFile[key] ?? card
-            result.candidates.append(Candidate(card: card, duplicate: duplicate))
+            return Candidate(card: card, duplicate: duplicate)
         }
-        return result
     }
 }

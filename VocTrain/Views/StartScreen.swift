@@ -34,6 +34,14 @@ struct StartScreen: View {
     /// `nil` for Add Cards.
     @State private var fileToImport: ImportedFile?
     @State private var isChoosingImport = false
+    /// The Anki package that "Open in Mnemit" brought, copied, while a sheet or the introduction
+    /// still covers Today.
+    @State private var waitingAnki: IncomingPackage?
+    /// The package whose sheet asks where its cards go.
+    @State private var incomingAnki: IncomingPackage?
+    /// What the sheet chose, which `importChosenAnki` takes up once the sheet has gone.
+    @State private var chosenAnki: (file: ImportedFile, destination: AnkiDestinationSheet.Destination)?
+    @State private var importFailure: String?
     @State private var showsNewDeck = false
     /// The deck a new deck's sheet leaves to push once it has gone.
     @State private var openAfterSheet: PushedDecks.Slot?
@@ -78,6 +86,12 @@ struct StartScreen: View {
         .sheet(item: $addingCards) { deck in
             AddCardsHost(deck: deck, file: fileToImport)
         }
+        .sheet(item: $incomingAnki, onDismiss: importChosenAnki) { package in
+            AnkiDestinationSheet(url: package.url, decks: knownDecks.byName) { file, destination in
+                chosenAnki = (file, destination)
+                incomingAnki = nil
+            }
+        }
         .fullScreenCover(item: $run) { run in
             StudyRunView(run: run, ring: ring, knownDecks: knownDecks, counts: deckCounts.counts) { self.run = nil }
         }
@@ -88,6 +102,11 @@ struct StartScreen: View {
             Button("OK") {}
         } message: {
             Text("This place has no Trash, so “\(setAsideDeck ?? "")” was moved to the folder “\(DeckFiles.setAsideFolderName)” next to it. Files can put it back.")
+        }
+        .alert("Import failed", isPresented: Binding(get: { importFailure != nil }, set: { if !$0 { importFailure = nil } })) {
+            Button("OK") {}
+        } message: {
+            Text(importFailure ?? "")
         }
         .onOpenURL(perform: open)
         .onAppear {
@@ -107,6 +126,8 @@ struct StartScreen: View {
                         // stream are not for its Undo.
                         previous.deck.undoManager.removeAllActions()
                     }
+                    // A package that came during the stream asks where it goes.
+                    await presentIncomingAnki()
                 }
             }
         }
@@ -250,6 +271,12 @@ struct StartScreen: View {
         guard run == nil, addingCards == nil, path.isEmpty else { return }
         let urls = knownDecks.byName.map(\.url)
         guard let url = lastUsed(in: urls) ?? urls.first else { return }
+        showAddCards(to: url, importing: file)
+    }
+
+    /// The sheet of Add Cards, or the preview of `file`, over the deck at `url`.
+    private func showAddCards(to url: URL, importing file: ImportedFile?) {
+        guard run == nil, addingCards == nil else { return }
         knownDecks.remember(url)
         fileToImport = file
         addingCards = OpenDeck(url: url)
@@ -258,15 +285,28 @@ struct StartScreen: View {
     /// Makes the deck in the folder of decks, which is the app's own folder on the iPhone while the
     /// learner has chosen none, and prepares its screen: an empty deck is for adding cards.
     private func createDeck(named name: String) async throws {
+        openAfterSheet = pushed.open(try await makeDeck(named: name))
+        showsNewDeck = false
+    }
+
+    /// Creates the deck `name` in the folder of decks and lists it. A name that is taken is a
+    /// failure, unless `numbered`: then the deck is "name 2", "name 3" and so on.
+    private func makeDeck(named name: String, numbered: Bool = false) async throws -> URL {
         if knownDecks.folder == nil {
             knownDecks.useLocalFolder()
         }
-        guard let folder = knownDecks.folder else { return }
-        let url = try await DeckFiles.create(named: name, in: folder)
-        knownDecks.remember(url)
-        knownDecks.refreshFolder()
-        openAfterSheet = pushed.open(url)
-        showsNewDeck = false
+        guard let folder = knownDecks.folder else { throw CocoaError(.fileNoSuchFile) }
+        var number = 1
+        while true {
+            do {
+                let url = try await DeckFiles.create(named: number == 1 ? name : "\(name) \(number)", in: folder)
+                knownDecks.remember(url)
+                knownDecks.refreshFolder()
+                return url
+            } catch DeckFiles.Failure.nameTaken where numbered && number < 100 {
+                number += 1
+            }
+        }
     }
 
     /// The sheet of the new deck has gone: the deck's screen.
@@ -325,15 +365,69 @@ struct StartScreen: View {
     }
 
     /// A deck file the learner opened from the Files app joins the list; a link from the
-    /// widget (`mnemit://study`) starts Study.
+    /// widget (`mnemit://study`) starts Study; an Anki package asks where its cards go.
     private func open(_ url: URL) {
-        guard WidgetLink.isStudy(url) else {
+        switch IncomingLink(url) {
+        case .study:
+            // The introduction comes first, and there are no decks before it.
+            guard hasSeenIntroduction else { return }
+            Task { await studyFromWidget() }
+        case .ankiPackage:
+            Task { await receiveAnki(url) }
+        case .deck:
             add(deckAt: url)
-            return
         }
-        // The introduction comes first, and there are no decks before it.
-        guard hasSeenIntroduction else { return }
-        Task { await studyFromWidget() }
+    }
+
+    // MARK: Anki packages
+
+    /// Copies a package that "Open in Mnemit" brought, then asks where its cards go.
+    private func receiveAnki(_ url: URL) async {
+        IncomingPackages.purge()
+        do {
+            waitingAnki = IncomingPackage(url: try await IncomingPackages.copy(url))
+            await presentIncomingAnki()
+        } catch {
+            importFailure = error.localizedDescription
+        }
+    }
+
+    /// Shows the sheet that asks where the waiting package goes, once nothing covers Today: the
+    /// introduction and a study stream finish first, the sheets and the decks of the stack close.
+    private func presentIncomingAnki() async {
+        guard waitingAnki != nil, hasSeenIntroduction, !showsIntroduction, run == nil else { return }
+        let isCovered = showsSettings || showsNewDeck || isChoosing || isChoosingImport || addingCards != nil || !path.isEmpty
+        showsSettings = false
+        showsNewDeck = false
+        isChoosing = false
+        isChoosingImport = false
+        addingCards = nil
+        path = []
+        if isCovered {
+            try? await Task.sleep(for: .milliseconds(600))
+        }
+        guard let package = waitingAnki, run == nil, !showsIntroduction else { return }
+        waitingAnki = nil
+        incomingAnki = package
+    }
+
+    /// The sheet of the destination has gone: the cards go to a new deck, named after the Anki
+    /// deck, or to the deck chosen, and the preview of the package shows.
+    private func importChosenAnki() {
+        guard let chosen = chosenAnki else { return }
+        chosenAnki = nil
+        Task {
+            do {
+                let url: URL
+                switch chosen.destination {
+                case let .existing(deck): url = deck.url
+                case let .newDeck(name): url = try await makeDeck(named: name, numbered: true)
+                }
+                showAddCards(to: url, importing: chosen.file)
+            } catch {
+                importFailure = error.localizedDescription
+            }
+        }
     }
 
     /// One tap on the widget is the first card: what covers Today closes first, the decks are
@@ -428,6 +522,9 @@ struct StartScreen: View {
     private func finishIntroduction() {
         hasSeenIntroduction = true
         showsIntroduction = false
-        Task { await refreshAll() }
+        Task {
+            await refreshAll()
+            await presentIncomingAnki()
+        }
     }
 }

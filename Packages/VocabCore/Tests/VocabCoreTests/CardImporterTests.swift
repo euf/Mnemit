@@ -100,4 +100,13 @@ struct CardImporterTests {
         #expect(result.skippedRows == 1)
         #expect(result.candidates.map(\.duplicate) == [nil, nil, .inFile(question: "kot", answer: "Katze")])
     }
+
+    /// The cards of an Anki package are marked the way the rows of a file are.
+    @Test func marksTheDuplicatesOfMadeCards() {
+        let existing = [Card(question: "Dom ", answer: "Haus")]
+        let made = [("dom", "Heim"), ("kot", "Katze"), ("KOT", "Kater")].map { Card(question: $0.0, answer: $0.1) }
+        let candidates = CardImporter.candidates(of: made, existing: existing)
+        #expect(candidates.map(\.card) == made)
+        #expect(candidates.map(\.duplicate) == [.inDeck, nil, .inFile(question: "kot", answer: "Katze")])
+    }
 }
