@@ -8,9 +8,10 @@ import WidgetKit
 ///
 /// The screen asks for a write whenever the figures may have changed: after each grade, at
 /// launch, when the decks change, when the reminder moves. Writes wait for a short quiet (a
-/// run of grades is one write) and happen off the main actor, as the forecast reads the decks
-/// again: the open deck as it is, the others from their files. The moment the app goes to
-/// the background the write is made at once.
+/// run of grades is one write, and a card that speaks is let finish, `GreekSpeech.whenQuiet()`) and
+/// happen off the main actor, as the forecast reads the decks again: the open deck as it is, the
+/// others from their files, and the keychain answers slowly. The moment the app goes to the
+/// background the write is made at once.
 @MainActor
 final class WidgetSync {
     /// What the snapshot is made from, as the screen has it when it asks.
@@ -54,6 +55,7 @@ final class WidgetSync {
         pending?.cancel()
         pending = Task { [weak self, delay] in
             try? await Task.sleep(for: delay)
+            await GreekSpeech.shared.whenQuiet()
             guard !Task.isCancelled else { return }
             await self?.write(inputs)
         }
@@ -88,8 +90,11 @@ final class WidgetSync {
         let run = Task { @MainActor in
             await previous?.value
             let now = Date()
-            let snapshot = await Task.detached(priority: .utility) { Self.snapshot(from: inputs, at: now) }.value
-            if StallTrace.measure("widgetStoreWrite", { store.write(snapshot) }) {
+            let isStored = await Task.detached(priority: .utility) { [store = self.store] in
+                let snapshot = StallTrace.measure("widgetSnapshot") { Self.snapshot(from: inputs, at: now) }
+                return StallTrace.measure("widgetStoreWrite") { store.write(snapshot) }
+            }.value
+            if isStored {
                 reload()
             }
         }

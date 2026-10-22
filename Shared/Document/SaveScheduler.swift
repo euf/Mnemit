@@ -4,7 +4,7 @@ import Foundation
 /// so the other device gets reviews soon and conflicts become rare. The devices take
 /// turns rather than being used at the same time, and iCloud Drive takes about a
 /// minute to bring a version over, so waiting a few seconds for more changes costs
-/// little.
+/// little. A save waits for a card that speaks to be through, see `GreekSpeech.whenQuiet()`.
 @MainActor
 final class SaveScheduler {
     /// The save scheduled after the latest change, or the one `flush()` started.
@@ -29,6 +29,7 @@ final class SaveScheduler {
         hasUnsavedChange = true
         saving = Task { [weak self, delay] in
             try? await Task.sleep(for: delay)
+            await GreekSpeech.shared.whenQuiet()
             guard !Task.isCancelled, let self else { return }
             hasUnsavedChange = false
             await save()?.value

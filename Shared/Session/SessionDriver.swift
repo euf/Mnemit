@@ -100,6 +100,7 @@ final class SessionDriver {
 
     /// The learner has seen what the last grade did.
     func dismissReceipt() {
+        StallTrace.mark("dismissReceipt")
         lastReceipt = nil
     }
 

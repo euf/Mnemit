@@ -29,16 +29,27 @@ struct SpeechWindowStallTests {
     static let revealAfter = 1.6
     static let gradeAfter = 2.6
     static let grades = 15
-    /// The speech window, in seconds after a grade.
+    /// The speech window, in seconds after a grade; and after the answer shows, which is spoken
+    /// `GreekSpeech.revealDelay` after, until the grade 1 s later (a little earlier: the swipe starts).
     static let window = 0.3...2.0
+    static let answerWindow = GreekSpeech.revealDelay...0.9
     /// A gap this long drops a frame at 60 Hz.
     static let budgetMs = 16.0
+    /// How long the voice, which is off, counts as speaking a word: from 0.4 s after the card came up
+    /// to the end of the window, a slow word on a good voice.
+    static let simulatedSpeech = Duration.milliseconds(1600)
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["MNEMIT_PERF"] != nil))
     func theMainThreadDoesNotStandStillWhileTheCardSpeaks() async throws {
         try #require(GreekSpeech.isUnderTest, "a test run must not speak")
-        UserDefaults.standard.set(true, forKey: GreekSpeech.autoSpeakKey)
-        defer { UserDefaults.standard.set(false, forKey: GreekSpeech.autoSpeakKey) }
+        GreekSpeech.shared.autoSpeaks = { true }
+        // A Greek word takes about a second to say; the voice is silent, and the work that waits for it
+        // waits as it would.
+        GreekSpeech.shared.simulatedSpeechDuration = Self.simulatedSpeech
+        defer {
+            GreekSpeech.shared.autoSpeaks = { GreekSpeech.autoSpeak }
+            GreekSpeech.shared.simulatedSpeechDuration = nil
+        }
         guard let source = Self.ownerDecks() else {
             print("SKIPPED: the owner's deck is not at ~/Library/Mobile Documents/com~apple~CloudDocs/Mnemit/Greek A1–A2.mnemit")
             return
@@ -103,6 +114,7 @@ struct SpeechWindowStallTests {
                 try await Self.sleep(until: cardStart, plus: Self.revealAfter)
                 let spokenBeforeReveal = speech.speakCount
                 let revealAt = DispatchTime.now().uptimeNanoseconds
+                recorder.add("reveal", revealAt, revealAt)
                 model.reveal()
                 try await Self.sleep(until: cardStart, plus: Self.gradeAfter)
                 let grade = pattern[graded % pattern.count]
@@ -114,10 +126,12 @@ struct SpeechWindowStallTests {
                 record.speakAtReveal = speech.speakCount - spokenBeforeReveal
                 // As the card's `commit` does: the speech stops, the card flies, then the stream grades.
                 speech.stop()
+                recorder.add("fly", DispatchTime.now().uptimeNanoseconds, DispatchTime.now().uptimeNanoseconds)
                 var done = false
                 flight.fly(grade, reduceMotion: false) {
                     record.at = DispatchTime.now().uptimeNanoseconds
                     model.grade(grade)
+                    record.rested = model.isResting
                     done = true
                 }
                 try await waitUntil("the card has been graded") { done }
@@ -137,9 +151,10 @@ struct SpeechWindowStallTests {
         report.line("keychain write (real store, main thread, once): \(Self.keychainWriteMs(document: document, ring: ring))")
         try report.write()
         await openDeck.close()
-        let worst = grades.compactMap { $0.at.map { Self.worstGap(in: timer.samples, around: $0, range: Self.window) } }.max() ?? 0
+        let worst = Self.worstStalls(grades, samples: timer.samples)
         if ProcessInfo.processInfo.environment["MNEMIT_PERF"] != "report" {
-            #expect(worst < Self.budgetMs, "the longest stall in the speech window is \(worst) ms")
+            #expect(worst.question < Self.budgetMs, "the longest stall in the speech window of a question is \(worst.question) ms")
+            #expect(worst.answer < Self.budgetMs, "the longest stall in the speech window of an answer is \(worst.answer) ms")
         }
     }
 
@@ -149,8 +164,8 @@ struct SpeechWindowStallTests {
     @Test func aCardAsksForItsSpeechOnce() async throws {
         try #require(GreekSpeech.isUnderTest, "a test run must not speak")
         // The app that hosts a test run turns the automatic speech off; the cards ask for it as they would.
-        UserDefaults.standard.set(true, forKey: GreekSpeech.autoSpeakKey)
-        defer { UserDefaults.standard.set(false, forKey: GreekSpeech.autoSpeakKey) }
+        GreekSpeech.shared.autoSpeaks = { true }
+        defer { GreekSpeech.shared.autoSpeaks = { GreekSpeech.autoSpeak } }
         let created = Date(timeIntervalSince1970: 1_791_216_000)
         let words = ["το σπίτι", "ο δρόμος", "η θάλασσα", "το βιβλίο"]
         let cards = words.map { Card(text: CardText(question: $0, answer: "x")!, created: created) }
@@ -281,6 +296,14 @@ struct SpeechWindowStallTests {
         time("RoundGuide.cardsDone(in:)") {
             _ = RoundGuide(ends: [10, 20], doneElsewhere: 3).cardsDone(in: document)
         }
+        var size: CGFloat = 150
+        time("gradient of a 150 pt ring, made anew (rest screen)") {
+            size += 1
+            let tip = CGColor(red: 0.6, green: 0.6, blue: 0.95, alpha: 1)
+            let accent = CGColor(red: 0.35, green: 0.34, blue: 0.84, alpha: 1)
+            _ = GradientGenerator.image(
+                scale: 3, size: CGSize(width: size, height: size), colors: [tip, tip, accent, accent], locations: [0, 0.05, 0.95, 1], endPoint: CGPoint(x: 0.4, y: 1))
+        }
         time("DailyProgress.evaluate (off main in the app)") {
             let activity = DeckActivity(deck: document.deck, calendar: document.calendar)
             _ = DailyProgress.evaluate([activity], at: document.clock.now, calendar: document.calendar)
@@ -300,6 +323,21 @@ struct SpeechWindowStallTests {
         return stored ? String(format: "%.2f ms", ms) : "not possible here (no keychain group), tried \(String(format: "%.2f", ms)) ms"
     }
 
+    /// The longest stalls in the windows where a card speaks: after a grade that brings a card with a
+    /// Greek question, and after the answer shows when it is Greek; and, for the record, after any
+    /// grade that leaves a card (a stream at rest speaks nothing).
+    static func worstStalls(_ grades: [GradeRecord], samples: [GapTimer.Sample]) -> (question: Double, answer: Double, anyGrade: Double) {
+        func worst(_ records: [GradeRecord], at time: (GradeRecord) -> UInt64?, range: ClosedRange<Double>) -> Double {
+            records.compactMap { record in time(record).map { worstGap(in: samples, around: $0, range: range) } }.max() ?? 0
+        }
+        let question = grades.filter { !$0.rested && $0.speakCalls > 0 }
+        let answer = grades.filter { $0.speakAtReveal > 0 }
+        return (
+            worst(question, at: \.at, range: window), worst(answer, at: \.revealAt, range: answerWindow),
+            worst(grades.filter { !$0.rested }, at: \.at, range: window)
+        )
+    }
+
     static func worstGap(in samples: [GapTimer.Sample], around at: UInt64, range: ClosedRange<Double>) -> Double {
         let from = at + UInt64(range.lowerBound * 1e9)
         let to = at + UInt64(range.upperBound * 1e9)
@@ -315,6 +353,8 @@ struct GradeRecord {
     var at: UInt64?
     var cardAppeared = 0
     var speakCalls = 0
+    /// The grade ended a round: the stream rests, no card shows and nothing is spoken.
+    var rested = false
     /// When the answer was shown, and how many utterances that asked for (a Greek answer under a
     /// question in Russian is spoken at once).
     var revealAt: UInt64?
@@ -408,16 +448,16 @@ final class ReportWriter {
             let ran = events.filter { $0.end > from && $0.start < to && $0.milliseconds >= 1 && !$0.name.hasSuffix("(off main)") }
                 .map { String(format: "%@ %.1f @%.2f", $0.name, $0.milliseconds, Double($0.start) / 1e9 - Double(at) / 1e9) }
                 .joined(separator: "; ")
-            line(String(format: "%2d %@ | %6.1f | %@ | %d | %d | %@", grade.index, grade.label, before, worstText, grade.cardAppeared, grade.speakCalls, ran))
+            line(String(format: "%2d %@ | %6.1f | %@ | %d | %d | %@", grade.index, grade.rested ? "\(grade.label) (rest)" : grade.label, before, worstText, grade.cardAppeared, grade.speakCalls, ran))
         }
         line("")
-        line("answer shown | max gap 0-0.3 s after | max gap 0.3-0.95 s after (the grade comes at 1.0 s) | utterances asked at the reveal")
+        line("answer shown | max gap 0-0.25 s after (the redraw) | max gap 0.25-0.9 s after (the answer is spoken; the grade comes at 1.0 s) | utterances asked at the reveal")
         for grade in grades {
             guard let at = grade.revealAt else { continue }
             line(
                 String(
-                    format: "%2d | %6.1f | %6.1f | %d", grade.index, SpeechWindowStallTests.worstGap(in: samples, around: at, range: 0...0.3),
-                    SpeechWindowStallTests.worstGap(in: samples, around: at, range: 0.3...0.95), grade.speakAtReveal))
+                    format: "%2d | %6.1f | %6.1f | %d", grade.index, SpeechWindowStallTests.worstGap(in: samples, around: at, range: 0...0.25),
+                    SpeechWindowStallTests.worstGap(in: samples, around: at, range: 0.25...0.95), grade.speakAtReveal))
         }
         line("")
         line("work by name over the whole run: count, median, max ms")
@@ -428,16 +468,21 @@ final class ReportWriter {
         }
         let all = samples.map { Double($0.gap) / 1e6 }
         line(String(format: "all gaps of the run: samples %d, over 16 ms %d, max %.1f ms", all.count, all.filter { $0 > 16 }.count, all.max() ?? 0))
-        let worstWindow = grades.compactMap { $0.at.map { SpeechWindowStallTests.worstGap(in: samples, around: $0, range: SpeechWindowStallTests.window) } }.max() ?? 0
-        line(String(format: "MAX STALL IN THE SPEECH WINDOW: %.1f ms (budget %.0f ms)", worstWindow, SpeechWindowStallTests.budgetMs))
+        let worst = SpeechWindowStallTests.worstStalls(grades, samples: samples)
+        let budget = SpeechWindowStallTests.budgetMs
+        line(String(format: "MAX STALL, SPEECH WINDOW OF A QUESTION (0.3-2.0 s after a grade whose card speaks): %.1f ms (budget %.0f ms)", worst.question, budget))
+        line(String(format: "MAX STALL, SPEECH WINDOW OF AN ANSWER (0.25-0.9 s after it shows): %.1f ms (budget %.0f ms)", worst.answer, budget))
+        line(String(format: "for the record, 0.3-2.0 s after any grade that leaves a card, spoken or not: %.1f ms", worst.anyGrade))
         line("")
         line("stalls over 16 ms outside the windows: where they fall (s after the nearest grade before them)")
         let starts = grades.compactMap(\.at)
         for sample in samples where Double(sample.gap) / 1e6 > 16 {
             let before = starts.last { $0 <= sample.end }
             let offset = before.map { Double(sample.end - $0) / 1e9 } ?? -1
-            let named = events.filter { $0.end > sample.end - sample.gap && $0.start < sample.end && $0.milliseconds >= 1 && !$0.name.hasSuffix("(off main)") }
-                .map { String(format: "%@ %.1f", $0.name, $0.milliseconds) }.joined(separator: "; ")
+            let named = events.filter {
+                $0.end >= sample.end - sample.gap && $0.start <= sample.end && ($0.milliseconds >= 1 || $0.start == $0.end) && !$0.name.hasSuffix("(off main)")
+            }
+            .map { $0.start == $0.end ? "[\($0.name)]" : String(format: "%@ %.1f", $0.name, $0.milliseconds) }.joined(separator: "; ")
             line(String(format: "  gap %6.1f ms at +%.2f s after grade: %@", Double(sample.gap) / 1e6, offset, named.isEmpty ? "(nothing traced: SwiftUI or the system)" : named))
         }
     }

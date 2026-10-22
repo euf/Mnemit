@@ -65,6 +65,8 @@ struct UndoChip: View {
         .task(id: receipt?.id) {
             guard receipt != nil else { return }
             try? await Task.sleep(for: .seconds(Self.lifetime))
+            // The chip going changes the screen: not while a card speaks.
+            await GreekSpeech.shared.whenQuiet()
             if !Task.isCancelled { onExpire() }
         }
     }

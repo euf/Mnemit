@@ -18,7 +18,9 @@ import VocabCore
 /// deck from its file finds it.
 ///
 /// The work runs off the main actor, after a short pause that later calls replace, so a
-/// grade doesn't wait for it, and a quick run of grades costs one evaluation.
+/// grade doesn't wait for it, and a quick run of grades costs one evaluation. It waits for a card
+/// that speaks to be through (`GreekSpeech.whenQuiet()`): the figures change a moment later, and the
+/// voice has the main thread and the processor to itself.
 @MainActor @Observable
 final class DailyRingModel {
     /// `nil` until the first evaluation is done.
@@ -46,6 +48,7 @@ final class DailyRingModel {
         evaluation?.cancel()
         let evaluation = Task { [weak self] in
             try? await Task.sleep(for: delay)
+            await GreekSpeech.shared.whenQuiet()
             guard !Task.isCancelled else { return }
             let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity], NewCardAllowances) in
                 var fileActivities = known
