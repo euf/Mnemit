@@ -184,18 +184,12 @@ public struct StudySession: Sendable {
         let (selected, catchUp) = selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, capsSize: false, past: past, using: &random)
         var counts = StudyCounts()
         counts.catchUp = catchUp
-        let steps = max(1, deck.learningOptions.steps)
         for candidate in selected {
             switch candidate.urgency {
-            case .learning:
-                counts.learning += 1
-                counts.answers += max(1, steps - (candidate.card.learningState?.step ?? 0))
-            case .review:
-                counts.review += 1
-                counts.answers += 1
+            case .learning: counts.learning += 1
+            case .review: counts.review += 1
             case .new:
                 if candidate.card.kind == .production { counts.newProduction += 1 } else { counts.newOther += 1 }
-                counts.answers += steps
             }
         }
 
@@ -431,10 +425,6 @@ public struct StudyCounts: Hashable, Sendable {
     public internal(set) var learning = 0
     /// Cards in the review phase.
     public internal(set) var review = 0
-    /// How many answers the plan takes if every one is Good: a review card one, a card in
-    /// (re)learning the steps it still needs, a new card all of them. The daily ring counts
-    /// answers, so this is its goal; a mistake or a Hard makes the plan take more.
-    public internal(set) var answers = 0
     /// Overdue review cards, due before the study day, that the plan leaves for the days after:
     /// what is beyond the share the backlog asks of a day (`DailyGoal.backlogShare(of:onTime:)`). The
     /// stream goes on with them once the plan is done (`StudyStream.Stage.catchUp`).
