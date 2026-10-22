@@ -3,13 +3,15 @@
 Research for Mnemit, 22.10.2026. Confidence: **[S]** from the cited source as read,
 **[I]** our inference, **[U]** found only in secondary sources, not confirmed.
 
-State before this research: a word's production card (meaning → Greek) waits until its
-recognition card (Greek → meaning) is in the review phase with a scheduled interval of at least
-`LearningOptions.productionUnlockDays` (default 21, 0 never locks). Production cards have their own
-daily limit `newProductionPerSession` (default 7). A new or review card is buried for the study day
-when its sibling was reviewed that day or is already selected; learning cards are never buried
-(`StudySession.selectCards`, `notesAwaitingRecognition`). Decks in use: Greek A1–A2 (known words,
-0 days), Greek B1 (new words, 21 days, 20 new recognition + 7 new production per day), see HANDOFF.md.
+Rule in the code: a word's production card (meaning → Greek) waits until its recognition card
+(Greek → meaning) is in the review phase with a scheduled interval of at least
+`LearningOptions.productionUnlockDays` (default 7, 0 never locks). Production cards have their own
+daily limit `newProductionPerSession` (default 7), and unlocked ones are taken oldest-learned first:
+by the first review of the word's recognition card, whatever the deck's new-card order. A new or
+review card is buried for the study day when its sibling was reviewed that day or is already
+selected; learning cards are never buried (`StudySession.selectCards`, `notesAwaitingRecognition`).
+Decks in use: Greek A1–A2 (known words, 0 days), Greek B1 (new words, 7 days, 20 new recognition +
+7 new production per day), see HANDOFF.md.
 
 ## 1. Findings
 
@@ -237,23 +239,16 @@ Reasons:
 Greek A1–A2 deck: 0 days stays right (known words; Teng & Xu: productive exercises on receptively
 known words raise productive scores).
 
-### What to change in code (the parent decides and implements)
+### Where the rule lives in code
 
-- Default `LearningOptions.productionUnlockDays` 21 → 7 in
-  `Packages/VocabCore/Sources/VocabCore/Model/Deck.swift` (property and its doc comment).
-  `DeckFile` always writes the key (`DeckFile.swift`, options record `encode`), so existing decks
-  keep their stored value and only new decks and decks without the key take the new default.
-  The Greek B1 deck needs `deck-from-tsv … --unlock-days 7` or the stepper in Options
-  (`VocTrain/Decks/DeckOptionsScreen.swift`, `MacVocTrainNg/Views/DeckOptionsView.swift`).
-- Gate type unchanged: `StudySession.notesAwaitingRecognition` keeps comparing
-  `calendar.days(from: lastReview, to: due)` with `productionUnlockDays`.
-- Tests built around the default 21 move with it: `NoteSelectionTests` lines 52–58 and 278–290
-  (an Easy first review gives interval 8, which a 7-day gate unlocks). `references/anki-parity.md`
-  line 20 names the default.
-- Open point outside the gate: `newProductionPerSession` (7) against `newCardsPerSession` (20 in
-  the B1 deck) and the newest-first order of production cards decide the real production lag
-  (section 2). Candidates: raise the limit to the recognition rate, or order eligible production
-  cards by the date they became eligible (`StudySession.swift`, the `newestFirst` sort).
+- Default `LearningOptions.productionUnlockDays` = 7 in
+  `Packages/VocabCore/Sources/VocabCore/Model/Deck.swift`. `DeckFile` always writes the key, so a deck
+  keeps the value it was saved with; the Greek B1 deck is set to 7.
+- Gate: `StudySession.notesAwaitingRecognition` compares `calendar.days(from: lastReview, to: due)`
+  with `productionUnlockDays`.
+- Order: unlocked new production cards are sorted by the first review of the word's recognition
+  card, oldest first (`StudySession.swift`, `productionOldestLearnedFirst`), so the daily production
+  limit works through the backlog of unlocked words from the oldest. Tests in `NoteSelectionTests`.
 
 ### What evidence would change it
 

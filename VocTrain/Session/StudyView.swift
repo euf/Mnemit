@@ -228,7 +228,7 @@ struct StudyView: View {
             }
             .onEnded { value in
                 guard !speakers.touchBeganOnSpeaker else { return }
-                guard model.stage == .revealed, let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
+                guard model.stage == .revealed, let grade = SwipeTally.shared.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
                     flight.springBack()
                     return
                 }
