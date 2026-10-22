@@ -31,7 +31,7 @@ Spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on mac
 | Hand-made deck card, big rounded box | `DeckView` section 1 is a `VStack` with `StudyCountsColumns` (34 pt numerals, `design: .rounded`, `minimumScaleFactor(0.6)`) and a footnote; section 2 is a clear row with `listRowInsets(EdgeInsets())` that makes `.borderedProminent` + `.controlSize(.large)` run edge to edge. |
 | Coloured counts, mixed weights | `StudyCountsLine`: semibold coloured number, regular secondary label, `subheadline`, 12 pt between pairs. The line sits under a `Label` with a symbol, so it starts under the symbol, one indent left of the name (derived from code, not seen on screen). |
 | Kerning | No `.tracking` or `.kerning` anywhere in the sources (grep). SF Pro tracks −0.43 pt at 17 pt and +0.40 at 34; SF Pro Rounded tracks +0.37 at 17 and +0.51 at 13 [H:typography]. The count column puts 34 pt rounded numerals over 13 pt SF Pro labels, and `minimumScaleFactor` shrinks glyphs cut for 34 pt. Whether SwiftUI re-tracks scaled text is UNVERIFIED. Fix by construction: text styles only, no `.rounded`, no `minimumScaleFactor` on numerals. |
-| Accent | `AccentColor.colorset` has no colour, so the app is system blue; counts are blue/red/green; `.tint(.primary)` on the deck row hides the blue of a `Button`; Forgot is red, the ramp is blue. Nothing is the brand. |
+| Accent | `AccentColor.colorset` holds system indigo in all three catalogs (iPhone, Mac, widget): `#5856D6` in light and dark, `#3634A3` (light) and `#6563E6` (dark) with Increase Contrast (§5.1); counts are neutral; `.tint(.primary)` on the deck row keeps the accent off the text of a `Button`; Forgot is red, the ramp is blue. |
 
 ## 2. iPhone home (Today)
 
