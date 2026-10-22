@@ -28,6 +28,40 @@ struct AccentContrastTests {
         ("secondarySystemBackground", .secondarySystemBackground),
     ]
 
+    /// The surfaces of a sheet: in dark it lifts the system backgrounds one step, the grouped rows to `#2C2C2E`
+    /// (resolved with `UITraitCollection.userInterfaceLevel` elevated, see `traits(_:level:)`).
+    static let raisedSurfaces: [(name: String, color: UIColor)] = [
+        ("systemBackground, raised", .systemBackground),
+        ("systemGroupedBackground, raised", .systemGroupedBackground),
+        ("secondarySystemGroupedBackground, raised", .secondarySystemGroupedBackground),
+        ("secondarySystemBackground, raised", .secondarySystemBackground),
+    ]
+
+    /// The traits of a view drawn in `appearance`, on a screen (the base level) or in a sheet (elevated).
+    static func traits(_ appearance: Appearance, level: UIUserInterfaceLevel = .base) -> UITraitCollection {
+        UITraitCollection(traitsFrom: [
+            UITraitCollection(userInterfaceStyle: appearance.style), UITraitCollection(accessibilityContrast: appearance.contrast),
+            UITraitCollection(userInterfaceLevel: level),
+        ])
+    }
+
+    /// A colour as `#RRGGBB`.
+    static func hex(_ color: UIColor, in traits: UITraitCollection) -> String {
+        var (red, green, blue, alpha) = (CGFloat(0), CGFloat(0), CGFloat(0), CGFloat(0))
+        color.resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return String(format: "#%02X%02X%02X", Int((red * 255).rounded()), Int((green * 255).rounded()), Int((blue * 255).rounded()))
+    }
+
+    /// Whether two colours are the same one, to two steps of 8 bits a channel, as pixels are read back.
+    static func isClose(_ first: UIColor, _ second: UIColor, in traits: UITraitCollection) -> Bool {
+        func channels(_ color: UIColor) -> [CGFloat] {
+            var (red, green, blue, alpha) = (CGFloat(0), CGFloat(0), CGFloat(0), CGFloat(0))
+            color.resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            return [red, green, blue].map { $0 * 255 }
+        }
+        return zip(channels(first), channels(second)).allSatisfy { abs($0 - $1) <= 2 }
+    }
+
     /// WCAG relative luminance of a colour in sRGB.
     static func luminance(_ color: UIColor, in traits: UITraitCollection) -> Double {
         var (red, green, blue, alpha) = (CGFloat(0), CGFloat(0), CGFloat(0), CGFloat(0))
@@ -64,6 +98,79 @@ struct AccentContrastTests {
             }
         }
         print(lines.joined(separator: "\n"))
+    }
+
+    /// A sheet raises the dark surfaces to `#2C2C2E`, where the accent is under 3:1 (2.47, and 2.97 with Increase
+    /// Contrast); there a graphic takes `Color.appAccentOnRaised`, the accent lightened in its hue, which holds
+    /// 3:1 on every raised surface. On a screen, and in light, it is the accent itself.
+    @Test func theRaisedAccentHoldsItsContrastOnRaisedSurfaces() throws {
+        var lines: [String] = []
+        for appearance in Self.appearances {
+            let screen = Self.traits(appearance)
+            let sheet = Self.traits(appearance, level: .elevated)
+            let accent = try #require(UIColor(named: "AccentColor", in: .main, compatibleWith: screen))
+            let accentLuminance = Self.luminance(accent, in: screen)
+            let raised = Color.raisedAccent(in: sheet)
+            let raisedLuminance = Self.luminance(raised, in: sheet)
+            lines.append("\(appearance.name): accent \(Self.hex(accent, in: screen)), raised accent \(Self.hex(raised, in: sheet))")
+
+            #expect(abs(Self.luminance(Color.raisedAccent(in: screen), in: screen) - accentLuminance) < 0.001, "on a screen it is the accent, \(appearance.name)")
+            if appearance.style == .light {
+                #expect(abs(raisedLuminance - accentLuminance) < 0.001, "in light it is the accent, \(appearance.name)")
+            } else {
+                var (hue, otherHue) = (CGFloat(0), CGFloat(0))
+                accent.resolvedColor(with: screen).getHue(&hue, saturation: nil, brightness: nil, alpha: nil)
+                raised.getHue(&otherHue, saturation: nil, brightness: nil, alpha: nil)
+                #expect(abs(hue - otherHue) < 0.01, "the hue stays, \(appearance.name)")
+                #expect(raisedLuminance > accentLuminance, "the lighter one, \(appearance.name)")
+            }
+            for surface in Self.raisedSurfaces {
+                let ratio = Self.contrast(raisedLuminance, Self.luminance(surface.color, in: sheet))
+                let plain = Self.contrast(accentLuminance, Self.luminance(surface.color, in: sheet))
+                lines.append("    on \(surface.name) \(Self.hex(surface.color, in: sheet)): \(String(format: "%.2f", ratio)), the accent \(String(format: "%.2f", plain))")
+                #expect(ratio >= 3, "raised accent on \(surface.name), \(appearance.name)")
+            }
+        }
+        print(lines.joined(separator: "\n"))
+    }
+
+    /// What a view in a presented controller shows of `Color.appAccentOnRaised`, from its pixels: the colour
+    /// resolves with the level of the presentation, so one value serves a screen and a sheet.
+    @MainActor
+    static func shownPresented(_ style: UIModalPresentationStyle, in appearance: Appearance) async throws -> (level: UIUserInterfaceLevel, color: UIColor) {
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.windowLevel = .alert + 1
+        window.overrideUserInterfaceStyle = appearance.style
+        window.traitOverrides.accessibilityContrast = appearance.contrast
+        let root = UIViewController()
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        let content = UIHostingController(rootView: Rectangle().fill(Color.appAccentOnRaised).ignoresSafeArea())
+        content.modalPresentationStyle = style
+        root.present(content, animated: false)
+        try await Task.sleep(for: .milliseconds(600))
+        let bounds = content.view.bounds
+        let image = UIGraphicsImageRenderer(bounds: bounds).image { _ in content.view.drawHierarchy(in: bounds, afterScreenUpdates: true) }
+        let pixels = PixelBitmap(image)
+        let (red, green, blue) = pixels.rgb(pixels.width / 2, pixels.height / 2)
+        return (content.traitCollection.userInterfaceLevel, UIColor(red: CGFloat(red) / 255, green: CGFloat(green) / 255, blue: CGFloat(blue) / 255, alpha: 1))
+    }
+
+    /// A sheet is raised and a full-screen cover, which the study stream is, is not: the same `Color` shows
+    /// the lighter accent in the first and the accent in the second.
+    @MainActor @Test func theRaisedAccentShowsInASheetAndNotInAFullScreenCover() async throws {
+        for appearance in Self.appearances where appearance.style == .dark {
+            let screen = Self.traits(appearance)
+            let accent = try #require(UIColor(named: "AccentColor", in: .main, compatibleWith: screen))
+            let sheet = try await Self.shownPresented(.pageSheet, in: appearance)
+            #expect(sheet.level == .elevated, "a sheet is raised, \(appearance.name)")
+            #expect(Self.isClose(sheet.color, Color.raisedAccent(in: Self.traits(appearance, level: .elevated)), in: screen), "a sheet shows the raised accent, \(appearance.name)")
+            let cover = try await Self.shownPresented(.fullScreen, in: appearance)
+            #expect(cover.level == .base, "a full-screen cover is not, \(appearance.name)")
+            #expect(Self.isClose(cover.color, accent, in: screen), "a cover shows the accent, \(appearance.name)")
+        }
     }
 
     /// The colours two SwiftUI `Color`s show side by side in a window of the given appearance, read from

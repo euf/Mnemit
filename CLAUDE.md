@@ -347,7 +347,11 @@
   счётов, подзаголовок «Paused»; то же пункт меню экрана колоды. Mac: Study ▸ Pause Deck / Resume Deck, кольцо и
   подсказка считают открытые документы без пауз. «How Today Works» называет её в плане строкой «Paused: <имя>».
   После возобновления её просроченные карточки — хвост по `DailyGoal.backlogShare`, без особых правил. Акцент — системный индиго `#5856D6` в `AccentColor` (все три каталога ассетов:
-  iPhone, Mac, виджет): заливка кнопки, кольцо, глиф, но не текст; счётчики New/Learning/Review нейтральные. Спека —
+  iPhone, Mac, виджет): заливка кнопки, кольцо, глиф, но не текст; глиф в листе — `Color.appAccentOnRaised`: в тёмной
+  теме лист поднимает поверхности до `#2C2C2E` (`#363638` в Increase Contrast), где акцент даёт 2,47:1 (2,57:1), и цвет,
+  читая `userInterfaceLevel` вида, берёт тот же оттенок светлее, `#706FDC` (3,32:1) и `#7B79EA` (3,31:1); заливка кнопки
+  с белой подписью остаётся акцентом, на экране и в полноэкранной обложке (поток Study) цвет тот же акцент
+  (`AccentContrastTests`); счётчики New/Learning/Review нейтральные. Спека —
   `references/design-spec.md`, контракт экранов — `references/flows.md`. Кадры: Today и экран колоды —
   `VocTrainTests/HomeSnapshotTests` (каталог — `TEST_RUNNER_HOME_SHOTS_DIR`), браузер, карточка и
   правка — `BrowserSnapshotTests` (`TEST_RUNNER_STUDY_SHOTS_DIR`).

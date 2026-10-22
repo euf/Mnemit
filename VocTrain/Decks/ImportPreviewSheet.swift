@@ -220,7 +220,7 @@ private struct PreviewList: View {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .imageScale(.large)
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(isSelected ? Color.appAccentOnRaised : Color.secondary)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(candidate.card.question)
                     Text(candidate.card.answer)

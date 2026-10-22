@@ -598,21 +598,23 @@ The accent is `AccentColor.colorset`, the same four colours in the iPhone (`VocT
 | Appearance | Value | White label on it | On surface |
 |---|---|---|---|
 | Light | `#5856D6` | 5.65 | 5.65 on white, 5.06 on `#F2F2F7` |
-| Light, Increase Contrast | `#3634A3` | 9.65 | 9.65 on white, 8.64 on `#F2F2F7` |
-| Dark | `#5856D6` (the light value) | 5.65 | 3.72 on black, 3.01 on `#1C1C1E`, 2.47 on `#2C2C2E` |
-| Dark, Increase Contrast | `#6563E6` | 4.69 | 4.48 on black, 3.63 on `#1C1C1E`, 2.97 on `#2C2C2E` |
+| Light, Increase Contrast | `#3634A3` | 9.65 | 9.65 on white, 8.12 on `#EBEBF0` |
+| Dark | `#5856D6` (the light value) | 5.65 | 3.72 on black, 3.01 on `#1C1C1E`; raised 2.47 on `#2C2C2E` |
+| Dark, Increase Contrast | `#6563E6` | 4.69 | 4.48 on black, 3.31 on `#242426`; raised 2.57 on `#363638` |
 
-Surfaces: in light white is `systemBackground` and `secondarySystemGroupedBackground`, `#F2F2F7` is `systemGroupedBackground` and `secondarySystemBackground`; in dark black is `systemBackground` and `systemGroupedBackground`, `#1C1C1E` is `secondarySystemGroupedBackground` and `secondarySystemBackground`, `#2C2C2E` is `tertiarySystemBackground` and the secondary grouped level of an elevated sheet. The surface hex values are the UIKit defaults from memory (UNVERIFIED; the HIG swatches are images and the JSON feed of [H:color] carries no hex values for them), and the table uses them in the Increase Contrast rows too. The gate test below reads the real ones.
+Surfaces, as `AccentContrastTests` resolves them on iOS 26: in light white is `systemBackground` and `secondarySystemGroupedBackground`, `#F2F2F7` (`#EBEBF0` with Increase Contrast) is `systemGroupedBackground` and `secondarySystemBackground`; in dark black is `systemBackground` and `systemGroupedBackground`, `#1C1C1E` (`#242426` with Increase Contrast) is `secondarySystemGroupedBackground` and `secondarySystemBackground`. A sheet raises them one step (`userInterfaceLevel` elevated): in dark `systemBackground` and `systemGroupedBackground` become `#1C1C1E` (`#242426`), `secondarySystemGroupedBackground` and `secondarySystemBackground` become `#2C2C2E` (`#363638`); light does not change. The tests print the table.
 
-Against the gate thresholds of §5.5: white on the accent is AA for text (4.5 or more) in all four rows, lowest 4.69 (dark, Increase Contrast). The accent holds 3.0 or more on the four gate surfaces in all four rows, lowest 3.01 (dark, on `#1C1C1E`). On `#2C2C2E` the accent is under 3.0 in dark (2.47) and in dark Increase Contrast (2.97); the gate test does not include that level.
+Against the gate thresholds of §5.5: white on the accent is AA for text (4.5 or more) in all four rows, lowest 4.69 (dark, Increase Contrast). The accent holds 3.0 or more on the four gate surfaces in all four rows, lowest 3.01 (dark, on `#1C1C1E`). On the raised surfaces of a sheet it is under 3.0 in dark (2.47 on `#2C2C2E`) and in dark Increase Contrast (2.57 on `#363638`): a graphic there takes the lighter accent below.
 
 System blue for comparison: light `#007AFF` 4.02 with white and 3.60 on `#F2F2F7`; dark `#0A84FF` 3.65 with white, 5.76 on black, 4.66 on `#1C1C1E`, 3.82 on `#2C2C2E`. Indigo is higher on the label in both appearances and on light surfaces (5.06 against 3.60 on `#F2F2F7`); it is lower on dark surfaces (3.01 against 4.66 on `#1C1C1E`).
 
-A single colour cannot give 4.5:1 for a white label (luminance at most 0.183) and 4.5:1 as text on `#1C1C1E` (at least 0.228). Indigo has luminance 0.136 (light and dark), so its label is 5.65 and its contrast as text on `#1C1C1E` is 3.01. In light the same value reaches 4.5 as text (5.65 on white, 5.06 on `#F2F2F7`); in dark it does not (3.72 on black). The accent is never small text in either appearance. It is a button fill (label 4.5 or more), a ring, a flame, a glyph (3.0 or more, WCAG non-text) [H:accessibility]. The Increase Contrast variants move the accent away from the surface it sits on, darker on light (`#3634A3`, 8.64 on `#F2F2F7`) and lighter on dark (`#6563E6`, 3.63 on `#1C1C1E`), as [H:color] advises for increased-contrast variants; the dark one lowers the white label from 5.65 to 4.69, still above 4.5.
+A single colour cannot give 4.5:1 for a white label (luminance at most 0.183) and 4.5:1 as text on `#1C1C1E` (at least 0.228). Indigo has luminance 0.136 (light and dark), so its label is 5.65 and its contrast as text on `#1C1C1E` is 3.01. In light the same value reaches 4.5 as text (5.65 on white, 5.06 on `#F2F2F7`); in dark it does not (3.72 on black). The accent is never small text in either appearance. It is a button fill (label 4.5 or more), a ring, a flame, a glyph (3.0 or more, WCAG non-text) [H:accessibility]. The Increase Contrast variants move the accent away from the surface it sits on, darker on light (`#3634A3`, 8.12 on `#EBEBF0`) and lighter on dark (`#6563E6`, 3.31 on `#242426`), as [H:color] advises for increased-contrast variants; the dark one lowers the white label from 5.65 to 4.69, still above 4.5.
+
+**Raised surfaces.** A graphic drawn in a sheet, a selection mark or a row symbol, is `Color.appAccentOnRaised`: the accent itself on a screen and in light; in dark at the elevated level (`UITraitCollection.userInterfaceLevel`), the accent lightened in its hue (241°, saturation held): `#706FDC` with 3.32 on `#2C2C2E`, and with Increase Contrast `#7B79EA` with 3.31 on `#363638`. The colour is a `UIColor` provider that reads the level of the view it is drawn in, so one value serves a screen and a sheet. In sheets today: the selection marks of Add Cards and of the import preview, and the row symbols of the Anki destination sheet. The ring, the flame, the maturity ramp and the study stream are on screens; the stream and the onboarding are full-screen covers, which are not raised, so they take the accent. Card Detail and How Today Works draw no accent graphic. The fill of a prominent button stays the accent: its white label asks 4.5, which the lighter ones do not give (4.20 and 3.64), and a button is named by its label, so its fill needs no 3:1 of its own.
 
 Roles of the accent: prominent button fill (Study, Show Answer, Study in the details sheet), ring, flame when the goal is met, `info.circle`, selection, and the progress pulse of §4.7 (a flash of the screen background at 0.12 opacity in light and 0.18 in dark). Nothing else: no text, no resting backgrounds, no card face.
 
-In code the accent is `Color.appAccent` (`Shared/Support/Presentation.swift`): on the iPhone and in the widget the named asset `Color("AccentColor")` (in a widget `Color.accentColor` is the system tint), on the Mac `Color.accentColor`, so the system accent setting applies (§5.6). `Color.dailyRing` is `appAccent`; `Color.dailyRingTail` is the tail of the ring's gradient (§5.7).
+In code the accent is `Color.appAccent`, and `Color.appAccentOnRaised` for a graphic that may sit in a sheet (`Shared/Support/Presentation.swift`): on the iPhone and in the widget the named asset `Color("AccentColor")` (in a widget `Color.accentColor` is the system tint), on the Mac `Color.accentColor`, so the system accent setting applies (§5.6). `Color.dailyRing` is `appAccent`; `Color.dailyRingTail` is the tail of the ring's gradient (§5.7).
 
 `AccentColor.colorset` (the build setting `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor` is set):
 
@@ -661,7 +663,7 @@ Neutral, decided in §1. Number `.primary`, 0 in `.secondary`; label `.secondary
 
 ### 5.5 Gate test (spec)
 
-`AccentContrastTests` in `VocTrainTests`: for appearance in light, dark, light + high contrast, dark + high contrast resolve `UIColor(named: "AccentColor")` and the surfaces `systemBackground`, `systemGroupedBackground`, `secondarySystemGroupedBackground`, `secondarySystemBackground` with `UITraitCollection`; compute WCAG relative luminance; print the table; fail below 4.5 for the white label and below 3.0 for every surface. Same on the Mac with `NSAppearance` pinned (`performAsCurrentDrawingAppearance`) [G §12]. Resolve system colours at run time; do not hard-code them. The four surfaces do not include `#2C2C2E`, where the accent is 2.47 in dark and 2.97 in dark Increase Contrast (§5.1).
+`AccentContrastTests` in `VocTrainTests`: for appearance in light, dark, light + high contrast, dark + high contrast resolve `UIColor(named: "AccentColor")` and the surfaces `systemBackground`, `systemGroupedBackground`, `secondarySystemGroupedBackground`, `secondarySystemBackground` with `UITraitCollection`; compute WCAG relative luminance; print the table; fail below 4.5 for the white label and below 3.0 for every surface. Same on the Mac with `NSAppearance` pinned (`performAsCurrentDrawingAppearance`) [G §12]. Resolve system colours at run time; do not hard-code them. The same four surfaces resolved at the elevated level (`#2C2C2E` and `#363638` for the grouped rows in dark) are held by `theRaisedAccentHoldsItsContrastOnRaisedSurfaces` to 3.0 for `Color.appAccentOnRaised`, which also prints what the plain accent has there (2.47 and 2.57); `theRaisedAccentShowsInASheetAndNotInAFullScreenCover` presents a sheet and a full-screen cover and reads the colour each shows from its pixels.
 
 ```swift
 func relativeLuminance(_ r: Double, _ g: Double, _ b: Double) -> Double {
@@ -689,9 +691,9 @@ The tail and its WCAG ratios, computed from the 8-bit values (surfaces as in §5
 | Appearance | Tail | Against the accent (1.3 or more) | On surface (3.0 or more) |
 |---|---|---|---|
 | Light | `#8280E0` | 1.64 | 3.44 on white, 3.08 on `#F2F2F7` |
-| Light, Increase Contrast | `#6867BA` | 1.95 | 4.96 on white, 4.44 on `#F2F2F7` |
-| Dark | `#8280E0` | 1.64 | 6.11 on black, 4.95 on `#1C1C1E`, 4.06 on `#2C2C2E` |
-| Dark, Increase Contrast | `#8C8AEC` | 1.55 | 6.96 on black, 5.64 on `#1C1C1E`, 4.62 on `#2C2C2E` |
+| Light, Increase Contrast | `#6867BA` | 1.95 | 4.96 on white, 4.17 on `#EBEBF0` |
+| Dark | `#8280E0` | 1.64 | 6.11 on black, 4.95 on `#1C1C1E`; raised 4.06 on `#2C2C2E` |
+| Dark, Increase Contrast | `#8C8AEC` | 1.55 | 6.96 on black, 5.14 on `#242426`; raised 4.00 on `#363638` |
 
 Every tail ratio meets the test's thresholds; the lowest on a surface is 3.08 (light, on `#F2F2F7`). A third of white instead of a quarter gives 2.62 there (`#908EE4`).
 
@@ -842,7 +844,6 @@ Dependencies on the stream agent: `DailyProgress`, `DailyRing`, `Streak`; a `Stu
 
 - All rendering: glass prominent button label colour and height, `safeAreaBar` with a `List`, principal toolbar ring, press feedback of a `.plain` button in a list row, concentric card corners. iOS 27 behaviour: the installed SDK is 26.2 (Xcode 26.3).
 - Fitness and Reminders layouts (ring left, metrics right, counts trailing in My Lists) are from memory; only the facts in [A:fitness] were read.
-- Surface hex values in §5.1 (UIKit defaults from memory); the gate test replaces them.
 - `.buttonStyle(.borderedProminent)` giving the prominent glass look in toolbars (the HIG names the `.prominent` style, the API mapping is from memory).
 - Deck window toolbar overflow at width 720 with the new items.
 - That `minimumScaleFactor` does not re-track text.

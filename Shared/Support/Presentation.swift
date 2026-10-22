@@ -279,6 +279,32 @@ extension Color {
         #endif
     }
 
+    /// The accent for a graphic that may sit on a raised surface: a glyph or a mark in a sheet. In dark a sheet
+    /// raises the grouped rows to `#2C2C2E` (`#363638` with Increase Contrast), where the accent holds 2.47:1
+    /// (2.97:1), under the 3:1 a graphic needs (WCAG 1.4.11, `references/design-spec.md` §5.1). Drawn there this is
+    /// a lighter indigo of the same hue, `#706FDC` (3.32:1) and, with Increase Contrast, `#7B79EA` (3.31:1); drawn
+    /// anywhere else it is the accent itself, so one value serves a screen and a sheet: it reads the level the view
+    /// is drawn at (`userInterfaceLevel`). Not for the fill of a button with a white label, which asks the darker
+    /// accent (4.5:1); the lighter one is 4.20 and 3.64. On the Mac a sheet is not raised: the accent.
+    static var appAccentOnRaised: Color {
+        #if os(iOS)
+        Color(uiColor: UIColor { raisedAccent(in: $0) })
+        #else
+        Color.accentColor
+        #endif
+    }
+
+    #if os(iOS)
+    /// `appAccentOnRaised` as the traits of a view ask for it.
+    static func raisedAccent(in traits: UITraitCollection) -> UIColor {
+        guard traits.userInterfaceStyle == .dark, traits.userInterfaceLevel == .elevated else {
+            return UIColor(named: "AccentColor", in: .main, compatibleWith: traits) ?? .tintColor
+        }
+        let hex: UInt32 = traits.accessibilityContrast == .high ? 0x7B79EA : 0x706FDC
+        return UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+    }
+    #endif
+
     /// The daily ring: the app's accent, indigo `#5856D6` (`AccentColor` holds it as sRGB, with
     /// high-contrast variants `#3634A3` light and `#6563E6` dark).
     /// Indigo because red means Forgot and the greens/teal mean recalled; green read as
