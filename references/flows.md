@@ -39,7 +39,7 @@ Root is a `NavigationStack` on Today.
 
 **Deck** (pushed; replaces the details sheet)
 - Header: due today, new, learning; **Study This Deck**.
-- Rows: Cards (count) → Card Browser; Add Cards; Practice Newest; Practice Mistakes;
+- Rows: Cards (count) → Card Browser; Add Cards; Import Cards…; Practice Newest; Practice Mistakes;
   Statistics; Options.
 - Toolbar menu: Rename, Export…, Delete Deck (moves the file to the Trash).
 
@@ -72,7 +72,10 @@ Root is a `NavigationStack` on Today.
 this iPhone).
 
 **Import**: a file picker (CSV/TSV now, `.apkg` when supported) → the same preview as the
-Mac → into a new or the current deck. **Export**: the share sheet with a CSV.
+Mac, a list with a checkmark per card (duplicates unchecked) → Add N Cards, one undo step.
+Entry points: Import Cards… on the Deck screen, Import… in Today's + menu (into the deck used
+last). **Export**: Export… in the Deck screen's menu opens the share sheet with a TSV that
+Anki imports as it is (header lines, word key and kind columns).
 
 **Options** (form): new cards per day; target recall (70–97 %, one-line explanation);
 translation→Greek: new per day and unlock after N days; new-card order; difficult after N

@@ -7,16 +7,41 @@ public enum DelimitedText {
         case comma = ","
         case semicolon = ";"
         case tab = "\t"
+
+        /// How the `#separator` header line of Anki names it.
+        var ankiName: String {
+            switch self {
+            case .comma: "comma"
+            case .semicolon: "semicolon"
+            case .tab: "tab"
+            }
+        }
+
+        /// The delimiter that a `#separator` value names, by name or as the character itself.
+        init?(ankiValue: String) {
+            let value = ankiValue.lowercased()
+            guard let delimiter = Self.allCases.first(where: { $0.ankiName == value || String($0.rawValue) == value }) else { return nil }
+            self = delimiter
+        }
     }
 
     /// The rows as text, following RFC 4180 with the given delimiter: fields
     /// containing the delimiter, a quote or a line break are enclosed in quotes, with
     /// quotes inside doubled. Every row ends with CRLF.
-    public static func encode(_ rows: [[String]], delimiter: Delimiter) -> String {
-        rows.map { row in
-            row.map { quoted($0, delimiter: delimiter) }.joined(separator: String(delimiter.rawValue))
-        }
-        .joined(separator: "\r\n") + (rows.isEmpty ? "" : "\r\n")
+    ///
+    /// With `ankiColumns`, the text starts with the header lines that Anki reads from a text
+    /// file: `#separator`, `#html:false` and `#columns` with those names. Anki then imports
+    /// the rows as they are. The rows must not hold a header row of their own, as Anki would
+    /// take it for a note.
+    public static func encode(_ rows: [[String]], delimiter: Delimiter, ankiColumns: [String]? = nil) -> String {
+        let body =
+            rows.map { row in
+                row.map { quoted($0, delimiter: delimiter) }.joined(separator: String(delimiter.rawValue))
+            }
+            .joined(separator: "\r\n") + (rows.isEmpty ? "" : "\r\n")
+        guard let ankiColumns else { return body }
+        let columns = ankiColumns.map { quoted($0, delimiter: delimiter) }.joined(separator: String(delimiter.rawValue))
+        return "#separator:\(delimiter.ankiName)\r\n#html:false\r\n#columns:\(columns)\r\n" + body
     }
 
     /// The rows of a text file, with its encoding and delimiter detected.
@@ -25,10 +50,33 @@ public enum DelimitedText {
     /// UTF-8 if the data is valid UTF-8, otherwise Latin-1 (see `text(of:)`). A UTF-8
     /// byte order mark is skipped. See `detectedDelimiter(in:)` for the delimiter.
     /// Empty lines are left out.
-    public static func decode(_ data: Data) -> (rows: [[String]], delimiter: Delimiter) {
-        let text = self.text(of: data)
-        let delimiter = detectedDelimiter(in: text)
-        return (parse(text, delimiter: delimiter), delimiter)
+    ///
+    /// Lines at the top that start with `#` are Anki's header lines, and no rows. A
+    /// `#separator` that names one of our delimiters decides it, and `#columns` gives
+    /// `columns`, the names of the fields of a row; `nil` if there is no such line.
+    public static func decode(_ data: Data) -> (rows: [[String]], delimiter: Delimiter, columns: [String]?) {
+        let (headers, text) = headerLines(of: self.text(of: data))
+        let delimiter = headers["separator"].flatMap(Delimiter.init(ankiValue:)) ?? detectedDelimiter(in: text)
+        let columns = headers["columns"].flatMap { parse($0, delimiter: delimiter).first }
+        return (parse(text, delimiter: delimiter), delimiter, columns)
+    }
+
+    /// The `#key:value` lines at the top of `text`, the key in lower case and the value as it
+    /// stands, and the text after them. A line that starts with `#` and has no colon is a
+    /// comment, which Anki ignores as well.
+    private static func headerLines(of text: String) -> (headers: [String: String], rest: String) {
+        var headers: [String: String] = [:]
+        var rest = Substring(text)
+        while rest.first == "#" {
+            let end = rest.firstIndex { $0.isNewline } ?? rest.endIndex
+            let line = rest[rest.index(after: rest.startIndex)..<end]
+            if let colon = line.firstIndex(of: ":") {
+                let key = line[..<colon].trimmingCharacters(in: .whitespaces).lowercased()
+                headers[key] = headers[key] ?? String(line[line.index(after: colon)...])
+            }
+            rest = rest[end...].drop { $0.isNewline }
+        }
+        return (headers, String(rest))
     }
 
     /// Latin-1 is read as Windows-1252, as Excel on Windows writes it: the same

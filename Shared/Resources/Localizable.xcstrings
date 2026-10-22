@@ -2186,6 +2186,16 @@
         }
       }
     },
+    "Export…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportieren …"
+          }
+        }
+      }
+    },
     "FSRS starts with parameters averaged over many learners. Computed from this deck's review log, they fit your memory, so cards need fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review.": {
       "localizations": {
         "de": {
@@ -2532,6 +2542,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Import fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "Import…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importieren …"
           }
         }
       }

@@ -158,6 +158,25 @@
   карточки без лога). Зависимость одна: `facebook/zstd` (SwiftPM, BSD, в `THIRD_PARTY_NOTICES.md`);
   Compression zstd не знает. Фикстуры настоящих пакетов — `Tests/VocabCoreTests/Resources/Anki`,
   скрипт их сборки лежит рядом (`uv run --with anki`).
+- Импорт и экспорт CSV/TSV: логика общая, `CardImport` и `CardExport` в `Shared/Support`; на Mac
+  к ним добавлены панели файлов (`CardImportPanel`, `CardExportPanel`), на iPhone — листы ниже.
+  Выгрузка начинается строками Anki `#separator:tab` (или `comma`), `#html:false`,
+  `#columns:Front⇥Back⇥Hint⇥Word Key⇥Kind` (на Mac с состоянием обучения ещё `Maturity`,
+  `Due`, `Reviews`), строки-шапки с названиями нет: Anki принял бы её за карточку. Названия
+  колонок английские на любом языке; Front и Back — имена полей базового типа заметок Anki, по
+  ним его диалог сам сопоставляет первые две колонки. `kind` — `recognition` или `production`,
+  у карточки без word key пусто. Чтение: `DelimitedText.decode` пропускает строки `#…` в начале
+  файла, берёт разделитель из `#separator` и отдаёт `columns`; `CardImporter` находит
+  Question или Front, Answer или Back, Hint, Word Key и Kind по названиям (из `#columns` или
+  из строки-шапки), kind без word key отбрасывается. Выгрузки со строкой-шапкой на языке
+  приложения, как писались раньше, читаются через `CardImport.isHeader`. Что из Anki не
+  читается: колонки `#guid column`, `#notetype column`, `#deck column`, `#tags column` и
+  `#html:true` (HTML остаётся в тексте). iPhone: «Import Cards…» на экране колоды и «Import…»
+  в меню «+» Today (в колоду, использованную последней) ведут через `cardFileImporter` в
+  `ImportPreviewSheet` (дубликаты без галки, «Add N Cards» — один `importCards`, один Undo);
+  «Export…» в меню экрана колоды — `ShareLink` с `DeckExport` (TSV во временном файле
+  `<колода>.tsv`). Два `fileImporter` на одной вьюхе гасят друг друга: у `StartScreen` пикер
+  колод на стеке, пикер карточек на `TodayScreen`.
 - Виджет (таргет `MnemitWidget`, папка `MnemitWidget/`, bundle id `com.euf.mnemit.ios.widget`,
   встроен в приложение на iPhone): home screen small и medium, lock screen circular и
   rectangular, тап ведёт по `mnemit://study` сразу в поток (`StartScreen.open`). Данные идут

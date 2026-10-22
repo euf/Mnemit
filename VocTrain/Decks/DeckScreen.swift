@@ -59,6 +59,9 @@ struct DeckContent: View {
     @State private var showsRename = false
     @State private var confirmsDelete = false
     @State private var showsAddCards = false
+    @State private var isChoosingImport = false
+    /// The file of "Import Cards…", for its preview sheet.
+    @State private var importedFile: ImportedFile?
     @State private var deleteFailure: String?
 
     var body: some View {
@@ -72,7 +75,9 @@ struct DeckContent: View {
                 }
             }
             if let document, let merger {
-                LoadedSections(document: document, merger: merger, canEdit: canEdit, start: start, addCards: { showsAddCards = true })
+                LoadedSections(
+                    document: document, merger: merger, canEdit: canEdit, start: start, addCards: { showsAddCards = true },
+                    importCards: { isChoosingImport = true })
             } else if failure == nil, let knownCounts {
                 Section {
                     CountsRow(counts: knownCounts)
@@ -88,6 +93,9 @@ struct DeckContent: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu("More", systemImage: "ellipsis") {
                     Button("Rename…", systemImage: "pencil") { showsRename = true }
+                    if let document {
+                        ExportLink(document: document, name: name)
+                    }
                     Button("Delete Deck", systemImage: "trash", role: .destructive) { confirmsDelete = true }
                 }
             }
@@ -105,6 +113,12 @@ struct DeckContent: View {
         .sheet(isPresented: $showsAddCards) {
             if let document {
                 AddCardsSheet(document: document)
+            }
+        }
+        .cardFileImporter(isPresented: $isChoosingImport) { importedFile = $0 }
+        .sheet(item: $importedFile) { file in
+            if let document {
+                ImportPreviewSheet(document: document, file: file)
             }
         }
         .confirmationDialog("Delete “\(name)”?", isPresented: $confirmsDelete, titleVisibility: .visible) {
@@ -145,6 +159,7 @@ private struct LoadedSections: View {
     var canEdit: Bool
     var start: (StudyModel.Entry) -> Void
     var addCards: () -> Void
+    var importCards: () -> Void
 
     var body: some View {
         let counts = document.dueCards.counts
@@ -184,6 +199,11 @@ private struct LoadedSections: View {
             }
             Button(action: addCards) {
                 RowLabel(title: "Add Cards", symbol: "plus")
+            }
+            .tint(.primary)
+            .disabled(!isEditable)
+            Button(action: importCards) {
+                RowLabel(title: "Import Cards…", symbol: "square.and.arrow.down")
             }
             .tint(.primary)
             .disabled(!isEditable)
