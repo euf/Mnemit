@@ -54,6 +54,10 @@ struct WelcomeView: View {
                     NSDocumentController.shared.openDocument(nil)
                 }
                 .buttonStyle(.link)
+                Button("Shared Decks on AnkiWeb…") {
+                    DeckWebWindow.show()
+                }
+                .buttonStyle(.link)
             }
             .controlSize(.large)
             .frame(width: 240)

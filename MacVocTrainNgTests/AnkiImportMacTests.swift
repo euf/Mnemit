@@ -70,4 +70,31 @@ struct AnkiImportMacTests {
         #expect(WelcomeRequest.takeImportCards()?.file == package)
         #expect(WelcomeRequest.takeImportCards() == nil)
     }
+
+    /// What a download of the deck browser does, a package or a table: the request, and then a
+    /// new document, which is where the window takes the request.
+    @Test func aDownloadOfTheDeckBrowserImportsIntoANewDeck() {
+        while WelcomeRequest.takeImportCards() != nil {}
+        let package = URL(fileURLWithPath: "/tmp/DeckDownloads/1/Greek Core.apkg")
+        let table = URL(fileURLWithPath: "/tmp/DeckDownloads/2/greek.csv")
+        var newDocuments = 0
+        WelcomeRequest.importIntoNewDeck(from: package) { newDocuments += 1 }
+        #expect(newDocuments == 1)
+        #expect(WelcomeRequest.takeImportCards()?.file == package)
+        WelcomeRequest.importIntoNewDeck(from: table) { newDocuments += 1 }
+        #expect(newDocuments == 2)
+        #expect(WelcomeRequest.takeImportCards()?.file == table)
+        #expect(WelcomeRequest.takeImportCards() == nil)
+    }
+
+    /// The browser of the Mac is the iPhone's: the same sources, and the files it saves are the
+    /// ones the import takes.
+    @Test func theBrowserKeepsItsSourcesAndSendsOtherHostsToSafari() {
+        #expect(DeckSources.all.count == 2)
+        #expect(DeckSources.isKnown(URL(string: "https://ankiweb.net/shared/decks")))
+        #expect(DeckSources.isKnown(URL(string: "https://www.mintdeck.app/decks")))
+        #expect(DeckSources.opensInSafari(URL(string: "https://example.com"), isLinkActivation: true))
+        #expect(DeckDownload.localName(forSuggested: "Greek Core.apkg").hasSuffix(".apkg"))
+        #expect(DeckDownload.shouldDownload(url: nil, mimeType: "text/csv", contentDisposition: nil, canShow: true))
+    }
 }

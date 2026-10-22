@@ -78,7 +78,11 @@ last). The preview of an Anki package heads with the Anki deck names, the number
 how many have review history and what was left out (cloze, media, empty); the history comes
 along. **Open in Mnemit** (Files, Safari, Mail) opens a sheet that asks where the cards go:
 a New Deck named after the Anki deck, or one of the decks; then the same preview. "Shared
-Decks on AnkiWeb" (Today's + menu, Today's empty state, the Deck screen) opens AnkiWeb in Safari. **Export**: Export… in the Deck screen's menu opens the share sheet with a TSV that
+Decks on AnkiWeb" (Today's + menu, Today's empty state, the Deck screen) opens the deck browser:
+a sheet with a web view at AnkiWeb's shared decks, Back, Forward, Reload, bookmarks (AnkiWeb, MintDeck) and
+Open in Safari; a link to another host opens in Safari. A `.apkg` the learner downloads there goes to the
+same sheet as "Open in Mnemit"; a `.csv` or `.tsv` goes to the preview over the deck used last (a new deck
+named after the file when there is none). **Export**: Export… in the Deck screen's menu opens the share sheet with a TSV that
 Anki imports as it is (header lines, word key and kind columns).
 
 **Options** (form): new cards per day; target recall (70–97 %, one-line explanation);
@@ -112,6 +116,7 @@ deck. Opening an `.apkg` from Finder does the same, not a document window.
    - CSV/TSV import on the iPhone; export on both with Anki's `#separator` / `#columns`
      headers and the word key and kind columns, so Anki reads the file as is.
    - No in-app deck catalogue: AnkiWeb has no API and its terms allow only browser access.
-     Import offers a link to AnkiWeb's shared decks, which opens in Safari; the downloaded
-     `.apkg` comes back through "Open in Mnemit".
+     Import offers a browser the learner drives (AnkiWeb's shared decks, MintDeck's free decks):
+     no script in its pages, no scraping; the app takes only the file the learner downloads,
+     which enters the import the way of "Open in Mnemit".
 4. Later: example sentences from Tatoeba's open API (CC BY) in Add Cards and Card Detail.

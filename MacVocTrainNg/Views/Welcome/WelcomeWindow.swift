@@ -87,6 +87,13 @@ enum WelcomeRequest {
         }
     }
 
+    /// Imports `file`, a package or a table, into a new deck: the request, then the document whose
+    /// window takes it. Finder opening a package and a download of the deck browser go this way.
+    static func importIntoNewDeck(from file: URL, newDocument: () -> Void = { NSDocumentController.shared.newDocument(nil) }) {
+        requestImportCards(from: file)
+        newDocument()
+    }
+
     /// The request of the import the welcome window made, once; windows take them in order.
     static func takeImportCards() -> Request? {
         pending.isEmpty ? nil : pending.removeFirst()
