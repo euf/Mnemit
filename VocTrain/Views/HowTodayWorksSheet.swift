@@ -39,7 +39,8 @@ struct HowTodayWorksButton: View {
                 .task {
                     let files = decks.map(\.url)
                     let now = now
-                    content = await Task.detached(priority: .utility) { HowTodayWorks.read(files, at: now) }.value
+                    let swipes = SwipeTally.shared.counts(at: now)
+                    content = await Task.detached(priority: .utility) { HowTodayWorks.read(files, at: now, swipes: swipes) }.value
                 }
         }
     }

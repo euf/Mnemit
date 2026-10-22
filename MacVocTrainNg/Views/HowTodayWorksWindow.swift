@@ -46,7 +46,7 @@ enum HowTodayWorksWindow {
             HowTodayWorksView(content: content)
                 .task {
                     let (sources, now, calendar) = (sources, now, calendar)
-                    content = await Task.detached(priority: .utility) { HowTodayWorks.make(sources, at: now, calendar: calendar) }.value
+                    content = await Task.detached(priority: .utility) { HowTodayWorks.make(sources, at: now, calendar: calendar, swipes: nil) }.value
                 }
         }
     }

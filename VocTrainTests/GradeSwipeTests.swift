@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import Testing
 
 @testable import VocTrain
@@ -269,6 +270,79 @@ struct GradeSwipeTests {
             let exit = GradeSwipe.exit(of: grade)
             #expect(abs(hypot(exit.width, exit.height) - GradeSwipe.exitDistance) < 0.001)
         }
+    }
+
+    // MARK: Swipes that a gap sprang back
+
+    @Test func aSwipeEndsInAGapOnlyWhenItTriedToGradeAndPointedIntoOne() {
+        func ended(_ translation: CGSize, _ predictedEnd: CGSize) -> Bool {
+            GradeSwipe.endedInGap(translation: translation, predictedEnd: predictedEnd)
+        }
+        // Compass 330° and 210° are the middles of the gaps: far, and a flick.
+        for bearing in [330.0, 210] {
+            #expect(ended(compass(bearing, length: 120), compass(bearing, length: 120)))
+            #expect(ended(compass(bearing, length: 400), compass(bearing, length: 400)))
+            #expect(ended(compass(bearing, length: 50), compass(bearing, length: 400)))
+            // A flick that starts in a zone and would end in the gap, and the other way round.
+            #expect(ended(compass(0, length: 50), compass(bearing, length: 400)))
+            #expect(ended(compass(bearing, length: 50), compass(90, length: 400)))
+        }
+        // A swipe that graded is no gap miss.
+        #expect(!ended(compass(0, length: 120), compass(0, length: 120)))
+        #expect(!ended(compass(90, length: 50), compass(90, length: 400)))
+        // Short and slow, in a gap: it tried nothing.
+        #expect(!ended(compass(330, length: 60), compass(330, length: 120)))
+        #expect(!ended(compass(330, length: 99), compass(330, length: 250)))
+        // Not moved far enough for a flick, or inside the dead zone.
+        #expect(!ended(compass(330, length: 25), compass(330, length: 400)))
+        #expect(!ended(compass(330, length: 10), compass(330, length: 400)))
+    }
+
+    @MainActor
+    @Test func theTallyCountsGradedSwipesAndGapMissesOfTheStudyDay() {
+        let calendar = StudyCalendar(timeZone: TimeZone(identifier: "UTC")!, rolloverHour: 4)
+        let now = Date(timeIntervalSince1970: 1_791_216_000)
+        let tally = SwipeTally()
+        #expect(tally.counts(at: now, calendar: calendar) == SwipeTally.Counts())
+        func release(_ translation: CGSize, _ predictedEnd: CGSize) -> Grade? {
+            tally.released(translation: translation, predictedEnd: predictedEnd, at: now, calendar: calendar)
+        }
+        // Three that graded: far, far, and a flick. The grade is what `GradeSwipe.released` says.
+        #expect(release(compass(0, length: 120), compass(0, length: 120)) == .easy)
+        #expect(release(compass(90, length: 120), compass(90, length: 120)) == .good)
+        #expect(release(compass(270, length: 50), compass(270, length: 400)) == .again)
+        #expect(tally.counts(at: now, calendar: calendar) == SwipeTally.Counts(graded: 3, gapMisses: 0))
+        // Four that a gap sprang back: far, far in the other gap, a flick, a flick from a zone into a gap.
+        #expect(release(compass(330, length: 120), compass(330, length: 120)) == nil)
+        #expect(release(compass(210, length: 400), compass(210, length: 400)) == nil)
+        #expect(release(compass(330, length: 50), compass(330, length: 400)) == nil)
+        #expect(release(compass(0, length: 50), compass(210, length: 400)) == nil)
+        // Not swipes that tried: a touch, a short drag in a zone, a slow one in a gap.
+        #expect(release(compass(90, length: 10), compass(90, length: 10)) == nil)
+        #expect(release(compass(90, length: 60), compass(90, length: 120)) == nil)
+        #expect(release(compass(330, length: 60), compass(330, length: 120)) == nil)
+        let counts = tally.counts(at: now, calendar: calendar)
+        #expect(counts == SwipeTally.Counts(graded: 3, gapMisses: 4))
+        #expect(counts.total == 7)
+    }
+
+    @MainActor
+    @Test func theTallyStartsAgainWithTheNextStudyDay() {
+        let calendar = StudyCalendar(timeZone: TimeZone(identifier: "UTC")!, rolloverHour: 4)
+        let day = calendar.dayNumber(for: Date(timeIntervalSince1970: 1_791_216_000))
+        let evening = calendar.start(ofDay: day).addingTimeInterval(14 * 3600)
+        let night = calendar.start(ofDay: day + 1).addingTimeInterval(-3600)
+        let morning = calendar.start(ofDay: day + 1).addingTimeInterval(3600)
+        let tally = SwipeTally()
+        _ = tally.released(translation: compass(330, length: 120), predictedEnd: compass(330, length: 120), at: evening, calendar: calendar)
+        _ = tally.released(translation: compass(90, length: 120), predictedEnd: compass(90, length: 120), at: evening, calendar: calendar)
+        #expect(tally.counts(at: evening, calendar: calendar) == SwipeTally.Counts(graded: 1, gapMisses: 1))
+        // After midnight and before the rollover it is the same study day.
+        #expect(tally.counts(at: night, calendar: calendar) == SwipeTally.Counts(graded: 1, gapMisses: 1))
+        // The next study day has none, and its first swipe counts alone.
+        #expect(tally.counts(at: morning, calendar: calendar) == SwipeTally.Counts())
+        _ = tally.released(translation: compass(330, length: 120), predictedEnd: compass(330, length: 120), at: morning, calendar: calendar)
+        #expect(tally.counts(at: morning, calendar: calendar) == SwipeTally.Counts(graded: 0, gapMisses: 1))
     }
 }
 

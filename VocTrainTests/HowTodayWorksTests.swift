@@ -42,8 +42,10 @@ struct HowTodayWorksTests {
 
     static var memory: MemoryEstimate { MemoryEstimate(words: 412.37, wordsAtDayStart: 411.53) }
 
+    static var swipes: SwipeTally.Counts { SwipeTally.Counts(graded: 38, gapMisses: 3) }
+
     static func content(decks: [HowTodayWorks.DeckInfo] = [HowTodayWorks.DeckInfo(name: "Greek B1", options: options)]) -> HowTodayWorks {
-        HowTodayWorks(progress: progress, breakdown: breakdown, memory: memory, decks: decks)
+        HowTodayWorks(progress: progress, breakdown: breakdown, memory: memory, swipes: swipes, decks: decks)
     }
 
     /// The figures of a section by their labels.
@@ -55,7 +57,7 @@ struct HowTodayWorksTests {
 
     @Test func theRowsAreTheFiguresOfTheObjectsInTheOrderOfTheScreen() throws {
         let content = Self.content()
-        #expect(content.sections.map(\.title) == ["Today's Plan", "Capacity", "Pace", "Streak", "Words in Memory", "FSRS"])
+        #expect(content.sections.map(\.title) == ["Today's Plan", "Capacity", "Pace", "Streak", "Words in Memory", "Swipes", "FSRS"])
         #expect(content.sections.allSatisfy { !$0.footer.isEmpty })
 
         let plan = values(content.sections[0])
@@ -97,7 +99,14 @@ struct HowTodayWorksTests {
         #expect(words["Gain today"]?.hasPrefix("+") == true)
         #expect(words["Next milestone"] == "500")
 
-        let fsrs = content.sections[5]
+        // The swipes: the gap misses of all that tried, and the sectors in compass degrees in the rule.
+        let swipes = content.sections[5]
+        #expect(swipes.rows == [.value(label: "Swipes that sprang back from a gap", value: "3 of 41 today")])
+        for sector in ["345° to 45°", "45° to 135°", "135° to 195°", "225° to 315°", "195° to 225°", "315° to 345°"] {
+            #expect(swipes.footer.contains(sector), "\(sector)")
+        }
+
+        let fsrs = content.sections[6]
         #expect(values(fsrs)["Target recall"] == Format.percent(0.9))
         #expect(values(fsrs)["Parameters"] == "Default")
         #expect(values(fsrs)["Steps per card"] == "2")
@@ -115,10 +124,11 @@ struct HowTodayWorksTests {
         var fitted = LearningOptions()
         fitted.parameters = FSRSParameters([Double](repeating: 0.5, count: FSRSParameters.count))!
         let content = HowTodayWorks(
-            progress: progress, breakdown: Self.breakdown, memory: Self.memory,
+            progress: progress, breakdown: Self.breakdown, memory: Self.memory, swipes: nil,
             decks: [HowTodayWorks.DeckInfo(name: nil, options: LearningOptions()), HowTodayWorks.DeckInfo(name: "Greek", options: fitted)])
         #expect(values(content.sections[3]) == ["Days": "5", "Today": "Not yet", "Cards to repair yesterday": "7"])
-        #expect(content.sections.suffix(2).map(\.title) == ["FSRS · Deck 1", "FSRS · Greek"])
+        // Where nothing is swiped (the Mac) there is no section of swipes.
+        #expect(content.sections.map(\.title) == ["Today's Plan", "Capacity", "Pace", "Streak", "Words in Memory", "FSRS · Deck 1", "FSRS · Greek"])
         #expect(values(content.sections[5])["Parameters"] == "Default")
         #expect(values(content.sections[6])["Parameters"] == "Fitted")
         #expect(values(content.sections[6])["Last automatic fit"] == "None yet")
