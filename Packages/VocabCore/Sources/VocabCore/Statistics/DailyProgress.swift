@@ -401,7 +401,27 @@ public struct Streak: Hashable, Sendable {
     public static func evaluate(
         reviews: [Int: Int], today: Int, planRuleStart: Int = DailyGoal.planRuleStart, isKept: (Int) -> Bool, isClosed: (Int) -> Bool, repairCards: Int
     ) -> Streak {
-        guard let first = reviews.filter({ $0.value > 0 }).keys.min() else { return Streak(days: 0, repairCards: nil) }
+        walk(reviews: reviews, today: today, planRuleStart: planRuleStart, isKept: isKept, isClosed: isClosed, repairCards: repairCards).streak
+    }
+
+    /// How one study day ended in `walk`.
+    struct Step: Hashable, Sendable {
+        /// The streak at the end of the day: for today, `Streak.days`.
+        var days: Int
+        /// The day closed its ring after a single missed day, and so kept the streak alive.
+        var saved: Bool
+        /// The day before was missed and this day has not closed its ring: only today can still save the streak.
+        var atRisk: Bool
+    }
+
+    /// The one rule of the streak, as `evaluate(reviews:today:planRuleStart:isKept:isClosed:repairCards:)` states
+    /// it: the streak and, for every study day from the first review to today, how that day ended. A day
+    /// before today ends with the streak it left (a single missed day leaves the streak it interrupted, at risk).
+    /// No review, no days.
+    static func walk(
+        reviews: [Int: Int], today: Int, planRuleStart: Int, isKept: (Int) -> Bool, isClosed: (Int) -> Bool, repairCards: Int
+    ) -> (streak: Streak, steps: [Int: Step]) {
+        guard let first = reviews.filter({ $0.value > 0 }).keys.min() else { return (Streak(days: 0, repairCards: nil), [:]) }
         func isLegacy(_ day: Int) -> Bool { day < planRuleStart && (reviews[day] ?? 0) > 0 }
         func kept(_ day: Int) -> Bool { isLegacy(day) || isKept(day) }
         func closed(_ day: Int) -> Bool { isLegacy(day) || isClosed(day) }
@@ -411,27 +431,43 @@ public struct Streak: Hashable, Sendable {
             case counting(days: Int)
             /// The day before was missed, after a streak of `daysBefore`.
             case missedOnce(daysBefore: Int)
+
+            var days: Int {
+                switch self {
+                case .idle: 0
+                case let .counting(days): days
+                case let .missedOnce(daysBefore): daysBefore
+                }
+            }
         }
         var state = State.idle
+        var steps: [Int: Step] = [:]
         for day in first..<max(first, today) {
+            var saved = false
             switch state {
             case let .counting(days):
                 state = kept(day) ? .counting(days: days + 1) : .missedOnce(daysBefore: days)
             case let .missedOnce(daysBefore):
-                state = closed(day) ? .counting(days: daysBefore + 2) : kept(day) ? .counting(days: 1) : .idle
+                saved = closed(day)
+                state = saved ? .counting(days: daysBefore + 2) : kept(day) ? .counting(days: 1) : .idle
             case .idle:
                 state = kept(day) ? .counting(days: 1) : .idle
             }
+            steps[day] = Step(days: state.days, saved: saved, atRisk: false)
         }
 
+        let step: Step
         switch state {
         case .idle:
-            return Streak(days: kept(today) ? 1 : 0, repairCards: nil)
+            step = Step(days: kept(today) ? 1 : 0, saved: false, atRisk: false)
         case let .counting(days):
-            return Streak(days: days + (kept(today) ? 1 : 0), repairCards: nil)
+            step = Step(days: days + (kept(today) ? 1 : 0), saved: false, atRisk: false)
         case let .missedOnce(daysBefore):
-            return closed(today) ? Streak(days: daysBefore + 2, repairCards: nil) : Streak(days: daysBefore, repairCards: repairCards)
+            let saved = closed(today)
+            step = Step(days: saved ? daysBefore + 2 : daysBefore, saved: saved, atRisk: !saved)
         }
+        steps[today] = step
+        return (Streak(days: step.days, repairCards: step.atRisk ? repairCards : nil), steps)
     }
 }
 
@@ -877,6 +913,9 @@ public final class DailyProgressCache: @unchecked Sendable {
         var capacity: Int
         var kept: [Int: Bool]
         var closed: [Int: Bool]
+        /// The day's goal and the cards done on it, for the `DayRecord`s.
+        var goals: [Int: Int]
+        var done: [Int: Int]
     }
 
     private let lock = NSLock()
@@ -1064,13 +1103,20 @@ public struct DailyProgress: Hashable, Sendable {
     public var ladder: [Int]
     /// The cards today's reviews lifted a step up the ladder (`DeckActivity.climbs(onDayOf:calendar:)`).
     public var climbedToday: Int
+    /// Every study day from the first through today, today included with its live figures: what the
+    /// milestones and achievements are worked out from (`Achievements`).
+    public var records: [DayRecord]
+    /// Everything earned over `records`, oldest first (`Achievements.earned(over:)`).
+    public var achievements: [Achievement]
 
     public init(
         ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace(), capacity: Int = DailyGoal.initialCapacity,
         roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), capacity: DailyGoal.initialCapacity), streakKeptToday: Bool = false,
         newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
-        ladder: [Int] = [], climbedToday: Int = 0
+        ladder: [Int] = [], climbedToday: Int = 0, records: [DayRecord] = [], achievements: [Achievement] = []
     ) {
+        self.records = records
+        self.achievements = achievements
         self.week = week
         self.ladder = ladder
         self.climbedToday = climbedToday
@@ -1164,6 +1210,8 @@ public struct DailyProgress: Hashable, Sendable {
             var capacity = DailyGoal.initialCapacity
             var kept: [Int: Bool] = [:]
             var closed: [Int: Bool] = [:]
+            var goals: [Int: Int] = [:]
+            var dones: [Int: Int] = [:]
             for day in first..<today {
                 if day > first {
                     capacity = DailyGoal.nextCapacity(after: capacity, yesterdayClosed: closed[day - 1] ?? false, dayBeforeClosed: closed[day - 2] ?? false)
@@ -1175,8 +1223,10 @@ public struct DailyProgress: Hashable, Sendable {
                 let done = (newDoneByDay[day] ?? 0) + (otherDoneByDay[day] ?? 0)
                 closed[day] = done >= rounds.goal
                 kept[day] = rounds.ends.first.map { done >= $0 } ?? true
+                goals[day] = rounds.goal
+                dones[day] = done
             }
-            return DailyProgressCache.Before(capacity: capacity, kept: kept, closed: closed)
+            return DailyProgressCache.Before(capacity: capacity, kept: kept, closed: closed, goals: goals, done: dones)
         }
         // The days before today are the same while the decks' own days before today are: each history says
         // which it comes from.
@@ -1218,9 +1268,15 @@ public struct DailyProgress: Hashable, Sendable {
         // Today is closed by its ring: cards added after the day began are laps, not debt.
         kept[today] = isKeptToday
         closed[today] = ring.isGoalMet
-        let streak = Streak.evaluate(
+        let (streak, steps) = Streak.walk(
             reviews: reviews, today: today, planRuleStart: planRuleStart, isKept: { kept[$0] ?? false }, isClosed: { closed[$0] ?? false },
             repairCards: max(0, ring.goal - ring.done))
+        let records = (first...today).map { day in
+            DayRecord(
+                day: day, done: day == today ? ring.done : before.done[day] ?? 0, goal: day == today ? ring.goal : before.goals[day] ?? 0,
+                kept: kept[day] ?? false, closed: closed[day] ?? false, streak: day == today ? streak.days : steps[day]?.days ?? 0,
+                savedStreak: steps[day]?.saved ?? false)
+        }
         // In the order of the decks given: the shares of the decks that take part, 0 for a paused one.
         var shares = allowances.makeIterator()
         let givenAllowances = given.map { $0.isPaused ? 0 : shares.next() ?? 0 }
@@ -1232,6 +1288,7 @@ public struct DailyProgress: Hashable, Sendable {
             ladder: decks.map { $0.ladder() }.reduce(into: [Int](repeating: 0, count: MaturityCategory.allCases.count)) { sum, steps in
                 for index in sum.indices { sum[index] += steps[index] }
             },
-            climbedToday: decks.reduce(0) { $0 + $1.climbs(onDayOf: now, calendar: calendar) })
+            climbedToday: decks.reduce(0) { $0 + $1.climbs(onDayOf: now, calendar: calendar) }, records: records,
+            achievements: Achievements.earned(over: records))
     }
 }
