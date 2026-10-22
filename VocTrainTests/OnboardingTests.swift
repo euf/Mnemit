@@ -64,8 +64,8 @@ struct OnboardingTests {
         let left = CGSize(width: -160, height: 0)
         let up = CGSize(width: 0, height: -160)
         let down = CGSize(width: 0, height: 160)
-        // Up and a little to the left (compass 330°), a gap: no grade.
-        let upLeft = CGSize(width: -80, height: -140)
+        // Up and to the left, a gap: no grade.
+        let upLeft = CGSize(width: -120, height: -120)
         func released(_ translation: CGSize) -> Grade? {
             GradeSwipe.released(translation: translation, predictedEnd: translation)
         }

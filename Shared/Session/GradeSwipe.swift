@@ -5,30 +5,36 @@ import VocabCore
 /// right for Good, up for Easy, down for Hard. "No" is only leftwards and every "yes" lies on
 /// the other three sides.
 ///
-/// The owner's diagram is a clock face of 24 sectors of 15°, 0 at the top, clockwise (compass
-/// degrees). The code measures the finger's direction the other way round, as an angle
-/// counter-clockwise from east with the screen's y turned up (math degrees, math = 90 - compass):
+/// The sectors are drawn on a clock face, 0 at the top, clockwise (compass degrees). The code
+/// measures the finger's direction the other way round, as an angle counter-clockwise from east
+/// with the screen's y turned up (math degrees, math = 90 - compass):
 ///
 /// | Grade | Compass | Math | Reference (compass / math) |
 /// |---|---|---|---|
-/// | Easy, up | 345°…45° | `goodReach`…`easyEnd` = 45°…105° | 15° / `easyReference` 75° |
+/// | Easy, up | 330°…45° | `goodReach`…`easyEnd` = 45°…120° | 15° / `easyReference` 75° |
 /// | Good, right | 45°…135° | `-goodReach`…`goodReach` = -45°…45° | 90° / `goodReference` 0° |
-/// | Hard, down | 135°…195° | `hardStart`…`360 - goodReach` = 255°…315° | 165° / `hardReference` 285° |
-/// | gap | 195°…225° | `forgotEnd`…`hardStart` = 225°…255° | none |
-/// | Forgot, left | 225°…315° | `forgotStart`…`forgotEnd` = 135°…225° | 270° / `forgotReference` 180° |
-/// | gap | 315°…345° | `easyEnd`…`forgotStart` = 105°…135° | none |
+/// | Hard, down | 135°…210° | `hardStart`…`360 - goodReach` = 240°…315° | 165° / `hardReference` 285° |
+/// | gap | 210°…240° | `forgotEnd`…`hardStart` = 210°…240° | none |
+/// | Forgot, left | 240°…300° | `forgotStart`…`forgotEnd` = 150°…210° | 270° / `forgotReference` 180° |
+/// | gap | 300°…330° | `easyEnd`…`forgotStart` = 120°…150° | none |
+///
+/// For a right-handed thumb the diagonal from the lower left to the upper right and the vertical
+/// are the fast directions and the horizontal the slowest but most precise (Trudeau et al.,
+/// Human Factors 2012), so Easy and Hard are wide and reach toward that diagonal, Forgot stays
+/// 60° wide, and Good is a clean 90°.
 ///
 /// Forgot is the only "no", and Easy by mistake for it is the costly slip, so a gap on both
-/// sides keeps it away from the two "yes" grades next to it. Between two "yes" grades (east and
-/// north, east and south) there is no gap: a misread there costs little. In a gap the swipe
+/// sides keeps it away from the two "yes" grades next to it. Between two "yes" grades (right and
+/// up, right and down) there is no gap: a misread there costs little. In a gap the swipe
 /// gives no grade: no tint, no lit button, the card moves a share (`gapTravel`) of the finger's
 /// way so it reads as "not a choice", and letting go springs it back, however far the finger
 /// is and however fast.
 ///
 /// While a swipe is under way the card is not moved along the finger but along the average of the
 /// finger's direction and the grade's reference direction (`cardOffset`): a finger straight up
-/// moves the card 7.5° to the right of up. Easy and Hard never lean left, Good goes right, and
-/// Forgot, whose reference is due west, never leans up or down.
+/// moves the card 7.5° to the right of up, Good goes right, and Forgot, whose reference is due
+/// west, never leans up or down. Easy's card goes between 7.5° left of up and 30° right of up,
+/// Hard's between 7.5° left of down and 30° right of down.
 enum GradeSwipe {
     /// How far a drag must go before letting go grades, in points.
     static let commitDistance: CGFloat = 100
@@ -41,19 +47,20 @@ enum GradeSwipe {
 
     /// Good takes this many degrees to either side of east: compass 45° to 135°.
     static let goodReach = 45.0
-    /// Easy goes from `goodReach` to here: compass 345° to 45°.
-    static let easyEnd = 105.0
-    /// Forgot goes from here to `forgotEnd`: compass 225° to 315°. Between `easyEnd` and here
-    /// lies the gap (compass 315° to 345°) that keeps Easy and Forgot apart.
-    static let forgotStart = 135.0
-    static let forgotEnd = 225.0
-    /// Hard goes from here to `360 - goodReach`: compass 135° to 195°. Between `forgotEnd` and
-    /// here lies the gap (compass 195° to 225°) that keeps Forgot and Hard apart.
-    static let hardStart = 255.0
+    /// Easy goes from `goodReach` to here: compass 330° to 45°.
+    static let easyEnd = 120.0
+    /// Forgot goes from here to `forgotEnd`: compass 240° to 300°. Between `easyEnd` and here
+    /// lies the gap (compass 300° to 330°) that keeps Easy and Forgot apart.
+    static let forgotStart = 150.0
+    static let forgotEnd = 210.0
+    /// Hard goes from here to `360 - goodReach`: compass 135° to 210°. Between `forgotEnd` and
+    /// here lies the gap (compass 210° to 240°) that keeps Forgot and Hard apart.
+    static let hardStart = 240.0
 
     /// The direction each grade pulls the card in, in degrees as `angle(of:)`, and the direction
-    /// it flies off in. Each is the middle of its sector: compass 15° for Easy (right of up),
-    /// 90° for Good, 165° for Hard (right of down) and 270° for Forgot.
+    /// it flies off in: compass 15° for Easy (right of up), 90° for Good, 165° for Hard (right
+    /// of down) and 270° for Forgot. Each lies inside its sector, within 45° of every direction
+    /// of it, so the average with the finger never cancels.
     static let easyReference = 75.0
     static let goodReference = 0.0
     static let hardReference = 285.0

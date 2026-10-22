@@ -102,7 +102,17 @@ struct HowTodayWorksTests {
         // The swipes: the gap misses of all that tried, and the sectors in compass degrees in the rule.
         let swipes = content.sections[5]
         #expect(swipes.rows == [.value(label: "Swipes that sprang back from a gap", value: "3 of 41 today")])
-        for sector in ["345° to 45°", "45° to 135°", "135° to 195°", "225° to 315°", "195° to 225°", "315° to 345°"] {
+        // They are the constants of `GradeSwipe`, in compass degrees (90 - the code's angle, modulo 360).
+        func bearing(_ math: Double) -> Int { Int((90 - math).truncatingRemainder(dividingBy: 360) + 360) % 360 }
+        let sectors = [
+            "Easy \(bearing(GradeSwipe.easyEnd))° to \(bearing(GradeSwipe.goodReach))°",
+            "Good \(bearing(GradeSwipe.goodReach))° to \(bearing(-GradeSwipe.goodReach))°",
+            "Hard \(bearing(-GradeSwipe.goodReach))° to \(bearing(GradeSwipe.hardStart))°",
+            "Forgot \(bearing(GradeSwipe.forgotEnd))° to \(bearing(GradeSwipe.forgotStart))°",
+            "\(bearing(GradeSwipe.hardStart))° to \(bearing(GradeSwipe.forgotEnd))° or "
+                + "\(bearing(GradeSwipe.forgotStart))° to \(bearing(GradeSwipe.easyEnd))°",
+        ]
+        for sector in sectors {
             #expect(swipes.footer.contains(sector), "\(sector)")
         }
 

@@ -1049,12 +1049,12 @@
         }
       }
     },
-    "A swipe that goes %lld points or flicks gives the grade of its direction, unless it points into a gap: 195° to 225° or 315° to 345°, where the card springs back. Clockwise from the top: Easy 345° to 45°, Good 45° to 135°, Hard 135° to 195°, Forgot 225° to 315°. Counted from when the app started, per study day.": {
+    "A swipe that goes %lld points or flicks gives the grade of its direction, unless it points into a gap: 210° to 240° or 300° to 330°, where the card springs back. Clockwise from the top: Easy 330° to 45°, Good 45° to 135°, Hard 135° to 210°, Forgot 240° to 300°. Counted from when the app started, per study day.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eine Wischgeste, die %lld Punkte weit geht oder ein Flick ist, gibt die Bewertung ihrer Richtung, außer sie zeigt in eine Lücke: 195° bis 225° oder 315° bis 345°, wo die Karte zurückspringt. Im Uhrzeigersinn von oben: Leicht 345° bis 45°, Gut 45° bis 135°, Schwer 135° bis 195°, Vergessen 225° bis 315°. Gezählt ab dem Start der App, je Lerntag."
+            "value": "Eine Wischgeste, die %lld Punkte weit geht oder ein Flick ist, gibt die Bewertung ihrer Richtung, außer sie zeigt in eine Lücke: 210° bis 240° oder 300° bis 330°, wo die Karte zurückspringt. Im Uhrzeigersinn von oben: Leicht 330° bis 45°, Gut 45° bis 135°, Schwer 135° bis 210°, Vergessen 240° bis 300°. Gezählt ab dem Start der App, je Lerntag."
           }
         }
       }

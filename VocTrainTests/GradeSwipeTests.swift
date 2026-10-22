@@ -47,12 +47,12 @@ struct GradeSwipeTests {
         #expect(GradeSwipe.zone(CGSize(width: 0, height: 100)) == .hard)
     }
 
-    @Test func theSectorsAreTheOnesOfTheOwnersDiagram() {
-        // The clock face of 24 sectors of 15°, 0 at the top, clockwise. Easy 345° to 45°, Good 45° to
-        // 135°, Hard 135° to 195°, a gap to 225°, Forgot 225° to 315°, a gap to 345°.
+    @Test func theSectorsAreTheOnesOfTheClockFace() {
+        // The clock face, 0 at the top, clockwise. Easy 330° to 45°, Good 45° to 135°, Hard 135° to 210°,
+        // a gap to 240°, Forgot 240° to 300°, a gap to 330°.
         let sectors: [(from: Double, to: Double, grade: Grade?)] = [
-            (345.5, 359.5, .easy), (0, 44.5, .easy), (45.5, 134.5, .good), (135.5, 194.5, .hard),
-            (195.5, 224.5, nil), (225.5, 314.5, .again), (315.5, 344.5, nil),
+            (330.5, 359.5, .easy), (0, 44.5, .easy), (45.5, 134.5, .good), (135.5, 209.5, .hard),
+            (210.5, 239.5, nil), (240.5, 299.5, .again), (300.5, 329.5, nil),
         ]
         for (from, to, grade) in sectors {
             for degrees in stride(from: from, through: to, by: 0.5) {
@@ -61,21 +61,21 @@ struct GradeSwipeTests {
         }
         // The named constants are those edges, in the code's degrees.
         #expect(GradeSwipe.goodReach == 45)
-        #expect(GradeSwipe.easyEnd == 105)
-        #expect(GradeSwipe.forgotStart == 135)
-        #expect(GradeSwipe.forgotEnd == 225)
-        #expect(GradeSwipe.hardStart == 255)
-        #expect(bearing(ofMath: GradeSwipe.easyEnd) == 345)
+        #expect(GradeSwipe.easyEnd == 120)
+        #expect(GradeSwipe.forgotStart == 150)
+        #expect(GradeSwipe.forgotEnd == 210)
+        #expect(GradeSwipe.hardStart == 240)
+        #expect(bearing(ofMath: GradeSwipe.easyEnd) == 330)
         #expect(bearing(ofMath: GradeSwipe.goodReach) == 45)
         #expect(bearing(ofMath: -GradeSwipe.goodReach) == 135)
-        #expect(bearing(ofMath: GradeSwipe.hardStart) == 195)
-        #expect(bearing(ofMath: GradeSwipe.forgotEnd) == 225)
-        #expect(bearing(ofMath: GradeSwipe.forgotStart) == 315)
+        #expect(bearing(ofMath: GradeSwipe.hardStart) == 210)
+        #expect(bearing(ofMath: GradeSwipe.forgotEnd) == 240)
+        #expect(bearing(ofMath: GradeSwipe.forgotStart) == 300)
         #expect(bearing(ofMath: 360 - GradeSwipe.goodReach) == 135)
     }
 
     @Test func theInsideOfEachSectorIsItsGradeAtAnyLength() {
-        // The middle of each sector, from the dead zone to far beyond the commit distance.
+        // The reference direction of each grade, from the dead zone to far beyond the commit distance.
         let middles: [(bearing: Double, grade: Grade)] = [(15, .easy), (90, .good), (165, .hard), (270, .again)]
         for (bearing, grade) in middles {
             for length in [20.0, 60, 100, 400] {
@@ -103,7 +103,7 @@ struct GradeSwipeTests {
         #expect(zone(GradeSwipe.hardStart + 0.5) == .hard)
     }
 
-    @Test func theReferencesAreTheMiddlesOfTheirSectors() {
+    @Test func theReferencesLieInsideTheirSectors() {
         // Compass: Easy 15° (right of up), Good 90°, Hard 165° (right of down), Forgot 270°.
         #expect(GradeSwipe.easyReference == 75)
         #expect(GradeSwipe.goodReference == 0)
@@ -129,14 +129,14 @@ struct GradeSwipeTests {
     }
 
     @Test func aGapGivesNoGradeNorADirectionWithinTheDeadZone() {
-        // Compass 330° and 210°: the middles of the two gaps.
-        #expect(GradeSwipe.zone(compass(330)) == nil)
-        #expect(GradeSwipe.zone(compass(210)) == nil)
-        #expect(GradeSwipe.isInGap(compass(330)))
-        #expect(GradeSwipe.isInGap(compass(210)))
+        // Compass 315° and 225°: the middles of the two gaps.
+        #expect(GradeSwipe.zone(compass(315)) == nil)
+        #expect(GradeSwipe.zone(compass(225)) == nil)
+        #expect(GradeSwipe.isInGap(compass(315)))
+        #expect(GradeSwipe.isInGap(compass(225)))
         // Under the dead zone there is no direction yet, so no gap either.
         #expect(GradeSwipe.zone(swipe(0, length: 10)) == nil)
-        #expect(!GradeSwipe.isInGap(compass(330, length: 10)))
+        #expect(!GradeSwipe.isInGap(compass(315, length: 10)))
         #expect(!GradeSwipe.isInGap(swipe(90)))
         #expect(GradeSwipe.zone(.zero) == nil)
     }
@@ -179,7 +179,7 @@ struct GradeSwipeTests {
     }
 
     @Test func letGoInAGapSpringsBackFarOrFast() {
-        for degrees in [110.0, 120, 130, 230, 240, 250] {
+        for degrees in [125.0, 135, 145, 215, 225, 235] {
             // Past the commit distance, far beyond it.
             #expect(GradeSwipe.released(translation: swipe(degrees, length: 120), predictedEnd: swipe(degrees, length: 120)) == nil)
             #expect(GradeSwipe.released(translation: swipe(degrees, length: 400), predictedEnd: swipe(degrees, length: 400)) == nil)
@@ -213,12 +213,12 @@ struct GradeSwipeTests {
         #expect(abs(card(285, .hard).angle - 285) < 0.001)
         // The edges of the sectors: halfway to the reference.
         #expect(abs(card(45, .easy).angle - 60) < 0.001)
-        #expect(abs(card(105, .easy).angle - 90) < 0.001)
+        #expect(abs(card(120, .easy).angle - 97.5) < 0.001)
         #expect(abs(card(45, .good).angle - 22.5) < 0.001)
         #expect(abs(card(-45, .good).angle - (360 - 22.5)) < 0.001)
-        #expect(abs(card(135, .again).angle - 157.5) < 0.001)
-        #expect(abs(card(225, .again).angle - 202.5) < 0.001)
-        #expect(abs(card(255, .hard).angle - 270) < 0.001)
+        #expect(abs(card(150, .again).angle - 165) < 0.001)
+        #expect(abs(card(210, .again).angle - 195) < 0.001)
+        #expect(abs(card(240, .hard).angle - 262.5) < 0.001)
         #expect(abs(card(315, .hard).angle - 300) < 0.001)
         // At the finger's distance, whatever the angle and the length.
         for grade in Grade.allCases {
@@ -228,11 +228,12 @@ struct GradeSwipeTests {
         }
     }
 
-    @Test func goodLeansRightEasyAndHardNeverLeftAndForgotNeverLeansUpOrDown() {
+    @Test func theCardStaysNearItsReferenceAndForgotNeverLeansUpOrDown() {
         for degrees in stride(from: 0.0, to: 360.0, by: 1) {
             let finger = swipe(degrees)
             guard let grade = GradeSwipe.zone(finger) else { continue }
             let moved = GradeSwipe.pull(finger, toward: grade)
+            let way = direction(moved)
             switch grade {
             case .again:
                 // Forgot's reference is due west: it pulls the card toward the horizontal, never away.
@@ -240,16 +241,17 @@ struct GradeSwipeTests {
                 #expect(moved.width < 0)
             case .good:
                 #expect(moved.width > 0, "\(grade) at \(degrees)°")
-            case .easy, .hard:
-                // The left edge of Easy and Hard is as far left of vertical as the reference is right of it:
-                // the card goes straight up or down there, and not left.
-                #expect(moved.width > -0.001, "\(grade) at \(degrees)°")
+            case .easy:
+                // Between 30° right of up (the near edge) and 7.5° left of up (the far edge).
+                #expect(way > 60 - 0.001 && way < 97.5 + 0.001, "\(grade) at \(degrees)°")
+            case .hard:
+                #expect(way > 262.5 - 0.001 && way < 300 + 0.001, "\(grade) at \(degrees)°")
             }
         }
     }
 
     @Test func theCardGoesAHalfWayInAGapAndWithTheFingerBelowTheDeadZone() {
-        let gap = swipe(120, length: 120)
+        let gap = swipe(135, length: 120)
         let half = GradeSwipe.cardOffset(for: gap)
         #expect(abs(half.width - gap.width * GradeSwipe.gapTravel) < 0.001)
         #expect(abs(half.height - gap.height * GradeSwipe.gapTravel) < 0.001)
@@ -278,8 +280,8 @@ struct GradeSwipeTests {
         func ended(_ translation: CGSize, _ predictedEnd: CGSize) -> Bool {
             GradeSwipe.endedInGap(translation: translation, predictedEnd: predictedEnd)
         }
-        // Compass 330° and 210° are the middles of the gaps: far, and a flick.
-        for bearing in [330.0, 210] {
+        // Compass 315° and 225° are the middles of the gaps: far, and a flick.
+        for bearing in [315.0, 225] {
             #expect(ended(compass(bearing, length: 120), compass(bearing, length: 120)))
             #expect(ended(compass(bearing, length: 400), compass(bearing, length: 400)))
             #expect(ended(compass(bearing, length: 50), compass(bearing, length: 400)))
@@ -291,11 +293,11 @@ struct GradeSwipeTests {
         #expect(!ended(compass(0, length: 120), compass(0, length: 120)))
         #expect(!ended(compass(90, length: 50), compass(90, length: 400)))
         // Short and slow, in a gap: it tried nothing.
-        #expect(!ended(compass(330, length: 60), compass(330, length: 120)))
-        #expect(!ended(compass(330, length: 99), compass(330, length: 250)))
+        #expect(!ended(compass(315, length: 60), compass(315, length: 120)))
+        #expect(!ended(compass(315, length: 99), compass(315, length: 250)))
         // Not moved far enough for a flick, or inside the dead zone.
-        #expect(!ended(compass(330, length: 25), compass(330, length: 400)))
-        #expect(!ended(compass(330, length: 10), compass(330, length: 400)))
+        #expect(!ended(compass(315, length: 25), compass(315, length: 400)))
+        #expect(!ended(compass(315, length: 10), compass(315, length: 400)))
     }
 
     @MainActor
@@ -313,14 +315,14 @@ struct GradeSwipeTests {
         #expect(release(compass(270, length: 50), compass(270, length: 400)) == .again)
         #expect(tally.counts(at: now, calendar: calendar) == SwipeTally.Counts(graded: 3, gapMisses: 0))
         // Four that a gap sprang back: far, far in the other gap, a flick, a flick from a zone into a gap.
-        #expect(release(compass(330, length: 120), compass(330, length: 120)) == nil)
-        #expect(release(compass(210, length: 400), compass(210, length: 400)) == nil)
-        #expect(release(compass(330, length: 50), compass(330, length: 400)) == nil)
-        #expect(release(compass(0, length: 50), compass(210, length: 400)) == nil)
+        #expect(release(compass(315, length: 120), compass(315, length: 120)) == nil)
+        #expect(release(compass(225, length: 400), compass(225, length: 400)) == nil)
+        #expect(release(compass(315, length: 50), compass(315, length: 400)) == nil)
+        #expect(release(compass(0, length: 50), compass(225, length: 400)) == nil)
         // Not swipes that tried: a touch, a short drag in a zone, a slow one in a gap.
         #expect(release(compass(90, length: 10), compass(90, length: 10)) == nil)
         #expect(release(compass(90, length: 60), compass(90, length: 120)) == nil)
-        #expect(release(compass(330, length: 60), compass(330, length: 120)) == nil)
+        #expect(release(compass(315, length: 60), compass(315, length: 120)) == nil)
         let counts = tally.counts(at: now, calendar: calendar)
         #expect(counts == SwipeTally.Counts(graded: 3, gapMisses: 4))
         #expect(counts.total == 7)
@@ -334,14 +336,14 @@ struct GradeSwipeTests {
         let night = calendar.start(ofDay: day + 1).addingTimeInterval(-3600)
         let morning = calendar.start(ofDay: day + 1).addingTimeInterval(3600)
         let tally = SwipeTally()
-        _ = tally.released(translation: compass(330, length: 120), predictedEnd: compass(330, length: 120), at: evening, calendar: calendar)
+        _ = tally.released(translation: compass(315, length: 120), predictedEnd: compass(315, length: 120), at: evening, calendar: calendar)
         _ = tally.released(translation: compass(90, length: 120), predictedEnd: compass(90, length: 120), at: evening, calendar: calendar)
         #expect(tally.counts(at: evening, calendar: calendar) == SwipeTally.Counts(graded: 1, gapMisses: 1))
         // After midnight and before the rollover it is the same study day.
         #expect(tally.counts(at: night, calendar: calendar) == SwipeTally.Counts(graded: 1, gapMisses: 1))
         // The next study day has none, and its first swipe counts alone.
         #expect(tally.counts(at: morning, calendar: calendar) == SwipeTally.Counts())
-        _ = tally.released(translation: compass(330, length: 120), predictedEnd: compass(330, length: 120), at: morning, calendar: calendar)
+        _ = tally.released(translation: compass(315, length: 120), predictedEnd: compass(315, length: 120), at: morning, calendar: calendar)
         #expect(tally.counts(at: morning, calendar: calendar) == SwipeTally.Counts(graded: 0, gapMisses: 1))
     }
 }
@@ -386,7 +388,7 @@ struct CardFlightSwipeTests {
     }
 
     @Test func inAGapTheCardGoesHalfWayWithoutGradeTintOrLitButton() {
-        for degrees in [120.0, 240] {
+        for degrees in [135.0, 225] {
             let flight = CardFlight()
             let finger = swipe(degrees, length: 140)
             flight.drag(finger, isRevealed: true)
@@ -405,7 +407,7 @@ struct CardFlightSwipeTests {
         let flight = CardFlight()
         flight.drag(swipe(90, length: 130), isRevealed: true)
         #expect(flight.highlighted == .easy)
-        flight.drag(swipe(120, length: 130), isRevealed: true)
+        flight.drag(swipe(135, length: 130), isRevealed: true)
         #expect(flight.zone == nil)
         #expect(flight.highlighted == nil)
         #expect(flight.committing == nil)
@@ -427,7 +429,7 @@ struct CardFlightSwipeTests {
         // Another grade at the commit distance is felt; a gap is not.
         flight.drag(swipe(90, length: 130), isRevealed: true)
         #expect(flight.gradeFeedback == 2)
-        flight.drag(swipe(120, length: 130), isRevealed: true)
+        flight.drag(swipe(135, length: 130), isRevealed: true)
         #expect(flight.gradeFeedback == 2)
         flight.drag(swipe(90, length: 130), isRevealed: true)
         #expect(flight.gradeFeedback == 3)
@@ -461,7 +463,7 @@ struct CardFlightSwipeTests {
 
     @Test func springingBackClearsTheGapToo() {
         let flight = CardFlight()
-        flight.drag(swipe(120, length: 140), isRevealed: true)
+        flight.drag(swipe(135, length: 140), isRevealed: true)
         #expect(flight.isInGap)
         flight.springBack()
         #expect(!flight.isInGap)

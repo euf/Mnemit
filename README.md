@@ -17,9 +17,10 @@ are in [`references/`](references/).
   free choices, and its costliest input is Hard on a forgotten card, which still grows the
   interval ([`fsrs-research.md`](references/fsrs-research.md) §1).
 - **Swipes with dead zones.** ← Forgot, → Good, ↑ Easy, ↓ Hard. The recognised sectors follow a
-  clock face, 0 at the top, clockwise: Easy 345°…45°, Good 45°…135°, Hard 135°…195°, Forgot
-  225°…315°, and nothing in the two gaps between the "no" and the "yes" sectors (195°…225°,
-  315°…345°): a swipe there springs back however far or fast it goes. The card does not follow
+  clock face, 0 at the top, clockwise: Easy 330°…45°, Good 45°…135°, Hard 135°…210°, Forgot
+  240°…300°, and nothing in the two gaps between the "no" and the "yes" sectors (210°…240°,
+  300°…330°): a swipe there springs back however far or fast it goes. The vertical sectors are
+  wide, as a right-handed thumb is fastest up, down and on the diagonal. The card does not follow
   the raw finger: it moves halfway between the finger and the grade's reference direction (Easy
   15°, Good 90°, Hard 165°, Forgot 270°), so a finger straight up moves it a little to the right
   of up and Forgot goes straight left. On the Mac the same arrows, Space to reveal, 1–4 as in Anki.

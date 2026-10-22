@@ -162,7 +162,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "A swipe that goes \(Int(GradeSwipe.commitDistance)) points or flicks gives the grade of its direction, unless it points into a gap: 195° to 225° or 315° to 345°, where the card springs back. Clockwise from the top: Easy 345° to 45°, Good 45° to 135°, Hard 135° to 195°, Forgot 225° to 315°. Counted from when the app started, per study day."
+                "A swipe that goes \(Int(GradeSwipe.commitDistance)) points or flicks gives the grade of its direction, unless it points into a gap: 210° to 240° or 300° to 330°, where the card springs back. Clockwise from the top: Easy 330° to 45°, Good 45° to 135°, Hard 135° to 210°, Forgot 240° to 300°. Counted from when the app started, per study day."
         )
         return Section(title: String(localized: "Swipes"), rows: rows, footer: footer)
     }
