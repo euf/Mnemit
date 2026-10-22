@@ -18,7 +18,9 @@ struct StreamRest {
     /// When cards come back that today's plan leaves out; `nil` if no card has been studied.
     var nextDue: Date?
     var now: Date
-    /// Review ahead or practice has something to go on with.
+    /// Overdue cards the plan left for the days after: Keep Going works through them first.
+    var catchUp = 0
+    /// The backlog, review ahead or practice has something to go on with.
     var canKeepGoing: Bool
     /// What the stream could add beyond the daily limits; `nil` if there are no new cards.
     var extraNew: ExtraNewCards?
@@ -26,9 +28,10 @@ struct StreamRest {
 
 /// The short stop between today's plan and the rest of the stream: "Done for today" with
 /// the size of the plan, how many cards were recalled and when the next one is due, the
-/// ring, and what the learner can do from here. "Keep Going" reviews ahead and practices,
-/// and is the default; the new cards beyond the daily limit need a button of their own, with
-/// a line that says what they cost. A finished practice ends with its figures.
+/// ring, and what the learner can do from here. "Keep Going" works through the rest of the
+/// backlog, then reviews ahead and practices, and is the default; the new cards beyond the
+/// daily limit need a button of their own, with a line that says what they cost. A finished
+/// practice ends with its figures.
 struct StreamRestView: View {
     var rest: StreamRest
     var progress: DailyProgress?
@@ -57,7 +60,9 @@ struct StreamRestView: View {
                 if let accuracy = rest.recap.accuracy {
                     Text("\(Format.percent(accuracy)) recalled")
                 }
-                if !rest.isPracticeOnly, let nextDue = rest.nextDue {
+                if !rest.isPracticeOnly, rest.catchUp > 0 {
+                    Text("+\(rest.catchUp) to catch up this week")
+                } else if !rest.isPracticeOnly, let nextDue = rest.nextDue {
                     Text("Next review \(Format.due(nextDue, now: rest.now))")
                 }
             }

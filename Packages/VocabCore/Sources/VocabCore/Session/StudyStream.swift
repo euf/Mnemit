@@ -5,14 +5,19 @@ import Foundation
 /// leaving the stream anywhere loses nothing, and the next stream picks up from the deck.
 ///
 /// 1. `Stage.plan`: today's plan, what `StudySession.counts(for:at:calendar:)` reports,
-///    in the order and within the limits of `StudySession`. When a segment of the plan is
-///    done, the plan is looked at again: `cardsPerSession` may have left cards out, and
-///    cards of an Again come back as learning cards.
-/// 2. `Stage.rest`: the plan is empty. The stream waits here for the learner, who can
-///    `keepGoing(in:at:calendar:)` or `addNewCards(_:in:at:calendar:)`.
-/// 3. Beyond the plan, `Stage.reviewAhead`: review cards that are not due yet, lowest
+///    in the order and within the limits of `StudySession`, a share of the backlog
+///    included (`DailyGoal.backlogShare(of:onTime:)`), taken in segments of at most
+///    `cardsPerSession` cards. When a segment of the plan is done, the plan is looked at
+///    again: the cards the segment left out come next, and cards of an Again come back as
+///    learning cards. The segments are the stream's business: the plan the learner sees is
+///    all of it.
+/// 2. `Stage.rest`: the plan is empty, which is the daily goal. The stream waits here for
+///    the learner, who can `keepGoing(in:at:calendar:)` or `addNewCards(_:in:at:calendar:)`.
+/// 3. Beyond the plan, `Stage.catchUp`: the rest of the backlog. Its cards are due, so
+///    reviewing them is not reviewing ahead.
+/// 4. Then `Stage.reviewAhead`: review cards that are not due yet, lowest
 ///    probability of recall first, reviewed like any other (`StudySession(reviewingAheadIn:...)`).
-/// 4. Then practice, which changes no card: `Stage.practiceMistakes` (today's mistakes,
+/// 5. Then practice, which changes no card: `Stage.practiceMistakes` (today's mistakes,
 ///    `Deck.mistakes(onDayOf:calendar:)`), then `Stage.practiceNewest`
 ///    (`Deck.newestBatchIDs`) again and again.
 ///
@@ -28,6 +33,8 @@ import Foundation
 public struct StudyStream: Sendable {
     public enum Stage: Sendable, Hashable {
         case plan
+        /// The overdue reviews the plan left for the days after, see `StudyCounts.catchUp`.
+        case catchUp
         case reviewAhead
         case practiceMistakes
         case practiceNewest
@@ -135,6 +142,8 @@ public struct StudyStream: Sendable {
             return false
         case .plan:
             next = [.plan]
+        case .catchUp:
+            next = isPracticeOnly ? [] : [.catchUp, .reviewAhead, .practiceMistakes, .practiceNewest]
         case .reviewAhead:
             next = isPracticeOnly ? [] : [.reviewAhead, .practiceMistakes, .practiceNewest]
         case .practiceMistakes:
@@ -149,14 +158,14 @@ public struct StudyStream: Sendable {
         return true
     }
 
-    /// From rest, goes on beyond the plan: review ahead, else the practice of today's
-    /// mistakes, else of the newest words.
+    /// From rest, goes on beyond the plan: the rest of the backlog, else review ahead, else the
+    /// practice of today's mistakes, else of the newest words.
     ///
     /// - Returns: Whether there was anything to go on with.
     @discardableResult
     public mutating func keepGoing(in deck: Deck, at now: Date, calendar: StudyCalendar) -> Bool {
         guard stage == .rest, !isPracticeOnly else { return false }
-        return install(firstOf: [.reviewAhead, .practiceMistakes, .practiceNewest], in: deck, at: now, calendar: calendar)
+        return install(firstOf: [.catchUp, .reviewAhead, .practiceMistakes, .practiceNewest], in: deck, at: now, calendar: calendar)
     }
 
     /// Whether `keepGoing(in:at:calendar:)` has anything to go on with.
@@ -205,6 +214,8 @@ public struct StudyStream: Sendable {
         switch stage {
         case .plan:
             segment = .study(StudySession(deck: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode))
+        case .catchUp:
+            segment = .study(StudySession(catchingUpIn: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode))
         case .reviewAhead:
             segment = .study(StudySession(reviewingAheadIn: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode))
         case .practiceMistakes:

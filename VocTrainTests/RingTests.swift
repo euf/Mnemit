@@ -7,7 +7,7 @@ import UIKit
 @testable import VocabCore
 
 private func progress(reviews: Int, goal: Int = 20, streak: Int = 0) -> DailyProgress {
-    DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streak, repairReviews: nil))
+    DailyProgress(ring: DailyRing(reviews: reviews, goal: goal), streak: Streak(days: streak, repairCards: nil))
 }
 
 /// What stands in the middle of the ring: the streak outside the study stream, the lap inside it.
@@ -73,7 +73,7 @@ struct RingSnapshotTests {
 
     /// The figures at `fraction` of the goal, with a streak of 12 days.
     static func progress(_ fraction: Double) -> DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: Int((fraction * Double(goal)).rounded()), goal: goal), streak: Streak(days: 12, repairReviews: nil))
+        DailyProgress(ring: DailyRing(reviews: Int((fraction * Double(goal)).rounded()), goal: goal), streak: Streak(days: 12, repairCards: nil))
     }
 
     /// `view` in a window of `size`, drawn once the run loop has laid it out.

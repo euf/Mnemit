@@ -44,8 +44,14 @@ struct TodayScreen: View {
     /// Opens the browser of the shared decks.
     var showAnkiWeb: () -> Void = {}
 
+    /// What today's plan still asks, all decks: its share of the backlog included, never the backlog.
     private var due: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) }
+    }
+
+    /// The overdue cards the plan leaves for the days after.
+    private var catchUp: Int {
+        decks.reduce(0) { $0 + (counts[$1.url]?.catchUp ?? 0) }
     }
 
     var body: some View {
@@ -100,7 +106,7 @@ struct TodayScreen: View {
         List {
             Section {
                 SummaryRow(
-                    due: due, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(),
+                    due: due, catchUp: catchUp, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(),
                     now: now, isLoaded: !counts.isEmpty)
             }
             Section("Decks") {
@@ -188,13 +194,17 @@ struct StudyButton: View {
         .controlSize(.large)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
-        .accessibilityValue(due > 0 ? Text("\(due) due") : Text(verbatim: ""))
+        .accessibilityValue(due > 0 ? Text("\(due) today") : Text(verbatim: ""))
     }
 }
 
-/// What is due, today's ring and the streak.
+/// What today's plan asks, today's ring and the streak, and the backlog the plan leaves for the
+/// days after.
 struct SummaryRow: View {
+    /// The cards of the plan still to do: the goal, not the cards that are due in all.
     var due: Int
+    /// The overdue cards beyond today's share of them.
+    var catchUp = 0
     var progress: DailyProgress?
     /// When something comes back that today's plans leave out.
     var nextDue: Date?
@@ -217,6 +227,11 @@ struct SummaryRow: View {
                 detail
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if catchUp > 0 {
+                    Text("+\(catchUp) to catch up this week")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 if let streak = progress?.streak, streak.days > 0 {
                     // Not a Label: in a list it puts its icon in a column of its own.
                     HStack(spacing: 4) {
@@ -238,7 +253,7 @@ struct SummaryRow: View {
     @ViewBuilder
     private var headline: some View {
         if due > 0 {
-            Text("\(due) due")
+            Text("\(due) today")
         } else if let ring = progress?.ring, ring.reviews > 0 {
             Text("All done")
         } else {
@@ -260,7 +275,8 @@ struct SummaryRow: View {
     }
 }
 
-/// A deck: its name, what today's plan takes from it, and the total; a tap opens its screen.
+/// A deck: its name, what today's plan takes from it, the total, and the overdue cards the plan
+/// leaves for the days after; a tap opens its screen.
 /// The chevron is drawn by hand, as the row is a button, not a `NavigationLink`: the deck has
 /// to be opened before the push, see `PushedDecks`.
 struct DeckRow: View {
@@ -276,6 +292,12 @@ struct DeckRow: View {
                     Text(name)
                     if let subtitle {
                         subtitle
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    if let catchUp = counts?.catchUp, catchUp > 0 {
+                        Text("+\(catchUp) to catch up this week")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .monospacedDigit()

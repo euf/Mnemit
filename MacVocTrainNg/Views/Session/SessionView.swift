@@ -170,11 +170,15 @@ struct SessionView: View {
         .padding(.vertical, 10)
     }
 
-    /// Names where the stream is when it isn't the plan: what the learner reviews ahead or
-    /// practices changes nothing about today's plan, and practice nothing about the schedule.
+    /// Names where the stream is when it isn't the plan: what the learner catches up on or reviews
+    /// ahead changes nothing about today's plan, and practice nothing about the schedule.
     @ViewBuilder
     private var stageLabel: some View {
         switch model.streamStage {
+        case .catchUp:
+            Text("Catch Up")
+                .font(.headline)
+                .help("Cards that were due before today, beyond today's share of them")
         case .reviewAhead:
             Text("Review Ahead")
                 .font(.headline)

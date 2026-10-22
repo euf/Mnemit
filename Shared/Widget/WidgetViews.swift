@@ -4,8 +4,8 @@ import VocabCore
 import WidgetKit
 
 /// The picture of the widget in each family, from the figures of one timeline entry: the
-/// daily ring (`DailyRingView`, which shows the streak in its middle), what is due, how far
-/// today's goal is. `nil` before the app wrote a snapshot.
+/// daily ring (`DailyRingView`, which shows the streak in its middle), what today's plan
+/// still asks, how far today's goal is. `nil` before the app wrote a snapshot.
 ///
 /// In `Shared` and not in the extension, so the tests of the app can draw it with fixed
 /// sizes; the extension only puts a timeline under it. Everything that opens the app is the
@@ -36,9 +36,9 @@ struct WidgetContent: View {
 }
 
 extension WidgetState {
-    /// "42 due", or what stands in for it when nothing is.
+    /// "42 today", the plan, or what stands in for it when it is empty: never the whole backlog.
     fileprivate var headline: Text {
-        if due > 0 { return Text("\(due) due") }
+        if due > 0 { return Text("\(due) today") }
         return reviews > 0 ? Text("All done") : Text("Nothing due")
     }
 
@@ -49,7 +49,7 @@ extension WidgetState {
     /// For the circular widget, whose middle holds the due count: no streak number, and one lap
     /// at most, as the badge of the laps would hang out of the circle the system cuts.
     fileprivate var ringWithoutStreak: DailyProgress {
-        DailyProgress(ring: DailyRing(reviews: min(reviews, goal), goal: goal), streak: Streak(days: 0, repairReviews: nil))
+        DailyProgress(ring: DailyRing(reviews: min(reviews, goal), goal: goal), streak: Streak(days: 0, repairCards: nil))
     }
 }
 

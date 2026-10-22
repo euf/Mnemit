@@ -32,14 +32,27 @@ are in [`references/`](references/).
 
 - **No sessions.** Study is one stream: due learning cards, then reviews (lowest recall
   probability first), then new cards within the day's limits. When the plan is done the
-  stream rests ("Done for today") and offers reviewing ahead, practice that does not touch
-  the schedule, and "+10 new" with an estimate of the extra daily load next week.
+  stream rests ("Done for today") and offers the rest of the backlog, reviewing ahead,
+  practice that does not touch the schedule, and "+10 new" with an estimate of the extra
+  daily load next week.
 - **Rings instead of a session count.** A ring in the manner of Apple Fitness fills to the
-  day's goal (20 answers, or the whole plan if smaller) and keeps going round after it;
+  day's goal, which is the day's plan as FSRS sets it: the cards due, overdue ones included,
+  and the new cards within the day's limits ("12 of 40 today"). It keeps going round after
+  the goal, so answers beyond the plan, catching up and reviewing ahead, fill the laps;
   during study its centre shows ×2, ×3 for the laps, elsewhere the streak in days. The
-  streak counts days that met the goal; a missed day is repaired by 40 answers the next day.
-  Everything is computed from the review logs; nothing extra is stored. A study day starts
-  at 4:00.
+  streak counts the days whose plan was done, a day with nothing due included. A missed day
+  is repaired by completing the plan of the next one, which holds what the missed day left
+  over; two missed days in a row end the streak. Everything is computed from the review
+  logs; nothing extra is stored. A study day starts at 4:00.
+- **A backlog does not pile up on one day.** After an import or a break, the review cards
+  that were already due before today ask a seventh of themselves, rounded up, of a day, the
+  most forgotten first: 1,500 overdue cards add about 215 to the day's own cards, and the
+  count shown is the plan, never the whole backlog. A backlog is never asked for less than a
+  normal day asks, so one missed day is made up the next day: five overdue cards beside
+  thirty due today are thirty-five. Today says "+1,320 to catch up this week" under the
+  plan. "Keep Going" after "Done for today" works through the rest; those cards are due, so
+  the answers are ordinary reviews and count towards the laps. The size of a study session
+  in the deck options is the size of one segment of the stream and does not cut the plan.
 - **Two directions per word, one after the other.** Each word has a recognition card
   (Greek → meaning) and a production card (meaning → Greek). Production cards unlock only
   after the recognition card has an interval of 21 days, have their own daily limit, and

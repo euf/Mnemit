@@ -105,7 +105,7 @@ final class SessionDriver {
         return true
     }
 
-    /// From rest, goes on beyond the plan: review ahead, practice.
+    /// From rest, goes on beyond the plan: the rest of the backlog, review ahead, practice.
     func keepGoing() {
         guard stream.keepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
         lastReceipt = nil
@@ -132,11 +132,13 @@ final class SessionDriver {
 
     /// What the stream shows at rest.
     var rest: StreamRest {
-        StreamRest(
+        let counts = StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar)
+        return StreamRest(
             isPracticeOnly: stream.isPracticeOnly,
             recap: stream.recap,
-            nextDue: StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar).nextDue,
+            nextDue: counts.nextDue,
             now: document.clock.now,
+            catchUp: counts.catchUp,
             canKeepGoing: stream.canKeepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar),
             extraNew: extraNew)
     }

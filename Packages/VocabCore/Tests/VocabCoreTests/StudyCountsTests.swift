@@ -37,10 +37,10 @@ struct StudyCountsTests {
     func taken(_ cards: [Card], options: LearningOptions? = nil) throws -> StudyCounts {
         let deck = try Deck(learningOptions: options ?? self.options(), cards: cards)
         let counts = StudySession.counts(for: deck, at: now, calendar: calendar)
-        // The session takes the very same number of cards, whatever its seed.
+        // The session takes the plan, as much of it as its size allows, whatever its seed.
         for seed in 1...5 {
             let session = StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: UInt64(seed))).session
-            #expect(session.totalCount == counts.total)
+            #expect(session.totalCount == min(deck.learningOptions.cardsPerSession ?? Int.max, counts.total))
         }
         return counts
     }
@@ -104,25 +104,36 @@ struct StudyCountsTests {
         #expect(counts.new == 0)
     }
 
-    @Test func sessionSizeCapTakesLearningThenReviewThenNewCards() throws {
+    @Test func sessionSizeCapsTheSessionTakingLearningThenReviewThenNewCardsButNotThePlan() throws {
         var options = options()
         options.cardsPerSession = 5
         let cards = (0..<3).map { learning("l\($0)") } + (0..<10).map { review("r\($0)") } + (0..<10).map { fresh("n\($0)") }
-        var counts = try taken(cards, options: options)
+        let deck = try Deck(learningOptions: options, cards: cards)
+        // The plan is all of it, whatever the size of a session is.
+        let counts = try taken(cards, options: options)
         #expect(counts.learning == 3)
-        #expect(counts.review == 2)
-        #expect(counts.new == 0)
-        #expect(counts.total == 5)
-        options.cardsPerSession = 15
-        counts = try taken(cards, options: options)
         #expect(counts.review == 10)
-        #expect(counts.new == 2)
-        #expect(counts.total == 15)
+        #expect(counts.new == 10)
+        #expect(counts.total == 23)
+        // A session takes the learning cards, then the reviews, up to its size.
+        var random = SeededRandom(seed: 1)
+        let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, using: &random)
+        let selected = ids.map { deck.card(withID: $0)! }
+        #expect(selected.count == 5)
+        #expect(selected.filter { $0.learningState?.phase == .learning }.count == 3)
+        #expect(selected.filter { $0.learningState?.phase == .review }.count == 2)
+        options.cardsPerSession = 15
+        let wider = try Deck(learningOptions: options, cards: cards)
+        random = SeededRandom(seed: 1)
+        let widerSelected = StudySession.selectCards(from: wider, at: now, calendar: calendar, using: &random).map { wider.card(withID: $0)! }
+        #expect(widerSelected.filter { $0.learningState?.phase == .review }.count == 10)
+        #expect(widerSelected.filter(\.isNew).count == 2)
+        #expect(widerSelected.count == 15)
     }
 
     @Test func countsMatchTheSessionOfADeckWithEveryKindOfCard() throws {
         var options = LearningOptions()
-        options.cardsPerSession = 40
+        options.cardsPerSession = nil
         options.newCardsPerSession = 10
         options.newProductionPerSession = 4
         var cards: [Card] = []
@@ -144,7 +155,6 @@ struct StudyCountsTests {
             #expect(selected.filter { $0.isNew && $0.kind == .production }.count == expected.newProduction)
             #expect(selected.filter { $0.isNew && $0.kind != .production }.count == expected.newOther)
         }
-        #expect(expected.total <= 40)
         #expect(expected.newOther <= 10)
         #expect(expected.newProduction <= 4)
     }
