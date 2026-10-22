@@ -92,14 +92,14 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + summary 88 + 
 | State | Summary row | Button |
 |---|---|---|
 | Cards due | `87 today`, `14 of 36 today`, streak; with a backlog `+1,320 to catch up this week` | `Study`, `.glassProminent` |
-| Nothing due, reviews today | ring full with checkmark, `All done`, `N reviews today`, streak | `Keep Going`, `.glass` (not prominent), opens the stream at `rest`, which offers keep going and new cards |
-| Nothing due, no reviews today | track only, `Nothing due`, `Next review <relative date>`, no `x of y` line | `Keep Going`, `.glass` |
+| Nothing due, cards done today | ring full with checkmark, `All done`, `N cards today`, streak | `Keep Going`, `.glass` (not prominent), opens the stream at `rest`, which offers keep going and new cards |
+| Nothing due, no cards done today | track only, `Nothing due`, `Next review <relative date>`, no `x of y` line | `Keep Going`, `.glass` |
 | No decks | `ContentUnavailableView` as now; title `No Decks`; prominent `Choose Mnemit Folder…`, plain `Open Deck…` | – |
 | First frame | Last counts and ring from `UserDefaults` | enabled when the cached total is above 0 |
 | Deck unreadable (iCloud) | row without counts | row stays tappable; the stream cover shows the existing failure view |
 | Accessibility sizes (`isAccessibilitySize`) | ring above the text (`AnyLayout` switch) | unchanged |
 
-The "no reviews, nothing due" case has a goal of 0 (`DailyGoal.goal(reviews: 0, owed: 0, plan: 0)`), which counts as met, so the ring is a track and the row hides the goal. The count is the plan of the day (`StudyCounts.total`), its share of the backlog included (`DailyGoal.backlogShare(of:onTime:)`: a seventh of it, but at least what a normal day asks), never the whole backlog; the cards beyond the share are `StudyCounts.catchUp`, shown as a secondary line on Today, in the deck rows and on the rest screen.
+The ring and every line beside it count cards. The goal is the number of cards in the day's plan when the day began (`StudyCounts.total` of that plan, `DeckActivity.plan(onDayOf:calendar:)`), fixed for the day: cards added later raise nothing. A card is done once it was graded that day and FSRS let it go to another day (`DeckActivity.done(onDayOf:calendar:)`): a review answered Hard, Good or Easy at once, a new card after its last learning step, a card answered Forgot only after it leaves relearning. Cards done beyond the goal, catching up, review ahead and "+10 new", fill the laps. "N cards left" is the plan still owed now (`StudyCounts.total`), so goal, done and left are one unit. The "nothing done, nothing due" case has a goal of 0 (`DailyGoal.goal(done: 0, owed: 0, plan: 0)`), which counts as met, so the ring is a track and the row hides the goal. The count is the plan of the day (`StudyCounts.total`), its share of the backlog included (`DailyGoal.backlogShare(of:onTime:)`: a seventh of it, but at least what a normal day asks), never the whole backlog; the cards beyond the share are `StudyCounts.catchUp`, shown as a secondary line on Today, in the deck rows and on the rest screen.
 
 ### 2.5 Scope of Study
 
@@ -191,7 +191,7 @@ struct SummaryRow: View {
                 Text(due > 0 ? "\(due) due" : "All done")
                     .font(.title2.weight(.semibold))
                 if let ring = progress?.ring {
-                    Text("\(ring.reviews) of \(ring.goal) today")
+                    Text("\(ring.done) of \(ring.goal) cards")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -401,7 +401,7 @@ struct CountsRow: View {
 
 ```
 ┌───────────────────────────────────────┐
-│ ✕          ◔  14 of 36           (…) │ nav 44: close | principal: ring 22 + subheadline | ellipsis
+│ ✕          ◔  14 of 36 cards     (…) │ nav 44: close | principal: ring 22 + subheadline | ellipsis
 │        [→ Good] in 4 days  Undo       │ UndoChip: material capsule, about 32 high, always reserved
 │ ┌───────────────────────────────────┐ │
 │ │                                   │ │ card: margin 16, inner padding 24, radius 22,
@@ -426,7 +426,7 @@ Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98
 ### 4.2 Header
 
 - Leading: `Button(role: .close)` (xmark). It replaces the `chevron.backward` End Session button; the stream has no session to end, every grade is saved. The HIG asks for the standard Close symbol and no text label [H:toolbars].
-- Principal: `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + `Text("14 of 36")`, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)` with the lap as its value ("Lap 2"). The ring is empty in the middle during the first lap, shows "×2" once the goal is reached, "×3" after the second lap. Goal met: `26 today`. This replaces both the 120-pt linear bar with `n / N` and the landscape `rowProgress`.
+- Principal: `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + `Text("14 of 36 cards")`, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)` with the lap as its value ("Lap 2"). The ring is empty in the middle during the first lap, shows "×2" once the goal is reached, "×3" after the second lap. Goal met: `26 cards today`. This replaces both the 120-pt linear bar with `n / N` and the landscape `rowProgress`.
 - Trailing: `Menu("More", systemImage: "ellipsis")` with Undo, Card Info, Suspend Card, Speak toggle (as now).
 - The streak is not in the header. At the moment the goal is met, reuse the `UndoChip` slot for one line (`Goal reached · 12-day streak`, 3 s) and give `sensoryFeedback(.success)`. No new element.
 - Practice stages show the word `Practice` as the principal text, without the ring.
@@ -491,7 +491,7 @@ struct StreamToolbar: ToolbarContent {
         ToolbarItem(placement: .principal) {
             HStack(spacing: 8) {
                 ProgressRing(fraction: ring.fraction, diameter: 22)
-                Text("\(ring.reviews) of \(ring.goal)").font(.subheadline).monospacedDigit()
+                Text("\(ring.done) of \(ring.goal) cards").font(.subheadline).monospacedDigit()
             }
             .accessibilityElement(children: .combine)
         }
@@ -683,7 +683,7 @@ Level 0 Today (all decks) → level 1 deck (details) → level 2 the deck docume
 
 Toolbar order, left to right: segmented `Cards | Statistics` (principal, as now) · ring chip · **Study** (`.borderedProminent`) · fixed space · Add Lesson Words · Learning Options.
 
-- Ring chip: `ProgressRing(diameter: 24)` with the streak in the middle (number only, 24 pt is too small for the word) + `Text("14/36")` monospaced, `.help("14 of 36 reviews today · 12-day streak")`, `.sharedBackgroundVisibility(.hidden)` (an indicator takes no button background).
+- Ring chip: `ProgressRing(diameter: 24)` with the streak in the middle (number only, 24 pt is too small for the word) + `Text("14/36")` monospaced, `.help("14 of 36 cards · 12-day streak")`, `.sharedBackgroundVisibility(.hidden)` (an indicator takes no button background).
 - Study: `Button("Study")` without count and without the `graduationcap` label. `ToolbarSpacer(.fixed)` between it and the symbol buttons: a text button next to symbol buttons reads as one control [H:toolbars]. The menu command Study ▸ Start Session (⌘L) exists, so the toolbar item has its menu twin [H:toolbars]; rename the item `Start Studying`.
 - Session header (`SessionView.header`): replace the 320-pt `ProgressView` and `n / N` with `DailyRingView(progress:, inStream: true)`, the lap in the middle as on the iPhone; keep the mistakes counter and Edit Card…; End Session becomes Done.
 - Spacing: `GradeChoice` gap 12 on Mac too; height stays 38 (HIG default Mac control 28, minimum 20 [H:accessibility]).
@@ -696,7 +696,7 @@ Replaces the Welcome window (`WelcomeWindow`, `WelcomeView`); opens at launch wh
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ ● ● ●  ◫       Today                     ◔ 14/36     [ Study ]   │ title Today, subtitle 14 of 36 reviews
+│ ● ● ●  ◫       Today                     ◔ 14/36     [ Study ]   │ title Today, subtitle 14 of 36 cards
 ├────────────────┬─────────────────────────────────────────────────┤
 │ (o) Today      │ ┌ Form, .grouped ───────────────────────────┐   │
 │                │ │ ╭──╮ 87 today                             │   │
@@ -751,15 +751,15 @@ struct MacHome: View {
             }
             .formStyle(.grouped)
             .navigationTitle("Today")
-            .navigationSubtitle("\(ring.reviews) of \(ring.goal) reviews")
+            .navigationSubtitle("\(ring.done) of \(ring.goal) cards")
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 6) {
                     ProgressRing(fraction: ring.fraction, diameter: 16)
-                    Text("\(ring.reviews)/\(ring.goal)").monospacedDigit()
+                    Text("\(ring.done)/\(ring.goal)").monospacedDigit()
                 }
-                .help("14 of 36 reviews today")
+                .help("14 of 36 cards")
             }
             .sharedBackgroundVisibility(.hidden)
             ToolbarSpacer(.fixed, placement: .primaryAction)

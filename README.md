@@ -36,16 +36,19 @@ are in [`references/`](references/).
   practice that does not touch the schedule, and "+10 new" with an estimate of the extra
   daily load next week.
 - **Rings instead of a session count.** A ring in the manner of Apple Fitness fills to the
-  day's goal, which is the day's plan as FSRS sets it: the cards due, overdue ones included,
-  and the new cards within the day's limits. The ring counts answers, as a new card takes
-  several; so Today and the widget say "74 cards left" and "75 of 218 reviews", each in its
-  own unit. It keeps going round after
-  the goal, so answers beyond the plan, catching up and reviewing ahead, fill the laps;
-  during study its centre shows ×2, ×3 for the laps, elsewhere the streak in days. The
-  streak counts the days whose plan was done, a day with nothing due included. A missed day
-  is repaired by completing the plan of the next one, which holds what the missed day left
-  over; two missed days in a row end the streak. Everything is computed from the review
-  logs; nothing extra is stored. A study day starts at 4:00.
+  day's goal: the number of cards in the day's plan as FSRS set it when the day began, the
+  cards due, overdue ones included, and the new cards within the day's limits. The ring
+  counts cards, one unit everywhere: a card is done once it was graded that day and FSRS let
+  it go to another day, so a review answered Hard, Good or Easy is done at once, a new card
+  after its learning steps, and a card answered Forgot when it is through relearning. Today
+  and the widget say "75 of 218 cards" and "143 cards left", which add up. The goal does not
+  move during the day: cards added later and "+10 new" are laps, as are catching up and
+  reviewing ahead. The ring keeps going round after the goal; during study its centre shows
+  ×2, ×3 for the laps, elsewhere the streak in days. The streak counts the days whose ring
+  was closed, a day with nothing due included. A missed day is repaired by completing the
+  plan of the next one, which holds what the missed day left over; two missed days in a row
+  end the streak. Everything is computed from the review logs; nothing extra is stored. A
+  study day starts at 4:00.
 - **A backlog does not pile up on one day.** After an import or a break, the review cards
   that were already due before today ask a seventh of themselves, rounded up, of a day, the
   most forgotten first: 1,500 overdue cards add about 215 to the day's own cards, and the
@@ -53,7 +56,7 @@ are in [`references/`](references/).
   normal day asks, so one missed day is made up the next day: five overdue cards beside
   thirty due today are thirty-five. Today says "+1,320 to catch up this week" under the
   plan. "Keep Going" after "Done for today" works through the rest; those cards are due, so
-  the answers are ordinary reviews and count towards the laps. The size of a study session
+  the cards are ordinary reviews and count towards the laps. The size of a study session
   in the deck options is the size of one segment of the stream and does not cut the plan.
 - **Two directions per word, one after the other.** Each word has a recognition card
   (Greek → meaning) and a production card (meaning → Greek). Production cards unlock only
