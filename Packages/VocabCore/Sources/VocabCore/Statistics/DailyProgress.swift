@@ -439,17 +439,20 @@ public struct DeckActivity: Sendable {
     private let deck: Deck
     /// The last `history(from:at:calendar:)` this activity worked out: the deck of an activity doesn't change, so
     /// a deck read from its file once is replayed once a study day, however often the progress is evaluated.
-    // ponytail: only for an activity that lives on, the decks read from files; the open document makes a
-    // new activity at every change and replays its log each time, 0.3 s on 3,000 cards and 400 days. Keep the
-    // days before today across changes, by a fingerprint of the log before today, if that costs too much.
     private let cachedHistory = HistoryCache()
+    /// The days before today, which outlive the activity: the open document makes a new activity at every
+    /// change, and with the cache of its last one the days that the change left alone are not replayed again.
+    private let pastCache: DeckHistoryCache
     /// The reviews by study day, one for each entry of a card's log. They tell on which
     /// days the learner studied and nothing more: the ring counts cards
     /// (`done(onDayOf:calendar:)`).
     public let reviewsByDay: [Int: Int]
 
-    public init(deck: Deck, calendar: StudyCalendar) {
+    /// - Parameter historyCache: What the activities of one deck share while it changes, an open document's:
+    ///   each keeps the days before today that its change left alone for the next (`DeckHistoryCache`).
+    public init(deck: Deck, calendar: StudyCalendar, historyCache: DeckHistoryCache = DeckHistoryCache()) {
         self.deck = deck
+        pastCache = historyCache
         reviewsByDay = Self.reviewsByDay(of: deck, calendar: calendar)
     }
 
@@ -541,7 +544,10 @@ public struct DeckActivity: Sendable {
     ///
     /// With `keepsStates` the log also holds the state of each replayed card at the end of each day it
     /// was reviewed on (`PaceLog.statesAfter`), which is how a deck is seen as it stood on a past day.
-    func replayLog(from firstDay: Int, through today: Int, calendar: StudyCalendar, keepsStates: Bool = false) -> PaceLog {
+    ///
+    /// With `resumed`, a copy of the deck as it stood when `firstDay` began (`Past.stood`), the reviews before
+    /// that day are not replayed again: each card goes on from the state it has there.
+    func replayLog(from firstDay: Int, through today: Int, calendar: StudyCalendar, keepsStates: Bool = false, resumed: Deck? = nil) -> PaceLog {
         let start = calendar.start(ofDay: firstDay)
         let end = calendar.start(ofDay: today + 1)
         let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
@@ -558,9 +564,16 @@ public struct DeckActivity: Sendable {
             guard let latest = card.log.last, latest.date >= start else { continue }
             var replayed = card
             replayed.resetLearningState()
+            var firstEntry = 0
+            if let resumed {
+                firstEntry = card.log.count
+                while firstEntry > 0, card.log[firstEntry - 1].date >= start { firstEntry -= 1 }
+                replayed.learningState = resumed.cards[cardIndex].learningState
+            }
             // The card's reviews of the day so far: whether it was done is known at the last of them.
             var ofDay: [(date: Date, duration: Duration?)] = []
-            for (index, entry) in card.log.enumerated() {
+            for index in firstEntry..<card.log.count {
+                let entry = card.log[index]
                 guard entry.date < end else { break }
                 if card.hasCompleteLog {
                     var random = Scheduler.random(forReviewOf: card.id, at: entry.date)
@@ -602,6 +615,30 @@ public struct DeckActivity: Sendable {
         /// on: the index of the card in the deck, and its state. Only with `keepsStates`.
         var statesAfter: [Int: [(card: Int, state: LearningState?)]] = [:]
         var done: Int { newDone + otherDone }
+
+        /// The log of the days other than `day`.
+        func without(day: Int) -> PaceLog {
+            var rest = self
+            rest.days[day] = nil
+            rest.newDone -= newDoneByDay[day] ?? 0
+            rest.otherDone -= otherDoneByDay[day] ?? 0
+            rest.newDoneByDay[day] = nil
+            rest.otherDoneByDay[day] = nil
+            rest.statesAfter[day] = nil
+            return rest
+        }
+
+        /// This log and `other`, which holds days this one doesn't.
+        func adding(_ other: PaceLog) -> PaceLog {
+            var all = self
+            all.days.merge(other.days) { $1 }
+            all.newDone += other.newDone
+            all.otherDone += other.otherDone
+            all.newDoneByDay.merge(other.newDoneByDay) { $1 }
+            all.otherDoneByDay.merge(other.otherDoneByDay) { $1 }
+            all.statesAfter.merge(other.statesAfter) { $1 }
+            return all
+        }
     }
 
     /// The one history an activity keeps.
@@ -639,6 +676,63 @@ public struct DeckActivity: Sendable {
         /// The new cards the deck's own limits take on the study day of `now` if it began now: the
         /// cards created since it began are in this plan, which `starts` leaves them out of.
         var newCeilingToday: Int
+        /// Which `Past` the days before today are from, if they are kept for the next change; two histories that
+        /// name the same hold the same days before today.
+        var pastID: UUID?
+    }
+
+    /// What the days before today left of a deck, to go on from: `History` without today, and the deck as it
+    /// stood when today began. It holds for as long as `key` does.
+    struct Past {
+        let id = UUID()
+        var key: PastKey
+        var paced: PaceLog
+        var starts: [Int: DayStart]
+        var stood: Deck
+        var locks: ProductionLocks
+    }
+
+    /// Everything that the days before today read of a deck, which is what must not change for `Past` to
+    /// hold: the options, and of each card its place, what the plan looks at (kind, note, creation,
+    /// suspension), its log before today, and, where the log doesn't reach back to the first review
+    /// and the card can't be replayed, the state it is in, which every past day sees. The texts, the state of a
+    /// card that can be replayed, and what was reviewed today are not in it: a grade or an edit of a text
+    /// leaves it as it was.
+    struct PastKey: Equatable {
+        struct PastCard: Equatable {
+            var id: Card.ID
+            var created: Date
+            var kind: CardKind?
+            var note: String?
+            var isSuspended: Bool
+            var isReplayable: Bool
+            var log: ArraySlice<ReviewLogEntry>
+            var state: LearningState?
+        }
+
+        var first: Int
+        var today: Int
+        var calendar: StudyCalendar
+        var options: LearningOptions
+        var cards: [PastCard]
+
+        init(of deck: Deck, first: Int, today: Int, calendar: StudyCalendar) {
+            self.first = first
+            self.today = today
+            self.calendar = calendar
+            options = deck.learningOptions
+            let start = calendar.start(ofDay: today)
+            cards = deck.cards.map { card in
+                var before = card.log.count
+                while before > 0, card.log[before - 1].date >= start { before -= 1 }
+                // A card never reviewed before today is the same to the days before it, new or graded today: its
+                // first grade doesn't make it a card that can't be replayed.
+                let isReplayable = card.hasCompleteLog || (before == 0 && card.learningState == nil)
+                return PastCard(
+                    id: card.id, created: card.created, kind: card.kind, note: card.note, isSuspended: card.isSuspended, isReplayable: isReplayable,
+                    log: card.log.prefix(before), state: isReplayable ? nil : card.learningState)
+            }
+        }
     }
 
     /// Replays the log forward, once, instead of looking back from today at every day: the cards go
@@ -647,17 +741,38 @@ public struct DeckActivity: Sendable {
     /// `StudySession.counts(for:at:calendar:)` of the deck as it stood when that day began. For the day
     /// of `now` this is the plan of `plan(onDayOf:calendar:)`. A card whose log doesn't reach back to
     /// its first review can't be replayed and stays as it is on every day, as in that plan.
+    ///
+    /// The days before today are kept with the activity's `DeckHistoryCache` while nothing they read of the deck
+    /// changes (`PastKey`), so a change of the open deck, a grade above all, replays only today: its reviews, from
+    /// the state each card was left in, and its plan. The result is the one a replay of all days gives.
     func history(from first: Int, at now: Date, calendar: StudyCalendar) -> History {
         let today = calendar.dayNumber(for: now)
         let first = min(first, today)
         let key = HistoryCache.Key(first: first, today: today, calendar: calendar)
         if let known = cachedHistory.history(for: key) { return known }
-        let history = replayHistory(from: first, through: today, calendar: calendar)
+        // A log that begins before `first` is replayed from its start, and its days before `first` leave no state.
+        let isKeepable = first <= (reviewsByDay.keys.min() ?? first)
+        let pastKey = PastKey(of: deck, first: first, today: today, calendar: calendar)
+        var history: History
+        if isKeepable, let past = pastCache.past(for: pastKey) {
+            history = continued(from: past, calendar: calendar)
+        } else {
+            let replayed = replayHistory(key: pastKey, calendar: calendar)
+            history = replayed.history
+            if isKeepable {
+                pastCache.keep(replayed.past)
+            } else {
+                history.pastID = nil
+            }
+        }
         cachedHistory.keep(history, for: key)
         return history
     }
 
-    private func replayHistory(from first: Int, through today: Int, calendar: StudyCalendar) -> History {
+    /// The history of all days from `key.first` to `key.today`, and what the days before today leave.
+    private func replayHistory(key: PastKey, calendar: StudyCalendar) -> (history: History, past: Past) {
+        let first = key.first
+        let today = key.today
         let paced = replayLog(from: first, through: today, calendar: calendar, keepsStates: true)
         var stood = deck
         for index in stood.cards.indices {
@@ -667,21 +782,108 @@ public struct DeckActivity: Sendable {
         }
         var locks = ProductionLocks(of: stood, calendar: calendar)
         var starts: [Int: DayStart] = [:]
-        var newCeilingToday = 0
-        for day in first...today {
-            for change in paced.statesAfter[day - 1] ?? [] {
+        /// Takes in the state each card was left in on `day`.
+        func stand(after day: Int) {
+            for change in paced.statesAfter[day] ?? [] {
                 stood.cards[change.card].learningState = change.state
                 locks.update(stood.cards[change.card], at: change.card)
             }
-            let start = calendar.start(ofDay: day)
-            let counts = StudySession.counts(for: stood, at: start, calendar: calendar, past: StudySession.DayIndex(lockedNotes: locks.notes))
-            starts[day] = DayStart(other: counts.learning + counts.review, new: counts.new)
-            if day == today {
-                let later = StudySession.DayIndex(lockedNotes: locks.notes, countsCardsCreatedLater: true)
-                newCeilingToday = StudySession.counts(for: stood, at: start, calendar: calendar, past: later).new
-            }
         }
-        return History(paced: paced, starts: starts, newCeilingToday: newCeilingToday)
+        for day in first..<today {
+            stand(after: day - 1)
+            starts[day] = Self.dayStart(on: day, of: stood, locks: locks, calendar: calendar)
+        }
+        stand(after: today - 1)
+        let past = Past(key: key, paced: paced.without(day: today), starts: starts, stood: stood, locks: locks)
+        starts[today] = Self.dayStart(on: today, of: stood, locks: locks, calendar: calendar)
+        let history = History(
+            paced: paced, starts: starts, newCeilingToday: Self.newCeiling(on: today, of: stood, locks: locks, calendar: calendar), pastID: past.id)
+        return (history, past)
+    }
+
+    /// The history from the days before today in `past`, and today replayed.
+    private func continued(from past: Past, calendar: StudyCalendar) -> History {
+        let today = past.key.today
+        let reviews = replayLog(from: today, through: today, calendar: calendar, keepsStates: true, resumed: past.stood)
+        var starts = past.starts
+        starts[today] = Self.dayStart(on: today, of: past.stood, locks: past.locks, calendar: calendar)
+        return History(
+            paced: past.paced.adding(reviews), starts: starts, newCeilingToday: Self.newCeiling(on: today, of: past.stood, locks: past.locks, calendar: calendar),
+            pastID: past.id)
+    }
+
+    /// The plan of study day `day` when it began, over `stood`, the deck as it was then.
+    private static func dayStart(on day: Int, of stood: Deck, locks: ProductionLocks, calendar: StudyCalendar) -> DayStart {
+        let counts = StudySession.counts(
+            for: stood, at: calendar.start(ofDay: day), calendar: calendar, past: StudySession.DayIndex(lockedNotes: locks.notes))
+        return DayStart(other: counts.learning + counts.review, new: counts.new)
+    }
+
+    /// The new cards the deck's limits take on `day` if it began now: the cards created since it began count.
+    private static func newCeiling(on day: Int, of stood: Deck, locks: ProductionLocks, calendar: StudyCalendar) -> Int {
+        let later = StudySession.DayIndex(lockedNotes: locks.notes, countsCardsCreatedLater: true)
+        return StudySession.counts(for: stood, at: calendar.start(ofDay: day), calendar: calendar, past: later).new
+    }
+}
+
+/// What `DailyProgress.evaluate` keeps between calls over the same decks: how the study days before today
+/// stood (`Before`), while the decks' own days before today (`DeckHistoryCache`) are the same ones. A
+/// grade changes today alone, and today is all a call then steps through.
+public final class DailyProgressCache: @unchecked Sendable {
+    struct Key: Equatable {
+        /// The `DeckActivity.Past` each deck's days before today are from, in the order of the decks.
+        var pasts: [UUID]
+        var first: Int
+        var today: Int
+        var calendar: StudyCalendar
+    }
+
+    /// The study days before today, stepped through from the first.
+    struct Before {
+        /// How many rounds the day before today held.
+        var capacity: Int
+        var kept: [Int: Bool]
+        var closed: [Int: Bool]
+    }
+
+    private let lock = NSLock()
+    private var held: (key: Key, before: Before)?
+
+    public init() {}
+
+    func before(for key: Key) -> Before? {
+        lock.withLock { held.flatMap { $0.key == key ? $0.before : nil } }
+    }
+
+    func keep(_ before: Before, for key: Key) {
+        lock.withLock { held = (key, before) }
+    }
+}
+
+/// What the activities of one deck share while the deck changes: the days before today, which a change of the
+/// deck usually leaves as they were (`DeckActivity.history(from:at:calendar:)`). The open document of a window
+/// makes a new activity at every change; handing each the cache of the last replays the days that did not
+/// change once, not at every grade. One cache serves one deck.
+public final class DeckHistoryCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var kept: DeckActivity.Past?
+    private var replayCount = 0
+
+    public init() {}
+
+    /// How often all days were replayed, not only today.
+    var replays: Int { lock.withLock { replayCount } }
+
+    func past(for key: DeckActivity.PastKey) -> DeckActivity.Past? {
+        let known = lock.withLock { kept }
+        return known?.key == key ? known : nil
+    }
+
+    func keep(_ past: DeckActivity.Past) {
+        lock.withLock {
+            kept = past
+            replayCount += 1
+        }
     }
 }
 
@@ -832,8 +1034,11 @@ public struct DailyProgress: Hashable, Sendable {
     /// A paused deck (`DeckActivity.isPaused`) takes no part in any of it: not in the plan, the goal, the
     /// rounds, the capacity, the admission of new cards, the streak, the words in memory or the cards done.
     /// What is reviewed in it counts for the day through the cards of the other decks only.
+    ///
+    /// With a `cache` that an earlier call over the same decks filled, the days before today that the decks'
+    /// own caches kept (`DeckHistoryCache`) are not stepped through again: only today is.
     public static func evaluate(
-        _ given: [DeckActivity], at now: Date, calendar: StudyCalendar, planRuleStart: Int = DailyGoal.planRuleStart
+        _ given: [DeckActivity], at now: Date, calendar: StudyCalendar, planRuleStart: Int = DailyGoal.planRuleStart, cache: DailyProgressCache? = nil
     ) -> DailyProgress {
         let decks = given.filter { !$0.isPaused }
         let today = calendar.dayNumber(for: now)
@@ -858,31 +1063,50 @@ public struct DailyProgress: Hashable, Sendable {
                 otherDone: days.reduce(0) { $0 + (otherDoneByDay[$1] ?? 0) })
         }
 
-        var capacity = DailyGoal.initialCapacity
-        var kept: [Int: Bool] = [:]
-        var closed: [Int: Bool] = [:]
-        var startRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), capacity: capacity)
-        var startPace = Pace()
-        var allowances = decks.map { _ in 0 }
-        for day in first...today {
-            if day > first {
-                capacity = DailyGoal.nextCapacity(after: capacity, yesterdayClosed: closed[day - 1] ?? false, dayBeforeClosed: closed[day - 2] ?? false)
-            }
-            let pace = pace(over: (day - DailyGoal.paceDays)...(day - 1))
-            let other = histories.reduce(0) { $0 + ($1.starts[day]?.other ?? 0) }
-            let allowed = DailyGoal.newCardsAllowed(capacity: capacity, otherCards: other, pace: pace)
-            if day < today {
+        /// How many rounds the day before today held, and which days before it kept the streak and closed
+        /// their rings.
+        func daysBeforeToday() -> DailyProgressCache.Before {
+            var capacity = DailyGoal.initialCapacity
+            var kept: [Int: Bool] = [:]
+            var closed: [Int: Bool] = [:]
+            for day in first..<today {
+                if day > first {
+                    capacity = DailyGoal.nextCapacity(after: capacity, yesterdayClosed: closed[day - 1] ?? false, dayBeforeClosed: closed[day - 2] ?? false)
+                }
+                let pace = pace(over: (day - DailyGoal.paceDays)...(day - 1))
+                let other = histories.reduce(0) { $0 + ($1.starts[day]?.other ?? 0) }
+                let allowed = DailyGoal.newCardsAllowed(capacity: capacity, otherCards: other, pace: pace)
                 let rounds = DayRounds(otherCards: other, newCards: min(allowed, histories.reduce(0) { $0 + ($1.starts[day]?.new ?? 0) }), pace: pace, capacity: capacity)
                 let done = (newDoneByDay[day] ?? 0) + (otherDoneByDay[day] ?? 0)
                 closed[day] = done >= rounds.goal
                 kept[day] = rounds.ends.first.map { done >= $0 } ?? true
-            } else {
-                allowances = DailyGoal.split(allowed, overCeilings: histories.map(\.newCeilingToday))
-                let new = zip(allowances, histories).reduce(0) { $0 + min($1.0, $1.1.starts[day]?.new ?? 0) }
-                startRounds = DayRounds(otherCards: other, newCards: new, pace: pace, capacity: capacity)
-                startPace = pace
             }
+            return DailyProgressCache.Before(capacity: capacity, kept: kept, closed: closed)
         }
+        // The days before today are the same while the decks' own days before today are: each history says
+        // which it comes from.
+        let pasts = histories.compactMap(\.pastID)
+        let key = pasts.count == histories.count ? DailyProgressCache.Key(pasts: pasts, first: first, today: today, calendar: calendar) : nil
+        let before: DailyProgressCache.Before
+        if let key, let known = cache?.before(for: key) {
+            before = known
+        } else {
+            before = daysBeforeToday()
+            if let key { cache?.keep(before, for: key) }
+        }
+        var capacity = before.capacity
+        var kept = before.kept
+        var closed = before.closed
+
+        if today > first {
+            capacity = DailyGoal.nextCapacity(after: capacity, yesterdayClosed: closed[today - 1] ?? false, dayBeforeClosed: closed[today - 2] ?? false)
+        }
+        let startPace = pace(over: (today - DailyGoal.paceDays)...(today - 1))
+        let other = histories.reduce(0) { $0 + ($1.starts[today]?.other ?? 0) }
+        let allowed = DailyGoal.newCardsAllowed(capacity: capacity, otherCards: other, pace: startPace)
+        let allowances = DailyGoal.split(allowed, overCeilings: histories.map(\.newCeilingToday))
+        let startNew = zip(allowances, histories).reduce(0) { $0 + min($1.0, $1.1.starts[today]?.new ?? 0) }
+        let startRounds = DayRounds(otherCards: other, newCards: startNew, pace: startPace, capacity: capacity)
 
         let counts = decks.indices.map { decks[$0].owed(now: now, calendar: calendar, newCardAllowance: allowances[$0]) }
         let owed = counts.reduce(0) { $0 + $1.total }

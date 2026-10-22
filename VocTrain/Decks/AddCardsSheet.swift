@@ -356,7 +356,7 @@ private struct PreviewRow: View {
         Button(action: toggle) {
             HStack(spacing: Spacing.gap) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(isSelected ? Color.appAccentOnRaised : Color.secondary)
                     .imageScale(.large)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(row.entry.greek)

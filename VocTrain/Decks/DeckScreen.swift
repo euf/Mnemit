@@ -296,7 +296,7 @@ private struct LoadedSections: View {
 }
 
 /// The title of a row in the text colour, its symbol in the accent: the accent is a glyph here,
-/// not text, as it has 3.7:1 on the dark rows.
+/// not text. In a sheet, whose dark rows are raised, it is the lighter accent of raised surfaces.
 struct RowLabel: View {
     var title: LocalizedStringKey
     var symbol: String
@@ -306,7 +306,7 @@ struct RowLabel: View {
             Text(title)
         } icon: {
             Image(systemName: symbol)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccentOnRaised)
         }
     }
 }

@@ -24,11 +24,22 @@ import VocabCore
 /// grade doesn't wait for it, and a quick run of grades costs one evaluation. It waits for a card
 /// that speaks to be through (`GreekSpeech.whenQuiet()`): the figures change a moment later, and the
 /// voice has the main thread and the processor to itself.
+///
+/// An open document changes with every grade, and replaying 400 days of its log for each costs 0.3 s on 3,000
+/// cards. The days before today are kept per document (`DeckHistoryCache`) and as stepped through over all the
+/// decks (`DailyProgressCache`) while nothing they read changes, a grade or an edit of a text, and then only
+/// today is replayed and stepped through.
 @MainActor @Observable
 final class DailyRingModel {
     /// `nil` until the first evaluation is done.
     private(set) var progress: DailyProgress?
     @ObservationIgnored private var fileActivities: [URL: DeckActivity] = [:]
+    /// The days before today of each open document, kept from one change to the next (`DeckHistoryCache`), so
+    /// that a grade replays only today. A cache that outlives its document, or meets another with the same
+    /// address, only fails to match and is replaced.
+    @ObservationIgnored private var historyCaches: [ObjectIdentifier: DeckHistoryCache] = [:]
+    /// The study days before today, stepped through once for as long as the decks' days before today stay.
+    @ObservationIgnored private let progressCache = DailyProgressCache()
     @ObservationIgnored private var evaluation: Task<Void, Never>?
 
     /// Evaluates the ring and the streak for `documents` and the decks at `files`; the
@@ -43,6 +54,9 @@ final class DailyRingModel {
     @discardableResult
     func refresh(documents: [VocabularyDocument], files: [URL] = [], reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) -> Task<Void, Never> {
         let decks = documents.map(\.deck)
+        let progressCache = progressCache
+        let caches = documents.map { historyCaches[ObjectIdentifier($0)] ?? DeckHistoryCache() }
+        historyCaches = Dictionary(zip(documents.map { ObjectIdentifier($0) }, caches), uniquingKeysWith: { first, _ in first })
         let calendar = documents.first?.calendar ?? StudyCalendar()
         let now = documents.first?.clock.now ?? Date()
         let known = fileActivities
@@ -64,8 +78,8 @@ final class DailyRingModel {
                     }
                 }
                 let read = files.filter { fileActivities[$0] != nil }
-                let activities = decks.map { DeckActivity(deck: $0, calendar: calendar) } + read.compactMap { fileActivities[$0] }
-                let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar)
+                let activities = zip(decks, caches).map { DeckActivity(deck: $0, calendar: calendar, historyCache: $1) } + read.compactMap { fileActivities[$0] }
+                let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar, cache: progressCache)
                 // In the order of the activities: the documents, then the files that were read. A paused deck has
                 // none, and the allowance of its file from before it was paused goes with it.
                 var allowances = NewCardAllowances()

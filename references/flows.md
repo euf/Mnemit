@@ -35,7 +35,8 @@ Root is a `NavigationStack` on Today.
   "All done" or "Nothing due"); under it "M of K cards · N left", the done cards against the
   daily goal and the cards of today's plan not done yet (not the raw due count); "+N to catch
   up this week" when a backlog is left; the streak, "12-day streak", with "· kept today" once
-  the first round is done; "≈ 28 words in memory · +15 today", and on the day a milestone is
+  the first round is done; under the ring, over the width of the row, "≈ 28 words in memory ·
+  +15 today" on one line (one wrapping text at large type sizes), and on the day a milestone is
   passed "50 words in memory!"; **Study** (all decks).
 - Decks section: a row per deck with its counts. Tapping a row pushes the Deck screen. Swipe and context menu:
   **Pause Deck** (`pause.circle`); a swipe also offers Remove from List where the list may forget the deck.
@@ -119,7 +120,7 @@ Study ▸ How Today Works, over the open decks, which it names Deck 1, Deck 2.)
 **New Deck**: a name field; creates `<name>.mnemit` in the deck folder (iCloud Drive or
 this iPhone).
 
-**Import**: a file picker (CSV, TSV or `.apkg`) → the same preview as the
+**Import**: a file picker (CSV, TSV, `.apkg` or `.colpkg`) → the same preview as the
 Mac, a list with a checkmark per card (duplicates unchecked) → Add N Cards, one undo step.
 Entry points: Import Cards… on the Deck screen, Import… in Today's + menu (into the deck used
 last). The preview of an Anki package heads with the Anki deck names, the number of cards,
@@ -141,8 +142,8 @@ lapses. Advanced: maximum interval, FSRS parameters with "Compute from Review Lo
 
 **Welcome window** is the Mac's Today: decks with their counts; Study opens a deck's stream;
 New Deck, Import Cards, Open Mnemit Folder.
-Import Cards… takes CSV, TSV and `.apkg`; an `.apkg` makes a new deck named after the Anki
-deck. Opening an `.apkg` from Finder does the same, not a document window.
+Import Cards… takes CSV, TSV, `.apkg` and `.colpkg`; a package makes a new deck named after the Anki
+deck, in the window title as well as in Save As. Opening an `.apkg` from Finder does the same, not a document window.
 
 **Deck window**: Cards | Statistics. Study ▸ **Pause Deck** / **Resume Deck** pauses the deck of the window; the
 ring in the toolbar and its help count the open decks that are not paused.
@@ -161,7 +162,7 @@ ring in the toolbar and its help count the open decks that are not paused.
 3. Import and export on both platforms (facts in `deck-formats-and-sources.md`):
    - `.apkg` import, all three layouts, with review history replayed into FSRS; text fields
      with HTML stripped; media and cloze notes skipped and counted in the preview. Mnemit
-     registers `.apkg`, so "Open in Mnemit" from Files, Safari or Mail starts the import.
+     registers `.apkg` and `.colpkg`, so "Open in Mnemit" from Files, Safari or Mail starts the import.
    - CSV/TSV import on the iPhone; export on both with Anki's `#separator` / `#columns`
      headers and the word key and kind columns, so Anki reads the file as is.
    - No in-app deck catalogue: AnkiWeb has no API and its terms allow only browser access.

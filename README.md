@@ -140,7 +140,7 @@ are in [`references/`](references/).
 
 ### Import and export
 
-- **Anki packages with their history.** `.apkg` in all three layouts (including the
+- **Anki packages with their history.** `.apkg` and `.colpkg` in all three layouts (including the
   zstd-compressed current one) is read without Anki; review history is replayed through
   Mnemit's FSRS. HTML is reduced to text; the first image and the first sound of each side
   come along as the card's media, a back takes the meaning and then the example sentence, and cloze

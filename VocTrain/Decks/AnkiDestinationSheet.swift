@@ -83,7 +83,7 @@ struct AnkiDestinationSheet: View {
                                 Text(verbatim: deck.name)
                             } icon: {
                                 Image(systemName: "rectangle.stack")
-                                    .foregroundStyle(Color.accentColor)
+                                    .foregroundStyle(Color.appAccentOnRaised)
                             }
                         }
                         .tint(.primary)

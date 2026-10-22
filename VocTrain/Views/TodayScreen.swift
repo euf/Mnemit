@@ -277,39 +277,46 @@ struct SummaryRow: View {
             typeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
             : AnyLayout(HStackLayout(spacing: 16))
-        layout {
-            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 96), center: RingCenter(progress, inStream: false))
-            VStack(alignment: .leading, spacing: 2) {
-                headline
-                    .font(.title2.weight(.semibold))
-                detail
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                if catchUp > 0 {
-                    Text("+\(catchUp) to catch up this week")
+        // The words in memory take the width of the row under the ring: beside it, on a 375 pt screen, "+15 today"
+        // would not fit on the line of the words.
+        VStack(alignment: .leading, spacing: 8) {
+            layout {
+                ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 96), center: RingCenter(progress, inStream: false))
+                VStack(alignment: .leading, spacing: 2) {
+                    headline
+                        .font(.title2.weight(.semibold))
+                    detail
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                }
-                if let progress, progress.streak.days > 0 {
-                    // Not a Label: in a list it puts its icon in a column of its own.
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .foregroundStyle(progress.streakKeptToday ? Color.accentColor : Color.secondary)
-                        Group {
-                            if progress.streakKeptToday {
-                                Text("\(progress.streak.days)-day streak · kept today")
-                            } else {
-                                Text("\(progress.streak.days)-day streak")
-                            }
-                        }
-                        .foregroundStyle(.secondary)
+                    if catchUp > 0 {
+                        Text("+\(catchUp) to catch up this week")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
-                    .font(.subheadline)
+                    if let progress, progress.streak.days > 0 {
+                        // Not a Label: in a list it puts its icon in a column of its own.
+                        HStack(spacing: 4) {
+                            Image(systemName: "flame.fill")
+                                .foregroundStyle(progress.streakKeptToday ? Color.accentColor : Color.secondary)
+                            Group {
+                                if progress.streakKeptToday {
+                                    Text("\(progress.streak.days)-day streak · kept today")
+                                } else {
+                                    Text("\(progress.streak.days)-day streak")
+                                }
+                            }
+                            .foregroundStyle(.secondary)
+                        }
+                        .font(.subheadline)
+                    }
                 }
-                memoryLine
-                    .font(.subheadline)
+                .monospacedDigit()
             }
-            .monospacedDigit()
+            if let memory = progress?.memory {
+                MemoryLine(memory: memory)
+                    .font(.subheadline)
+                    .monospacedDigit()
+            }
         }
         .padding(.vertical, 8)
         .redacted(reason: isLoaded ? [] : .placeholder)
@@ -386,33 +393,25 @@ struct SummaryRow: View {
             Text("Next review \(Format.due(nextDue, now: now))")
         }
     }
+}
 
-    /// "≈ 28 words in memory · +15 today", or on the day a milestone was passed "50 words in memory!" with a
-    /// glyph in the accent: the accent is never small text.
-    @ViewBuilder
-    private var memoryLine: some View {
-        if let memory = progress?.memory {
-            if let milestone = memory.milestoneLine {
-                HStack(spacing: 4) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(Color.accentColor)
-                    Text(milestone)
-                        .fontWeight(.semibold)
-                }
-            } else if let words = memory.wordsLine {
-                // "≈ 28 words in memory · +15 today", the gain under the words where the line is too long.
-                ViewThatFits(in: .horizontal) {
-                    Text(verbatim: memory.line ?? "")
-                        .lineLimit(1)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(words)
-                        if let gain = memory.gainLine {
-                            Text(gain)
-                        }
-                    }
-                }
-                .foregroundStyle(.secondary)
+/// "≈ 28 words in memory · +15 today" on one line, or on the day a milestone was passed "50 words in memory!"
+/// with a glyph in the accent: the accent is never small text. Where the line is too long, at a large type size,
+/// it is one text that wraps, not the gain stacked under the words.
+struct MemoryLine: View {
+    var memory: MemoryEstimate
+
+    var body: some View {
+        if let milestone = memory.milestoneLine {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(Color.accentColor)
+                Text(milestone)
+                    .fontWeight(.semibold)
             }
+        } else if let line = memory.line {
+            Text(verbatim: line)
+                .foregroundStyle(.secondary)
         }
     }
 }

@@ -19,7 +19,8 @@ final class ShortcutsHelp {
     /// Whether "?" opens it: while a session asks flash cards.
     var opensWithQuestionMark = false
 
-    @ObservationIgnored private weak var window: NSWindow?
+    /// The window of the document's view, once it has one.
+    @ObservationIgnored private(set) weak var window: NSWindow?
     @ObservationIgnored private var monitor: Any?
 
     /// Shows the cheat sheet at the start of the first flash card session, once.

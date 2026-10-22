@@ -2,9 +2,9 @@ import Foundation
 import VocabCore
 
 extension URL {
-    /// Whether this is an Anki package, by its extension.
+    /// Whether this is an Anki package, a deck (`.apkg`) or a collection (`.colpkg`), by its extension.
     var isAnkiPackage: Bool {
-        pathExtension.caseInsensitiveCompare("apkg") == .orderedSame
+        ["apkg", "colpkg"].contains { pathExtension.caseInsensitiveCompare($0) == .orderedSame }
     }
 }
 

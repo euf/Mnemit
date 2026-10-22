@@ -296,7 +296,19 @@
   дня; `Streak.repairCards` — сколько карточек осталось до замкнутого кольца); два пропуска
   подряд рвут. Цена полного пересчёта — O(дни × карточки); замер на 3 000 карточек и 400 днях
   лога (35 000 оценок): 0,31 с в release на Mac, 2,4 с в debug
-  (`DailyProgressPerformanceTests`, `MNEMIT_PERF=1`).
+  (`DailyProgressPerformanceTests`, `MNEMIT_PERF=1`). Открытая колода не пересчитывает дни до
+  сегодняшнего на каждое изменение: `DeckHistoryCache` (по документу, его держит `DailyRingModel`)
+  хранит `DeckActivity.Past`: историю без сегодняшнего дня, копию колоды на начало сегодняшнего дня и
+  замки production, пока не меняется то, что читают прошлые дни (`DeckActivity.PastKey`: опции; у
+  каждой карточки место в колоде, `kind`, `note`, `created`, suspended, лог до сегодня, а у карточки с
+  неполным логом ещё и её состояние). Оценка карточки с полным логом, правка текста и время внутри
+  дня ключ не меняют: считается только сегодня (повторения дня от состояний карточек на его начало,
+  план дня, потолок новых), 8,5 мс на 3 000 карточках и 400 днях вместо 0,31 с. Suspend, опции,
+  добавление и удаление карточки, заметка и вид, сброс, оценка карточки с неполным логом и новый
+  учебный день — полный пересчёт (первая оценка ещё не оценённой карточки ключ не меняет).
+  `DailyProgressCache` держит то же для шагов `evaluate` по дням (ёмкость, замкнутые кольца, streak) по
+  набору `Past` всех колод. Эталон — полный пересчёт: `DeckHistoryCacheTests` сравнивает оба пути на
+  случайных оценках и правках двух колод.
   iPhone считает по всем колодам из `KnownDecks` (файлы читает `DeckFileReader`), Mac — по
   открытым документам (`OpenDecks`); колоды на паузе (`LearningOptions.isPaused`) не входят ни в
   одно из этих чисел. Снимок виджета (`WidgetSnapshot.done`, `.goal`) держит
@@ -330,7 +342,9 @@
   вторая строка «M of K cards · N left» (сделанные карточки против цели дня и карточки плана, ещё не
   сделанные, не сырой due: M, N и K в одной единице, M + N ≥ K, равно, пока план влезает во время дня и в
   него ничего не добавили; Forgot его не нарушает); «+N to catch up this week» при хвосте; streak
-  «N-day streak», с «· kept today», когда первый раунд сделан; слова в памяти. Кольцо и streak — по всем
+  «N-day streak», с «· kept today», когда первый раунд сделан; слова в памяти одной строкой «≈ 28 words in memory · +15
+  today» под кольцом на ширину строки (`MemoryLine`: ширина строки, а не колонки рядом с кольцом, где на 375 pt прирост не помещается;
+  на крупных размерах шрифта один текст переносится). Кольцо и streak — по всем
   колодам, колоды строками. Study открывает поток одним касанием поверх экрана
   (`StudyRunView`). Строка колоды толкает на стек Today экран колоды (`DeckScreen`/`DeckContent`:
   счётчики дня, Study This Deck, Cards → браузер, Add Cards, практики, Statistics, Options; меню:
@@ -364,7 +378,11 @@
   счётов, подзаголовок «Paused»; то же пункт меню экрана колоды. Mac: Study ▸ Pause Deck / Resume Deck, кольцо и
   подсказка считают открытые документы без пауз. «How Today Works» называет её в плане строкой «Paused: <имя>».
   После возобновления её просроченные карточки — хвост по `DailyGoal.backlogShare`, без особых правил. Акцент — системный индиго `#5856D6` в `AccentColor` (все три каталога ассетов:
-  iPhone, Mac, виджет): заливка кнопки, кольцо, глиф, но не текст; счётчики New/Learning/Review нейтральные. Спека —
+  iPhone, Mac, виджет): заливка кнопки, кольцо, глиф, но не текст; глиф в листе — `Color.appAccentOnRaised`: в тёмной
+  теме лист поднимает поверхности до `#2C2C2E` (`#363638` в Increase Contrast), где акцент даёт 2,47:1 (2,57:1), и цвет,
+  читая `userInterfaceLevel` вида, берёт тот же оттенок светлее, `#706FDC` (3,32:1) и `#7B79EA` (3,31:1); заливка кнопки
+  с белой подписью остаётся акцентом, на экране и в полноэкранной обложке (поток Study) цвет тот же акцент
+  (`AccentContrastTests`); счётчики New/Learning/Review нейтральные. Спека —
   `references/design-spec.md`, контракт экранов — `references/flows.md`. Кадры: Today и экран колоды —
   `VocTrainTests/HomeSnapshotTests` (каталог — `TEST_RUNNER_HOME_SHOTS_DIR`), браузер, карточка и
   правка — `BrowserSnapshotTests` (`TEST_RUNNER_STUDY_SHOTS_DIR`).
@@ -423,10 +441,14 @@
   из `cards.data`. Зависимость одна: `facebook/zstd` (SwiftPM, BSD, в `THIRD_PARTY_NOTICES.md`);
   Compression zstd не знает. Фикстуры настоящих пакетов — `Tests/VocabCoreTests/Resources/Anki`,
   скрипт их сборки лежит рядом (`uv run --with anki`).
-- Экраны импорта Anki (`Shared/Support/CardImport+Anki.swift`, `.apkg` принимают пикер iPhone,
+- Экраны импорта Anki (`Shared/Support/CardImport+Anki.swift`, `.apkg` и `.colpkg` принимают пикер iPhone,
   панель Mac и «Open in Mnemit»): тип `UTType.ankiPackage`, импортируемый
   `com.euf.mnemit.anki-package` (расширение `apkg`, conforms `public.zip-archive` и `public.data`),
-  в обоих `Info.plist` — тип документа Viewer, `LSHandlerRank` Alternate. Предпросмотр тот же, что у
+  в обоих `Info.plist` — тип документа Viewer, `LSHandlerRank` Alternate; коллекция —
+  `UTType.ankiCollection`, `com.euf.mnemit.anki-collection` (расширение `colpkg`, те же родители и та же
+  пара записей в обоих `Info.plist`). `UTType.ankiPackages` — оба типа: пикер iPhone
+  (`cardFileImporter`) и панель Mac (`CardImport.chooseFile`) предлагают их с таблицами;
+  `URL.isAnkiPackage` — расширение `apkg` или `colpkg`. Предпросмотр тот же, что у
   CSV (`CardImport.Preview`, у пакета `anki: AnkiSummary` — названия колод Anki, сколько карточек с
   историей, пропуски cloze, медиа, пустых; `skipLines` называет причины со счётом: cloze, «картинки или
   звука стороны нет в пакете», «пустая сторона»; `mediaLine` — «75 images, 75 sounds, 3.4 MB»:
@@ -452,7 +474,9 @@
   сайтов с колодами (следующий пункт). Mac: `AppDelegate.application(_:open:)` ведёт `.apkg` из
   Finder тем же путём, что «Import Cards» окна приветствия (`WelcomeRequest.importIntoNewDeck(from:)`:
   запрос и новый документ), окно нового документа зовёт `DocumentView.importCards(from:namesDeck:)` и
-  называет безымянную колоду (`displayName`) по колоде Anki и берёт настройки пресета (`isNewDeck`:
+  называет безымянную колоду по колоде Anki (`nameWindow`: `displayName` документа и
+  `synchronizeWindowTitleWithDocumentName` у его окон: AppKit берёт новый `displayName` в заголовок
+  только по этому вызову, до него там «Untitled») и берёт настройки пресета (`isNewDeck`:
   `namesDeck`, документ без файла и карточек); «Import Cards» из меню окна колоды (`namesDeck` ложь)
   оставляет настройки колоды; колоды из Finder уходят оттуда в `NSDocumentController.openDocument`.
 - Браузер сайтов с колодами (`Shared/Web/DeckWebBrowser` и `DeckWebBrowserView`, лист на iPhone,

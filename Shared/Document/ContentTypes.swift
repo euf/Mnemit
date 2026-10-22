@@ -15,4 +15,9 @@ extension UTType {
     /// viewer, rank alternate, so "Open in Mnemit" starts the import. Imported, as Anki
     /// owns the format.
     static let ankiPackage = UTType(importedAs: "com.euf.mnemit.anki-package", conformingTo: .zip)
+    /// Anki collection packages (`.colpkg`), which `AnkiImport.read` reads like an `.apkg`; declared and
+    /// listed in the same places.
+    static let ankiCollection = UTType(importedAs: "com.euf.mnemit.anki-collection", conformingTo: .zip)
+    /// Every type an Anki package may have: the pickers and panels of "Import Cards…" offer them with the tables.
+    static let ankiPackages = [ankiPackage, ankiCollection]
 }
