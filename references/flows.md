@@ -37,7 +37,11 @@ Root is a `NavigationStack` on Today.
   up this week" when a backlog is left; the streak, "12-day streak", with "· kept today" once
   the first round is done; "≈ 28 words in memory · +15 today", and on the day a milestone is
   passed "50 words in memory!"; **Study** (all decks).
-- Decks section: a row per deck with its counts. Tapping a row pushes the Deck screen.
+- Decks section: a row per deck with its counts. Tapping a row pushes the Deck screen. Swipe and context menu:
+  **Pause Deck** (`pause.circle`); a swipe also offers Remove from List where the list may forget the deck.
+- **Paused** section at the bottom, only when a deck is paused: its rows in the secondary colour, no counts,
+  the subtitle "Paused"; swipe and context menu **Resume Deck** (`play.circle`). A paused deck is no part of the
+  day: the ring, the rounds, Study and the "Next: …" leave it out. With every deck paused, Study is disabled.
 - Toolbar **+** menu: Add Cards (to the last deck used), New Deck, Import.
 - `.searchable` over every card of every deck; a result pushes Card Detail.
 - **Empty state** (no decks): New Deck, Import Cards, Use iCloud Drive Folder. No mention of
@@ -63,8 +67,9 @@ Study ▸ How Today Works, over the open decks, which it names Deck 1, Deck 2.)
 - For the learner who knows Anki and FSRS: the numbers and rules under the ring and the rounds, as they are
   now. Read-only: no controls, no charts. A grouped form; each section's footer holds its rule.
 - **Today's Plan**: reviews due today; overdue cards taken, of the backlog; cards in learning; new cards admitted,
-  and each deck's ceiling with its limits (new / production); the daily goal in cards; the rounds and where each
-  ends, in cards; cards done; cards left; catch-up beyond the plan.
+  and each deck's ceiling with its limits (new / production), a paused deck as "Paused: <name>" with no figures;
+  the daily goal in cards; the rounds and where each ends, in cards; cards done; cards left; catch-up beyond the
+  plan.
 - **Capacity**: the rounds of today and their time; the last 14 days, newest first, with rounds, ring
   (Closed or Open) and step (+1, 0, −1).
 - **Pace**: seconds for a new card and for another card, each with its source (Durations (n), Gaps (n) or
@@ -81,7 +86,10 @@ Study ▸ How Today Works, over the open decks, which it names Deck 1, Deck 2.)
   this week"; **Study This Deck**.
 - Rows: Cards (count) → Card Browser; Add Cards; Import Cards…; Practice Newest; Practice Mistakes;
   Statistics; Options.
-- Toolbar menu: Rename, Export…, Delete Deck (moves the file to the Trash).
+- Toolbar menu: Rename, **Pause Deck** / **Resume Deck** (`pause.circle` / `play.circle`), Export…, Delete Deck
+  (moves the file to the Trash).
+- A paused deck says so under its counts: "Paused. Today's plan leaves this deck out." Study This Deck and the
+  rest work; the counts are those of the deck's own limits.
 
 **Card Browser** (pushed)
 - `List` with `.searchable` and the filter row (rule 4); sort menu: Due, Added, A–Z,
@@ -136,7 +144,8 @@ New Deck, Import Cards, Open Mnemit Folder.
 Import Cards… takes CSV, TSV and `.apkg`; an `.apkg` makes a new deck named after the Anki
 deck. Opening an `.apkg` from Finder does the same, not a document window.
 
-**Deck window**: Cards | Statistics.
+**Deck window**: Cards | Statistics. Study ▸ **Pause Deck** / **Resume Deck** pauses the deck of the window; the
+ring in the toolbar and its help count the open decks that are not paused.
 - Cards: the filter row of rule 4 as a scope bar under the toolbar (replaces the Leeches
   toggle); search includes the word key; table columns as today plus Kind.
 - Inspector: the iPhone's Card Detail sections, including kind, word key and sibling.

@@ -92,6 +92,13 @@ are in [`references/`](references/).
   their own daily limit, and siblings are buried for the day so one card does not answer the
   other. No study compares introducing the second direction later with introducing it together;
   the numbers and sources are in [references/production-cards-research.md](references/production-cards-research.md).
+- **Pause a deck.** A deck can be paused, from its row on Today (swipe or long press), from the menu of
+  its screen, or on the Mac in Study ▸ Pause Deck. A paused deck takes no part in the day: not in the
+  plan, the goal, the rounds, the new cards the day admits (they go to the other decks), the streak,
+  the words in memory, the widget, the reminders, Study or the "Next" after a stream. Today lists it
+  under "Paused", with no counts. It stays open: you can browse it, add cards and study it with Study
+  This Deck, and what you review there fills the ring only through the cards of the other decks.
+  When you resume it, its overdue reviews are a backlog like any other and come back a seventh a day.
 - **Difficult cards** (leeches) after 8 lapses, as a filter in the browser.
 
 ### Scheduling
