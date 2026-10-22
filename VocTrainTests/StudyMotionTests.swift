@@ -41,44 +41,58 @@ struct StudyMotionTests {
         }
     }
 
-    @Test func eachDestinationHasItsOwnWay() throws {
+    /// Every card leaves past the edge of the screen, along the direction of its grade, and nothing rides on it; what
+    /// follows is the destination's. Reduce Motion has no way at all: the card stays where it is and fades.
+    @Test func everyCardLeavesPastTheEdge() throws {
         let motion = motion()
-        // Into the ring: the way is from the card's place to the ring's, small at the end.
-        motion.depart(card(), receipt: GradeReceipt(grade: .good, interval: .days(8)), release: release(), velocity: .zero, behind: 2, peek: 6, reduceMotion: false)
-        let ring = try #require(motion.departures.last)
-        #expect(ring.destination == .ring)
-        #expect(ring.label == "in 8 days")
-        let path = try #require(ring.path)
-        #expect(path.end.width == motion.ringHome.midX - motion.cardSlot.midX)
-        #expect(path.end.height == motion.ringHome.midY - motion.cardSlot.midY)
-        #expect(path.endScale < 0.1 && path.fades)
-
-        // Under the stack: below the card, at the pose after the last of the cards waiting.
-        motion.depart(card(), receipt: GradeReceipt(grade: .again, interval: .learning), release: release(), velocity: .zero, behind: 2, peek: 6, reduceMotion: false)
-        let stack = try #require(motion.departures.last?.path)
-        #expect(stack.end.width == 0)
-        #expect(stack.end.height == StackPose.offset(3, height: 500, peek: 6))
-        #expect(stack.endScale == StackPose.scale(3))
-        // With no cards waiting it goes under nothing, at the pose of the first edge; the edges stop at three.
-        motion.depart(card(), receipt: GradeReceipt(grade: .again, interval: .learning), release: release(), velocity: .zero, behind: 9, peek: 6, reduceMotion: false)
-        #expect(motion.departures.last?.path?.endScale == StackPose.scale(StackPose.maxEdges + 1))
-
-        // A practice flies off the way it always did.
-        motion.depart(card(), receipt: GradeReceipt(grade: .easy, interval: nil), release: release(), velocity: .zero, behind: 0, peek: 6, reduceMotion: false)
-        #expect(motion.departures.last?.path?.end == GradeSwipe.exit(of: .easy))
-        #expect(motion.departures.last?.label == nil)
-
-        // Reduce Motion: no way at all, the card stays where it is, and the label stays.
-        motion.depart(card(), receipt: GradeReceipt(grade: .good, interval: .days(1)), release: release(), velocity: .zero, behind: 0, peek: 6, reduceMotion: true)
+        let receipts: [(GradeReceipt, GradeReceipt.Destination)] = [
+            (GradeReceipt(grade: .good, interval: .days(8)), .ring),
+            (GradeReceipt(grade: .again, interval: .learning), .stack),
+            (GradeReceipt(grade: .easy, interval: nil), .away),
+            (GradeReceipt(grade: .again, interval: .days(3), isLeech: true), .away),
+        ]
+        for (receipt, destination) in receipts {
+            motion.depart(card(), receipt: receipt, release: release(), velocity: .zero, behind: 2, reduceMotion: false)
+            let departure = try #require(motion.departures.last)
+            #expect(departure.destination == destination)
+            #expect(departure.path == CardPath(end: GradeSwipe.exit(of: receipt.grade), endScale: 1, fades: false))
+        }
+        motion.depart(card(), receipt: GradeReceipt(grade: .good, interval: .days(1)), release: release(), velocity: .zero, behind: 0, reduceMotion: true)
         let still = try #require(motion.departures.last)
         #expect(still.path == nil)
         #expect(still.release.offset == .zero)
-        #expect(still.label == "tomorrow")
         #expect(still.lifetime == StudyMotion.Timing.fade)
     }
 
-    /// A card in the ring steps it at once, ahead of the figures; the figures that come after take over,
-    /// and a card that is still on its way holds them back.
+    /// A card that goes back today comes in again as a blank sheet by the edge it left by, once it is past it, and slides
+    /// under the stack to its deepest edge; until it is there the stack lacks that edge, and then it has it.
+    @Test func aCardBackTodayComesInAsASheetUnderTheStack() async throws {
+        let motion = motion()
+        let receipt = GradeReceipt(grade: .again, interval: .learning)
+        #expect(motion.edges(cardsBehind: 3) == 3)
+        motion.depart(card(), receipt: receipt, release: release(), velocity: .zero, behind: 3, reduceMotion: false)
+        #expect(motion.sheetsAway == 1 && motion.sheets.isEmpty)
+        #expect(motion.edges(cardsBehind: 3) == 2)
+        try await wait(for: { !motion.sheets.isEmpty })
+        let sheet = try #require(motion.sheets.first)
+        #expect(sheet.from == GradeSwipe.exit(of: .again))
+        #expect(sheet.level == 3)
+        try await wait(for: { motion.sheetsAway == 0 })
+        #expect(motion.sheets.isEmpty)
+        #expect(motion.edges(cardsBehind: 3) == 3)
+
+        // Past the last edge it goes under the deepest one there is; Reduce Motion has no sheet.
+        motion.depart(card(), receipt: receipt, release: release(), velocity: .zero, behind: 9, reduceMotion: false)
+        try await wait(for: { !motion.sheets.isEmpty })
+        #expect(motion.sheets.first?.level == StackPose.maxEdges)
+        try await wait(for: { motion.sheetsAway == 0 })
+        motion.depart(card(), receipt: receipt, release: release(), velocity: .zero, behind: 3, reduceMotion: true)
+        #expect(motion.sheetsAway == 0)
+    }
+
+    /// A grade steps the ring by its gain at once, ahead of the figures: a done card bumps and bursts it and names its
+    /// interval beside it for a moment, a card back today with a part to give steps it quietly, Forgot moves nothing.
+    /// The figures that come after take over, and a card that is still leaving holds them back.
     @Test func theRingStepsAheadOfTheFigures() async throws {
         let (document, undoManager) = try document(cards: 4)
         let model = StudyModel(document: document)
@@ -94,26 +108,41 @@ struct StudyMotionTests {
         #expect(done == 2)
 
         let motion = motion(ring: ring)
-        #expect(motion.shown == nil)
-        motion.depart(card(), receipt: GradeReceipt(grade: .good, interval: .days(8)), release: release(), velocity: .zero, behind: 0, peek: 6, reduceMotion: false)
-        // On its way: the figures arriving now are held back until it lands.
-        motion.figuresChanged()
-        #expect(motion.landings == 0)
-        try await wait(for: { motion.landings == 1 })
-        #expect(motion.landings == 1)
+        #expect(motion.shown == nil && motion.interval == nil && motion.barBurstAt == nil)
+        let doneCard = GradeReceipt(grade: .good, interval: .days(8), gain: 1)
+        motion.depart(card(), receipt: doneCard, release: release(), velocity: .zero, behind: 0, reduceMotion: false)
         #expect(motion.shown == Double(done + 1))
+        #expect(motion.landings == 1 && motion.barBurstAt != nil)
+        #expect(motion.interval == "in 8 days")
+        // On its way: the figures arriving now are held back until it is gone.
+        motion.figuresChanged()
+        #expect(motion.shown == Double(done + 1))
+        try await wait(for: { motion.departures.isEmpty })
+        #expect(motion.shown == nil, "the figures that were held back are shown once the card is gone")
 
-        // The figures caught up with the card that landed.
+        // A step in a card's way: the ring moves, without bump or burst, and the interval stays what it was.
+        let burst = motion.barBurstAt
+        motion.depart(card(), receipt: GradeReceipt(grade: .hard, interval: .learning, gain: 0.5), release: release(), velocity: .zero, behind: 1, reduceMotion: false)
+        #expect(motion.shown == Double(done) + 0.5)
+        #expect(motion.landings == 1 && motion.barBurstAt == burst)
+        // Forgot gives nothing.
+        motion.depart(card(), receipt: GradeReceipt(grade: .again, interval: .learning), release: release(), velocity: .zero, behind: 1, reduceMotion: false)
+        #expect(motion.shown == Double(done) + 0.5)
+
+        // The figures catch up with the grades that have left.
+        try await wait(for: { motion.departures.isEmpty })
         motion.figuresChanged()
         #expect(motion.shown == nil)
 
-        // It is gone when its time is up.
-        try await wait(for: { motion.departures.isEmpty })
-        #expect(motion.departures.isEmpty)
+        // The interval is gone after its time.
+        try await wait(for: { motion.interval == nil })
+        #expect(motion.interval == nil)
 
-        // Undo takes the step back.
-        motion.retractStep()
-        #expect(motion.shown == Double(done - 1))
+        // Undo takes the step back by the gain of the grade it undoes, and the interval with it.
+        motion.depart(card(), receipt: doneCard, release: release(), velocity: .zero, behind: 0, reduceMotion: true)
+        motion.undone(doneCard, reduceMotion: false)
+        #expect(motion.shown == Double(done))
+        #expect(motion.interval == nil)
     }
 
     /// The rest: the ring waits for the card to land and comes down with the slot showing; Next Round takes it back up
@@ -122,7 +151,7 @@ struct StudyMotionTests {
     /// `StudyScreenSnapshotTests` (rest travel half and end, burst peak) show them.
     @Test func theRestIsReachedByTheRingsWayAndLeftBackwards() {
         let motion = motion()
-        motion.restBegan(afterLanding: true, reduceMotion: false)
+        motion.restBegan(afterExit: true, reduceMotion: false)
         #expect(motion.showsRest && motion.travels && !motion.hasArrived && motion.showsSlot)
         #expect(motion.travel == 0)
 
@@ -138,7 +167,7 @@ struct StudyMotionTests {
     /// Without travel (Reduce Motion) the rest is there at once, with no ring on the way and no burst.
     @Test func withoutTravelTheRestComesAtOnce() {
         let motion = motion()
-        motion.restBegan(afterLanding: true, reduceMotion: true)
+        motion.restBegan(afterExit: true, reduceMotion: true)
         #expect(motion.showsRest && !motion.travels && motion.hasArrived && !motion.showsSlot && motion.burstStartedAt == nil)
         motion.leaveRest(
             snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created, canKeepGoing: false), reduceMotion: true,
@@ -156,33 +185,39 @@ struct StudyMotionTests {
         #expect(motion.showsRest && motion.hasArrived && motion.restSnapshot == nil && !motion.isChoreographing)
     }
 
-    /// Undo's card returns by the way its grade took, as a way of its own; after a grade that went nowhere, or
-    /// without travel, it is simply there.
-    @Test func undoReturnsByTheWayTheGradeWent() {
+    /// Undo's card comes back in from the edge its grade took it past, whatever became of it; after a step that gave no
+    /// grade, or without travel, it is simply there. A card that comes out from under the stack takes its deepest edge
+    /// with it for a moment.
+    @Test func undoBringsTheCardBackInFromTheEdge() async throws {
         let motion = motion()
-        if case let .returns(path) = motion.returnArrival(from: .ring, behind: 1, peek: 6, reduceMotion: false) {
-            #expect(path.end == CGSize(width: motion.ringHome.midX - motion.cardSlot.midX, height: motion.ringHome.midY - motion.cardSlot.midY))
-        } else {
-            Issue.record("the card should come back out of the ring")
+        for destinationReceipt in [
+            GradeReceipt(grade: .easy, interval: .days(8)), GradeReceipt(grade: .again, interval: .learning), GradeReceipt(grade: .good, interval: nil),
+        ] {
+            #expect(
+                motion.returnArrival(destinationReceipt, reduceMotion: false)
+                    == .returns(CardPath(end: GradeSwipe.exit(of: destinationReceipt.grade), endScale: 1, fades: false)))
         }
-        if case let .returns(path) = motion.returnArrival(from: .stack, behind: 1, peek: 6, reduceMotion: false) {
-            #expect(path.end.height == StackPose.offset(2, height: 500, peek: 6))
-        } else {
-            Issue.record("the card should come back up from under the stack")
-        }
-        #expect(motion.returnArrival(from: .away, behind: 1, peek: 6, reduceMotion: false) == .still)
-        #expect(motion.returnArrival(from: .ring, behind: 1, peek: 6, reduceMotion: true) == .still)
+        #expect(motion.returnArrival(nil, reduceMotion: false) == .still)
+        #expect(motion.returnArrival(GradeReceipt(grade: .easy, interval: .days(8)), reduceMotion: true) == .still)
+
+        #expect(motion.edges(cardsBehind: 4) == 4)
+        motion.undone(GradeReceipt(grade: .again, interval: .learning), reduceMotion: false)
+        #expect(motion.edges(cardsBehind: 4) == 3)
+        try await wait(for: { motion.edges(cardsBehind: 4) == 4 })
+        #expect(motion.edges(cardsBehind: 4) == 4)
     }
 
-    /// The pose of level n: scaled by 4 % a level, and so low that its lower edge is `peek` points below that of the
-    /// level above.
-    @Test func theEdgesOfTheStackShowBelowTheCardByPeek() {
+    /// The edges of the stack: 3 pt lower and 2 pt narrower on each side than the one above, five at most, fainter with
+    /// depth, and the room under the card is the same whether or not there are any.
+    @Test func theEdgesAreLowerAndNarrowerWithDepth() {
+        #expect(StackPose.maxEdges == 5)
         for level in 1...StackPose.maxEdges {
-            let height: CGFloat = 500
-            let peek: CGFloat = 6
-            let bottom = height / 2 + StackPose.offset(level, height: height, peek: peek) + StackPose.scale(level) * height / 2
-            #expect(abs(bottom - (height + peek * CGFloat(level))) < 0.001)
+            #expect(StackPose.drop(level) == 3 * CGFloat(level))
+            #expect(StackPose.width(level, cardWidth: 343) == 343 - 4 * CGFloat(level))
+            #expect(StackPose.faintness(level) > 0 && StackPose.faintness(level) <= 1)
+            if level > 1 { #expect(StackPose.faintness(level) < StackPose.faintness(level - 1)) }
         }
+        #expect(StackPose.reserve(peek: 6) == StackPose.drop(StackPose.maxEdges))
     }
 
     @Test func theBurstSwellsAndFades() {

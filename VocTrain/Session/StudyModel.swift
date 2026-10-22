@@ -66,6 +66,8 @@ final class StudyModel: Identifiable {
     private(set) var returnedByUndo = false
     /// Where each undoable step sent its card, one entry per step: what Undo plays backwards.
     private var destinations: [GradeReceipt.Destination] = []
+    /// The receipt of each step, in step with `destinations`; `nil` for a step that gave no grade.
+    private var receipts: [GradeReceipt?] = []
     private var undoIsComing = false
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
@@ -239,6 +241,7 @@ final class StudyModel: Identifiable {
             return nil
         }
         destinations.append(receipt.destination)
+        receipts.append(receipt)
         stepLanes.append(lane)
         return receipt
     }
@@ -250,6 +253,7 @@ final class StudyModel: Identifiable {
         let lane = current
         if driver.suspendCurrentCard() {
             destinations.append(.away)
+            receipts.append(nil)
             stepLanes.append(lane)
         }
     }
@@ -296,6 +300,10 @@ final class StudyModel: Identifiable {
         guard canUndo, let from = destinations.last else { return nil }
         return UndoReturn(from: from, fromRest: isResting)
     }
+
+    /// The grade Undo takes back, for the edge the card comes back by and the step the ring gives back; `nil`
+    /// where the step gave none, a suspension.
+    var undoReceipt: GradeReceipt? { receipts.last ?? nil }
 
     /// Takes back the last review or suspension of this stream, like Undo in the menu.
     func undoLast() {
@@ -350,6 +358,8 @@ extension StudyModel: SessionDriverDelegate {
         }
         destinations.removeLast(max(0, destinations.count - steps))
         while destinations.count < steps { destinations.append(.away) }
+        receipts.removeLast(max(0, receipts.count - steps))
+        while receipts.count < steps { receipts.append(nil) }
         undoIsComing = lanes[index].document.undoManager?.isUndoing == true
     }
 }

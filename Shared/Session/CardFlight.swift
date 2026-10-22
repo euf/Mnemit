@@ -261,17 +261,11 @@ extension Color {
 struct FlightCard<Content: View>: View {
     var flight: CardFlight
     var content: Content
-    /// What rides on the card while it leaves, "in 8 days" (`GradeReceipt.flightLabel`), with how
-    /// much of it shows: it fades in as the card sets off.
-    var badge: String?
-    var badgeOpacity = 1.0
 
     private let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
 
-    init(flight: CardFlight, badge: String? = nil, badgeOpacity: Double = 1, @ViewBuilder content: () -> Content) {
+    init(flight: CardFlight, @ViewBuilder content: () -> Content) {
         self.flight = flight
-        self.badge = badge
-        self.badgeOpacity = badgeOpacity
         self.content = content()
     }
 
@@ -284,12 +278,6 @@ struct FlightCard<Content: View>: View {
                 .animation(.easeOut(duration: 0.12), value: flight.tint)
             text
             shape.strokeBorder(Color.primary.opacity(0.12))
-            if let badge {
-                FlightBadge(text: badge)
-                    .opacity(badgeOpacity)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, Spacing.margin)
-            }
         }
         .compositingGroup()
         .geometryGroup()
@@ -307,27 +295,6 @@ struct FlightCard<Content: View>: View {
         #else
         content
         #endif
-    }
-}
-
-/// The small capsule on a card that leaves: where it goes, "tomorrow", "in 3 months", "again today",
-/// "suspended · leech". The card's tint is a colour of its grade, so the capsule is in the colour of
-/// the card's surface and the label in the primary colour, as the card's own text is.
-struct FlightBadge: View {
-    var text: String
-
-    var body: some View {
-        Text(verbatim: text)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.primary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .padding(.horizontal, Spacing.gap)
-            .padding(.vertical, Spacing.hairline + 1)
-            .background { Capsule().fill(Color.cardSurface) }
-            .overlay { Capsule().strokeBorder(Color.primary.opacity(0.12)) }
-            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-            .accessibilityHidden(true)
     }
 }
 

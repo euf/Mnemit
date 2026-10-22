@@ -304,24 +304,25 @@ struct StudyScreenSnapshotTests {
         after.isHidden = true
     }
 
-    /// The card in the air with its label on it, `progress` of the way along: into the ring in the bar
-    /// (the ring's place and the card's are the ones the views report), under the stack, off to the side
-    /// for a leech, and with Reduce Motion where it was, half faded. The next card is on top already.
+    /// The card on its way past the edge, `progress` of the way along, with nothing written on it: a done card (the ring
+    /// in the bar stepped, "in 8 days" beside it, the stack a sheet thinner), a card back today (the stack lacks its
+    /// edge until the card is under it), the same card as a blank sheet half way under the stack, a leech, and with
+    /// Reduce Motion where it was, half faded. The next card is on top already.
     @Test(arguments: [false, true])
     func theCardInTheAir(dark: Bool) async throws {
-        let cases: [(name: String, receipt: GradeReceipt, progress: Double, reduceMotion: Bool, drag: CGSize)] = [
-            ("22-flight-ring", GradeReceipt(grade: .good, interval: .days(8)), 0.5, false, CGSize(width: 130, height: -20)),
-            ("23-flight-ring-late", GradeReceipt(grade: .easy, interval: .days(95)), 0.8, false, CGSize(width: 25, height: -120)),
-            ("24-flight-stack", GradeReceipt(grade: .again, interval: .learning), 0.55, false, CGSize(width: -110, height: 15)),
-            ("25-flight-leech", GradeReceipt(grade: .again, interval: .days(3), isLeech: true), 0.35, false, CGSize(width: -110, height: 15)),
-            ("26-flight-reduced", GradeReceipt(grade: .good, interval: .days(1)), 0.5, true, .zero),
+        let cases: [(name: String, receipt: GradeReceipt, progress: Double, sheet: Double?, reduceMotion: Bool, drag: CGSize)] = [
+            ("22-leaving-done", GradeReceipt(grade: .good, interval: .days(8), gain: 1), 0.5, nil, false, CGSize(width: 130, height: -20)),
+            ("23-leaving-back-today", GradeReceipt(grade: .hard, interval: .learning, gain: 0.5), 0.5, nil, false, CGSize(width: 60, height: 120)),
+            ("24-sheet-under-stack", GradeReceipt(grade: .again, interval: .learning), 1, 0.5, false, CGSize(width: -110, height: 15)),
+            ("25-leaving-leech", GradeReceipt(grade: .again, interval: .days(3), isLeech: true), 0.35, nil, false, CGSize(width: -110, height: 15)),
+            ("26-leaving-reduced", GradeReceipt(grade: .good, interval: .days(1), gain: 1), 0.5, nil, true, .zero),
         ]
         for item in cases {
             let (model, ring, _, _) = try await prepareRound(done: 1)
             model.reveal()
             let flight = CardFlight()
             let motion = StudyMotion(ring: ring)
-            motion.frozen = StudyMotion.Frozen(departure: item.progress)
+            motion.frozen = StudyMotion.Frozen(departure: item.progress, sheet: item.sheet)
             let window = try await host(model, ring: ring, flight: flight, motion: motion, dark: dark)
             #expect(motion.ringHome.width > 0, "the ring in the bar reports its place")
             #expect(motion.cardSlot.width > 0, "the card reports its place")
@@ -330,15 +331,17 @@ struct StudyScreenSnapshotTests {
                 flight.drag(item.drag, from: start, isRevealed: true)
             }
             let card = try #require(model.currentCard)
-            motion.depart(card, receipt: item.receipt, release: flight.release, velocity: .zero, behind: model.cardsBehind, peek: 6, reduceMotion: item.reduceMotion)
+            motion.depart(card, receipt: item.receipt, release: flight.release, velocity: .zero, behind: model.cardsBehind, reduceMotion: item.reduceMotion)
             flight.didRelease(item.receipt.grade)
-            try await Task.sleep(for: .milliseconds(800))
+            // The ring's burst is in the air at this time.
+            try await Task.sleep(for: .milliseconds(400))
             try write(window, name: item.name, dark: dark)
             window.isHidden = true
         }
     }
 
-    /// The stack: three cards left in the round show as three blank edges under the card, one as one.
+    /// The stack: three cards left in the round show as three edges under the card, hairlines each lower and narrower than the
+    /// one above, one as one.
     @Test(arguments: [false, true])
     func theStackOfTheRound(dark: Bool) async throws {
         for (name, done) in [("27-stack-3", 0), ("28-stack-1", 2)] {

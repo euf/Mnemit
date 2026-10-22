@@ -212,7 +212,7 @@ struct StudyView: View {
         // A card of its own for each question: the one under rises into place from the stack.
         .id(model.questionNumber)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background { CardStack(edges: min(model.cardsBehind, StackPose.maxEdges), peek: peek, dealt: false) }
+        .background { CardStack(edges: motion.edges(cardsBehind: model.cardsBehind), sheets: motion.sheets, frozenSheet: motion.frozen?.sheet, dealt: false) }
         .environment(\.speakerPlaces, speakers)
         .coordinateSpace(name: SpeakerPlaces.space)
         .onGeometryChange(for: CGRect.self) {
@@ -293,11 +293,11 @@ struct StudyView: View {
             return
         }
         flight.didRelease(grade)
-        motion.depart(card, receipt: receipt, release: release, velocity: velocity, behind: behind, peek: peek, reduceMotion: reduceMotion)
+        motion.depart(card, receipt: receipt, release: release, velocity: velocity, behind: behind, reduceMotion: reduceMotion)
         // The label is gone in a moment.
         AccessibilityNotification.Announcement(receipt.announcement).post()
         if model.isResting {
-            motion.restBegan(afterLanding: receipt.destination == .ring, reduceMotion: reduceMotion)
+            motion.restBegan(afterExit: receipt.destination == .ring, reduceMotion: reduceMotion)
         }
     }
 
@@ -308,22 +308,21 @@ struct StudyView: View {
 
     private var canUndo: Bool { model.canUndo && !motion.isChoreographing }
 
-    /// Takes back the last grade the way it went: the card comes back out of the ring, which gives its step
-    /// back, or up from under the stack, with its answer showing. From the rest the ring goes up to the bar first.
+    /// Takes back the last grade the way it went: the card comes back in from the edge it left by, with its answer
+    /// showing, and the ring gives the grade's step back. From the rest the ring goes up to the bar first.
     private func undo() {
         guard canUndo, let target = model.undoReturn else { return }
-        let behind = model.cardsBehind
-        let arrival = motion.returnArrival(from: target.from, behind: behind, peek: peek, reduceMotion: reduceMotion)
-        let retracts = target.from == .ring
+        let receipt = model.undoReceipt
+        let arrival = motion.returnArrival(receipt, reduceMotion: reduceMotion)
         if target.fromRest {
             motion.leaveRest(
                 snapshot: model.rest, reduceMotion: reduceMotion, cardsAfter: StudyMotion.Timing.travel, arrival: arrival,
                 apply: { model.undoLast() }, didLeave: { !model.isResting },
-                then: { if retracts { motion.retractStep() } })
+                then: { motion.undone(receipt, reduceMotion: reduceMotion) })
         } else {
             motion.arrival = arrival
             model.undoLast()
-            if retracts { motion.retractStep() }
+            motion.undone(receipt, reduceMotion: reduceMotion)
         }
     }
 
@@ -454,12 +453,13 @@ private struct StudyHeader: View {
         .animation(.easeOut(duration: 0.2), value: motion.showsRest && motion.travel >= 1)
     }
 
-    /// "Round 2 of 4" while rounds remain, "36 cards today" after them, beside a small ring.
+    /// A small ring, and beside it the time left, "≈ 4 min", while the goal is open, or "36 cards today" once it is
+    /// met. For a moment after a done card the interval it was given, "in 8 days", takes their place.
     @ViewBuilder
     private var ringAndFigures: some View {
         let daily = ring.progress?.ring
         HStack(spacing: 8) {
-            StreamRing(progress: ring.progress, shown: motion.shown)
+            StreamRing(progress: ring.progress, shown: motion.shown, burstAt: reduceMotion ? nil : motion.barBurstAt)
                 .ringBump(motion.landings, reduceMotion: reduceMotion)
                 .opacity(motion.travels ? 0 : 1)
                 .onGeometryChange(for: CGRect.self) {
@@ -468,16 +468,22 @@ private struct StudyHeader: View {
                     motion.ringHome = $0
                 }
             if let daily {
-                HStack(spacing: 4) {
+                ZStack(alignment: .leading) {
                     if daily.isGoalMet {
                         Text("\(daily.done) cards today")
-                    } else {
-                        Text("\(daily.done) of \(daily.goal) cards")
-                        if let minutes = ring.progress?.minutesLeft {
-                            Text(verbatim: "· " + Format.timeLeft(minutes: minutes))
-                        }
+                            .opacity(motion.interval == nil ? 1 : 0)
+                    } else if let minutes = ring.progress?.minutesLeft {
+                        Text(verbatim: Format.timeLeft(minutes: minutes))
+                            .opacity(motion.interval == nil ? 1 : 0)
+                    }
+                    if let interval = motion.interval {
+                        Text(verbatim: interval)
+                            .transition(.opacity)
+                            // VoiceOver has it from the announcement of the grade.
+                            .accessibilityHidden(true)
                     }
                 }
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: motion.interval)
                 .font(.subheadline)
                 .monospacedDigit()
                 .lineLimit(1)
@@ -485,6 +491,10 @@ private struct StudyHeader: View {
             }
         }
         .accessibilityElement(children: .combine)
+        // A grade that adds only a part of a card changes the figures and not the count of done cards.
+        .onChange(of: ring.progress?.ring.fraction) {
+            motion.figuresChanged()
+        }
     }
 }
 
@@ -493,15 +503,18 @@ private struct StudyHeader: View {
 /// is calm. As big as the figures beside it need for "×2", and it grows with the text size up
 /// to a ceiling, as the bar has only so much height. VoiceOver reads the lap ("Lap 2") with the
 /// figures beside it, which the bar combines into one element. `shown` is what the ring shows as
-/// done when it is ahead of the figures, a card having landed in it.
+/// done when it is ahead of the figures, a grade having stepped it. `burstAt` starts the small burst around it.
 struct StreamRing: View {
     var progress: DailyProgress?
     var shown: Double?
+    var burstAt: Date?
     @ScaledMetric(relativeTo: .subheadline) private var diameter: CGFloat = 30
 
     var body: some View {
-        ProgressRing(
-            fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44), center: RingCenter(progress, inStream: true),
-            speaksCenter: true)
+        RingBurst(startedAt: burstAt, diameter: min(diameter, 44)) {
+            ProgressRing(
+                fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44), center: RingCenter(progress, inStream: true),
+                speaksCenter: true)
+        }
     }
 }

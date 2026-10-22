@@ -65,9 +65,10 @@ private struct PathMotion: ViewModifier {
     }
 }
 
-/// A card that has been graded, flying on as a card of its own from the pose it was let go in: into the
-/// ring (shrinking, with its label on it), under the stack, or off the screen. It takes no touch; the
-/// card that was under it is on top already. With Reduce Motion it stays where it is and fades, the label on it.
+/// A card that has been graded, going on as a card of its own from the pose it was let go in, with the finger's
+/// speed, until it is off the screen. It takes no touch; the card that was under it is on top already. Nothing
+/// is written on it: a label on a card that is leaving is never read. With Reduce Motion it stays where it is
+/// and fades.
 struct DepartingCard: View {
     var departure: Departure
     /// A picture's instant: how far along its way the card is.
@@ -78,7 +79,6 @@ struct DepartingCard: View {
     @State private var y: Double
     @State private var q: Double
     @State private var o: Double
-    @State private var badge: Double
 
     init(departure: Departure, frozen: Double? = nil) {
         self.departure = departure
@@ -89,7 +89,6 @@ struct DepartingCard: View {
         _y = State(initialValue: progress)
         _q = State(initialValue: progress)
         _o = State(initialValue: max(0, (progress - 0.7) / 0.3))
-        _badge = State(initialValue: frozen == nil ? 0 : 1)
     }
 
     var body: some View {
@@ -109,7 +108,7 @@ struct DepartingCard: View {
 
     private func flies(along path: CardPath) -> some View {
         let shift = CGSize(width: path.end.width - departure.release.offset.width, height: path.end.height - departure.release.offset.height)
-        return FlightCard(flight: flight, badge: departure.label, badgeOpacity: badge) {
+        return FlightCard(flight: flight) {
             CardFace(card: departure.card, isRevealed: true)
         }
         .modifier(
@@ -118,34 +117,24 @@ struct DepartingCard: View {
                 curves: .forward(velocity: departure.velocity, shift: shift, duration: StudyMotion.Timing.flight)))
     }
 
-    /// Where the card has turned to by the end: a card sent off keeps turning the way it went, and one
-    /// that lands in the ring or under the stack comes straight.
+    /// Where the card has turned to by the end: it keeps turning the way it went.
     private var turn: Angle {
-        guard departure.destination == .away else { return .degrees(-departure.release.rotation.degrees) }
         let rotation = departure.release.rotation.degrees
         let direction = rotation != 0 ? (rotation > 0 ? 1.0 : -1.0) : (departure.path.map { $0.end.width >= 0 ? 1.0 : -1.0 } ?? 1)
         return .degrees(direction * CardFlight.maxRotation - rotation)
     }
 
     private var fades: some View {
-        ZStack {
-            FlightCard(flight: flight) {
-                CardFace(card: departure.card, isRevealed: true)
-            }
-            .opacity(1 - o)
-            .animation(.easeOut(duration: StudyMotion.Timing.fade), value: o)
-            if let label = departure.label {
-                FlightBadge(text: label)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, Spacing.margin)
-            }
+        FlightCard(flight: flight) {
+            CardFace(card: departure.card, isRevealed: true)
         }
+        .opacity(1 - o)
+        .animation(.easeOut(duration: StudyMotion.Timing.fade), value: o)
     }
 
     private func begin() {
         guard frozen == nil else { return }
         flight.tintFully(departure.grade)
-        withAnimation(.easeOut(duration: 0.12)) { badge = 1 }
         x = 1
         y = 1
         q = 1
@@ -154,13 +143,12 @@ struct DepartingCard: View {
 }
 
 /// The card on top of the stack and how it came there. It rises out of the stack where it was the next
-/// card: from the pose of level 1, a little smaller and lower, to its place, its words fading in over
-/// 0.15 s. Undo's card comes back along the way it went (`CardArrival.returns`), from the ring or from under
-/// the stack. The card is the same view as ever (`FlightCard`), so the finger moves it at once.
+/// card: from the pose of level 1, a little narrower and lower, to its place, its words fading in over
+/// 0.15 s. Undo's card comes back along the way it went (`CardArrival.returns`), in from the edge it left by.
+/// The card is the same view as ever (`FlightCard`), so the finger moves it at once.
 struct TopCard<Face: View>: View {
     var flight: CardFlight
     var arrival: CardArrival
-    var peek: CGFloat
     /// A picture's instant: how far the rising card has come, 0 to 1.
     var frozenRise: Double?
     var face: Face
@@ -172,10 +160,10 @@ struct TopCard<Face: View>: View {
     @State private var q: Double
     @State private var o: Double
 
-    init(flight: CardFlight, arrival: CardArrival, peek: CGFloat, frozenRise: Double? = nil, @ViewBuilder face: () -> Face) {
+    /// `peek` is the old step of the edges, which they no longer take from the screen (`StackPose.step`).
+    init(flight: CardFlight, arrival: CardArrival, peek _: CGFloat, frozenRise: Double? = nil, @ViewBuilder face: () -> Face) {
         self.flight = flight
         self.arrival = arrival
-        self.peek = peek
         self.frozenRise = frozenRise
         self.face = face()
         let rises = arrival == .rises
@@ -197,11 +185,17 @@ struct TopCard<Face: View>: View {
                 .animation(.easeOut(duration: 0.15), value: words)
         }
         .modifier(returning)
-        .scaleEffect(StackPose.scale(1) + (1 - StackPose.scale(1)) * rise)
+        .scaleEffect(x: narrow + (1 - narrow) * rise, y: 1)
         .animation(Self.rising, value: rise)
-        .offset(y: StackPose.offset(1, height: flight.size.height, peek: peek) * (1 - rise))
+        .offset(y: StackPose.drop(1) * (1 - rise))
         .animation(Self.rising, value: rise)
         .onAppear(perform: begin)
+    }
+
+    /// How wide the card is in the pose of level 1, as a share of its width.
+    private var narrow: CGFloat {
+        let width = flight.size.width
+        return width > 0 ? StackPose.width(1, cardWidth: width) / width : 1
     }
 
     /// The way back, from `path` to the place of the card; a card that did not come back by Undo has none.
@@ -226,49 +220,90 @@ struct TopCard<Face: View>: View {
     }
 }
 
-/// The cards under the top one, as blank faces: up to three edges, each a little smaller than the one
-/// above and a little lower, with nothing written on them. They are behind the card and show only below it.
-/// When the stack is dealt, as a round begins, the edges spread out from under the top card one after
-/// the other.
+/// The cards under the top one, as the edges of a book's pages: up to `StackPose.maxEdges` hairline outlines
+/// under the card's bottom edge, each a little lower and narrower than the one above, fainter with depth.
+/// They are behind the card and show only below it. A card that went back today comes in as a blank sheet by
+/// the edge it left by, slides under the stack, and becomes the deepest edge. When the stack is dealt, as a
+/// round begins, the edges spread out from under the top card one after the other.
 struct CardStack: View {
     /// The edges to show, at most `StackPose.maxEdges`; 0 is no stack.
     var edges: Int
-    var peek: CGFloat
+    var sheets: [Sheet] = []
+    /// A picture's instant: how far the sheets have slid, 0 to 1.
+    var frozenSheet: Double?
     @State private var isSpread: Bool
 
-    init(edges: Int, peek: CGFloat, dealt: Bool = true) {
+    init(edges: Int, sheets: [Sheet] = [], frozenSheet: Double? = nil, dealt: Bool = true) {
         self.edges = edges
-        self.peek = peek
+        self.sheets = sheets
+        self.frozenSheet = frozenSheet
         _isSpread = State(initialValue: !dealt)
     }
 
     var body: some View {
         GeometryReader { proxy in
             ZStack {
+                ForEach(sheets) { sheet in
+                    SheetOnItsWay(sheet: sheet, size: proxy.size, frozen: frozenSheet)
+                        .transition(.opacity)
+                }
                 ForEach((1...StackPose.maxEdges).reversed(), id: \.self) { level in
                     if level <= edges {
-                        edge(level, height: proxy.size.height)
+                        page(level, size: proxy.size, spread: isSpread)
+                            .transition(.opacity)
                     }
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .animation(.smooth(duration: 0.25), value: edges)
+            .animation(.smooth(duration: 0.25), value: sheets.map(\.id))
         }
         .onAppear { isSpread = true }
         .accessibilityHidden(true)
         .allowsHitTesting(false)
     }
 
-    private func edge(_ level: Int, height: CGFloat) -> some View {
+    /// The edge of `level`: a blank page the width and place its level gives it.
+    private func page(_ level: Int, size: CGSize, spread: Bool) -> some View {
+        Self.page(width: spread ? StackPose.width(level, cardWidth: size.width) : size.width, height: size.height, faintness: StackPose.faintness(level))
+            .offset(y: spread ? StackPose.drop(level) : 0)
+            .animation(.spring(duration: 0.4, bounce: 0.2).delay(0.05 * Double(level)), value: spread)
+    }
+
+    /// A blank sheet: the card's shape, its surface, a hairline round it.
+    static func page(width: CGFloat, height: CGFloat, faintness: Double) -> some View {
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         return
             shape
             .fill(Color.cardSurface)
-            .overlay { shape.strokeBorder(Color.primary.opacity(0.12)) }
-            .scaleEffect(isSpread ? StackPose.scale(level) : 1)
-            .offset(y: isSpread ? StackPose.offset(level, height: height, peek: peek) : 0)
-            .animation(.spring(duration: 0.4, bounce: 0.2).delay(0.05 * Double(level)), value: isSpread)
-            .transition(.opacity)
+            .overlay { shape.strokeBorder(Color(.separator).opacity(faintness), lineWidth: 1) }
+            .frame(width: width, height: height)
+    }
+}
+
+/// A sheet on its way from the edge of the screen to its place under the stack: from the size of the card,
+/// where the card left, to the width and depth of the edge it becomes.
+private struct SheetOnItsWay: View {
+    var sheet: Sheet
+    var size: CGSize
+    var frozen: Double?
+    @State private var along: Double
+
+    init(sheet: Sheet, size: CGSize, frozen: Double?) {
+        self.sheet = sheet
+        self.size = size
+        self.frozen = frozen
+        _along = State(initialValue: frozen ?? 0)
+    }
+
+    var body: some View {
+        CardStack.page(
+            width: size.width + (StackPose.width(sheet.level, cardWidth: size.width) - size.width) * along, height: size.height,
+            faintness: 1 - (1 - StackPose.faintness(sheet.level)) * along
+        )
+        .offset(x: sheet.from.width * (1 - along), y: sheet.from.height * (1 - along) + StackPose.drop(sheet.level) * along)
+        .animation(.spring(duration: StudyMotion.Timing.sheet, bounce: 0.1), value: along)
+        .onAppear { if frozen == nil { along = 1 } }
     }
 }
 

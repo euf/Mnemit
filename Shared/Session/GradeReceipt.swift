@@ -32,14 +32,14 @@ struct GradeReceipt: Equatable {
         detail.map { "\(title) · \($0)" } ?? title
     }
 
-    /// Where the card goes when it is graded, which decides how it leaves the screen on the iPhone.
+    /// Where the card goes when it is graded, which decides what the screen does after it has left on the iPhone.
     enum Destination: Equatable {
-        /// To another day, so the card is done: it flies into the ring in the bar.
+        /// To another day, so the card is done: it leaves, the stack loses a sheet, the ring steps and bursts.
         case ring
-        /// Back today, in a learning step or after a lapse: it tucks under the stack of the round.
+        /// Back today, in a learning step or after a lapse: it leaves and comes back in as a sheet under the stack.
         case stack
         /// Nowhere the screen shows: a practice, which schedules nothing, or a leech, which
-        /// is suspended. The card flies out in the direction of its grade.
+        /// is suspended. The card leaves and that is all.
         case away
     }
 
@@ -52,15 +52,15 @@ struct GradeReceipt: Equatable {
         }
     }
 
-    /// What rides on the card while it leaves: "tomorrow", "in 8 days", "in 3 months", "again today",
-    /// "suspended · leech"; `nil` in practice.
+    /// What the bar says beside the ring for a moment after a done card: "tomorrow", "in 8 days", "in 3 months";
+    /// "again today" and "suspended · leech" for the others; `nil` in practice.
     var flightLabel: String? {
         if isLeech { return String(localized: "suspended · leech") }
         if case .days(1) = interval { return String(localized: "tomorrow") }
         return interval.map { Format.interval($0) }
     }
 
-    /// What VoiceOver announces as the card leaves, since the label is gone in a moment: "Good, in 8 days".
+    /// What VoiceOver announces as the card leaves, since the interval is gone in a moment: "Good, in 8 days".
     var announcement: String {
         [title, flightLabel].compactMap { $0 }.joined(separator: ", ")
     }
