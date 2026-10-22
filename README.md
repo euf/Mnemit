@@ -89,8 +89,9 @@ are in [`references/`](references/).
   recognition. A word's production card therefore unlocks once its recognition card has an
   interval of 7 days, which on the default parameters is after the first spaced review passed
   (the lock is a deck option; 0 turns it off for words already known). Production cards have
-  their own daily limit, and siblings are buried for the day so one card does not answer the
-  other. No study compares introducing the second direction later with introducing it together;
+  their own daily limit and come oldest learned word first (by the first review of the
+  recognition card), whatever the new-card order; siblings are buried for the day so one card
+  does not answer the other. No study compares introducing the second direction later with introducing it together;
   the numbers and sources are in [references/production-cards-research.md](references/production-cards-research.md).
 - **Difficult cards** (leeches) after 8 lapses, as a filter in the browser.
 
