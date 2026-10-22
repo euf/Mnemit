@@ -320,9 +320,11 @@ struct StudyModelTests {
     @Test func undoAcrossARoundBoundaryBringsTheCardBackAndTakesTheRestAway() throws {
         let (document, undoManager) = try makeDueDocument(count: 5)
         let model = StudyModel(document: document, rounds: RoundGuide(ends: [2, 4, 5]))
-        done(2, model, undoManager: undoManager)
+        done(1, model, undoManager: undoManager)
+        // The card that ends the round, as the stream shows it: the stream's order is its own.
+        let second = try #require(model.currentCard)
+        done(1, model, undoManager: undoManager)
         #expect(model.isRoundRest)
-        let second = try #require(document.deck.cards.first { $0.log.count == 2 })
 
         // The chip at the rest takes back the review that ended the round.
         undoManager.undo()
