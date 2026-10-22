@@ -1648,7 +1648,7 @@
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld από 7 κύκλους έκλεισαν αυτή την εβδομάδα"
+            "value": "%lld από τους 7 κύκλους έκλεισαν αυτή την εβδομάδα"
           }
         },
         "ru": {
@@ -4495,7 +4495,7 @@
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Προλάβε"
+            "value": "Αναπλήρωση"
           }
         },
         "ru": {
@@ -8923,7 +8923,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Следующая оценка %@"
+            "value": "Следующее повторение %@"
           }
         }
       }
