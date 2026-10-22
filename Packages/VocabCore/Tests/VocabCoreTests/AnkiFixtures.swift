@@ -195,6 +195,8 @@ enum AnkiFixtures {
         var name = "Basic"
         var fields = ["Front", "Back"]
         var templates = ["{{Front}}"]
+        /// The answer template of each card; a card without one has an empty one.
+        var answers: [String] = []
         var isCloze = false
     }
 
@@ -212,7 +214,7 @@ enum AnkiFixtures {
             models[String(type.id)] = [
                 "name": type.name, "type": type.isCloze ? 1 : 0,
                 "flds": type.fields.enumerated().map { ["name": $0.element, "ord": $0.offset] },
-                "tmpls": type.templates.enumerated().map { ["name": "Card \($0.offset + 1)", "ord": $0.offset, "qfmt": $0.element, "afmt": ""] },
+                "tmpls": type.templates.enumerated().map { ["name": "Card \($0.offset + 1)", "ord": $0.offset, "qfmt": $0.element, "afmt": type.answers.indices.contains($0.offset) ? type.answers[$0.offset] : ""] },
             ]
         }
         let conf: [String: Any] = schedulerVersion.map { ["schedVer": $0] } ?? [:]
@@ -263,7 +265,9 @@ enum AnkiFixtures {
                 statements.append("INSERT INTO fields VALUES (\(type.id), \(ord), \(quoted(name)), X'')")
             }
             for (ord, format) in type.templates.enumerated() {
-                statements.append("INSERT INTO templates VALUES (\(type.id), \(ord), 'Card \(ord + 1)', \(hex(stringField(1, format))))")
+                // Template.Config: q_format is field 1, a_format field 2.
+                let answer = type.answers.indices.contains(ord) ? stringField(2, type.answers[ord]) : Data()
+                statements.append("INSERT INTO templates VALUES (\(type.id), \(ord), 'Card \(ord + 1)', \(hex(stringField(1, format) + answer)))")
             }
         }
         for (id, name) in decks {

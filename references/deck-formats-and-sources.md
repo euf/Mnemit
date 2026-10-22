@@ -61,6 +61,7 @@ The schema-14, 15, 17 and 18 upgrade scripts create or change `deck_config`, `co
 
 - `notes`: `id, guid, mid, mod, usn, tags, flds, sfld, csum, flags, data`. Fields are in `flds`, separated by the `0x1f` unit-separator character [H for the columns; the separator is [U] here, standard knowledge].
 - `cards`: `id, nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, left, odue, odid, flags, data`. `due` for review cards is days since the collection's creation (`col.crt`); for learning cards epoch seconds; for new cards a position. `type` 0 new, 1 learning, 2 review, 3 relearning; `queue` -3, -2 buried, -1 suspended [S, read from the AnkiDroid wiki]: https://github.com/ankidroid/Anki-Android/wiki/Database-Structure (undated wiki, mentions FSRS so edited after 2023).
+- Note types: fields by `ord` and card templates by `ord` with their question and answer formats. Schema 11: `col.models` JSON, `flds[].name` and `tmpls[].qfmt` / `tmpls[].afmt`. Schema 18: tables `fields` and `templates`, whose `config` is a protobuf `Template.Config` with `q_format = 1` and `a_format = 2` [H, measured: `AnkiImportTests.readsADeckWhoseSecondFieldIsAnImage` reads both from packages Anki 26.09.3 wrote]. Mnemit takes the front from the fields the question format shows and the back from those the answer format adds (`{{FrontSide}}` is no field), skipping a field that has no text. Shared decks put image and audio fields between the word and its translation, so the first two fields are a word and an image, not a front and a back: the Greek A2 deck of prep2go has `Front, Image, Audio, Back, ExamplesBlock, FrequencyBlock`, a question format `{{Front}} {{{Image}}` (a stray brace) and an answer format `{{FrontSide}} … {{Back}} {{{ExamplesBlock}} {{{FrequencyBlock}}` [H, measured 2026-10-22 on the file the app downloaded: schema 11 in `collection.anki21`, `meta` version 2, 75 notes with one card each, the Image field `<div><img></div>` in every note].
 - `revlog`: `id, cid, usn, ease, ivl, lastIvl, factor, time, type` [H]: schema11.sql. Semantics from rslib `RevlogEntry` [H]: https://github.com/ankitects/anki/blob/main/rslib/src/revlog/mod.rs
   - `id` is the review timestamp in epoch milliseconds; `cid` the card id.
   - `ease` is the button pressed, 1 to 4 (0 for manual rescheduling).
@@ -114,7 +115,7 @@ Minimal read recipe for Latest [I from the sources above]:
 2. Read `meta`; decode one varint field; version 3 means Latest, 2 means Legacy 2, absent means Legacy 1 or Legacy 2 by which collection entry exists.
 3. Decompress the collection entry with zstd when Latest; write it to a temp file.
 4. Open it with SQLite (system `libsqlite3` is enough; only `notes`, `cards`, `revlog`, and for names `decks` and `notetypes`/`fields` or the `col` JSON).
-5. Split `notes.flds` on `0x1f`; map fields to question and answer by the note type's field order.
+5. Split `notes.flds` on `0x1f`; map fields to question and answer by the fields the note type's question and answer templates show (see the note types above); where a template shows none, by the first two fields with text.
 6. For media, decompress `media` (zstd) and decode `MediaEntries` (three fields; hand-written protobuf varint reader is enough), then decompress entry `N` for each entry.
 7. Ignore `collection.anki2` when `meta` says 2 or 3.
 

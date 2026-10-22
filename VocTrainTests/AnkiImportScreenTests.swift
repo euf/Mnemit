@@ -133,6 +133,42 @@ struct AnkiImportScreenTests {
         #expect(anki.lines[1] == String(localized: "Anki's settings for this deck are not applied to an existing deck."))
     }
 
+    /// The shape of the shared deck that had imported with no card: the second field is an image.
+    @Test(arguments: ["media-fields-latest", "media-fields-legacy2"])
+    func aDeckWhoseSecondFieldIsAnImageGivesItsCardsAndSaysWhatItLeftOut(name: String) async throws {
+        let (document, _) = try makeDocument()
+        let preview = try await preview(name, for: document, isNewDeck: true)
+        let anki = try #require(preview.anki)
+        #expect(preview.candidates.map(\.card.question) == ["παίρνω", "χρόνος"])
+        #expect(preview.candidates.map(\.card.answer) == ["get", "time"])
+        #expect(anki.skippedMediaOnly == 2)
+        #expect(anki.skippedEmpty == 3)
+        #expect(
+            anki.skipLines == [
+                String(localized: "\(2) cards with only an image or a sound on a side are left out."),
+                String(localized: "\(1) cards with an empty side are left out."),
+            ])
+    }
+
+    @Test func aPackageWithNoCardSaysWhy() async throws {
+        let (document, _) = try makeDocument()
+        let package = AnkiImport(skippedCloze: 2, skippedMediaRefs: 70, skippedEmpty: 75, skippedMediaOnly: 70)
+        let preview = await CardImport.ankiPreview(of: package, fileName: "a.apkg", for: document)
+        #expect(preview.candidates.isEmpty)
+        let message = try #require(preview.anki).noCardsMessage(fileName: "a.apkg")
+        #expect(
+            message.components(separatedBy: "\n") == [
+                String(localized: "“\("a.apkg")” has no cards Mnemit can import."),
+                String(localized: "\(2) cloze cards are left out."),
+                String(localized: "\(70) cards with only an image or a sound on a side are left out."),
+                String(localized: "\(5) cards with an empty side are left out."),
+            ])
+
+        // An empty package has nothing to add to the first line.
+        let empty = await CardImport.ankiPreview(of: AnkiImport(), fileName: "b.apkg", for: document)
+        #expect(try #require(empty.anki).noCardsMessage(fileName: "b.apkg") == String(localized: "“\("b.apkg")” has no cards Mnemit can import."))
+    }
+
     @Test func cardsTheTargetDeckHasStartUncheckedAndTheHistoryIsReplayedWithItsOptions() async throws {
         let (document, _) = try makeDocument([Card(text: CardText(question: " Γάτα ", answer: "kitten")!, created: created)])
         let preview = try await preview("greek-latest", for: document)

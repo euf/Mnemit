@@ -332,8 +332,16 @@
 - Импорт Anki (`.apkg`, `.colpkg`; VocabCore, `Import/Anki`, экраны — следующий пункт): `AnkiImport.read(url)`
   читает три раскладки (`collection.anki2`, `.anki21`, `.anki21b` под zstd с protobuf `meta`) и
   отдаёт `notes` (front, back, `reviews`, `isSuspended`, `preset`), счётчики пропусков (`skippedCloze`,
-  `skippedMediaRefs`, `skippedEmpty`), `deckNames` и `presets`; синхронный и тяжёлый, звать не с главного
-  потока. Карточки с историей — `AnkiImport.cards(from:learningOptions:calendar:created:)`: состояние
+  `skippedMediaRefs`, `skippedEmpty`, из него `skippedMediaOnly` — сторона из одной картинки или
+  звука), `deckNames` и `presets`; синхронный и тяжёлый, звать не с главного
+  потока. Front и back берутся из шаблонов карточки (`AnkiCollection.sides(ofCardAt:…)`): front — первое
+  поле с текстом из тех, что показывает вопрос (`qfmt`), back — первое с текстом из тех, что ответ
+  (`afmt`) добавляет к вопросу (`{{FrontSide}}` не поле, `{{type:Поле}}` — окно ввода, оно
+  показывает поле только в ответе, лишняя `{` у `{{{Поле}}` отбрасывается). Поле из одной картинки
+  или звука текста не имеет, поэтому берётся следующее: у типа заметки «Front, Image, Audio, Back»
+  front — слово, back — перевод; остальные поля ответа (примеры, частотность) не импортируются.
+  Шаблон не читается или не показывает полей — берутся первые два поля с текстом. Карточки с
+  историей — `AnkiImport.cards(from:learningOptions:calendar:created:)`: состояние
   берётся повтором повторений через `Scheduler.replaying` с параметрами FSRS колоды (память самого
   Anki не читается), в колоду их кладёт `DeckChange.importing(_:into:learningOptions:)` (`adding` берёт
   только новые карточки без лога). Пресеты (`AnkiPreset`: имя, `parameters`, `desiredRetention`) идут
@@ -354,8 +362,11 @@
   `com.euf.mnemit.anki-package` (расширение `apkg`, conforms `public.zip-archive` и `public.data`),
   в обоих `Info.plist` — тип документа Viewer, `LSHandlerRank` Alternate. Предпросмотр тот же, что у
   CSV (`CardImport.Preview`, у пакета `anki: AnkiSummary` — названия колод Anki, сколько карточек с
-  историей, пропуски cloze, медиа, пустых); дубликаты по вопросу против целевой колоды без галки
-  (`CardImporter.candidates(of:existing:)`, общий с CSV). Пакет читает `CardImport.loadAnki(at:)`
+  историей, пропуски cloze, медиа, пустых; `skipLines` называет причины со счётом: cloze, «только
+  картинка или звук на стороне», «пустая сторона»); дубликаты по вопросу против целевой колоды без галки
+  (`CardImporter.candidates(of:existing:)`, общий с CSV). Пакет без карточек не пуст молча: «No Cards»
+  на iPhone и окно ошибки на Mac берут `AnkiSummary.noCardsMessage(fileName:)`, имя файла и те же
+  причины со счётом. Пакет читает `CardImport.loadAnki(at:)`
   вне главного потока (доступ, `NSFileCoordinator`), карточки считает `ankiPreview` там же:
   параметры FSRS и календарь берутся из целевой колоды, а у новой колоды (`isNewDeck`, без карточек)
   параметры и запоминаемость — из пресета Anki (`Preview.learningOptions`). «Add N Cards» —

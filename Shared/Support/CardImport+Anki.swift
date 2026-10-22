@@ -25,6 +25,8 @@ extension CardImport {
         /// Fields that had an image or a sound, which are left out of them.
         var skippedMediaRefs: Int
         var skippedEmpty: Int
+        /// Of `skippedEmpty`, the cards where a side held only an image or a sound.
+        var skippedMediaOnly = 0
         /// What became of the FSRS settings of the preset most cards use.
         var settings = Settings.absent
 
@@ -42,7 +44,28 @@ extension CardImport {
             deckNames.formatted(.list(type: .and, width: .narrow))
         }
 
-        /// One line each: the cards with history, the settings, then whatever was left out.
+        /// One line each for what was left out: cloze cards, cards with only an image or a sound on a
+        /// side, cards with an empty side. The other empty sides are those that nothing was left of.
+        var skipLines: [String] {
+            var lines: [String] = []
+            if skippedCloze > 0 {
+                lines.append(String(localized: "\(skippedCloze) cloze cards are left out."))
+            }
+            if skippedMediaOnly > 0 {
+                lines.append(String(localized: "\(skippedMediaOnly) cards with only an image or a sound on a side are left out."))
+            }
+            if skippedEmpty > skippedMediaOnly {
+                lines.append(String(localized: "\(skippedEmpty - skippedMediaOnly) cards with an empty side are left out."))
+            }
+            return lines
+        }
+
+        /// Why a package gives no card: the file, then what was left out.
+        func noCardsMessage(fileName: String) -> String {
+            ([String(localized: "“\(fileName)” has no cards Mnemit can import.")] + skipLines).joined(separator: "\n")
+        }
+
+        /// One line each: the cards with history, the settings, whatever was left out, then the media.
         var lines: [String] {
             var lines = [String(localized: "\(withHistory) with review history")]
             switch settings {
@@ -55,12 +78,7 @@ extension CardImport {
             case .keptForExistingDeck:
                 lines.append(String(localized: "Anki's settings for this deck are not applied to an existing deck."))
             }
-            if skippedCloze > 0 {
-                lines.append(String(localized: "\(skippedCloze) cloze cards are left out."))
-            }
-            if skippedEmpty > 0 {
-                lines.append(String(localized: "\(skippedEmpty) cards with an empty side are left out."))
-            }
+            lines += skipLines
             if skippedMediaRefs > 0 {
                 lines.append(String(localized: "Images and sounds are left out of \(skippedMediaRefs) fields."))
             }
@@ -110,7 +128,7 @@ extension CardImport {
             deckNames: package.deckNames, withHistory: cards.filter { !$0.log.isEmpty }.count,
             skippedCloze: package.skippedCloze, skippedMediaRefs: package.skippedMediaRefs,
             // The reader counts the notes with an empty side, `cards(from:…)` those that the text rules leave out.
-            skippedEmpty: package.skippedEmpty + package.notes.count - cards.count)
+            skippedEmpty: package.skippedEmpty + package.notes.count - cards.count, skippedMediaOnly: package.skippedMediaOnly)
         if let taken {
             summary.settings = .applied(target: Int((taken.targetRecall * 100).rounded()))
         } else if preset != nil {

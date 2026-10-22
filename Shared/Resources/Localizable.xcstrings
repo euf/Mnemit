@@ -353,6 +353,46 @@
         }
       }
     },
+    "%lld cards with only an image or a sound on a side are left out.": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte mit nur einem Bild oder Ton auf einer Seite wird ausgelassen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten mit nur einem Bild oder Ton auf einer Seite werden ausgelassen."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld card with only an image or a sound on a side is left out."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld cards with only an image or a sound on a side are left out."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld cloze cards are left out.": {
       "localizations": {
         "de": {
