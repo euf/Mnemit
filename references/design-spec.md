@@ -99,7 +99,7 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + summary 88 + 
 | Deck unreadable (iCloud) | row without counts | row stays tappable; the stream cover shows the existing failure view |
 | Accessibility sizes (`isAccessibilitySize`) | ring above the text (`AnyLayout` switch) | unchanged |
 
-The "no reviews, nothing due" case has a goal of 0 (`DailyGoal.goal(reviews: 0, owed: 0, plan: 0)`), which counts as met, so the ring is a track and the row hides the goal. The count is the plan of the day (`StudyCounts.total`), its share of the backlog included, never the whole backlog; the cards beyond the share are `StudyCounts.catchUp`, shown as a secondary line on Today, in the deck rows and on the rest screen.
+The "no reviews, nothing due" case has a goal of 0 (`DailyGoal.goal(reviews: 0, owed: 0, plan: 0)`), which counts as met, so the ring is a track and the row hides the goal. The count is the plan of the day (`StudyCounts.total`), its share of the backlog included (`DailyGoal.backlogShare(of:onTime:)`: a seventh of it, but at least what a normal day asks), never the whole backlog; the cards beyond the share are `StudyCounts.catchUp`, shown as a secondary line on Today, in the deck rows and on the rest screen.
 
 ### 2.5 Scope of Study
 

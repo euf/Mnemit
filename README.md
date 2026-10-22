@@ -47,9 +47,12 @@ are in [`references/`](references/).
 - **A backlog does not pile up on one day.** After an import or a break, the review cards
   that were already due before today ask a seventh of themselves, rounded up, of a day, the
   most forgotten first: 1,500 overdue cards add about 215 to the day's own cards, and the
-  count shown is the plan, never the whole backlog. Today says "+1,320 to catch up this
-  week" under it. "Keep Going" after "Done for today" works through the rest; those cards
-  are due, so the answers are ordinary reviews and count towards the laps.
+  count shown is the plan, never the whole backlog. A backlog is never asked for less than a
+  normal day asks, so one missed day is made up the next day: five overdue cards beside
+  thirty due today are thirty-five. Today says "+1,320 to catch up this week" under the
+  plan. "Keep Going" after "Done for today" works through the rest; those cards are due, so
+  the answers are ordinary reviews and count towards the laps. The size of a study session
+  in the deck options is the size of one segment of the stream and does not cut the plan.
 - **Two directions per word, one after the other.** Each word has a recognition card
   (Greek → meaning) and a production card (meaning → Greek). Production cards unlock only
   after the recognition card has an interval of 21 days, have their own daily limit, and
