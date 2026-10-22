@@ -161,6 +161,18 @@ struct DailyRoundsTests {
         #expect(rounds.minutesToNextRound(cardsDone: 17) == nil)
     }
 
+    @Test func eachRoundHasItsMinutesAtTheDaysPace() {
+        // 12 reviews at 10 s are 2 minutes; 4 new cards at 30 s are 2 more; the last new card, 30 s, is under one: 0.
+        let rounds = DayRounds(otherCards: 12, newCards: 5, pace: pace, capacity: 3)
+        #expect(rounds.ends == [12, 16, 17])
+        #expect(rounds.minutes(ofRound: 1) == 2)
+        #expect(rounds.minutes(ofRound: 2) == 2)
+        #expect(rounds.minutes(ofRound: 3) == 0)
+        #expect(rounds.minutes(ofRound: 0) == nil)
+        #expect(rounds.minutes(ofRound: 4) == nil)
+        #expect(DayRounds(otherCards: 0, newCards: 0, pace: pace, capacity: 2).minutes(ofRound: 1) == nil)
+    }
+
     @Test func aPriceBelowASecondIsASecond() {
         #expect(Pace(newCard: 0, otherCard: -3) == Pace(newCard: 1, otherCard: 1))
         #expect(DayRounds(otherCards: 3, newCards: 3, pace: Pace(newCard: 0, otherCard: 0), capacity: 1).goal == 6)

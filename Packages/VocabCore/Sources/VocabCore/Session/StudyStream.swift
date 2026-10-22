@@ -23,6 +23,12 @@ import Foundation
 ///
 /// New cards beyond the daily limits come only on request, as `addNewCards`.
 ///
+/// Inside the plan the stream also rests at the end of each round of the day but the last
+/// (`DayRounds`): `restAtRoundEnd(roundsDone:rounds:)` looks at how many rounds the cards done
+/// have ended, and `continueRound()` goes on. The rest holds the running segment, so no card is
+/// lost or asked twice. Which round the learner has gone through is part of the value, as
+/// everything else is, so undo and redo bring the rest back or take it away.
+///
 /// A stream from `init(practicingMistakesIn:at:calendar:random:)` or
 /// `init(practicingNewestWordsIn:at:random:)` does one practice and then rests
 /// (`isPracticeOnly`).
@@ -60,6 +66,13 @@ public struct StudyStream: Sendable {
 
     /// How many new cards `addNewCards` adds at most.
     public static let newCardChunk = 10
+
+    /// How many rounds of the day the learner has gone through: those that were done when the stream
+    /// began, and those they went on from at a rest. A round done beyond it is a rest to come.
+    public private(set) var roundsPassed = 0
+    /// The number of rounds done at the rest the stream is at inside the plan, "Round 1 done"; `nil`
+    /// when it is not at one. The segment goes on from here when `continueRound()` is called.
+    public private(set) var roundRest: Int?
 
     /// Stays the same for the whole stream: undo of a review brings back the stream of
     /// that review, even from another segment.
@@ -123,10 +136,12 @@ public struct StudyStream: Sendable {
     /// The part of the segment that study and practice share.
     public var session: Session { mode.session }
 
-    public var isResting: Bool { stage == .rest }
+    /// The stream waits for the learner: the plan is done, or the plan stops at the end of a round.
+    public var isResting: Bool { stage == .rest || roundRest != nil }
 
     /// Grades the current card of the segment, see `SessionMode.grade(_:in:at:calendar:duration:)`.
     public mutating func grade(_ grade: Grade, in deck: Deck, at now: Date, calendar: StudyCalendar, duration: Duration? = nil) -> SessionMode.Outcome? {
+        guard roundRest == nil else { return nil }
         let outcome = mode.grade(grade, in: deck, at: now, calendar: calendar, duration: duration)
         if outcome != nil { stepCount += 1 }
         return outcome
@@ -170,6 +185,33 @@ public struct StudyStream: Sendable {
         return true
     }
 
+    /// Starts the count of rounds at `rounds`: the rounds that are done before the stream is, which
+    /// it doesn't rest for.
+    public mutating func startRounds(at rounds: Int) {
+        roundsPassed = max(0, rounds)
+    }
+
+    /// Rests inside the plan if the cards done have ended a round that the learner has not been
+    /// through, and it is not the last: `roundsDone` of the day's `rounds`. The last round ends in
+    /// the rest of the plan, or in laps, as ever. Only the plan rests; call it as the driver moves
+    /// on, with the deck as it is, so that redo, which brings a stream back to the moment after a
+    /// review, finds the rest again.
+    ///
+    /// - Returns: Whether the stream rests now.
+    @discardableResult
+    public mutating func restAtRoundEnd(roundsDone: Int, rounds: Int) -> Bool {
+        guard stage == .plan, !isPracticeOnly, roundRest == nil, roundsDone > roundsPassed, roundsDone < rounds else { return roundRest != nil }
+        roundRest = roundsDone
+        return true
+    }
+
+    /// From a rest at the end of a round, goes on with the next one.
+    public mutating func continueRound() {
+        guard let rounds = roundRest else { return }
+        roundsPassed = rounds
+        roundRest = nil
+    }
+
     /// From rest, goes on beyond the plan: the rest of the backlog, else review ahead, else the
     /// practice of today's mistakes, else of the newest words.
     ///
@@ -204,6 +246,7 @@ public struct StudyStream: Sendable {
             deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: random.next()), reviewMode: reviewMode, extraNew: count,
             newCardAllowance: newCardAllowance)
         guard !plan.session.isFinished else { return false }
+        continueRound()
         install(.study(plan), as: .plan)
         return true
     }
@@ -251,6 +294,7 @@ public struct StudyStream: Sendable {
 
     private mutating func rest(at now: Date) {
         absorbRecap()
+        roundRest = nil
         stage = .rest
         mode = .study(StudySession(cardIDs: [], at: now, random: SeededRandom(seed: random.next()), reviewMode: reviewMode))
     }

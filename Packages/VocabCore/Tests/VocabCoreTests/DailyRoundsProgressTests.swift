@@ -255,6 +255,26 @@ extension DailyProgressTests {
         #expect(progress.streak == Streak(days: interval + 1, repairCards: nil))
     }
 
+    @Test func theProgressHoldsTheWordsInMemoryOfTheDecks() throws {
+        var deck = try Deck(learningOptions: options(), cards: (0..<30).map { due("r\($0)", onDay: today) })
+        let before = evaluate([deck])
+        #expect(before.memory.shownWords > 0)
+        #expect(before.memory.shownGain == 0)
+        review(12, of: &deck, at: now)
+        let after = evaluate([deck])
+        // The twelve reviewed today are back at full memory, which the day's start did not have.
+        #expect(after.memory.words > before.memory.words)
+        #expect(after.memory.shownGain > 0)
+        #expect(after.memory.wordsAtDayStart == before.memory.wordsAtDayStart)
+    }
+
+    @Test func aRoundHasItsMinutesWhateverTheRingHasCaughtUpWith() throws {
+        let deck = try Deck(learningOptions: options(), cards: (0..<40).map { due("r\($0)", onDay: today) })
+        let progress = evaluate([deck])
+        #expect(progress.minutes(ofRound: 1) == 2)
+        #expect(progress.minutes(ofRound: progress.rounds + 1) == nil)
+    }
+
     @Test func aDayWithAnEmptyPlanKeepsTheStreakAndTheRoundsAreNone() throws {
         let deck = try Deck(learningOptions: options(), cards: (0..<5).map { waiting("r\($0)", onDay: today + 3) })
         let progress = evaluate([deck])

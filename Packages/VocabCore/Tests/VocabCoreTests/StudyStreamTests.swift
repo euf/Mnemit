@@ -450,4 +450,123 @@ struct StudyStreamTests {
         #expect(run.stream.stage == .plan)
         #expect(run.deck.cards.allSatisfy { $0.log.isEmpty })
     }
+
+    // MARK: Rounds
+
+    /// Moves a run on as the driver does after a review: the deck says how many cards are done, and
+    /// the rounds that ended at `ends` say how many rounds that is.
+    func settle(_ run: inout Run, ends: [Int]) {
+        let done = run.deck.doneCards(onDayOf: now, calendar: calendar)
+        run.stream.restAtRoundEnd(roundsDone: ends.filter { $0 <= done }.count, rounds: ends.count)
+    }
+
+    @Test func theStreamRestsAtTheEndOfEachRoundButTheLastAndGoesOnFromThere() throws {
+        var run = try run((1...5).map { review("r\($0)") })
+        let ends = [2, 4, 5]
+        run.grade(.good)
+        settle(&run, ends: ends)
+        #expect(!run.stream.isResting)
+        run.grade(.good)
+        settle(&run, ends: ends)
+        #expect(run.stream.isResting)
+        #expect(run.stream.roundRest == 1)
+        #expect(run.stream.stage == .plan)
+        // The card to ask next is kept, and nothing is graded while the stream rests.
+        let next = try #require(run.currentID)
+        #expect(run.stream.grade(.good, in: run.deck, at: now, calendar: calendar) == nil)
+        #expect(run.currentID == next)
+        #expect(!run.stream.canKeepGoing(in: run.deck, at: now, calendar: calendar))
+
+        run.stream.continueRound()
+        settle(&run, ends: ends)
+        #expect(!run.stream.isResting)
+        #expect(run.stream.roundsPassed == 1)
+        #expect(run.currentID == next)
+        run.grade(.good)
+        run.grade(.good)
+        settle(&run, ends: ends)
+        #expect(run.stream.roundRest == 2)
+        run.stream.continueRound()
+        run.grade(.good)
+        settle(&run, ends: ends)
+        // The last round ends in the rest of the plan, not in one of its own.
+        #expect(run.stream.stage == .rest)
+        #expect(run.stream.roundRest == nil)
+        #expect(run.stream.roundsPassed == 2)
+    }
+
+    @Test func aRoundThatWasDoneBeforeTheStreamBeganIsNoRest() throws {
+        var run = try run((1...4).map { review("r\($0)") })
+        run.stream.startRounds(at: 1)
+        run.grade(.good)
+        run.grade(.good)
+        settle(&run, ends: [2, 4, 5])
+        #expect(!run.stream.isResting)
+        // The next one is.
+        run.grade(.good)
+        run.grade(.good)
+        settle(&run, ends: [3, 4, 6])
+        #expect(run.stream.stage == .rest)
+    }
+
+    @Test func undoBringsTheRoundRestBackAndTakesItAway() throws {
+        var run = try run((1...4).map { review("r\($0)") })
+        let ends = [2, 4]
+        run.grade(.good)
+        let beforeLast = run.stream
+        let deckBefore = run.deck
+        run.grade(.good)
+        settle(&run, ends: ends)
+        let atRest = run.stream
+        #expect(atRest.roundRest == 1)
+
+        // Undo takes back the review, and the stream before it was not at a rest.
+        run.deck = deckBefore
+        run.stream = beforeLast
+        settle(&run, ends: ends)
+        #expect(!run.stream.isResting)
+        #expect(run.stream.roundRest == nil)
+
+        // Redo gives the stream after the review: the rest comes with it.
+        run.stream = atRest
+        #expect(run.stream.roundRest == 1)
+        #expect(run.stream.isResting)
+    }
+
+    @Test func goingOnFromARestIsKeptByUndoOfTheNextReview() throws {
+        var run = try run((1...4).map { review("r\($0)") })
+        let ends = [2, 4]
+        run.grade(.good)
+        run.grade(.good)
+        settle(&run, ends: ends)
+        run.stream.continueRound()
+        let beforeThird = run.stream
+        let deckBefore = run.deck
+        run.grade(.good)
+        // What undo does: the deck, then the stream, which moves on without resting again.
+        run.deck = deckBefore
+        run.stream = beforeThird
+        settle(&run, ends: ends)
+        #expect(!run.stream.isResting)
+        #expect(run.stream.roundsPassed == 1)
+    }
+
+    @Test func newCardsAddedAtARestGoOnWithTheRound() throws {
+        var run = try run([review("r1"), review("r2"), fresh("n1"), fresh("n2")])
+        // A new card graded Good is still in its steps, so the cards are graded until two are done.
+        while run.deck.doneCards(onDayOf: now, calendar: calendar) < 2 { run.grade(.good) }
+        settle(&run, ends: [2, 4])
+        #expect(run.stream.roundRest == 1)
+        let added = run.stream.addNewCards(2, in: run.deck, at: now, calendar: calendar)
+        #expect(added)
+        #expect(!run.stream.isResting)
+        #expect(run.stream.roundsPassed == 1)
+    }
+
+    @Test func aPracticeOnlyStreamNeverRestsInsideItself() throws {
+        var stream = StudyStream(practicingNewestWordsIn: try Deck(cards: [fresh("a"), fresh("b")]), at: now)
+        let rests = stream.restAtRoundEnd(roundsDone: 1, rounds: 3)
+        #expect(!rests)
+        #expect(!stream.isResting)
+    }
 }
