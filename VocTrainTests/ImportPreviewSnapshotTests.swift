@@ -69,7 +69,7 @@ struct ImportPreviewSnapshotTests {
 
         let package = try await CardImport.loadAnki(at: AnkiImportScreenTests.fixture("greek-latest"))
         let preview = await CardImport.ankiPreview(of: package, fileName: "greek-latest.apkg", for: document)
-        #expect(preview.candidates.count == 6)
+        #expect(preview.candidates.count == 7)
         #expect(preview.anki?.withHistory == 4)
 
         let file = ImportedFile(ankiAt: AnkiImportScreenTests.fixture("greek-latest"), package: package)

@@ -313,6 +313,46 @@
         }
       }
     },
+    "%lld cards whose image or sound is missing from the package are left out.": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte, deren Bild oder Ton im Paket fehlt, wird ausgelassen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten, deren Bild oder Ton im Paket fehlt, werden ausgelassen."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld card whose image or sound is missing from the package is left out."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld cards whose image or sound is missing from the package are left out."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld cards with an empty side are left out.": {
       "localizations": {
         "de": {
@@ -346,46 +386,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld cards with an empty side are left out."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld cards with only an image or a sound on a side are left out.": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karte mit nur einem Bild oder Ton auf einer Seite wird ausgelassen."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karten mit nur einem Bild oder Ton auf einer Seite werden ausgelassen."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld card with only an image or a sound on a side is left out."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld cards with only an image or a sound on a side are left out."
                 }
               }
             }
@@ -479,6 +479,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld fällig"
+          }
+        }
+      }
+    },
+    "%lld images": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Bild"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Bilder"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld image"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld images"
+                }
+              }
+            }
           }
         }
       }
@@ -729,6 +769,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld s"
+          }
+        }
+      }
+    },
+    "%lld sounds": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Ton"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Töne"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sound"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sounds"
+                }
+              }
+            }
           }
         }
       }

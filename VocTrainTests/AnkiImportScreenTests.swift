@@ -8,8 +8,8 @@ import UniformTypeIdentifiers
 /// What the Anki import screens stand on: the routing of the URLs the app is opened with, the
 /// copy of a package that "Open in Mnemit" brings, the preview of a package with its counts and
 /// duplicates, and "Add N Cards" with the review history. The packages are the fixtures of
-/// VocabCore, made by Anki's own library: six cards, four of them with reviews, two cloze cards,
-/// two fields with media and one empty card left out.
+/// VocabCore, made by Anki's own library: seven cards, four of them with reviews, one with a picture
+/// for its back, two cloze cards, one sound the package lacks left out of a field.
 @MainActor @Suite(.timeLimit(.minutes(3)))
 struct AnkiImportScreenTests {
     let created = Date(timeIntervalSince1970: 1_791_216_000)
@@ -89,7 +89,7 @@ struct AnkiImportScreenTests {
         #expect(copy.deletingLastPathComponent().deletingLastPathComponent().standardizedFileURL == folder.standardizedFileURL)
         #expect(try Data(contentsOf: copy) == Data(contentsOf: Self.fixture("greek-legacy2")))
         // The copy reads as the original does.
-        #expect(try CardImport.readAnki(at: copy).notes.count == 6)
+        #expect(try CardImport.readAnki(at: copy).notes.count == 7)
 
         IncomingPackages.purge(folder)
         #expect(!FileManager.default.fileExists(atPath: copy.path))
@@ -116,21 +116,42 @@ struct AnkiImportScreenTests {
         let (document, _) = try makeDocument()
         let preview = try await preview(name, for: document)
         let anki = try #require(preview.anki)
-        #expect(preview.candidates.map(\.card.question) == ["γάτα", "σπίτι\nτο", "ήχος", "νερό", "water", "σκύλος"])
+        #expect(preview.candidates.map(\.card.question) == ["γάτα", "σπίτι\nτο", "εικόνα", "ήχος", "νερό", "water", "σκύλος"])
         #expect(anki.deckNames == ["Greek::Lesson 1"])
         #expect(anki.withHistory == 4)
         #expect(anki.skippedCloze == 2)
-        #expect(anki.skippedMediaRefs == 2)
-        #expect(anki.skippedEmpty == 1)
+        // The sound of "ήχος" isn't in the package; the picture of "εικόνα" is.
+        #expect(anki.skippedMediaRefs == 1)
+        #expect(anki.skippedEmpty == 0)
+        #expect(anki.media.images == 1 && anki.media.sounds == 0 && anki.media.bytes > 0)
+        #expect(preview.media.count == 1)
         #expect(preview.skippedRows == 0)
         #expect(preview.candidates.allSatisfy { $0.duplicate == nil })
         // Everything is checked: the cards, the suspended one among them.
-        #expect(preview.selection.count == 6)
+        #expect(preview.selection.count == 7)
         // The package's preset has FSRS settings, which an existing deck doesn't take.
         #expect(anki.settings == .keptForExistingDeck)
         #expect(anki.lines.count == 5)
         #expect(anki.lines.first == String(localized: "4 with review history"))
         #expect(anki.lines[1] == String(localized: "Anki's settings for this deck are not applied to an existing deck."))
+        #expect(anki.lines[2] == anki.mediaLine)
+        #expect(anki.lines[2].hasPrefix(String(localized: "\(1) images")))
+    }
+
+    /// The line of the media: counts of images and sounds, and the room they take, where there are any.
+    @Test func theMediaLineSaysHowManyImagesAndSoundsAndHowMuchRoom() {
+        func summary(_ images: Int, _ sounds: Int, _ bytes: Int) -> CardImport.AnkiSummary {
+            CardImport.AnkiSummary(
+                deckNames: [], withHistory: 0, skippedCloze: 0, skippedMediaRefs: 0, skippedEmpty: 0,
+                media: AnkiImport.MediaSummary(images: images, sounds: sounds, bytes: bytes))
+        }
+        let size = ByteCountFormatter.string(fromByteCount: 3_450_000, countStyle: .file)
+        #expect(summary(75, 75, 3_450_000).mediaLine == "\(String(localized: "\(75) images")), \(String(localized: "\(75) sounds")), \(size)")
+        #expect(summary(1, 0, 3_450_000).mediaLine == "\(String(localized: "\(1) images")), \(size)")
+        #expect(summary(0, 2, 3_450_000).mediaLine == "\(String(localized: "\(2) sounds")), \(size)")
+        #expect(summary(0, 0, 0).mediaLine == nil)
+        // No media, no line.
+        #expect(!summary(0, 0, 0).lines.contains { $0.contains("MB") })
     }
 
     /// The shape of the shared deck that had imported with no card: the second field is an image.
@@ -139,15 +160,18 @@ struct AnkiImportScreenTests {
         let (document, _) = try makeDocument()
         let preview = try await preview(name, for: document, isNewDeck: true)
         let anki = try #require(preview.anki)
-        #expect(preview.candidates.map(\.card.question) == ["παίρνω", "χρόνος"])
-        #expect(preview.candidates.map(\.card.answer) == ["get", "time"])
-        #expect(anki.skippedMediaOnly == 2)
-        #expect(anki.skippedEmpty == 3)
+        // A side with only a picture or a sound is a card now, with an empty text; the meaning
+        // comes with the example after it, and the frequency is left out.
+        #expect(preview.candidates.map(\.card.question) == ["παίρνω", "χρόνος", "", ""])
         #expect(
-            anki.skipLines == [
-                String(localized: "\(2) cards with only an image or a sound on a side are left out."),
-                String(localized: "\(1) cards with an empty side are left out."),
+            preview.candidates.map(\.card.answer) == [
+                "get\nΠαίρνω τον καφέ μου στις οκτώ.\nI get my coffee at eight.", "time", "no word", "ακούω",
             ])
+        #expect(preview.candidates.allSatisfy { $0.duplicate == nil })
+        #expect(anki.skippedMediaOnly == 0)
+        #expect(anki.skippedEmpty == 1)
+        #expect(anki.media.images == 1 && anki.media.sounds == 1)
+        #expect(anki.skipLines == [String(localized: "\(1) cards with an empty side are left out.")])
     }
 
     @Test func aPackageWithNoCardSaysWhy() async throws {
@@ -160,7 +184,7 @@ struct AnkiImportScreenTests {
             message.components(separatedBy: "\n") == [
                 String(localized: "“\("a.apkg")” has no cards Mnemit can import."),
                 String(localized: "\(2) cloze cards are left out."),
-                String(localized: "\(70) cards with only an image or a sound on a side are left out."),
+                String(localized: "\(70) cards whose image or sound is missing from the package are left out."),
                 String(localized: "\(5) cards with an empty side are left out."),
             ])
 
@@ -175,9 +199,9 @@ struct AnkiImportScreenTests {
         let duplicates = preview.candidates.filter { $0.duplicate != nil }
         #expect(duplicates.map(\.card.question) == ["γάτα"])
         #expect(duplicates.first?.duplicate == .inDeck)
-        #expect(preview.selection.count == 5)
+        #expect(preview.selection.count == 6)
         #expect(!preview.selection.contains(duplicates[0].id))
-        #expect(preview.selectedCards.map(\.question) == ["σπίτι\nτο", "ήχος", "νερό", "water", "σκύλος"])
+        #expect(preview.selectedCards.map(\.question) == ["σπίτι\nτο", "εικόνα", "ήχος", "νερό", "water", "σκύλος"])
 
         // The same package for a deck with other options comes out with other memory: it is the
         // deck's own steps that replay the reviews, a lapse of the cat taking one step or two to learn again.
@@ -214,10 +238,10 @@ struct AnkiImportScreenTests {
         #expect(preview.candidates[0].card.learningState?.stability != defaults.candidates[0].card.learningState?.stability)
 
         undoManager.beginUndoGrouping()
-        document.importCards(preview.selectedCards, learningOptions: preview.learningOptions)
+        document.importCards(preview.selectedCards, learningOptions: preview.learningOptions, media: preview.media)
         undoManager.endUndoGrouping()
         #expect(document.deck.learningOptions == options)
-        #expect(document.deck.cards.count == 6)
+        #expect(document.deck.cards.count == 7)
 
         // One undo takes the cards and the settings back.
         undoManager.undo()
@@ -266,14 +290,14 @@ struct AnkiImportScreenTests {
         let (document, undoManager) = try makeDocument([existing])
         let preview = try await preview("greek-latest", for: document)
         // The learner unchecks the water.
-        preview.selection.remove(preview.candidates[3].id)
+        preview.selection.remove(preview.candidates[4].id)
 
         undoManager.beginUndoGrouping()
-        document.importCards(preview.selectedCards)
+        document.importCards(preview.selectedCards, media: preview.media)
         undoManager.endUndoGrouping()
 
         let cards = document.deck.cards
-        #expect(cards.map(\.question) == ["ο κλέφτης", "γάτα", "σπίτι\nτο", "ήχος", "water", "σκύλος"])
+        #expect(cards.map(\.question) == ["ο κλέφτης", "γάτα", "σπίτι\nτο", "εικόνα", "ήχος", "water", "σκύλος"])
         let cat = try #require(cards.first { $0.question == "γάτα" })
         #expect(cat.log.count == 5)
         #expect(cat.learningState?.lapses == 1)
@@ -286,6 +310,45 @@ struct AnkiImportScreenTests {
         #expect(!undoManager.canUndo)
         undoManager.redo()
         #expect(document.deck.cards.first { $0.question == "γάτα" }?.log.count == 5)
+    }
+
+    /// The files come with the cards in one undo step, the document writes them into the package, and
+    /// a deck read from there has them: an Anki deck with pictures and sounds, saved on the phone.
+    @Test func theFilesOfAPackageComeWithItsCardsAndAreSavedInThePackage() async throws {
+        let (document, undoManager) = try makeDocument()
+        let preview = try await preview("media-files-latest", for: document, isNewDeck: true)
+        #expect(preview.media.count == 5)
+        let anki = try #require(preview.anki)
+        #expect(anki.media.images == 3 && anki.media.sounds == 2)
+
+        undoManager.beginUndoGrouping()
+        document.importCards(preview.selectedCards, learningOptions: preview.learningOptions, media: preview.media)
+        undoManager.endUndoGrouping()
+        #expect(document.deck.cards.count == 7)
+        #expect(document.deck.media.names == preview.media.names)
+
+        // Saved as a package: the media folder holds each file once, and the cards name them.
+        let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let package = folder.appending(path: "Files.mnemit", directoryHint: .isDirectory)
+        try document.fileWrapper().write(to: package, options: .atomic, originalContentsURL: nil)
+        let files = try FileManager.default.contentsOfDirectory(atPath: package.appending(path: "media").path)
+        #expect(Set(files) == preview.media.names)
+
+        // Read again, as another launch does: the deck holds the files its cards name.
+        let read = try DeckFile.read(at: package)
+        #expect(read.media.names == preview.media.names)
+        #expect(read.cards.map(\.media) == document.deck.cards.map(\.media))
+
+        // A second save over the package clones what is there; one undo takes cards and files out.
+        document.packageURL = package
+        let again = folder.appending(path: "Again.mnemit", directoryHint: .isDirectory)
+        try document.fileWrapper().write(to: again, options: .atomic, originalContentsURL: package)
+        #expect(try DeckFile.read(at: again) == read)
+        undoManager.undo()
+        #expect(document.deck.cards.isEmpty && document.deck.media.isEmpty)
+        #expect(try document.fileWrapper().fileWrappers?[DeckMedia.folderName] == nil)
     }
 
     // MARK: The name of a new deck

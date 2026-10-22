@@ -139,7 +139,7 @@ struct ImportPreviewSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add \(preview?.selection.count ?? 0) Cards") {
                         if let preview {
-                            document.importCards(preview.selectedCards, learningOptions: preview.learningOptions)
+                            document.importCards(preview.selectedCards, learningOptions: preview.learningOptions, media: preview.media)
                         }
                         dismiss()
                     }

@@ -130,9 +130,16 @@ public struct AnkiImport: Sendable {
 
     /// How many images and sounds the notes use and how much room the files take.
     public struct MediaSummary: Equatable, Sendable {
-        public var images = 0
-        public var sounds = 0
-        public var bytes = 0
+        public var images: Int
+        public var sounds: Int
+        public var bytes: Int
+
+        public init(images: Int = 0, sounds: Int = 0, bytes: Int = 0) {
+            self.images = images
+            self.sounds = sounds
+            self.bytes = bytes
+        }
+
         public var isEmpty: Bool { images == 0 && sounds == 0 }
     }
 

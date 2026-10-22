@@ -153,6 +153,66 @@ struct OpenDeckTests {
         await deck.close()
     }
 
+    // MARK: Media
+
+    /// The package of a deck with one card that names `data` as its question image.
+    private func deckWithMedia(_ data: Data) throws -> (deck: Deck, name: String) {
+        var media = DeckMedia()
+        let name = media.add(data, fileExtension: "png")
+        var card = makeCard("dom")
+        card.media = CardMedia(questionImage: name)
+        return (try Deck(cards: [card], media: media), name)
+    }
+
+    /// A save by the UIDocument writes the package of the deck again from its snapshot, which has to
+    /// carry the media: a review of a card must not cost the deck its pictures.
+    @Test func aDeckKeepsItsMediaWhenTheUIDocumentSavesIt() async throws {
+        let data = Data("a picture".utf8)
+        let (original, name) = try deckWithMedia(data)
+        let url = try write(original)
+        let deck = OpenDeck(url: url)
+        let document = try await waitForDocument(of: deck)
+        #expect(document.deck.media.contents(of: name) == data)
+
+        review(document)
+        try await waitUntil("the run loop has closed the undo group") { deck.undoManager.groupingLevel == 0 }
+        await deck.close()
+
+        let saved = try DeckFile.read(at: url)
+        #expect(saved.cards.first?.log.map(\.grade) == [.good])
+        #expect(saved.cards.first?.questionImage == name)
+        #expect(saved.media.contents(of: name) == data)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: url.appending(path: "media").path) == [name])
+    }
+
+    /// The file of a card that came from another device comes with the card, through the merge.
+    @Test func theMediaOfTheOtherDevicesCardsComeThroughTheMerge() async throws {
+        let data = Data("a picture from the Mac".utf8)
+        let dom = makeCard("dom")
+        let url = try write(Deck(cards: [dom]))
+        let deck = OpenDeck(url: url)
+        let document = try await waitForDocument(of: deck)
+
+        var media = DeckMedia()
+        let name = media.add(data, fileExtension: "png")
+        var kot = makeCard("kot")
+        kot.media = CardMedia(answerImage: name)
+        let changed = try Deck(cards: [dom, kot], contentModified: .now, media: media)
+        try await writeUntil(
+            "the card of the other device and its file are in the document", write: { try await writeCoordinated(changed, to: url) },
+            until: { document.deck.cards.count == 2 && document.deck.media.contains(name) })
+        #expect(document.deck.media.contents(of: name) == data)
+        #expect(document.deck.cards.last?.answerImage == name)
+
+        // Saved with the next change: both files and both cards are in the package.
+        review(document)
+        try await waitUntil("the run loop has closed the undo group") { deck.undoManager.groupingLevel == 0 }
+        await deck.close()
+        let saved = try DeckFile.read(at: url)
+        #expect(saved.cards.count == 2)
+        #expect(saved.media.contents(of: name) == data)
+    }
+
     /// Reviews the first card due with Good, as a study session does.
     private func review(_ document: VocabularyDocument) {
         var mode = SessionMode.study(StudySession(deck: document.deck, at: document.clock.now, calendar: document.calendar))

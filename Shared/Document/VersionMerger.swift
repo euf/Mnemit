@@ -89,6 +89,7 @@ final class VersionMerger {
         let fileURL = isEditable ? fileURL : nil
         guard document !== self.document || fileURL != watch.url else { return }
         let previous = self.document
+        document.packageURL = fileURL
         if fileURL != watch.url {
             watch.connect(fileURL)
         }
