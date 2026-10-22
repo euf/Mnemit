@@ -2272,6 +2272,16 @@
         }
       }
     },
+    "Deck Not Changed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel nicht geändert"
+          }
+        }
+      }
+    },
     "Deck order": {
       "localizations": {
         "de": {
@@ -6938,6 +6948,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "„%@“ enthält keine Zeilen mit Frage und Antwort."
+          }
+        }
+      }
+    },
+    "“%@” could not be opened. Try again when its file has finished syncing.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ ließ sich nicht öffnen. Versuche es wieder, wenn die Datei fertig synchronisiert ist."
           }
         }
       }

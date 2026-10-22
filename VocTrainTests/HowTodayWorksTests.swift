@@ -152,8 +152,8 @@ struct HowTodayWorksTests {
         pausedOptions.isPaused = true
         let taking = HowTodayWorks.Source(name: "Greek B1", deck: try Deck(cards: cards))
         let paused = HowTodayWorks.Source(name: "Greek B2", deck: try Deck(learningOptions: pausedOptions, cards: cards))
-        let content = HowTodayWorks.make([taking, paused], at: Self.day, calendar: StudyCalendar())
-        let alone = HowTodayWorks.make([taking], at: Self.day, calendar: StudyCalendar())
+        let content = HowTodayWorks.make([taking, paused], at: Self.day, calendar: StudyCalendar(), swipes: nil)
+        let alone = HowTodayWorks.make([taking], at: Self.day, calendar: StudyCalendar(), swipes: nil)
 
         let pausedRow = HowTodayWorks.Row.value(label: "Paused: Greek B2", value: "–")
         #expect(content.sections[0].rows.contains(pausedRow))

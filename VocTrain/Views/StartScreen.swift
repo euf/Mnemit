@@ -44,6 +44,8 @@ struct StartScreen: View {
     /// The browser of the shared decks, while its sheet is up.
     @State private var webBrowser: DeckWebBrowser?
     @State private var importFailure: String?
+    /// A deck that could not be opened to pause or resume it.
+    @State private var pauseFailure: String?
     @State private var showsNewDeck = false
     /// The deck a new deck's sheet leaves to push once it has gone.
     @State private var openAfterSheet: PushedDecks.Slot?
@@ -111,6 +113,11 @@ struct StartScreen: View {
             Button("OK") {}
         } message: {
             Text("This place has no Trash, so “\(setAsideDeck ?? "")” was moved to the folder “\(DeckFiles.setAsideFolderName)” next to it. Files can put it back.")
+        }
+        .alert("Deck Not Changed", isPresented: Binding(get: { pauseFailure != nil }, set: { if !$0 { pauseFailure = nil } })) {
+            Button("OK") {}
+        } message: {
+            Text("“\(pauseFailure ?? "")” could not be opened. Try again when its file has finished syncing.")
         }
         .alert("Import failed", isPresented: Binding(get: { importFailure != nil }, set: { if !$0 { importFailure = nil } })) {
             Button("OK") {}
@@ -291,6 +298,8 @@ struct StartScreen: View {
             if let document = await open.editableDocument() {
                 document.setPaused(isPaused)
                 await open.settleChanges()
+            } else {
+                pauseFailure = deck.name
             }
             await open.close()
             await refreshAll()
