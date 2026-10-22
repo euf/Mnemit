@@ -148,7 +148,7 @@
   (`SessionViewModel(entry: .practiceNewest)`), iPhone — строка в листе деталей колоды
   (`StudyModel(entry: .practiceNewest)`). Карточка, добавленная руками позже, начинает свою
   партию.
-- Импорт Anki (`.apkg`, `.colpkg`; VocabCore, `Import/Anki`, экранов нет): `AnkiImport.read(url)`
+- Импорт Anki (`.apkg`, `.colpkg`; VocabCore, `Import/Anki`, экраны — следующий пункт): `AnkiImport.read(url)`
   читает три раскладки (`collection.anki2`, `.anki21`, `.anki21b` под zstd с protobuf `meta`) и
   отдаёт `notes` (front, back, `reviews`, `isSuspended`), счётчики пропусков (`skippedCloze`,
   `skippedMediaRefs`, `skippedEmpty`) и `deckNames`; синхронный и тяжёлый, звать не с главного
@@ -158,6 +158,26 @@
   карточки без лога). Зависимость одна: `facebook/zstd` (SwiftPM, BSD, в `THIRD_PARTY_NOTICES.md`);
   Compression zstd не знает. Фикстуры настоящих пакетов — `Tests/VocabCoreTests/Resources/Anki`,
   скрипт их сборки лежит рядом (`uv run --with anki`).
+- Экраны импорта Anki (`Shared/Support/CardImport+Anki.swift`, `.apkg` принимают пикер iPhone,
+  панель Mac и «Open in Mnemit»): тип `UTType.ankiPackage`, импортируемый
+  `com.euf.mnemit.anki-package` (расширение `apkg`, conforms `public.zip-archive` и `public.data`),
+  в обоих `Info.plist` — тип документа Viewer, `LSHandlerRank` Alternate. Предпросмотр тот же, что у
+  CSV (`CardImport.Preview`, у пакета `anki: AnkiSummary` — названия колод Anki, сколько карточек с
+  историей, пропуски cloze, медиа, пустых); дубликаты по вопросу против целевой колоды без галки
+  (`CardImporter.candidates(of:existing:)`, общий с CSV). Пакет читает `CardImport.loadAnki(at:)`
+  вне главного потока (доступ, `NSFileCoordinator`), карточки считает `ankiPreview` там же:
+  параметры FSRS и календарь берутся из целевой колоды. «Add N Cards» — `importCards` →
+  `DeckChange.importing`, один Undo. iPhone: URL разбирает `IncomingLink` (study, ankiPackage, deck)
+  в `StartScreen.open`; пакет копируется в `tmp/IncomingAnki` (`IncomingPackages`: URL бывает
+  scoped, в Inbox или в iCloud), лист `AnkiDestinationSheet` читает его и спрашивает, куда: «New
+  Deck “<имя>”» (`DeckFiles.create` в текущей папке, имя — `CardImport.deckName`, занятое
+  получает « 2», « 3») или колода из списка; затем тот же `AddCardsHost` с `ImportPreviewSheet`.
+  Пока накрыто введение или поток Study, пакет ждёт (`waitingAnki`). Ссылка «Shared Decks on
+  AnkiWeb» (`AnkiWebLink`, `Link` в Safari) — в меню «+», пустом Today и на экране колоды. Mac:
+  `AppDelegate.application(_:open:)` ведёт `.apkg` из Finder тем же путём, что «Import Cards» окна
+  приветствия (`WelcomeRequest.requestImportCards(from:)` и новый документ), окно нового документа
+  зовёт `DocumentView.importCards(from:namesDeck:)` и называет безымянную колоду (`displayName`)
+  по колоде Anki; колоды из Finder уходят оттуда в `NSDocumentController.openDocument`.
 - Импорт и экспорт CSV/TSV: логика общая, `CardImport` и `CardExport` в `Shared/Support`; на Mac
   к ним добавлены панели файлов (`CardImportPanel`, `CardExportPanel`), на iPhone — листы ниже.
   Выгрузка начинается строками Anki `#separator:tab` (или `comma`), `#html:false`,

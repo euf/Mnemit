@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import VocabCore
 
@@ -26,6 +27,8 @@ struct DocumentView: View {
     @State private var session: SessionViewModel?
     @State private var showingOptions = false
     @State private var importPreview: CardImport.Preview?
+    /// Whether an import file is being read: an Anki package takes a while.
+    @State private var isReadingImport = false
     @State private var addingLessonWords = false
     @State private var toast: Toast?
     @State private var shortcutsHelp = ShortcutsHelp()
@@ -102,6 +105,13 @@ struct DocumentView: View {
                 toast = Toast(String(localized: "Added \(count) cards. The production cards unlock after the recognition cards are learned."))
             }
         }
+        .overlay {
+            if isReadingImport {
+                ProgressView("Reading cards…")
+                    .padding(24)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+        }
         .overlay(alignment: .bottom) {
             if let toast {
                 ToastView(toast: toast) { self.toast = nil }
@@ -113,9 +123,10 @@ struct DocumentView: View {
             shortcutsHelp.opensWithQuestionMark = isFlashcards
         }
         .onChange(of: canEdit, initial: true) { _, canEdit in
-            // The welcome window made this document to import cards into.
-            if canEdit, WelcomeRequest.takeImportCards() {
-                Task { importCards() }
+            // The welcome window made this document to import cards into: a new deck, which
+            // an Anki package names.
+            if canEdit, let request = WelcomeRequest.takeImportCards() {
+                Task { importCards(from: request.file, namesDeck: true) }
             }
         }
         .attachingUndoManager(to: document)
@@ -149,7 +160,7 @@ struct DocumentView: View {
                 practiceNewest: practiceNewestWords,
                 show: { screen = $0 },
                 showOptions: { showingOptions = true },
-                importCards: importCards,
+                importCards: { importCards() },
                 exportCards: exportCards,
                 addLessonWords: { addingLessonWords = canEdit && session == nil },
                 showShortcuts: { shortcutsHelp.isShown = true }
@@ -182,9 +193,19 @@ struct DocumentView: View {
     }
     #endif
 
-    private func importCards() {
-        guard canEdit else { return }
-        importPreview = CardImport.chooseFile(existing: document.deck.cards, created: document.clock.now)
+    /// Asks for a file, or takes `file`, and shows its cards to choose from. `namesDeck`: the
+    /// deck is new, and the Anki deck of a package names it.
+    private func importCards(from file: URL? = nil, namesDeck: Bool = false) {
+        guard canEdit, !isReadingImport, let url = file ?? CardImport.chooseFile() else { return }
+        isReadingImport = true
+        Task {
+            defer { isReadingImport = false }
+            guard let preview = await CardImport.preview(ofFileAt: url, for: document) else { return }
+            if namesDeck, fileURL == nil, document.deck.cards.isEmpty, let anki = preview.anki {
+                NSDocumentController.shared.currentDocument?.displayName = CardImport.deckName(forDecks: anki.deckNames, fileName: url.lastPathComponent)
+            }
+            importPreview = preview
+        }
     }
 
     private func exportCards() {

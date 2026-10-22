@@ -3,25 +3,39 @@ import UniformTypeIdentifiers
 import VocabCore
 
 extension CardImport {
-    /// Asks for a file and reads it; `nil` if the user cancels or the file has no cards.
-    static func chooseFile(existing: [Card], created: Date) -> Preview? {
+    /// Asks for a CSV or TSV file or an Anki package; `nil` if the user cancels.
+    static func chooseFile() -> URL? {
         let openPanel = NSOpenPanel()
-        openPanel.allowedContentTypes = [.delimitedText, .plainText]
+        openPanel.allowedContentTypes = [.delimitedText, .plainText, .ankiPackage]
         openPanel.allowsMultipleSelection = false
-        openPanel.message = String(localized: "Choose a CSV or TSV file with a question, an answer and an optional hint per row.")
+        openPanel.message = String(localized: "Choose an Anki package, or a CSV or TSV file with a question, an answer and an optional hint per row.")
         openPanel.prompt = String(localized: "Import")
-        guard openPanel.runModal() == .OK, let source = openPanel.url else { return nil }
+        return openPanel.runModal() == .OK ? openPanel.url : nil
+    }
 
-        let data: Data
+    /// Reads the file at `url` into the preview for the deck of `document`; the cards of an Anki
+    /// package are made off the main thread. `nil`, after telling the learner, if the file can't
+    /// be read or has no cards.
+    static func preview(ofFileAt url: URL, for document: VocabularyDocument) async -> Preview? {
+        let name = url.lastPathComponent
+        let preview: Preview
         do {
-            data = try Data(contentsOf: source)
+            if url.isAnkiPackage {
+                let package = try await loadAnki(at: url)
+                preview = await ankiPreview(of: package, fileName: name, for: document)
+            } else {
+                let data = try Data(contentsOf: url)
+                preview = self.preview(of: data, fileName: name, existing: document.deck.cards, created: document.clock.now)
+            }
         } catch {
-            showError(error.localizedDescription)
+            showError(failureMessage(error))
             return nil
         }
-        let preview = preview(of: data, fileName: source.lastPathComponent, existing: existing, created: created)
         guard !preview.candidates.isEmpty else {
-            showError(String(localized: "“\(source.lastPathComponent)” contains no rows with a question and an answer."))
+            showError(
+                url.isAnkiPackage
+                    ? String(localized: "“\(name)” has no cards Mnemit can import.")
+                    : String(localized: "“\(name)” contains no rows with a question and an answer."))
             return nil
         }
         return preview

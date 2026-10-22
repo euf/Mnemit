@@ -71,10 +71,14 @@ Root is a `NavigationStack` on Today.
 **New Deck**: a name field; creates `<name>.mnemit` in the deck folder (iCloud Drive or
 this iPhone).
 
-**Import**: a file picker (CSV/TSV now, `.apkg` when supported) → the same preview as the
+**Import**: a file picker (CSV, TSV or `.apkg`) → the same preview as the
 Mac, a list with a checkmark per card (duplicates unchecked) → Add N Cards, one undo step.
 Entry points: Import Cards… on the Deck screen, Import… in Today's + menu (into the deck used
-last). **Export**: Export… in the Deck screen's menu opens the share sheet with a TSV that
+last). The preview of an Anki package heads with the Anki deck names, the number of cards,
+how many have review history and what was left out (cloze, media, empty); the history comes
+along. **Open in Mnemit** (Files, Safari, Mail) opens a sheet that asks where the cards go:
+a New Deck named after the Anki deck, or one of the decks; then the same preview. "Shared
+Decks on AnkiWeb" (Today's + menu, Today's empty state, the Deck screen) opens AnkiWeb in Safari. **Export**: Export… in the Deck screen's menu opens the share sheet with a TSV that
 Anki imports as it is (header lines, word key and kind columns).
 
 **Options** (form): new cards per day; target recall (70–97 %, one-line explanation);
@@ -85,6 +89,8 @@ lapses. Advanced: maximum interval, FSRS parameters with "Compute from Review Lo
 
 **Welcome window** is the Mac's Today: decks with their counts; Study opens a deck's stream;
 New Deck, Import Cards, Open Mnemit Folder.
+Import Cards… takes CSV, TSV and `.apkg`; an `.apkg` makes a new deck named after the Anki
+deck. Opening an `.apkg` from Finder does the same, not a document window.
 
 **Deck window**: Cards | Statistics.
 - Cards: the filter row of rule 4 as a scope bar under the toolbar (replaces the Leeches

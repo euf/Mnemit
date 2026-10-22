@@ -12,8 +12,16 @@ struct ImportPreviewView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Import Cards")
                     .font(.title2.weight(.semibold))
+                if let anki = preview.anki {
+                    Text(anki.deckTitle)
+                        .fontWeight(.semibold)
+                }
                 Text("\(preview.candidates.count) cards in “\(preview.fileName)”")
                     .foregroundStyle(.secondary)
+                ForEach(preview.anki?.lines ?? [], id: \.self) { line in
+                    Text(line)
+                        .foregroundStyle(.secondary)
+                }
                 if preview.skippedRows > 0 {
                     Text("\(preview.skippedRows) rows without a question or an answer are left out.")
                         .foregroundStyle(.secondary)

@@ -64,24 +64,31 @@ enum WelcomeWindow {
     }
 }
 
-/// What the welcome window asks of the document window it opens.
+/// What the welcome window, or Finder opening an Anki package, asks of the document window it
+/// opens: to start "Import Cards…", from the package if there is one.
 @MainActor
 enum WelcomeRequest {
-    private static var importsCards = false
+    struct Request: Identifiable {
+        let id = UUID()
+        /// The Anki package to import; `nil` to ask for a file.
+        var file: URL?
+    }
 
-    /// Asks the next document window to start "Import Cards…".
-    static func requestImportCards() {
-        importsCards = true
+    private static var pending: [Request] = []
+
+    /// Asks the next document window to start "Import Cards…", from `file` if given.
+    static func requestImportCards(from file: URL? = nil) {
+        let request = Request(file: file)
+        pending.append(request)
         // A request that no window took doesn't wait for an unrelated one.
         Task {
             try? await Task.sleep(for: .seconds(5))
-            importsCards = false
+            pending.removeAll { $0.id == request.id }
         }
     }
 
-    /// Whether the welcome window asked for the import, once.
-    static func takeImportCards() -> Bool {
-        defer { importsCards = false }
-        return importsCards
+    /// The request of the import the welcome window made, once; windows take them in order.
+    static func takeImportCards() -> Request? {
+        pending.isEmpty ? nil : pending.removeFirst()
     }
 }
