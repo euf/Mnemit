@@ -21,7 +21,7 @@ import os
 /// - Everything else, like `DueCardCounter` and `SessionDriver`, subscribes to
 ///   `deckDidChange`. It sends after every change, once `deck` holds the new state.
 ///
-/// Why the document doesn't switch to Observation: `docs/adr/0003-dokument-bleibt-observableobject.md`.
+/// Why the document doesn't switch to Observation: `docs/adr/0003-document-stays-observableobject.md`.
 ///
 /// The changes of a study session, suspending and merging are here; adding, editing,
 /// deleting and resetting cards and the learning options are in the extension in

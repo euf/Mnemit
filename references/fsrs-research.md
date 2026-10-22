@@ -62,7 +62,7 @@ Adopt (decided 22.10.2026):
 1. **Automatic re-optimization, kept only when it fits better.** Verbamor refits each learner's
    FSRS-6 parameters from their history once there are enough reviews, and keeps the new
    ones only if they fit better. **[I]** A learner who never opens Options would keep default
-   parameters forever. Built: `ParameterRefit` (CLAUDE.md, fork section): fits at 400 and 1,500
+   parameters forever. Built: `ParameterRefit` (`references/scheduling.md`): fits at 400 and 1,500
    reviews, then every 30 days or 1,000 reviews; kept when the log loss on the newest 20 % of
    the log, which the fit did not train on, is lower at all (as Anki keeps fitted parameters only
    when they beat the current ones; the holdout guards against overfitting).

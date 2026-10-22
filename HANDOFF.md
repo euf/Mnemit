@@ -1,96 +1,92 @@
 # HANDOFF — Mnemit
 
-## Состояние
+## State
 
-- Версия 4.0 в `main`, на iPhone стоит 4.0.0 (7ccc87e), подпись до 29.10. Что умеет приложение и почему так — README, раздел
-  «Design choices»; термины дня, кольца, стрика и темпа — `GLOSSARY.md`, раздел «Mnemit» (карточка
-  никогда не оценка); экраны обоих приложений — `references/flows.md`; исследования FSRS —
-  `references/fsrs-research.md` и `references/fsrs-vs-sm17.md`. Задание суб-агенту писать по
-  `references/agent-lessons-rings.md`: один источник, потолок, правило остановки, базовая линия тестов.
-- Mac: `~/Applications/Mnemit.app`, `com.euf.mnemit`, ставится `Scripts/install-mac.sh`.
-- iPhone 13 mini (UDID `00008110-000411010C68401E`): Mnemit `com.euf.mnemit.ios` с виджетом
-  `com.euf.mnemit.ios.widget`, ставится `~/dotfiles/ios-renew --force` (см. «Подпись iPhone»).
-  На iPhone учат, правят карточки и колоды, добавляют слова после урока.
-- Колоды в `iCloud Drive/Mnemit/`, обе собраны `Tools/deck-from-tsv` из словаря
+- Version 4.0 on `main`; the iPhone runs 4.0.0 (7ccc87e), signed until 29.10. What the app does and
+  why: README, section "Design choices"; terms of the day, ring, streak and pace: `GLOSSARY.md`,
+  section "Mnemit" (a card is never a review); screens of both apps: `references/flows.md`; FSRS
+  research: `references/fsrs-research.md` and `references/fsrs-vs-sm17.md`. Brief sub-agents by
+  `references/agent-lessons-rings.md`: one source, a ceiling, a stop rule, a test baseline.
+- Mac: `~/Applications/Mnemit.app`, `com.euf.mnemit`, installed by `Scripts/install-mac.sh`.
+- iPhone 13 mini (UDID `00008110-000411010C68401E`): Mnemit `com.euf.mnemit.ios` with the widget
+  `com.euf.mnemit.ios.widget`, installed by `~/dotfiles/ios-renew --force` (see "iPhone signing").
+  On the iPhone EF studies, edits cards and decks, and adds words after a lesson.
+- Decks in `iCloud Drive/Mnemit/`, both built by `Tools/deck-from-tsv` from the dictionary
   `~/Documents/greek-lessons/vocab/` (`merge.py` → `greek-vocab.tsv`, `cards.py` → `cards-*.tsv`):
-  - `Greek A1–A2.mnemit` — повторение знакомого: 1629 слов, 3258 карточек (узнавание и
-    перевод на греческий), 30 + 30 новых за сессию, production не заперта, порядок колоды.
-  - `Greek B1.mnemit` — изучение: 1118 слов, 2236 карточек, 20 новых узнавания + 7 production,
-    production открывается через 21 день, новые — сначала свежие. 78 старых карточек
-    первой колоды заморожены (их слова ушли в A1–A2), 131 усыновлена с прогрессом.
-  Вопрос на узнавание — греческая форма, ответ — русский · английский и пример; на перевод —
-  русский, подсказка — часть речи и английский, ответ — греческая форма и пример. Греческого
-  в подсказке нет никогда. Копии перед каждой записью — `iCloud Drive/Mnemit/.backups`.
-- Формат колоды — пакет `.mnemit` (тип `com.euf.mnemit.deck`). Колоды с `.voctrain` открываются,
-  перечисляются в папке и сохраняются на месте под своим именем; приложения ничего не
-  переименовывают, колоду переименовывают руками в iCloud Drive.
-- Синхронизация: один файл-пакет в iCloud Drive, оба приложения открывают его на месте.
-  Конфликтные версии сливает `VersionMerger` апстрима. CloudKit и iCloud-entitlement не нужны.
+  - `Greek A1–A2.mnemit`, review of the familiar: 1629 words, 3258 cards (recognition and translation
+    into Greek), 30 + 30 new per day, production not locked, deck order.
+  - `Greek B1.mnemit`, learning: 1118 words, 2236 cards, 20 new recognition + 7 production per day,
+    production unlocks after 21 days, new cards newest first. 78 old cards of the first deck are
+    frozen (their words went to A1–A2), 131 adopted with their progress.
+  A recognition question is the Greek form; the answer is Russian · English and an example. A
+  translation question is Russian, the hint the part of speech and English, the answer the Greek form
+  and an example. There is never Greek in a hint. Copies before every write:
+  `iCloud Drive/Mnemit/.backups`.
+- Deck format: the `.mnemit` package (type `com.euf.mnemit.deck`). `.voctrain` decks open, are listed
+  in the folder and are saved in place under their own name; the apps rename nothing, and a deck is
+  renamed by hand in iCloud Drive.
+- Sync: one package file in iCloud Drive, both apps open it in place. Upstream's `VersionMerger` merges
+  conflicting versions. No CloudKit and no iCloud entitlement needed.
 
-## Подпись iPhone
+## iPhone signing
 
-Бесплатная Personal Team `2NS3PB4YC9` (Apple ID в Xcode → Settings → Accounts), сборка и
-установка — `~/dotfiles/ios-renew` по строке в `~/.config/ios-renew/apps`:
+Free Personal Team `2NS3PB4YC9` (Apple ID in Xcode → Settings → Accounts); build and install by
+`~/dotfiles/ios-renew` from its line in `~/.config/ios-renew/apps`:
 `/Users/eugene/Code/Mnemit MacVocTrainNg.xcodeproj VocTrain VocTrain/Mnemit.entitlements`.
-Скрипт собирает `main` из своего worktree, Xcode сам выдаёт профили на 7 дней приложению и
-виджету, launchd `com.eugene.ios-renew` продлевает их каждую ночь. Entitlements приложения и
-виджета — один файл с `keychain-access-groups = $(AppIdentifierPrefix)com.euf.mnemit.shared`:
-через этот keychain-элемент приложение отдаёт виджету снимок дня. iCloud-контейнера и Push у
-бесплатной команды нет, поэтому папка колод выбирается окном выбора файлов. Лимиты команды:
-3 приложения на устройство (сейчас FicTypeApp и Mnemit), 10 App ID в неделю.
+The script builds `main` from its own worktree, Xcode issues 7-day profiles to the app and the widget,
+and launchd `com.eugene.ios-renew` renews them every night. App and widget share one entitlements file
+with `keychain-access-groups = $(AppIdentifierPrefix)com.euf.mnemit.shared`: through that keychain item
+the app hands the widget the day's snapshot. The free team has no iCloud container and no Push, so the
+deck folder is chosen in the file picker. Team limits: 3 apps per device (now FicTypeApp and Mnemit),
+10 App IDs a week.
 
-## Открыто
+## Open
 
-Порядок — по важности для EF. Задания суб-агентам — по `references/agent-token-costs.md` и
-`references/agent-lessons-rings.md`; хук `agent-budget.py` остановит агента на 120 мин / 40 M токенов.
+In order of importance to EF. Brief sub-agents by `references/agent-token-costs.md` and
+`references/agent-lessons-rings.md`; the `agent-budget.py` hook stops an agent at 120 min / 40 M tokens.
 
-1. **Показ медиа на карточке** (ядро в 3.3: `Card.questionImage/Audio`, `answerImage/Audio`,
-   `Deck.media.contents(of:)`, папка `media/` в пакете). Сделать: картинка на своей стороне карточки
-   (iPhone поток, Card Detail, Mac), звук колоды — кнопкой динамика и при автоозвучке вместо
-   синтезатора; строки браузера и лист правки для сторон, где только картинка или звук (сейчас строка
-   пустая, а лист правки требует текст вопроса); шаблон вопроса prep2go поле `Audio` не показывает —
-   звук ответа есть, вопроса нет. Свои фото и записи в Add Cards — потом.
-2. **Документация — уборка и английский.** Рабочий язык проекта — английский (EF 22.10).
-   - `CLAUDE.md`: раздел форка (75 КБ по-русски) — в короткий английский индекс, подробности — в
-     тематические файлы `references/`; разделы апстрима Workflow, Issue tracker, Unattended agents,
-     Triage, Wiki — убрать, оставить строку о том, как отдавать правки апстриму.
-   - `docs/agents/*` и `Tools/agent-loop.sh` (процесс апстрима) — удалить, если на них ничего не ссылается.
-   - `docs/adr/0001–0005` — перевести на английский; `GLOSSARY.md` — один английский глоссарий
-     (немецкие термины апстрима переводом, немецкое слово интерфейса в скобках); этот HANDOFF — на
-     английский; `docs/prototypes/*.html` — удалить, если устарели и на них нет ссылок.
-3. **Переписать историю git по-английски.** Только коммиты форка (`git log --author=euf`); коммиты
-   апстрима, включая немецкие и подписанные «Claude» за 10–15.10, не трогать. `git-filter-repo`
-   (`uv tool install --managed-python -p 3.12 git-filter-repo`), сообщения переводить по смыслу, без
-   LLM-трейлеров. До — свежий клон как резерв, после — `git push --force-with-lease origin main`;
-   строку «на iPhone стоит» в «Состоянии» поправить после переписи. Делать, когда веток агентов нет.
-4. **Живая проверка на iPhone** (на экране не видели, только тесты и снимки):
-   - 4.0: один поток Study по всем активным колодам (карточка из колоды, чья следующая срочнее;
-     Undo уходит в колоду последнего шага; раунды считают все колоды; «Done for today» — когда план
-     кончился везде);
-   - движение карточки: сделанная летит в кольцо с ярлыком интервала, «again today» — под стопку,
-     следующая всплывает из стопки, ввод не ждёт полёта; конец раунда — кольцо спускается в пустой
-     слот, строки по одной; Undo — обратным ходом; кнопка ↶ в панели; Reduce Motion; VoiceOver
-     проговаривает оценку. Снимки — `VocTrainTests/StudyScreenSnapshotTests`;
-   - речь без заикания (окно речи 0,3–2 с без работы главного потока; `SpeechWindowStallTests` с
-     `TEST_RUNNER_MNEMIT_PERF=1`) — проверяет EF на слух;
-   - пересечения колод: «Also in <deck>» и «Similar to …» в предпросмотре импорта, Add Cards и Card
-     Detail; слова в памяти считают слово один раз;
-   - пауза колоды (свайп, меню, раздел Paused), свайп-зоны и счётчик промахов в «How Today Works»,
-     импорт prep2go (75 карточек, картинки и звук, примеры в ответе), раунды и ёмкость, виджет.
-5. **Mac-сьют на `main` не прогнан** (тесты открывают окна). Известные падения, когда тестовое
-   приложение не на переднем плане: `CardListViewTests.firstClickIntoTableSelectsRow` и
-   `focusedTableHandsFocusToNewTableWhenSorted`. Любое другое падение — новое.
-6. **`~/Documents/greek-lessons/vocab/merge.py` `key()`** даёт пары «ο/η» и «ο» для одного слова
-   (6 пар в колодах EF): Mnemit их связывает `WordKey`, генератор — нет.
-7. **Известное поведение, решать по жалобе:**
-   - после «Done for today» во всех колодах Keep Going идёт по колоде последней карточки (её catch-up
-     и review ahead), остальные колоды — новым Study;
-   - темп по длительностям включается с 20 оценками с `ms` в категории; до того — медиана пауз между
-     оценками, без данных — 30 с новая, 10 с остальные;
-   - `AnkiImportTests.leavesNoTemporaryDatabaseBehind` иногда падает (общий tmp); повтор проходит;
-   - xcodebuild 27.1 иногда виснет после итога iOS-прогона; итог в логе верен;
-   - хвост из нескольких карточек при пустом сегодняшнем плане просит одну в день;
-   - лист Learning Options на Mac перезаписывает подгонку параметров, пришедшую, пока он открыт.
-8. Позже: примеры из Tatoeba; FSRS-7, когда выйдет в fsrs-rs; разброс сиблингов и балансировка
-   нагрузки (сначала хранить выбранную дату в логе); скрытие сиблингов между колодами — когда пар
-   больше 1 % (`references/cross-deck-overlap.md`); режим прослушивания.
+1. **Showing media on the card** (core in 3.3: `Card.questionImage/Audio`, `answerImage/Audio`,
+   `Deck.media.contents(of:)`, the `media/` folder in the package). To do: the image on its side of the
+   card (iPhone stream, Card Detail, Mac); the deck's sound on the speaker button and, with auto-speech,
+   instead of the synthesizer; browser rows and the edit sheet for sides with only an image or a sound
+   (the row is empty now, and the edit sheet requires question text); prep2go's question template
+   doesn't show the `Audio` field, so the answer has sound and the question doesn't. Own photos and
+   recordings in Add Cards come later.
+2. **Rewrite the git history in English.** Only the fork's commits (`git log --author=euf`); leave
+   upstream's commits alone, including the German ones and those signed "Claude" from 10–15.10.
+   `git-filter-repo` (`uv tool install --managed-python -p 3.12 git-filter-repo`); translate messages by
+   meaning, no LLM trailers. Before: a fresh clone as a reserve; after: `git push --force-with-lease
+   origin main`; fix the "iPhone runs" hash in State after the rewrite. Do it when there are no agent
+   branches.
+3. **Live check on the iPhone** (not seen on screen, only tests and snapshots):
+   - 4.0: one Study stream over all active decks (the card from the deck whose next card is more
+     urgent; Undo goes to the deck of the last step; rounds count all decks; "Done for today" when the
+     plan has ended everywhere);
+   - card motion: a done card flies into the ring with an interval label, "again today" goes under the
+     stack, the next one rises from the stack, input doesn't wait for the flight; round end: the ring
+     descends into the empty slot, lines one by one; Undo plays in reverse; the ↶ button in the bar;
+     Reduce Motion; VoiceOver speaks the grade. Snapshots: `VocTrainTests/StudyScreenSnapshotTests`;
+   - speech without stutter (speech window 0.3–2 s without main-thread work; `SpeechWindowStallTests`
+     with `TEST_RUNNER_MNEMIT_PERF=1`): EF checks by ear;
+   - deck overlaps: "Also in <deck>" and "Similar to …" in the import preview, Add Cards and Card
+     Detail; words in memory count a word once;
+   - pausing a deck (swipe, menu, Paused section), swipe zones and the miss counter in "How Today
+     Works", prep2go import (75 cards, images and sound, examples in the answer), rounds and capacity,
+     widget.
+4. **The Mac suite on `main` hasn't been run** (the tests open windows). Known failures when the test
+   app isn't in front: `CardListViewTests.firstClickIntoTableSelectsRow` and
+   `focusedTableHandsFocusToNewTableWhenSorted`. Any other failure is new.
+5. **`~/Documents/greek-lessons/vocab/merge.py` `key()`** gives the pairs "ο/η" and "ο" for one word
+   (6 pairs in EF's decks): Mnemit links them through `WordKey`, the generator doesn't.
+6. **Known behaviour, decide on complaint:**
+   - after "Done for today" in all decks, Keep Going runs on the deck of the last card (its catch-up and
+     review ahead), the other decks through a new Study;
+   - pace from durations starts with 20 reviews with `ms` in a category; before that the median of the
+     gaps between reviews, with no data 30 s for new, 10 s for the rest;
+   - `AnkiImportTests.leavesNoTemporaryDatabaseBehind` sometimes fails (shared tmp); a rerun passes;
+   - xcodebuild 27.1 sometimes hangs after the iOS run's summary; the summary in the log is right;
+   - a backlog of a few cards with an empty plan for today asks for one a day;
+   - the Mac Learning Options sheet overwrites a parameter fit that arrived while it was open.
+7. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
+   (store the chosen date in the log first); hiding siblings across decks once pairs exceed 1 %
+   (`references/cross-deck-overlap.md`); a listening mode.

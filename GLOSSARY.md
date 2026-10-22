@@ -1,262 +1,253 @@
-# MacVocTrain NG
+# Mnemit glossary
 
-Ein Vokabeltrainer für den Mac. Der Lernende tippt zu einer Frage seine Eingabe, bewertet
-sich selbst, und FSRS plant, wann er die Karte wiedersieht.
+A vocabulary trainer: the learner answers a question (typing on the Mac, or revealing the answer
+in flashcard mode and on the iPhone), grades themself, and FSRS plans when they see the card again.
 
-Stichwort ist der Begriff im Code, dahinter das deutsche Wort der Oberfläche. Beide gelten;
-die Synonyme unter _Vermeiden_ nicht.
+Each entry gives the term in code, which is also the English word on screen unless the entry says
+otherwise, then the German word on screen (DE) and the Russian word for talking with EF (RU). The
+synonyms under _Avoid_ are not used, in any of the three languages.
 
 ## Language
 
-### Karten
+### Cards
 
-**Card** (Karte):
-Ein Paar aus Question und Answer, dazu ein optionaler Hint. Sie wird nur in eine Richtung
-abgefragt, von der Question zur Answer.
-_Vermeiden_: Vokabel, Eintrag, Karteikarte, Index card, Word, Entry
+**Card** (DE Karte; RU «карточка»):
+A pair of Question and Answer, plus an optional Hint. It is asked in one direction only, from the
+Question to the Answer.
+_Avoid_: vocable, entry, index card, word, Vokabel, Eintrag, Karteikarte
 
-**Question** (Frage):
-Die Seite einer Card, die gezeigt und abgefragt wird.
-_Vermeiden_: Front, Vorderseite
+**Question** (DE Frage; RU «вопрос»):
+The side of a Card that is shown and asked.
+_Avoid_: front, Vorderseite
 
-**Answer** (Antwort):
-Die erwartete Antwort einer Card; sie kann mehrere Alternatives enthalten.
-_Vermeiden_: Back, Rückseite, Lösung; „Antwort“ für die Response oder die Review
+**Answer** (DE Antwort; RU «ответ»):
+The expected answer of a Card; it may hold several Alternatives.
+_Avoid_: back, solution, Rückseite, Lösung; "answer" for the Response or the Review
 
-**Alternatives** (Alternativen):
-Mehrere gleichwertige Teile einer Answer, durch `/` getrennt. Ihre Reihenfolge ist egal;
-wer nur einen Teil nennt, antwortet Incomplete. Besteht eine Answer oder Response nur aus
-`/` und Leerraum, etwa `/`, ist sie als Ganzes eine einzige Alternative.
-_Vermeiden_: Varianten, Synonyme
+**Alternatives** (DE Alternativen; RU «варианты ответа»):
+Several equivalent parts of an Answer, separated by `/`. Their order doesn't matter; naming only one
+part answers Incomplete. An Answer or Response made only of `/` and whitespace, such as `/`, is one
+single Alternative as a whole.
+_Avoid_: variants, synonyms
 
-**Hint** (Hinweis):
-Ein optionaler Zusatz, der zusammen mit der Question gezeigt wird.
-_Vermeiden_: Remark, Bemerkung
+**Hint** (DE Hinweis; RU «подсказка»):
+An optional addition shown together with the Question.
+_Avoid_: remark, Bemerkung
 
-**New card** (Neue Karte):
-Eine Card, die noch nie in einer Study session abgefragt wurde.
-_Vermeiden_: ungelernt, unseen
+**New card** (DE Neue Karte; RU «новая карточка»):
+A Card never yet asked in a Study session.
+_Avoid_: unlearned, unseen
 
-**Suspended card** (Ausgesetzte Karte):
-Eine Card, die der Lernende ausgesetzt hat, auf dem Mac oder dem iPhone: Sie ist nie Due,
-keine Session fragt sie ab, bis er sie auf dem Mac wieder aufnimmt (Resume). Ihr Learning
-state bleibt derweil, wie er war.
-_Vermeiden_: ignoriert, deaktiviert, zurückgestellt, Buried
+**Suspended card** (DE Ausgesetzte Karte; RU «приостановленная карточка»):
+A Card the learner suspended, on the Mac or the iPhone: it is never Due and no Session asks it
+until they resume it (Resume). Its Learning state stays as it was meanwhile.
+_Avoid_: ignored, disabled, deferred, buried
 
-### Abfragen und Bewerten
+### Reviewing and grading
 
-**Review** (Abfrage):
-Einmal eine Card abfragen und bewerten.
-_Vermeiden_: Answer, Antwort, Wiederholung, Rep
+**Review** (DE Abfrage; RU «оценка»):
+Asking a Card once and grading it.
+_Avoid_: answer, repetition, rep, Wiederholung, «повторение»
 
-**Response** (Eingabe):
-Was der Lernende auf eine Question hin eintippt.
-_Vermeiden_: Answer, „deine Antwort“
+**Response** (DE Eingabe; RU «ввод»):
+What the learner types in reply to a Question.
+_Avoid_: answer, "your answer"
 
-**Review mode** (Abfrageart):
-Wie eine Review lief: Typed (Getippt), der Lernende tippt eine Response, und die App
-schlägt eine Grade vor; oder Revealed (Aufgedeckt), der Lernende deckt die Answer auf und
-gibt die Grade ohne Response. Der Mac fragt Typed ab oder, im Modus „Flashcards“, Revealed;
-das iPhone fragt Revealed. Eine Revealed Review, die die Card weiß, behält den Anteil
-`revealedRecallWeight` der Stabilität, die FSRS hinzurechnet (im Fork voreingestellt 1,
-einstellbar bis herunter auf ein Drittel); siehe `docs/adr/0004-aufgedeckte-abfragen-gedaempft.md` und
-`docs/adr/0005-aufgedeckte-abfragen-zaehlen-im-fork-voll.md`.
-_Vermeiden_: Karteikarten-Modus
+**Review mode** (DE Abfrageart; RU «способ оценки»):
+How a Review went: Typed (DE Getippt), the learner types a Response and the app suggests a Grade;
+or Revealed (DE Aufgedeckt), the learner reveals the Answer and gives the Grade without a Response.
+The Mac asks Typed or, in "Flashcards" mode, Revealed; the iPhone asks Revealed. A Revealed Review
+the Card recalls keeps the share `revealedRecallWeight` of the stability FSRS adds (1 by default in
+the fork, adjustable down to a third); see `docs/adr/0004-revealed-reviews-damped.md` and
+`docs/adr/0005-revealed-reviews-count-fully-in-fork.md`.
+_Avoid_: flashcard mode (for the review mode)
 
-**Check result** (Prüfergebnis):
-Wie die Response zur Answer passt: Correct, Incomplete, Almost correct oder Wrong. Es
-schlägt eine Grade nur vor.
-_Vermeiden_: Bewertung, Urteil
+**Check result** (DE Prüfergebnis; RU «результат проверки»):
+How the Response matches the Answer: Correct, Incomplete, Almost correct or Wrong. It only
+suggests a Grade.
+_Avoid_: rating, verdict
 
-**Correct** (Richtig):
-Die Response enthält alle Alternatives der Answer.
-_Vermeiden_: „richtig“ für eine Grade, siehe Recalled
+**Correct** (DE Richtig):
+The Response contains all Alternatives of the Answer.
+_Avoid_: "correct" for a Grade, see Recalled
 
-**Incomplete** (Unvollständig):
-Die Response enthält nur einen Teil der Alternatives und nichts Falsches.
+**Incomplete** (DE Unvollständig):
+The Response contains only part of the Alternatives and nothing wrong.
 
-**Almost correct** (Fast richtig):
-Die Response verfehlt die Answer nur um wenige Tippfehler oder die Groß- und
-Kleinschreibung. Wie viele Tippfehler, hängt von der Länge der Alternative ab: unter 4
-Zeichen keiner, ab 4 einer, ab 8 zwei.
-_Vermeiden_: Typo, Tippfehler (als Ergebnis)
+**Almost correct** (DE Fast richtig):
+The Response misses the Answer only by a few typos or by letter case. How many typos depends on the
+length of the Alternative: none under 4 characters, one from 4, two from 8.
+_Avoid_: typo (as a result)
 
-**Wrong** (Falsch):
-Die Response ist weder Correct, Incomplete noch Almost correct, oder sie ist leer.
-_Vermeiden_: „falsch“ für eine Grade, siehe Again
+**Wrong** (DE Falsch):
+The Response is neither Correct, Incomplete nor Almost correct, or it is empty.
+_Avoid_: "wrong" for a Grade, see Again
 
-**Grade** (Bewertung):
-Wie gut der Lernende eine Card wusste: Again, Hard, Good oder Easy. Die App schlägt eine
-Grade vor, entscheiden tut der Lernende.
-_Vermeiden_: Rating, Note, Score
+**Grade** (DE Bewertung; RU «вариант оценки»):
+How well the learner knew a Card: Again, Hard, Good or Easy. The app suggests a Grade; the learner
+decides.
+_Avoid_: rating, mark, score
 
-**Again** (Nochmal):
-Die Grade für eine Card, die der Lernende nicht wusste.
-_Vermeiden_: failed, Wrong, falsch
+**Again** (on the button: Forgot; DE Nochmal; RU «забыл»):
+The Grade for a Card the learner didn't know. The scheduler calls it Again; its button and swipe
+say Forgot.
+_Avoid_: failed, wrong
 
-**Recalled** (Gewusst):
-Jede Grade außer Again.
-_Vermeiden_: Correct, richtig
+**Recalled** (DE Gewusst; RU «вспомнил»):
+Any Grade except Again.
+_Avoid_: correct
 
-**Mistake** (Fehler):
-Eine Card, die in einer Session mindestens einmal Again bekam.
-_Vermeiden_: failed card, „falsch beantwortet“
+**Mistake** (DE Fehler; RU «ошибка»):
+A Card that got Again at least once in a Session.
+_Avoid_: failed card, "answered wrong"
 
-**Lapse** (Vergessen):
-Again für eine Card in der Review phase; sie fällt damit in Relearning.
-_Vermeiden_: forgotten, „vergessene Karte“ als Begriff
+**Lapse** (DE Vergessen; RU «провал»):
+Again for a Card in the Review phase; it falls into Relearning.
+_Avoid_: forgotten, "forgotten card" as a term
 
-### Lernstand
+### Learning state
 
-**Learning state** (Lernstand):
-Was die App über das Gedächtnis des Lernenden zu einer Card weiß: Phase, Stability,
-Difficulty, wann sie Due ist und wie viele Reviews und Lapses sie hatte. Eine New card hat
-keinen. Zurücksetzen macht die Card wieder zur New card und leert ihr Review log; ein Merge
-lässt die Reviews von davor auch aus der anderen Fassung weg.
-_Vermeiden_: Memory state, Memory, Gedächtnis; Reset progress, Lernfortschritt zurücksetzen
+**Learning state** (DE Lernstand; RU «состояние обучения»):
+What the app knows about the learner's memory of a Card: Phase, Stability, Difficulty, when it is
+Due and how many Reviews and Lapses it had. A New card has none. Resetting makes the Card a New card
+again and empties its Review log; a Merge leaves out the earlier Reviews from the other version too.
+_Avoid_: memory state, memory, reset progress
 
-**Phase** (Phase):
-Wo eine Card im Lernen steht: Learning, Review phase oder Relearning. Eine New card hat
-noch keine.
+**Phase** (DE Phase; RU «фаза»):
+Where a Card stands in learning: Learning, Review phase or Relearning. A New card has none yet.
 
-**Learning** (Lernend):
-Die Phase einer Card nach ihrer ersten Review, bis sie genug Steps gesammelt hat.
-_Vermeiden_: „Lernend“ als Maturity, siehe Shaky
+**Learning** (DE Lernend; RU «обучение»):
+The Phase of a Card after its first Review, until it has collected enough Steps.
+_Avoid_: "learning" as a Maturity, see Shaky
 
-**Review phase** (Wiederholungsphase):
-Die Phase einer gelernten Card, die erst nach einem Interval wieder drankommt.
-_Vermeiden_: Review (für die Phase), Wiederholung (ohne „-phase“), graduated
+**Review phase** (DE Wiederholungsphase; RU «фаза повторения»):
+The Phase of a learned Card that comes back only after an Interval.
+_Avoid_: review (for the phase), graduated
 
-**Relearning** (Erneut lernen):
-Die Phase einer Card nach einem Lapse, bis sie wieder genug Steps gesammelt hat.
-_Vermeiden_: Neu lernen
+**Relearning** (DE Erneut lernen; RU «переучивание»):
+The Phase of a Card after a Lapse, until it has collected enough Steps again.
+_Avoid_: learning anew
 
-**Step** (Lernschritt):
-Eine Good für eine Card in Learning oder Relearning. Hard hält die Card auf ihrem Step,
-Again setzt sie auf null zurück, Easy bringt sie sofort in die Review phase.
-_Vermeiden_: Learning step als Zeitstufe (wie in Anki), „richtige Antwort“
+**Step** (DE Lernschritt; RU «шаг обучения»):
+A Good for a Card in Learning or Relearning. Hard keeps the Card on its Step, Again resets it to
+zero, Easy moves it straight to the Review phase.
+_Avoid_: learning step as a time delay (as in Anki), "right answer"
 
-**Stability** (Stabilität):
-Die Zahl der Tage, bis die Recall probability einer Card auf 90 % fällt.
+**Stability** (DE Stabilität; RU «стабильность»):
+The number of days until a Card's Recall probability falls to 90 %.
 
-**Difficulty** (Schwierigkeit):
-Wie schwer eine Card dem Lernenden fällt, von 1 bis 10.
+**Difficulty** (DE Schwierigkeit; RU «сложность»):
+How hard a Card is for the learner, from 1 to 10.
 
-**Recall probability** (Abrufwahrscheinlichkeit):
-Die geschätzte Chance, eine Card jetzt zu wissen; in FSRS „retrievability“. Die Zeit seit
-der letzten Review zählt in ganzen Study days, am Tag einer Review ist sie also 100 %.
-_Vermeiden_: Retrievability, chance of remembering, Erinnerungswahrscheinlichkeit
+**Recall probability** (DE Abrufwahrscheinlichkeit; RU «вероятность вспомнить»):
+The estimated chance of knowing a Card now; "retrievability" in FSRS. The time since the last Review
+counts in whole Study days, so on the day of a Review it is 100 %.
+_Avoid_: retrievability, chance of remembering
 
-**Target recall** (Angestrebte Abrufquote):
-Die Recall probability, bei der eine Card in der Review phase wieder abgefragt wird; in FSRS
-„desired retention“.
-_Vermeiden_: Desired retention; „Retention“ und „Behaltensquote“ heißen die gemessene Quote
+**Target recall** (DE Angestrebte Abrufquote; RU «целевая запоминаемость»):
+The Recall probability at which a Card in the Review phase is asked again; "desired retention" in
+FSRS.
+_Avoid_: desired retention; "retention" is the measured rate
 
-**Retention** (Behaltensquote):
-Der Anteil der Reviews einer Card in der Review phase, die der Lernende wusste (Hard, Good
-oder Easy), je Zeitraum und getrennt nach Interval unter 21 Study days (Young) und ab 21
-(Mature); in Anki „true retention“. Sie zeigt, was die Target recall tatsächlich erreicht.
-Nicht gezählt werden Reviews in Learning und Relearning, die erste Review einer New card und
-weitere Reviews am selben Study day. Code: `TrueRetention`.
-_Vermeiden_: True retention, Retention für die Target recall
+**Retention** (DE Behaltensquote; RU «фактическая запоминаемость»):
+The share of a Card's Reviews in the Review phase the learner recalled (Hard, Good or Easy), per
+period and split by Interval under 21 Study days (Young) and from 21 (Mature); "true retention" in
+Anki. It shows what the Target recall actually achieves. Not counted: Reviews in Learning and
+Relearning, the first Review of a New card, and further Reviews on the same Study day. Code:
+`TrueRetention`.
+_Avoid_: true retention, retention for the Target recall
 
-**Parameters** (Parameter):
-Die 21 Gewichte des FSRS-Modells, je Deck in den Learning options. Sie beginnen mit den
-Standardwerten von open-spaced-repetition und lassen sich aus dem Review log des Decks
-berechnen. Dafür zählen nur Typed Reviews an einem späteren Study day als die vorige Review
-derselben Card, und nur von Cards, deren Review log bis zur ersten Review reicht.
+**Parameters** (DE Parameter; RU «параметры»):
+The 21 weights of the FSRS model, per Deck in the Learning options. They start with the defaults of
+open-spaced-repetition and can be computed from the Deck's Review log. Only Reviews on a later Study
+day than the previous Review of the same Card count for that, and only from Cards whose Review log
+reaches back to the first Review.
 
-**Interval** (Abstand):
-Die Zahl der Study days, bis eine Card in der Review phase wieder abgefragt wird.
-_Vermeiden_: Wiederholungstermin, Pause
+**Interval** (DE Abstand; RU «интервал»):
+The number of Study days until a Card in the Review phase is asked again.
+_Avoid_: review date, pause
 
-**Study day** (Lerntag):
-Ein Tag, der um 4 Uhr morgens beginnt. Intervals zählen in Study days.
-_Vermeiden_: Kalendertag, Tag
+**Study day** (DE Lerntag; RU «учебный день»):
+A day that starts at 4 am. Intervals count in Study days.
+_Avoid_: calendar day, day
 
-**Due** (Fällig):
-Eine Card, die in der nächsten Study session drankommen kann: jede New card, jede Card in
-Learning oder Relearning und jede Card, deren Interval abgelaufen ist, außer einer
-Suspended card.
-_Vermeiden_: anstehend, offen
+**Due** (DE Fällig; RU «к повторению», «due»):
+A Card the next Study session may ask: every New card, every Card in Learning or Relearning and
+every Card whose Interval has run out, except a Suspended card.
+_Avoid_: pending, open
 
-**Maturity** (Reifegrad):
-Wie gut eine Card sitzt, nach ihrer Stability: New (Neu), Shaky (Unsicher, unter 4 Tagen
-oder in Learning oder Relearning), Young (Jung, 4–16 Tage), Maturing (Gefestigt,
-16–64 Tage), Mature (Sicher, 64–256 Tage), Mastered (Gemeistert, ab 256 Tagen).
-_Vermeiden_: Status, Learning, Lernend
+**Maturity** (DE Reifegrad; RU «зрелость»):
+How firmly a Card sits, by its Stability: New (DE Neu), Shaky (DE Unsicher; under 4 days, or in
+Learning or Relearning), Young (DE Jung; 4–16 days), Maturing (DE Gefestigt; 16–64 days), Mature
+(DE Sicher; 64–256 days), Mastered (DE Gemeistert; from 256 days).
+_Avoid_: status, learning
 
-### Stapel
+### Decks
 
-**Deck** (Stapel):
-Eine Sammlung von Cards mit ihren Learning options und ihrem Progress, gespeichert in einer
-Datei. Sein Name ist der Dateiname.
-_Vermeiden_: Dokument, Datei, Kartei, Box, Index card box
+**Deck** (DE Stapel; RU «колода»):
+A collection of Cards with their Learning options and their Progress, stored in one file. Its name
+is the file name.
+_Avoid_: document, file, box, index card box, Kartei
 
-**Merge** (Zusammenführen):
-Zwei Fassungen desselben Decks zu einer machen, etwa die von Mac und iPhone nach einem
-Konflikt auf iCloud Drive. Die Review logs beider zählen; Cards und Learning options kommen
-aus der Fassung, deren Inhalt zuletzt geändert wurde. Reviews ändern den Inhalt nicht,
-Aussetzen auch nicht: Ob eine Card ausgesetzt ist, kommt aus der Fassung, die das zuletzt
-geändert hat.
-_Vermeiden_: Synchronisieren, Abgleich
+**Merge** (DE Zusammenführen; RU «слияние»):
+Making one of two versions of the same Deck, such as the Mac's and the iPhone's after a conflict on
+iCloud Drive. The Review logs of both count; each part comes from the version that changed it last,
+by the rules of `DeckChange.merging` (`references/deck-package.md`). Reviews don't change the content.
+_Avoid_: sync, reconcile
 
-**Learning options** (Lernoptionen):
-Die Einstellungen, die für ein Deck gelten, etwa Target recall, die Zahl der Steps und die
-Grenzen einer Session.
-_Vermeiden_: Deck settings, Einstellungen
+**Learning options** (DE Lernoptionen; RU «опции колоды»):
+The settings that apply to one Deck, such as Target recall, the number of Steps and the daily limits.
+_Avoid_: deck settings, Einstellungen
 
-**Preferences** (Einstellungen):
-Die Einstellungen der App, die für alle Decks gelten.
-_Vermeiden_: Settings, Optionen
+**Preferences** (DE Einstellungen; RU «настройки приложения»):
+The app's settings that apply to all Decks.
+_Avoid_: settings, options
 
-**Review log** (Verlauf):
-Alle Reviews einer Card in einer Study session, jeweils mit Zeitpunkt und Grade und, wenn
-gemessen, der Dauer: wie lange die Card bei aktiver App auf dem Bildschirm stand (`ms` in
-`reviews.jsonl`). Die Dauer fließt nur ins Tempo ein, nie in den Zeitplan.
-_Vermeiden_: History, Antwortverlauf, Kartenverlauf
+**Review log** (DE Verlauf; RU «лог оценок»):
+All Reviews of a Card, each with its time and Grade and, when measured, the duration: how long the
+Card stood on screen with the app active (`ms` in `reviews.jsonl`). The duration feeds only the
+pace, never the schedule.
+_Avoid_: history, answer history, card history
 
-**Progress** (Fortschritt):
-Wie sich die Cards eines Decks über die Zeit gefestigt haben, als Folge von Daily
-snapshots.
-_Vermeiden_: History, Verlauf, Statistikverlauf
+**Progress** (DE Fortschritt; RU «прогресс»):
+How the Cards of a Deck have firmed up over time, as a sequence of Daily snapshots.
+_Avoid_: history, statistics history
 
-**Daily snapshot** (Tagesstand):
-Wie viele Cards eines Decks am Ende eines Study day wie stabil waren.
-_Vermeiden_: Tagesstatistik
+**Daily snapshot** (DE Tagesstand; RU «снимок дня»):
+How many Cards of a Deck had which stability at the end of a Study day.
+_Avoid_: daily statistics
 
-### Sitzungen
+### Sessions
 
-**Session** (Sitzung):
-Reviews über eine feste Auswahl von Cards am Stück, bis alle erledigt sind oder der Lernende
-aufhört. Es gibt Study sessions und Practice.
-_Vermeiden_: Runde, Durchgang
+**Session** (DE Sitzung; RU «сессия»):
+Reviews over a fixed selection of Cards in one go, until all are done or the learner stops. There are
+Study sessions and Practice. In the fork Study runs as a Stream; the types keep the name.
+_Avoid_: round, pass
 
-**Study session** (Lernsitzung):
-Eine Session über die Due Cards, deren Reviews den Learning state der Cards ändern. Eine Card
-bleibt darin, bis sie in der Review phase ist. „Lernen“ ist das Verb dazu.
-_Vermeiden_: Abfragerunde
+**Study session** (DE Lernsitzung; RU «учебная сессия»):
+A Session over the Due Cards whose Reviews change the Cards' Learning state. A Card stays in it until
+it is in the Review phase. "Study" is the verb for it.
+_Avoid_: review round
 
-**Practice** (Üben):
-Eine Session über die Mistakes einer vorigen Session. Sie ändert keinen Learning state und
-schreibt nichts ins Review log.
-_Vermeiden_: Drill, Training, Fehlerrunde
+**Practice** (DE Üben; RU «практика»):
+A Session over the Mistakes of the day or the newest batch. It changes no Learning state and writes
+nothing to the Review log.
+_Avoid_: drill, training, mistake round
 
 ### MacVocTrain 1
 
 **MacVocTrain 1**:
-Die Vorgänger-App; ihre Dokumente lassen sich als Deck importieren.
+The predecessor app; its documents can be imported as a Deck.
 
-**Level**:
-Die Stufe einer Karte in MacVocTrain 1, die ihren nächsten Abstand fest vorgab. Beim Import
-wird daraus eine Stability. Nur im Zusammenhang mit dem Import benutzen.
+**Level** (RU «уровень»):
+A card's stage in MacVocTrain 1, which fixed its next interval. The import turns it into a
+Stability. Use only in the context of the import.
 
 ## Mnemit: the day, the ring, the streak
 
-Terms of the fork, in English like its code and README. Each entry gives the term in code, the
-words on screen (EN / DE) and the Russian word for CLAUDE.md and HANDOFF.md. The rule behind
-them: **a card is never a review, and a review is never a card.** A day is measured in cards;
-reviews only price the time. The day is cut into short rounds, and the app learns how many of them
+Terms of the fork. Each entry gives the term in code, the words on screen (EN / DE) and the
+Russian word. The rule behind them: **a card is never a review, and a review is never a card.**
+A day is measured in cards; reviews only price the time. The day is cut into short rounds, and the app learns how many of them
 the learner really does.
 
 **Review** (on screen: not counted; RU «оценка»):

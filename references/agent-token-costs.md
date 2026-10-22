@@ -23,8 +23,8 @@ the agent produces (output tokens are under 1 % of the total).
 ## What makes the context
 
 1. **Baseline, ~76 k before any work:** the system prompt and tools, the global `CLAUDE.md`
-   (~17 k tokens), `MEMORY.md` (~9 k), and this repository's `CLAUDE.md` (~27 k, of which the
-   fork section is 75 KB of dense Russian that every agent loads whether its task needs it or not).
+   (~17 k tokens), `MEMORY.md` (~9 k), and this repository's `CLAUDE.md` (~27 k at the measurement, when it held the
+   fork's details as 75 KB of dense Russian that every agent loaded whatever its task; now ~3 k).
 2. **Whole files read to explore,** the largest growth: `cat` of `SessionDriver.swift`,
    `StartScreen.swift`, `StudyView.swift`, `DailyProgress.swift`, `Card.swift` plus neighbours,
    several per call, 20–30 k characters each, kept in context to the end.
@@ -43,7 +43,7 @@ the agent produces (output tokens are under 1 % of the total).
 - **Size the agent to the task.** A one-file change doesn't need its own agent: the 76 k baseline
   and the exploration cost more than doing it in the parent with known line numbers. Mechanical
   passes (terminology, docs) suit haiku.
-- **Shrink the baseline.** This repository's `CLAUDE.md` fork section moves to topic files under
-  `references/` with a short index left in `CLAUDE.md`; agents read the topic they work on.
+- **Shrink the baseline.** This repository's `CLAUDE.md` is a short index; the details live in
+  topic files under `references/`, and agents read the topic they work on.
 - **Restart instead of growing.** An agent past ~250 k context with work left should write its
   state to a scratch file and report; a fresh agent continues from the file.
