@@ -35,7 +35,8 @@ Root is a `NavigationStack` on Today.
   "All done" or "Nothing due"); under it "M of K cards · N left", the done cards against the
   daily goal and the cards of today's plan not done yet (not the raw due count); "+N to catch
   up this week" when a backlog is left; the streak, "12-day streak", with "· kept today" once
-  the first round is done; "≈ 28 words in memory · +15 today", and on the day a milestone is
+  the first round is done; under the ring, over the width of the row, "≈ 28 words in memory ·
+  +15 today" on one line (one wrapping text at large type sizes), and on the day a milestone is
   passed "50 words in memory!"; **Study** (all decks).
 - Decks section: a row per deck with its counts. Tapping a row pushes the Deck screen. Swipe and context menu:
   **Pause Deck** (`pause.circle`); a swipe also offers Remove from List where the list may forget the deck.
