@@ -64,18 +64,19 @@ enum WidgetFixtures {
         return try! Deck(cards: cards)
     }
 
-    static func progress(done: Int, goal: Int, streak: Int) -> DailyProgress {
-        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil))
+    static func progress(done: Int, goal: Int, streak: Int, secondsPerCard: Double = DailyGoal.fallbackSecondsPerCard) -> DailyProgress {
+        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil), secondsPerCard: secondsPerCard)
     }
 
     /// A snapshot made at `now` whose due count is `count(date)`, hourly for two days.
     static func snapshot(
-        now: Date, reviews: Int, goal: Int = 20, streak: Int, isGoalMet: Bool, reminder: Date? = nil, count: (Date) -> Int
+        now: Date, reviews: Int, goal: Int = 20, streak: Int, isGoalMet: Bool, reminder: Date? = nil, secondsPerCard: Double? = nil,
+        count: (Date) -> Int
     ) -> WidgetSnapshot {
         let dates = WidgetSnapshot.forecastDates(from: now, calendar: calendar)
         return WidgetSnapshot(
             date: now, reviews: reviews, goal: goal, streakDays: streak, isGoalMet: isGoalMet,
-            due: dates.map { .init(date: $0, count: count($0)) }, nextReminder: reminder)
+            due: dates.map { .init(date: $0, count: count($0)) }, nextReminder: reminder, secondsPerCard: secondsPerCard)
     }
 }
 
@@ -102,6 +103,18 @@ struct WidgetSnapshotTests {
         let first = try #require((json["due"] as? [[String: Any]])?.first)
         #expect(Set(first.keys) == ["date", "count"])
         #expect(json["date"] as? Double == Fixtures.date(22, 10).timeIntervalSince1970)
+    }
+
+    @Test func thePriceOfACardIsInTheFormatOnlyWhenThereIsOne() throws {
+        let priced = Fixtures.snapshot(now: Fixtures.date(22, 10), reviews: 3, streak: 2, isGoalMet: false, secondsPerCard: 9.5) { _ in 1 }
+        let json = try #require(JSONSerialization.jsonObject(with: priced.encoded()) as? [String: Any])
+        #expect(json["secondsPerCard"] as? Double == 9.5)
+        #expect(WidgetSnapshot.decoded(from: try priced.encoded()) == priced)
+        // What an older app wrote has no price: it still reads, and there is no time to show.
+        let unpriced = Fixtures.snapshot(now: Fixtures.date(22, 10), reviews: 3, streak: 2, isGoalMet: false) { _ in 1 }
+        let old = try #require(WidgetSnapshot.decoded(from: try unpriced.encoded()))
+        #expect(old.secondsPerCard == nil)
+        #expect(old.state(at: Fixtures.date(22, 10)).minutesLeft == nil)
     }
 
     @Test func unreadableDataIsNoSnapshot() {
@@ -156,6 +169,37 @@ struct WidgetSnapshotTests {
         #expect(snapshot.due.map(\.count) == [8, 9, 11])
         #expect(snapshot.due.map(\.date) == dates)
         #expect(snapshot.reviews == 12 && snapshot.goal == 20 && snapshot.streakDays == 7 && !snapshot.isGoalMet)
+    }
+
+    @Test func theSnapshotKeepsThePriceOfACardFromWhenItWasMade() {
+        let now = Fixtures.date(22, 10, 20)
+        let dates = Array(WidgetSnapshot.forecastDates(from: now, calendar: Fixtures.calendar).prefix(3))
+        let snapshot = WidgetSnapshot(
+            now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7, secondsPerCard: 12.5), dates: dates, dueByDeck: [[7, 7, 8]], nextReminder: nil)
+        #expect(snapshot.secondsPerCard == 12.5)
+    }
+
+    /// The minutes follow the cards due at each hour of the forecast, priced by the one price of the snapshot.
+    @Test func theMinutesLeftFollowTheDueCountOfTheMoment() {
+        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), reviews: 12, streak: 7, isGoalMet: false, secondsPerCard: 10) {
+            $0 < Fixtures.date(22, 12) ? 42 : $0 < Fixtures.date(22, 16) ? 100 : 0
+        }
+        let state = { snapshot.state(at: $0, calendar: Fixtures.studyCalendar) }
+        #expect(state(Fixtures.date(22, 10, 20)).minutesLeft == 7)
+        #expect(state(Fixtures.date(22, 12)).minutesLeft == 17)
+        // Nothing due: nothing to say.
+        #expect(state(Fixtures.date(22, 16)).minutesLeft == nil)
+        // Five cards at ten seconds: under a minute.
+        let few = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), reviews: 12, streak: 7, isGoalMet: false, secondsPerCard: 10) { _ in 5 }
+        #expect(few.state(at: Fixtures.date(22, 11), calendar: Fixtures.studyCalendar).minutesLeft == 0)
+        // The timeline carries the price into the next study day.
+        #expect(snapshot.timeline(from: Fixtures.date(22, 10, 20), calendar: Fixtures.studyCalendar).allSatisfy { $0.secondsPerCard == 10 })
+    }
+
+    @Test func theTimeLeftReadsAsMinutesOrUnderOne() {
+        #expect(Format.timeLeft(minutes: 7) == "≈ 7 min")
+        #expect(Format.timeLeft(minutes: 120) == "≈ 120 min")
+        #expect(Format.timeLeft(minutes: 0) == "< 1 min")
     }
 
     @Test func syncMakesTheSnapshotFromOpenAndSavedDecks() throws {

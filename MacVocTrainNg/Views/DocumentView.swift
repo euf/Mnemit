@@ -299,11 +299,16 @@ private struct RingChip: View {
         .accessibilityValue(help)
     }
 
-    /// "14 of 20 cards", and "· 12-day streak" when there is one.
+    /// "14 of 20 cards", with "· ≈ 7 min" for the cards left and "· 12-day streak" when there is one.
     private var help: String {
         guard let progress else { return "" }
-        let today = String(localized: "\(progress.ring.done) of \(progress.ring.goal) cards")
-        guard progress.streak.days > 0 else { return today }
-        return today + " · " + String(localized: "\(progress.streak.days)-day streak")
+        var parts = [String(localized: "\(progress.ring.done) of \(progress.ring.goal) cards")]
+        if let minutes = progress.minutesLeft {
+            parts.append(Format.timeLeft(minutes: minutes))
+        }
+        if progress.streak.days > 0 {
+            parts.append(String(localized: "\(progress.streak.days)-day streak"))
+        }
+        return parts.joined(separator: " · ")
     }
 }

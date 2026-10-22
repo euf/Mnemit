@@ -180,22 +180,27 @@ struct StudyView: View {
         }
     }
 
-    /// "14 of 30 today", or "36 today" once the goal is met, beside a small ring.
+    /// "14 of 30 cards · ≈ 7 min" while the goal is open, "36 cards today" once it is met, beside a small ring.
     @ViewBuilder
     private var ringAndFigures: some View {
         let daily = ring.progress?.ring
         HStack(spacing: 8) {
             StreamRing(progress: ring.progress)
             if let daily {
-                Group {
+                HStack(spacing: 4) {
                     if daily.isGoalMet {
                         Text("\(daily.done) cards today")
                     } else {
                         Text("\(daily.done) of \(daily.goal) cards")
+                        if let minutes = ring.progress?.minutesLeft {
+                            Text(verbatim: "· " + Format.timeLeft(minutes: minutes))
+                        }
                     }
                 }
                 .font(.subheadline)
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             }
         }
         .accessibilityElement(children: .combine)

@@ -763,6 +763,22 @@
         }
       }
     },
+    "< 1 min": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "< 1 Min."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "< 1 min"
+          }
+        }
+      }
+    },
     "A Translation → Greek card stays locked until its Greek → translation card has an interval this long. A word is asked in one direction per day.": {
       "localizations": {
         "de": {
@@ -6152,6 +6168,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "„%@“ ist geöffnet."
+          }
+        }
+      }
+    },
+    "≈ %lld min": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ %lld Min."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ %lld Min."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ %lld min"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ %lld min"
+                }
+              }
+            }
           }
         }
       }

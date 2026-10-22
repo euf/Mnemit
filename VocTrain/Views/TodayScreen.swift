@@ -250,10 +250,35 @@ struct SummaryRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// "≈ 7 min": the cards left at the learner's own pace, once the decks are read.
+    private var timeLeft: String? {
+        guard let progress, let minutes = DailyGoal.minutesLeft(cards: due, secondsPerCard: progress.secondsPerCard) else { return nil }
+        return Format.timeLeft(minutes: minutes)
+    }
+
     @ViewBuilder
     private var headline: some View {
         if due > 0 {
-            Text("\(due) cards left")
+            let cardsLeft = Text("\(due) cards left")
+            if let timeLeft {
+                // "74 cards left · ≈ 7 min", the time under it where the line is too long.
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        cardsLeft
+                        Text(verbatim: "· " + timeLeft)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    VStack(alignment: .leading, spacing: 0) {
+                        cardsLeft
+                        Text(verbatim: timeLeft)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                cardsLeft
+            }
         } else if let ring = progress?.ring, ring.done > 0 {
             Text("All done")
         } else {
