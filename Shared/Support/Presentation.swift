@@ -279,8 +279,8 @@ extension Color {
         #endif
     }
 
-    /// The daily ring: the app's accent, system indigo (`AccentColor` references
-    /// `systemIndigoColor`, so light, dark and high-contrast variants come from the system).
+    /// The daily ring: the app's accent, indigo `#5856D6` (`AccentColor` holds it as sRGB, with
+    /// high-contrast variants `#3634A3` light and `#6563E6` dark).
     /// Indigo because red means Forgot and the greens/teal mean recalled; green read as
     /// Excel and terracotta as Claude (owner, 21.10.2026). On the Mac the user's system
     /// accent shows instead unless it is Multicolor.

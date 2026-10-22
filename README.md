@@ -23,6 +23,10 @@ are in [`references/`](references/).
   between the finger and the grade's target (E, NE, W, SE), so every "yes" leans right and
   Forgot goes straight left. On the Mac the same arrows, Space to reveal, 1–4 as in Anki.
 - **One gesture.** Touching the card shows the answer; the same swipe grades it.
+- **One haptic per grade.** A swipe is felt once, when letting go would grade; the card that
+  flies off after it is silent. A button, a key or a flick are felt once, as the card flies.
+- **Progress you can see.** When a grade sends the card to another day, the screen behind it
+  pulses briefly in the accent; a card that comes back today gets no pulse.
 - **No intervals on the buttons.** "4 d" under a button reads as a promise and pulls the
   choice; the interval is shown after grading, in the undo chip.
 - **Undo everywhere.** The chip after each grade, a shake on the iPhone, Z or Esc on the
@@ -42,10 +46,12 @@ are in [`references/`](references/).
   on a later day, so a review card graded Hard, Good or Easy is done at once, a new card after
   its learning steps, and a card graded Forgot when it is through relearning. A card counts
   once, however many reviews it took. Today and the widget say "75 of 218 cards" and "143 cards
-  left", which add up, and the cards left come with "≈ 7 min": new cards and all other cards
-  are each priced at the seconds a done card of that kind took over the last week, the pauses of
-  up to two minutes between reviews divided by the cards done (30 seconds a new card and 10 any
-  other until 10 of that kind are done). The daily goal does not move during the day:
+  left", which add up, and the cards left come with "≈ 7 min". Each review records how long its
+  card was on screen while the app was in front. New cards and all other cards are priced apart:
+  the typical time of a review (a lognormal mean from the median and the spread of the recorded
+  times, so a card left open while away barely moves it) times the reviews a done card of that
+  kind took over the last week. Older logs without times are priced from the pauses between
+  reviews the same way; until there is enough data, 30 seconds a new card and 10 any other. The daily goal does not move during the day:
   cards added later and "+10 new" fill laps, as do catch-up and review ahead. The ring keeps
   going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
   streak in days. The streak counts the days whose ring was closed, a day with nothing due
@@ -87,11 +93,11 @@ are in [`references/`](references/).
 ### Storage and sync
 
 - **A deck is a package of text files, not a database.** `Deck.mnemit` holds `deck.json`
-  (cards and their state) and `reviews.jsonl` (one line per answer, only ever appended).
+  (cards and their state) and `reviews.jsonl` (one line per review, with its time on screen, only ever appended).
   iCloud Drive syncs it like any document; only the changed pieces upload. A SQLite file
   in a sync folder is what Anki's own manual warns against
   ([`deck-formats-and-sources.md`](references/deck-formats-and-sources.md)).
-- **Merging per card, never losing an answer.** When two devices edit offline, the review
+- **Merging per card, never losing a review.** When two devices edit offline, the review
   logs are joined, the later edit of a card wins, a deletion wins only if it is later than
   every change on the other device, and options keep the later change. A randomized test
   plays 200 histories on two devices and checks that both sides converge.
@@ -114,8 +120,9 @@ are in [`references/`](references/).
 
 ### Look
 
-- **A system accent, semantic colours.** Indigo for the app; red only for "no", greens only
-  for "yes"; counts are neutral.
+- **One accent, semantic colours.** Indigo `#5856D6` for the app and its widget (red means
+  "no" and the greens mean "yes", so the accent is neither); counts are neutral. On the Mac the
+  system accent setting applies.
 - **Rings drawn as Fitness draws them.** The drawing is MKRingProgressView's Core Graphics
   code transcribed into a SwiftUI `Canvas`: gradient to the head, solid laps underneath, the
   head's shadow on the ring it overlaps.
