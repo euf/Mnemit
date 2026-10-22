@@ -1466,6 +1466,16 @@
         }
       }
     },
+    "Checked %@, kept: no better fit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geprüft am %@, beibehalten: keine bessere Anpassung"
+          }
+        }
+      }
+    },
     "Checking": {
       "localizations": {
         "de": {
@@ -4966,6 +4976,16 @@
         }
       }
     },
+    "The parameters are fitted again at %@ reviews, then every %lld days or after %@ more reviews, and replace the current ones only if they predict your newest reviews at least %@ better.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Parameter werden bei %@ Abfragen, danach alle %lld Tage oder nach %@ weiteren Abfragen neu angepasst und ersetzen die aktuellen nur, wenn sie deine neuesten Abfragen um mindestens %@ besser vorhersagen."
+          }
+        }
+      }
+    },
     "The parameters could not be computed.": {
       "localizations": {
         "de": {
@@ -5352,6 +5372,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kommende Abfragen"
+          }
+        }
+      }
+    },
+    "Update Parameters": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parameter aktualisieren"
+          }
+        }
+      }
+    },
+    "Update parameters automatically": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parameter automatisch aktualisieren"
+          }
+        }
+      }
+    },
+    "Updated %@ from %@ answers": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktualisiert am %@ aus %@ Antworten"
           }
         }
       }

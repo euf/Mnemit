@@ -130,6 +130,12 @@ struct DocumentView: View {
             }
         }
         .attachingUndoManager(to: document)
+        // The deck opened: its parameters are fitted again if it is due, in the background and
+        // never into a study stream (`ParameterRefit`).
+        .task(id: canEdit) {
+            guard canEdit, session == nil else { return }
+            await ParameterRefitter.refit(document) { session == nil }
+        }
         .documentSync(document, fileURL: fileURL, isEditable: isEditable, merger: merger, isInSession: session != nil)
         .onAppear {
             OpenDecks.shared.add(document)
