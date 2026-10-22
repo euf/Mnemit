@@ -96,6 +96,26 @@ enum AnkiFixtures {
     /// A message with one varint field, like `PackageMetadata`.
     static func varintField(_ number: Int, _ value: UInt64) -> Data { varint(UInt64(number << 3)) + varint(value) }
 
+    /// A message field: a length-delimited `payload`.
+    static func bytesField(_ number: Int, _ payload: Data) -> Data {
+        varint(UInt64(number << 3 | 2)) + varint(UInt64(payload.count)) + payload
+    }
+
+    private static func littleEndian(_ value: Float) -> Data {
+        Data((0..<4).map { UInt8(truncatingIfNeeded: value.bitPattern >> UInt32(8 * $0)) })
+    }
+
+    /// A `float` field: wire type 5, four bytes little-endian.
+    static func floatField(_ number: Int, _ value: Float) -> Data {
+        varint(UInt64(number << 3 | 5)) + littleEndian(value)
+    }
+
+    /// A `repeated float` field, packed (as proto3 writes it) or as one field per value.
+    static func floatsField(_ number: Int, _ values: [Float], packed: Bool = true) -> Data {
+        guard packed else { return values.reduce(Data()) { $0 + floatField(number, $1) } }
+        return values.isEmpty ? Data() : bytesField(number, values.reduce(Data()) { $0 + littleEndian($1) })
+    }
+
     /// A message with one string field, like `Notetype.Template.Config`.
     static func stringField(_ number: Int, _ value: String) -> Data {
         varint(UInt64(number << 3 | 2)) + varint(UInt64(value.utf8.count)) + Data(value.utf8)
@@ -155,6 +175,19 @@ enum AnkiFixtures {
             + reviews.map { "INSERT INTO revlog VALUES (\($0.id), \($0.card), \($0.ease), \($0.type), \($0.factor))" }
     }
 
+    /// A deck preset: the FSRS lists of Anki's three versions and the desired retention
+    /// (`nil` leaves it out, as proto3 does for 0 and old collections do altogether).
+    struct RawPreset {
+        var id: Int
+        var name = "Default"
+        var fsrs4: [Float] = []
+        var fsrs5: [Float] = []
+        var fsrs6: [Float] = []
+        var desiredRetention: Float? = 0.9
+        /// Schema 18 only: whether the lists are written packed.
+        var isPacked = true
+    }
+
     struct RawNoteType {
         var id: Int
         var name = "Basic"
@@ -166,6 +199,7 @@ enum AnkiFixtures {
     /// A collection of schema 11, where note types, decks and the configuration are JSON in `col`.
     static func legacyCollection(
         noteTypes: [RawNoteType] = [RawNoteType(id: 1)], decks: [Int: String] = [1: "Default"], schedulerVersion: Int? = 2,
+        presets: [RawPreset]? = nil, deckPresets: [Int: Int] = [:],
         notes: [RawNote], cards: [RawCard], reviews: [RawReview] = []
     ) -> Data {
         func json(_ object: Any) -> String {
@@ -180,17 +214,33 @@ enum AnkiFixtures {
             ]
         }
         let conf: [String: Any] = schedulerVersion.map { ["schedVer": $0] } ?? [:]
-        let deckObjects = Dictionary(uniqueKeysWithValues: decks.map { (String($0.key), ["name": $0.value]) })
-        return database(
-            ["CREATE TABLE col (conf text, models text, decks text)"] + commonTables
-                + ["INSERT INTO col VALUES (\(quoted(json(conf))), \(quoted(json(models))), \(quoted(json(deckObjects))))"]
-                + rows(notes: notes, cards: cards, reviews: reviews))
+        var deckObjects: [String: [String: Any]] = [:]
+        for (id, name) in decks {
+            var object: [String: Any] = ["name": name]
+            object["conf"] = deckPresets[id]
+            deckObjects[String(id)] = object
+        }
+        // `dconf` is only there if there are presets, so the importer is tried without it, too.
+        var table = "CREATE TABLE col (conf text, models text, decks text"
+        var values = "\(quoted(json(conf))), \(quoted(json(models))), \(quoted(json(deckObjects)))"
+        if let presets {
+            var objects: [String: [String: Any]] = [:]
+            for preset in presets {
+                var object: [String: Any] = ["name": preset.name, "fsrsWeights": preset.fsrs4, "fsrsParams5": preset.fsrs5, "fsrsParams6": preset.fsrs6]
+                object["desiredRetention"] = preset.desiredRetention
+                objects[String(preset.id)] = object
+            }
+            table += ", dconf text"
+            values += ", \(quoted(json(objects)))"
+        }
+        return database([table + ")"] + commonTables + ["INSERT INTO col VALUES (\(values))"] + rows(notes: notes, cards: cards, reviews: reviews))
     }
 
     /// A collection of schema 18: tables for note types, fields, templates and decks, with
     /// protobuf `config` blobs and Anki's own collation on the names.
     static func currentCollection(
         noteTypes: [RawNoteType] = [RawNoteType(id: 1)], decks: [Int: String] = [1: "Default"],
+        presets: [RawPreset]? = nil, deckPresets: [Int: Int] = [:],
         notes: [RawNote], cards: [RawCard], reviews: [RawReview] = []
     ) -> Data {
         func hex(_ data: Data) -> String { "X'" + data.map { String(format: "%02x", $0) }.joined() + "'" }
@@ -215,7 +265,20 @@ enum AnkiFixtures {
             }
         }
         for (id, name) in decks {
-            statements.append("INSERT INTO decks VALUES (\(id), \(quoted(name.replacingOccurrences(of: "::", with: "\u{1F}"))), X'', X'')")
+            // `kind` is a `KindContainer`: field 1 is the normal deck, whose field 1 is the preset.
+            let kind = deckPresets[id].map { bytesField(1, varintField(1, UInt64($0))) } ?? Data()
+            statements.append("INSERT INTO decks VALUES (\(id), \(quoted(name.replacingOccurrences(of: "::", with: "\u{1F}"))), X'', \(hex(kind)))")
+        }
+        if let presets {
+            statements.append("CREATE TABLE deck_config (id integer NOT NULL PRIMARY KEY, name text NOT NULL COLLATE unicase, mtime_secs integer NOT NULL, usn integer NOT NULL, config blob NOT NULL)")
+            for preset in presets {
+                // Fields of other kinds come before, between and after the ones read: learn_steps (1), new_per_day (9), other (255).
+                var config = floatsField(1, [1, 10]) + floatsField(3, preset.fsrs4, packed: preset.isPacked) + varintField(9, 20)
+                config += floatsField(5, preset.fsrs5, packed: preset.isPacked) + floatsField(6, preset.fsrs6, packed: preset.isPacked)
+                config += preset.desiredRetention.map { floatField(37, $0) } ?? Data()
+                config += bytesField(255, Data("{}".utf8))
+                statements.append("INSERT INTO deck_config VALUES (\(preset.id), \(quoted(preset.name)), 0, 0, \(hex(config)))")
+            }
         }
         return database(commonTables + statements + rows(notes: notes, cards: cards, reviews: reviews))
     }

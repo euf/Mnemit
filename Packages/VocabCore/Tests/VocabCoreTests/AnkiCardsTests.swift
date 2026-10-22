@@ -129,4 +129,38 @@ struct AnkiCardsTests {
         #expect(DeckChange.importing([], into: deck) == nil)
         #expect(DeckChange.adding(made, to: Deck())?.upserts.count == 1)
     }
+
+    @Test func theSettingsOfThePresetChangeTheReplayedCards() throws {
+        let url = try #require(Bundle.module.url(forResource: "Resources/Anki/greek-latest", withExtension: "apkg"))
+        let result = try AnkiImport.read(url)
+        let preset = try #require(result.learningOptions(applyingTo: options))
+        let plain = result.cards(learningOptions: options, calendar: calendar, created: created)
+        let tuned = result.cards(learningOptions: preset, calendar: calendar, created: created)
+        // The cat has history: the parameters give it another stability and difficulty than the defaults do.
+        let before = try #require(plain[0].learningState)
+        let after = try #require(tuned[0].learningState)
+        #expect(after.stability != before.stability)
+        #expect(after.difficulty != before.difficulty)
+        #expect(plain[2].isNew && tuned[2].isNew)
+    }
+
+    @Test func aNewDeckTakesTheOptionsInTheSameChange() throws {
+        let preset = AnkiPreset(name: "a", parameters: FSRSParameters.default.weights.map { Float($0) }, desiredRetention: 0.85)
+        let applied = try #require(preset.learningOptions(applyingTo: options))
+        var deck = Deck()
+        let made = cards([.init(front: "a", back: "b", reviews: history)], options: applied)
+        let change = try #require(DeckChange.importing(made, into: deck, learningOptions: applied))
+        let inverse = deck.apply(change, at: time(day: 11), calendar: calendar)
+        #expect(deck.learningOptions == applied && deck.cards == made)
+        #expect(deck.learningOptionsChanged != nil)
+        // One undo takes the cards and the options back.
+        _ = deck.apply(inverse, at: time(day: 11), calendar: calendar)
+        #expect(deck.cards.isEmpty && deck.learningOptions == options)
+
+        // Options that are the deck's already, or none, leave them (and their stamp) alone.
+        var plain = Deck()
+        let same = try #require(DeckChange.importing(made, into: plain, learningOptions: options))
+        _ = plain.apply(same, at: time(day: 11), calendar: calendar)
+        #expect(plain.learningOptionsChanged == nil)
+    }
 }

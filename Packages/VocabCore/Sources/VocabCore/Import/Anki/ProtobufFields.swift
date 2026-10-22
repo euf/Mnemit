@@ -2,15 +2,20 @@ import Foundation
 
 /// The top-level fields of one protobuf message, for the few places where an Anki
 /// package holds one: the `meta` entry (`PackageMetadata`), and the `config` blobs of
-/// note types and templates in the collection. Nested messages are not parsed;
+/// note types, templates and deck presets in the collection. Nested messages are not parsed;
 /// `bytes` of a field can be passed to another `ProtobufFields`.
 struct ProtobufFields {
     private enum Value {
         case varint(UInt64)
+        case fixed32(UInt32)
         case bytes(Data)
     }
 
     private var fields: [(number: Int, value: Value)] = []
+
+    private static func littleEndian32(_ bytes: [UInt8], at start: Int) -> UInt32 {
+        (0..<4).reduce(0) { $0 | UInt32(bytes[start + $1]) << UInt32(8 * $1) }
+    }
 
     /// Reads as many fields as the data holds; a malformed tail ends the list.
     init(_ data: Data) {
@@ -36,8 +41,12 @@ struct ProtobufFields {
             case 0:
                 guard let value = varint() else { return }
                 fields.append((number, .varint(value)))
-            case 1, 5:
-                position += key & 7 == 1 ? 8 : 4
+            case 1:
+                position += 8
+            case 5:
+                guard position + 4 <= bytes.count else { return }
+                fields.append((number, .fixed32(Self.littleEndian32(bytes, at: position))))
+                position += 4
             case 2:
                 guard let length = varint(), length <= UInt64(bytes.count - position) else { return }
                 fields.append((number, .bytes(Data(bytes[position..<position + Int(length)]))))
@@ -63,5 +72,30 @@ struct ProtobufFields {
             if case let .bytes(value) = field.value { return value }
         }
         return nil
+    }
+
+    /// The last value of a `float` field, `nil` if it is absent, which proto3 also writes for 0.
+    func float(_ number: Int) -> Float? {
+        for field in fields.reversed() where field.number == number {
+            if case let .fixed32(value) = field.value { return Float(bitPattern: value) }
+        }
+        return nil
+    }
+
+    /// The values of a `repeated float` field, packed (as proto3 writes it) or one by one.
+    func floats(_ number: Int) -> [Float] {
+        var result: [Float] = []
+        for field in fields where field.number == number {
+            switch field.value {
+            case let .fixed32(value):
+                result.append(Float(bitPattern: value))
+            case let .bytes(data) where data.count % 4 == 0:
+                let bytes = [UInt8](data)
+                result += stride(from: 0, to: bytes.count, by: 4).map { Float(bitPattern: Self.littleEndian32(bytes, at: $0)) }
+            default:
+                break
+            }
+        }
+        return result
     }
 }

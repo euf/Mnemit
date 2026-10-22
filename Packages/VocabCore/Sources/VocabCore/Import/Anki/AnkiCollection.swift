@@ -1,9 +1,9 @@
 import Foundation
 
 /// Reads notes, cards and reviews from an Anki collection. Two schemas exist: 11, where
-/// note types and decks are JSON in the one row of `col` (Legacy 1 and 2), and 18, where
-/// they are tables with protobuf columns (Latest). `notes`, `cards` and `revlog` are the
-/// same in both.
+/// note types, decks and deck presets are JSON in the one row of `col` (Legacy 1 and 2), and
+/// 18, where they are tables with protobuf columns (Latest). `notes`, `cards` and `revlog`
+/// are the same in both.
 struct AnkiCollection {
     /// What the import needs to know about a note type.
     struct NoteType {
@@ -13,12 +13,20 @@ struct AnkiCollection {
         var questionFormats: [Int: String] = [:]
     }
 
+    /// A deck: its name, and the number of its preset if it names one.
+    struct Deck {
+        var name: String
+        var preset: Int?
+    }
+
     let database: AnkiDatabase
 
     func imported() throws -> AnkiImport {
         let isCurrent = try database.hasTable("notetypes")
         let noteTypes = try isCurrent ? currentNoteTypes() : legacyNoteTypes()
         let decks = try isCurrent ? currentDecks() : legacyDecks()
+        // The presets only add settings, so a collection whose presets can't be read still imports.
+        let presets = (try? isCurrent ? currentPresets() : legacyPresets()) ?? [:]
         let threeButtons = try !isCurrent && usesThreeLearningButtons()
         var log = try reviews(threeButtons: threeButtons)
 
@@ -49,9 +57,17 @@ struct AnkiCollection {
                 continue
             }
             usedDecks.insert(deck)
-            result.notes.append(AnkiImport.Note(front: question.text, back: answer.text, reviews: log.removeValue(forKey: id) ?? [], isSuspended: queue == -1))
+            // For now the preset is its number in Anki, which `presetNumbers` turns into an index below.
+            let preset = decks[deck]?.preset.flatMap { presets[$0] == nil ? nil : $0 }
+            result.notes.append(
+                AnkiImport.Note(front: question.text, back: answer.text, reviews: log.removeValue(forKey: id) ?? [], isSuspended: queue == -1, preset: preset))
         }
-        result.deckNames = usedDecks.compactMap { decks[$0] }.sorted()
+        result.deckNames = usedDecks.compactMap { decks[$0]?.name }.sorted()
+        let presetNumbers = Set(result.notes.compactMap(\.preset)).sorted()
+        result.presets = presetNumbers.compactMap { presets[$0] }
+        for index in result.notes.indices {
+            result.notes[index].preset = result.notes[index].preset.flatMap(presetNumbers.firstIndex(of:))
+        }
         return result
     }
 
@@ -144,10 +160,26 @@ struct AnkiCollection {
         return result
     }
 
-    private func legacyDecks() throws -> [Int: String] {
-        var result: [Int: String] = [:]
+    private func legacyDecks() throws -> [Int: Deck] {
+        var result: [Int: Deck] = [:]
         for (key, deck) in try legacyJSON("decks") {
-            if let id = Int(key), let name = deck["name"] as? String { result[id] = name }
+            if let id = Int(key), let name = deck["name"] as? String { result[id] = Deck(name: name, preset: deck["conf"] as? Int) }
+        }
+        return result
+    }
+
+    /// `col.dconf`: the keys of FSRS are `fsrsWeights` (FSRS-4.5), `fsrsParams5`, `fsrsParams6`
+    /// and `desiredRetention`, as `DeckConfSchema11` in rslib names them.
+    private func legacyPresets() throws -> [Int: AnkiPreset] {
+        var result: [Int: AnkiPreset] = [:]
+        for (key, configuration) in try legacyJSON("dconf") {
+            func floats(_ key: String) -> [Float] {
+                (configuration[key] as? [Any] ?? []).compactMap { ($0 as? NSNumber)?.floatValue }
+            }
+            guard let id = Int(key) else { continue }
+            result[id] = AnkiPreset(
+                name: configuration["name"] as? String ?? "", fsrs4: floats("fsrsWeights"), fsrs5: floats("fsrsParams5"), fsrs6: floats("fsrsParams6"),
+                desiredRetention: (configuration["desiredRetention"] as? NSNumber)?.floatValue ?? 0)
         }
         return result
     }
@@ -172,11 +204,26 @@ struct AnkiCollection {
         return result
     }
 
-    private func currentDecks() throws -> [Int: String] {
-        // A deck's name holds its parents separated by U+001F.
+    private func currentDecks() throws -> [Int: Deck] {
+        // A deck's name holds its parents separated by U+001F. `kind` is a `KindContainer`:
+        // field 1 is a normal deck, whose field 1 is the ID of its preset.
         Dictionary(
-            uniqueKeysWithValues: try database.rows("SELECT id, name FROM decks") {
-                ($0.int(0), $0.text(1).replacingOccurrences(of: "\u{1F}", with: "::"))
+            uniqueKeysWithValues: try database.rows("SELECT id, name, kind FROM decks") {
+                let normal = ProtobufFields($0.data(2)).bytes(1)
+                let preset = normal.flatMap { ProtobufFields($0).varint(1) }.map { Int(truncatingIfNeeded: $0) }
+                return ($0.int(0), Deck(name: $0.text(1).replacingOccurrences(of: "\u{1F}", with: "::"), preset: preset))
+            })
+    }
+
+    /// `deck_config`: `config` is a `DeckConfig.Config`, where `fsrs_params_4`, `fsrs_params_5`
+    /// and `fsrs_params_6` are the `repeated float` fields 3, 5 and 6 and `desired_retention`
+    /// the `float` 37 (`deck_config.proto`).
+    private func currentPresets() throws -> [Int: AnkiPreset] {
+        guard try database.hasTable("deck_config") else { return [:] }
+        return Dictionary(
+            uniqueKeysWithValues: try database.rows("SELECT id, name, config FROM deck_config") {
+                let fields = ProtobufFields($0.data(2))
+                return ($0.int(0), AnkiPreset(name: $0.text(1), fsrs4: fields.floats(3), fsrs5: fields.floats(5), fsrs6: fields.floats(6), desiredRetention: fields.float(37) ?? 0))
             })
     }
 }
