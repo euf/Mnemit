@@ -21,31 +21,35 @@
 
 ## Motion
 
-- The card shows where the grade went (`StudyMotion`, `StudyMotionViews`, `RingBurst`). The grade
-  applies at once, not after the flight. The graded card flies off as a separate one (`Departure`,
-  `DepartingCard`, a layer above the bar) from the pose it was released in, while the next one is
-  already on top and takes touches during the flight.
-- The receipt decides the path (`GradeReceipt.destination`): `.days` without a leech flies into the
-  bar's small ring (ring and card frames from `onGeometryChange` in global coordinates, not constants);
-  `.learning` goes under the bottom of the stack; no interval (practice) and a leech keep the old exit
-  along `GradeSwipe.exit`.
+- Every graded card leaves past the edge of the screen (`StudyMotion`, `StudyMotionViews`, `RingBurst`). The
+  grade applies at once. The card goes on as a separate one (`Departure`, `DepartingCard`, a layer above the
+  bar) from the pose it was released in, along `GradeSwipe.exit` until it is off the screen, while the next
+  one is already on top and takes touches. Nothing is written on it.
+- The receipt decides what follows (`GradeReceipt.destination`). Done (`.days`, no leech): the deepest edge of
+  the stack fades and the stack moves up a step, the ring in the bar steps, bumps (`ringBump`) and bursts
+  (`RingBurst`, `StudyMotion.barBurstAt`), and `GradeReceipt.flightLabel` ("tomorrow", "in 8 days") replaces
+  the figures beside the ring for 1.5 s, cross-faded. Back today (`.learning`): once the card is off the
+  screen, a blank sheet (`Sheet`) comes in by the same edge and slides under the stack to its deepest edge,
+  which it becomes; until then the stack lacks that edge (`StudyMotion.edges(cardsBehind:)`).
+- Each grade steps the ring by `GradeReceipt.gain` at once (`StudyMotion.shown`, ahead of the digits until
+  the figures change and no card is leaving); gain 0 (Forgot) moves nothing, a card back today steps it
+  without bump or burst. The figures: "≈ 4 min" while the goal is open, "36 cards today" once met.
+  VoiceOver gets the interval as an announcement (`GradeReceipt.announcement`).
 - Finger velocity (`DragGesture.Value.velocity`) enters each axis's spring (`PathCurves`); a button or
   key uses ease-in.
-- After 0.42 s the ring steps ahead of the digits (`StudyMotion.shownDone`) and swells for 1.15 s with a
-  glow (`ringBump`); no haptic on landing.
-- The card carries a label (`GradeReceipt.flightLabel`: "tomorrow", "in 8 days", "again today",
-  "suspended · leech"); VoiceOver gets it as an announcement.
-- The stack (`CardStack`): up to three empty edges under the card, by the number of round cards behind
-  the top one (`StudyModel.cardsBehind`, `SessionDriver.cardsLeftInRound` from `RoundGuide`). The next
-  card rises into place from the first edge's pose (0.96 → 1.0); the words fade in over 0.15 s.
-- Undo plays the same in reverse (`StudyModel.undoReturn`: where each step went and whether the stream
-  is resting); the card returns with the answer shown (`returnedByUndo`) and says nothing.
-- At a round's end the ring descends from the bar into the card's empty place (`RingTraveler`,
-  `ringPlace` on `StreamRestView`), bursts on arrival, and the rest lines come in one by one, 0.1 s apart.
-  Next Round sends the ring back up and deals the stack again.
+- The stack (`CardStack`): the edges of a book's pages, hairline outlines (1 pt, the card's corner radius,
+  separator colour, fainter with depth) under the card's bottom edge, each 3 pt lower and 2 pt narrower per
+  side than the one above, up to five by `StudyModel.cardsBehind` (`SessionDriver.cardsLeftInRound`, from
+  `RoundGuide`). The next card rises from the first edge's pose; its words fade in over 0.15 s.
+- Undo plays it backwards (`StudyModel.undoReturn`, `undoReceipt`): the card comes in from the edge it left
+  by, answer shown (`returnedByUndo`), silent; the ring takes back the grade's gain; a card that had gone
+  under the stack takes its deepest edge with it for a moment.
+- At a round's end, as the last card goes past the edge, the ring descends from the bar into the card's
+  empty place (`RingTraveler`, `ringPlace` on `StreamRestView`), bursts on arrival, and the rest lines come in
+  one by one, 0.1 s apart. Next Round sends the ring back up and deals the stack again.
 - The burst (`RingBurst`: swell 1.0 → 1.12 → 1.0 and 12 grains over 0.8 s) also plays for a words-in-
   memory milestone on Today, once per milestone (`MilestoneCelebration`).
-- Reduce Motion: the card fades in place over 0.6 s with its label, the ring steps without swelling, the
+- Reduce Motion: the card fades in place over 0.6 s, the ring steps without swelling, the
   rest screen cross-fades, no grains.
 - The stream takes the day's rounds from the ring's progress also after opening
   (`StudyModel.adoptRounds`: the ring is computed later than the stream; a boundary already passed is not
