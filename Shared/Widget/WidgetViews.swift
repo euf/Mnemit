@@ -36,14 +36,14 @@ struct WidgetContent: View {
 }
 
 extension WidgetState {
-    /// "42 today", the plan, or what stands in for it when it is empty: never the whole backlog.
+    /// "42 cards left", what the plan still asks, or what stands in for it when it is empty: never the whole backlog.
     fileprivate var headline: Text {
-        if due > 0 { return Text("\(due) today") }
+        if due > 0 { return Text("\(due) cards left") }
         return reviews > 0 ? Text("All done") : Text("Nothing due")
     }
 
     fileprivate var progressLine: Text {
-        Text("\(reviews) of \(goal) today")
+        Text("\(reviews) of \(goal) reviews")
     }
 
     /// For the circular widget, whose middle holds the due count: no streak number, and one lap

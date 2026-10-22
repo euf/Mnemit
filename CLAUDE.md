@@ -156,8 +156,9 @@
   есть по плану, который он ещё был должен: день, наверстанный позже, засчитывается.
   iPhone считает по всем колодам из `KnownDecks` (файлы читает `DeckFileReader`), Mac — по
   открытым документам (`OpenDecks`).
-- iPhone запускается на Today (`StartScreen` держит состояние, `TodayScreen` рисует): «N today» (план,
-  не сырой due), «+N to catch up this week» при backlog, кольцо
+- iPhone запускается на Today (`StartScreen` держит состояние, `TodayScreen` рисует): «N cards left» (карточки плана, что
+  ещё остались, не сырой due) и «M of K reviews» (ответы против цели кольца: единицы разные, поэтому
+  обе подписаны), «+N to catch up this week» при backlog, кольцо
   и streak по всем колодам, колоды строками. Study открывает поток одним касанием поверх экрана
   (`StudyRunView`). Строка колоды толкает на стек Today экран колоды (`DeckScreen`/`DeckContent`:
   счётчики дня, Study This Deck, Cards → браузер, Add Cards, практики, Statistics, Options; меню:

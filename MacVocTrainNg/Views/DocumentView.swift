@@ -299,10 +299,10 @@ private struct RingChip: View {
         .accessibilityValue(help)
     }
 
-    /// "14 of 20 today", and "· 12-day streak" when there is one.
+    /// "14 of 20 reviews", and "· 12-day streak" when there is one.
     private var help: String {
         guard let progress else { return "" }
-        let today = String(localized: "\(progress.ring.reviews) of \(progress.ring.goal) today")
+        let today = String(localized: "\(progress.ring.reviews) of \(progress.ring.goal) reviews")
         guard progress.streak.days > 0 else { return today }
         return today + " · " + String(localized: "\(progress.streak.days)-day streak")
     }

@@ -194,7 +194,7 @@ struct StudyButton: View {
         .controlSize(.large)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
-        .accessibilityValue(due > 0 ? Text("\(due) today") : Text(verbatim: ""))
+        .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
     }
 }
 
@@ -253,7 +253,7 @@ struct SummaryRow: View {
     @ViewBuilder
     private var headline: some View {
         if due > 0 {
-            Text("\(due) today")
+            Text("\(due) cards left")
         } else if let ring = progress?.ring, ring.reviews > 0 {
             Text("All done")
         } else {
@@ -265,7 +265,7 @@ struct SummaryRow: View {
     private var detail: some View {
         if let ring = progress?.ring, ring.reviews > 0 {
             if due > 0 {
-                Text("\(ring.reviews) of \(ring.goal) today")
+                Text("\(ring.reviews) of \(ring.goal) reviews")
             } else {
                 Text("\(ring.reviews) reviews today")
             }

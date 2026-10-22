@@ -37,7 +37,9 @@ are in [`references/`](references/).
   daily load next week.
 - **Rings instead of a session count.** A ring in the manner of Apple Fitness fills to the
   day's goal, which is the day's plan as FSRS sets it: the cards due, overdue ones included,
-  and the new cards within the day's limits ("12 of 40 today"). It keeps going round after
+  and the new cards within the day's limits. The ring counts answers, as a new card takes
+  several; so Today and the widget say "74 cards left" and "75 of 218 reviews", each in its
+  own unit. It keeps going round after
   the goal, so answers beyond the plan, catching up and reviewing ahead, fill the laps;
   during study its centre shows ×2, ×3 for the laps, elsewhere the streak in days. The
   streak counts the days whose plan was done, a day with nothing due included. A missed day
