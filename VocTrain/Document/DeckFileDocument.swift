@@ -68,9 +68,25 @@ final class DeckFileDocument: UIDocument {
         }
     }
 
+    /// The deck as it is, for `writeContents(_:to:for:originalContentsURL:)`. UIDocument asks on the
+    /// main thread, and encoding the deck takes tens of milliseconds there, in the middle of a
+    /// card's speech; it writes on a queue of its own, and the encoding goes there.
+    private struct Snapshot {
+        var deck: Deck
+        var document: VocabularyDocument
+    }
+
     override func contents(forType typeName: String) throws -> Any {
         guard let document else { throw CocoaError(.fileWriteUnknown) }
-        return try StallTrace.measure("saveEncode") { try document.fileWrapper() }
+        return StallTrace.measure("saveSnapshot") { Snapshot(deck: document.deckToSave, document: document) }
+    }
+
+    override func writeContents(_ contents: Any, to url: URL, for saveOperation: UIDocument.SaveOperation, originalContentsURL: URL?) throws {
+        guard let snapshot = contents as? Snapshot else {
+            return try super.writeContents(contents, to: url, for: saveOperation, originalContentsURL: originalContentsURL)
+        }
+        let wrapper = try StallTrace.measure("saveEncode") { try snapshot.document.fileWrapper(for: snapshot.deck) }
+        try wrapper.write(to: url, options: [], originalContentsURL: originalContentsURL)
     }
 
     override func handleError(_ error: any Error, userInteractionPermitted: Bool) {
