@@ -10,21 +10,35 @@ import VocabCore
 /// the learner's language the second, the example the smallest. `minimumScaleFactor(0.6)` is
 /// only a valve for the largest Dynamic Type sizes; nothing in the face is laid out again while
 /// the card is swiped.
+///
+/// A side with an image shows it above its text, scaled to fit and at most `maxImageShare` of the
+/// card's height; one with a sound has the speaker button for it. `media` is the deck's, which
+/// holds the files the card names; without it the face shows the texts only.
 struct CardFace: View {
     var question: String
     var hint: String
     var answer: String
     var isRevealed: Bool
+    var cardMedia = CardMedia()
+    var media: DeckMedia?
 
-    init(card: Card, isRevealed: Bool) {
-        self.init(question: card.question, hint: card.hint, answer: card.answer, isRevealed: isRevealed)
+    /// The card's height, to cap the image by.
+    @State private var height: CGFloat = 0
+
+    /// How much of the card's height an image takes at most.
+    static let maxImageShare: CGFloat = 0.4
+
+    init(card: Card, isRevealed: Bool, media: DeckMedia? = nil) {
+        self.init(question: card.question, hint: card.hint, answer: card.answer, isRevealed: isRevealed, cardMedia: card.media, media: media)
     }
 
-    init(question: String, hint: String, answer: String, isRevealed: Bool) {
+    init(question: String, hint: String, answer: String, isRevealed: Bool, cardMedia: CardMedia = CardMedia(), media: DeckMedia? = nil) {
         self.question = question
         self.hint = hint
         self.answer = answer
         self.isRevealed = isRevealed
+        self.cardMedia = cardMedia
+        self.media = media
     }
 
     /// The answer split at its first line break: the head, which `SpeakButton` speaks, and an
@@ -58,11 +72,23 @@ struct CardFace: View {
         }
         .multilineTextAlignment(.center)
         .padding(Metrics.padding)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.height }, action: { height = $0 })
+    }
+
+    /// The image of a side, which waits for the card's height: it has no room before.
+    @ViewBuilder
+    private func image(_ name: String?) -> some View {
+        if name != nil, media != nil {
+            SideImage(name: name, media: media, maxHeight: height * Self.maxImageShare)
+        }
     }
 
     private var questionBlock: some View {
         VStack(spacing: Metrics.questionHintSpacing) {
-            SpokenWord(text: question, font: Metrics.question(isGreek: question.containsGreek))
+            image(cardMedia.questionImage)
+            if !question.isEmpty || cardMedia.questionAudio != nil {
+                SpokenWord(text: question, font: Metrics.question(isGreek: question.containsGreek), sound: cardMedia.questionAudio, media: media)
+            }
             if !hint.isEmpty {
                 Text(hint)
                     .font(Metrics.hint)
@@ -76,7 +102,10 @@ struct CardFace: View {
     private var answerBlock: some View {
         let parts = parts
         return VStack(spacing: Metrics.answerExampleSpacing) {
-            SpokenWord(text: parts.head, font: Metrics.answerHead(isGreek: parts.head.containsGreek))
+            image(cardMedia.answerImage)
+            if !parts.head.isEmpty || cardMedia.answerAudio != nil {
+                SpokenWord(text: parts.head, font: Metrics.answerHead(isGreek: parts.head.containsGreek), sound: cardMedia.answerAudio, media: media)
+            }
             if let example = parts.example {
                 Text(example)
                     .font(Metrics.example)
@@ -122,27 +151,34 @@ struct CardFace: View {
 struct SpokenWord: View {
     var text: String
     var font: Font
+    /// The deck's sound of the side, in `media`: the speaker plays it, and a side without text
+    /// shows the speaker alone.
+    var sound: String?
+    var media: DeckMedia?
 
     var body: some View {
         #if os(iOS)
         HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
             word
-            SpeakButton(text: text, font: font)
+            SpeakButton(text: text, font: font, sound: sound, media: media)
         }
         #else
         // The Mac's speaker is a small button at its own size, centred beside the word.
         HStack(spacing: Spacing.tight) {
             word
-            SpeakButton(text: text)
+            SpeakButton(text: text, sound: sound, media: media)
         }
         #endif
     }
 
+    @ViewBuilder
     private var word: some View {
-        Text(text)
-            .font(font)
-            .minimumScaleFactor(0.6)
-            .selectable()
+        if !text.isEmpty {
+            Text(text)
+                .font(font)
+                .minimumScaleFactor(0.6)
+                .selectable()
+        }
     }
 }
 

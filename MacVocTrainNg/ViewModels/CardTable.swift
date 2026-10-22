@@ -8,6 +8,8 @@ struct CardRow: Identifiable {
     var question: String
     var answer: String
     var hint: String
+    /// The images and sounds, for a side without text.
+    var media: CardMedia
     var kind: CardKind?
     /// Recognition first, then production, cards without a kind last.
     var kindRank: Int
@@ -24,6 +26,7 @@ struct CardRow: Identifiable {
         question = card.question
         answer = card.answer
         hint = card.hint
+        media = card.media
         kind = card.kind
         kindRank = card.kind.flatMap(CardKind.allCases.firstIndex(of:)) ?? CardKind.allCases.count
         category = MaturityCategory(card: card)

@@ -197,7 +197,7 @@ struct SessionView: View {
 
             if model.studyBy == .flashcards {
                 FlashcardView(
-                    card: card, isRevealed: model.stage == .revealed,
+                    card: card, isRevealed: model.stage == .revealed, media: model.document.deck.media,
                     onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
             } else {
                 typedQuestion(card)
@@ -354,6 +354,8 @@ private struct FeedbackView: View {
 private struct FlashcardView: View {
     var card: Card
     var isRevealed: Bool
+    /// The deck's media, for the images and sounds of the card.
+    var media: DeckMedia
     var onReveal: () -> Void
     var onGrade: @MainActor (Grade) -> Void
 
@@ -363,7 +365,7 @@ private struct FlashcardView: View {
     var body: some View {
         VStack(spacing: 14) {
             FlightCard(flight: flight) {
-                CardFace(card: card, isRevealed: isRevealed)
+                CardFace(card: card, isRevealed: isRevealed, media: media)
             }
             .frame(maxWidth: 560, minHeight: 160, idealHeight: 240, maxHeight: 260)
             .contentShape(Rectangle())

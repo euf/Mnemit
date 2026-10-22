@@ -64,12 +64,16 @@ struct CardListView: View {
             Divider()
 
             Table(rows, selection: $selection, sortOrder: sortOrderKeepingFocus, columnCustomization: $columnCustomization) {
-                TableColumn("Question", value: \.question)
-                    .customizationID("question")
-                    .disabledCustomizationBehavior([.reorder, .visibility])
-                TableColumn("Answer", value: \.answer)
-                    .customizationID("answer")
-                    .disabledCustomizationBehavior([.reorder, .visibility])
+                TableColumn("Question", value: \.question) { row in
+                    SideText(text: row.question, image: row.media.questionImage, audio: row.media.questionAudio)
+                }
+                .customizationID("question")
+                .disabledCustomizationBehavior([.reorder, .visibility])
+                TableColumn("Answer", value: \.answer) { row in
+                    SideText(text: row.answer, image: row.media.answerImage, audio: row.media.answerAudio)
+                }
+                .customizationID("answer")
+                .disabledCustomizationBehavior([.reorder, .visibility])
                 TableColumn("Hint", value: \.hint)
                     .customizationID("hint")
                     .disabledCustomizationBehavior([.reorder, .visibility])

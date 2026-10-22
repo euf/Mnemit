@@ -630,7 +630,8 @@ extension EnvironmentValues {
 }
 
 /// A small speaker button for `text`; nothing if it isn't Greek or the device has no
-/// Greek voice. Placed beside the text it speaks.
+/// Greek voice. Placed beside the text it speaks. A side that has a `sound` the deck's `media`
+/// holds gets the button whatever its text, and a tap plays the sound instead of speaking.
 ///
 /// Beside a word, pass the word's `font`: the symbol takes its size, so it scales with the
 /// word, and has a first baseline of its own, so a row aligned by `.firstTextBaseline`
@@ -639,16 +640,28 @@ extension EnvironmentValues {
 struct SpeakButton: View {
     var text: String
     var font: Font?
+    var sound: String?
+    var media: DeckMedia?
 
     @Environment(\.speakerPlaces) private var places
     @Environment(\.isEnabled) private var isEnabled
     @State private var id = UUID()
     @State private var frame = CGRect.zero
 
+    /// The deck's sound of the side, if it has one.
+    private var playable: String? {
+        guard let sound, media?.contains(sound) == true else { return nil }
+        return sound
+    }
+
     var body: some View {
-        if GreekSpeech.shared.canSpeak(text) {
+        if playable != nil || GreekSpeech.shared.canSpeak(text) {
             Button {
-                GreekSpeech.shared.speak(text)
+                if let playable, let media {
+                    GreekSpeech.shared.play(sound: playable, of: media)
+                } else {
+                    GreekSpeech.shared.speak(text)
+                }
             } label: {
                 Image(systemName: "speaker.wave.2")
                     .font(font)

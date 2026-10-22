@@ -88,7 +88,7 @@ private struct CardDetailList: View {
         let now = document.clock.now
         List {
             Section {
-                CardTexts(card: card)
+                CardTexts(card: card, media: document.deck.media)
             }
             if card.kind != nil || card.note != nil || otherCopy != nil {
                 kindSection
@@ -185,6 +185,8 @@ private struct CardDetailList: View {
 /// card of the study stream, but left aligned and without a card around it.
 private struct CardTexts: View {
     var card: Card
+    /// The deck's media, for the images and sounds of the card.
+    var media: DeckMedia
 
     /// The answer split at its first line break: the head, which the speaker says, and an
     /// example sentence, if there is one.
@@ -197,17 +199,31 @@ private struct CardTexts: View {
         text.containsGreek ? .largeTitle.weight(.semibold) : .title.weight(.semibold)
     }
 
+    /// The image of a side, left aligned like the texts.
+    @ViewBuilder
+    private func image(_ name: String?) -> some View {
+        if name != nil {
+            SideImage(name: name, media: media, maxHeight: 240, alignment: .leading)
+        }
+    }
+
     var body: some View {
         let answer = answer
         VStack(alignment: .leading, spacing: Spacing.gap) {
-            SpokenWord(text: card.question, font: font(for: card.question))
+            image(card.questionImage)
+            if !card.question.isEmpty || card.questionAudio != nil {
+                SpokenWord(text: card.question, font: font(for: card.question), sound: card.questionAudio, media: media)
+            }
             if !card.hint.isEmpty {
                 Text(card.hint)
                     .font(.title3)
                     .foregroundStyle(.secondary)
             }
             Divider()
-            SpokenWord(text: answer.head, font: font(for: answer.head))
+            image(card.answerImage)
+            if !answer.head.isEmpty || card.answerAudio != nil {
+                SpokenWord(text: answer.head, font: font(for: answer.head), sound: card.answerAudio, media: media)
+            }
             if let example = answer.example {
                 Text(example)
                     .font(.body)

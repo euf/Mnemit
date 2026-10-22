@@ -291,9 +291,9 @@ struct CardRow: View {
             : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: Spacing.gap))
         layout {
             VStack(alignment: .leading, spacing: 2) {
-                Text(card.question)
+                SideText(text: card.question, image: card.questionImage, audio: card.questionAudio)
                     .lineLimit(2)
-                Text(answer)
+                SideText(text: answer, image: card.answerImage, audio: card.answerAudio)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

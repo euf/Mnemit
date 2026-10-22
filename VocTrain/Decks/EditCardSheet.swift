@@ -24,9 +24,9 @@ struct EditCardSheet: View {
         _showsAdvanced = State(initialValue: showsAdvanced)
     }
 
-    /// The text as it would be saved, `nil` while the question or the answer is empty.
+    /// The text as it would be saved, `nil` while the question or the answer is empty and has no media.
     private var text: CardText? {
-        CardText(question: question, answer: answer, hint: hint)
+        CardText(question: question, answer: answer, hint: hint, media: card.media)
     }
 
     private var key: String? {

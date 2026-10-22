@@ -15,6 +15,17 @@ struct CardTextTests {
         #expect(CardText(question: "", answer: "") == nil)
     }
 
+    @Test func aSideWithMediaMayHaveNoText() throws {
+        let image = CardMedia(questionImage: "3f2a9c0b7d1e4a58.jpg")
+        let sound = CardMedia(answerAudio: "3f2a9c0b7d1e4a59.mp3")
+        #expect(try #require(CardText(question: " ", answer: "Haus", media: image)).question == "")
+        #expect(try #require(CardText(question: "dom", answer: "", media: sound)).answer == "")
+        // The media of the other side doesn't count, and neither side may be empty without its own.
+        #expect(CardText(question: "", answer: "Haus", media: sound) == nil)
+        #expect(CardText(question: "dom", answer: "", media: image) == nil)
+        #expect(CardText(question: "", answer: "Haus") == nil)
+    }
+
     @Test func hintMayBeEmpty() {
         #expect(CardText(question: "dom", answer: "Haus", hint: "  ")?.hint == "")
     }

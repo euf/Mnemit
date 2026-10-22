@@ -40,8 +40,8 @@ struct CardEditSheet: View {
         hidesAnswer ? document.card(withID: cardID)?.answer ?? answer : answer
     }
 
-    /// `nil` while question or answer is empty; Save is disabled then.
-    private var text: CardText? { CardText(question: question, answer: savedAnswer, hint: hint) }
+    /// `nil` while question or answer is empty and has no media; Save is disabled then.
+    private var text: CardText? { CardText(question: question, answer: savedAnswer, hint: hint, media: document.card(withID: cardID)?.media ?? CardMedia()) }
 
     var body: some View {
         VStack(spacing: 0) {

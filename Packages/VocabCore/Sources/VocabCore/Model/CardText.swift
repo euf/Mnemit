@@ -3,17 +3,19 @@ import Foundation
 /// Question, answer and hint of a card as entered, without surrounding whitespace.
 ///
 /// Adding, editing and importing cards share the rule: question and answer must not
-/// be empty, the hint may be.
+/// be empty, the hint may be. A side of a card that has an image or a sound (`CardMedia`) may
+/// have no text, as the cards of an Anki import do.
 public struct CardText: Hashable, Sendable {
     public let question: String
     public let answer: String
     public let hint: String
 
-    /// `nil` if the question or the answer is empty after trimming.
-    public init?(question: String, answer: String, hint: String = "") {
+    /// `nil` if the question or the answer is empty after trimming, and the card has no media on
+    /// that side.
+    public init?(question: String, answer: String, hint: String = "", media: CardMedia = CardMedia()) {
         let question = Self.trimmed(question)
         let answer = Self.trimmed(answer)
-        guard !question.isEmpty, !answer.isEmpty else { return nil }
+        guard !question.isEmpty || media.hasQuestionMedia, !answer.isEmpty || media.hasAnswerMedia else { return nil }
         self.question = question
         self.answer = answer
         self.hint = Self.trimmed(hint)
