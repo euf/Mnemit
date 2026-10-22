@@ -21,6 +21,8 @@ struct CardFace: View {
     var isRevealed: Bool
     var cardMedia = CardMedia()
     var media: DeckMedia?
+    /// What FSRS knows of the card, for the corner of the face; `nil` draws no corner.
+    var memory: CardMemory?
 
     /// The card's height, to cap the image by.
     @State private var height: CGFloat = 0
@@ -28,8 +30,9 @@ struct CardFace: View {
     /// How much of the card's height an image takes at most.
     static let maxImageShare: CGFloat = 0.4
 
-    init(card: Card, isRevealed: Bool, media: DeckMedia? = nil) {
+    init(card: Card, isRevealed: Bool, media: DeckMedia? = nil, memory: CardMemory? = nil) {
         self.init(question: card.question, hint: card.hint, answer: card.answer, isRevealed: isRevealed, cardMedia: card.media, media: media)
+        self.memory = memory
     }
 
     init(question: String, hint: String, answer: String, isRevealed: Bool, cardMedia: CardMedia = CardMedia(), media: DeckMedia? = nil) {
@@ -72,6 +75,12 @@ struct CardFace: View {
         }
         .multilineTextAlignment(.center)
         .padding(Metrics.padding)
+        .overlay(alignment: .topLeading) {
+            if let memory {
+                MemoryBadge(memory: memory, showsRecall: isRevealed)
+                    .padding(14)
+            }
+        }
         .onGeometryChange(for: CGFloat.self, of: { $0.size.height }, action: { height = $0 })
     }
 
@@ -191,5 +200,64 @@ extension View {
         #else
         self
         #endif
+    }
+}
+
+/// What FSRS knows of a card, for the corner of its face: its step on the ladder of memory and its chance of
+/// recall now, before the answer (`references/learning-flow.md`, "Progression").
+struct CardMemory: Equatable {
+    var step: MaturityCategory
+    var recall: Double?
+
+    init(step: MaturityCategory, recall: Double?) {
+        self.step = step
+        self.recall = recall
+    }
+
+    init(card: Card, in deck: Deck, at now: Date, calendar: StudyCalendar) {
+        self.init(step: MaturityCategory(card: card), recall: deck.recallProbability(of: card, at: now, calendar: calendar))
+    }
+}
+
+/// The corner of a card: its step as five small bars in the step's colour, rising like a signal, or "New" for a
+/// card never studied; once the answer shows, the chance of recall FSRS gave it, "82%".
+struct MemoryBadge: View {
+    var memory: CardMemory
+    var showsRecall: Bool
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 6) {
+            if memory.step == .new {
+                Text(verbatim: MaturityCategory.new.cardTitle)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.secondary.opacity(0.15)))
+            } else {
+                HStack(alignment: .bottom, spacing: 2) {
+                    ForEach(1...5, id: \.self) { level in
+                        Capsule()
+                            .fill(level <= memory.step.rawValue ? memory.step.color : Color.secondary.opacity(0.25))
+                            .frame(width: 3, height: 4 + 2 * CGFloat(level))
+                    }
+                }
+                if showsRecall, let recall = memory.recall {
+                    Text(verbatim: Format.percent(recall))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .transition(.opacity)
+                }
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: showsRecall)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: label))
+    }
+
+    private var label: String {
+        let recall = showsRecall ? memory.recall.map { "\(String(localized: "Recall Probability")) \(Format.percent($0))" } : nil
+        return [memory.step.cardTitle, recall].compactMap { $0 }.joined(separator: ", ")
     }
 }

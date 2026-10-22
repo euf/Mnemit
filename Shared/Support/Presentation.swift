@@ -15,6 +15,18 @@ extension MaturityCategory {
         }
     }
 
+    /// The step of one card, for its corner and the moment it climbs: "Maturing", in Russian «Созревающая».
+    var cardTitle: String {
+        switch self {
+        case .new: String(localized: "card.step.new", defaultValue: "New")
+        case .shaky: String(localized: "card.step.shaky", defaultValue: "Shaky")
+        case .young: String(localized: "card.step.young", defaultValue: "Young")
+        case .maturing: String(localized: "card.step.maturing", defaultValue: "Maturing")
+        case .mature: String(localized: "card.step.mature", defaultValue: "Mature")
+        case .mastered: String(localized: "card.step.mastered", defaultValue: "Mastered")
+        }
+    }
+
     var explanation: String {
         switch self {
         case .new: String(localized: "Never studied")

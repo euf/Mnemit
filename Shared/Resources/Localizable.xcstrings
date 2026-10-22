@@ -6552,6 +6552,28 @@
         }
       }
     },
+    "Every day Mnemit lays out the cards due today: a few minutes' worth.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeden Tag legt Mnemit die heute fälligen Karten bereit: ein paar Minuten Arbeit."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κάθε μέρα το Mnemit απλώνει τις κάρτες που είναι για σήμερα: λίγα λεπτά δουλειά."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каждый день Mnemit раскладывает карточки, которые пора повторить: на несколько минут."
+          }
+        }
+      }
+    },
     "Export": {
       "localizations": {
         "de": {
@@ -9654,6 +9676,28 @@
         }
       }
     },
+    "One stack a day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Stapel pro Tag"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μία στοίβα τη μέρα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одна стопка в день"
+          }
+        }
+      }
+    },
     "One word per line: the Greek word, an equals sign, a dash or a hyphen with spaces around it, then the translation.": {
       "localizations": {
         "de": {
@@ -10662,6 +10706,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вероятность вспомнить"
+          }
+        }
+      }
+    },
+    "Recall a card and the ring moves. A new word comes back under the stack until you know it twice.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erinnerst du dich an eine Karte, bewegt sich der Ring. Ein neues Wort kommt unter den Stapel zurück, bis du es zweimal weißt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Θυμήθηκες μια κάρτα; Ο κύκλος προχωρά. Μια νέα λέξη γυρνά κάτω από τη στοίβα ώσπου να τη θυμηθείς δύο φορές."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вспомнили карточку — кольцо сдвигается. Новое слово возвращается под стопку, пока вы не вспомните его дважды."
           }
         }
       }
@@ -13482,6 +13548,28 @@
         }
       }
     },
+    "The first two minutes keep your streak. Close the ring, and the day is done.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die ersten zwei Minuten halten deine Serie. Schließ den Ring, und der Tag ist geschafft."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Τα πρώτα δύο λεπτά κρατούν το σερί σου. Κλείσε τον κύκλο και η μέρα τελείωσε."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Первые две минуты сохраняют стрик. Закройте кольцо — и день сделан."
+          }
+        }
+      }
+    },
     "The package holds no collection Mnemit can read.": {
       "localizations": {
         "de": {
@@ -15000,6 +15088,28 @@
         }
       }
     },
+    "Words climb from New to Mastered as FSRS sees them stick.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wörter steigen von Neu bis Gemeistert, wenn FSRS sieht, dass sie sitzen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι λέξεις ανεβαίνουν από «Νέες» ως «Κατακτημένες» όσο το FSRS βλέπει ότι μένουν."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слова поднимаются от «Новых» до «Освоенных», когда FSRS видит, что они держатся."
+          }
+        }
+      }
+    },
     "Words in Memory": {
       "localizations": {
         "de": {
@@ -15194,6 +15304,174 @@
           "stringUnit": {
             "state": "translated",
             "value": "и ещё %lld"
+          }
+        }
+      }
+    },
+    "card.step.mastered": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemeistert"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κατακτημένη"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mastered"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Освоенная"
+          }
+        }
+      }
+    },
+    "card.step.mature": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sicher"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ώριμη"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mature"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зрелая"
+          }
+        }
+      }
+    },
+    "card.step.maturing": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gefestigt"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σε ωρίμανση"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maturing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Созревающая"
+          }
+        }
+      }
+    },
+    "card.step.new": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neu"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Νέα"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новая"
+          }
+        }
+      }
+    },
+    "card.step.shaky": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsicher"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αβέβαιη"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shaky"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шаткая"
+          }
+        }
+      }
+    },
+    "card.step.young": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jung"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Νεαρή"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Young"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Молодая"
           }
         }
       }

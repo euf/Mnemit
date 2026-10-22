@@ -206,7 +206,9 @@ struct StudyView: View {
     /// the cards of the round that wait, as a stack of blank edges.
     private func cardView(_ card: Card) -> some View {
         TopCard(flight: flight, arrival: motion.arrival, frozenRise: motion.frozen?.rise) {
-            CardFace(card: card, isRevealed: model.stage == .revealed, media: model.document.deck.media)
+            CardFace(
+                card: card, isRevealed: model.stage == .revealed, media: model.document.deck.media,
+                memory: CardMemory(card: card, in: model.document.deck, at: model.document.clock.now, calendar: model.document.calendar))
         }
         // A card of its own for each question: the one under rises into place from the stack.
         .id(model.questionNumber)

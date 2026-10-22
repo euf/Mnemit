@@ -79,7 +79,7 @@ struct SwipePractice: Equatable {
 /// The steps of the introduction, in the order they come. Skipping the practice goes on to
 /// the next step: the storage choice and the reminder are not for skipping.
 enum OnboardingStep: CaseIterable {
-    case welcome, swipe, sync, reminder
+    case welcome, swipe, day, sync, reminder
 
     /// The step after this one; `nil` after the last, where the introduction ends.
     var next: OnboardingStep? {

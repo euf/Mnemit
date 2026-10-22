@@ -56,6 +56,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// `nil` in a snapshot an older app wrote.
     var wordsInMemory: Int?
     var wordsToday: Int?
+    /// The cards by step of the ladder of memory (`DailyProgress.ladder`); `nil` in a snapshot an older app wrote.
+    var ladder: [Int]?
 
     /// How many times the goal was reached: 2 from 200 %.
     var laps: Int { done / max(1, goal) }
@@ -68,13 +70,15 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         case date
         case done = "reviews"
         case goal, streakDays, isGoalMet, due, nextReminder, secondsPerCard
-        case rounds, roundsDone, minutesToNextRound, wordsInMemory, wordsToday
+        case rounds, roundsDone, minutesToNextRound, wordsInMemory, wordsToday, ladder
     }
 
     init(
         date: Date, done: Int, goal: Int, streakDays: Int, isGoalMet: Bool, due: [Due], nextReminder: Date?, secondsPerCard: Double? = nil,
-        rounds: Int? = nil, roundsDone: Int? = nil, minutesToNextRound: Int? = nil, wordsInMemory: Int? = nil, wordsToday: Int? = nil
+        rounds: Int? = nil, roundsDone: Int? = nil, minutesToNextRound: Int? = nil, wordsInMemory: Int? = nil, wordsToday: Int? = nil,
+        ladder: [Int]? = nil
     ) {
+        self.ladder = ladder
         self.rounds = rounds
         self.roundsDone = roundsDone
         self.minutesToNextRound = minutesToNextRound
@@ -98,7 +102,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
             date: now, done: progress.ring.done, goal: progress.ring.goal, streakDays: progress.streak.days,
             isGoalMet: progress.ring.isGoalMet, due: zip(dates, totals).map { Due(date: $0, count: $1) }, nextReminder: nextReminder,
             secondsPerCard: progress.secondsPerCardLeft, rounds: progress.rounds, roundsDone: progress.roundsDone,
-            minutesToNextRound: progress.minutesToNextRound, wordsInMemory: progress.memory.shownWords, wordsToday: progress.memory.shownGain)
+            minutesToNextRound: progress.minutesToNextRound, wordsInMemory: progress.memory.shownWords, wordsToday: progress.memory.shownGain,
+            ladder: progress.ladder)
     }
 
     /// The moments the forecast looks at: `now`, then each full hour after it.
@@ -164,6 +169,8 @@ struct WidgetState: Equatable, Sendable {
     /// while the learner is away.
     var wordsInMemory: Int?
     var wordsToday: Int?
+    /// The ladder of memory, which a day away barely moves, so it stays.
+    var ladder: [Int]? = nil
 
     /// Where the learner stands in the rounds; `nil` when the snapshot has none.
     var roundStatus: RoundStatus? {
@@ -210,13 +217,13 @@ extension WidgetSnapshot {
             return WidgetState(
                 date: moment, done: done, goal: goal, streakDays: streakDays, isGoalMet: isGoalMet, due: count, nextReminder: reminder,
                 secondsPerCard: secondsPerCard, rounds: rounds, roundsDone: roundsDone, minutesToNextRound: minutesToNextRound,
-                wordsInMemory: wordsInMemory, wordsToday: wordsToday)
+                wordsInMemory: wordsInMemory, wordsToday: wordsToday, ladder: ladder)
         }
         let missed = days - (isGoalMet ? 1 : 0)
         let isEmptyPlanMet = count == 0 && missed == 0
         return WidgetState(
             date: moment, done: 0, goal: count, streakDays: missed >= 2 ? 0 : streakDays + (isEmptyPlanMet ? 1 : 0),
-            isGoalMet: count == 0, due: count, nextReminder: reminder, secondsPerCard: secondsPerCard)
+            isGoalMet: count == 0, due: count, nextReminder: reminder, secondsPerCard: secondsPerCard, ladder: ladder)
     }
 
     /// The cards left of the plan at `moment`: the last forecast at or before it, the first one if none is.

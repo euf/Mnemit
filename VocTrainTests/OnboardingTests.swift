@@ -22,9 +22,10 @@ struct OnboardingTests {
     // MARK: Steps
 
     @Test func theStepsGoFromWelcomeThroughSwipesAndSyncToTheReminder() {
-        #expect(OnboardingStep.allCases == [.welcome, .swipe, .sync, .reminder])
+        #expect(OnboardingStep.allCases == [.welcome, .swipe, .day, .sync, .reminder])
         #expect(OnboardingStep.welcome.next == .swipe)
-        #expect(OnboardingStep.swipe.next == .sync)
+        #expect(OnboardingStep.swipe.next == .day)
+        #expect(OnboardingStep.day.next == .sync)
         #expect(OnboardingStep.sync.next == .reminder)
         // The end: the introduction is over.
         #expect(OnboardingStep.reminder.next == nil)

@@ -23,7 +23,7 @@ struct GradeReceipt: Equatable {
     /// "in 25 days · Maturing".
     var caption: String? {
         guard let flightLabel else { return nil }
-        return climb.map { "\(flightLabel) · \($0.title)" } ?? flightLabel
+        return climb.map { "\(flightLabel) · \($0.cardTitle)" } ?? flightLabel
     }
 
     /// The grade by the name its button has: "Forgot", not the scheduler's "Again".
