@@ -156,6 +156,7 @@ private struct DeckStream: View {
         .onChange(of: canEdit, initial: true) {
             if canEdit, model == nil {
                 model = StudyModel(document: document, entry: entry)
+                model?.setActive(scenePhase == .active)
             }
         }
         .onAppear {
@@ -164,6 +165,7 @@ private struct DeckStream: View {
         }
         .onReceive(document.deckDidChange) { refreshRing() }
         .onChange(of: scenePhase) { _, phase in
+            model?.setActive(phase == .active)
             if phase == .active { refreshRing(reload: true) }
         }
         // The plan and the study day change as time passes.

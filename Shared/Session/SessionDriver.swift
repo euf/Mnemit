@@ -24,12 +24,16 @@ final class SessionDriver {
     private(set) var lastReceipt: GradeReceipt?
     @ObservationIgnored weak var delegate: (any SessionDriverDelegate)?
     @ObservationIgnored private var deckObservation: AnyCancellable?
+    /// Times the card being asked, from the moment `moveOn()` shows it.
+    @ObservationIgnored private var stopwatch: ActiveStopwatch
 
     /// Starts with the current card of `stream`, or at rest. Tells the delegate of no
-    /// move: it isn't set yet.
-    init(document: VocabularyDocument, stream: StudyStream) {
+    /// move: it isn't set yet. `now` is the monotonic clock that times the cards; a test
+    /// moves it.
+    init(document: VocabularyDocument, stream: StudyStream, now: @escaping () -> SuspendingClock.Instant = { .now }) {
         self.document = document
         self.stream = stream
+        stopwatch = ActiveStopwatch(now: now)
         advance()
         refreshCurrentCard()
         deckObservation = document.deckDidChange.sink { [weak self] in
@@ -67,7 +71,8 @@ final class SessionDriver {
         guard document.isReadyToEdit else { return false }
         let before = stream
         let interval = gradeIntervals?[grade]
-        guard let outcome = stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar) else { return false }
+        let duration = stopwatch.elapsed
+        guard let outcome = stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar, duration: duration) else { return false }
         let restore = sessionRestore(from: before, to: stream)
         switch outcome {
         case let .rescheduled(change):
@@ -78,6 +83,13 @@ final class SessionDriver {
         lastReceipt = GradeReceipt(grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count)
         moveOn()
         return true
+    }
+
+    /// The app became active or stopped being: the time while it isn't active is not on any
+    /// card's account (`ReviewLogEntry.duration`). It starts out active; the model reports
+    /// the changes: the scene phase on the iPhone, the application on the Mac.
+    func setActive(_ isActive: Bool) {
+        stopwatch.setActive(isActive)
     }
 
     /// The learner has seen what the last grade did.
@@ -148,6 +160,7 @@ final class SessionDriver {
     private func moveOn() {
         advance()
         refreshCurrentCard()
+        stopwatch.restart()
         delegate?.sessionDriverDidMoveOn(self)
     }
 
@@ -241,4 +254,41 @@ protocol SessionDriverDelegate: AnyObject {
 extension SessionDriverDelegate {
     func sessionDriverCardDidChange(_ driver: SessionDriver) {}
     func sessionDriverDidRestore(_ driver: SessionDriver) {}
+}
+
+/// How long the card being asked has been on screen with the app active; see `ReviewLogEntry.duration`.
+///
+/// It counts from the moment a card is shown (`restart()`) and stands still while the app is
+/// not active (`setActive(_:)`): in the background, with the phone locked, behind another app.
+/// A suspending clock, so a Mac asleep with a card on screen doesn't count either. No cap: a
+/// card left open in an active app counts, and the pace takes a robust estimate of them.
+struct ActiveStopwatch {
+    private let now: () -> SuspendingClock.Instant
+    private var banked: Duration = .zero
+    /// When the running stretch began; `nil` while the app is inactive.
+    private var since: SuspendingClock.Instant?
+    private(set) var isActive = true
+
+    /// Running from now, with the app active.
+    init(now: @escaping () -> SuspendingClock.Instant = { .now }) {
+        self.now = now
+        since = now()
+    }
+
+    /// A new card is on screen: counts from zero.
+    mutating func restart() {
+        banked = .zero
+        since = isActive ? now() : nil
+    }
+
+    mutating func setActive(_ active: Bool) {
+        guard active != isActive else { return }
+        if !active { banked = elapsed }
+        isActive = active
+        since = active ? now() : nil
+    }
+
+    var elapsed: Duration {
+        banked + (since.map { now() - $0 } ?? .zero)
+    }
 }

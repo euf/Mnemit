@@ -91,6 +91,12 @@ final class StudyModel: Identifiable {
         driver.dismissReceipt()
     }
 
+    /// Whether the app is active (the scene phase): the time while it isn't is left out of
+    /// the duration a review logs.
+    func setActive(_ isActive: Bool) {
+        driver.setActive(isActive)
+    }
+
     func reveal() {
         guard stage == .asking else { return }
         stage = .revealed

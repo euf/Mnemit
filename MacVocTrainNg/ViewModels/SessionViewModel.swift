@@ -1,3 +1,5 @@
+import AppKit
+import Combine
 import Foundation
 import Observation
 import VocabCore
@@ -44,6 +46,8 @@ final class SessionViewModel {
     /// How the stream asks its cards.
     let studyBy: Preferences.StudyBy
     private let driver: SessionDriver
+    /// Tells the driver when the application stops being active: the time away is not on a card.
+    @ObservationIgnored private var activityObservation: AnyCancellable?
     private(set) var stage: Stage
     private(set) var previous: PreviousReview?
     /// Counts the questions asked. The view gives each question a response field of
@@ -71,6 +75,10 @@ final class SessionViewModel {
         driver = SessionDriver(document: document, stream: stream)
         stage = driver.isResting ? .resting : .asking
         driver.delegate = self
+        let center = NotificationCenter.default
+        activityObservation = center.publisher(for: NSApplication.didBecomeActiveNotification).map { _ in true }
+            .merge(with: center.publisher(for: NSApplication.didResignActiveNotification).map { _ in false })
+            .sink { [weak self] in self?.driver.setActive($0) }
     }
 
     /// The segment running; its mode decides how a review is recorded.
