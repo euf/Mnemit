@@ -49,9 +49,9 @@ struct OpenDeckTests {
         #expect(saved.cards.first?.log.map(\.grade) == [.good])
         #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path).sorted() == ["Greek A1–A2.voctrain", "Greek B1.mnemit"])
 
-        // The Info.plist declares the same types as document types.
+        // The Info.plist declares the same types as document types, and the Anki package after them.
         let documentTypes = Bundle.main.infoDictionary?["CFBundleDocumentTypes"] as? [[String: Any]] ?? []
-        #expect(documentTypes.flatMap { $0["LSItemContentTypes"] as? [String] ?? [] } == UTType.deckTypes.map(\.identifier))
+        #expect(documentTypes.flatMap { $0["LSItemContentTypes"] as? [String] ?? [] } == (UTType.deckTypes + [.ankiPackage]).map(\.identifier))
     }
 
     @Test func aFileThatIsNoDeckFails() async throws {

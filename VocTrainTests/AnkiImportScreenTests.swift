@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UniformTypeIdentifiers
 
 @testable import VocTrain
 @testable import VocabCore
@@ -47,6 +48,19 @@ struct AnkiImportScreenTests {
         #expect(IncomingLink(URL(fileURLWithPath: "/files/apkg notes.mnemit", isDirectory: true)) == .deck)
         // The other links of the scheme are not Study, so they end up with the decks as before.
         #expect(IncomingLink(URL(string: "mnemit://settings")!) == .deck)
+    }
+
+    /// What makes "Open in Mnemit" offer the package: the imported type and a document type of
+    /// the viewer role with the alternate rank, in the Info.plist of the app under test.
+    @Test func theInfoPlistDeclaresThePackageForOpenIn() {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let imported = (info["UTImportedTypeDeclarations"] as? [[String: Any]] ?? []).first { $0["UTTypeIdentifier"] as? String == UTType.ankiPackage.identifier }
+        #expect(imported?["UTTypeConformsTo"] as? [String] == ["public.zip-archive", "public.data"])
+        #expect((imported?["UTTypeTagSpecification"] as? [String: Any])?["public.filename-extension"] as? [String] == ["apkg"])
+        let document = (info["CFBundleDocumentTypes"] as? [[String: Any]] ?? []).first { $0["LSItemContentTypes"] as? [String] == [UTType.ankiPackage.identifier] }
+        #expect(document?["CFBundleTypeRole"] as? String == "Viewer")
+        #expect(document?["LSHandlerRank"] as? String == "Alternate")
+        #expect(UTType.ankiPackage.conforms(to: .zip) && UTType.ankiPackage.conforms(to: .data))
     }
 
     @Test func theLinkToAnkiWebIsTheListOfSharedDecks() {
