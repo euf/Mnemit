@@ -32,7 +32,9 @@ public struct AnkiPreset: Sendable, Equatable {
     /// Anki reads: 17 and 19 values are filled up the way Anki does when it reads an
     /// older set, `check_and_fill_parameters_fsrs6` in fsrs-rs 6.6.2 (`model_v6.rs`, called
     /// by `FSRS::new`, the version rslib depends on), and every value is then kept in its
-    /// range, as `clip_parameters` does there.
+    /// range, as `clip_parameters` does there. One range differs: fsrs-rs leaves w19 at 0
+    /// for such a set, Mnemit's floor is 0.01 (a deck with a smaller w19 is refused), a
+    /// factor of S^-0.01 on the stability after a same-day review.
     public var fsrsParameters: FSRSParameters? {
         guard parameters.allSatisfy(\.isFinite) else { return nil }
         var w = parameters

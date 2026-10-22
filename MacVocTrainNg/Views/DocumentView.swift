@@ -194,14 +194,15 @@ struct DocumentView: View {
     #endif
 
     /// Asks for a file, or takes `file`, and shows its cards to choose from. `namesDeck`: the
-    /// deck is new, and the Anki deck of a package names it.
+    /// deck is new, and the Anki deck of a package names it and sets its FSRS settings.
     private func importCards(from file: URL? = nil, namesDeck: Bool = false) {
         guard canEdit, !isReadingImport, let url = file ?? CardImport.chooseFile() else { return }
         isReadingImport = true
+        let isNewDeck = namesDeck && fileURL == nil && document.deck.cards.isEmpty
         Task {
             defer { isReadingImport = false }
-            guard let preview = await CardImport.preview(ofFileAt: url, for: document) else { return }
-            if namesDeck, fileURL == nil, document.deck.cards.isEmpty, let anki = preview.anki {
+            guard let preview = await CardImport.preview(ofFileAt: url, for: document, isNewDeck: isNewDeck) else { return }
+            if isNewDeck, document.deck.cards.isEmpty, let anki = preview.anki {
                 NSDocumentController.shared.currentDocument?.displayName = CardImport.deckName(forDecks: anki.deckNames, fileName: url.lastPathComponent)
             }
             importPreview = preview

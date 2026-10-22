@@ -61,6 +61,32 @@ struct AnkiImportMacTests {
         #expect(made.summary.skippedEmpty == 2)
     }
 
+    /// A new deck takes the FSRS settings of the Anki preset most cards use and replays with them;
+    /// a deck that exists keeps its options and says so.
+    @Test func aNewDeckTakesTheSettingsOfTheDominantPreset() {
+        let review = ReviewLogEntry(date: created, grade: .good, mode: .revealed)
+        let weights = FSRSParameters.default.weights.map { Float($0) }
+        let package = AnkiImport(
+            notes: [.init(front: "a", back: "1", reviews: [review], preset: 1), .init(front: "b", back: "2", preset: 1), .init(front: "c", back: "3", preset: 0)],
+            deckNames: ["Greek"],
+            presets: [AnkiPreset(name: "Default", desiredRetention: 0.9), AnkiPreset(name: "Greek", parameters: weights, desiredRetention: 0.85)])
+
+        let newDeck = CardImport.ankiCandidates(of: package, existing: [], learningOptions: LearningOptions(), calendar: calendar, created: created, isNewDeck: true)
+        #expect(newDeck.learningOptions?.targetRecall == 0.85)
+        #expect(newDeck.summary.settings == .applied(target: 85))
+        #expect(newDeck.summary.lines.count == 2)
+        #expect(newDeck.summary.lines[1] == String(localized: "Uses Anki's FSRS settings: \("85 %") target"))
+
+        let existingDeck = CardImport.ankiCandidates(of: package, existing: [], learningOptions: LearningOptions(), calendar: calendar, created: created)
+        #expect(existingDeck.learningOptions == nil)
+        #expect(existingDeck.summary.settings == .keptForExistingDeck)
+        #expect(existingDeck.summary.lines[1] == String(localized: "Anki's settings for this deck are not applied to an existing deck."))
+
+        // Without a preset in the package there is nothing to take and nothing to say.
+        let plain = CardImport.ankiCandidates(of: AnkiImport(notes: [.init(front: "a", back: "1")]), existing: [], learningOptions: LearningOptions(), calendar: calendar, created: created, isNewDeck: true)
+        #expect(plain.learningOptions == nil && plain.summary.settings == .absent && plain.summary.lines.count == 1)
+    }
+
     @Test func requestsFromTheWelcomeWindowAreTakenInOrderAndOnce() {
         while WelcomeRequest.takeImportCards() != nil {}
         let package = URL(fileURLWithPath: "/Downloads/Greek.apkg")

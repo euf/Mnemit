@@ -10,8 +10,10 @@ extension URL {
 
 /// The Anki side of "Import Cards…" on both platforms: reads a package (`.apkg`) off the main
 /// thread and turns it into the same preview a CSV file gets, with the cards' review history
-/// replayed into the deck's own FSRS parameters (`AnkiImport.cards(from:…)`). "Add N Cards"
-/// puts them in with `DeckChange.importing`, so the history comes along.
+/// replayed into the deck's FSRS parameters (`AnkiImport.cards(from:…)`): those of the deck, or,
+/// for a new deck, those of the Anki preset most cards use, which the deck then keeps
+/// (`AnkiImport.learningOptions(applyingTo:)`). "Add N Cards" puts the cards in with
+/// `DeckChange.importing`, so the history comes along.
 extension CardImport {
     /// What an Anki package brought and what it left out, for the head of the preview.
     struct AnkiSummary: Equatable, Sendable {
@@ -23,15 +25,36 @@ extension CardImport {
         /// Fields that had an image or a sound, which are left out of them.
         var skippedMediaRefs: Int
         var skippedEmpty: Int
+        /// What became of the FSRS settings of the preset most cards use.
+        var settings = Settings.absent
+
+        enum Settings: Equatable, Sendable {
+            /// The preset has none Mnemit can take.
+            case absent
+            /// A new deck takes them: the desired retention, in percent.
+            case applied(target: Int)
+            /// The cards go to a deck that exists and keeps its options.
+            case keptForExistingDeck
+        }
 
         /// The names of the decks in one line.
         var deckTitle: String {
             deckNames.formatted(.list(type: .and, width: .narrow))
         }
 
-        /// One line each: the cards with history, then whatever was left out.
+        /// One line each: the cards with history, the settings, then whatever was left out.
         var lines: [String] {
             var lines = [String(localized: "\(withHistory) with review history")]
+            switch settings {
+            case .absent:
+                break
+            case let .applied(target):
+                // The percent sign stays out of the key: an interpolated "%" is a format escape.
+                let percent = "\(target) %"
+                lines.append(String(localized: "Uses Anki's FSRS settings: \(percent) target"))
+            case .keptForExistingDeck:
+                lines.append(String(localized: "Anki's settings for this deck are not applied to an existing deck."))
+            }
             if skippedCloze > 0 {
                 lines.append(String(localized: "\(skippedCloze) cloze cards are left out."))
             }
@@ -73,26 +96,43 @@ extension CardImport {
     /// The cards of `package` made for a deck with these options, as candidates: the ones the
     /// deck has already, or an earlier card of the package, are marked duplicates. Replays
     /// every review, so it takes a while for a large package: not for the main thread.
+    ///
+    /// `isNewDeck`: the deck has no cards yet, and takes the FSRS settings of the Anki preset most
+    /// cards use, if it has any; the cards are replayed with them, and `learningOptions` of the
+    /// result are what the deck is to have. A deck that exists keeps its options.
     nonisolated static func ankiCandidates(
-        of package: AnkiImport, existing: [Card], learningOptions: LearningOptions, calendar: StudyCalendar, created: Date
-    ) -> (candidates: [CardImporter.Candidate], summary: AnkiSummary) {
-        let cards = package.cards(learningOptions: learningOptions, calendar: calendar, created: created)
-        let summary = AnkiSummary(
+        of package: AnkiImport, existing: [Card], learningOptions: LearningOptions, calendar: StudyCalendar, created: Date, isNewDeck: Bool = false
+    ) -> (candidates: [CardImporter.Candidate], summary: AnkiSummary, learningOptions: LearningOptions?) {
+        let preset = package.learningOptions(applyingTo: learningOptions)
+        let taken = isNewDeck ? preset : nil
+        let cards = package.cards(learningOptions: taken ?? learningOptions, calendar: calendar, created: created)
+        var summary = AnkiSummary(
             deckNames: package.deckNames, withHistory: cards.filter { !$0.log.isEmpty }.count,
             skippedCloze: package.skippedCloze, skippedMediaRefs: package.skippedMediaRefs,
             // The reader counts the notes with an empty side, `cards(from:…)` those that the text rules leave out.
             skippedEmpty: package.skippedEmpty + package.notes.count - cards.count)
-        return (CardImporter.candidates(of: cards, existing: existing), summary)
+        if let taken {
+            summary.settings = .applied(target: Int((taken.targetRecall * 100).rounded()))
+        } else if preset != nil {
+            summary.settings = .keptForExistingDeck
+        }
+        return (CardImporter.candidates(of: cards, existing: existing), summary, taken)
     }
 
-    /// The preview of `package` for `document`'s deck, made off the main thread.
-    static func ankiPreview(of package: AnkiImport, fileName: String, for document: VocabularyDocument) async -> Preview {
+    /// The preview of `package` for `document`'s deck, made off the main thread. `isNewDeck`:
+    /// the document is the new deck the package makes (see `ankiCandidates`); it takes the
+    /// settings of Anki's preset when "Add N Cards" imports the preview.
+    static func ankiPreview(of package: AnkiImport, fileName: String, for document: VocabularyDocument, isNewDeck: Bool = false) async -> Preview {
         let existing = document.deck.cards
         let options = document.deck.learningOptions
         let calendar = document.calendar
         let created = document.clock.now
-        let made = await Task.detached { ankiCandidates(of: package, existing: existing, learningOptions: options, calendar: calendar, created: created) }.value
-        return Preview(fileName: fileName, candidates: made.candidates, skippedRows: 0, anki: made.summary)
+        // Settings from Anki replace those of the deck only where there is nothing else to replay.
+        let isNew = isNewDeck && existing.isEmpty
+        let made = await Task.detached {
+            ankiCandidates(of: package, existing: existing, learningOptions: options, calendar: calendar, created: created, isNewDeck: isNew)
+        }.value
+        return Preview(fileName: fileName, candidates: made.candidates, skippedRows: 0, anki: made.summary, learningOptions: made.learningOptions)
     }
 
     /// The name of the deck a package makes: the Anki deck's, with its levels apart by an en

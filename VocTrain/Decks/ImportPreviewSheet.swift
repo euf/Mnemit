@@ -15,6 +15,9 @@ struct ImportedFile: Identifiable {
     let id = UUID()
     var name: String
     var content: Content
+    /// Whether the cards go to a new deck, made for the package: it takes the FSRS settings of the
+    /// Anki preset most cards use.
+    var isNewDeck = false
 
     init(name: String, data: Data) {
         self.name = name
@@ -136,7 +139,7 @@ struct ImportPreviewSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add \(preview?.selection.count ?? 0) Cards") {
                         if let preview {
-                            document.importCards(preview.selectedCards)
+                            document.importCards(preview.selectedCards, learningOptions: preview.learningOptions)
                         }
                         dismiss()
                     }
@@ -167,7 +170,7 @@ struct ImportPreviewSheet: View {
                 } else {
                     package = try await CardImport.loadAnki(at: url)
                 }
-                preview = await CardImport.ankiPreview(of: package, fileName: file.name, for: document)
+                preview = await CardImport.ankiPreview(of: package, fileName: file.name, for: document, isNewDeck: file.isNewDeck)
             } catch {
                 failure = CardImport.failureMessage(error)
             }

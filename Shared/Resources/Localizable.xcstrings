@@ -1183,6 +1183,16 @@
         }
       }
     },
+    "Anki's settings for this deck are not applied to an existing deck.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Einstellungen von Anki für diesen Stapel werden nicht auf einen bestehenden Stapel angewendet."
+          }
+        }
+      }
+    },
     "Another version of this deck could not be merged": {
       "localizations": {
         "de": {
@@ -5402,6 +5412,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gilt für diesen Stapel."
+          }
+        }
+      }
+    },
+    "Uses Anki's FSRS settings: %@ target": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwendet die FSRS-Einstellungen von Anki: Ziel %@"
           }
         }
       }
