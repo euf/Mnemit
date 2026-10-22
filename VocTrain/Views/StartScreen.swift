@@ -77,6 +77,8 @@ struct StartScreen: View {
             .cardFileImporter(isPresented: $isChoosingImport) { openLastDeck(importing: $0) }
             .navigationDestination(for: DeckRoute.self, destination: destination)
         }
+        // The sheets and screens that look for a word in the other decks read the files from it.
+        .environment(\.knownDeckFiles, KnownDeckFiles(decks: knownDecks.byName))
         .deckPicker(isPresented: $isChoosing, choosesFolder: choosesFolder) { url in
             if url.isDeck {
                 add(deckAt: url)

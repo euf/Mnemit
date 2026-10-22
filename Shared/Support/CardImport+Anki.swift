@@ -138,7 +138,8 @@ extension CardImport {
     /// cards use, if it has any; the cards are replayed with them, and `learningOptions` of the
     /// result are what the deck is to have. A deck that exists keeps its options.
     nonisolated static func ankiCandidates(
-        of package: AnkiImport, existing: [Card], learningOptions: LearningOptions, calendar: StudyCalendar, created: Date, isNewDeck: Bool = false
+        of package: AnkiImport, existing: [Card], learningOptions: LearningOptions, calendar: StudyCalendar, created: Date, isNewDeck: Bool = false,
+        elsewhere: WordIndex = WordIndex()
     ) -> (candidates: [CardImporter.Candidate], summary: AnkiSummary, learningOptions: LearningOptions?) {
         let preset = package.learningOptions(applyingTo: learningOptions)
         let taken = isNewDeck ? preset : nil
@@ -154,13 +155,15 @@ extension CardImport {
         } else if preset != nil {
             summary.settings = .keptForExistingDeck
         }
-        return (CardImporter.candidates(of: cards, existing: existing), summary, taken)
+        return (CardImporter.candidates(of: cards, existing: existing, elsewhere: elsewhere), summary, taken)
     }
 
     /// The preview of `package` for `document`'s deck, made off the main thread. `isNewDeck`:
     /// the document is the new deck the package makes (see `ankiCandidates`); it takes the
-    /// settings of Anki's preset when "Add N Cards" imports the preview.
-    static func ankiPreview(of package: AnkiImport, fileName: String, for document: VocabularyDocument, isNewDeck: Bool = false) async -> Preview {
+    /// settings of Anki's preset when "Add N Cards" imports the preview. `elsewhere`: the words of the other decks.
+    static func ankiPreview(
+        of package: AnkiImport, fileName: String, for document: VocabularyDocument, isNewDeck: Bool = false, elsewhere: WordIndex = WordIndex()
+    ) async -> Preview {
         let existing = document.deck.cards
         let options = document.deck.learningOptions
         let calendar = document.calendar
@@ -168,7 +171,8 @@ extension CardImport {
         // Settings from Anki replace those of the deck only where there is nothing else to replay.
         let isNew = isNewDeck && existing.isEmpty
         let made = await Task.detached {
-            ankiCandidates(of: package, existing: existing, learningOptions: options, calendar: calendar, created: created, isNewDeck: isNew)
+            ankiCandidates(
+                of: package, existing: existing, learningOptions: options, calendar: calendar, created: created, isNewDeck: isNew, elsewhere: elsewhere)
         }.value
         return Preview(
             fileName: fileName, candidates: made.candidates, skippedRows: 0, anki: made.summary, learningOptions: made.learningOptions,

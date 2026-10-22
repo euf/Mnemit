@@ -399,8 +399,20 @@ down, so "≈ 412" never promises more than the model says. The **gain of the da
 number at 04:00, which takes each card as it stood before the day's reviews (replayed from its log,
 as `DeckActivity.plan` does) and is rounded to the nearest word. **Milestones** are 50, 100, 250,
 500, 1000, 1500, 2000, 3000 and 5000: the next one above the number now, and the one crossed
-today (the number at 04:00 below it, now at or above it). The decks add up (`MemoryEstimate.total`).
+today (the number at 04:00 below it, now at or above it). The decks add up (`MemoryEstimate.total`), and a
+word that several decks hold, or one deck holds twice, counts once, at the highest probability among its cards
+(**Word key**).
 _Avoid_: words learned, vocabulary size, «выученные слова»
+
+**Word key** (on screen: "Word Key" in the card detail, "Also in <deck>", "Similar to … in <deck>"; RU «ключ слова»):
+The word a Greek card is about, written `lemma#article` in `Card.note` and compared by `WordKey`. Two cards hold the
+same word when the lemma is equal and the articles are compatible: the lemma is cut at a comma, `; `, ` / `, ` · `,
+a bracket or ` -` and loses a trailing group of endings (`-ή-ό`); the article counts (`κύριος` is not `ο κύριος`);
+`ο/η` matches `ο` and `η` of the lemma; accents stay (`πώς` is not `πως`). Words that differ by an accent only
+**look like** each other, and only that is shown. The key is Greek only. `WordIndex` finds the word of a card in other
+decks; it sets default ticks and adds lines of text, and merges nothing (`WordKey`, `WordIndex`,
+`references/cross-deck-overlap.md`).
+_Avoid_: duplicate (a duplicate is an equal question in one deck), merge, «дубликат слова»
 
 **Paused deck** (on screen: "Pause Deck", "Resume Deck", "Paused" / „Stapel pausieren“, „Stapel fortsetzen“,
 „Pausiert“; RU «колода на паузе»):

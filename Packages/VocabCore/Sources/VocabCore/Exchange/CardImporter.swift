@@ -13,11 +13,16 @@ public enum CardImporter {
         case inDeck
         /// An earlier card of the file, with this question and answer, has the same question.
         case inFile(question: String, answer: String)
+        /// Another deck has the same word (`WordKey.same(as:)`), whatever its spelling and its glosses.
+        case inOtherDeck(WordIndex.Match)
     }
 
     public struct Candidate: Identifiable, Sendable {
         public var card: Card
         public var duplicate: Duplicate?
+        /// A word of another deck that differs from this one by accents only (`WordKey.looksLike(_:)`):
+        /// the card is no duplicate, the learner is told.
+        public var similar: WordIndex.Match?
 
         public var id: Card.ID { card.id }
     }
@@ -54,13 +59,15 @@ public enum CardImporter {
 
     /// - Parameters:
     ///   - existing: The cards of the deck, to mark duplicates.
+    ///   - elsewhere: The words of the other decks, to mark the cards whose word they have.
     ///   - isHeader: Whether the first row is a header rather than a card. Its names, like
     ///     `columns`, say which column is which.
     ///   - created: The creation date of the new cards.
     ///   - columns: The names of the columns, from the `#columns` line of a file, see
     ///     `DelimitedText.decode(_:)`. Then the first row is a card, as in Anki.
     public static func candidates(
-        from rows: [[String]], existing: [Card], isHeader: ([String]) -> Bool, created: Date, columns: [String]? = nil
+        from rows: [[String]], existing: [Card], elsewhere: WordIndex = WordIndex(), isHeader: ([String]) -> Bool, created: Date,
+        columns: [String]? = nil
     ) -> Result {
         var skippedRows = 0
         var cards: [Card] = []
@@ -79,21 +86,31 @@ public enum CardImporter {
             let kind = note == nil ? nil : CardKind(rawValue: field(layout.kind).trimmingCharacters(in: .whitespaces).lowercased())
             cards.append(Card(text: text, note: note, kind: kind, created: created))
         }
-        return Result(candidates: candidates(of: cards, existing: existing), skippedRows: skippedRows)
+        return Result(candidates: candidates(of: cards, existing: existing, elsewhere: elsewhere), skippedRows: skippedRows)
     }
 
     /// `cards` as candidates, in order: a card whose question `existing` has, or an earlier
-    /// card of `cards` has, is marked as a duplicate. The cards of an Anki package come
-    /// this way, see `AnkiImport.cards(from:learningOptions:calendar:created:)`.
-    public static func candidates(of cards: [Card], existing: [Card]) -> [Candidate] {
+    /// card of `cards` has, is marked as a duplicate, and so is one whose word, whatever its
+    /// spelling and glosses (`WordKey`), `elsewhere` has; `elsewhere` also finds the words that
+    /// differ by an accent only, which are `similar`. The cards of an Anki package come this
+    /// way, see `AnkiImport.cards(from:learningOptions:calendar:created:)`.
+    public static func candidates(of cards: [Card], existing: [Card], elsewhere: WordIndex = WordIndex()) -> [Candidate] {
         let inDeck = Set(existing.map(\.questionKey))
         // The first card of each question in the file.
         var inFile: [String: Card] = [:]
         return cards.map { card in
             let key = card.questionKey
-            let duplicate: Duplicate? = inDeck.contains(key) ? .inDeck : inFile[key].map { .inFile(question: $0.question, answer: $0.answer) }
+            var duplicate: Duplicate? = inDeck.contains(key) ? .inDeck : inFile[key].map { .inFile(question: $0.question, answer: $0.answer) }
+            var similar: WordIndex.Match?
+            if duplicate == nil {
+                switch elsewhere.match(card) {
+                case let .same(match)?: duplicate = .inOtherDeck(match)
+                case let .looksLike(match)?: similar = match
+                case nil: break
+                }
+            }
             inFile[key] = inFile[key] ?? card
-            return Candidate(card: card, duplicate: duplicate)
+            return Candidate(card: card, duplicate: duplicate, similar: similar)
         }
     }
 }

@@ -79,6 +79,37 @@ struct AddCardsTests {
         #expect(preview.rows.allSatisfy { $0.cards.count == 2 })
     }
 
+    @Test func aWordWithEndingsOrAnotherArticleIsTheWordTheDeckHas() throws {
+        let deck = try Deck(cards: [
+            makeCard("ο/η οδηγός", answer: "driver", note: "οδηγός#ο/η", kind: .recognition),
+            makeCard("απλός, -ή, -ό", answer: "plain", note: "απλός-ή-ό", kind: .recognition),
+        ])
+        let preview = WordListPreview(text: "ο οδηγός = the driver\nαπλός = simple\nτο νερό = water", deck: deck, created: created)
+        #expect(preview.rows.map(\.duplicate) == [.inDeck, .inDeck, nil])
+    }
+
+    @Test func aWordAnotherDeckHasStartsUncheckedAndOneThatLooksLikeItIsChecked() throws {
+        let other = try Deck(cards: [
+            makeCard("ο/η οδηγός", answer: "driver; guide\nA sentence.", note: "οδηγός#ο/η", kind: .recognition),
+            makeCard("άπλος", answer: "simple", note: "άπλος", kind: .recognition),
+        ])
+        let index = WordIndex(decks: [("Greek A1–A2", other)])
+        let preview = WordListPreview(text: "ο οδηγός = the driver\nαπλός, -ή, -ό = plain\nη κλοπή = theft", deck: Deck(), elsewhere: index, created: created)
+
+        guard case let .inOtherDeck(match)? = preview.rows[0].duplicate else {
+            Issue.record("the first word is in the other deck")
+            return
+        }
+        #expect((match.deck, match.question, match.answer) == ("Greek A1–A2", "ο/η οδηγός", "driver; guide"))
+        #expect(preview.rows.map(\.isSelectedByDefault) == [false, true, true])
+        #expect(preview.rows[1].duplicate == nil)
+        #expect(preview.rows[1].similar?.question == "άπλος")
+        #expect(preview.rows[2].similar == nil)
+        // The deck's own check comes first.
+        let own = try Deck(cards: [makeCard("ο οδηγός", answer: "x", note: "οδηγός#ο", kind: .recognition)])
+        #expect(WordListPreview(text: "ο οδηγός = the driver", deck: own, elsewhere: index, created: created).rows.map(\.duplicate) == [.inDeck])
+    }
+
     @Test func aListWithNothingUsableMakesNoRows() {
         #expect(WordListPreview(text: "", deck: Deck(), created: created).rows.isEmpty)
         let preview = WordListPreview(text: "  \n one\n two = ", deck: Deck(), created: created)

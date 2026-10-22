@@ -22,6 +22,10 @@ struct ImportPreviewView: View {
                     Text(line)
                         .foregroundStyle(.secondary)
                 }
+                ForEach(preview.otherDeckLines, id: \.self) { line in
+                    Text(line)
+                        .foregroundStyle(.secondary)
+                }
                 if preview.skippedRows > 0 {
                     Text("\(preview.skippedRows) rows without a question or an answer are left out.")
                         .foregroundStyle(.secondary)
@@ -44,8 +48,12 @@ struct ImportPreviewView: View {
                         Label("Already in this deck", systemImage: "exclamationmark.triangle")
                     case let .inFile(question, answer):
                         Label("Already earlier in the file: \(question) → \(answer)", systemImage: "exclamationmark.triangle")
+                    case let .inOtherDeck(match):
+                        Label(match.alsoInLine, systemImage: "exclamationmark.triangle")
                     case nil:
-                        EmptyView()
+                        if let similar = candidate.similar {
+                            Label(similar.similarLine, systemImage: "info.circle")
+                        }
                     }
                 }
                 .width(min: 120, ideal: 160)

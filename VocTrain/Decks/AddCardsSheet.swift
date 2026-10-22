@@ -20,6 +20,10 @@ struct AddCardsSheet: View {
 
     @ObservedObject var document: VocabularyDocument
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.knownDeckFiles) private var knownDeckFiles
+    /// The words of the other decks, once they are read: a word one of them has is left out of the
+    /// list by default, and a typed one is told of.
+    @State private var elsewhere = WordIndex()
 
     @State private var mode = Mode.oneCard
     @State private var question = ""
@@ -63,7 +67,13 @@ struct AddCardsSheet: View {
     }
 
     private var preview: WordListPreview {
-        WordListPreview(text: listText, deck: document.deck, created: document.clock.now)
+        WordListPreview(text: listText, deck: document.deck, elsewhere: elsewhere, created: document.clock.now)
+    }
+
+    /// What another deck holds of the word typed in One Card, on whichever side the Greek is.
+    private var otherDeckHit: WordIndex.Hit? {
+        guard let greek = [question, answer].first(where: \.hasGreekLetters), let key = WordKey(greek) else { return nil }
+        return elsewhere.match(key)
     }
 
     private func isSelected(_ row: WordListPreview.Row) -> Bool {
@@ -136,6 +146,7 @@ struct AddCardsSheet: View {
         }
         // A swipe down would lose the text; Cancel asks.
         .interactiveDismissDisabled(hasTypedText)
+        .task { elsewhere = await knownDeckFiles.wordIndex(excluding: document.packageURL) }
     }
 
     // MARK: One card
@@ -156,11 +167,33 @@ struct AddCardsSheet: View {
                 .submitLabel(.done)
                 .onSubmit(addOne)
         } footer: {
-            if let duplicate = document.deck.cards(withQuestion: question).first {
-                Label {
-                    Text("Already in this deck: \(duplicate.question) → \(duplicate.answer)")
-                } icon: {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+            let duplicate = document.deck.cards(withQuestion: question).first
+            let hit = otherDeckHit
+            if duplicate != nil || hit != nil {
+                VStack(alignment: .leading, spacing: Spacing.hairline) {
+                    if let duplicate {
+                        Label {
+                            Text("Already in this deck: \(duplicate.question) → \(duplicate.answer)")
+                        } icon: {
+                            Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                        }
+                    }
+                    switch hit {
+                    case let .same(match)?:
+                        Label {
+                            Text(match.alsoInLine)
+                        } icon: {
+                            Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                        }
+                    case let .looksLike(match)?:
+                        Label {
+                            Text(match.similarLine)
+                        } icon: {
+                            Image(systemName: "info.circle")
+                        }
+                    case nil:
+                        EmptyView()
+                    }
                 }
             }
         }
@@ -370,9 +403,19 @@ private struct PreviewRow: View {
                                 Text("Already in this deck")
                             case let .inFile(question, answer):
                                 Text("Already earlier in the list: \(question) → \(answer)")
+                            case let .inOtherDeck(match):
+                                Text(match.alsoInLine)
                             }
                         } icon: {
                             Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    } else if let similar = row.similar {
+                        Label {
+                            Text(similar.similarLine)
+                        } icon: {
+                            Image(systemName: "info.circle")
                         }
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -415,8 +458,10 @@ enum WordPair {
 }
 
 /// What the lines of the From a List mode make: a row per word with its two cards, and
-/// the lines that are no word. A word the deck has already, or an earlier line made, stays
-/// in the list as a duplicate, unchecked by default, as the import preview does.
+/// the lines that are no word. A word the deck has already, or an earlier line made, or
+/// another deck has, stays in the list as a duplicate, unchecked by default, as the import
+/// preview does; a word that differs from one of another deck by an accent only is checked,
+/// with a line that says so.
 struct WordListPreview {
     struct Row: Identifiable {
         /// The word key, numbered if an earlier line has it too.
@@ -425,6 +470,8 @@ struct WordListPreview {
         /// Recognition, then production.
         var cards: [Card]
         var duplicate: CardImporter.Duplicate?
+        /// The word of another deck that this one differs from by an accent only.
+        var similar: WordIndex.Match?
 
         var isSelectedByDefault: Bool { duplicate == nil }
     }
@@ -433,30 +480,41 @@ struct WordListPreview {
     /// The lines with text but no "word = translation": their number, from 1, and text.
     var invalidLines: [(number: Int, text: String)] = []
 
-    init(text: String, deck: Deck, created: Date) {
+    init(text: String, deck: Deck, elsewhere: WordIndex = WordIndex(), created: Date) {
         let parsed = LessonWords.parse(text)
         let lines = text.components(separatedBy: .newlines)
         invalidLines = parsed.invalidLines.map { ($0, CardText.trimmed(lines[$0 - 1])) }
 
-        // The same keys as the deck's own checks: a word key as `LessonWords.plan`
-        // compares them, a question as `CardText.key(forQuestion:)` does.
-        let notesInDeck = Set(deck.cards.compactMap(\.note).map(Self.normalized))
+        // The same keys as the deck's own checks: a word key as `LessonWords.plan` compares
+        // them, a question as `CardText.key(forQuestion:)` does.
+        let notesInDeck = Set(deck.cards.compactMap { $0.note.flatMap { WordKey($0) } }.flatMap(\.sameKeys))
         let questionsInDeck = Set(deck.cards.map { CardText.key(forQuestion: $0.question) })
-        var firstOfNote: [String: LessonWords.Entry] = [:]
+        var firstOfWord: [String: LessonWords.Entry] = [:]
         var linesOfNote: [String: Int] = [:]
         for entry in parsed.entries {
-            let key = Self.normalized(entry.note)
-            let duplicate: CardImporter.Duplicate? =
-                if notesInDeck.contains(key) || questionsInDeck.contains(CardText.key(forQuestion: entry.greek)) {
-                    .inDeck
-                } else {
-                    firstOfNote[key].map { .inFile(question: $0.greek, answer: $0.translation) }
+            let id = Self.normalized(entry.note)
+            let wordKey = WordKey(entry.note)
+            let keys = wordKey?.sameKeys ?? []
+            var duplicate: CardImporter.Duplicate?
+            var similar: WordIndex.Match?
+            if !notesInDeck.isDisjoint(with: keys) || questionsInDeck.contains(CardText.key(forQuestion: entry.greek)) {
+                duplicate = .inDeck
+            } else if let first = keys.lazy.compactMap({ firstOfWord[$0] }).first {
+                duplicate = .inFile(question: first.greek, answer: first.translation)
+            } else {
+                switch wordKey.flatMap(elsewhere.match) {
+                case let .same(match)?: duplicate = .inOtherDeck(match)
+                case let .looksLike(match)?: similar = match
+                case nil: break
                 }
-            firstOfNote[key] = firstOfNote[key] ?? entry
-            let number = linesOfNote[key, default: 0] + 1
-            linesOfNote[key] = number
+            }
+            for key in keys where firstOfWord[key] == nil {
+                firstOfWord[key] = entry
+            }
+            let number = linesOfNote[id, default: 0] + 1
+            linesOfNote[id] = number
             let cards = LessonWords.plan(for: [entry], existingNotes: [String](), created: created).cards
-            rows.append(Row(id: number == 1 ? key : "\(key)#\(number)", entry: entry, cards: cards, duplicate: duplicate))
+            rows.append(Row(id: number == 1 ? id : "\(id)#\(number)", entry: entry, cards: cards, duplicate: duplicate, similar: similar))
         }
     }
 

@@ -151,4 +151,67 @@ struct MemoryEstimateTests {
         #expect(abs(total.gainToday - (first.gainToday + second.gainToday)) < 1e-9)
         #expect(MemoryEstimate.total([]) == MemoryEstimate(words: 0, wordsAtDayStart: 0))
     }
+
+    // MARK: A word in several decks
+
+    func word(_ greek: String, note: String, kind: CardKind? = .recognition) -> Card {
+        Card(question: greek, answer: "a", note: note, kind: kind)
+    }
+
+    @Test func aWordOfTwoDecksCountsOnceAtTheHighestRecall() throws {
+        let weak = reviewed(word("απλός, -ή, -ό", note: "απλός"), on: today - 20)
+        let strong = reviewed(word("απλός", note: "απλός"), on: today - 2)
+        let first = try memory([weak], on: today)
+        let second = try memory([strong], on: today)
+        let total = MemoryEstimate.total([first, second])
+        #expect(second.words > first.words)
+        #expect(abs(total.words - second.words) < 1e-12)
+        #expect(abs(total.wordsAtDayStart - second.wordsAtDayStart) < 1e-12)
+        // Either order.
+        #expect(abs(MemoryEstimate.total([second, first]).words - second.words) < 1e-12)
+    }
+
+    @Test func theHighestRecallAtTheDayStartCountsToo() throws {
+        // The copy reviewed today was the weaker one when the day began.
+        let old = reviewed(word("νερό", note: "νερό#το"), on: today - 5)
+        let reviewedToday = reviewed(reviewed(word("νερό", note: "νερό#το"), on: today - 30), on: today)
+        let first = try memory([old], on: today)
+        let second = try memory([reviewedToday], on: today)
+        let total = MemoryEstimate.total([first, second])
+        #expect(abs(total.words - 1) < 1e-9)
+        #expect(abs(total.wordsAtDayStart - max(first.wordsAtDayStart, second.wordsAtDayStart)) < 1e-12)
+        #expect(total.wordsAtDayStart < first.wordsAtDayStart + second.wordsAtDayStart)
+    }
+
+    @Test func aCommonGenderArticleJoinsItsTwoGenders() throws {
+        let decks = try [
+            memory([reviewed(word("ο/η οδηγός", note: "οδηγός#ο/η"), on: today)], on: today),
+            memory([reviewed(word("ο οδηγός", note: "οδηγός#ο"), on: today)], on: today),
+            memory([reviewed(word("η οδηγός", note: "οδηγός#η"), on: today)], on: today),
+        ]
+        #expect(abs(MemoryEstimate.total(decks).words - 1) < 1e-9)
+        // ο and η alone are two words.
+        #expect(abs(MemoryEstimate.total([decks[1], decks[2]]).words - 2) < 1e-9)
+    }
+
+    @Test func differentWordsAndCardsWithoutAKeyAreCountedEach() throws {
+        let first = try memory(
+            [reviewed(word("κύριος", note: "κύριος"), on: today), reviewed(word("πώς", note: "πώς"), on: today), reviewed(recognition("a"), on: today)], on: today)
+        let second = try memory(
+            [reviewed(word("ο κύριος", note: "κύριος#ο"), on: today), reviewed(word("πως", note: "πως"), on: today), reviewed(recognition("a"), on: today)],
+            on: today)
+        #expect(abs(MemoryEstimate.total([first, second]).words - 6) < 1e-9)
+    }
+
+    @Test func aWordHeldTwiceByOneDeckCountsOnce() throws {
+        let one = try memory(
+            [reviewed(word("απλός", note: "απλός"), on: today), reviewed(word("απλός, -ή, -ό", note: "απλός"), on: today - 9)], on: today)
+        #expect(one.words > 1.2)
+        #expect(abs(MemoryEstimate.total([one]).words - 1) < 1e-9)
+    }
+
+    @Test func aTotalOfPlainNumbersIsTheirSum() {
+        let total = MemoryEstimate.total([MemoryEstimate(words: 1.5, wordsAtDayStart: 1), MemoryEstimate(words: 2, wordsAtDayStart: 0.5)])
+        #expect(total == MemoryEstimate(words: 3.5, wordsAtDayStart: 1.5))
+    }
 }

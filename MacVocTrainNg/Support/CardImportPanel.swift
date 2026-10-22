@@ -20,13 +20,14 @@ extension CardImport {
     static func preview(ofFileAt url: URL, for document: VocabularyDocument, isNewDeck: Bool = false) async -> Preview? {
         let name = url.lastPathComponent
         let preview: Preview
+        let elsewhere = await OpenDecks.shared.wordIndex(excluding: document)
         do {
             if url.isAnkiPackage {
                 let package = try await loadAnki(at: url)
-                preview = await ankiPreview(of: package, fileName: name, for: document, isNewDeck: isNewDeck)
+                preview = await ankiPreview(of: package, fileName: name, for: document, isNewDeck: isNewDeck, elsewhere: elsewhere)
             } else {
                 let data = try Data(contentsOf: url)
-                preview = self.preview(of: data, fileName: name, existing: document.deck.cards, created: document.clock.now)
+                preview = self.preview(of: data, fileName: name, existing: document.deck.cards, elsewhere: elsewhere, created: document.clock.now)
             }
         } catch {
             showError(failureMessage(error))

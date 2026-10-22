@@ -49,6 +49,37 @@ struct CardExchangeTests {
         #expect(csvLines[3] == "ο κλέφτης,\"thief, robber\",noun,κλέφτης#ο,recognition")
     }
 
+    @Test func aWordTheOtherDecksHaveStartsUncheckedAndIsCountedPerDeck() throws {
+        let other = try Deck(cards: wordCards)
+        let index = WordIndex(decks: [("Greek A1–A2", other)])
+        let table = """
+            #separator:tab
+            #html:false
+            #columns:Front\tBack\tHint\tWord Key\tKind
+            ο κλέφτης\tthe thief\t\tκλέφτης#ο\trecognition
+            the thief\tο κλέφτης\t\tκλέφτης#ο\tproduction
+            το σπίτι\thouse\t\t\t
+            η αστυνομία\tpolice\t\t\t
+            """
+        let preview = CardImport.preview(of: Data(table.utf8), fileName: "deck", existing: [], elsewhere: index, created: created)
+
+        guard case let .inOtherDeck(match)? = preview.candidates.first?.duplicate else {
+            Issue.record("the first card is in the other deck")
+            return
+        }
+        #expect(match.deck == "Greek A1–A2")
+        #expect(preview.candidates.map { $0.duplicate == nil } == [false, false, true, false])
+        #expect(preview.selection == Set(preview.candidates.filter { $0.duplicate == nil }.map(\.id)))
+        #expect(preview.candidates[0].otherDeckLine == match.alsoInLine)
+        #expect(preview.candidates[2].otherDeckLine == nil)
+        // The two cards of the thief, and η αστυνομία, which the other deck has without a word key: by its Greek question.
+        #expect(preview.otherDeckLines == [String(localized: "\(3) cards are also in \("Greek A1–A2") and start unticked.")])
+        // Without the other decks the preview is the one of one deck.
+        let alone = CardImport.preview(of: Data(table.utf8), fileName: "deck", existing: [], created: created)
+        #expect(alone.otherDeckLines.isEmpty)
+        #expect(alone.selection.count == 4)
+    }
+
     @Test func ourOwnExportComesBackWithWordKeyAndKind() {
         for format in CardExport.Format.allCases {
             let data = CardExport.data(of: wordCards, format: format, includingLearningState: false, calendar: calendar)

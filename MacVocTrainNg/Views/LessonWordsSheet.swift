@@ -3,7 +3,9 @@ import VocabCore
 
 /// "Add Lesson Words…": the words of a lesson typed one per line, "greek = translation",
 /// with a preview of the cards they make, two for each word, see `LessonWords`. The
-/// cards join the deck as one change, which one undo takes back.
+/// cards join the deck as one change, which one undo takes back. A word another open deck has
+/// is left out, and listed, unless the learner asks for it; a word that differs from one by an
+/// accent only is added, and listed.
 struct LessonWordsSheet: View {
     @ObservedObject var document: VocabularyDocument
     /// The name of the deck, for the button.
@@ -12,10 +14,16 @@ struct LessonWordsSheet: View {
     var onAdded: (Int) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
+    /// The words of the other open decks, once they are read.
+    @State private var elsewhere = WordIndex()
+    /// Whether the words the other decks have are added too.
+    @State private var includesOtherDecks = false
 
     var body: some View {
         let parsed = LessonWords.parse(text)
-        let plan = LessonWords.plan(for: parsed.entries, existingNotes: document.deck.cards.compactMap(\.note), created: document.clock.now)
+        let plan = LessonWords.plan(
+            for: parsed.entries, existingNotes: document.deck.cards.compactMap(\.note), elsewhere: includesOtherDecks ? WordIndex() : elsewhere,
+            created: document.clock.now)
 
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -46,6 +54,10 @@ struct LessonWordsSheet: View {
 
             skipped(parsed: parsed, plan: plan)
 
+            if !elsewhere.isEmpty {
+                Toggle("Add the words other decks have, too", isOn: $includesOtherDecks)
+            }
+
             HStack {
                 Text("Preview")
                     .font(.headline)
@@ -70,6 +82,7 @@ struct LessonWordsSheet: View {
         }
         .padding(20)
         .frame(minWidth: 560, idealWidth: 660, minHeight: 440, idealHeight: 520)
+        .task { elsewhere = await OpenDecks.shared.wordIndex(excluding: document) }
     }
 
     /// What the preview leaves out, and why.
@@ -81,6 +94,17 @@ struct LessonWordsSheet: View {
             }
             if !plan.skipped.isEmpty {
                 Text("\(plan.skipped.count) words are in the deck already, or earlier in the list, and are left out.")
+            }
+            if !plan.skippedElsewhere.isEmpty {
+                Text("\(plan.skippedElsewhere.count) words are in other decks, and are left out.")
+                ForEach(Array(plan.skippedElsewhere.enumerated()), id: \.offset) { _, item in
+                    Text(verbatim: "\(item.entry.greek) · \(item.match.alsoInLine)")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            ForEach(Array(plan.similar.enumerated()), id: \.offset) { _, item in
+                Text(verbatim: "\(item.entry.greek) · \(item.match.similarLine)")
+                    .foregroundStyle(.secondary)
             }
         }
         .font(.callout)

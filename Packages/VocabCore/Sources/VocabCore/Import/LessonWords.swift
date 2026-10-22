@@ -21,6 +21,12 @@ public enum LessonWords {
         public var invalidLines: [Int] = []
     }
 
+    /// A word of the text and the word of another deck it is, or looks like.
+    public struct Elsewhere: Equatable, Sendable {
+        public var entry: Entry
+        public var match: WordIndex.Match
+    }
+
     /// What adding the words to a deck would do.
     public struct Plan: Equatable, Sendable {
         /// The cards to add: every recognition card first, then every production card.
@@ -28,6 +34,12 @@ public enum LessonWords {
         /// Words whose note the deck holds already, or an earlier line of the text made;
         /// they add nothing.
         public var skipped: [Entry] = []
+        /// Words another deck has, the same word whatever its spelling: left out as a whole,
+        /// both cards, as the words of `skipped` are.
+        public var skippedElsewhere: [Elsewhere] = []
+        /// Words that differ from a word of another deck by accents only: added, and the
+        /// learner is told.
+        public var similar: [Elsewhere] = []
     }
 
     /// The separators between the two sides of a line.
@@ -70,16 +82,33 @@ public enum LessonWords {
         return parsed
     }
 
-    /// The cards that adding `entries` to a deck with `existingNotes` would make.
-    public static func plan(for entries: [Entry], existingNotes: some Sequence<String>, created: Date) -> Plan {
-        var known = Set(existingNotes.map(normalized))
+    /// The cards that adding `entries` to a deck with `existingNotes` would make. A word is in
+    /// the deck when its `WordKey` is the same as that of a note, or of an earlier entry.
+    /// `elsewhere` holds the words of the other decks.
+    public static func plan(
+        for entries: [Entry], existingNotes: some Sequence<String>, elsewhere: WordIndex = WordIndex(), created: Date
+    ) -> Plan {
+        var known = Set(existingNotes.compactMap { WordKey($0) }.flatMap(\.sameKeys))
         var plan = Plan()
         var recognition: [Card] = []
         var production: [Card] = []
         for entry in entries {
-            guard known.insert(normalized(entry.note)).inserted else {
-                plan.skipped.append(entry)
-                continue
+            let key = WordKey(entry.note)
+            if let key {
+                if !known.isDisjoint(with: key.sameKeys) {
+                    plan.skipped.append(entry)
+                    continue
+                }
+                switch elsewhere.match(key) {
+                case let .same(match)?:
+                    plan.skippedElsewhere.append(Elsewhere(entry: entry, match: match))
+                    continue
+                case let .looksLike(match)?:
+                    plan.similar.append(Elsewhere(entry: entry, match: match))
+                case nil:
+                    break
+                }
+                known.formUnion(key.sameKeys)
             }
             if let text = CardText(question: entry.greek, answer: entry.translation) {
                 recognition.append(Card(text: text, note: entry.note, kind: .recognition, created: created))
@@ -92,35 +121,12 @@ public enum LessonWords {
         return plan
     }
 
-    /// The note of a Greek word, made as `key()` in `greek-lessons/vocab/merge.py` makes
-    /// it, so the deck finds the word again when that script's table is synced: the lemma
-    /// in lower case, with its accents, endings and brackets cut off after the first comma
-    /// or bracket, and the article of a noun moved behind a `#`:
-    /// "η παρέα" is "παρέα#η", "υπεύθυνος, -η, -ο" is "υπεύθυνος", "τρώω (έφαγα)" is "τρώω".
+    /// The note of a Greek word, the written-out `WordKey`: the lemma in lower case, with its
+    /// accents kept and its endings, alternatives and brackets cut off, and the article of a
+    /// noun moved behind a `#`: "η παρέα" is "παρέα#η", "υπεύθυνος, -η, -ο" is "υπεύθυνος",
+    /// "τρώω (έφαγα)" is "τρώω", "ο ψεύτης / η ψεύτρα" is "ψεύτης#ο". It starts from `key()` in
+    /// `greek-lessons/vocab/merge.py`, whose table the deck is synced with, and cuts more.
     public static func note(forGreek greek: String) -> String {
-        // Not `lowercased()`: only Foundation's version writes a final sigma as ς.
-        var word = greek.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(with: nil).precomposedStringWithCanonicalMapping
-        var article = ""
-        for candidate in articles where word.hasPrefix(candidate) {
-            word.removeFirst(candidate.count)
-            article = "#" + candidate.trimmingCharacters(in: .whitespaces)
-            break
-        }
-        let lemma = word.prefix { $0 != "(" && $0 != "," }
-        return lemma.trimmingCharacters(in: .whitespacesAndNewlines) + article
-    }
-
-    private static let articles = ["ο/η ", "η/ο ", "ο ", "η ", "το ", "οι ", "τα "]
-
-    /// Notes are compared in composed Unicode form, as `deck-from-tsv` does.
-    private static func normalized(_ note: String) -> String {
-        CardText.trimmed(note).precomposedStringWithCanonicalMapping
-    }
-}
-
-extension String {
-    /// Whether the text has Greek letters, of the modern alphabet or the polytonic one.
-    fileprivate var hasGreekLetters: Bool {
-        unicodeScalars.contains { (0x0370...0x03FF).contains($0.value) || (0x1F00...0x1FFF).contains($0.value) }
+        WordKey(greek)?.note ?? ""
     }
 }

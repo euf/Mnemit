@@ -102,4 +102,46 @@ struct LessonWordsTests {
         let plan = LessonWords.plan(for: LessonWords.parse("  \n\n").entries, existingNotes: [String](), created: created)
         #expect(plan.cards.isEmpty && plan.skipped.isEmpty)
     }
+
+    /// The cuts of `WordKey` too: alternatives, endings and an indefinite article.
+    @Test(arguments: [
+        ("ο ψεύτης / η ψεύτρα", "ψεύτης#ο"),
+        ("απλός -ή -ό", "απλός"),
+        ("απλός-ή-ό", "απλός"),
+        ("ο φίλος; η φίλη", "φίλος#ο"),
+        ("ένα κιλό", "κιλό#ένα"),
+        ("αλήθεια;", "αλήθεια;"),
+    ])
+    func noteIsCutLikeAWordKey(greek: String, note: String) {
+        #expect(LessonWords.note(forGreek: greek) == note)
+    }
+
+    /// A deck's note in the spelling of an older table is the same word as the cut one.
+    @Test func skipsTheWordsOfNotesThatAreTheSameWord() {
+        let entries = LessonWords.parse("ο οδηγός = driver\nαπλός, -ή, -ό = simple\nτο νερό = water\nη οδηγός = female driver").entries
+        let plan = LessonWords.plan(for: entries, existingNotes: ["οδηγός#ο/η", "απλός-ή-ό", "νερό"], created: created)
+        // ο/η holds ο and η, απλός-ή-ό is απλός; νερό without an article is no το νερό.
+        #expect(plan.skipped.map(\.greek) == ["ο οδηγός", "απλός, -ή, -ό", "η οδηγός"])
+        #expect(plan.cards.map(\.note) == ["νερό#το", "νερό#το"])
+    }
+
+    @Test func leavesOutTheWordsOtherDecksHaveAndTellsOfTheOnesThatLookLike() throws {
+        let other = try Deck(cards: [
+            Card(question: "ο/η οδηγός", answer: "driver", note: "οδηγός#ο/η", kind: .recognition),
+            Card(question: "άπλος", answer: "simple", note: "άπλος", kind: .recognition),
+        ])
+        let index = WordIndex(decks: [("Greek A1–A2", other)])
+        let entries = LessonWords.parse("ο οδηγός = the driver\nαπλός, -ή, -ό = plain; simple\nη κλοπή = theft").entries
+        let plan = LessonWords.plan(for: entries, existingNotes: [String](), elsewhere: index, created: created)
+        #expect(plan.skippedElsewhere.map(\.entry.greek) == ["ο οδηγός"])
+        #expect(plan.skippedElsewhere.map(\.match.deck) == ["Greek A1–A2"])
+        #expect(plan.skippedElsewhere.map(\.match.question) == ["ο/η οδηγός"])
+        #expect(plan.similar.map(\.entry.greek) == ["απλός, -ή, -ό"])
+        #expect(plan.similar.map(\.match.question) == ["άπλος"])
+        // The word that looks like another is added, both its cards; the one the other deck has is not.
+        #expect(plan.cards.map(\.note) == ["απλός", "κλοπή#η", "απλός", "κλοπή#η"])
+        #expect(plan.skipped.isEmpty)
+        // Without the index the plan is the one of one deck.
+        #expect(LessonWords.plan(for: entries, existingNotes: [String](), created: created).cards.count == 6)
+    }
 }

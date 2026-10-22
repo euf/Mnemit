@@ -17,6 +17,8 @@ struct AddCardForm: View {
     @State private var question = ""
     @State private var answer = ""
     @State private var hint = ""
+    /// The words of the other open decks, once they are read.
+    @State private var elsewhere = WordIndex()
     @FocusState private var focus: Field?
     /// Counts Return presses; `onChange` submits. SwiftUI on macOS renews a field's
     /// submit action only when the field's text changes, so Return in a hint field that
@@ -30,6 +32,11 @@ struct AddCardForm: View {
 
     /// `nil` until question and answer are filled in.
     private var text: CardText? { CardText(question: question, answer: answer, hint: hint) }
+
+    /// What another deck holds of the word typed, on whichever side the Greek is.
+    private var otherDeckHit: WordIndex.Hit? {
+        [question, answer].lazy.compactMap { WordKey($0) }.compactMap(elsewhere.match).first
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -53,7 +60,20 @@ struct AddCardForm: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
+            switch otherDeckHit {
+            case let .same(match)?:
+                Label(match.alsoInLine, systemImage: "exclamationmark.triangle")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            case let .looksLike(match)?:
+                Label(match.similarLine, systemImage: "info.circle")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            case nil:
+                EmptyView()
+            }
         }
+        .task { elsewhere = await OpenDecks.shared.wordIndex(excluding: document) }
         .onAppear {
             if document.deck.cards.isEmpty {
                 focus = .question
