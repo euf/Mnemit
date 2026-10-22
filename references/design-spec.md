@@ -1,6 +1,6 @@
 # Mnemit design spec: home, deck details, study stream, accent, Mac
 
-Spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on macOS 27). Read from code: `StartScreen`, `DeckView`, `StudyCountsView`, `StudyView`, `GradeChoice`, `Presentation`, `CardFlight`, Mac `DocumentView`, `SessionView`, `WelcomeView`, `AppCommands`. Read from the stream agent's worktree (`.claude/worktrees/agent-aa4d062d083bbd42b`, uncommitted): `DailyProgress.swift` (`DailyGoal` 20 reviews, `DailyRing`, `Streak`, `DailyProgress.evaluate(_:at:calendar:)` over all decks) and `StudyStream.swift` (per deck: `plan`, `rest`, `reviewAhead`, practice). No GUI was run for this spec.
+Spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on macOS 27). Read from code: `StartScreen`, `DeckView`, `StudyCountsView`, `StudyView`, `GradeChoice`, `Presentation`, `CardFlight`, Mac `DocumentView`, `SessionView`, `WelcomeView`, `AppCommands`. Read from the stream agent's worktree (`.claude/worktrees/agent-aa4d062d083bbd42b`, uncommitted): `DailyProgress.swift` (`DailyGoal`, `DailyRing`, `Streak`, `DailyProgress.evaluate(_:at:calendar:)` over all decks) and `StudyStream.swift` (per deck: `plan`, `rest`, `reviewAhead`, practice). No GUI was run for this spec.
 
 ## 0. How to read this
 
@@ -49,8 +49,8 @@ Rejected: auto-start of the stream at launch. The learner would not see what is 
 │                                  ( … )│ nav bar 44: ellipsis menu (trailing)
 │ Today                                 │ large title 34 bold, system
 │ ┌───────────────────────────────────┐ │ insetGrouped section, margin 16
-│ │  ╭─────╮   87 due                  │ │ title2 semibold, monospaced digits
-│ │  │  ◔  │   14 of 20 today          │ │ subheadline, secondary
+│ │  ╭─────╮   87 today                │ │ title2 semibold, monospaced digits
+│ │  │  ◔  │   14 of 36 today          │ │ subheadline, secondary
 │ │  ╰─────╯   [flame] 12-day streak   │ │ subheadline; flame = accent when goal met
 │ └───────────────────────────────────┘ │ ring 72, line 10, round caps
 │  DECKS                                │ system section header
@@ -85,13 +85,13 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + summary 88 + 
 | Zero due | same row | Trailing `checkmark` in secondary, subtitle `Next review <relative>` from `Format.due`. |
 | Swipe | `.swipeActions` | Keep Remove from List for decks outside the folder. |
 | Primary action | `.safeAreaBar(edge: .bottom)` | `Button` label `Text("Study")` full width, `.buttonStyle(.glassProminent)`, `.controlSize(.large)`, `.padding(.horizontal, 16)`, `.padding(.bottom, 8)`. System height, no fixed frame, no icon, no count in the label. The scroll edge effect comes from `safeAreaBar`; no background under it [H:layout]. |
-| Accessibility | | Study button `accessibilityValue("\(due) cards due")`. |
+| Accessibility | | Study button `accessibilityValue("\(due) today")`. |
 
 ### 2.4 States
 
 | State | Summary row | Button |
 |---|---|---|
-| Cards due | `87 due`, `14 of 20 today`, streak | `Study`, `.glassProminent` |
+| Cards due | `87 today`, `14 of 36 today`, streak; with a backlog `+1,320 to catch up this week` | `Study`, `.glassProminent` |
 | Nothing due, reviews today | ring full with checkmark, `All done`, `N reviews today`, streak | `Keep Going`, `.glass` (not prominent), opens the stream at `rest`, which offers keep going and new cards |
 | Nothing due, no reviews today | track only, `Nothing due`, `Next review <relative date>`, no `x of y` line | `Keep Going`, `.glass` |
 | No decks | `ContentUnavailableView` as now; title `No Decks`; prominent `Choose Mnemit Folder…`, plain `Open Deck…` | – |
@@ -99,7 +99,7 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + summary 88 + 
 | Deck unreadable (iCloud) | row without counts | row stays tappable; the stream cover shows the existing failure view |
 | Accessibility sizes (`isAccessibilitySize`) | ring above the text (`AnyLayout` switch) | unchanged |
 
-The "no reviews, nothing due" case exists because `DailyGoal.goal(reviews: 0, owed: 0)` is 1; the row hides the goal then.
+The "no reviews, nothing due" case has a goal of 0 (`DailyGoal.goal(reviews: 0, owed: 0, plan: 0)`), which counts as met, so the ring is a track and the row hides the goal. The count is the plan of the day (`StudyCounts.total`), its share of the backlog included, never the whole backlog; the cards beyond the share are `StudyCounts.catchUp`, shown as a secondary line on Today, in the deck rows and on the rest screen.
 
 ### 2.5 Scope of Study
 
@@ -401,7 +401,7 @@ struct CountsRow: View {
 
 ```
 ┌───────────────────────────────────────┐
-│ ✕          ◔  14 of 20           (…) │ nav 44: close | principal: ring 22 + subheadline | ellipsis
+│ ✕          ◔  14 of 36           (…) │ nav 44: close | principal: ring 22 + subheadline | ellipsis
 │        [→ Good] in 4 days  Undo       │ UndoChip: material capsule, about 32 high, always reserved
 │ ┌───────────────────────────────────┐ │
 │ │                                   │ │ card: margin 16, inner padding 24, radius 22,
@@ -426,7 +426,7 @@ Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98
 ### 4.2 Header
 
 - Leading: `Button(role: .close)` (xmark). It replaces the `chevron.backward` End Session button; the stream has no session to end, every grade is saved. The HIG asks for the standard Close symbol and no text label [H:toolbars].
-- Principal: `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + `Text("14 of 20")`, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)` with the lap as its value ("Lap 2"). The ring is empty in the middle during the first lap, shows "×2" once the goal is reached, "×3" after the second lap. Goal met: `26 today`. This replaces both the 120-pt linear bar with `n / N` and the landscape `rowProgress`.
+- Principal: `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + `Text("14 of 36")`, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)` with the lap as its value ("Lap 2"). The ring is empty in the middle during the first lap, shows "×2" once the goal is reached, "×3" after the second lap. Goal met: `26 today`. This replaces both the 120-pt linear bar with `n / N` and the landscape `rowProgress`.
 - Trailing: `Menu("More", systemImage: "ellipsis")` with Undo, Card Info, Suspend Card, Speak toggle (as now).
 - The streak is not in the header. At the moment the goal is met, reuse the `UndoChip` slot for one line (`Goal reached · 12-day streak`, 3 s) and give `sensoryFeedback(.success)`. No new element.
 - Practice stages show the word `Practice` as the principal text, without the ring.
@@ -669,9 +669,9 @@ The owner asked on 22.10.2026 for rings in the manner of the Fitness rings, take
 | Mac toolbar chip (`RingChip`) | 24 pt | streak, number only |
 | Mac session header (`DailyRingView`) | 28 pt, a button with a popover | lap |
 
-VoiceOver: `DailyRingView` reads "Day streak: 5 days" or "Lap 2" as its label and "14 / 20" as its value, "Daily Goal" while the middle is empty; in the study bar `StreamRing` passes `speaksCenter: true`, so "Lap 2" joins "14 of 20" in the bar's combined element. `ProgressRing` is otherwise hidden from accessibility, as the text beside it says the figures. The popover shows "Goal reached" with a check mark and "Lap ×N" from the second lap.
+VoiceOver: `DailyRingView` reads "Day streak: 5 days" or "Lap 2" as its label and "14 / 36" as its value, "Daily Goal" while the middle is empty; in the study bar `StreamRing` passes `speaksCenter: true`, so "Lap 2" joins "14 of 36" in the bar's combined element. `ProgressRing` is otherwise hidden from accessibility, as the text beside it says the figures. The popover shows "Goal reached" with a check mark and "Lap ×N" from the second lap.
 
-Pictures: `VocTrainTests/RingTests.swift` (`TEST_RUNNER_STUDY_SHOTS_DIR`) writes `ring-1-today`, `ring-2-study-bar`, `ring-3-chip`, `ring-4-rest` in light and dark at 0, 40, 100, 160 and 230 % (46 of 20 reviews), and `ring-5-edges` at 5, 95, 100, 105, 150, 200 and 300 %; `MacVocTrainNgTests/RingSnapshotMacTests.swift` writes the Mac chip and the session ring.
+Pictures: `VocTrainTests/RingTests.swift` (`TEST_RUNNER_STUDY_SHOTS_DIR`) writes `ring-1-today`, `ring-2-study-bar`, `ring-3-chip`, `ring-4-rest` in light and dark at 0, 40, 100, 160 and 230 % of the goal, and `ring-5-edges` at 5, 95, 100, 105, 150, 200 and 300 %; `MacVocTrainNgTests/RingSnapshotMacTests.swift` writes the Mac chip and the session ring.
 
 ## 6. Mac
 
@@ -683,7 +683,7 @@ Level 0 Today (all decks) → level 1 deck (details) → level 2 the deck docume
 
 Toolbar order, left to right: segmented `Cards | Statistics` (principal, as now) · ring chip · **Study** (`.borderedProminent`) · fixed space · Add Lesson Words · Learning Options.
 
-- Ring chip: `ProgressRing(diameter: 24)` with the streak in the middle (number only, 24 pt is too small for the word) + `Text("14/20")` monospaced, `.help("14 of 20 reviews today · 12-day streak")`, `.sharedBackgroundVisibility(.hidden)` (an indicator takes no button background).
+- Ring chip: `ProgressRing(diameter: 24)` with the streak in the middle (number only, 24 pt is too small for the word) + `Text("14/36")` monospaced, `.help("14 of 36 reviews today · 12-day streak")`, `.sharedBackgroundVisibility(.hidden)` (an indicator takes no button background).
 - Study: `Button("Study")` without count and without the `graduationcap` label. `ToolbarSpacer(.fixed)` between it and the symbol buttons: a text button next to symbol buttons reads as one control [H:toolbars]. The menu command Study ▸ Start Session (⌘L) exists, so the toolbar item has its menu twin [H:toolbars]; rename the item `Start Studying`.
 - Session header (`SessionView.header`): replace the 320-pt `ProgressView` and `n / N` with `DailyRingView(progress:, inStream: true)`, the lap in the middle as on the iPhone; keep the mistakes counter and Edit Card…; End Session becomes Done.
 - Spacing: `GradeChoice` gap 12 on Mac too; height stays 38 (HIG default Mac control 28, minimum 20 [H:accessibility]).
@@ -696,11 +696,11 @@ Replaces the Welcome window (`WelcomeWindow`, `WelcomeView`); opens at launch wh
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ ● ● ●  ◫       Today                     ◔ 14/20     [ Study ]   │ title Today, subtitle 14 of 20 reviews
+│ ● ● ●  ◫       Today                     ◔ 14/36     [ Study ]   │ title Today, subtitle 14 of 36 reviews
 ├────────────────┬─────────────────────────────────────────────────┤
 │ (o) Today      │ ┌ Form, .grouped ───────────────────────────┐   │
-│                │ │ ╭──╮ 87 due                               │   │
-│ Decks          │ │ │◔ │ 14 of 20 today · [flame] 12-day streak│   │
+│                │ │ ╭──╮ 87 today                             │   │
+│ Decks          │ │ │◔ │ 14 of 36 today · [flame] 12-day streak│   │
 │ ▤ Greek A1–A2 60│ └───────────────────────────────────────────┘   │
 │ ▤ Greek B1    27│ ┌ Decks ────────────────────────────────────┐   │
 │                │ │ Greek A1–A2  30 new · 0 learning · 30 review│   │
@@ -759,7 +759,7 @@ struct MacHome: View {
                     ProgressRing(fraction: ring.fraction, diameter: 16)
                     Text("\(ring.reviews)/\(ring.goal)").monospacedDigit()
                 }
-                .help("14 of 20 reviews today")
+                .help("14 of 36 reviews today")
             }
             .sharedBackgroundVisibility(.hidden)
             ToolbarSpacer(.fixed, placement: .primaryAction)
@@ -790,7 +790,7 @@ Dependencies on the stream agent: `DailyProgress`, `DailyRing`, `Streak`; a `Stu
 
 ### 7.2 New strings (Shared/Resources/Localizable.xcstrings, German in state `translated`)
 
-`Today` and `Study` exist (`Heute`, `Lernen`). New: `Decks`, `Keep Going`, `All done`, `Nothing due`, `%lld due` (plural forms in en and de), `%lld of %lld today`, `%lld today`, `%lld-day streak` (plural), `Deck Details`, `Practice Newest Words`, `Practice Today's Mistakes`, `What today's plan takes from this deck.`, `Next: %@`, `Goal reached`, `No Decks`, `Open Deck`.
+`Today` and `Study` exist (`Heute`, `Lernen`). New: `Decks`, `Keep Going`, `All done`, `Nothing due`, `+%lld to catch up this week`, `Catch Up`, `%lld of %lld today`, `%lld today`, `%lld-day streak` (plural), `Deck Details`, `Practice Newest Words`, `Practice Today's Mistakes`, `What today's plan takes from this deck.`, `Next: %@`, `Goal reached`, `No Decks`, `Open Deck`.
 
 ### 7.3 Check matrix (on the 13 mini simulator or device; Mac with `vqa`)
 

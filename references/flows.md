@@ -30,7 +30,7 @@ code today is mapped in the inventory of 21.10.2026 (anchors in the commit that 
 Root is a `NavigationStack` on Today.
 
 **Today**
-- Ring, due count, streak; **Study** (all decks).
+- Ring, the plan of the day (not the raw due count), streak; **Study** (all decks).
 - Decks section: a row per deck with its counts. Tapping a row pushes the Deck screen.
 - Toolbar **+** menu: Add Cards (to the last deck used), New Deck, Import.
 - `.searchable` over every card of every deck; a result pushes Card Detail.
