@@ -73,7 +73,7 @@ struct ProgressRing: View {
     var body: some View {
         let lineWidth = Self.lineWidth(diameter: diameter)
         let ring = ZStack {
-            ActivityRing(progress: max(0, fraction), color: .dailyRingTail, tipColor: .dailyRing, lineWidth: lineWidth)
+            ActivityRing(progress: max(0, fraction), color: .dailyRing, tipColor: .dailyRingTail, lineWidth: lineWidth)
                 .animation(reduceMotion ? nil : .smooth, value: fraction)
             RingCenterLabel(center: center, diameter: diameter, lineWidth: lineWidth)
         }

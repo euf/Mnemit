@@ -22,18 +22,12 @@
 
 import SwiftUI
 
-/// An activity ring in the manner of the Fitness rings: a gradient along a round-capped stroke
-/// from `color` to `tipColor`, a dim track behind it, and, once `progress` passes 1, a tip with a
-/// shadow where the ring overlaps itself. The ring fills the frame it is given.
-///
-/// From WolfActivityRing: the `trim` and `AngularGradient` stroke whose gradient ends at the
-/// head, the half-disc tip that carries the shadow (`RingCap`) and the annulus that cuts the
-/// shadow off at the edges of the stroke (`RingClipShape`). Left out: the options struct, the
-/// outline, the content closure, the tip that shows from 95 %. Changed: past 1 the first lap is
-/// a closed ring in `tipColor` and the gradient runs over the part of the next lap, so the head
-/// matches the tip; the shadow is sized by the stroke and comes only past 100 %; the view is
-/// `Animatable`, so the gradient, the tip and the lap move together; the animation is the
-/// caller's (Reduce Motion).
+/// An activity ring in the manner of the Fitness rings, as WolfActivityRing draws it: one
+/// round-capped stroke trimmed to `progress` with a gradient from `color` at the top to `tipColor`
+/// at the head, a dim track behind it, and from 95 % a tip that covers the start of the stroke
+/// where the ring closes and overlaps itself, without a shadow, as Wolf's own Fitness rings. Past 1 the stroke stays a full circle and
+/// the gradient keeps stretching, so the head is always the brightest. The ring fills the frame it
+/// is given; the track is `tipColor` at 25 %, the rest of the drawing is Wolf's as written. The view is `Animatable`; the animation is the caller's.
 struct ActivityRing: View, Animatable {
     /// 0 to 1 is the first lap; more is the laps after it.
     var progress: Double
@@ -51,37 +45,23 @@ struct ActivityRing: View, Animatable {
     var body: some View {
         GeometryReader { geometry in
             let radius = (min(geometry.size.width, geometry.size.height) - lineWidth) / 2
-            let angle = Angle.degrees(360 * progress).radians
-            // The part of the lap the head is in: the gradient runs over it, from the top to the head. At a
-            // whole number of laps the head is at the top, and its tip covers the seam there, as in Fitness.
-            let rest = progress.truncatingRemainder(dividingBy: 1)
-            let lap = progress > 1 && rest > 0 ? rest : min(progress, 1)
             ZStack {
                 Circle()
                     .stroke(tipColor.opacity(0.25), lineWidth: lineWidth)
                     .frame(width: radius * 2)
-                if progress >= 1 {
-                    // The first lap, closed, in the colour of the head: the lap on top of it starts light.
-                    Circle()
-                        .stroke(tipColor, lineWidth: lineWidth)
-                        .frame(width: radius * 2)
-                }
-                if progress > 0 {
-                    Circle()
-                        .trim(from: 0, to: lap)
-                        .stroke(
-                            AngularGradient(gradient: Gradient(colors: [color, tipColor]), center: .center, startAngle: .zero, endAngle: .degrees(360 * lap)),
-                            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: radius * 2)
-                }
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        AngularGradient(gradient: Gradient(colors: [color, tipColor]), center: .center, startAngle: .degrees(0), endAngle: .degrees(360 * progress)),
+                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: radius * 2)
                 RingCap(progress: progress, ringRadius: radius)
                     .fill(tipColor, strokeBorder: tipColor, lineWidth: 1)  // hides the seam
                     .frame(width: lineWidth, height: lineWidth)
-                    .shadow(color: .black.opacity(0.5), radius: lineWidth * 0.3, x: lineWidth * 0.2 * cos(angle), y: lineWidth * 0.2 * sin(angle))
                     .clipShape(RingClipShape(radius: radius, thickness: lineWidth))
-                    .opacity(progress >= 1 ? 1 : 0)
+                    .opacity(progress < 0.95 ? 0 : 1)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
