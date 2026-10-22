@@ -61,7 +61,7 @@ private struct StreakLine: View {
         if state.streakDays > 0 {
             HStack(spacing: 4) {
                 Image(systemName: "flame.fill")
-                    .foregroundStyle(state.isGoalMet ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(state.isGoalMet ? Color.appAccent : Color.secondary)
                     .widgetAccentable(state.isGoalMet)
                 Text("\(state.streakDays)-day streak")
             }
@@ -125,7 +125,7 @@ private struct MediumWidget: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(Color.accentColor, in: Capsule())
+                    .background(Color.appAccent, in: Capsule())
                     .widgetAccentable()
             }
         }
@@ -191,7 +191,7 @@ private struct EmptyWidget: View {
             VStack(spacing: 8) {
                 Image(systemName: "rectangle.stack.fill")
                     .font(.title)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color.appAccent)
                     .widgetAccentable()
                 Text("Open Mnemit to start")
                     .font(.subheadline)

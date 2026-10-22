@@ -263,18 +263,29 @@ enum Format {
 }
 
 extension Color {
+    /// The app's accent. On the iPhone it is named: in a widget `Color.accentColor` is the
+    /// system tint (blue), since WidgetKit uses the extension's `AccentColor` only for the
+    /// configuration screen. On the Mac `accentColor`, so the system accent setting applies.
+    static var appAccent: Color {
+        #if os(iOS)
+        Color("AccentColor")
+        #else
+        Color.accentColor
+        #endif
+    }
+
     /// The daily ring: the app's accent, system indigo (`AccentColor` references
     /// `systemIndigoColor`, so light, dark and high-contrast variants come from the system).
     /// Indigo because red means Forgot and the greens/teal mean recalled; green read as
     /// Excel and terracotta as Claude (owner, 21.10.2026). On the Mac the user's system
     /// accent shows instead unless it is Multicolor.
-    static var dailyRing: Color { Color.accentColor }
+    static var dailyRing: Color { .appAccent }
 
     /// The tail of the ring's gradient (`ProgressRing`): the accent mixed with a quarter of white
     /// in device RGB. It follows the accent in all four appearances. A quarter is the most that
     /// keeps 3:1 on the light grouped grey (a third does not); `AccentContrastTests` holds the
     /// tail to 3:1 on the surfaces and to 1.3:1 against the accent.
-    static var dailyRingTail: Color { Color.accentColor.mix(with: .white, by: 0.25, in: .device) }
+    static var dailyRingTail: Color { Color.appAccent.mix(with: .white, by: 0.25, in: .device) }
 
     /// The face of a flash card: a little off the background, so the card stands out
     /// from the screen it is swiped across. On iOS the grouped pair, as on the Today screen:
