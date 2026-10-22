@@ -48,27 +48,33 @@ are in [`references/`](references/).
 - **No sessions, one stream over all decks.** Study is one stream over every active deck: the day's
   plan (cards in learning, then review cards with the lowest recall probability first, then new
   cards within the day's limits, taken from the decks in turn), each card from the deck whose next
-  card is most urgent and graded into that deck. Study This Deck runs it over one deck. When the
-  plan is done the stream rests ("Done for today") and offers catch-up on the backlog, review
-  ahead, practice that does not touch the schedule, and "+10 new" with the extra cards a day it
-  adds next week.
-- **Rounds, streak, ring and words in memory.** The day is cut into rounds of two minutes of
-  work at your own pace, and Today shows the next small goal: "≈ 2 min to keep your streak"
-  before the first round, "Round 2 of 4 · ≈ 2 min" after it, "Ring closed" after the last. The
-  streak is kept once the first round is done. Study rests at the end of each round but the
-  last, says how long the next one takes and how many words the day has added to your memory,
-  and offers Next Round or Done for Now. How many rounds a day holds, its capacity, comes from
+  card is most urgent and graded into that deck. Study This Deck runs it over one deck. When
+  today's cards are done the stream rests ("Ring closed") and offers one way on: catch-up on the
+  backlog, else "+10 new" with the extra cards a day it adds next week, else practice that does
+  not touch the schedule. A card is never reviewed before it is due: an early review gains FSRS
+  little, and more work is a new card.
+- **One ring a day, two rests at most.** The model, and what was dropped from 4.0, are in
+  [`learning-flow.md`](references/learning-flow.md). Inside, the day is cut into rounds of two
+  minutes of work at your own pace; no screen names them. Today shows the next small goal: "≈ 2
+  min to keep your streak" before the first round, then the cards left and their time, then
+  "Ring closed". The streak is kept once the first round is done, and Study rests there once
+  ("Streak kept": Keep Going or Done for Now); the next rest is the closed ring, with the rings of
+  the last seven days. How many rounds a day holds, its capacity, comes from
   your review logs: two on the first day, one more when the ring was closed on each of the two
   days before, one fewer after a day that ended with the ring open. New cards are admitted up
   to the time the capacity leaves after the day's reviews, so a break does not turn into a wall
   of work.
-- **The ring counts cards.** A ring in the manner of Apple Fitness fills to the daily goal: the
+- **The ring counts cards, and every answer recalled moves it.** A ring in the manner of Apple
+  Fitness fills to the daily goal: the
   cards of the day's plan as FSRS set it when the day began that fit the day's rounds, the
   review cards due, overdue ones included, and the new cards the capacity admits. A card is done
   once its last review of the day left it due on a later day, so a review card graded Hard,
   Good or Easy is done at once, a new card after its learning steps, and a card graded Forgot
   when it is through relearning. A card counts once, however many reviews it took. Today says
-  "12 of 24 cards · 12 left", which add up. Each review records how long its
+  "12 of 24 cards · 12 left", which add up. The ring also shows the cards on their way: an
+  answer recalled moves its card by the answers recalled today over those plus the steps still
+  needed, so a new word is half a card after its first Good; Forgot moves nothing, and nothing
+  is taken back (`Card.credit`). Each review records how long its
   card was on screen while the app was in front. New cards and all other cards are priced apart:
   the typical time of a review (a lognormal mean from the median and the spread of the recorded
   times, so a card left open while away barely moves it) times the reviews a done card of that
@@ -114,6 +120,10 @@ are in [`references/`](references/).
   This Deck, and what you review there fills the ring only through the cards of the other decks.
   When you resume it, its overdue reviews are a backlog like any other and come back a seventh a day.
 - **Difficult cards** (leeches) after 8 lapses, as a filter in the browser.
+- **Greek spoken from memory.** A card's Greek word is rendered into a buffer as the card comes up
+  and played from memory, so the voice never stutters on a busy phone; where the deck has a
+  recording for the side, the recording plays instead
+  ([`speech-stutter-research.md`](references/speech-stutter-research.md)).
 
 ### Scheduling
 
