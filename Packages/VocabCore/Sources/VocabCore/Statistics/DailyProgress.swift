@@ -54,6 +54,45 @@ public enum DailyGoal {
     // ponytail: a cutover date and a clause in `Streak.evaluate`, no per-learner migration;
     // delete both once no streak can reach back past the day.
     public static let planRuleStart = CivilDate(year: 2026, month: 10, day: 23).dayNumber
+
+    /// The study days before today whose answers set the pace (`secondsPerCard(days:done:)`).
+    public static let paceDays = 7
+    /// A pause between two answers longer than this is a break, not study time.
+    public static let paceBreak: TimeInterval = 120
+    /// The cards that must be done in the window for the learner's own pace to count.
+    public static let paceMinimumCards = 20
+    /// The pace until there is a pace: what a card takes when the learner has not done enough of them lately.
+    public static let fallbackSecondsPerCard: Double = 20
+
+    /// How long one done card takes this learner: the seconds between consecutive answers of a
+    /// study day, pauses over `paceBreak` left out, divided by the cards done on those days.
+    /// A card's learning steps and Agains are in the price, because all of a new card's answers
+    /// land on one done card. `days` holds the answer times of each study day of the window,
+    /// today and the `paceDays` before it, across all decks; `done` the cards done on them.
+    /// `fallbackSecondsPerCard` for fewer than `paceMinimumCards`, or answers with no time between them.
+    // ponytail: the gap between answers stands for the time spent, the log holds no durations: a
+    // pause shorter than `paceBreak` counts as work, a card read for longer is cut short. Store
+    // the time each answer took (a `reviews.jsonl` field) and sum it, if the estimate misleads.
+    public static func secondsPerCard(days: [[Date]], done: Int) -> Double {
+        guard done >= paceMinimumCards else { return fallbackSecondsPerCard }
+        var seconds: TimeInterval = 0
+        for day in days {
+            let answers = day.sorted()
+            for (earlier, later) in zip(answers, answers.dropFirst()) {
+                let gap = later.timeIntervalSince(earlier)
+                if gap <= paceBreak { seconds += gap }
+            }
+        }
+        return seconds > 0 ? seconds / Double(done) : fallbackSecondsPerCard
+    }
+
+    /// The minutes `cards` still to do take at `secondsPerCard` each, rounded up; 0 for less than
+    /// a minute ("< 1 min"), and `nil` for no cards, which need no estimate.
+    public static func minutesLeft(cards: Int, secondsPerCard: Double) -> Int? {
+        guard cards > 0 else { return nil }
+        let seconds = Double(cards) * secondsPerCard
+        return seconds < 60 ? 0 : Int((seconds / 60).rounded(.up))
+    }
 }
 
 /// The ring of a study day: cards done against the goal, both in cards. The ring is full at
@@ -245,17 +284,69 @@ public struct DeckActivity: Sendable {
             return count + 1
         }
     }
+
+    /// The answers of the study days that set the learner's pace, and the cards done on them
+    /// (`DailyGoal.secondsPerCard(days:done:)`): the study day of `now` and the `DailyGoal.paceDays`
+    /// before it. A card is done on a day when its last answer of that day left it due on a later
+    /// one, which the scheduler replays from its log: a card that was done on an earlier day
+    /// and answered again since is still done on that day. A card whose log doesn't reach back to
+    /// its first review (`Card.hasCompleteLog`) can't be replayed and counts as done on each day it
+    /// was answered.
+    func pace(at now: Date, calendar: StudyCalendar) -> Pace {
+        let today = calendar.dayNumber(for: now)
+        let start = calendar.start(ofDay: today - DailyGoal.paceDays)
+        let end = calendar.start(ofDay: today + 1)
+        let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
+        var pace = Pace()
+        for card in deck.cards {
+            guard let latest = card.log.last, latest.date >= start else { continue }
+            var replayed = card
+            replayed.resetLearningState()
+            for (index, entry) in card.log.enumerated() {
+                guard entry.date < end else { break }
+                if card.hasCompleteLog {
+                    var random = Scheduler.random(forReviewOf: card.id, at: entry.date)
+                    replayed = scheduler.review(replayed, grade: entry.grade, at: entry.date, mode: entry.mode, using: &random)
+                }
+                guard entry.date >= start else { continue }
+                let day = calendar.dayNumber(for: entry.date)
+                pace.days[day, default: []].append(entry.date)
+                let endOfDay = calendar.start(ofDay: day + 1)
+                let isLastOfDay = !(card.log.indices.contains(index + 1) && card.log[index + 1].date < endOfDay)
+                if isLastOfDay, !card.hasCompleteLog || (replayed.learningState?.due ?? .distantPast) >= endOfDay {
+                    pace.done += 1
+                }
+            }
+        }
+        return pace
+    }
+
+    /// What a deck gives `DailyGoal.secondsPerCard(days:done:)`: answer times by study day, and cards done.
+    struct Pace {
+        var days: [Int: [Date]] = [:]
+        var done = 0
+    }
 }
 
 /// The ring and the streak of a learner over some decks, see `evaluate(_:at:calendar:)`.
 public struct DailyProgress: Hashable, Sendable {
     public var ring: DailyRing
     public var streak: Streak
+    /// The cards of today's plan still to do across the decks: `StudySession.counts(for:at:calendar:).total`,
+    /// the "N cards left".
+    public var cardsLeft: Int
+    /// What one done card takes this learner, `DailyGoal.secondsPerCard(days:done:)`.
+    public var secondsPerCard: Double
 
-    public init(ring: DailyRing, streak: Streak) {
+    public init(ring: DailyRing, streak: Streak, cardsLeft: Int = 0, secondsPerCard: Double = DailyGoal.fallbackSecondsPerCard) {
         self.ring = ring
         self.streak = streak
+        self.cardsLeft = cardsLeft
+        self.secondsPerCard = secondsPerCard
     }
+
+    /// How long the cards left take, `DailyGoal.minutesLeft(cards:secondsPerCard:)`.
+    public var minutesLeft: Int? { DailyGoal.minutesLeft(cards: cardsLeft, secondsPerCard: secondsPerCard) }
 
     /// Adds up the cards done and the plans of all `decks`: one ring and one streak for the
     /// learner, however many decks they study.
@@ -278,8 +369,17 @@ public struct DailyProgress: Hashable, Sendable {
         let plan = decks.reduce(0) { $0 + $1.plan(onDayOf: now, calendar: calendar).total }
         let done = decks.reduce(0) { $0 + $1.done(onDayOf: now, calendar: calendar) }
         let ring = DailyRing(done: done, goal: DailyGoal.goal(done: done, owed: owed(today), plan: plan))
+        var answerDays: [Int: [Date]] = [:]
+        var doneInWindow = 0
+        for deck in decks {
+            let pace = deck.pace(at: now, calendar: calendar)
+            answerDays.merge(pace.days, uniquingKeysWith: +)
+            doneInWindow += pace.done
+        }
         // Today is met by its ring: cards added after the day began are laps, not debt.
         let streak = Streak.evaluate(reviews: reviews, today: today, planRuleStart: planRuleStart) { $0 == today && ring.isGoalMet ? 0 : owed($0) }
-        return DailyProgress(ring: ring, streak: streak)
+        return DailyProgress(
+            ring: ring, streak: streak, cardsLeft: owed(today),
+            secondsPerCard: DailyGoal.secondsPerCard(days: Array(answerDays.values), done: doneInWindow))
     }
 }
