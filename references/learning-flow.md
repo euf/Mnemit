@@ -133,6 +133,50 @@ them per day (`DailySnapshot`). No points, no levels of our own: the steps are F
 Not added, as they reward volume over memory and pull against FSRS: points, leagues, hearts, reviewing
 ahead for a bigger number.
 
+## Milestones, achievements and the Progress screen
+
+Who it is for. A newcomer has to want to come back every day of the first two weeks, which is their way
+into FSRS without knowing the community; the first rewards come early and often. An Anki user has to
+find the reviews and the decks better than what they leave; their rewards are records and the numbers
+of FSRS. Everything is worked out from the review log, as the ring and the streak are: nothing is stored
+but which monthly screen this device has shown.
+
+**Streak milestones**, celebrated on the day they are reached, on the Streak kept screen (its title
+becomes the milestone, with a medal and the burst): 3 days, a week (7), 2 weeks (14), a month (30),
+2 months (61), 3 months (91), half a year (183), a year (365), a year and a half (548), 2 years (730).
+They are named in words, never as a count of days; the widget and Today only show the number growing.
+
+**Achievements**, each earned on a study day and kept with its date:
+
+| Line | Tiers | Earned when |
+|---|---|---|
+| Streak | the milestones above | the streak reaches the tier |
+| First ring | one | the first day a ring closes |
+| Perfect week | one, then again each time | seven rings closed in a row |
+| Laps | ×2, ×3, ×5, ×10 | the cards done in a day reach that many times the day's goal |
+| Big day | 50, 100, 200, 500 cards | the cards done in a day (cards FSRS sent to another day) |
+| Comeback | one, then counted | a missed day made up by closing the next day's ring: the streak survived |
+
+**The comeback scenario.** The day after a missed day, Today's headline says "Close the ring to save
+your streak" (with the cards it takes) instead of "≈ 2 min to keep your streak", and the streak line
+reads "12-day streak · at risk" with a grey flame. When that ring closes, the Ring closed screen's
+title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
+
+**Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
+dates, the next tier as a grey medal with a hint and how far there is to go ("12 of 14 days"), and
+nothing of the tiers after it: there is always one more to find.
+
+**The Progress screen**, from Today (a tap on the ring's panel, which gets a chevron): the streak large,
+with the longest; the rings of the last 13 weeks as a calendar of small rings (closed, kept, missed); the
+ladder of memory with the count of each step; the achievements; the records: most cards in a day, most
+laps, rings closed, days studied, cards done. For the Anki user the same screen ends with the FSRS
+figures: true retention of the last 30 days against the target, cards by step.
+
+**Celebrations.** Achievements earned today show on the Ring closed screen as medals under the title
+("New: ×3 laps"), at most three, with the burst. **Every month** has a screen of its own: on the first
+open of a new month, after a month with study, Today shows "October" as a sheet: rings closed of days,
+cards done, the best streak of the month, the achievements of the month, and See All Progress.
+
 ## What goes, and why
 
 | In 4.0 | Now | Why |
