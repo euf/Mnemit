@@ -77,6 +77,8 @@ struct WordKeyTests {
         #expect(try same("οδηγός#ο/η", "ο οδηγός"))
         #expect(try key("η παρέα").note == "παρέα#η")
         #expect(try key("παρέα#η") == key("η παρέα"))
+        // A note from a table with an empty article column.
+        #expect(try key("άγγλος#") == key("άγγλος"))
     }
 
     @Test(arguments: [

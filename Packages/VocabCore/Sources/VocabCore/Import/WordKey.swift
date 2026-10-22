@@ -37,8 +37,10 @@ public struct WordKey: Hashable, Sendable {
         // Not `lowercased()`: only Foundation's version writes a final sigma as ς.
         var word = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(with: nil).precomposedStringWithCanonicalMapping
         var article = ""
-        if let hash = word.lastIndex(of: "#"), Self.articles.contains(String(word[word.index(after: hash)...])) {
-            article = String(word[word.index(after: hash)...])
+        let hash = word.lastIndex(of: "#")
+        let suffix = hash.map { String(word[word.index(after: $0)...]) }
+        if let hash, let suffix, suffix.isEmpty || Self.articles.contains(suffix) {
+            article = suffix
             word = String(word[..<hash])
         } else if let leading = Self.articles.first(where: { word.hasPrefix($0 + " ") }) {
             article = leading
