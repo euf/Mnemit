@@ -34,7 +34,10 @@ import Foundation
 /// card, `learningOptionsChanged` and `deletedCards` of the deck, which merges between
 /// devices that both edit cards need: an older app version drops them on save, and a
 /// merge then settles the texts and options by `contentModified` as before, and may
-/// bring back a card deleted on the other device.
+/// bring back a card deleted on the other device. `updatesParametersAutomatically` and
+/// `lastAutoFit` of the options (`ParameterRefit`) came without one too, and are left out
+/// of the file while they hold their defaults: an older app version drops them, fits
+/// nothing by itself and forgets when the newer one last did.
 ///
 /// When `currentVersion` goes up: a missing key takes its default, so a newer app
 /// version reads an older deck of the same version. The other way round, an older
@@ -247,6 +250,10 @@ extension DeckFile {
         var revealedRecallWeight: Double
         var optimizeFromRevealed: Bool
         var leechThreshold: Int
+        /// Left out while on, the default.
+        var updatesParametersAutomatically: Bool?
+        /// Left out until the app first fits the parameters by itself.
+        var lastAutoFit: AutoFitRecord?
 
         init(_ options: LearningOptions) {
             targetRecall = options.targetRecall
@@ -263,6 +270,8 @@ extension DeckFile {
             revealedRecallWeight = options.revealedRecallWeight
             optimizeFromRevealed = options.optimizeFromRevealed
             leechThreshold = options.leechThreshold
+            updatesParametersAutomatically = options.updatesParametersAutomatically ? nil : false
+            lastAutoFit = options.lastAutoFit.map(AutoFitRecord.init)
         }
 
         func learningOptions() throws -> LearningOptions {
@@ -287,6 +296,8 @@ extension DeckFile {
             options.revealedRecallWeight = revealedRecallWeight
             options.optimizeFromRevealed = optimizeFromRevealed
             options.leechThreshold = leechThreshold
+            options.updatesParametersAutomatically = updatesParametersAutomatically ?? options.updatesParametersAutomatically
+            options.lastAutoFit = lastAutoFit?.autoFit
             return options
         }
 
@@ -294,6 +305,7 @@ extension DeckFile {
             case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
             case newProductionPerSession, productionUnlockDays, newCardOrder
             case caseSensitive, fuzzing, parameters, revealedRecallWeight, optimizeFromRevealed, leechThreshold
+            case updatesParametersAutomatically, lastAutoFit
         }
 
         init(from decoder: Decoder) throws {
@@ -323,6 +335,9 @@ extension DeckFile {
             revealedRecallWeight = try container.decodeIfPresent(Double.self, forKey: .revealedRecallWeight) ?? defaults.revealedRecallWeight
             optimizeFromRevealed = try container.decodeIfPresent(Bool.self, forKey: .optimizeFromRevealed) ?? defaults.optimizeFromRevealed
             leechThreshold = try container.decodeIfPresent(Int.self, forKey: .leechThreshold) ?? defaults.leechThreshold
+            updatesParametersAutomatically = try container.decodeIfPresent(Bool.self, forKey: .updatesParametersAutomatically)
+            // A damaged record costs the deck one more fit, not its readability.
+            lastAutoFit = try? container.decodeIfPresent(AutoFitRecord.self, forKey: .lastAutoFit)
         }
 
         func encode(to encoder: Encoder) throws {
@@ -342,6 +357,25 @@ extension DeckFile {
             try container.encode(revealedRecallWeight, forKey: .revealedRecallWeight)
             try container.encode(optimizeFromRevealed, forKey: .optimizeFromRevealed)
             try container.encode(leechThreshold, forKey: .leechThreshold)
+            try container.encodeIfPresent(updatesParametersAutomatically, forKey: .updatesParametersAutomatically)
+            try container.encodeIfPresent(lastAutoFit, forKey: .lastAutoFit)
+        }
+    }
+
+    /// `LearningOptions.AutoFit`.
+    private struct AutoFitRecord: Codable {
+        var date: Date
+        var reviewCount: Int
+        var adopted: Bool
+
+        init(_ fit: LearningOptions.AutoFit) {
+            date = fit.date
+            reviewCount = fit.reviewCount
+            adopted = fit.adopted
+        }
+
+        var autoFit: LearningOptions.AutoFit {
+            LearningOptions.AutoFit(date: date, reviewCount: reviewCount, adopted: adopted)
         }
     }
 

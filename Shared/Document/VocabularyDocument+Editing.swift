@@ -111,4 +111,18 @@ extension VocabularyDocument {
         guard isReadyToEdit, let change = DeckChange.changingLearningOptions(learningOptions, in: deck, calendar: calendar) else { return }
         perform(change, actionName: String(localized: "Change Learning Options"))
     }
+
+    /// Applies what the automatic refit found, see `ParameterRefit`: the new parameters, if
+    /// they are kept, and the note of the attempt, to the learning options as they are now.
+    /// One undo step, named like the change of the parameters it is. A deck that has moved on
+    /// since the fit began is left as it is: the learner switched the update off, or another
+    /// device fitted it later.
+    func applyParameterRefit(_ result: ParameterRefit.Result) {
+        let options = deck.learningOptions
+        guard isReadyToEdit, options.updatesParametersAutomatically,
+            options.lastAutoFit.map({ $0.date < result.fit.date }) ?? true,
+            let change = DeckChange.changingLearningOptions(result.applied(to: options), in: deck, calendar: calendar)
+        else { return }
+        perform(change, actionName: String(localized: "Update Parameters"))
+    }
 }

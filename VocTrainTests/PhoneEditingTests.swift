@@ -43,6 +43,10 @@ struct PhoneEditingTests {
         document.attachUndoManager(undoManager)
         var options = document.deck.learningOptions
         options.steps = 3
+        var refitted = FSRSParameters.default.weights
+        refitted[0] = 0.5
+        let refit = ParameterRefit.Result(
+            parameters: FSRSParameters(refitted), fit: LearningOptions.AutoFit(date: created, reviewCount: 700, adopted: true))
         let newCards = [makeCard("ryba"), makeCard("ptak")]
         let text = CardText(question: "dom", answer: "Haus / Heim", hint: "Gebäude")!
 
@@ -59,6 +63,7 @@ struct PhoneEditingTests {
             ("Resume Card", { document.setSuspended(false, of: [dom.id]) }),
             ("Reset Learning State", { document.resetLearningState(of: [studied.id]) }),
             ("Change Learning Options", { document.updateLearningOptions(options) }),
+            ("Update Parameters", { document.applyParameterRefit(refit) }),
             ("Delete Card", { document.delete([pies.id]) }),
             ("Delete Cards", { document.delete([dom.id, kot.id]) }),
         ]
@@ -67,6 +72,8 @@ struct PhoneEditingTests {
             #expect(undoManager.undoActionName == String(localized: String.LocalizationValue(name)), "\(name)")
         }
         #expect(document.deck.learningOptions.steps == 3)
+        #expect(document.deck.learningOptions.parameters == refit.parameters)
+        #expect(document.deck.learningOptions.lastAutoFit == refit.fit)
         #expect(document.deck.cards.map(\.question) == ["mysz", "słońce", "ryba", "ptak", "woda", "chleb"])
 
         for _ in edits {

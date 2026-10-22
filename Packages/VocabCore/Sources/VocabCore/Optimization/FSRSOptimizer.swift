@@ -22,6 +22,18 @@ public struct FSRSOptimizer: Sendable {
         public var rmse: Double
     }
 
+    /// Parameters fitted to a deck against the ones it has: how well each predicts the same
+    /// reviews, all of them or the newest part, see `compare(with:progress:)` and
+    /// `compareOnNewest(share:with:progress:)`.
+    public struct Comparison: Sendable {
+        public var parameters: FSRSParameters
+        public var current: Evaluation
+        public var computed: Evaluation
+
+        /// Whether the fitted parameters predict the reviews better by log loss.
+        public var isBetter: Bool { computed.logLoss < current.logLoss }
+    }
+
     /// Hyperparameters, as in `TrainingConfig::default()` of fsrs-rs.
     struct Configuration: Sendable {
         var epochs = 5
@@ -90,6 +102,43 @@ public struct FSRSOptimizer: Sendable {
         }
         weights.replaceSubrange(0..<4, with: stabilities)
         return try Self.parameters(weights)
+    }
+
+    /// Trains parameters and evaluates them and `current` on the same reviews, as the
+    /// options screen does: the learner sees how well the new parameters describe the log.
+    ///
+    /// - Throws: `Error.notEnoughData` when there is nothing to evaluate, `CancellationError`.
+    public func compare(with current: FSRSParameters, progress: (Double) -> Void = { _ in }) throws -> Comparison {
+        let parameters = try computeParameters(progress: progress)
+        guard let before = evaluate(current), let after = evaluate(parameters) else {
+            throw Error.notEnoughData
+        }
+        return Comparison(parameters: parameters, current: before, computed: after)
+    }
+
+    /// Trains parameters on the older reviews and evaluates them and `current` on the newest
+    /// `share` of them, which the training never saw: whether the fit predicts reviews to come
+    /// better than what the deck has, not whether it memorized the log. The items are in the
+    /// order of their reviews, so the split is by time. The automatic refit
+    /// (`ParameterRefit`) judges by this.
+    ///
+    /// - Throws: `Error.notEnoughData` when the newest part is empty or nothing is left to
+    ///   train on, `CancellationError`.
+    public func compareOnNewest(share: Double, with current: FSRSParameters, progress: (Double) -> Void = { _ in }) throws -> Comparison {
+        let newestCount = max(1, Int((Double(items.count) * share).rounded()))
+        guard items.count > newestCount else { throw Error.notEnoughData }
+        func part(_ items: ArraySlice<TrainingItem>) -> FSRSOptimizer {
+            var optimizer = FSRSOptimizer(items: Array(items), relearningSteps: relearningSteps, revealedRecallWeight: revealedRecallWeight)
+            optimizer.configuration = configuration
+            return optimizer
+        }
+        let split = items.count - newestCount
+        let parameters = try part(items[..<split]).computeParameters(progress: progress)
+        let newest = part(items[split...])
+        guard let before = newest.evaluate(current), let after = newest.evaluate(parameters) else {
+            throw Error.notEnoughData
+        }
+        return Comparison(parameters: parameters, current: before, computed: after)
     }
 
     private static func parameters(_ weights: [Double]) throws -> FSRSParameters {

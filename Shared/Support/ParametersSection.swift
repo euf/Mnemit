@@ -28,16 +28,8 @@ struct ParametersSection: View {
     private enum ComputationState {
         case idle
         case running(Double)
-        case finished(Comparison)
+        case finished(FSRSOptimizer.Comparison)
         case failed
-    }
-
-    struct Comparison: Sendable {
-        var parameters: FSRSParameters
-        var current: FSRSOptimizer.Evaluation
-        var computed: FSRSOptimizer.Evaluation
-
-        var isBetter: Bool { computed.logLoss < current.logLoss }
     }
 
     var body: some View {
@@ -47,6 +39,12 @@ struct ParametersSection: View {
                 .task(id: options.optimizeFromRevealed) { await countReviews() }
             Toggle("Learn from revealed reviews", isOn: $options.optimizeFromRevealed)
                 .help("Also computes the parameters from reviews you graded after revealing the answer, which is every review on the iPhone and on the Mac with flash cards. Off uses typed reviews only.")
+            Toggle("Update parameters automatically", isOn: $options.updatesParametersAutomatically)
+            if let fit = options.lastAutoFit {
+                Text(Self.summary(of: fit))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
             switch reviewCount {
             case nil:
                 LabeledContent("Usable reviews", value: "")
@@ -66,6 +64,7 @@ struct ParametersSection: View {
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
                 Text("FSRS starts with parameters averaged over many learners. Computed from this deck's review log, they fit your memory, so cards need fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review.")
+                refitFooter
                 if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {
                     if options.optimizeFromRevealed {
                         Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: reviews on a later study day than the previous review of the same card.")
@@ -80,6 +79,14 @@ struct ParametersSection: View {
         // A comparison made with other inputs says nothing about the current ones.
         .onChange(of: options.optimizeFromRevealed) { resetComputation() }
         .onChange(of: options.revealedRecallWeight) { resetComputation() }
+    }
+
+    private var refitFooter: Text {
+        let second = ParameterRefit.secondFitReviewCount.formatted()
+        let days = ParameterRefit.intervalDays
+        let step = ParameterRefit.reviewStep.formatted()
+        let gain = Format.percent(ParameterRefit.requiredImprovement)
+        return Text("The parameters are fitted again at \(second) reviews, then every \(days) days or after \(step) more reviews, and replace the current ones only if they predict your newest reviews at least \(gain) better.")
     }
 
     private func resetComputation() {
@@ -135,6 +142,16 @@ struct ParametersSection: View {
         }
     }
 
+    /// What the last automatic fit did, in a line: "Updated 22 Oct from 2,314 answers", or
+    /// that it checked and kept the parameters.
+    static func summary(of fit: LearningOptions.AutoFit) -> String {
+        let date = fit.date.formatted(.dateTime.day().month(.abbreviated))
+        if fit.adopted {
+            return String(localized: "Updated \(date) from \(fit.reviewCount.formatted()) answers")
+        }
+        return String(localized: "Checked \(date), kept: no better fit")
+    }
+
     private static func error(_ value: Double) -> String {
         value.formatted(.percent.precision(.fractionLength(1)))
     }
@@ -163,11 +180,7 @@ struct ParametersSection: View {
             let (progress, continuation) = AsyncStream.makeStream(of: Double.self, bufferingPolicy: .bufferingNewest(1))
             let work = Task.detached(priority: .userInitiated) {
                 defer { continuation.finish() }
-                let parameters = try optimizer.computeParameters { continuation.yield($0) }
-                guard let before = optimizer.evaluate(current), let after = optimizer.evaluate(parameters) else {
-                    throw FSRSOptimizer.Error.notEnoughData
-                }
-                return Comparison(parameters: parameters, current: before, computed: after)
+                return try optimizer.compare(with: current) { continuation.yield($0) }
             }
             await withTaskCancellationHandler {
                 for await fraction in progress {

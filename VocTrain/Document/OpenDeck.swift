@@ -68,6 +68,28 @@ final class OpenDeck {
         }
     }
 
+    /// The document once it can be changed, for work that opens a deck without a view to show
+    /// it. `nil` if the deck failed to open, did not become editable within half a minute, or
+    /// the task was cancelled.
+    func editableDocument() async -> VocabularyDocument? {
+        let deadline = ContinuousClock.now + .seconds(30)
+        while !Task.isCancelled, ContinuousClock.now < deadline {
+            if let document, isEditable, document.isReadyToEdit { return document }
+            if failure != nil { return nil }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        return nil
+    }
+
+    /// Waits for the run loop to close the undo group of the last change, which the UIDocument
+    /// counts as unsaved: closing the deck before saves nothing. Gives up after five seconds.
+    func settleChanges() async {
+        let deadline = ContinuousClock.now + .seconds(5)
+        while undoManager.groupingLevel > 0, !Task.isCancelled, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
     /// Saves what is unsaved and lets go of the file. A file that failed to open is
     /// closed already.
     func close() async {

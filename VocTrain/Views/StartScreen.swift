@@ -54,6 +54,8 @@ struct StartScreen: View {
     @State private var showsSettings = false
     @State private var showsIntroduction = false
     @State private var wantsIntroduction = false
+    /// Whether the decks were checked for a new fit of their FSRS parameters since launch.
+    @State private var hasCheckedParameters = false
     @AppStorage("IntroductionSeen") private var hasSeenIntroduction = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -190,6 +192,29 @@ struct StartScreen: View {
             }
             if scenePhase == .active { syncWidget() }
         }
+        // Once the lists are read and nothing covers Today, the decks that are due get their
+        // parameters fitted again. Whatever the learner opens cancels the pass, and it starts
+        // anew when Today is back, with the decks already done no longer due.
+        .task(id: canRefitParameters) {
+            if canRefitParameters { await refitParameters() }
+        }
+    }
+
+    // MARK: Parameters
+
+    /// Whether nothing is open or asked for: no stream, no deck, no sheet, no introduction.
+    private var isIdle: Bool {
+        hasSeenIntroduction && !showsIntroduction && run == nil && path.isEmpty && addingCards == nil && !showsSettings && !showsNewDeck
+            && !isChoosing && !isChoosingImport && incomingAnki == nil && waitingAnki == nil && chosenAnki == nil
+    }
+
+    private var canRefitParameters: Bool {
+        scenePhase == .active && isIdle && !deckCounts.counts.isEmpty && !hasCheckedParameters
+    }
+
+    private func refitParameters() async {
+        await DeckRefits.run(knownDecks.byName.map(\.url)) { isIdle }
+        if !Task.isCancelled { hasCheckedParameters = true }
     }
 
     // MARK: Routes

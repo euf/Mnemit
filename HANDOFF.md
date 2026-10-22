@@ -37,7 +37,9 @@
 ## Открыто
 
 - Живьём не проверены на телефоне: виджет (снимок через keychain, тап → учёба), «Open in Mnemit»
-  для `.apkg` из Files/Safari/Mail, «Compute from Review Log», клавиатура и фокус в Add Cards.
+  для `.apkg` из Files/Safari/Mail, «Compute from Review Log», клавиатура и фокус в Add Cards,
+  автоподгонка параметров после запуска (колода с 400+ повторениями получает строку «Updated …»
+  или «Checked …» в Options → Advanced) и на Mac при открытии документа.
 - Mac: новая колода из `.apkg` до сохранения называется в заголовке окна «Untitled», хотя Save As
   предлагает имя колоды Anki; `.colpkg` пикер не предлагает, хотя `AnkiImport.read` его читает.
 - Mac: тест `CardListViewTests.firstClickIntoTableSelectsRow` падает, когда тестовое приложение
