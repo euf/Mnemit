@@ -31,12 +31,27 @@ struct DailyGoalTests {
 
     @Test func aBacklogAsksOnePartOfAWeekRoundedUp() {
         #expect(DailyGoal.backlogSpreadDays == 7)
-        #expect(DailyGoal.backlogShare(of: 0) == 0)
-        #expect(DailyGoal.backlogShare(of: 1) == 1)
-        #expect(DailyGoal.backlogShare(of: 7) == 1)
-        #expect(DailyGoal.backlogShare(of: 8) == 2)
-        #expect(DailyGoal.backlogShare(of: 1500) == 215)
-        #expect(DailyGoal.backlogShare(of: -3) == 0)
+        #expect(DailyGoal.backlogShare(of: 0, onTime: 0) == 0)
+        #expect(DailyGoal.backlogShare(of: 1, onTime: 0) == 1)
+        #expect(DailyGoal.backlogShare(of: 7, onTime: 0) == 1)
+        #expect(DailyGoal.backlogShare(of: 8, onTime: 0) == 2)
+        #expect(DailyGoal.backlogShare(of: 1500, onTime: 0) == 215)
+        #expect(DailyGoal.backlogShare(of: 600, onTime: 0) == 86)
+        #expect(DailyGoal.backlogShare(of: -3, onTime: 0) == 0)
+    }
+
+    @Test func aBacklogClearsAtLeastAsMuchAsANormalDayAsksButNeverMoreThanThereIs() {
+        // One missed day's backlog is done in a day: a normal day's worth, all of it if it is smaller.
+        #expect(DailyGoal.backlogShare(of: 5, onTime: 30) == 5)
+        #expect(DailyGoal.backlogShare(of: 40, onTime: 40) == 40)
+        #expect(DailyGoal.backlogShare(of: 41, onTime: 40) == 40)
+        // A large backlog still goes by its seventh while the day's own cards are fewer.
+        #expect(DailyGoal.backlogShare(of: 1500, onTime: 50) == 215)
+        #expect(DailyGoal.backlogShare(of: 1500, onTime: 215) == 215)
+        // Many on-time cards and a mid-sized backlog: a normal day's worth.
+        #expect(DailyGoal.backlogShare(of: 600, onTime: 120) == 120)
+        #expect(DailyGoal.backlogShare(of: 0, onTime: 50) == 0)
+        #expect(DailyGoal.backlogShare(of: -3, onTime: -3) == 0)
     }
 
     @Test func theRingFillsInLaps() {
@@ -373,6 +388,51 @@ struct DailyProgressTests {
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).catchUp == 1500 - 215)
     }
 
+    @Test func aSmallBacklogIsDoneInADayAsLongAsTheDaysOwnCardsAreMore() throws {
+        // One missed day: five cards left over, thirty due today.
+        var deck = try Deck(learningOptions: options(), cards: (0..<30).map { due("t\($0)", onDay: today) } + (0..<5).map { due("b\($0)", onDay: today - 1) })
+        var counts = StudySession.counts(for: deck, at: now, calendar: calendar)
+        #expect(counts.total == 35)
+        #expect(counts.catchUp == 0)
+        #expect(evaluate([deck]).ring == DailyRing(reviews: 0, goal: 35))
+        // Nothing of the plan is left over once it is done.
+        reviewPlan(of: &deck, at: now)
+        counts = StudySession.counts(for: deck, at: now, calendar: calendar)
+        #expect(counts.total == 0)
+        #expect(counts.catchUp == 0)
+        #expect(evaluate([deck]).ring == DailyRing(reviews: 35, goal: 35))
+    }
+
+    @Test func theBacklogShareGoesBySeventhsWhileTheDaysOwnCardsAreFewer() throws {
+        // 1500 overdue and 50 due today: the share is 215, not the 50 of a normal day.
+        let deck = try Deck(
+            learningOptions: options(), cards: (0..<50).map { due("t\($0)", onDay: today) } + (0..<1500).map { due("b\($0)", onDay: today - 1 - $0 % 5) })
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 50 + 215)
+        #expect(evaluate([deck]).ring == DailyRing(reviews: 0, goal: 50 + 215))
+    }
+
+    @Test func aBacklogAsBigAsTheDaysOwnCardsIsDoneInADayAndTheShareStaysAsItIsWorkedOff() throws {
+        // Forty overdue, forty due today: eighty, not forty-six.
+        var deck = try Deck(learningOptions: options(), cards: (0..<40).map { due("t\($0)", onDay: today) } + (0..<40).map { due("b\($0)", onDay: today - 1) })
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 80)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).catchUp == 0)
+        // Worked off in steps, the goal is the same at every one, and the plan shrinks by what is reviewed.
+        var done = 0
+        for step in [10, 30, 5, 35] {
+            review(step, of: &deck, at: now)
+            done += step
+            #expect(evaluate([deck]).ring == DailyRing(reviews: done, goal: 80), "after \(done)")
+            #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 80 - done, "after \(done)")
+        }
+        #expect(evaluate([deck]).ring.isGoalMet)
+    }
+
+    @Test func sixHundredOverdueAndNothingDueAsksEightySix() throws {
+        let deck = try Deck(learningOptions: options(), cards: (0..<600).map { due("b\($0)", onDay: today - 1 - $0 % 3) })
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 86)
+        #expect(evaluate([deck]).ring == DailyRing(reviews: 0, goal: 86))
+    }
+
     @Test func theSizeOfASessionCapsNeitherTheGoalNorWhatIsShown() throws {
         // The default size of a session, 100, is the size of a segment of the stream, no cap on the plan.
         var options = options()
@@ -413,7 +473,7 @@ struct DailyProgressTests {
         let first = today - 1 - interval
         for day in 0..<4 {
             let date = now.addingTimeInterval(Double(day) * 86400)
-            let share = DailyGoal.backlogShare(of: remaining)
+            let share = DailyGoal.backlogShare(of: remaining, onTime: 0)
             #expect(evaluate([deck], at: date).ring == DailyRing(reviews: 0, goal: share), "day \(day)")
             reviewPlan(of: &deck, at: date)
             #expect(evaluate([deck], at: date).ring == DailyRing(reviews: share, goal: share), "day \(day) done")

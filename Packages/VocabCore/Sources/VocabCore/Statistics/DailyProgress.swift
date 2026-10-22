@@ -6,7 +6,7 @@ import Foundation
 /// The goal of a study day is its plan as FSRS sets it, what `StudySession.counts(for:at:calendar:)`
 /// reports: the cards due that day, overdue ones included, and the new cards within the day's
 /// limits. Only the backlog, the review cards that were already due before the day, asks a
-/// share of itself (`backlogShare(of:)`), so an import or a long break doesn't pile a
+/// share of itself (`backlogShare(of:onTime:)`), so an import or a long break doesn't pile a
 /// thousand cards on one day. A day is met when its plan is done, an empty plan included:
 /// nothing was due, so memory is where FSRS wants it. Reviews count in every mode: the
 /// plan, catching up, review ahead and anything else a study stream reviews as a card.
@@ -18,10 +18,15 @@ public enum DailyGoal {
     /// The days over which a backlog is spread: each day asks one part of it.
     public static let backlogSpreadDays = 7
 
-    /// What a day asks of a backlog of `backlog` overdue reviews: its part of the spread,
-    /// rounded up so that a backlog is always worked off.
-    public static func backlogShare(of backlog: Int) -> Int {
-        (max(0, backlog) + backlogSpreadDays - 1) / backlogSpreadDays
+    /// What a day asks of a backlog of `backlog` overdue reviews, when `onTime` review cards
+    /// are due on the day itself: its part of the spread, rounded up so that a backlog is
+    /// always worked off, but at least what a normal day asks, `onTime`, so that a small
+    /// backlog, one missed day's, is cleared in a day and leaves no week-long tail. Never more
+    /// than the backlog.
+    public static func backlogShare(of backlog: Int, onTime: Int) -> Int {
+        let backlog = max(0, backlog)
+        let spread = (backlog + backlogSpreadDays - 1) / backlogSpreadDays
+        return min(backlog, max(spread, onTime))
     }
 
     /// The goal of a study day on which `reviews` were graded, `owed` answers of its plan still

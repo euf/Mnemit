@@ -31,7 +31,7 @@ public struct StudySession: Sendable {
     }
 
     /// A session over every card that is due at `now`, the backlog beyond today's share of it
-    /// (`DailyGoal.backlogShare(of:)`) included: what the stream goes on with once the plan is
+    /// (`DailyGoal.backlogShare(of:onTime:)`) included: what the stream goes on with once the plan is
     /// done. These cards are due, so their reviews are ordinary ones.
     public init(catchingUpIn deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed) {
         var random = random
@@ -258,7 +258,9 @@ public struct StudySession: Sendable {
         var newLeft = max(0, (options.newCardsPerSession ?? Int.max) - introduced.other)
         var productionLeft = max(0, (options.newProductionPerSession ?? Int.max) - introduced.production)
         let overdue = due.reduce(0) { $0 + ($1.isBacklog ? 1 : 0) }
-        var backlogLeft = includingBacklog ? Int.max : backlogShareLeft(overdue: overdue, in: deck, at: now, scheduler: scheduler, calendar: calendar)
+        let onTime = due.reduce(0) { $0 + (!$1.isBacklog && $1.urgency != .learning ? 1 : 0) }
+        var backlogLeft =
+            includingBacklog ? Int.max : backlogShareLeft(overdue: overdue, onTime: onTime, in: deck, at: now, scheduler: scheduler, calendar: calendar)
         var backlogTaken = 0
         let sizeLimit = capsSize ? options.cardsPerSession ?? Int.max : Int.max
         for candidate in due + new where selected.count < sizeLimit {
@@ -311,26 +313,34 @@ public struct StudySession: Sendable {
         var isBacklog = false
     }
 
-    /// How many cards of the backlog today takes: `DailyGoal.backlogShare(of:)` of the backlog
-    /// as the study day began, less those of it already reviewed today, so the share stays
-    /// the same however far it is worked off.
+    /// How many cards of the backlog today takes: `DailyGoal.backlogShare(of:onTime:)` of the
+    /// backlog and of the review cards due on the day, both as the study day began, less the
+    /// cards of the backlog already reviewed today, so the share stays the same however far
+    /// it is worked off.
     ///
-    /// The backlog of the day's start is the `overdue` cards that still are, plus the cards
-    /// reviewed since that were overdue then: those whose log, replayed up to the day's start,
-    /// leaves a review card due before it. Nothing is replayed while no card is overdue.
-    private static func backlogShareLeft(overdue: Int, in deck: Deck, at now: Date, scheduler: Scheduler, calendar: StudyCalendar) -> Int {
+    /// Both counts of the day's start are what is there now, `overdue` and `onTime`, plus what
+    /// was reviewed since and was there then: the cards whose log, replayed up to the day's
+    /// start, leaves a review card due before the day (the backlog) or on it. Nothing is
+    /// replayed while no card is overdue.
+    private static func backlogShareLeft(overdue: Int, onTime: Int, in deck: Deck, at now: Date, scheduler: Scheduler, calendar: StudyCalendar) -> Int {
         guard overdue > 0 else { return 0 }
-        let start = calendar.start(ofDay: calendar.dayNumber(for: now))
-        var cleared = 0
+        let day = calendar.dayNumber(for: now)
+        let start = calendar.start(ofDay: day)
+        let end = calendar.start(ofDay: day + 1)
+        var clearedBacklog = 0
+        var clearedOnTime = 0
         for card in deck.cards where card.hasCompleteLog {
             let before = card.log.prefix { $0.date < start }
             // Reviewed on this study day up to `now`, and before it.
             guard !before.isEmpty, before.count < card.log.count, card.log[before.count].date <= now else { continue }
-            if let state = scheduler.replaying(Array(before), of: card).learningState, state.phase == .review, state.due < start {
-                cleared += 1
+            guard let state = scheduler.replaying(Array(before), of: card).learningState, state.phase == .review else { continue }
+            if state.due < start {
+                clearedBacklog += 1
+            } else if state.due < end {
+                clearedOnTime += 1
             }
         }
-        return max(0, DailyGoal.backlogShare(of: overdue + cleared) - cleared)
+        return max(0, DailyGoal.backlogShare(of: overdue + clearedBacklog, onTime: onTime + clearedOnTime) - clearedBacklog)
     }
 
     /// The notes with a recognition card that isn't learned yet, so their production cards
@@ -426,7 +436,7 @@ public struct StudyCounts: Hashable, Sendable {
     /// answers, so this is its goal; a mistake or a Hard makes the plan take more.
     public internal(set) var answers = 0
     /// Overdue review cards, due before the study day, that the plan leaves for the days after:
-    /// what is beyond the share the backlog asks of a day (`DailyGoal.backlogShare(of:)`). The
+    /// what is beyond the share the backlog asks of a day (`DailyGoal.backlogShare(of:onTime:)`). The
     /// stream goes on with them once the plan is done (`StudyStream.Stage.catchUp`).
     public internal(set) var catchUp = 0
     /// When something comes back that today's counts leave out: the first learning or
