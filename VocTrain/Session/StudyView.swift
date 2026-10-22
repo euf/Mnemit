@@ -84,7 +84,8 @@ struct StudyView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     // In a menu, so a stray tap doesn't suspend the card; Undo comes first
-                    // (#293). The rest keeps the menu for Undo and the new cards.
+                    // (#293). New cards beyond the limit are offered only at rest
+                    // ("Done for today"), when the plan is done.
                     Menu("More", systemImage: "ellipsis") {
                         // Only reviews and suspensions of this stream: undo beyond them
                         // would change cards the stream doesn't show.
@@ -98,14 +99,6 @@ struct StudyView: View {
                             }
                             Button("Suspend Card", systemImage: "pause.circle") {
                                 model.suspendCurrentCard()
-                            }
-                        }
-                        if let extra = model.extraNew {
-                            Button {
-                                model.addNewCards()
-                            } label: {
-                                Text("+\(extra.cards) new")
-                                Text("≈ +\(extra.reviewsPerDay) reviews/day next week")
                             }
                         }
                         if GreekSpeech.shared.voice != nil {
