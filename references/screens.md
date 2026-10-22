@@ -71,6 +71,21 @@ The screens around Study. The contract of every screen: `references/flows.md`; t
   Delete, ⌘E and the arrows go to it. `TableClickFocus` (the table's background) moves focus into the
   table after a mouse click on it; a selection that changes by itself doesn't touch focus.
 
+## Media on the card
+
+- The study card (`CardFace`, both apps) shows a side's image above its text: scaled to fit, at most 40 % of
+  the card's height (`CardFace.maxImageShare`, read by `onGeometryChange`), corner radius 8, centred; a side
+  without text shows the image alone. `SideImage` decodes a file once per name (`MediaImages`, an `NSCache`).
+  The iPhone stream and the Mac session pass the deck's `DeckMedia`; the departing card doesn't, so it
+  leaves without its image. Card Detail shows the image left aligned, at most 240 pt.
+- `SpeakButton` / `SpokenWord`: a side with a sound the deck holds gets the button whatever its text or the
+  voices, and a tap plays the sound (`GreekSpeech.play(sound:of:)`). A side without text shows the button alone.
+  The Mac's S key still speaks the Greek text only.
+- Browser rows and the Mac table: a side without text shows `MediaPlaceholder` (`photo` or `speaker.wave.2`
+  and "Image" or "Sound", secondary colour; the image first) in `SideText`.
+- `CardText(question:answer:hint:media:)` lets a side without text through if the card has media on that
+  side; both edit sheets pass the card's media. A card with neither text nor media still can't be saved.
+
 ## Pausing a deck
 
 - `LearningOptions.isPaused`; the key `paused` in `deck.json` is written only when true, same format
