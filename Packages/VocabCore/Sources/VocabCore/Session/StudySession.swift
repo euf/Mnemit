@@ -44,15 +44,6 @@ public struct StudySession: Sendable {
         self.init(cardIDs: ids, at: now, random: random, reviewMode: reviewMode)
     }
 
-    /// A session over cards that are not due yet, those the learner is least likely to
-    /// recall now first, see `selectReviewAhead(from:at:calendar:using:)`. Its reviews
-    /// are ordinary reviews: FSRS takes the early review into account.
-    public init(reviewingAheadIn deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed) {
-        var random = random
-        let ids = Self.selectReviewAhead(from: deck, at: now, calendar: calendar, using: &random)
-        self.init(cardIDs: ids, at: now, random: random, reviewMode: reviewMode)
-    }
-
     /// A session over `cardIDs` in their order of urgency, see `SessionQueue`.
     init(cardIDs: [Card.ID], at now: Date, random: SeededRandom, reviewMode: ReviewMode) {
         var random = random
@@ -142,39 +133,6 @@ public struct StudySession: Sendable {
         selection(
             from: deck, at: now, calendar: calendar, extraNew: extraNew, includingBacklog: includingBacklog, newCardAllowance: newCardAllowance, using: &random
         ).cards.map(\.card.id)
-    }
-
-    /// The cards a review ahead asks: review cards that are not due yet, lowest probability
-    /// of recall now first (the same buckets as `selectCards`, ties at random). Cards of
-    /// one note are buried as for the plan: one card per note, none if another card of the
-    /// note was reviewed on the current study day. A card reviewed today is left out, as
-    /// no study day has passed since: its recall probability is still 1. New and
-    /// suspended cards are never taken, nor are cards in (re)learning, which are due
-    /// anyway; a new production card stays locked, as only review cards come here.
-    static func selectReviewAhead(from deck: Deck, at now: Date, calendar: StudyCalendar, using random: inout SeededRandom) -> [Card.ID] {
-        let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
-        let today = calendar.dayNumber(for: now)
-        let reviewedToday = notesReviewed(onDayOf: now, in: deck, calendar: calendar)
-
-        var candidates: [Candidate] = []
-        for card in deck.cards where !card.isSuspended && !card.isDue(at: now) {
-            guard let state = card.learningState, state.phase == .review, calendar.dayNumber(for: state.lastReview) != today else { continue }
-            let r = scheduler.recallProbability(of: state, at: now)
-            candidates.append(Candidate(card: card, urgency: .review(recallBucket: (r * recallBuckets).rounded(.down)), tieBreak: random.next()))
-        }
-        candidates.sort { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
-
-        var selected: [Card.ID] = []
-        var selectedNotes = Set<String>()
-        for candidate in candidates {
-            let card = candidate.card
-            if let note = card.note {
-                if selectedNotes.contains(note) || (reviewedToday[note] ?? []).contains(where: { $0 != card.id }) { continue }
-                selectedNotes.insert(note)
-            }
-            selected.append(card.id)
-        }
-        return selected
     }
 
     /// The plan of the study day of `now` over `deck`, by kind: the very selection of

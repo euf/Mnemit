@@ -329,7 +329,7 @@ struct RingTraveler: View {
                 let origin = proxy.frame(in: .global).origin
                 let width = home.width + (rest.width - home.width) * travel
                 RingBurst(startedAt: reduceMotion ? nil : motion.burstStartedAt, diameter: Self.diameter) {
-                    DailyRingView(progress: progress, diameter: Self.diameter, inStream: !motion.hasArrived, shownDone: motion.shownDone)
+                    DailyRingView(progress: progress, diameter: Self.diameter, inStream: !motion.hasArrived, shown: motion.shown)
                 }
                 .ringBump(motion.landings, reduceMotion: reduceMotion)
                 .scaleEffect(width / Self.diameter)

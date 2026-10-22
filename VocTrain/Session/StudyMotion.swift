@@ -116,7 +116,7 @@ final class StudyMotion {
     private(set) var landings = 0
     /// What the ring in the bar shows as done, ahead of the figures: a card that lands steps it at
     /// once, and the figures, which wait for the card that speaks, catch up. `nil` shows the figures.
-    private(set) var shownDone: Int?
+    private(set) var shown: Double?
     private var inFlight = 0
 
     // MARK: The rest
@@ -223,20 +223,22 @@ final class StudyMotion {
     private func landed() {
         inFlight = max(0, inFlight - 1)
         landings += 1
-        guard let real = ring?.progress?.ring.done else { return }
-        shownDone = max((shownDone ?? real) + 1, real)
+        guard let ring = ring?.progress?.ring else { return }
+        let real = Double(ring.done) + ring.underway
+        shown = max((shown ?? real) + 1, real)
     }
 
     /// The figures of the ring changed: the ring shows them, unless a card is still on its way to it.
     func figuresChanged() {
         guard inFlight == 0 else { return }
-        shownDone = nil
+        shown = nil
     }
 
     /// Undo brings a card back out of the ring: the ring takes its step back.
     func retractStep() {
-        guard let real = ring?.progress?.ring.done else { return }
-        shownDone = max(0, (shownDone ?? real) - 1)
+        guard let ring = ring?.progress?.ring else { return }
+        let real = Double(ring.done) + ring.underway
+        shown = max(0, (shown ?? real) - 1)
     }
 
     // MARK: The rest

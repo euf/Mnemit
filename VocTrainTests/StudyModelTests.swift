@@ -137,40 +137,48 @@ struct StudyModelTests {
         #expect(document.deck == before)
     }
 
-    /// The plan is done: the stream rests, then reviews ahead, with ordinary reviews that undo
-    /// takes back across the segments.
-    @Test func afterThePlanTheStreamRestsAndReviewsAhead() throws {
-        let lastReview = created.addingTimeInterval(-5 * 86400)
-        let state = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: created.addingTimeInterval(5 * 86400), reviews: 1)
-        let ahead = Card(question: "ahead", answer: "x", created: created, learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
-        let new = Card(text: CardText(question: "new", answer: "x")!, created: created)
-        let document = try VocabularyDocument(deck: Deck(cards: [new, ahead]), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+    /// The plan is done: the stream rests, then catches up on the backlog the plan left, with ordinary
+    /// reviews that undo takes back across the segments. Eight cards overdue ask two of themselves today.
+    @Test func afterThePlanTheStreamRestsAndCatchesUp() throws {
+        // Learned with two Goods on a day such that they fell due yesterday, as the log replays them.
+        let calendar = StudyCalendar()
+        var options = LearningOptions()
+        options.fuzzing = false
+        let scheduler = Scheduler(learningOptions: options, calendar: calendar)
+        func learned(_ question: String, onDay day: Int) -> Card {
+            let first = calendar.start(ofDay: day).addingTimeInterval(10 * 3600)
+            let log = [ReviewLogEntry(date: first, grade: .good, mode: .revealed), ReviewLogEntry(date: first.addingTimeInterval(60), grade: .good, mode: .revealed)]
+            return scheduler.replaying(log, of: Card(question: question, answer: "x", created: first))
+        }
+        let today = calendar.dayNumber(for: created)
+        let interval = calendar.dayNumber(for: learned("probe", onDay: today).learningState!.due) - today
+        let overdue = (0..<8).map { learned("overdue \($0)", onDay: today - 1 - interval) }
+        let document = try VocabularyDocument(
+            deck: Deck(learningOptions: options, cards: overdue), clock: StudyClock { [created] in created.addingTimeInterval(60) }, calendar: calendar)
         let undoManager = UndoManager()
         undoManager.groupsByEvent = false
         document.attachUndoManager(undoManager)
         let model = StudyModel(document: document)
         #expect(model.streamStage == .plan)
-        #expect(model.rest.nextDue != nil)
-
-        model.reveal()
-        grade(model, .good, undoManager: undoManager)
-        model.reveal()
-        grade(model, .good, undoManager: undoManager)
-        #expect(model.isResting)
-        #expect(model.rest.recap.cards == 1)
+        while !model.isResting {
+            model.reveal()
+            grade(model, .good, undoManager: undoManager)
+        }
+        #expect(model.rest.recap.cards == 2)
+        #expect(model.rest.catchUp == 6)
         #expect(model.rest.canKeepGoing)
 
         model.keepGoing()
-        #expect(model.streamStage == .reviewAhead)
-        #expect(model.currentCard?.id == ahead.id)
+        #expect(model.streamStage == .catchUp)
+        let card = try #require(model.currentCard)
         model.reveal()
         grade(model, .good, undoManager: undoManager)
-        #expect(document.card(withID: ahead.id)?.log.count == 2)
+        #expect(document.card(withID: card.id)?.log.count == 3)
         #expect(model.hasUndoableSteps)
 
         undoManager.undo()
-        #expect(model.streamStage == .reviewAhead)
-        #expect(document.card(withID: ahead.id) == ahead)
+        #expect(model.streamStage == .catchUp)
+        #expect(document.card(withID: card.id) == card)
     }
 
     /// "+10 new" offers the cards beyond the daily limit, with what they cost, and asks them.
@@ -514,8 +522,8 @@ struct StudyModelTests {
         #expect(model.stage == .asking)
         #expect(model.currentCard != nil)
         done(2, model, undoManager: undoManager)
-        #expect(model.rest.roundEnd == RoundEnd(round: 2, rounds: 3))
-        model.continueRound()
+        // The rounds between the first and the last go by without a rest.
+        #expect(!model.isResting)
         done(1, model, undoManager: undoManager)
         // The last round ends in the rest of the plan.
         #expect(model.isResting && !model.isRoundRest)
@@ -556,12 +564,13 @@ struct StudyModelTests {
 
     @Test func roundsDoneBeforeTheStreamBeganAreNotRestedFor() throws {
         let (document, undoManager) = try makeDueDocument(count: 5)
-        // Two cards were done in another deck: round 1 is over, and the next ends at 4 and the last at 6.
-        let model = StudyModel(document: document, rounds: RoundGuide(ends: [2, 4, 6], doneElsewhere: 2))
+        // Two cards were done in another deck: round 1 is over, and the last ends at 4, the ring, with cards
+        // of the plan left beyond it.
+        let model = StudyModel(document: document, rounds: RoundGuide(ends: [2, 4], doneElsewhere: 2))
         done(1, model, undoManager: undoManager)
         #expect(!model.isResting)
         done(1, model, undoManager: undoManager)
-        #expect(model.rest.roundEnd == RoundEnd(round: 2, rounds: 3))
+        #expect(model.rest.roundEnd == RoundEnd(round: 2, rounds: 2))
     }
 
     @Test func leavingAtARoundRestLosesNothingAndTheNextStreamGoesOn() throws {

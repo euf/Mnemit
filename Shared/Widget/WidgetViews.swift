@@ -51,8 +51,8 @@ extension WidgetState {
         Text("\(done) of \(goal) cards")
     }
 
-    /// What the day asks next, in rounds (`RoundStatus.title`), while cards are left and the snapshot knows the
-    /// rounds; `nil` otherwise, and the headline says the cards left.
+    /// What the day asks next (`RoundStatus.title`), "≈ 2 min to keep your streak", while cards are left and the
+    /// snapshot knows the rounds; `nil` otherwise, and the headline says the cards left.
     fileprivate var roundTitle: LocalizedStringResource? {
         due > 0 ? roundStatus?.title : nil
     }
@@ -78,20 +78,11 @@ private struct HeadlineLine: View {
 
     var body: some View {
         if let title = state.roundTitle {
-            // "Round 2 of 4", the time of the round on the line under it; before the first round the time
-            // is in the title, and long enough to take a second line.
-            VStack(alignment: .leading, spacing: 0) {
-                Text(title)
-                    .font(font)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
-                if let time = state.roundStatus?.time {
-                    Text(verbatim: time)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
+            // Long enough to take a second line.
+            Text(title)
+                .font(font)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
         } else if let timeLeft = state.timeLeft {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {

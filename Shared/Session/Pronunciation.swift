@@ -345,12 +345,12 @@ final class GreekSpeech {
         return rendering
     }
 
-    /// Renders `utterance` into one buffer, `nil` if the renderer gives no sound within `renderLimit`.
-    static func write(_ utterance: AVSpeechUtterance, with renderer: AVSpeechSynthesizer) async -> RenderedWord? {
+    /// Renders `utterance` into one buffer, `nil` if the renderer gives no sound within `limit` seconds.
+    static func write(_ utterance: AVSpeechUtterance, with renderer: AVSpeechSynthesizer, limit: Double = renderLimit) async -> RenderedWord? {
         await withCheckedContinuation { continuation in
             let chunks = Chunks(continuation)
             renderer.write(utterance) { chunks.add($0) }
-            DispatchQueue.main.asyncAfter(deadline: .now() + renderLimit) { chunks.finish() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + limit) { chunks.finish() }
         }
     }
 

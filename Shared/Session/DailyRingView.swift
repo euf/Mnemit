@@ -17,14 +17,14 @@ struct DailyRingView: View {
     var inStream = false
     /// What the ring shows as done while it is ahead of the figures, a card having landed in it; `nil`
     /// shows the figures.
-    var shownDone: Int?
+    var shown: Double?
     @State private var isShowingDetails = false
 
     var body: some View {
         Button {
             isShowingDetails = true
         } label: {
-            ProgressRing(fraction: DailyRingFigure.fraction(progress, shownDone: shownDone), diameter: diameter, center: center)
+            ProgressRing(fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: diameter, center: center)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

@@ -311,7 +311,7 @@ private struct RingChip: View {
         .accessibilityValue(help)
     }
 
-    /// The round line, "Round 2 of 4 · ≈ 2 min", then "14 of 20 cards", "· 12-day streak" when there is one,
+    /// The day's headline, "≈ 2 min to keep your streak" or "Ring closed", then "14 of 20 cards", "· 12-day streak" when there is one,
     /// and "≈ 28 words in memory · +15 today".
     private var help: String {
         guard let progress else { return "" }

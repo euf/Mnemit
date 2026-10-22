@@ -1,0 +1,122 @@
+# The learning flow: one day, one ring, one streak
+
+What the learner sees and does from opening the app to closing the ring, and which parts of 4.0 go.
+Evidence: `learning-flow-research.md` (Duolingo, Apple rings, Anki and FSRS, Brainscape, Quizlet,
+Clozemaster). Rules behind the numbers: `daily-ring.md`; terms: `GLOSSARY.md`, section "Mnemit".
+
+## Verdict
+
+4.0 shows five measures at once: rounds, minutes, cards, words and days. The ring fills by cards while
+the line beside it counts rounds; the stream stops every two minutes; the streak, the ring and the
+rounds are three goals of one day. The model below keeps one unit on screen, the card, and one goal a
+day, the ring. Rounds stay inside, as the unit the app learns the learner's time in, and leave every
+screen but How Today Works. The stream stops twice a day at most: once the streak is kept, and once
+the ring is closed.
+
+## The model
+
+| Learner's word | What it is | Where it comes from |
+|---|---|---|
+| Card | the one thing on screen; swiped once, graded by the swipe | the deck |
+| Today's cards (the ring) | the cards FSRS asks today that fit the learner's day; every answer recalled moves the ring by its share of a card | the plan at 04:00, priced by pace, cut to the day's time |
+| The stack | the cards still waiting today, in the middle of the screen | the stream's segment |
+| Streak | days in a row with the first ≈ 2 min of cards done | the review log |
+| Words in memory | how many words the learner would recall now | FSRS's recall probability, summed |
+| Catch-up | due cards beyond today's ring, after a break | the backlog beyond its share |
+
+Never on screen: review counts (a card is never a review), rounds, capacity, plan against goal,
+seconds per card, intervals before a grade.
+
+A card is done when FSRS sends it to another day, and a new word takes two right answers to get
+there. The learner feels swipes, not cards: a right answer that moved nothing would read as wasted.
+So the ring counts cards with partial credit (`Card.credit`): an answer recalled (Hard, Good, Easy)
+moves its card by the answers recalled today over those plus the steps still needed, Forgot moves
+nothing, and nothing is taken back. A new word is half a card after its first Good. The count beside
+the ring stays in whole cards; the closing screen joins the two: "10 cards · 22 answers".
+
+FSRS decides what is urgent; the learner decides only whether to go on. Due cards are the work owed;
+new cards are the only free input, and the app admits as many as the learner's time holds, so the ring
+is a size the learner has shown they finish. The size is learned, never asked: no budget, no slider.
+
+## Horizons
+
+| Horizon | The learner does | Sees, as reward | Rule |
+|---|---|---|---|
+| Seconds | swipes one card | the card leaves past the edge; recalled, the ring steps by its share; done, the stack loses a sheet, the ring bumps and "in 8 days" shows beside it; back today, the card comes in again from the edge it left by and slides under the stack | done = FSRS sent the card to another day; partial credit by steps |
+| ≈ 2 min | the first cards of the day | the streak screen: "Streak kept · 13 days", a milestone at 7, 30, 100, 365 days | first round of the day done (Duolingo: one lesson keeps the streak, apart from the goal) |
+| The day | today's cards | the ring closes: the ring screen with the day's figures and the week | done ≥ goal |
+| The week | closes rings on most days | seven rings in a row, Monday to Sunday, on the ring screen | ring per day from the log; the day's time grows after two closed days, shrinks after an open one |
+| Months | keeps the streak, learns | words-in-memory milestones (50, 100, 250, 500, 1,000 …) and streak milestones | FSRS recall, the log |
+
+A missed day is forgiven when the next day closes its ring (the streak survives; Duolingo's Freeze
+and Apple's paused rings are the same slack). Pausing a deck takes it out of the day.
+
+## Screens
+
+```
+Today ──Study──► card ─► card ─► … ─► Streak kept ──Keep Going──► card ─► … ─► Ring closed
+  ▲                                      │ Done for Now                        │ Catch Up / +10 New
+  └──────────────────────────────────────┴─────────────────────────────────────┴─ Done
+```
+
+**Today.** The ring (centre: the streak in days), one headline, one detail line, Study.
+
+| State | Headline | Detail |
+|---|---|---|
+| before the streak step | ≈ 2 min to keep your streak | 12 of 24 cards · 12 left |
+| streak kept, ring open | 12 cards left · ≈ 4 min | 12 of 24 cards · 12 left |
+| ring closed | Ring closed | 24 cards today |
+| nothing due | Nothing due | Next review tomorrow |
+
+Under them: "13-day streak · kept today", "≈ 412 words in memory · +15 today", and after a break
+"+1,320 to catch up this week".
+
+**Study.** The stack in the middle, the small ring in the bar with "≈ 4 min" (after a done card, for
+a moment, "in 8 days"), the close button. Closing loses nothing; Today picks up the count.
+
+**The stack.** The card on top lies on the sheets under it, drawn as the edges of a book's pages:
+under its bottom edge hairline outlines with its corner radius, each 3 pt lower and 2 pt narrower
+on each side than the one above it, fainter with depth; `min(cards left − 1, 5)` of them, so a long
+day looks thick and the last six thin out one line at a time.
+- Graded, the card goes on with the finger and leaves past the edge of the screen. Nothing rides on
+  it: a label on a card that is leaving is never read.
+- Done (another day): the deepest line fades, the stack moves up a step, the next card rises from
+  the first line; the ring in the bar steps, bumps and bursts, and its caption shows the interval.
+- Back today (a step to go, or Forgot): the card comes in again from the edge it left by, already
+  a sheet, and slides under the stack, where it becomes the deepest line: the stack is as thick as
+  before, which is why the card comes back.
+- The last card has no lines. When it leaves, what lay under it shows: the ring comes down from the
+  bar into its place and closes there, and the day's lines come in.
+- Undo plays the grade backwards: the card comes in from the edge it left by to the top, out from
+  under the stack if it went there; the ring takes its step back.
+- Reduce Motion: the card fades in place, the ring steps without a bump, nothing travels.
+
+**Streak kept** (once a day, after the first ≈ 2 min; not when the day's cards end there too): the
+ring, "Streak kept", the streak in days, "+4 words in memory today", "12 cards left · ≈ 4 min".
+**Keep Going** (default), **Done for Now**.
+
+**Ring closed** (when today's cards are done, and when the plan has run out): the ring closes with its
+burst, then the day: "10 cards · 22 answers", the share recalled, "+15 words in memory today", the streak, the
+week's seven rings; a milestone when one was passed today. One way on, the most useful first:
+**Catch Up** with its cards and time when due cards are left beyond the ring; else **+10 New** with
+what it costs next week; and **Done**.
+
+**How Today Works** keeps everything for the learner who knows FSRS: the plan and its parts, the
+rounds and the day's time, pace, the streak's repair, FSRS parameters.
+
+## What goes, and why
+
+| In 4.0 | Now | Why |
+|---|---|---|
+| A rest after every round | one rest, at the streak; the next at the ring | a stop every 2 min breaks the flow; the ring already shows progress; the one stop that pays is the streak (Duolingo: the streak screen raised day-7 retention by 1.7 %) |
+| "Round 2 of 4 · ≈ 2 min" on Today, in the bar, in the widget, on the Mac | cards left and time | two progress measures beside one ring; rounds are an internal unit of time |
+| Capacity, "Next round ≈ 2 min" | How Today Works only | the size of the day is learned, not chosen |
+| Review ahead after catch-up | gone from Keep Going | reviewing before due gains FSRS little, and fills the ring with low-value work; more work is a new card |
+| Keep Going running catch-up, then review ahead, then practice | Catch Up when due cards are left; +10 New otherwise | one named way on; practice stays on the deck screen |
+| The ring closing in the middle of a stream after a break | the stream stops at the ring | the ring is the day's goal; the cards beyond it are catch-up and say so |
+
+Kept as they are: one stream over all decks, the 04:00 day, the ring in cards, laps (×2, ×3) for
+work beyond the goal, the backlog spread over a week, the streak's repair by a closed ring, words in
+memory, pausing a deck, practice from the deck screen.
+
+The rests between rounds come back with `StudyStream.restsAtEveryRound = true`.

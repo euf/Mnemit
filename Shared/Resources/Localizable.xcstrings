@@ -2032,16 +2032,6 @@
         }
       }
     },
-    "Cards that aren't due yet, the ones you are least likely to recall first": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Noch nicht fällige Karten, zuerst die mit der niedrigsten Abrufwahrscheinlichkeit"
-          }
-        }
-      }
-    },
     "Cards that were due before today, beyond today's share of them": {
       "localizations": {
         "de": {
@@ -5248,16 +5238,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Abfrage"
-          }
-        }
-      }
-    },
-    "Review Ahead": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vorab wiederholen"
           }
         }
       }

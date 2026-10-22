@@ -206,70 +206,29 @@ struct StudyStreamTests {
         #expect(counts.catchUp == 0)
     }
 
-    @Test func withoutABacklogKeepGoingGoesStraightToReviewAhead() throws {
+    @Test func withoutABacklogKeepGoingGoesStraightToPractice() throws {
         var run = try run([review("r1"), review("ahead", interval: 20, dueInDays: 10)])
         _ = run.play(whileIn: .plan)
         #expect(run.stream.stage == .rest)
         let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
         #expect(keptGoing)
-        #expect(run.stream.stage == .reviewAhead)
+        #expect(run.stream.stage == .practiceNewest)
     }
 
-    // MARK: Review ahead
-
-    @Test func reviewAheadTakesTheLowestRecallFirstAndOnlyReviewCardsNotDue() throws {
-        var suspended = review("suspended", interval: 10, dueInDays: 5)
-        suspended.isSuspended = true
-        let low = review("low", interval: 10, dueInDays: 2)
-        let high = review("high", interval: 30, dueInDays: 20)
-        let middle = review("middle", interval: 30, dueInDays: 12)
-        let learning = Card(
-            question: "learning", answer: "learning",
-            learningState: LearningState(phase: .learning, step: 1, stability: 1, difficulty: 5, lastReview: now.addingTimeInterval(-60), due: now))
-        let deck = try Deck(learningOptions: options(), cards: [high, fresh("new"), suspended, middle, low, learning, review("due")])
-        var random = SeededRandom(seed: 1)
-        let ids = StudySession.selectReviewAhead(from: deck, at: now, calendar: calendar, using: &random)
-        #expect(ids == [low.id, middle.id, high.id])
-    }
-
-    @Test func reviewAheadBuriesSiblingsAndLeavesOutCardsReviewedToday() throws {
-        var options = options()
-        options.productionUnlockDays = 0
-        // Two siblings not due: one is taken, the one with the lower recall.
-        let recognition = review("r", note: "a", kind: .recognition, interval: 10, dueInDays: 2)
-        let production = review("p", note: "a", kind: .production, interval: 30, dueInDays: 12)
-        // A sibling was reviewed today: the other one waits for tomorrow.
-        var doneToday = review("done", note: "b", kind: .recognition, interval: 10, dueInDays: 5)
-        doneToday.learningState?.lastReview = now.addingTimeInterval(-3600)
-        let buried = review("buried", note: "b", kind: .production, interval: 10, dueInDays: 2)
-        let alone = review("alone", interval: 40, dueInDays: 30)
-        let deck = try Deck(learningOptions: options, cards: [production, recognition, doneToday, buried, alone])
-        var random = SeededRandom(seed: 1)
-        let ids = StudySession.selectReviewAhead(from: deck, at: now, calendar: calendar, using: &random)
-        #expect(ids == [recognition.id, alone.id])
-    }
-
-    @Test func keepGoingReviewsAheadWithOrdinaryReviews() throws {
+    @Test func keepGoingNeverReviewsACardBeforeItIsDue() throws {
         var run = try run([review("ahead", interval: 10, dueInDays: 5)])
         #expect(run.stream.stage == .rest)
-        #expect(run.stream.canKeepGoing(in: run.deck, at: now, calendar: calendar))
         let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
         #expect(keptGoing)
-        #expect(run.stream.stage == .reviewAhead)
+        #expect(run.stream.stage == .practiceNewest)
         let before = run.deck.cards[0]
         run.grade(.good)
-        let after = run.deck.cards[0]
-        // Recorded as a normal review: FSRS took the early review, the card is due later.
-        #expect(after.log.count == 1)
-        #expect(after.learningState?.reviews == 2)
-        #expect(after.learningState!.stability > before.learningState!.stability)
-        #expect(after.learningState!.due > before.learningState!.due)
-        #expect(after.log[0].mode == .revealed)
+        #expect(run.deck.cards[0] == before)
     }
 
     // MARK: Practice
 
-    @Test func afterReviewAheadComePracticeOfTodaysMistakesAndThenTheNewestWordsAgainAndAgain() throws {
+    @Test func afterThePlanComePracticeOfTodaysMistakesAndThenTheNewestWordsAgainAndAgain() throws {
         var run = try run([review("due"), review("ahead", interval: 10, dueInDays: 5)])
         let mistake = run.deck.cards[0].id
         run.grade(.again)
@@ -279,9 +238,6 @@ struct StudyStreamTests {
 
         let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
         #expect(keptGoing)
-        #expect(run.stream.stage == .reviewAhead)
-        #expect(run.stream.session.totalCount == 1)
-        run.grade(.good)
         #expect(run.stream.stage == .practiceMistakes)
         #expect(run.stream.session.currentCardID == mistake)
 
@@ -460,7 +416,7 @@ struct StudyStreamTests {
         run.stream.restAtRoundEnd(roundsDone: ends.filter { $0 <= done }.count, rounds: ends.count)
     }
 
-    @Test func theStreamRestsAtTheEndOfEachRoundButTheLastAndGoesOnFromThere() throws {
+    @Test func theStreamRestsAtTheFirstRoundOnlyAndGoesOnToTheEndOfThePlan() throws {
         var run = try run((1...5).map { review("r\($0)") })
         let ends = [2, 4, 5]
         run.grade(.good)
@@ -485,14 +441,35 @@ struct StudyStreamTests {
         run.grade(.good)
         run.grade(.good)
         settle(&run, ends: ends)
-        #expect(run.stream.roundRest == 2)
-        run.stream.continueRound()
+        // The rounds between the first and the last go by without a rest.
+        #expect(!run.stream.isResting)
         run.grade(.good)
         settle(&run, ends: ends)
         // The last round ends in the rest of the plan, not in one of its own.
         #expect(run.stream.stage == .rest)
         #expect(run.stream.roundRest == nil)
-        #expect(run.stream.roundsPassed == 2)
+        #expect(run.stream.roundsPassed == 1)
+    }
+
+    @Test func theStreamRestsAtTheRingWhileThePlanHasCardsBeyondIt() throws {
+        var run = try run((1...5).map { review("r\($0)") })
+        // A goal of 3 cards in a plan of 5, as after a break.
+        let ends = [2, 3]
+        run.grade(.good)
+        run.grade(.good)
+        settle(&run, ends: ends)
+        #expect(run.stream.roundRest == 1)
+        run.stream.continueRound()
+        run.grade(.good)
+        settle(&run, ends: ends)
+        #expect(run.stream.roundRest == 2)
+        run.stream.continueRound()
+        run.grade(.good)
+        settle(&run, ends: ends)
+        #expect(!run.stream.isResting)
+        run.grade(.good)
+        settle(&run, ends: ends)
+        #expect(run.stream.stage == .rest)
     }
 
     @Test func aRoundThatWasDoneBeforeTheStreamBeganIsNoRest() throws {
@@ -502,7 +479,7 @@ struct StudyStreamTests {
         run.grade(.good)
         settle(&run, ends: [2, 4, 5])
         #expect(!run.stream.isResting)
-        // The next one is.
+        // Nor is a round between the first and the last; the plan ends in its rest.
         run.grade(.good)
         run.grade(.good)
         settle(&run, ends: [3, 4, 6])

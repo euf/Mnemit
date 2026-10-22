@@ -329,32 +329,12 @@ struct SummaryRow: View {
         return Format.timeLeft(minutes: minutes)
     }
 
-    /// What the day asks next, in rounds: "≈ 2 min to keep your streak" before the first, "Round 2 of 4 · ≈ 2
-    /// min" after it, "Ring closed" once they are done. Without rounds, which is before the decks are read, the
-    /// cards left, and nothing at all once none is left.
+    /// What the day asks next: "≈ 2 min to keep your streak" before the first round, then the cards left with
+    /// their time, "Ring closed" once the ring is; nothing at all once no card is left.
     @ViewBuilder
     private var headline: some View {
-        let status = progress.map(RoundStatus.init)
-        if due > 0, let title = status?.title {
-            if let time = status?.time {
-                // "Round 2 of 4 · ≈ 2 min", the time under it where the line is too long.
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(title)
-                        Text(verbatim: "· " + time)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(title)
-                        Text(verbatim: time)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            } else {
-                Text(title)
-            }
+        if due > 0, let title = progress.flatMap({ RoundStatus($0).title }) {
+            Text(title)
         } else if due > 0 {
             let cardsLeft = Text("\(due) cards left")
             if let timeLeft {

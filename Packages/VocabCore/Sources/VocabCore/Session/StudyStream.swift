@@ -14,18 +14,18 @@ import Foundation
 /// 2. `Stage.rest`: the plan is empty, which is the daily goal. The stream waits here for
 ///    the learner, who can `keepGoing(in:at:calendar:)` or `addNewCards(_:in:at:calendar:)`.
 /// 3. Beyond the plan, `Stage.catchUp`: the rest of the backlog. Its cards are due, so
-///    reviewing them is not reviewing ahead.
-/// 4. Then `Stage.reviewAhead`: review cards that are not due yet, lowest
-///    probability of recall first, reviewed like any other (`StudySession(reviewingAheadIn:...)`).
-/// 5. Then practice, which changes no card: `Stage.practiceMistakes` (today's mistakes,
+///    reviewing them is not reviewing ahead. Cards that are not due are never reviewed: an
+///    early review gains FSRS little, and more work is a new card (`addNewCards`).
+/// 4. Then practice, which changes no card: `Stage.practiceMistakes` (today's mistakes,
 ///    `Deck.mistakes(onDayOf:calendar:)`), then `Stage.practiceNewest`
 ///    (`Deck.newestBatchIDs`) again and again.
 ///
 /// New cards beyond the daily limits come only on request, as `addNewCards`.
 ///
-/// Inside the plan the stream also rests at the end of each round of the day but the last
-/// (`DayRounds`): `restAtRoundEnd(roundsDone:rounds:)` looks at how many rounds the cards done
-/// have ended, and `continueRound()` goes on. The rest holds the running segment, so no card is
+/// Inside the plan the stream also rests twice a day at most (`DayRounds`): at the end of the
+/// first round, which keeps the streak, and at the end of the last, which closes the ring while
+/// the plan still has cards, as after a break. `restAtRoundEnd(roundsDone:rounds:)` looks at how
+/// many rounds the cards done have ended, and `continueRound()` goes on. The rest holds the running segment, so no card is
 /// lost or asked twice. Which round the learner has gone through is part of the value, as
 /// everything else is, so undo and redo bring the rest back or take it away.
 ///
@@ -41,7 +41,6 @@ public struct StudyStream: Sendable {
         case plan
         /// The overdue reviews the plan left for the days after, see `StudyCounts.catchUp`.
         case catchUp
-        case reviewAhead
         case practiceMistakes
         case practiceNewest
         /// The plan is done, or the practice of a practice-only stream; no card is asked.
@@ -153,7 +152,7 @@ public struct StudyStream: Sendable {
     }
 
     /// Moves on to the next segment if the one running has no card left to ask: the plan
-    /// goes on while it isn't empty and rests once it is, review ahead goes on into
+    /// goes on while it isn't empty and rests once it is, the catch-up goes on into
     /// practice, practice repeats. Rest and a segment with a card change nothing.
     ///
     /// Call it with the deck as it is after the last review. A segment that has no card
@@ -170,9 +169,7 @@ public struct StudyStream: Sendable {
         case .plan:
             next = [.plan]
         case .catchUp:
-            next = isPracticeOnly ? [] : [.catchUp, .reviewAhead, .practiceMistakes, .practiceNewest]
-        case .reviewAhead:
-            next = isPracticeOnly ? [] : [.reviewAhead, .practiceMistakes, .practiceNewest]
+            next = isPracticeOnly ? [] : [.catchUp, .practiceMistakes, .practiceNewest]
         case .practiceMistakes:
             next = isPracticeOnly ? [] : [.practiceNewest]
         case .practiceNewest:
@@ -191,16 +188,22 @@ public struct StudyStream: Sendable {
         roundsPassed = max(0, rounds)
     }
 
+    /// Whether the stream rests at the end of every round but the last, as in 4.0, instead of at the
+    /// first and the last only.
+    public static let restsAtEveryRound = false
+
     /// Rests inside the plan if the cards done have ended a round that the learner has not been
-    /// through, and it is not the last: `roundsDone` of the day's `rounds`. The last round ends in
-    /// the rest of the plan, or in laps, as ever. Only the plan rests; call it as the driver moves
+    /// through: `roundsDone` of the day's `rounds`. Only the first round of the day rests, which keeps
+    /// the streak, and the last, which closes the ring; the last only while the plan has cards left,
+    /// else the plan ends in the rest of the plan. Only the plan rests; call it as the driver moves
     /// on, with the deck as it is, so that redo, which brings a stream back to the moment after a
     /// review, finds the rest again.
     ///
     /// - Returns: Whether the stream rests now.
     @discardableResult
     public mutating func restAtRoundEnd(roundsDone: Int, rounds: Int) -> Bool {
-        guard stage == .plan, !isPracticeOnly, roundRest == nil, roundsDone > roundsPassed, roundsDone < rounds else { return roundRest != nil }
+        guard stage == .plan, !isPracticeOnly, roundRest == nil, roundsDone > roundsPassed else { return roundRest != nil }
+        guard Self.restsAtEveryRound ? roundsDone < rounds : roundsPassed == 0 || roundsDone >= rounds else { return false }
         roundRest = roundsDone
         return true
     }
@@ -212,14 +215,14 @@ public struct StudyStream: Sendable {
         roundRest = nil
     }
 
-    /// From rest, goes on beyond the plan: the rest of the backlog, else review ahead, else the
+    /// From rest, goes on beyond the plan: the rest of the backlog, else the
     /// practice of today's mistakes, else of the newest words.
     ///
     /// - Returns: Whether there was anything to go on with.
     @discardableResult
     public mutating func keepGoing(in deck: Deck, at now: Date, calendar: StudyCalendar) -> Bool {
         guard stage == .rest, !isPracticeOnly else { return false }
-        return install(firstOf: [.catchUp, .reviewAhead, .practiceMistakes, .practiceNewest], in: deck, at: now, calendar: calendar)
+        return install(firstOf: [.catchUp, .practiceMistakes, .practiceNewest], in: deck, at: now, calendar: calendar)
     }
 
     /// Whether `keepGoing(in:at:calendar:)` has anything to go on with.
@@ -274,8 +277,6 @@ public struct StudyStream: Sendable {
                 StudySession(deck: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode, newCardAllowance: newCardAllowance))
         case .catchUp:
             segment = .study(StudySession(catchingUpIn: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode))
-        case .reviewAhead:
-            segment = .study(StudySession(reviewingAheadIn: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode))
         case .practiceMistakes:
             segment = .practice(Practice(practicing: deck.mistakes(onDayOf: now, calendar: calendar), at: now, random: segmentRandom))
         case .practiceNewest:

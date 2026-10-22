@@ -4,26 +4,21 @@ import Testing
 @testable import VocTrain
 @testable import VocabCore
 
-/// The lines the day is told in: the round the learner is in, and the words in memory.
+/// The lines the day is told in: the streak to keep, the closed ring, and the words in memory. Rounds never show.
 struct DayLinesTests {
     func line(_ title: LocalizedStringResource?) -> String? { title.map { String(localized: $0) } }
 
     @Test func beforeTheFirstRoundTheLineIsTheTimeToKeepTheStreak() {
         let status = RoundStatus(rounds: 4, roundsDone: 0, minutesToNext: 2)
         #expect(line(status.title) == "≈ 2 min to keep your streak")
-        #expect(status.time == nil)
         #expect(status.line == "≈ 2 min to keep your streak")
         #expect(!status.isStreakKept)
         #expect(line(RoundStatus(rounds: 4, roundsDone: 0, minutesToNext: 0).title) == "< 1 min to keep your streak")
     }
 
-    @Test func betweenRoundsTheLineIsTheRoundWithItsTime() {
+    @Test func betweenTheStreakAndTheRingThereIsNoLine() {
         let status = RoundStatus(rounds: 4, roundsDone: 1, minutesToNext: 2)
-        #expect(line(status.title) == "Round 2 of 4")
-        #expect(line(status.round) == "Round 2 of 4")
-        #expect(status.time == "≈ 2 min")
-        #expect(status.line == "Round 2 of 4 · ≈ 2 min")
-        #expect(status.current == 2)
+        #expect(status.title == nil && status.line == nil)
         #expect(status.isStreakKept)
     }
 
@@ -31,7 +26,6 @@ struct DayLinesTests {
         let status = RoundStatus(rounds: 4, roundsDone: 4, minutesToNext: nil)
         #expect(status.isClosed)
         #expect(line(status.title) == "Ring closed")
-        #expect(status.time == nil && status.round == nil && status.current == nil)
         #expect(status.line == "Ring closed")
     }
 

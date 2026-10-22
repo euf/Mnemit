@@ -14,7 +14,8 @@ struct SpeechRenderTests {
         for word in ["καλημέρα", "ευχαριστώ", "ο σκύλος", "η θάλασσα"] {
             let utterance = AVSpeechUtterance(string: word)
             utterance.voice = voice
-            let rendered = try #require(await GreekSpeech.write(utterance, with: renderer), "\(word)")
+            // The first word loads the voice, which takes long in a full test run.
+            let rendered = try #require(await GreekSpeech.write(utterance, with: renderer, limit: 60), "\(word)")
             let buffer = rendered.buffer
             let seconds = Double(buffer.frameLength) / buffer.format.sampleRate
             #expect((0.3...3).contains(seconds), "\(word): \(seconds) s")

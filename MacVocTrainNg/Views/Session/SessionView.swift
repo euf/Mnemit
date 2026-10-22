@@ -179,21 +179,12 @@ struct SessionView: View {
             Text("Catch Up")
                 .font(.headline)
                 .help("Cards that were due before today, beyond today's share of them")
-        case .reviewAhead:
-            Text("Review Ahead")
-                .font(.headline)
-                .help("Cards that aren't due yet, the ones you are least likely to recall first")
         case .practiceMistakes, .practiceNewest:
             Text("Practice")
                 .font(.headline)
                 .help("Practice doesn't change when cards come back")
         case .plan, .rest:
-            // Where the learner is in the day: the round, while rounds remain.
-            if let round = ring.progress.flatMap({ RoundStatus($0).round }) {
-                Text(round)
-                    .font(.headline)
-                    .monospacedDigit()
-            }
+            EmptyView()
         }
     }
 

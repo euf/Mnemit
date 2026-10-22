@@ -79,6 +79,8 @@ final class SessionDriver {
     func grade(_ grade: Grade) -> Bool {
         guard document.isReadyToEdit else { return false }
         let before = stream
+        let graded = session.currentCardID
+        let creditBefore = graded.map(credit(of:)) ?? 0
         let interval = gradeIntervals?[grade]
         let duration = stopwatch.elapsed
         guard let outcome = StallTrace.measure("stream.grade", { stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar, duration: duration) }) else { return false }
@@ -89,9 +91,16 @@ final class SessionDriver {
         case .practiced:
             registerPracticeUndo(restore)
         }
-        lastReceipt = GradeReceipt(grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count)
+        lastReceipt = GradeReceipt(
+            grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count,
+            gain: max(0, (graded.map(credit(of:)) ?? 0) - creditBefore))
         moveOn()
         return true
+    }
+
+    /// How far today's reviews brought the card with `id` toward done, for the ring.
+    private func credit(of id: Card.ID) -> Double {
+        document.card(withID: id)?.credit(onDayOf: document.clock.now, calendar: document.calendar, steps: document.deck.learningOptions.steps) ?? 0
     }
 
     /// Takes the rounds of the day from a progress that arrived, or changed, while the stream is open: the

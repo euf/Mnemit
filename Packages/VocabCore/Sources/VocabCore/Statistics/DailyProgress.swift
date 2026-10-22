@@ -347,14 +347,18 @@ public struct Pace: Hashable, Sendable {
 public struct DailyRing: Hashable, Sendable {
     public var done: Int
     public var goal: Int
+    /// The cards on their way to done, as parts of a card (`Deck.cardsUnderway(onDayOf:calendar:)`): the
+    /// ring shows them, the counts don't.
+    public var underway: Double
 
-    public init(done: Int, goal: Int) {
+    public init(done: Int, goal: Int, underway: Double = 0) {
         self.done = max(0, done)
         self.goal = max(0, goal)
+        self.underway = max(0, underway)
     }
 
-    /// 0.5 at half the goal, 2.25 in the third lap.
-    public var fraction: Double { Double(done) / Double(max(1, goal)) }
+    /// 0.5 at half the goal, 2.25 in the third lap; the cards on their way count with their parts.
+    public var fraction: Double { (Double(done) + underway) / Double(max(1, goal)) }
 
     public var isGoalMet: Bool { done >= goal }
 
@@ -517,6 +521,12 @@ public struct DeckActivity: Sendable {
     /// Counted on the deck as it is.
     public func done(onDayOf now: Date, calendar: StudyCalendar) -> Int {
         deck.doneCards(onDayOf: now, calendar: calendar)
+    }
+
+    /// The cards on their way to done on the study day of `now`, as parts of a card,
+    /// `Deck.cardsUnderway(onDayOf:calendar:)`.
+    public func underway(onDayOf now: Date, calendar: StudyCalendar) -> Double {
+        deck.cardsUnderway(onDayOf: now, calendar: calendar)
     }
 
     /// The words this deck has in memory at `now`, `MemoryEstimate`.
@@ -947,6 +957,57 @@ extension Deck {
             return count + 1
         }
     }
+
+    /// The cards on their way to done on the study day of `now`, each as the part of a card its reviews
+    /// of the day made (`Card.credit(onDayOf:calendar:steps:)`), added up: the cards reviewed that day
+    /// that FSRS asks again that day. With the done cards it is what the ring shows, so every answer
+    /// recalled moves the ring, not only the one that lets a card go.
+    public func cardsUnderway(onDayOf now: Date, calendar: StudyCalendar) -> Double {
+        let day = calendar.dayNumber(for: now)
+        let start = calendar.start(ofDay: day)
+        let end = calendar.start(ofDay: day + 1)
+        return cards.reduce(0) { sum, card in
+            guard let state = card.learningState, state.due < end, state.lastReview >= start, state.lastReview < end else { return sum }
+            return sum + card.credit(onDayOf: now, calendar: calendar, steps: learningOptions.steps)
+        }
+    }
+}
+
+extension Card {
+    /// How far the reviews of the study day of `now` brought the card toward done, 0 to 1: 1 once FSRS let
+    /// it go to another day; before that the answers recalled that day (Hard, Good, Easy) over those
+    /// answers and the learning steps the card still needs, at its best moment of the day. So each answer
+    /// recalled moves it, Forgot doesn't, and a Forgot after a recalled answer takes nothing back. A new
+    /// card with two steps is half done after a Good; a review card graded Forgot is at 0, and half done
+    /// after the Good that follows. The phase and step come from the grades alone, replayed from the
+    /// first review; a log that doesn't reach back to it (`hasCompleteLog`) starts as a review card.
+    public func credit(onDayOf now: Date, calendar: StudyCalendar, steps required: Int) -> Double {
+        let day = calendar.dayNumber(for: now)
+        let start = calendar.start(ofDay: day)
+        let end = calendar.start(ofDay: day + 1)
+        var phase: LearningPhase = hasCompleteLog || log.isEmpty ? .learning : .review
+        var step = 0
+        var recalled = 0
+        var best = 0.0
+        for entry in log where entry.date < end {
+            switch phase {
+            case .review:
+                if entry.grade == .again {
+                    phase = .relearning
+                    step = 0
+                }
+            case .learning, .relearning:
+                var steps = Steps(count: step, required: required)
+                steps.apply(entry.grade)
+                (phase, step) = steps.areEnough ? (.review, 0) : (phase, steps.count)
+            }
+            guard entry.date >= start else { continue }
+            if entry.grade != .again { recalled += 1 }
+            let left = max(1, required) - step
+            best = max(best, phase == .review ? 1 : Double(recalled) / Double(recalled + left))
+        }
+        return best
+    }
 }
 
 /// The ring, the rounds and the streak of a learner over some decks, see `evaluate(_:at:calendar:)`.
@@ -1112,7 +1173,8 @@ public struct DailyProgress: Hashable, Sendable {
         let owed = counts.reduce(0) { $0 + $1.total }
         let owedNew = counts.reduce(0) { $0 + $1.newAtDayStart }
         let done = decks.reduce(0) { $0 + $1.done(onDayOf: now, calendar: calendar) }
-        let ring = DailyRing(done: done, goal: DailyGoal.goal(done: done, owed: owed, plan: startRounds.goal))
+        let underway = decks.reduce(0) { $0 + $1.underway(onDayOf: now, calendar: calendar) }
+        let ring = DailyRing(done: done, goal: DailyGoal.goal(done: done, owed: owed, plan: startRounds.goal), underway: underway)
         // A day that began with an empty plan has the plan as it stands, which is new cards the learner
         // is doing: they are its rounds.
         let roundPlan =

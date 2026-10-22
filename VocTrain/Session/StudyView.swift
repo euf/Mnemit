@@ -446,10 +446,6 @@ private struct StudyHeader: View {
                 Text("Catch Up")
                     .font(.subheadline.weight(.semibold))
                 ringAndFigures
-            case .reviewAhead:
-                Text("Review Ahead")
-                    .font(.subheadline.weight(.semibold))
-                ringAndFigures
             case .plan, .rest:
                 ringAndFigures
             }
@@ -463,7 +459,7 @@ private struct StudyHeader: View {
     private var ringAndFigures: some View {
         let daily = ring.progress?.ring
         HStack(spacing: 8) {
-            StreamRing(progress: ring.progress, shownDone: motion.shownDone)
+            StreamRing(progress: ring.progress, shown: motion.shown)
                 .ringBump(motion.landings, reduceMotion: reduceMotion)
                 .opacity(motion.travels ? 0 : 1)
                 .onGeometryChange(for: CGRect.self) {
@@ -473,9 +469,7 @@ private struct StudyHeader: View {
                 }
             if let daily {
                 HStack(spacing: 4) {
-                    if let round = ring.progress.flatMap({ RoundStatus($0).round }) {
-                        Text(round)
-                    } else if daily.isGoalMet {
+                    if daily.isGoalMet {
                         Text("\(daily.done) cards today")
                     } else {
                         Text("\(daily.done) of \(daily.goal) cards")
@@ -498,16 +492,16 @@ private struct StudyHeader: View {
 /// lap in its middle from the second on: "×2" once the goal is reached. No streak and no popover: the bar
 /// is calm. As big as the figures beside it need for "×2", and it grows with the text size up
 /// to a ceiling, as the bar has only so much height. VoiceOver reads the lap ("Lap 2") with the
-/// figures beside it, which the bar combines into one element. `shownDone` is what the ring shows as
+/// figures beside it, which the bar combines into one element. `shown` is what the ring shows as
 /// done when it is ahead of the figures, a card having landed in it.
 struct StreamRing: View {
     var progress: DailyProgress?
-    var shownDone: Int?
+    var shown: Double?
     @ScaledMetric(relativeTo: .subheadline) private var diameter: CGFloat = 30
 
     var body: some View {
         ProgressRing(
-            fraction: DailyRingFigure.fraction(progress, shownDone: shownDone), diameter: min(diameter, 44), center: RingCenter(progress, inStream: true),
+            fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44), center: RingCenter(progress, inStream: true),
             speaksCenter: true)
     }
 }

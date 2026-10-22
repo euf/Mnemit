@@ -12,6 +12,9 @@ struct GradeReceipt: Equatable {
     var interval: ReviewInterval?
     /// The grade made the card a leech, which suspended it.
     var isLeech = false
+    /// The part of a card the grade added to the ring, 0 to 1 (`Card.credit(onDayOf:calendar:steps:)`):
+    /// what was left of it for a card the grade let go, a step's share for one in its steps, 0 for Forgot.
+    var gain = 0.0
 
     /// The grade by the name its button has: "Forgot", not the scheduler's "Again".
     var title: String {

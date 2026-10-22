@@ -175,8 +175,8 @@ struct SessionViewModelTests {
         #expect(document.card(withID: card.id)?.learningState == reviewed)
     }
 
-    /// Today's plan, review ahead, practice: undo takes back the reviews of all of them, one by
-    /// one, and the place of the stream with each. The review ahead is an ordinary review.
+    /// Today's plan, then practice: undo takes back the steps of both, one by one, and the place of
+    /// the stream with each. A card that is not due is never reviewed: beyond the plan comes practice.
     @Test func undoReachesAcrossTheSegmentsOfTheStream() throws {
         let now = Date()
         let lastReview = now.addingTimeInterval(-5 * 86400)
@@ -194,25 +194,18 @@ struct SessionViewModelTests {
         step(undoManager) { model.grade(.good) }
         #expect(model.isResting)
         model.keepGoing()
-        #expect(model.streamStage == .reviewAhead)
-        #expect(model.currentCard?.id == ahead.id)
-        // Ahead of time, the review asks the way the plan did.
-        guard case let .study(study) = model.mode else {
-            Issue.record("Review ahead is a study segment.")
-            return
-        }
-        #expect(study.reviewMode == .revealed)
+        #expect(model.streamStage == .practiceNewest)
+        #expect(model.isPracticing)
+        let practiced = try #require(model.currentCard)
 
         model.reveal()
         step(undoManager) { model.grade(.good) }
-        #expect(model.isPracticing)
-        #expect(document.card(withID: ahead.id)?.log.count == 2)
+        #expect(document.card(withID: ahead.id) == ahead)
         #expect(model.canUndoLast)
 
         undoManager.undo()
-        #expect(model.streamStage == .reviewAhead)
-        #expect(model.currentCard?.id == ahead.id)
-        #expect(document.card(withID: ahead.id) == ahead)
+        #expect(model.streamStage == .practiceNewest)
+        #expect(model.currentCard?.id == practiced.id)
         undoManager.undo()
         #expect(model.streamStage == .plan)
         #expect(model.currentCard?.id == due.id)

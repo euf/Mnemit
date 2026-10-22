@@ -871,7 +871,8 @@ struct DailyProgressTests {
         #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 1))
         for step in 1...2 {
             grade([.good], at: 0, of: &deck)
-            #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 1), "step \(step)")
+            // Not done, but on its way: each step is a third of the card.
+            #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 1, underway: Double(step) / 3), "step \(step)")
             #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 1, "step \(step)")
         }
         grade([.good], at: 0, of: &deck)
@@ -891,7 +892,8 @@ struct DailyProgressTests {
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 1)
         grade([.again], at: 0, of: &deck)
         grade([.good], at: 0, of: &deck)
-        #expect(evaluate([deck]).ring == DailyRing(done: 2, goal: 3))
+        // Half of the card, as one of its two relearning steps is done.
+        #expect(evaluate([deck]).ring == DailyRing(done: 2, goal: 3, underway: 0.5))
         #expect(!evaluate([deck]).ring.isGoalMet)
         // The last relearning step: FSRS lets the card go to another day, and the ring is closed.
         grade([.good], at: 0, of: &deck)
@@ -945,10 +947,10 @@ struct DailyProgressTests {
     }
 
     @Test func cardsBeyondThePlanCountTowardTheLaps() throws {
-        // A plan of 6, then reviews ahead: cards not due until tomorrow.
+        // A plan of 6, then 14 cards not due until tomorrow, reviewed all the same.
         var deck = try Deck(learningOptions: options(), cards: (0..<6).map { due("c\($0)", onDay: today) } + (0..<14).map { due("a\($0)", onDay: today + 1) })
         reviewPlan(of: &deck, at: now)
-        var ahead = StudySession(reviewingAheadIn: deck, at: now, calendar: calendar, random: SeededRandom(seed: 1), reviewMode: .revealed)
+        var ahead = StudySession(cardIDs: deck.cards.suffix(14).map(\.id), at: now, random: SeededRandom(seed: 1), reviewMode: .revealed)
         for _ in 0..<14 {
             let id = ahead.session.currentCardID!
             deck.cards[deck.index(of: id)!] = ahead.review(.good, of: deck.card(withID: id)!, with: deck.learningOptions, at: now, calendar: calendar)!

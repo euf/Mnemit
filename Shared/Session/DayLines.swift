@@ -1,12 +1,12 @@
 import Foundation
 import VocabCore
 
-/// Where the learner stands in the day's rounds, as the lines of Today, the study header, the widget and
-/// the Mac's help say it. The figures come from `DailyProgress`, or from a widget snapshot that holds the
-/// same three numbers.
+/// Where the learner stands in the day, as the headline of Today, the widget and the Mac's help say it. The
+/// figures come from `DailyProgress`, or from a widget snapshot that holds the same three numbers.
 ///
-/// Before the first round the line is the time to keep the streak, "≈ 2 min to keep your streak"; between
-/// rounds, "Round 2 of 4" with the time of the round; once the last round is done, "Ring closed".
+/// Before the first round the line is the time to keep the streak, "≈ 2 min to keep your streak"; once the
+/// last round is done, "Ring closed"; in between there is none, and the screens say the cards left. Rounds are
+/// the unit the day's time is learned in and never show (`references/learning-flow.md`).
 struct RoundStatus: Equatable, Sendable {
     /// The rounds the day holds; 0 for a day without a plan.
     var rounds: Int
@@ -30,39 +30,21 @@ struct RoundStatus: Equatable, Sendable {
     /// Every round of the day is done: the ring is closed.
     var isClosed: Bool { rounds > 0 && roundsDone >= rounds }
 
-    /// The round the learner is in, counting from 1; `nil` without rounds and once they are done.
-    var current: Int? { rounds > 0 && roundsDone < rounds ? roundsDone + 1 : nil }
-
     /// The first round keeps the streak, so it is kept once one is done, or when the plan was empty.
     var isStreakKept: Bool { rounds == 0 || roundsDone > 0 }
 
-    /// "Round 2 of 4".
-    var round: LocalizedStringResource? {
-        current.map { LocalizedStringResource("Round \($0) of \(rounds)") }
-    }
-
-    /// The first thing the day says: "≈ 2 min to keep your streak" before the first round, "Round 2 of 4" after
-    /// it, "Ring closed" once the rounds are done; `nil` for a day without rounds.
+    /// The first thing the day says: "≈ 2 min to keep your streak" before the first round, "Ring closed" once
+    /// the rounds are done; `nil` in between and for a day without rounds.
     var title: LocalizedStringResource? {
         if isClosed { return LocalizedStringResource("Ring closed") }
-        guard current != nil else { return nil }
-        if roundsDone == 0, let minutesToNext {
+        if rounds > 0, roundsDone == 0, let minutesToNext {
             return LocalizedStringResource("\(Format.timeLeft(minutes: minutesToNext)) to keep your streak")
         }
-        return round
+        return nil
     }
 
-    /// "≈ 2 min": the time of the round the learner is in, beside "Round 2 of 4". Before the first round the
-    /// time is in the title, and after the last there is none.
-    var time: String? {
-        roundsDone > 0 && current != nil ? minutesToNext.map { Format.timeLeft(minutes: $0) } : nil
-    }
-
-    /// The title and the time in one line, "Round 2 of 4 · ≈ 2 min".
-    var line: String? {
-        guard let title else { return nil }
-        return [String(localized: title), time].compactMap { $0 }.joined(separator: " · ")
-    }
+    /// The title as a string.
+    var line: String? { title.map { String(localized: $0) } }
 }
 
 extension MemoryEstimate {

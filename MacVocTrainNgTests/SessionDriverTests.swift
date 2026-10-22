@@ -95,8 +95,8 @@ struct SessionDriverTests {
         #expect(laterListener.restores == 0)
     }
 
-    /// The plan, then review ahead, then practice; undo goes back through all of them
-    /// card by card, and redo forward again.
+    /// The plan, then practice; undo goes back through both card by card, and redo forward again.
+    /// A card that is not due is never reviewed: beyond the plan comes practice.
     @Test func undoAndRedoReachAcrossTheSegmentsOfTheStream() throws {
         var learningOptions = LearningOptions()
         learningOptions.steps = 1
@@ -115,17 +115,15 @@ struct SessionDriverTests {
         step(undoManager) { driver.grade(.good) }
         #expect(driver.isResting)
         driver.keepGoing()
-        #expect(driver.stream.stage == .reviewAhead)
-        #expect(driver.currentCard?.id == ahead.id)
-        step(undoManager) { driver.grade(.good) }
-        #expect(document.card(withID: ahead.id)?.log.count == 2)
         #expect(driver.stream.stage == .practiceNewest)
+        let practiced = try #require(driver.currentCard)
+        step(undoManager) { driver.grade(.good) }
+        #expect(document.card(withID: ahead.id)?.log.count == 1)
         #expect(driver.stream.stepCount == 2)
 
         undoManager.undo()
-        #expect(driver.stream.stage == .reviewAhead)
-        #expect(driver.currentCard?.id == ahead.id)
-        #expect(document.card(withID: ahead.id)?.log.count == 1)
+        #expect(driver.stream.stage == .practiceNewest)
+        #expect(driver.currentCard?.id == practiced.id)
         #expect(driver.stream.stepCount == 1)
 
         undoManager.undo()
@@ -140,7 +138,7 @@ struct SessionDriverTests {
 
         undoManager.redo()
         #expect(driver.stream.stage == .practiceNewest)
-        #expect(document.card(withID: ahead.id)?.log.count == 2)
+        #expect(driver.stream.stepCount == 2)
     }
 
     /// Suspending is undone like a review: the card and the place in one step (#290).

@@ -94,18 +94,18 @@ struct StudyMotionTests {
         #expect(done == 2)
 
         let motion = motion(ring: ring)
-        #expect(motion.shownDone == nil)
+        #expect(motion.shown == nil)
         motion.depart(card(), receipt: GradeReceipt(grade: .good, interval: .days(8)), release: release(), velocity: .zero, behind: 0, peek: 6, reduceMotion: false)
         // On its way: the figures arriving now are held back until it lands.
         motion.figuresChanged()
         #expect(motion.landings == 0)
         try await wait(for: { motion.landings == 1 })
         #expect(motion.landings == 1)
-        #expect(motion.shownDone == done + 1)
+        #expect(motion.shown == Double(done + 1))
 
         // The figures caught up with the card that landed.
         motion.figuresChanged()
-        #expect(motion.shownDone == nil)
+        #expect(motion.shown == nil)
 
         // It is gone when its time is up.
         try await wait(for: { motion.departures.isEmpty })
@@ -113,7 +113,7 @@ struct StudyMotionTests {
 
         // Undo takes the step back.
         motion.retractStep()
-        #expect(motion.shownDone == done - 1)
+        #expect(motion.shown == Double(done - 1))
     }
 
     /// The rest: the ring waits for the card to land and comes down with the slot showing; Next Round takes it back up
