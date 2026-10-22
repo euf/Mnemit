@@ -15,11 +15,13 @@ struct DeckScreen: View {
     var start: (StudyModel.Entry) -> Void
     var rename: (String) async throws -> Void
     var delete: () async throws -> Void
+    /// Opens the browser of the shared decks.
+    var showAnkiWeb: () -> Void = {}
 
     var body: some View {
         DeckContent(
             name: deck.name, knownCounts: knownCounts, document: deck.document, failure: deck.failure, merger: deck.merger,
-            canEdit: deck.isEditable, start: start, rename: rename, delete: delete
+            canEdit: deck.isEditable, start: start, rename: rename, delete: delete, showAnkiWeb: showAnkiWeb
         )
         .background {
             if let document = deck.document {
@@ -55,6 +57,7 @@ struct DeckContent: View {
     var start: (StudyModel.Entry) -> Void
     var rename: (String) async throws -> Void
     var delete: () async throws -> Void
+    var showAnkiWeb: () -> Void = {}
 
     @State private var showsRename = false
     @State private var confirmsDelete = false
@@ -77,7 +80,7 @@ struct DeckContent: View {
             if let document, let merger {
                 LoadedSections(
                     document: document, merger: merger, canEdit: canEdit, start: start, addCards: { showsAddCards = true },
-                    importCards: { isChoosingImport = true })
+                    importCards: { isChoosingImport = true }, showAnkiWeb: showAnkiWeb)
             } else if failure == nil, let knownCounts {
                 Section {
                     CountsRow(counts: knownCounts)
@@ -160,6 +163,7 @@ private struct LoadedSections: View {
     var start: (StudyModel.Entry) -> Void
     var addCards: () -> Void
     var importCards: () -> Void
+    var showAnkiWeb: () -> Void
 
     var body: some View {
         let counts = document.dueCards.counts
@@ -207,7 +211,7 @@ private struct LoadedSections: View {
             }
             .tint(.primary)
             .disabled(!isEditable)
-            Link(destination: AnkiWebLink.url) {
+            Button(action: showAnkiWeb) {
                 RowLabel(title: "Shared Decks on AnkiWeb", symbol: "safari")
             }
             .tint(.primary)

@@ -188,12 +188,31 @@
   получает « 2», « 3»; файл помечен `ImportedFile.isNewDeck`) или колода из списка; затем тот же
   `AddCardsHost` с `ImportPreviewSheet`.
   Пока накрыто введение или поток Study, пакет ждёт (`waitingAnki`). Ссылка «Shared Decks on
-  AnkiWeb» (`AnkiWebLink`, `Link` в Safari) — в меню «+», пустом Today и на экране колоды. Mac:
-  `AppDelegate.application(_:open:)` ведёт `.apkg` из Finder тем же путём, что «Import Cards» окна
-  приветствия (`WelcomeRequest.requestImportCards(from:)` и новый документ), окно нового документа
-  зовёт `DocumentView.importCards(from:namesDeck:)`, называет безымянную колоду (`displayName`)
-  по колоде Anki и берёт настройки пресета (`isNewDeck`: `namesDeck`, документ без файла и карточек);
-  «Import Cards» из меню окна колоды (`namesDeck` ложь) оставляет настройки колоды; колоды из Finder уходят оттуда в `NSDocumentController.openDocument`.
+  AnkiWeb» (`AnkiWebLink`) — в меню «+», пустом Today и на экране колоды — открывает браузер
+  сайтов с колодами (следующий пункт). Mac: `AppDelegate.application(_:open:)` ведёт `.apkg` из
+  Finder тем же путём, что «Import Cards» окна приветствия (`WelcomeRequest.importIntoNewDeck(from:)`:
+  запрос и новый документ), окно нового документа зовёт `DocumentView.importCards(from:namesDeck:)` и
+  называет безымянную колоду (`displayName`) по колоде Anki и берёт настройки пресета (`isNewDeck`:
+  `namesDeck`, документ без файла и карточек); «Import Cards» из меню окна колоды (`namesDeck` ложь)
+  оставляет настройки колоды; колоды из Finder уходят оттуда в `NSDocumentController.openDocument`.
+- Браузер сайтов с колодами (`Shared/Web/DeckWebBrowser` и `DeckWebBrowserView`, лист на iPhone,
+  окно `DeckWebWindow` на Mac из окна приветствия и пункта File «Shared Decks on AnkiWeb…»): обычный
+  `WKWebView` под управлением человека, без скриптов в страницах, без своего user agent, без
+  разбора и предзагрузки страниц; приложение получает только файл, который человек скачал сам.
+  Источники — одна константа `DeckSources.all` в `Shared/Support/DeckSources.swift` (AnkiWeb Shared
+  Decks — стартовая страница, MintDeck Free Decks): это и закладки в тулбаре, и список хостов.
+  Хост источника или его поддомен (https) остаётся в окне; клик по ссылке на любой другой хост уходит
+  в Safari, редиректы источника не считаются кликом. Скачивание: ответ главного фрейма становится
+  `.download`, если имя файла (`Content-Disposition` или путь) кончается на `apkg`, `csv`, `tsv`, или
+  заголовок `attachment`, или MIME `application/octet-stream`, `zip`, `text/csv`, `text/tab-separated-values`,
+  или WebKit показать ответ не умеет (`DeckDownload.shouldDownload`); так же — ссылка с атрибутом
+  `download`. `WKDownloadDelegate` кладёт файл в `tmp/DeckDownloads/<uuid>/` (имя без `.apkg`/`.csv`/
+  `.tsv` получает `.apkg`, ошибку чтения назовёт импорт); следующая загрузка чистит папку. Файл идёт тем
+  же путём, что у «Open in Mnemit» и пикера: iPhone — `StartScreen.receiveDownload` (пакет в
+  `receiveAnki`, таблица в предпросмотр колоды, использованной последней, а без колод — в новую по
+  имени файла), Mac — `WelcomeRequest.importIntoNewDeck(from:)`. WebKit-файлы исключены из таргета
+  виджета (`PBXFileSystemSynchronizedBuildFileExceptionSet` у группы `Shared`); у Mac-приложения
+  в песочнице добавлен `com.apple.security.network.client`, без него `WKWebView` ничего не грузит.
 - Импорт и экспорт CSV/TSV: логика общая, `CardImport` и `CardExport` в `Shared/Support`; на Mac
   к ним добавлены панели файлов (`CardImportPanel`, `CardExportPanel`), на iPhone — листы ниже.
   Выгрузка начинается строками Anki `#separator:tab` (или `comma`), `#html:false`,

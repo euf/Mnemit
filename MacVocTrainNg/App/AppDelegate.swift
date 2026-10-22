@@ -25,8 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             if url.isAnkiPackage {
-                WelcomeRequest.requestImportCards(from: url)
-                NSDocumentController.shared.newDocument(nil)
+                WelcomeRequest.importIntoNewDeck(from: url)
             } else {
                 NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, error in
                     if let error {

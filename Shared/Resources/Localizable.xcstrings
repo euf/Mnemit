@@ -1266,6 +1266,26 @@
     "A–Z": {
       "shouldTranslate": false
     },
+    "Back": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurück"
+          }
+        }
+      }
+    },
+    "Bookmarks": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lesezeichen"
+          }
+        }
+      }
+    },
     "Both directions": {
       "localizations": {
         "de": {
@@ -1632,6 +1652,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Richtig"
+          }
+        }
+      }
+    },
+    "Couldn't Load the Page": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seite konnte nicht geladen werden"
           }
         }
       }
@@ -2126,6 +2156,36 @@
         }
       }
     },
+    "Download Failed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "Downloading “%@”…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ wird geladen …"
+          }
+        }
+      }
+    },
+    "Downloading…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird geladen …"
+          }
+        }
+      }
+    },
     "Due": {
       "localizations": {
         "de": {
@@ -2372,6 +2432,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Format:"
+          }
+        }
+      }
+    },
+    "Forward": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorwärts"
           }
         }
       }
@@ -3566,6 +3636,16 @@
         }
       }
     },
+    "Open in Safari": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Safari öffnen"
+          }
+        }
+      }
+    },
     "Open your Mnemit folder to see the decks in it, or import cards from a table.": {
       "localizations": {
         "de": {
@@ -3912,6 +3992,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Erneut lernen"
+          }
+        }
+      }
+    },
+    "Reload": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neu laden"
           }
         }
       }
@@ -4466,12 +4556,32 @@
         }
       }
     },
+    "Shared Decks": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geteilte Stapel"
+          }
+        }
+      }
+    },
     "Shared Decks on AnkiWeb": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Geteilte Stapel auf AnkiWeb"
+          }
+        }
+      }
+    },
+    "Shared Decks on AnkiWeb…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geteilte Stapel auf AnkiWeb …"
           }
         }
       }

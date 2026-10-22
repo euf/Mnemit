@@ -84,6 +84,14 @@
 			);
 			target = 7A0000000000000000000063 /* MnemitWidget */;
 		};
+		7A0000000000000000000070 /* Exceptions for "Shared" folder in "MnemitWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Web/DeckWebBrowser.swift,
+				Web/DeckWebBrowserView.swift,
+			);
+			target = 7A0000000000000000000063 /* MnemitWidget */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -110,6 +118,9 @@
 		};
 		7A0000000000000000000030 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7A0000000000000000000070 /* Exceptions for "Shared" folder in "MnemitWidget" target */,
+			);
 			path = Shared;
 			sourceTree = "<group>";
 		};

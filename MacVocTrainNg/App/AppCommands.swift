@@ -43,6 +43,7 @@ struct AppCommands: Commands {
             }
             Button("Import Cards…") { actions?.importCards() }
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
+            Button("Shared Decks on AnkiWeb…") { DeckWebWindow.show() }
             Button("Export Cards…") { actions?.exportCards() }
                 .disabled(actions == nil)
             Button("Add Lesson Words…") { actions?.addLessonWords() }

@@ -41,6 +41,8 @@ struct TodayScreen: View {
     var showSettings: () -> Void
     var refresh: () async -> Void
     var importCards: () -> Void = {}
+    /// Opens the browser of the shared decks.
+    var showAnkiWeb: () -> Void = {}
 
     private var due: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) }
@@ -58,7 +60,7 @@ struct TodayScreen: View {
                         .buttonStyle(.borderedProminent)
                     Button("Use iCloud Drive Folder", action: chooseFolder)
                     Button("Open Deck…", action: openDeck)
-                    AnkiWebLink()
+                    AnkiWebLink(action: showAnkiWeb)
                 }
             } else {
                 // One view carries the search field, so it keeps its focus as the first letter
@@ -81,7 +83,7 @@ struct TodayScreen: View {
                         .disabled(decks.isEmpty)
                     Button("Import…", systemImage: "square.and.arrow.down", action: importCards)
                         .disabled(decks.isEmpty)
-                    AnkiWebLink()
+                    AnkiWebLink(action: showAnkiWeb)
                     Button("New Deck", systemImage: "rectangle.stack.badge.plus", action: newDeck)
                 }
                 Menu("More", systemImage: "ellipsis") {
