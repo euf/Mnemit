@@ -302,11 +302,18 @@ Study days in a row whose ring was closed (done ≥ goal); an empty plan counts.
 repaired by doing the next day's plan; two in a row end the streak.
 
 **Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):
-Seconds per done card: the pauses of up to 120 s between consecutive reviews of a study day,
-summed over the last 7 study days and today, divided by the cards done on those days; 20 s
-while fewer than 20 cards were done (`DailyGoal.secondsPerCard`). Reviews only measure the
-time; the time is spread over done cards, so the steps of a new card and an Again are in its
-price. Time left = cards left × pace, in whole minutes (`DailyGoal.minutesLeft`).
+Seconds per done card, in two prices (`Pace`): one for cards that were new when their study day
+began (no review before the day), one for all others (review, relearning, learning carried over
+from an earlier day). A pause of up to 120 s between consecutive reviews of a study day goes to
+the card of the later review, in the kind that card had that day: the steps of a new card are
+new, an Again on a review card and its relearning are other. Each kind's seconds over the last
+7 study days and today are divided by the cards of that kind done on those days; 30 s for new
+and 10 s for other while fewer than 10 of the kind were done (`DailyGoal.pace`). Reviews only
+measure the time; the time is spread over done cards, so the steps and the Again are in the
+price. Time left = new cards left × new price + other cards left × other price, in whole
+minutes (`DailyGoal.minutesLeft`); a new card started today and still in its steps is among
+the new cards left (`StudyCounts.newAtDayStart`). The widget knows only how many cards are
+left, and keeps one price: the time left over the cards left.
 _Avoid_: seconds per review, seconds per answer
 
 **Stream** (Study; RU «поток»):

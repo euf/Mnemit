@@ -42,9 +42,10 @@ are in [`references/`](references/).
   on a later day, so a review card graded Hard, Good or Easy is done at once, a new card after
   its learning steps, and a card graded Forgot when it is through relearning. A card counts
   once, however many reviews it took. Today and the widget say "75 of 218 cards" and "143 cards
-  left", which add up, and the cards left come with "≈ 7 min": the pace is the seconds a done
-  card took over the last week, the pauses of up to two minutes between reviews divided by the
-  cards done (20 seconds a card until 20 are done). The daily goal does not move during the day:
+  left", which add up, and the cards left come with "≈ 7 min": new cards and all other cards
+  are each priced at the seconds a done card of that kind took over the last week, the pauses of
+  up to two minutes between reviews divided by the cards done (30 seconds a new card and 10 any
+  other until 10 of that kind are done). The daily goal does not move during the day:
   cards added later and "+10 new" fill laps, as do catch-up and review ahead. The ring keeps
   going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
   streak in days. The streak counts the days whose ring was closed, a day with nothing due
