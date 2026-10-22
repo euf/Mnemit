@@ -82,34 +82,53 @@ struct DailyGoalTests {
         #expect(DailyRing(done: -2, goal: -1) == DailyRing(done: 0, goal: 0))
     }
 
-    /// Answer times `seconds` after a start, as the seconds between the answers of a study day.
-    func answers(_ seconds: [Double]) -> [Date] {
-        seconds.map { Date(timeIntervalSince1970: 1_791_216_000 + $0) }
+    /// Reviews `seconds` after a start, of cards that were new when their study day began or of others.
+    func reviews(_ seconds: [Double], new isNew: Bool = false) -> [DailyGoal.PacedReview] {
+        seconds.map { (Date(timeIntervalSince1970: 1_791_216_000 + $0), isNew) }
     }
 
     @Test func aPauseOverTwoMinutesIsABreakAndNotStudyTime() {
         // 0, 30, 60 and 90 s of work, a pause of 340 s, then 30 s: 120 s in all.
-        let morning = answers([0, 30, 60, 400, 430])
-        // Exactly 120 s still counts, 121 s is a break; the answers need not come sorted.
-        let evening = answers([341, 0, 221, 100])
+        let morning = reviews([0, 30, 60, 400, 430])
+        // Exactly 120 s still counts, 121 s is a break; the reviews need not come sorted.
+        let evening = reviews([341, 0, 221, 100])
         // 90 + 120 + 100 = 310 s over 31 cards.
-        #expect(DailyGoal.secondsPerCard(days: [morning, evening], done: 31) == 10)
-        #expect(DailyGoal.secondsPerCard(days: [morning], done: 24) == 3.75)
+        #expect(DailyGoal.pace(days: [morning, evening], newDone: 0, otherDone: 31).otherCard == 10)
+        #expect(DailyGoal.pace(days: [morning], newDone: 0, otherDone: 24).otherCard == 3.75)
     }
 
     @Test func twoDaysAreNotOneLongGap() {
-        // Two answers a minute apart on different days are no work between them.
-        #expect(DailyGoal.secondsPerCard(days: [answers([0]), answers([60])], done: 20) == DailyGoal.fallbackSecondsPerCard)
+        // Two reviews a minute apart on different days are no work between them.
+        let pace = DailyGoal.pace(days: [reviews([0]), reviews([60])], newDone: 20, otherDone: 20)
+        #expect(pace == Pace())
     }
 
-    @Test func fewerThanTwentyDoneCardsTakeTheFallback() {
-        let day = answers(Array(stride(from: 0.0, through: 380, by: 10)))
-        #expect(DailyGoal.fallbackSecondsPerCard == 20)
-        #expect(DailyGoal.secondsPerCard(days: [day], done: 19) == 20)
-        #expect(DailyGoal.secondsPerCard(days: [day], done: 0) == 20)
-        // 38 gaps of 10 s over 20 cards.
-        #expect(DailyGoal.secondsPerCard(days: [day], done: 20) == 19)
-        #expect(DailyGoal.secondsPerCard(days: [], done: 25) == 20)
+    @Test func aGapIsTheTimeOfTheCardOfTheLaterReview() {
+        // Ten review cards a swipe of 6 s each after a first review whose own time is unknown,
+        // then ten new cards of three reviews, 10 s apart: 60 s over 10 cards and 300 s over 10 cards.
+        let others = reviews((0...10).map { Double($0) * 6 })
+        let news = reviews((1...30).map { 60 + Double($0) * 10 }, new: true)
+        #expect(DailyGoal.pace(days: [others + news], newDone: 10, otherDone: 10) == Pace(newCard: 30, otherCard: 6))
+        // The gap before a review belongs to its card, whichever card came before: a new card then
+        // a review card then a new one, 10, 25 and 5 s on from the first.
+        let mixed = reviews([0, 10], new: true) + reviews([35]) + reviews([40], new: true)
+        // New: 10 + 5 s, other: 25 s, each over 10 cards.
+        #expect(DailyGoal.pace(days: [mixed], newDone: 10, otherDone: 10) == Pace(newCard: 1.5, otherCard: 2.5))
+    }
+
+    @Test func eachKindFallsBackWhenItHasFewerThanTenDoneCards() {
+        #expect(DailyGoal.fallbackNewCardSeconds == 30)
+        #expect(DailyGoal.fallbackOtherCardSeconds == 10)
+        #expect(Pace() == Pace(newCard: 30, otherCard: 10))
+        let day = reviews(Array(stride(from: 0.0, through: 200, by: 10)), new: true) + reviews(Array(stride(from: 400.0, through: 480, by: 4)))
+        // 20 gaps of 10 s of new cards and 20 gaps of 4 s of others.
+        #expect(DailyGoal.pace(days: [day], newDone: 10, otherDone: 10) == Pace(newCard: 20, otherCard: 8))
+        #expect(DailyGoal.pace(days: [day], newDone: 9, otherDone: 10) == Pace(newCard: 30, otherCard: 8))
+        #expect(DailyGoal.pace(days: [day], newDone: 10, otherDone: 9) == Pace(newCard: 20, otherCard: 10))
+        #expect(DailyGoal.pace(days: [day], newDone: 0, otherDone: 0) == Pace())
+        #expect(DailyGoal.pace(days: [], newDone: 25, otherDone: 25) == Pace())
+        // Enough cards but no time between the reviews of a kind: its fallback, too.
+        #expect(DailyGoal.pace(days: [reviews([0, 500, 1000], new: true)], newDone: 40, otherDone: 40) == Pace())
     }
 
     @Test func minutesLeftRoundUpAndASliverIsUnderAMinute() {
@@ -124,6 +143,33 @@ struct DailyGoalTests {
         #expect(DailyGoal.minutesLeft(cards: 74, secondsPerCard: 5.2) == 7)
         #expect(DailyGoal.minutesLeft(cards: 74, secondsPerCard: 5.8) == 8)
         #expect(DailyGoal.minutesLeft(cards: 300, secondsPerCard: 20) == 100)
+    }
+
+    @Test func theTimeLeftPricesNewCardsAndOthersEachAtItsOwnPace() {
+        let pace = Pace(newCard: 30, otherCard: 10)
+        #expect(DailyGoal.minutesLeft(newCards: 0, otherCards: 0, pace: pace) == nil)
+        #expect(DailyGoal.minutesLeft(newCards: 0, otherCards: 5, pace: pace) == 0)
+        // 3 × 30 s + 4 × 10 s = 130 s: three minutes, where all seven at the new price take four
+        // and all seven at the other price take two.
+        #expect(DailyGoal.minutesLeft(newCards: 3, otherCards: 4, pace: pace) == 3)
+        #expect(DailyGoal.minutesLeft(newCards: 7, otherCards: 0, pace: pace) == 4)
+        #expect(DailyGoal.minutesLeft(newCards: 0, otherCards: 7, pace: pace) == 2)
+        // 20 × 30 s + 60 × 10 s = 1200 s exactly, 20 minutes.
+        #expect(DailyGoal.minutesLeft(newCards: 20, otherCards: 60, pace: pace) == 20)
+        #expect(pace.seconds(newCards: 3, otherCards: 4) == 130)
+    }
+
+    @Test func oneEffectivePriceForTheWidgetGivesTheMinutesOfTheSum() {
+        let pace = Pace(newCard: 30, otherCard: 10)
+        let effective = pace.secondsPerCard(newCards: 3, otherCards: 4)
+        #expect(abs(effective - 130.0 / 7) < 1e-12)
+        // No cards left: the price of the others.
+        #expect(pace.secondsPerCard(newCards: 0, otherCards: 0) == 10)
+        // 26 new and 12 other cards take 900 s, 15 minutes. 38 × (900 / 38) is a hair over 900 in
+        // floating point, which a plain round-up would turn into 16.
+        let widget = DailyGoal.minutesLeft(cards: 38, secondsPerCard: pace.secondsPerCard(newCards: 26, otherCards: 12))
+        #expect(widget == 15)
+        #expect(widget == DailyGoal.minutesLeft(newCards: 26, otherCards: 12, pace: pace))
     }
 }
 
@@ -377,9 +423,11 @@ struct DailyProgressTests {
         options.steps = 3
         let card = answered("n", [.good, .good, .good], at: [at(0, 10), at(0, 10, 1), at(0, 10, 2)], options: options)
         let deck = try Deck(learningOptions: options, cards: [card, Card(question: "p", answer: "p")])
-        let pace = DeckActivity(deck: deck, calendar: calendar).pace(at: now, calendar: calendar)
+        let pace = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
         #expect(pace.done == 1)
-        #expect(pace.days[today]?.count == 3)
+        // The three reviews and the done card of a card that was new when the day began are new.
+        #expect(pace.newDone == 1 && pace.otherDone == 0)
+        #expect(pace.days[today]?.map(\.isNew) == [true, true, true])
     }
 
     @Test func aCardStillInLearningAtTheDaysEndIsNotDone() throws {
@@ -387,7 +435,7 @@ struct DailyProgressTests {
         options.steps = 3
         let card = answered("n", [.good, .good], at: [at(0, 10), at(0, 10, 1)], options: options)
         let deck = try Deck(learningOptions: options, cards: [card])
-        let pace = DeckActivity(deck: deck, calendar: calendar).pace(at: now, calendar: calendar)
+        let pace = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
         #expect(pace.done == 0)
         #expect(pace.days[today]?.count == 2)
     }
@@ -400,9 +448,24 @@ struct DailyProgressTests {
         let edge = answered("e", [.good, .good], at: [at(7, 10), at(7, 10, 1)])
         let outside = answered("o", [.good, .good], at: [at(8, 10), at(8, 10, 1)])
         let deck = try Deck(learningOptions: options(), cards: [again, edge, outside])
-        let pace = DeckActivity(deck: deck, calendar: calendar).pace(at: now, calendar: calendar)
+        let pace = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
         #expect(pace.done == 3)
         #expect(Set(pace.days.keys) == [today - 7, today - 3, today])
+        // A card is new on the day of its first review and not after: learned three days ago it is
+        // done as a new card, and reviewed today as another.
+        #expect(pace.newDone == 2 && pace.otherDone == 1)
+        #expect(pace.days[today - 3]?.map(\.isNew) == [true, true])
+        #expect(pace.days[today]?.map(\.isNew) == [false])
+    }
+
+    @Test func anAgainOnAReviewCardAndItsRelearningAreOthers() throws {
+        // Learned a month ago, forgotten today and relearned by two Goods 12 s apart.
+        let card = answered(
+            "r", [.good, .good, .again, .good, .good], at: [at(30, 10), at(30, 10, 1), at(0, 9), at(0, 9, 0.2), at(0, 9, 0.4)])
+        let deck = try Deck(learningOptions: options(), cards: [card])
+        let log = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
+        #expect(log.days[today]?.map(\.isNew) == [false, false, false])
+        #expect(log.newDone == 0 && log.otherDone == 1)
     }
 
     @Test func aCardWithoutItsFirstReviewsInTheLogCountsAsDoneOnEachDayAnswered() throws {
@@ -410,33 +473,64 @@ struct DailyProgressTests {
         card.log.removeFirst()
         let deck = try Deck(learningOptions: options(), cards: [card])
         #expect(!card.hasCompleteLog)
-        let pace = DeckActivity(deck: deck, calendar: calendar).pace(at: now, calendar: calendar)
+        let pace = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
+        // Its log can't say that the card was new: the card is another.
         #expect(pace.done == 1)
+        #expect(pace.newDone == 0 && pace.otherDone == 1)
     }
 
     @Test func theLearnersPaceIsPricedFromTheGapsAndTheDoneCardsOfAllDecks() throws {
-        // Twenty-five cards in two decks, each learned by two Goods ten seconds apart, the cards twenty seconds apart:
+        // Twenty-five new cards in two decks, each learned by two Goods ten seconds apart, the cards twenty seconds apart:
         // 49 gaps of 10 s, 490 s in all, over 25 done cards.
         let cards = (0..<25).map { index in
             answered("c\(index)", [.good, .good], at: [at(0, 9).addingTimeInterval(Double(index) * 20), at(0, 9).addingTimeInterval(Double(index) * 20 + 10)])
         }
-        let decks = [try Deck(learningOptions: options(), cards: Array(cards[..<10])), try Deck(learningOptions: options(), cards: Array(cards[10...]))]
+        let decks = [try Deck(learningOptions: options(), cards: Array(cards[..<9])), try Deck(learningOptions: options(), cards: Array(cards[9...]))]
         let progress = evaluate(decks)
-        #expect(abs(progress.secondsPerCard - 19.6) < 1e-9)
+        #expect(abs(progress.pace.newCard - 19.6) < 1e-9)
+        // No other card was done: its fallback.
+        #expect(progress.pace.otherCard == DailyGoal.fallbackOtherCardSeconds)
         // Nothing is due, no cards are left and no time is wanted.
         #expect(progress.cardsLeft == 0)
         #expect(progress.minutesLeft == nil)
-        // One deck alone has too few cards done (15 of them are in the other): the fallback.
-        #expect(evaluate([decks[0]]).secondsPerCard == DailyGoal.fallbackSecondsPerCard)
+        // One deck alone has too few cards done (16 of them are in the other): the fallbacks.
+        #expect(evaluate([decks[0]]).pace == Pace())
+    }
+
+    @Test func newCardsAndOthersAreEachPricedFromTheirOwnGaps() throws {
+        var options = options()
+        options.steps = 3
+        let morning = at(0, 9)
+        let learnedLongAgo = [at(30, 10), at(30, 10, 1), at(30, 10, 2)]
+        // A review card that goes wrong at 09:00:00 and stays in relearning: a first review with no
+        // time before it, and no card done.
+        var cards = [answered("lead", [.good, .good, .good, .again], at: learnedLongAgo + [morning], options: options)]
+        // Ten review cards, one Good each 6 s after the other: 60 s over 10 done cards.
+        cards += (0..<10).map { index in
+            answered("r\(index)", [.good, .good, .good, .good], at: learnedLongAgo + [morning.addingTimeInterval(6 + 6 * Double(index))], options: options)
+        }
+        // Ten new cards of three Goods each, every review 8 s after the one before: 240 s over 10 done cards.
+        cards += (0..<10).map { index in
+            let first = morning.addingTimeInterval(68 + 24 * Double(index))
+            return answered("n\(index)", [.good, .good, .good], at: [first, first.addingTimeInterval(8), first.addingTimeInterval(16)], options: options)
+        }
+        let deck = try Deck(learningOptions: options, cards: cards)
+        let log = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
+        #expect(log.newDone == 10 && log.otherDone == 10)
+        let progress = evaluate([deck])
+        #expect(progress.pace == Pace(newCard: 24, otherCard: 6))
+        // The card in relearning is the one card left, and it was not new when the day began.
+        #expect(progress.cardsLeft == 1 && progress.newCardsLeft == 0)
+        #expect(progress.minutesLeft == 0)
     }
 
     @Test func theMinutesLeftAreTheCardsOfThePlanStillOwedAtThePace() throws {
-        // Seven cards due today and no history to price a card by: 20 s each, 140 s, three minutes.
+        // Seven review cards due today and no history to price a card by: 10 s each, 70 s, two minutes.
         let deck = try Deck(learningOptions: options(), cards: (0..<7).map { due("c\($0)", onDay: today) })
         var progress = evaluate([deck])
-        #expect(progress.cardsLeft == 7)
-        #expect(progress.secondsPerCard == DailyGoal.fallbackSecondsPerCard)
-        #expect(progress.minutesLeft == 3)
+        #expect(progress.cardsLeft == 7 && progress.newCardsLeft == 0)
+        #expect(progress.pace == Pace())
+        #expect(progress.minutesLeft == 2)
         // One card left: under a minute.
         var worked = deck
         review(6, of: &worked, at: now)
@@ -445,6 +539,39 @@ struct DailyProgressTests {
         #expect(progress.minutesLeft == 0)
         reviewPlan(of: &worked, at: now)
         #expect(evaluate([worked]).minutesLeft == nil)
+    }
+
+    @Test func theTimeLeftPricesTheNewCardsAndTheOthersLeftEachByItsPace() throws {
+        // Four new cards and three review cards: 4 × 30 s + 3 × 10 s = 150 s, three minutes.
+        let deck = try Deck(learningOptions: options(), cards: (0..<4).map { new("n\($0)") } + (0..<3).map { due("c\($0)", onDay: today) })
+        let progress = evaluate([deck])
+        #expect(progress.cardsLeft == 7 && progress.newCardsLeft == 4 && progress.otherCardsLeft == 3)
+        #expect(progress.minutesLeft == 3)
+        // The widget's one price: the time left over the cards left; with none left, the price of the others.
+        #expect(abs(progress.secondsPerCardLeft - 150.0 / 7) < 1e-12)
+        var worked = deck
+        reviewPlan(of: &worked, at: now)
+        #expect(evaluate([worked]).cardsLeft == 0)
+        #expect(evaluate([worked]).secondsPerCardLeft == DailyGoal.fallbackOtherCardSeconds)
+    }
+
+    @Test func aNewCardStartedTodayAndStillInLearningIsNewAndAnAgainIsNot() throws {
+        // Four new cards and three review cards. An hour ago one new card got a Good, which leaves it in its
+        // learning steps and due again, and a review card an Again, which leaves it in relearning.
+        var deck = try Deck(learningOptions: options(), cards: (0..<4).map { new("n\($0)") } + (0..<3).map { due("c\($0)", onDay: today) })
+        let hourAgo = now.addingTimeInterval(-3600)
+        grade([.good], at: 0, of: &deck, on: hourAgo)
+        grade([.again], at: 4, of: &deck, on: hourAgo)
+        let counts = StudySession.counts(for: deck, at: now, calendar: calendar)
+        #expect(counts.new == 3 && counts.learning == 2 && counts.review == 2)
+        #expect(counts.learningFromNew == 1 && counts.newAtDayStart == 4)
+        let progress = evaluate([deck])
+        #expect(progress.cardsLeft == 7 && progress.newCardsLeft == 4 && progress.otherCardsLeft == 3)
+        // 4 × 30 s + 3 × 10 s.
+        #expect(progress.minutesLeft == 3)
+        // Once through its steps the new card is done and no longer left.
+        grade([.good], at: 0, of: &deck, on: now.addingTimeInterval(-1800))
+        #expect(evaluate([deck]).newCardsLeft == 3)
     }
 
     @Test func theGoalIsThePlanInCardsAndTheRingFillsAsItIsWorkedOff() throws {

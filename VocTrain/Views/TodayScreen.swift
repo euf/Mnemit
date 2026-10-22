@@ -49,6 +49,11 @@ struct TodayScreen: View {
         decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) }
     }
 
+    /// Of `due`, the cards that were new when the day began, which the time left prices as new.
+    private var newDue: Int {
+        decks.reduce(0) { $0 + (counts[$1.url]?.newAtDayStart ?? 0) }
+    }
+
     /// The catch-up, the overdue review cards the plan leaves for the days after.
     private var catchUp: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.catchUp ?? 0) }
@@ -106,7 +111,7 @@ struct TodayScreen: View {
         List {
             Section {
                 SummaryRow(
-                    due: due, catchUp: catchUp, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(),
+                    due: due, newDue: newDue, catchUp: catchUp, progress: progress, nextDue: counts.values.compactMap(\.nextDue).min(),
                     now: now, isLoaded: !counts.isEmpty)
             }
             Section("Decks") {
@@ -203,6 +208,8 @@ struct StudyButton: View {
 struct SummaryRow: View {
     /// The cards of the plan not done yet, "N cards left": not the cards that are due in all.
     var due: Int
+    /// Of `due`, the cards that were new when the day began.
+    var newDue = 0
     /// The overdue review cards beyond today's share of the backlog.
     var catchUp = 0
     var progress: DailyProgress?
@@ -250,9 +257,9 @@ struct SummaryRow: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// "≈ 7 min": the cards left at the learner's pace, once the decks are read.
+    /// "≈ 7 min": the cards left at the learner's pace, new cards and others each at its own, once the decks are read.
     private var timeLeft: String? {
-        guard let progress, let minutes = DailyGoal.minutesLeft(cards: due, secondsPerCard: progress.secondsPerCard) else { return nil }
+        guard let progress, let minutes = DailyGoal.minutesLeft(newCards: newDue, otherCards: due - newDue, pace: progress.pace) else { return nil }
         return Format.timeLeft(minutes: minutes)
     }
 

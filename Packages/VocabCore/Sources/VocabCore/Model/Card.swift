@@ -219,6 +219,13 @@ public struct Card: Identifiable, Hashable, Sendable {
         !log.isEmpty && learningState?.reviews == log.count
     }
 
+    /// Whether the card was new at `start`, say when a study day began: it had no review before.
+    /// A log that doesn't reach back to the first review (`hasCompleteLog`) can't tell, and says
+    /// the card was not.
+    func wasNew(before start: Date) -> Bool {
+        learningState == nil || (hasCompleteLog && log[0].date >= start)
+    }
+
     /// New cards are always due, suspended cards never.
     public func isDue(at date: Date) -> Bool {
         guard !isSuspended else { return false }

@@ -64,8 +64,8 @@ enum WidgetFixtures {
         return try! Deck(cards: cards)
     }
 
-    static func progress(done: Int, goal: Int, streak: Int, secondsPerCard: Double = DailyGoal.fallbackSecondsPerCard) -> DailyProgress {
-        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil), secondsPerCard: secondsPerCard)
+    static func progress(done: Int, goal: Int, streak: Int, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace()) -> DailyProgress {
+        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil), cardsLeft: cardsLeft, newCardsLeft: newCardsLeft, pace: pace)
     }
 
     /// A snapshot made at `now` whose due count is `count(date)`, hourly for two days.
@@ -179,12 +179,28 @@ struct WidgetSnapshotTests {
         #expect(snapshot.done == 12 && snapshot.goal == 20 && snapshot.streakDays == 7 && !snapshot.isGoalMet)
     }
 
-    @Test func theSnapshotKeepsThePriceOfACardFromWhenItWasMade() {
+    /// The forecast counts cards and not their kinds: the snapshot keeps the one price of the cards left now.
+    @Test func theSnapshotKeepsTheOnePriceOfTheCardsLeftWhenItWasMade() {
         let now = Fixtures.date(22, 10, 20)
         let dates = Array(WidgetSnapshot.forecastDates(from: now, calendar: Fixtures.calendar).prefix(3))
-        let snapshot = WidgetSnapshot(
-            now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7, secondsPerCard: 12.5), dates: dates, dueByDeck: [[7, 7, 8]], nextReminder: nil)
-        #expect(snapshot.secondsPerCard == 12.5)
+        func snapshot(cardsLeft: Int, newCardsLeft: Int, pace: Pace = Pace(newCard: 30, otherCard: 12.5)) -> WidgetSnapshot {
+            WidgetSnapshot(
+                now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7, cardsLeft: cardsLeft, newCardsLeft: newCardsLeft, pace: pace),
+                dates: dates, dueByDeck: [[cardsLeft, cardsLeft, cardsLeft / 2]], nextReminder: nil)
+        }
+        // 3 new cards at 30 s and 5 others at 12.5 s: 152.5 s over 8 cards.
+        #expect(snapshot(cardsLeft: 8, newCardsLeft: 3).secondsPerCard == 152.5 / 8)
+        #expect(snapshot(cardsLeft: 8, newCardsLeft: 0).secondsPerCard == 12.5)
+        #expect(snapshot(cardsLeft: 8, newCardsLeft: 8).secondsPerCard == 30)
+        // Nothing left: the price of the others.
+        #expect(snapshot(cardsLeft: 0, newCardsLeft: 0).secondsPerCard == 12.5)
+        // The widget's minutes for the cards due now are the app's for the cards left: 152.5 s, 3 minutes.
+        let state = snapshot(cardsLeft: 8, newCardsLeft: 3).state(at: now, calendar: Fixtures.studyCalendar)
+        #expect(state.minutesLeft == DailyGoal.minutesLeft(newCards: 3, otherCards: 5, pace: Pace(newCard: 30, otherCard: 12.5)))
+        #expect(state.minutesLeft == 3)
+        // 26 new and 12 other cards at 30 s and 10 s take 900 s, 15 minutes exactly, in the widget as in the app.
+        let exact = snapshot(cardsLeft: 38, newCardsLeft: 26, pace: Pace()).state(at: now, calendar: Fixtures.studyCalendar)
+        #expect(exact.minutesLeft == 15)
     }
 
     /// The minutes follow the cards due at each hour of the forecast, priced by the one price of the snapshot.

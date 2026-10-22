@@ -40,8 +40,10 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var due: [Due]
     /// The next daily reminder, if one is scheduled.
     var nextReminder: Date?
-    /// The pace when the snapshot is made (`DailyGoal.secondsPerCard`), the seconds a done card
-    /// takes: the widget can't read the logs, and prices the cards left of each hour of the forecast with it.
+    /// The one price of a card left when the snapshot is made (`DailyProgress.secondsPerCardLeft`): the
+    /// time the cards left take at the pace of new cards and of others, over their number, and the pace of
+    /// the others when none is left. The widget can't read the logs and knows only how many cards each hour
+    /// of the forecast holds, so it prices them all with it.
     /// `nil` in a snapshot an older app wrote: no time then.
     var secondsPerCard: Double?
 
@@ -76,7 +78,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         self.init(
             date: now, done: progress.ring.done, goal: progress.ring.goal, streakDays: progress.streak.days,
             isGoalMet: progress.ring.isGoalMet, due: zip(dates, totals).map { Due(date: $0, count: $1) }, nextReminder: nextReminder,
-            secondsPerCard: progress.secondsPerCard)
+            secondsPerCard: progress.secondsPerCardLeft)
     }
 
     /// The moments the forecast looks at: `now`, then each full hour after it.

@@ -184,9 +184,12 @@ public struct StudySession: Sendable {
         let (selected, catchUp) = selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, capsSize: false, past: past, using: &random)
         var counts = StudyCounts()
         counts.catchUp = catchUp
+        let startOfDay = calendar.start(ofDay: calendar.dayNumber(for: now))
         for candidate in selected {
             switch candidate.urgency {
-            case .learning: counts.learning += 1
+            case .learning:
+                counts.learning += 1
+                if candidate.card.wasNew(before: startOfDay) { counts.learningFromNew += 1 }
             case .review: counts.review += 1
             case .new:
                 if candidate.card.kind == .production { counts.newProduction += 1 } else { counts.newOther += 1 }
@@ -426,6 +429,9 @@ public struct StudyCounts: Hashable, Sendable {
     public internal(set) var learning = 0
     /// Cards in the review phase.
     public internal(set) var review = 0
+    /// Of `learning`, the cards that were new when the study day began: a new card started
+    /// today and still in its learning steps.
+    public internal(set) var learningFromNew = 0
     /// Overdue review cards, due before the study day, that the plan leaves for the days after:
     /// what is beyond the share the backlog asks of a day (`DailyGoal.backlogShare(of:onTime:)`). The
     /// stream goes on with them once the plan is done (`StudyStream.Stage.catchUp`).
@@ -436,6 +442,11 @@ public struct StudyCounts: Hashable, Sendable {
     public internal(set) var nextDue: Date?
 
     public var new: Int { newProduction + newOther }
+
+    /// The cards that were new when the study day began: `new`, and the new cards started
+    /// today that are still in learning (`learningFromNew`). What the time left prices as new
+    /// (`DailyGoal.minutesLeft(newCards:otherCards:pace:)`).
+    public var newAtDayStart: Int { new + learningFromNew }
 
     /// The cards of the plan: all of them at the start of the day (the daily goal), the cards
     /// left later ("N cards left"). `cardsPerSession` doesn't cap it: it is the size of a
