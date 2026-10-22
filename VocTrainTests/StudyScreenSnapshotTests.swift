@@ -81,6 +81,14 @@ struct StudyScreenSnapshotTests {
         return window
     }
 
+    /// Waits until `condition` holds, at most `limit`: a loaded machine takes its time to lay out.
+    private func until(_ limit: Duration = .seconds(15), _ condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now + limit
+        while !condition(), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+    }
+
     private func host(_ model: StudyModel, ring: DailyRingModel, flight: CardFlight, motion: StudyMotion? = nil, dark: Bool, textSize: DynamicTypeSize? = nil) async throws -> UIWindow {
         try await host(StudyView(model: model, ring: ring, flight: flight, motion: motion, onClose: {}), dark: dark, textSize: textSize)
     }
@@ -106,8 +114,7 @@ struct StudyScreenSnapshotTests {
             grade(model, .easy, undoManager: undoManager)
         }
         let ring = DailyRingModel()
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
         return (model, ring)
     }
 
@@ -122,8 +129,7 @@ struct StudyScreenSnapshotTests {
             guard model.currentCard?.question == Self.filler.question else { continue }
             self.grade(model, grade, undoManager: undoManager)
             let ring = DailyRingModel()
-            ring.refresh(documents: [document], delay: .zero)
-            try await Task.sleep(for: .milliseconds(300))
+            await ring.refresh(documents: [document], delay: .zero).value
             return (model, ring)
         }
         throw TestFailure("the filler never came first")
@@ -189,24 +195,21 @@ struct StudyScreenSnapshotTests {
         try beSilent()
         let (document, undoManager) = try makeDocument()
         let ring = DailyRingModel()
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
         let guide = try #require(RoundGuide(progress: ring.progress, document: document))
         #expect(guide.ends == [4, 6])
         let model = StudyModel(document: document, rounds: guide)
         for _ in 0..<3 {
             grade(model, .easy, undoManager: undoManager)
         }
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
         let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
         try write(window, name: "8-round-header", dark: dark)
         window.isHidden = true
 
         grade(model, .easy, undoManager: undoManager)
         #expect(model.isRoundRest)
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
         let rest = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
         try write(rest, name: "8-round-end", dark: dark)
         rest.isHidden = true
@@ -215,8 +218,7 @@ struct StudyScreenSnapshotTests {
         #expect(!model.isResting)
         grade(model, .easy, undoManager: undoManager)
         grade(model, .easy, undoManager: undoManager)
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
         #expect(model.isResting && !model.isRoundRest)
         let done = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
         try write(done, name: "8-plan-end", dark: dark)
@@ -273,16 +275,14 @@ struct StudyScreenSnapshotTests {
         try beSilent()
         let (document, undoManager) = try makeDocument()
         let ring = DailyRingModel()
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
         let guide = try #require(RoundGuide(progress: ring.progress, document: document))
         #expect(guide.ends == [4, 6])
         let model = StudyModel(document: document, rounds: guide)
         for _ in 0..<done {
             grade(model, .easy, undoManager: undoManager)
         }
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
         return (model, ring, document, undoManager)
     }
 
@@ -324,6 +324,7 @@ struct StudyScreenSnapshotTests {
             let motion = StudyMotion(ring: ring)
             motion.frozen = StudyMotion.Frozen(departure: item.progress, sheet: item.sheet)
             let window = try await host(model, ring: ring, flight: flight, motion: motion, dark: dark)
+            try await until { motion.ringHome.width > 0 && motion.cardSlot.width > 0 }
             #expect(motion.ringHome.width > 0, "the ring in the bar reports its place")
             #expect(motion.cardSlot.width > 0, "the card reports its place")
             if item.drag != .zero {
@@ -381,8 +382,7 @@ struct StudyScreenSnapshotTests {
         model.reveal()
         grade(model, .easy, undoManager: undoManager)
         #expect(model.isRoundRest)
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
 
         for (name, travel, lines) in [("30-rest-travel-half", 0.5, 0), ("31-rest-travel-end", 1.0, 0)] {
             motion.freezeRest(travel: travel, lines: lines)
@@ -401,8 +401,7 @@ struct StudyScreenSnapshotTests {
         model.reveal()
         grade(model, .easy, undoManager: undoManager)
         #expect(model.isRoundRest)
-        ring.refresh(documents: [document], delay: .zero)
-        try await Task.sleep(for: .milliseconds(300))
+        await ring.refresh(documents: [document], delay: .zero).value
         for (name, lines) in [("32-lines-1", 1), ("33-lines-3", 3), ("34-lines-all", 9)] {
             let motion = StudyMotion(ring: ring)
             motion.freezeRest(travel: 1, lines: lines)

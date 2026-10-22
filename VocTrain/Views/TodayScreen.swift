@@ -366,7 +366,7 @@ struct SummaryRow: View {
             .font(.subheadline)
         Text("\(0)-day streak")
             .font(.subheadline)
-        .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .combine)
     }
 
     /// "≈ 7 min": the cards left at the learner's pace, new cards and others each at its own, once the decks are read.
