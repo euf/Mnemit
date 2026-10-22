@@ -164,6 +164,10 @@ public struct Deck: Hashable, Sendable {
     /// `Deck.apply(_:at:calendar:)` keeps it: a card that is back in the deck is no
     /// longer in it.
     public internal(set) var deletedCards: [Card.ID: Date]
+    /// The images and sounds of the cards (`CardMedia`), the `media` folder of the package. Only
+    /// `apply(_:at:calendar:)` changes them, and only by the files a change brings in or takes out
+    /// again; see `DeckMedia` for what a package keeps.
+    public internal(set) var media: DeckMedia
 
     /// Why a deck can't be built from its parts.
     enum Error: Swift.Error, Equatable {
@@ -179,6 +183,7 @@ public struct Deck: Hashable, Sendable {
         contentModified = nil
         learningOptionsChanged = nil
         deletedCards = [:]
+        media = DeckMedia()
     }
 
     /// A deck built from its parts, as `DeckFile` reads it or `LegacyImporter` converts
@@ -193,7 +198,8 @@ public struct Deck: Hashable, Sendable {
         progress: [DailySnapshot] = [],
         contentModified: Date? = nil,
         learningOptionsChanged: Date? = nil,
-        deletedCards: [Card.ID: Date] = [:]
+        deletedCards: [Card.ID: Date] = [:],
+        media: DeckMedia = DeckMedia()
     ) throws {
         var ids = Set<Card.ID>()
         if let duplicate = cards.first(where: { !ids.insert($0.id).inserted }) {
@@ -207,6 +213,7 @@ public struct Deck: Hashable, Sendable {
         self.contentModified = contentModified
         self.learningOptionsChanged = learningOptionsChanged
         self.deletedCards = deletedCards.filter { !ids.contains($0.key) }
+        self.media = media
     }
 
     public func index(of id: Card.ID) -> Int? {
@@ -266,6 +273,11 @@ public struct Deck: Hashable, Sendable {
         card.learningState.map {
             Scheduler(learningOptions: learningOptions, calendar: calendar).recallProbability(of: $0, at: now)
         }
+    }
+
+    /// The names of the media files some card names.
+    public var namedMedia: Set<String> {
+        cards.reduce(into: Set<String>()) { $0.formUnion($1.media.names) }
     }
 
     /// Cards with the same question as `question`, see `CardText.key(forQuestion:)`.

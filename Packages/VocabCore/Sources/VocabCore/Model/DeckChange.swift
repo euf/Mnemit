@@ -21,6 +21,12 @@ public struct DeckChange: Sendable {
     /// the removals and the cards that come back: those removed are noted `now`, those
     /// that come back dropped. Only a merge and its inverse replace them.
     var deletedCards: [Card.ID: Date]?
+    /// Media files the deck takes in: those of an import or of a merge, or those a card's new
+    /// media come in. Files the deck holds already stay as they are.
+    var addedMedia = DeckMedia()
+    /// Media files to take out: the inverse of the files a change brought in. One that a card
+    /// still names stays.
+    var removedMedia: Set<String> = []
     var contentStamp: ContentStamp
 
     /// What a change does to `Deck.contentModified` and `Deck.learningOptionsChanged`.
@@ -62,6 +68,19 @@ extension DeckChange {
     public static func removing(_ ids: Set<Card.ID>, from deck: Deck) -> DeckChange? {
         let removals = deck.cards.map(\.id).filter(ids.contains)
         return removals.isEmpty ? nil : DeckChange(removals: removals)
+    }
+
+    /// Sets the images and sounds of the card with `id` in `deck` to `media`, keeping its learning
+    /// state; `files` are the media files that are new to the deck. A name that isn't of the form of
+    /// `DeckMedia.name(for:fileExtension:)` reads as none. `nil` if `deck` doesn't hold the card, or
+    /// the media stay and `files` brings nothing new.
+    public static func settingMedia(_ media: CardMedia, of id: Card.ID, in deck: Deck, adding files: DeckMedia = DeckMedia()) -> DeckChange? {
+        guard let card = deck.card(withID: id) else { return nil }
+        var edited = card
+        edited.media = media.checked
+        var change = DeckChange(upserts: edited == card ? [] : [edited])
+        change.addedMedia = files.missing(from: deck.media)
+        return change.upserts.isEmpty && change.addedMedia.isEmpty ? nil : change
     }
 
     /// Replaces question, answer and hint of the card with `id` in `deck` by `text`,
@@ -189,6 +208,12 @@ extension Deck {
             self.progress = progress
         }
 
+        let newMedia = change.addedMedia.missing(from: media)
+        if !newMedia.isEmpty {
+            media.formUnion(newMedia)
+            inverse.removedMedia = newMedia.names
+        }
+
         // Every step below passes over the cards once: a change may touch all of them.
         if !change.removals.isEmpty {
             let removals = Set(change.removals)
@@ -231,6 +256,15 @@ extension Deck {
         }
         if !insertions.isEmpty {
             cards = Self.inserting(insertions, into: cards)
+        }
+
+        if !change.removedMedia.isEmpty {
+            // Cards are as they will be: a file a card still names stays, as undoing an import
+            // must not take the file of a card that came later.
+            let taken = media.remove(change.removedMedia.subtracting(namedMedia))
+            if !taken.isEmpty {
+                inverse.addedMedia = taken
+            }
         }
 
         if !change.upserts.isEmpty || !change.removals.isEmpty || change.progress != nil {

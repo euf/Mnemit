@@ -46,11 +46,17 @@ extension DeckChange {
     /// (`AnkiImport.learningOptions(applyingTo:)`): the deck takes them in the same change, so
     /// one undo takes both back. Pass them only for a deck without cards: the cards of the deck
     /// are not replayed again.
-    public static func importing(_ cards: [Card], into deck: Deck, learningOptions: LearningOptions? = nil) -> DeckChange? {
+    ///
+    /// `media` are the files the cards name (`AnkiImport.media`): the deck takes those the cards
+    /// it adds name, in the same change, and the one undo takes out those that are new to it.
+    public static func importing(_ cards: [Card], into deck: Deck, learningOptions: LearningOptions? = nil, media: DeckMedia = DeckMedia()) -> DeckChange? {
         var ids = Set(deck.cards.map(\.id))
         let added = cards.filter { ids.insert($0.id).inserted }
         var options = learningOptions
         options?.sanitize()
-        return added.isEmpty ? nil : DeckChange(upserts: added, learningOptions: options == deck.learningOptions ? nil : options)
+        guard !added.isEmpty else { return nil }
+        var change = DeckChange(upserts: added, learningOptions: options == deck.learningOptions ? nil : options)
+        change.addedMedia = media.keeping(added.reduce(into: Set<String>()) { $0.formUnion($1.media.names) })
+        return change
     }
 }

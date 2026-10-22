@@ -8,7 +8,14 @@ import Foundation
 /// Stapel.mnemit/
 ///   deck.json       learning options, cards with their learning state, progress
 ///   reviews.jsonl   one line per review: {"card":"…","date":1791216000,"grade":3}
+///   media/          images and sounds of the cards, one file each (left out without any)
 /// ```
+///
+/// The files of `media/` are named by their content, `3f2a9c0b7d1e4a58.jpg`, see `DeckMedia`;
+/// a card names its files in the keys `questionImage`, `questionAudio`, `answerImage` and
+/// `answerAudio` of `deck.json`, which are left out for a side without one. Version 5 added
+/// them: an older app version would drop the folder, and the media with it, the next time it
+/// saves the deck, so it rejects the deck instead.
 ///
 /// `deck.json` is pretty-printed JSON with sorted keys, so it stays readable and
 /// diffs well. Its keys are spelled out by the records at the end of this file and
@@ -69,8 +76,8 @@ public enum DeckFile {
     /// What decks said in `format` before the app moved to the company's identifiers;
     /// still read, never written.
     static let legacyFormats: Set = ["com.mfluch.voctrain.deck"]
-    public static let currentVersion = 4
-    /// The oldest version this app version reads.
+    public static let currentVersion = 5
+    /// The oldest version this app version reads: 3 and 4 read as decks without media.
     public static let oldestReadableVersion = 3
     public static let deckFileName = "deck.json"
     public static let reviewsFileName = "reviews.jsonl"
@@ -99,14 +106,19 @@ public enum DeckFile {
 
     /// The package for `deck`.
     ///
-    /// - Parameter reviewLog: Pass the same encoder for every save of a document,
-    ///   so only reviews added since the last save are encoded.
-    public static func fileWrapper(for deck: Deck, reviewLog: ReviewLogEncoder = ReviewLogEncoder()) throws -> FileWrapper {
+    /// - Parameters:
+    ///   - reviewLog: Pass the same encoder for every save of a document,
+    ///     so only reviews added since the last save are encoded.
+    ///   - original: The package the deck was read from and is saved over, if there is one. Media
+    ///     files that are in it are cloned from there and not written again (`DeckMedia`).
+    public static func fileWrapper(for deck: Deck, reviewLog: ReviewLogEncoder = ReviewLogEncoder(), original: URL? = nil) throws -> FileWrapper {
         let deckFile = FileWrapper(regularFileWithContents: try encodeDeck(deck))
         deckFile.preferredFilename = deckFileName
         let reviewsFile = FileWrapper(regularFileWithContents: reviewLog.encode(deck.cards))
         reviewsFile.preferredFilename = reviewsFileName
-        return FileWrapper(directoryWithFileWrappers: [deckFileName: deckFile, reviewsFileName: reviewsFile])
+        var children = [deckFileName: deckFile, reviewsFileName: reviewsFile]
+        children[DeckMedia.folderName] = deck.media.folderWrapper(original: original)
+        return FileWrapper(directoryWithFileWrappers: children)
     }
 
     /// `deck.json`: everything except the review log.
@@ -125,7 +137,14 @@ public enum DeckFile {
     /// it is missing although a card was reviewed, has lines of unknown cards, or is
     /// longer than a card's count of reviews. A shorter one is fine; cards imported
     /// from MacVocTrain 1 lack the reviews before the import.
-    public static func decode(_ wrapper: FileWrapper) throws -> Deck {
+    ///
+    /// - Parameters:
+    ///   - withMedia: Whether the deck holds the media files of the package, `true` unless the deck
+    ///     is only counted: a deck read without them loses them if it is saved. The files that no
+    ///     card names are never held (`DeckMedia`).
+    ///   - url: Where the package is, if it is a package on disk: the media files are then read
+    ///     from there when needed, and cloned when saved, instead of kept as the wrappers of `wrapper`.
+    public static func decode(_ wrapper: FileWrapper, withMedia: Bool = true, at url: URL? = nil) throws -> Deck {
         guard wrapper.isDirectory else {
             // Only version 1 was a single file; its header reports it as outdated.
             _ = try decode(wrapper.regularFileContents ?? Data())
@@ -143,7 +162,23 @@ public enum DeckFile {
         if let card = deck.cards.first(where: { $0.log.count > ($0.learningState?.reviews ?? 0) }) {
             throw Error.reviewLogTooLong(question: card.question)
         }
+        if withMedia {
+            let named = deck.namedMedia
+            if let url {
+                deck.media = DeckMedia(folderAt: url.appending(path: DeckMedia.folderName, directoryHint: .isDirectory), keeping: named)
+            } else {
+                deck.media = DeckMedia(folder: wrapper.fileWrappers?[DeckMedia.folderName], keeping: named)
+            }
+        }
         return deck
+    }
+
+    /// Reads the package at `url`, through a `FileWrapper` that holds nothing but the listing of
+    /// the files: `deck.json` and `reviews.jsonl` are read now, the media when they are needed.
+    /// Not for the main thread of an app, and not outside the coordination of the file; see
+    /// `decode(_:withMedia:at:)` for `withMedia`.
+    public static func read(at url: URL, withMedia: Bool = true) throws -> Deck {
+        try decode(FileWrapper(url: url, options: []), withMedia: withMedia, at: url)
     }
 
     /// Reads the `deck.json` of a package, without the review log.
@@ -409,8 +444,13 @@ extension DeckFile {
         var suspended: Bool?
         /// Left out unless the card was ever suspended.
         var suspensionChanged: Date?
-        /// Left out unless the texts, the note or the kind were ever changed.
+        /// Left out unless the texts, the media, the note or the kind were ever changed.
         var contentChanged: Date?
+        /// The names of media files (`DeckMedia`), each left out for a side without one.
+        var questionImage: String?
+        var questionAudio: String?
+        var answerImage: String?
+        var answerAudio: String?
 
         init(_ card: Card) {
             id = card.id
@@ -425,6 +465,10 @@ extension DeckFile {
             suspended = card.isSuspended ? true : nil
             suspensionChanged = card.suspensionChanged
             contentChanged = card.contentChanged
+            questionImage = card.questionImage
+            questionAudio = card.questionAudio
+            answerImage = card.answerImage
+            answerAudio = card.answerAudio
         }
 
         var card: Card {
@@ -435,6 +479,7 @@ extension DeckFile {
                 hint: hint ?? "",
                 note: Card.normalized(note),
                 kind: kind.flatMap(CardKind.init(rawValue:)),
+                media: CardMedia(questionImage: questionImage, questionAudio: questionAudio, answerImage: answerImage, answerAudio: answerAudio).checked,
                 created: created ?? Date(timeIntervalSince1970: 0),
                 learningState: learningState?.learningState,
                 learningStateReset: learningStateReset,
