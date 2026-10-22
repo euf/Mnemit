@@ -100,14 +100,14 @@ struct LocalizationTests {
         let english: [(String.LocalizationValue, String)] = [
             ("≈ +\(1) cards/day next week", "≈ +1 card/day next week"),
             ("≈ +\(2) cards/day next week", "≈ +2 cards/day next week"),
-            ("\(1) cards in today's plan", "1 card in today's plan"),
-            ("\(2) cards in today's plan", "2 cards in today's plan"),
+            ("\(1) answers", "1 answer"),
+            ("\(2) answers", "2 answers"),
         ]
         let german: [(String.LocalizationValue, String)] = [
             ("≈ +\(1) cards/day next week", "≈ +1 Karte/Tag nächste Woche"),
             ("≈ +\(2) cards/day next week", "≈ +2 Karten/Tag nächste Woche"),
-            ("\(1) cards in today's plan", "1 Karte im heutigen Plan"),
-            ("\(2) cards in today's plan", "2 Karten im heutigen Plan"),
+            ("\(1) answers", "1 Antwort"),
+            ("\(2) answers", "2 Antworten"),
         ]
         for (language, cases) in [("en", english), ("de", german)] {
             for (value, expected) in cases {

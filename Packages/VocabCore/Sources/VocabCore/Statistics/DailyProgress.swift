@@ -1034,12 +1034,16 @@ public struct DailyProgress: Hashable, Sendable {
     public var newCardAllowances: [Int]
     /// The words in memory across the decks now, and when the day began (`MemoryEstimate`).
     public var memory: MemoryEstimate
+    /// The rings of the last seven study days, today last: closed or not, `nil` before the first study day.
+    /// Today's is closed once its ring is.
+    public var week: [Bool?]
 
     public init(
         ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace(), capacity: Int = DailyGoal.initialCapacity,
         roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), capacity: DailyGoal.initialCapacity), streakKeptToday: Bool = false,
-        newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0)
+        newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0), week: [Bool?] = []
     ) {
+        self.week = week
         self.ring = ring
         self.streak = streak
         self.cardsLeft = cardsLeft
@@ -1193,6 +1197,7 @@ public struct DailyProgress: Hashable, Sendable {
         return DailyProgress(
             ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: pace(over: (today - DailyGoal.paceDays)...today), capacity: capacity,
             roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: givenAllowances,
-            memory: MemoryEstimate.total(decks.map { $0.memory(at: now, calendar: calendar) }))
+            memory: MemoryEstimate.total(decks.map { $0.memory(at: now, calendar: calendar) }),
+            week: (today - 6...today).map { $0 < first ? nil : closed[$0] ?? false })
     }
 }

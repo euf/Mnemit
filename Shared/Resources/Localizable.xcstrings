@@ -73,6 +73,46 @@
     "%lld / %lld": {
       "shouldTranslate": false
     },
+    "%lld answers": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Antwort"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Antworten"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld answer"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld answers"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld cards": {
       "localizations": {
         "de": {
@@ -146,46 +186,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld cards are also in %@ and start unticked."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld cards in today's plan": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karte im heutigen Plan"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karten im heutigen Plan"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld card in today's plan"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld cards in today's plan"
                 }
               }
             }
@@ -306,46 +306,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld cards selected"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld cards this round": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karte in dieser Runde"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karten in dieser Runde"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld card this round"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld cards this round"
                 }
               }
             }
@@ -789,6 +749,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld von %2$lld heute"
+          }
+        }
+      }
+    },
+    "%lld of 7 rings closed this week": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld von 7 Ringen diese Woche geschlossen"
           }
         }
       }
@@ -4072,16 +4042,6 @@
         }
       }
     },
-    "Next Round": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nächste Runde"
-          }
-        }
-      }
-    },
     "Next milestone": {
       "localizations": {
         "de": {
@@ -4108,16 +4068,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nächste Abfrage %@"
-          }
-        }
-      }
-    },
-    "Next round %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nächste Runde %@"
           }
         }
       }
@@ -5338,26 +5288,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ring geschlossen"
-          }
-        }
-      }
-    },
-    "Round %lld done": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runde %lld geschafft"
-          }
-        }
-      }
-    },
-    "Round %lld of %lld": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runde %1$lld von %2$lld"
           }
         }
       }

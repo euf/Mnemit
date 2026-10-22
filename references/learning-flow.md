@@ -43,10 +43,10 @@ is a size the learner has shown they finish. The size is learned, never asked: n
 | Horizon | The learner does | Sees, as reward | Rule |
 |---|---|---|---|
 | Seconds | swipes one card | the card leaves past the edge; recalled, the ring steps by its share; done, the stack loses a sheet, the ring bumps and "in 8 days" shows beside it; back today, the card comes in again from the edge it left by and slides under the stack | done = FSRS sent the card to another day; partial credit by steps |
-| ≈ 2 min | the first cards of the day | the streak screen: "Streak kept · 13 days", a milestone at 7, 30, 100, 365 days | first round of the day done (Duolingo: one lesson keeps the streak, apart from the goal) |
+| ≈ 2 min | the first cards of the day | the streak screen: "Streak kept", the streak in days | first round of the day done (Duolingo: one lesson keeps the streak, apart from the goal) |
 | The day | today's cards | the ring closes: the ring screen with the day's figures and the week | done ≥ goal |
 | The week | closes rings on most days | seven rings in a row, Monday to Sunday, on the ring screen | ring per day from the log; the day's time grows after two closed days, shrinks after an open one |
-| Months | keeps the streak, learns | words-in-memory milestones (50, 100, 250, 500, 1,000 …) and streak milestones | FSRS recall, the log |
+| Months | keeps the streak, learns | the streak in days in the ring's centre; words-in-memory milestones (50, 100, 250, 500, 1,000 …) | FSRS recall, the log |
 
 A missed day is forgiven when the next day closes its ring (the streak survives; Duolingo's Freeze
 and Apple's paused rings are the same slack). Pausing a deck takes it out of the day.
@@ -98,8 +98,8 @@ ring, "Streak kept", the streak in days, "+4 words in memory today", "12 cards l
 **Ring closed** (when today's cards are done, and when the plan has run out): the ring closes with its
 burst, then the day: "10 cards · 22 answers", the share recalled, "+15 words in memory today", the streak, the
 week's seven rings; a milestone when one was passed today. One way on, the most useful first:
-**Catch Up** with its cards and time when due cards are left beyond the ring; else **+10 New** with
-what it costs next week; and **Done**.
+**Catch Up** when due cards are left beyond the ring; else **+10 new** with what it costs next week;
+else **Practice**; and **Done**. The week is seven small rings, today last, with the weekday initials.
 
 **How Today Works** keeps everything for the learner who knows FSRS: the plan and its parts, the
 rounds and the day's time, pace, the streak's repair, FSRS parameters.

@@ -881,6 +881,15 @@ struct DailyProgressTests {
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 0)
     }
 
+    @Test func theWeekEndsWithTodaysRing() throws {
+        var deck = try Deck(learningOptions: options(), cards: (0..<2).map { due("c\($0)", onDay: today) })
+        #expect(evaluate([deck]).week.count == 7)
+        #expect(evaluate([deck]).week.last == false)
+        grade([.good], at: 0, of: &deck)
+        grade([.good], at: 1, of: &deck)
+        #expect(evaluate([deck]).week.last == true)
+    }
+
     @Test func anAgainKeepsACardUndoneUntilItGraduatesAndNeverRaisesTheGoal() throws {
         var deck = try Deck(learningOptions: options(), cards: (0..<3).map { due("c\($0)", onDay: today) })
         grade([.good], at: 1, of: &deck)

@@ -9,12 +9,16 @@ struct ExtraNewCards {
     var reviewsPerDay: Int
 }
 
-/// The end of a round of the day, where the plan stops for a moment: "Round 1 done".
+/// Where the plan stops for a moment: at the end of the first round, which keeps the streak, or at the end
+/// of the last, which closes the ring while the plan has cards beyond it.
 struct RoundEnd: Equatable {
     /// How many rounds are done.
     var round: Int
     /// How many the day holds.
     var rounds: Int
+
+    /// The rest closes the ring; otherwise it keeps the streak.
+    var closesRing: Bool { round >= rounds }
 }
 
 /// What the stream shows while it rests, see `StreamRestView`.
@@ -37,13 +41,12 @@ struct StreamRest {
     var roundEnd: RoundEnd?
 }
 
-/// The short stop in the stream: at the end of a round of the day, "Round 1 done" with what the next one
-/// asks and the words the day has added to memory, and the learner goes on with Next Round or leaves with
-/// Done for Now; and at the end of the plan, "Done for today" with the size of the plan, how many cards were
-/// recalled and when the next one is due, the ring, and what the learner can do from here. "Keep Going" works
-/// through the catch-up, then reviews ahead and practices, and is the default; the new cards beyond the daily
-/// limit need a button of their own, with a line that says what they cost in cards a day. A finished
-/// practice ends with its figures.
+/// The short stop in the stream, twice a day at most (`references/learning-flow.md`). "Streak kept" after
+/// the first round: the streak, the words the day has added, the cards left to the ring; Keep Going or Done
+/// for Now. "Ring closed" when today's cards are done: the cards and the answers they took, the share
+/// recalled, the words, the streak and the week's rings, then one way on, the most useful first: Catch Up
+/// when due cards are left, else the new cards beyond the daily limit with what they cost in cards a day,
+/// else practice. A finished practice ends with its figures.
 struct StreamRestView: View {
     var rest: StreamRest
     var progress: DailyProgress?
@@ -133,10 +136,14 @@ struct StreamRestView: View {
 
     private var title: some View {
         Group {
-            if let end = rest.roundEnd {
-                Text("Round \(end.round) done")
+            if rest.isPracticeOnly {
+                Text("Practice complete")
+            } else if let end = rest.roundEnd, !end.closesRing {
+                Text("Streak kept")
+            } else if progress?.ring.isGoalMet == true {
+                Text("Ring closed")
             } else {
-                Text(rest.isPracticeOnly ? "Practice complete" : "Done for today")
+                Text("Done for today")
             }
         }
         .font(.title.weight(.semibold))
@@ -145,7 +152,7 @@ struct StreamRestView: View {
     @ViewBuilder
     private var buttons: some View {
         if let end = rest.roundEnd {
-            roundEndButtons(end)
+            if end.closesRing { ringButtons } else { streakButtons }
         } else {
             planEndButtons
         }
@@ -164,107 +171,122 @@ struct StreamRestView: View {
     }
 
     private var lines: [Line] {
-        if let end = rest.roundEnd { return roundEndLines(end) }
-        return planEndLines
+        if rest.isPracticeOnly { return practiceLines }
+        if let end = rest.roundEnd, !end.closesRing { return [streakLine, gainLine, leftLine].compactMap { $0 } }
+        return dayLines
     }
 
-    /// The cards the round asked: the difference of the card counts at which it and the one before end.
-    private func cards(inRound round: Int) -> Int? {
-        guard let ends = progress?.roundEnds, round >= 1, round <= ends.count else { return nil }
-        return ends[round - 1] - (round > 1 ? ends[round - 2] : 0)
-    }
-
-    /// The iPhone: the cards of the round, the words it added, the streak, and what the next round asks.
-    /// The Mac keeps its three lines in their old order.
-    private func roundEndLines(_ end: RoundEnd) -> [Line] {
-        let cards = staggers ? cards(inRound: end.round).map { count in Line("cards") { Text("\(count) cards this round") } } : nil
-        let gain = progress?.memory.gainSentence.map { gain in Line("gain") { Text(gain) } }
-        let streak =
-            end.round == 1
-            ? Line("streak") {
-                HStack(spacing: 4) {
-                    Image(systemName: "flame.fill")
-                        .foregroundStyle(Color.appAccent)
-                        .accessibilityHidden(true)
-                    Text("Streak kept")
-                }
-            } : nil
-        let next = progress?.minutes(ofRound: end.round + 1).map { minutes in Line("next") { Text("Next round \(Format.timeLeft(minutes: minutes))") } }
-        return (staggers ? [cards, gain, streak, next] : [streak, next, gain]).compactMap { $0 }
-    }
-
-    private var planEndLines: [Line] {
+    private var practiceLines: [Line] {
         var lines: [Line] = []
         if rest.recap.cards > 0 {
-            if rest.isPracticeOnly {
-                lines.append(Line("cards") { Text("\(rest.recap.cards) cards") })
-            } else {
-                lines.append(Line("cards") { Text("\(rest.recap.cards) cards in today's plan") })
-            }
+            lines.append(Line("cards") { Text("\(rest.recap.cards) cards") })
         }
         if let accuracy = rest.recap.accuracy {
             lines.append(Line("accuracy") { Text("\(Format.percent(accuracy)) recalled") })
         }
-        if !rest.isPracticeOnly, progress?.ring.isGoalMet == true {
-            lines.append(Line("closed") { Text("Ring closed") })
+        return lines
+    }
+
+    /// The day: "10 cards · 22 answers", the share recalled, the words or their milestone, the streak, the
+    /// week's rings, and the catch-up or when cards come back.
+    private var dayLines: [Line] {
+        var lines: [Line] = []
+        if rest.recap.cards > 0 {
+            let cards = [String(localized: "\(rest.recap.cards) cards"), String(localized: "\(rest.recap.reviews) answers")]
+            lines.append(Line("cards") { Text(verbatim: cards.joined(separator: " · ")) })
         }
-        if !rest.isPracticeOnly, let gain = progress?.memory.gainSentence {
-            lines.append(Line("gain") { Text(gain) })
+        if let accuracy = rest.recap.accuracy {
+            lines.append(Line("accuracy") { Text("\(Format.percent(accuracy)) recalled") })
         }
-        if !rest.isPracticeOnly, rest.catchUp > 0 {
+        if let milestone = progress?.memory.milestoneLine {
+            lines.append(Line("milestone") { Text(milestone).foregroundStyle(Color.appAccent) })
+        } else if let gainLine {
+            lines.append(gainLine)
+        }
+        if let streakLine { lines.append(streakLine) }
+        if let progress, progress.week.count == 7 {
+            lines.append(Line("week") { WeekRings(week: progress.week, today: progress.ring.fraction, now: rest.now).padding(.vertical, Spacing.tight) })
+        }
+        if rest.catchUp > 0 {
             lines.append(Line("catchup") { Text("+\(rest.catchUp) to catch up this week") })
-        } else if !rest.isPracticeOnly, let nextDue = rest.nextDue {
+        } else if let nextDue = rest.nextDue {
             lines.append(Line("next") { Text("Next review \(Format.due(nextDue, now: rest.now))") })
         }
         return lines
     }
 
+    private var streakLine: Line? {
+        guard let days = progress?.streak.days, days > 0 else { return nil }
+        return Line("streak") {
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(Color.appAccent)
+                    .accessibilityHidden(true)
+                Text("\(days)-day streak")
+            }
+        }
+    }
+
+    private var gainLine: Line? {
+        progress?.memory.gainSentence.map { gain in Line("gain") { Text(gain) } }
+    }
+
+    /// "12 cards left · ≈ 4 min": what is left to the ring.
+    private var leftLine: Line? {
+        guard let progress, progress.cardsLeft > 0 else { return nil }
+        let left = String(localized: "\(progress.cardsLeft) cards left")
+        let text = progress.minutesLeft.map { "\(left) · \(Format.timeLeft(minutes: $0))" } ?? left
+        return Line("left") { Text(verbatim: text) }
+    }
+
     // MARK: The buttons
 
-    private func roundEndButtons(_ end: RoundEnd) -> some View {
+    @ViewBuilder
+    private func button(_ title: LocalizedStringKey, prominent: Bool, action: @escaping () -> Void) -> some View {
+        let button = Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
+        }
+        if prominent {
+            button.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
+        } else {
+            button.buttonStyle(.bordered)
+        }
+    }
+
+    private var streakButtons: some View {
         VStack(spacing: Spacing.gap) {
-            Button(action: onNextRound) {
-                Text("Next Round")
-                    .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
-            }
-            .buttonStyle(.borderedProminent)
-            .keyboardShortcut(.defaultAction)
-            Button(action: onDone) {
-                Text("Done for Now")
-                    .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
-            }
-            .buttonStyle(.bordered)
+            button("Keep Going", prominent: true, action: onNextRound)
+            button("Done for Now", prominent: false, action: onDone)
+        }
+    }
+
+    /// The ring is closed and the plan has cards beyond it, as after a break: they are the catch-up.
+    private var ringButtons: some View {
+        VStack(spacing: Spacing.gap) {
+            button("Catch Up", prominent: true, action: onNextRound)
+            button("Done", prominent: false, action: onDone)
         }
     }
 
     private var planEndButtons: some View {
-        VStack(spacing: Spacing.gap) {
-            if rest.canKeepGoing {
-                Button(action: onKeepGoing) {
-                    Text("Keep Going")
-                        .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
-                }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
+        let catchesUp = rest.canKeepGoing && rest.catchUp > 0
+        return VStack(spacing: Spacing.gap) {
+            if catchesUp {
+                button("Catch Up", prominent: true, action: onKeepGoing)
             }
             if let extra = rest.extraNew {
                 VStack(spacing: Spacing.hairline) {
-                    Button(action: onAddNewCards) {
-                        Text("+\(extra.cards) new")
-                            .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
-                    }
-                    .buttonStyle(.bordered)
+                    button("+\(extra.cards) new", prominent: !catchesUp, action: onAddNewCards)
                     Text("≈ +\(extra.reviewsPerDay) cards/day next week")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-            Button(action: onDone) {
-                Text("Done")
-                    .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
+            if rest.canKeepGoing, !catchesUp {
+                button("Practice", prominent: false, action: onKeepGoing)
             }
-            .buttonStyle(.bordered)
-            .keyboardShortcut(rest.canKeepGoing ? nil : .defaultAction)
+            button("Done", prominent: !catchesUp && rest.extraNew == nil, action: onDone)
         }
     }
 
@@ -287,5 +309,42 @@ extension View {
     fileprivate func reveal(_ isShown: Bool) -> some View {
         opacity(isShown ? 1 : 0)
             .offset(y: isShown ? 0 : 6)
+    }
+}
+
+/// The rings of the last seven study days, today last, each with the initial of its weekday: closed,
+/// open, or faint before the first study day. Today's as it stands.
+struct WeekRings: View {
+    var week: [Bool?]
+    /// Today's ring, 1 when closed.
+    var today: Double
+    var now: Date
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(week.indices, id: \.self) { index in
+                VStack(spacing: 4) {
+                    ProgressRing(fraction: fraction(index), diameter: 20)
+                        .opacity(week[index] == nil ? 0.35 : 1)
+                    Text(verbatim: letter(index))
+                        .font(.caption2.weight(index == week.count - 1 ? .bold : .regular))
+                        .foregroundStyle(index == week.count - 1 ? .primary : .secondary)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("\(week.filter { $0 == true }.count) of 7 rings closed this week"))
+    }
+
+    private func fraction(_ index: Int) -> Double {
+        index == week.count - 1 ? min(1, today) : (week[index] == true ? 1 : 0)
+    }
+
+    /// The weekday's initial, "M"; the study day starts at 04:00.
+    // ponytail: the rollover hour is fixed at 4 here; pass the deck's calendar if it ever moves.
+    private func letter(_ index: Int) -> String {
+        let calendar = Calendar.current
+        let day = calendar.date(byAdding: .day, value: index - (week.count - 1), to: now.addingTimeInterval(-4 * 3600)) ?? now
+        return calendar.veryShortWeekdaySymbols[calendar.component(.weekday, from: day) - 1]
     }
 }

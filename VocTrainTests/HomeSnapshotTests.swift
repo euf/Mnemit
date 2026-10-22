@@ -165,7 +165,7 @@ struct HomeSnapshotTests {
 
     // MARK: Tests
 
-    /// Between rounds: "Round 2 of 4 · ≈ 2 min", the cards done and left, the streak kept, the words in memory.
+    /// After the streak step: the cards left with their time, the cards done and left, the streak kept, the words in memory.
     @Test func todayWithCardsDue() async throws {
         try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)))
     }
