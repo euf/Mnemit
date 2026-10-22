@@ -42,7 +42,7 @@ public struct CardSearchIndex: Sendable {
     ///
     /// `.diacriticInsensitive` only drops marks that canonical decomposition splits
     /// off, so letters with a stroke and the ligatures go through `plainLetters`.
-    private static func fold(_ text: String) -> String {
+    static func fold(_ text: String) -> String {
         let folded = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
         guard folded.unicodeScalars.contains(where: { plainLetters[$0] != nil }) else {
             return folded.precomposedStringWithCanonicalMapping

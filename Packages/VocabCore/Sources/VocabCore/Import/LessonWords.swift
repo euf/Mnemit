@@ -117,10 +117,3 @@ public enum LessonWords {
         CardText.trimmed(note).precomposedStringWithCanonicalMapping
     }
 }
-
-extension String {
-    /// Whether the text has Greek letters, of the modern alphabet or the polytonic one.
-    fileprivate var hasGreekLetters: Bool {
-        unicodeScalars.contains { (0x0370...0x03FF).contains($0.value) || (0x1F00...0x1FFF).contains($0.value) }
-    }
-}
