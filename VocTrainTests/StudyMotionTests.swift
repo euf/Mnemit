@@ -32,6 +32,15 @@ struct StudyMotionTests {
 
     private func card() -> Card { Card(text: CardText(question: "q", answer: "a")!, created: created) }
 
+    /// Waits for `condition`, which a timer on the main actor makes true; the full run keeps the main actor busy
+    /// with other tests, so a fixed sleep would be a guess.
+    private func wait(for condition: () -> Bool, seconds: Double = 5) async throws {
+        let deadline = ContinuousClock.now + .seconds(seconds)
+        while !condition(), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+    }
+
     @Test func eachDestinationHasItsOwnWay() throws {
         let motion = motion()
         // Into the ring: the way is from the card's place to the ring's, small at the end.
@@ -90,7 +99,7 @@ struct StudyMotionTests {
         // On its way: the figures arriving now are held back until it lands.
         motion.figuresChanged()
         #expect(motion.landings == 0)
-        try await Task.sleep(for: .seconds(StudyMotion.Timing.landing + 0.2))
+        try await wait(for: { motion.landings == 1 })
         #expect(motion.landings == 1)
         #expect(motion.shownDone == done + 1)
 
@@ -99,7 +108,7 @@ struct StudyMotionTests {
         #expect(motion.shownDone == nil)
 
         // It is gone when its time is up.
-        try await Task.sleep(for: .seconds(0.4))
+        try await wait(for: { motion.departures.isEmpty })
         #expect(motion.departures.isEmpty)
 
         // Undo takes the step back.
@@ -114,9 +123,9 @@ struct StudyMotionTests {
         motion.restBegan(afterLanding: true, reduceMotion: false)
         #expect(motion.showsRest && motion.travels && !motion.hasArrived && motion.showsSlot)
         #expect(motion.travel == 0)
-        try await Task.sleep(for: .seconds(StudyMotion.Timing.landing + 0.1))
+        try await wait(for: { motion.travel == 1 })
         #expect(motion.travel == 1)
-        try await Task.sleep(for: .seconds(StudyMotion.Timing.travel))
+        try await wait(for: { motion.hasArrived })
         #expect(motion.hasArrived && !motion.showsSlot && motion.burstStartedAt != nil)
         #expect(motion.isChoreographing == false)
 
@@ -127,9 +136,9 @@ struct StudyMotionTests {
             cardsAfter: 0.2, arrival: .rises, apply: { applied = true }, didLeave: { true }, then: { dealt = true })
         #expect(applied && !dealt && motion.showsRest && !motion.hasArrived && motion.travel == 0)
         #expect(motion.restSnapshot != nil)
-        try await Task.sleep(for: .seconds(0.35))
+        try await wait(for: { dealt })
         #expect(dealt && !motion.showsRest && motion.arrival == .rises)
-        try await Task.sleep(for: .seconds(StudyMotion.Timing.travel))
+        try await wait(for: { !motion.travels })
         #expect(!motion.travels && !motion.isChoreographing)
     }
 
