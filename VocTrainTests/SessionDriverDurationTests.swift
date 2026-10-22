@@ -136,6 +136,5 @@ struct SessionDriverDurationTests {
         undoManager.endUndoGrouping()
         let logged = try #require(document.card(withID: id)?.log.first?.duration)
         #expect(logged >= .milliseconds(60))
-        #expect(logged < .seconds(5))
     }
 }

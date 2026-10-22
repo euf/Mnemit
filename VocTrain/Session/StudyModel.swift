@@ -46,6 +46,11 @@ final class StudyModel: Identifiable {
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
     /// same study day.
     init(document: VocabularyDocument, entry: Entry = .study) {
+        // Before the first card shows: the voice and the audio session are ready by then, and
+        // the stream's speech never sets them up in the middle of an animation. Before the
+        // driver too: its stopwatch starts with the first card, and opening the voice isn't on
+        // the card's account.
+        GreekSpeech.shared.open()
         let now = document.clock.now
         let stream: StudyStream
         switch entry {
@@ -60,9 +65,6 @@ final class StudyModel: Identifiable {
         driver = SessionDriver(document: document, stream: stream)
         stage = driver.isResting ? .resting : .asking
         driver.delegate = self
-        // Before the first card shows: the voice and the audio session are ready by then, and
-        // the stream's speech never sets them up in the middle of an animation.
-        GreekSpeech.shared.open()
     }
 
     /// The segment running: study, or practice; `SessionMode` is how the core records the
