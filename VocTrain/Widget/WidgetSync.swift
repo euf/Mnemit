@@ -23,8 +23,9 @@ final class WidgetSync {
     /// A deck that counts towards the forecast: the open one is taken as it is in memory,
     /// as its file may not hold the last grades yet.
     enum Source: Sendable {
-        case file(URL)
-        case open(Deck, StudyCalendar)
+        /// The file of a deck and the new-card allowance of the deck for the day.
+        case file(URL, allowance: Int? = nil)
+        case open(Deck, StudyCalendar, allowance: Int? = nil)
     }
 
     private let store: SnapshotStore
@@ -103,10 +104,10 @@ final class WidgetSync {
         let dates = WidgetSnapshot.forecastDates(from: now, calendar: calendar)
         let dueByDeck = inputs.decks.compactMap { source -> [Int]? in
             switch source {
-            case let .open(deck, studyCalendar):
-                return WidgetSnapshot.dueCounts(of: [deck], at: dates, calendar: studyCalendar)
-            case let .file(url):
-                return KnownDeckCounts.counts(at: url, on: dates)?.map(\.total)
+            case let .open(deck, studyCalendar, allowance):
+                return WidgetSnapshot.dueCounts(of: [deck], at: dates, calendar: studyCalendar, newCardAllowance: allowance)
+            case let .file(url, allowance):
+                return KnownDeckCounts.counts(at: url, on: dates, allowance: allowance)?.map(\.total)
             }
         }
         return WidgetSnapshot(now: now, progress: inputs.progress, dates: dates, dueByDeck: dueByDeck, nextReminder: inputs.nextReminder)

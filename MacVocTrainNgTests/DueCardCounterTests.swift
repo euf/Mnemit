@@ -26,6 +26,16 @@ struct DueCardCounterTests {
         #expect(dueCards.count == 2)
     }
 
+    @Test func newCardsAreCountedWithinTheDocumentsAllowance() throws {
+        let cards = (0..<6).map { Card(question: "n\($0)", answer: "x") }
+        let document = try VocabularyDocument(deck: Deck(cards: cards))
+        #expect(document.dueCards.counts.new == 6)
+        document.newCardAllowance = 2
+        #expect(document.dueCards.counts.new == 2)
+        document.newCardAllowance = nil
+        #expect(document.dueCards.counts.new == 6)
+    }
+
     /// The counter counts again at the start of every minute, like `TimelineView(.everyMinute)`.
     @Test func dueCardsAreCountedOnTheFullMinute() {
         let minute = Date(timeIntervalSince1970: 1_791_216_000)

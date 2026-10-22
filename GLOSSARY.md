@@ -256,7 +256,8 @@ wird daraus eine Stability. Nur im Zusammenhang mit dem Import benutzen.
 Terms of the fork, in English like its code and README. Each entry gives the term in code, the
 words on screen (EN / DE) and the Russian word for CLAUDE.md and HANDOFF.md. The rule behind
 them: **a card is never a review, and a review is never a card.** A day is measured in cards;
-reviews only price the time.
+reviews only price the time. The day is cut into short rounds, and the app learns how many of them
+the learner really does.
 
 **Review** (on screen: not counted; RU «оценка»):
 One grade of one card, as above: one swipe, button or key. A card can take several reviews on
@@ -267,13 +268,47 @@ _Avoid_: card, answer (the answer is a side of the card), повторение, 
 
 **Plan** (today's plan / heutiger Plan; RU «план дня»):
 The cards a study day asks, as FSRS sets them: review cards due on the day, the backlog share,
-cards in learning, and new cards within the day's limits (`StudySession.counts`).
+cards in learning, and new cards within the day's limits and the deck's allowance
+(`StudySession.counts`, `newCardAllowance`).
 _Avoid_: session, queue, due count
 
+**Round** (RU «раунд»):
+A stretch of the day's work: 120 s at the learner's pace (`DailyGoal.roundSeconds`). A card costs
+the pace of its kind, new at the day's start or other. Round k ends at the first card where the
+cost reaches k × 120 s, and the last round ends at the goal; a card that costs more than a round
+ends the rounds it spans (`DayRounds.ends`). The first round keeps the streak
+(`DailyProgress.streakKeptToday`). `DailyProgress` holds `rounds`, `roundsDone`, `roundEnds`,
+`cardsToNextRound` and `minutesToNextRound`, at the pace the day began with. A day that began with
+an empty plan cuts the cards as they stand into rounds.
+_Avoid_: session, lap, segment
+
+**Capacity** (RU «ёмкость дня»):
+How many rounds the day holds, 1 to 15 (`DailyProgress.capacity`). It comes from the review logs
+alone, forward from the first study day, so every device that reads the same logs gets the same: 2
+on the first day; each later day takes one step from the day before: one more if the ring was
+closed on each of the two days before it, one fewer if the day before ended with its ring open (a
+day without study is open when its plan had cards), else the same
+(`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`). The capacity sets the day's
+time, capacity × 120 s.
+_Avoid_: limit, quota, level
+
+**Admission** (new-card allowance; RU «допуск новых»):
+The new cards a day takes in: the time of the day less the day's plan cards that are not new, at
+the pace the day began with (the seven study days before it), over the price of a new card, at
+least 0 (`DailyGoal.newCardsAllowed`). The decks' own limits (`newCardsPerSession`,
+`newProductionPerSession`) are ceilings. Across all decks the allowance is shared in proportion to
+the ceilings, by largest remainder (`DailyGoal.split`); each deck's share is its
+`newCardAllowance`, which the plan takes (`DailyProgress.newCardAllowances`). Cards first reviewed
+today count against it, and "+10 new" comes beyond it.
+_Avoid_: new-card limit, daily new cards
+
 **Daily goal** (the K of "M of K cards" / „M von K Karten“; RU «цель дня»):
-The number of cards in the plan when the study day began at 04:00. It stays for the day: cards
-added later, "+10 new" and an Again don't raise it. A day that began with an empty plan takes
-the plan as it stands (`DailyGoal.goal`).
+The cards of the plan, as it stood when the study day began at 04:00, that fit the day's time:
+learning cards and reviews in the stream's order, then new cards, at the day's prices, up to the
+capacity in rounds; at least one card if the plan has any (`DayRounds.goal`). With admission the
+plan normally fits. After a break the reviews beyond the day's time stay in the plan and go to the
+laps. The goal stays for the day: cards added later, "+10 new" and an Again don't raise it. A day
+that began with an empty plan takes the plan as it stands (`DailyGoal.goal`).
 _Avoid_: reviews goal, target, quota
 
 **Done card** (the M of "M of K cards"; RU «сделанная карточка»):
@@ -284,8 +319,8 @@ took (`DeckActivity.done`).
 _Avoid_: reviewed card, answered card, «повторённая карточка»
 
 **Cards left** ("N cards left" / „noch N Karten“; RU «осталось»):
-Cards of the plan not done yet (`StudySession.counts(...).total` now). Done + left = goal as
-long as nothing was added to the plan.
+Cards of the plan not done yet (`StudySession.counts(...).total` now). Done + left = the plan,
+which is the goal or more: the reviews beyond the day's time are left, too.
 
 **Backlog** ("+N to catch up this week"; RU «хвост»):
 Review cards that were due before the study day began.
@@ -297,11 +332,14 @@ off after the plan.
 
 **Ring** (RU «кольцо»):
 Done cards against the daily goal. Done cards beyond the goal fill **laps** (×2, ×3): catch-up,
-review ahead and extra new cards.
+review ahead and extra new cards. The ring is closed at done ≥ goal.
 
 **Streak** (RU «стрик»):
-Study days in a row whose ring was closed (done ≥ goal); an empty plan counts. One missed day is
-repaired by doing the next day's plan; two in a row end the streak.
+Study days in a row that kept it. A day keeps it with its first round done (done ≥ the end of
+round 1); an empty plan counts. One missed day is repaired when the next day closes its ring
+(done ≥ goal): the first round of that day is not enough, and then the streak starts anew with
+it. Two missed days in a row end the streak. Days before `DailyGoal.planRuleStart` (23.10.2026)
+count with one review.
 
 **Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):
 Seconds per done card, in two prices (`Pace`): one for cards that were new when their study day

@@ -13,6 +13,16 @@ struct SessionViewModelTests {
         return try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: (0..<cards).map { Card(question: "q\($0)", answer: "a\($0)") }), calendar: .testing)
     }
 
+    @Test func theStreamTakesTheNewCardsOfTheDocumentsAllowance() throws {
+        let document = try makeDocument(cards: 6)
+        document.newCardAllowance = 2
+        let model = SessionViewModel(document: document, autoAdvance: true)
+        #expect(model.session.totalCount == 2)
+        // Without an allowance the plan is the deck's limits.
+        document.newCardAllowance = nil
+        #expect(SessionViewModel(document: document, autoAdvance: true).session.totalCount == 6)
+    }
+
     @Test func correctResponseMovesOnAndCanBeUndone() throws {
         let document = try makeDocument(cards: 2)
         let undoManager = makeUndoManager(for: document)

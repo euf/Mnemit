@@ -12,6 +12,11 @@ import VocabCore
 /// open come as documents, with their reviews not yet saved; the others are read from
 /// their files, once per `reloadFiles`, and kept.
 ///
+/// It also hands out the new-card allowance of each deck (`DailyProgress.newCardAllowances`), the
+/// deck's share of the new cards the day admits: to an open document as its `newCardAllowance`, and
+/// for a deck read from its file in `NewCardAllowances.today`, where whoever builds the plan of a
+/// deck from its file finds it.
+///
 /// The work runs off the main actor, after a short pause that later calls replace, so a
 /// grade doesn't wait for it, and a quick run of grades costs one evaluation.
 @MainActor @Observable
@@ -29,7 +34,9 @@ final class DailyRingModel {
     ///     the same files: after the app came back to the front, say. Without it the
     ///     files are read only if they are not the ones of the last call.
     ///   - delay: How long to wait for another call before evaluating.
-    func refresh(documents: [VocabularyDocument], files: [URL] = [], reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) {
+    /// - Returns: The evaluation, which a later call cancels: its `value` is there when the figures are.
+    @discardableResult
+    func refresh(documents: [VocabularyDocument], files: [URL] = [], reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) -> Task<Void, Never> {
         let decks = documents.map(\.deck)
         let calendar = documents.first?.calendar ?? StudyCalendar()
         let now = documents.first?.clock.now ?? Date()
@@ -37,10 +44,10 @@ final class DailyRingModel {
         let mustRead = reloadFiles || Set(files) != Set(known.keys)
 
         evaluation?.cancel()
-        evaluation = Task { [weak self] in
+        let evaluation = Task { [weak self] in
             try? await Task.sleep(for: delay)
             guard !Task.isCancelled else { return }
-            let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity]) in
+            let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity], NewCardAllowances) in
                 var fileActivities = known
                 if mustRead {
                     fileActivities = [:]
@@ -50,13 +57,26 @@ final class DailyRingModel {
                         }
                     }
                 }
-                let activities = decks.map { DeckActivity(deck: $0, calendar: calendar) } + files.compactMap { fileActivities[$0] }
-                return (DailyProgress.evaluate(activities, at: now, calendar: calendar), fileActivities)
+                let read = files.filter { fileActivities[$0] != nil }
+                let activities = decks.map { DeckActivity(deck: $0, calendar: calendar) } + read.compactMap { fileActivities[$0] }
+                let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar)
+                // In the order of the activities: the documents, then the files that were read.
+                var allowances = NewCardAllowances()
+                for (url, allowance) in zip(read, progress.newCardAllowances.dropFirst(decks.count)) {
+                    allowances[url] = allowance
+                }
+                return (progress, fileActivities, allowances)
             }.value
             guard !Task.isCancelled, let self else { return }
             fileActivities = result.1
             progress = result.0
+            NewCardAllowances.today.merge(result.2)
+            for (document, allowance) in zip(documents, result.0.newCardAllowances) {
+                document.newCardAllowance = allowance
+            }
         }
+        self.evaluation = evaluation
+        return evaluation
     }
 }
 
@@ -80,5 +100,32 @@ enum DeckFileReader {
             deck = try? DeckFile.decode(wrapper)
         }
         return deck
+    }
+}
+
+/// How many new cards each deck may introduce today next to its own limits: the deck's share of the
+/// new cards the day admits (`DailyProgress.newCardAllowances`), by the file the deck is kept in.
+/// `StudySession` takes it as `newCardAllowance`; a deck with no entry has none, and its plan is
+/// the one of its limits.
+struct NewCardAllowances: Equatable, Sendable {
+    private var byFile: [String: Int] = [:]
+
+    /// What the daily ring worked out last, for every deck file it has seen: the allowance of a deck
+    /// holds for the study day, so a file the last evaluation left out keeps the one it had.
+    @MainActor static var today = NewCardAllowances()
+
+    subscript(url: URL) -> Int? {
+        get { byFile[Self.key(url)] }
+        set { byFile[Self.key(url)] = newValue }
+    }
+
+    mutating func merge(_ other: NewCardAllowances) {
+        byFile.merge(other.byFile) { _, new in new }
+    }
+
+    /// The same file however its URL is spelled: the path of a package may end with a slash, and
+    /// `/var` is a link to `/private/var`.
+    private static func key(_ url: URL) -> String {
+        url.standardizedFileURL.resolvingSymlinksInPath().path
     }
 }

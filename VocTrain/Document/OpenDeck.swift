@@ -125,6 +125,8 @@ final class OpenDeck {
         guard let deck = file.takeLoadedDeck() else { return }
         if document == nil {
             let document = VocabularyDocument(deck: deck)
+            // What the daily ring worked out for the deck's file, so its plan is the day's from the first look.
+            document.newCardAllowance = NewCardAllowances.today[url]
             // Before anyone sees the document: changes and merges need it (#305).
             document.attachUndoManager(undoManager)
             file.document = document

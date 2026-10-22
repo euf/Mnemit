@@ -65,6 +65,15 @@ final class VocabularyDocument: ObservableObject {
     let clock: StudyClock
     /// The cards of the next study session, kept up to date as time passes.
     private(set) lazy var dueCards = DueCardCounter(document: self)
+    /// How many new cards the deck may introduce today next to its own limits: its share of the new
+    /// cards the day admits, which the daily ring works out (`DailyProgress.newCardAllowances`). `nil`
+    /// until it has, and the plan is that of the deck's limits. The plan of the study stream and what
+    /// the counter shows follow it.
+    var newCardAllowance: Int? {
+        didSet {
+            if newCardAllowance != oldValue { dueCards.refresh() }
+        }
+    }
     /// Remembers the encoded review log between saves, so autosave stays cheap.
     /// Thread-safe on its own, as saving uses it on a background thread.
     private let reviewLog = ReviewLogEncoder()

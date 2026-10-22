@@ -24,6 +24,14 @@ struct StudyModelTests {
         undoManager.endUndoGrouping()
     }
 
+    @Test func theStreamTakesTheNewCardsOfTheDocumentsAllowance() throws {
+        let (document, _) = try makeDocument(questions: ["a", "b", "c", "d", "e"])
+        document.newCardAllowance = 2
+        let model = StudyModel(document: document)
+        #expect(model.session.totalCount == 2)
+        #expect(document.dueCards.counts.new == 2)
+    }
+
     @Test func gradingNeedsTheAnswerShown() throws {
         let (document, undoManager) = try makeDocument()
         let model = StudyModel(document: document)

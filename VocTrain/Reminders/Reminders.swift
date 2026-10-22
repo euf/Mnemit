@@ -29,8 +29,8 @@ enum ReminderPlan {
 /// Local notifications only; the app has no push entitlement.
 ///
 /// The reminders of the next few days are scheduled at once, each with the counts of its
-/// own day (`StudySession.counts(for:at:calendar:)`, so cards that come due until then are
-/// in), and again whenever the counts may have changed: when the app goes to the
+/// own day (`StudySession.counts(for:at:calendar:newCardAllowance:)`, so cards that come due until
+/// then are in, and the new ones are those of today's allowance), and again whenever the counts may have changed: when the app goes to the
 /// background, after a deck closes, when the learner changes the time and when the app
 /// comes to the front. A day with nothing due gets no reminder.
 @MainActor @Observable
@@ -162,10 +162,12 @@ final class Reminders {
 
     private func counts(of deck: KnownDeck, on dates: [Date], open: OpenDeck?) async -> [StudyCounts]? {
         if let open, KnownDecks.isSameFile(open.url, deck.url), let document = open.document {
-            return dates.map { StudySession.counts(for: document.deck, at: $0, calendar: document.calendar) }
+            let allowance = document.newCardAllowance
+            return dates.map { StudySession.counts(for: document.deck, at: $0, calendar: document.calendar, newCardAllowance: allowance) }
         }
         let url = deck.url
-        return await Task.detached(priority: .utility) { KnownDeckCounts.counts(at: url, on: dates) }.value
+        let allowance = NewCardAllowances.today[url]
+        return await Task.detached(priority: .utility) { KnownDeckCounts.counts(at: url, on: dates, allowance: allowance) }.value
     }
 
     private func setBadge(_ count: Int) async {

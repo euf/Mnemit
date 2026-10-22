@@ -19,7 +19,7 @@ enum WidgetLink {
 /// small, a few kilobytes.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// The cards of the plan across all known decks at `date`, as the day's plan counts
-    /// them (`StudySession.counts(for:at:calendar:)`): the share of the backlog included, the
+    /// them (`StudySession.counts(for:at:calendar:newCardAllowance:)`): the share of the backlog included, the
     /// rest of it, the catch-up, not.
     struct Due: Codable, Equatable, Sendable {
         var date: Date
@@ -89,9 +89,9 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         return [now] + (0..<hours).map { first.addingTimeInterval(Double($0) * 3600) }
     }
 
-    /// The cards of the plan across `decks` at each of `dates`.
-    static func dueCounts(of decks: [Deck], at dates: [Date], calendar: StudyCalendar) -> [Int] {
-        dates.map { date in decks.reduce(0) { $0 + StudySession.counts(for: $1, at: date, calendar: calendar).total } }
+    /// The cards of the plan across `decks` at each of `dates`, the new ones within `newCardAllowance`.
+    static func dueCounts(of decks: [Deck], at dates: [Date], calendar: StudyCalendar, newCardAllowance: Int? = nil) -> [Int] {
+        dates.map { date in decks.reduce(0) { $0 + StudySession.counts(for: $1, at: date, calendar: calendar, newCardAllowance: newCardAllowance).total } }
     }
 }
 

@@ -6,7 +6,7 @@ import VocabCore
 /// What a study session started now would take, new, learning and review cards, for
 /// the deck screen, the toolbar, the menu, the session summary and the status bar of
 /// the card list. A card never studied counts only as far as the session would
-/// introduce it, see `StudySession.counts(for:at:calendar:)`.
+/// introduce it, see `StudySession.counts(for:at:calendar:newCardAllowance:)`.
 ///
 /// Counts again after every change to the deck and at the start of every minute,
 /// because cards become due as time passes. The minute is the one of
@@ -40,7 +40,7 @@ final class DueCardCounter {
     }
 
     private static func counts(of document: VocabularyDocument) -> StudyCounts {
-        StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar)
+        StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar, newCardAllowance: document.newCardAllowance)
     }
 
     /// The start of the minute after `date`. Every time zone is a whole number of

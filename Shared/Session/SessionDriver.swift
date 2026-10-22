@@ -136,7 +136,8 @@ final class SessionDriver {
     /// week; `nil` if there are none, and for a practice.
     var extraNew: ExtraNewCards? {
         guard !stream.isPracticeOnly else { return nil }
-        let count = StudyStream.extraNewCards(in: document.deck, at: document.clock.now, calendar: document.calendar)
+        let count = StudyStream.extraNewCards(
+            in: document.deck, at: document.clock.now, calendar: document.calendar, newCardAllowance: stream.newCardAllowance)
         guard count > 0 else { return nil }
         let load = NewCardLoad.reviewsPerDay(addingNewCards: count, options: document.deck.learningOptions, at: document.clock.now, calendar: document.calendar)
         return ExtraNewCards(cards: count, reviewsPerDay: Int(load.rounded()))
@@ -144,7 +145,7 @@ final class SessionDriver {
 
     /// What the stream shows at rest.
     var rest: StreamRest {
-        let counts = StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar)
+        let counts = StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar, newCardAllowance: stream.newCardAllowance)
         return StreamRest(
             isPracticeOnly: stream.isPracticeOnly,
             recap: stream.recap,

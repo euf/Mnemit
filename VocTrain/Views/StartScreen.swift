@@ -540,7 +540,8 @@ struct StartScreen: View {
 
     /// Reads the counts of every deck and the ring over them, and then sets the reminders by them.
     private func refreshCounts() async {
-        ring.refresh(documents: [], files: knownDecks.byName.map(\.url), reloadFiles: true, delay: .zero)
+        // The ring first: the new cards each deck takes today are its allowance, which the ring works out.
+        await ring.refresh(documents: [], files: knownDecks.byName.map(\.url), reloadFiles: true, delay: .zero).value
         await deckCounts.refresh(knownDecks.byName)
         await rescheduleReminders()
     }
@@ -575,9 +576,9 @@ struct StartScreen: View {
         let open = openDeck
         let decks = knownDecks.byName.map { known -> WidgetSync.Source in
             if let open, KnownDecks.isSameFile(open.url, known.url), let document = open.document {
-                return .open(document.deck, document.calendar)
+                return .open(document.deck, document.calendar, allowance: document.newCardAllowance)
             }
-            return .file(known.url)
+            return .file(known.url, allowance: NewCardAllowances.today[known.url])
         }
         return WidgetSync.Inputs(progress: progress, decks: decks, nextReminder: reminders.nextFire)
     }

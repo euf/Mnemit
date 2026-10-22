@@ -55,7 +55,8 @@ final class StudyModel: Identifiable {
         let stream: StudyStream
         switch entry {
         case .study:
-            stream = StudyStream(deck: document.deck, at: now, calendar: document.calendar, reviewMode: .revealed)
+            stream = StudyStream(
+                deck: document.deck, at: now, calendar: document.calendar, reviewMode: .revealed, newCardAllowance: document.newCardAllowance)
         case .practiceMistakes:
             stream = StudyStream(practicingMistakesIn: document.deck, at: now, calendar: document.calendar)
         case .practiceNewest:
