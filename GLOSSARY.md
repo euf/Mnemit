@@ -344,3 +344,22 @@ _Avoid_: session (except for the upstream types that still carry the name)
 New cards beyond the day's limits, taken from the rest screen. Their cost is shown in cards a
 day next week (`NewCardLoad`, which assumes every review Good, so a due day is one review of
 one card).
+
+**Words in memory** ("≈ N words in memory"; RU «слов в памяти»):
+The number of words the learner would recall right now, from FSRS alone: the sum, over the
+recognition cards that have been reviewed and are not suspended, of each card's probability of
+recall (`Scheduler.recallProbability`, `MemoryEstimate`). A word is its recognition card (a card
+without a kind, from an older deck, is one too); a production card is the same word the other way
+round and counts nothing, so a word with two cards counts once. A card never reviewed counts
+nothing; one in learning or relearning counts by the same function from its state. Nothing is
+stored, and the number is the model's own prediction, so it is honest by construction: it grows
+when the learner learns, falls over days without reviews and grows back with the reviews, and no
+count of cards or reviews can inflate it. The probability counts whole study days since the last
+review, as everywhere in the app: the number moves at the study day's change (04:00), a day
+without reviews has a gain of 0, and the fall shows against the day before. It is shown rounded
+down, so "≈ 412" never promises more than the model says. The **gain of the day** is now minus the
+number at 04:00, which takes each card as it stood before the day's reviews (replayed from its log,
+as `DeckActivity.plan` does) and is rounded to the nearest word. **Milestones** are 50, 100, 250,
+500, 1000, 1500, 2000, 3000 and 5000: the next one above the number now, and the one crossed
+today (the number at 04:00 below it, now at or above it). The decks add up (`MemoryEstimate.total`).
+_Avoid_: words learned, vocabulary size, «выученные слова»
