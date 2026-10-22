@@ -2,6 +2,13 @@
 
 ## Состояние
 
+- Версия 1.6 в `main`; на iPhone стоит 1.4.7 (5f6be2d). 1.6 не поставилась 22.10: в Xcode 27.1
+  (`/Applications/Xcode-27.1.0.app`) нет Apple ID, `xcodebuild` отвечает «No Accounts». После входа
+  EF в Xcode → Settings → Accounts ночной `ios-renew` (04:30) соберёт `main` сам, сразу —
+  `~/dotfiles/ios-renew --force`. Подпись текущей сборки истекает 29.10, FicTypeApp там же. Что умеет приложение и почему так — README, раздел
+  «Design choices»; экраны обоих приложений — `references/flows.md`; исследования FSRS —
+  `references/fsrs-research.md` и `references/fsrs-vs-sm17.md`. Задание суб-агенту писать по
+  `references/agent-lessons-rings.md`: один источник, потолок, правило остановки, базовая линия тестов.
 - Mac: `~/Applications/Mnemit.app`, `com.euf.mnemit`, ставится `Scripts/install-mac.sh`.
 - iPhone 13 mini (UDID `00008110-000411010C68401E`): Mnemit `com.euf.mnemit.ios` с виджетом
   `com.euf.mnemit.ios.widget`, ставится `~/dotfiles/ios-renew --force` (см. «Подпись iPhone»).
@@ -36,12 +43,37 @@
 
 ## Открыто
 
-- Живьём не проверены на телефоне: виджет (снимок через keychain, тап → учёба), «Open in Mnemit»
-  для `.apkg` из Files/Safari/Mail, «Compute from Review Log», клавиатура и фокус в Add Cards,
-  автоподгонка параметров после запуска (колода с 400+ повторениями получает строку «Updated …»
-  или «Checked …» в Options → Advanced) и на Mac при открытии документа.
-- Mac: новая колода из `.apkg` до сохранения называется в заголовке окна «Untitled», хотя Save As
-  предлагает имя колоды Anki; `.colpkg` пикер не предлагает, хотя `AnkiImport.read` его читает.
-- Mac: тест `CardListViewTests.firstClickIntoTableSelectsRow` падает, когда тестовое приложение
-  не на переднем плане; клик и фокус проверены вживую (`vqa`).
-- Позже по `references/flows.md`: примеры предложений из Tatoeba в Add Cards и на экране карточки.
+1. **Переписать историю git по-английски.** EF просил, отложено, пока работали агенты; сейчас веток
+   агентов нет. Только коммиты форка (автор euf, около 150 штук, `git log --author=euf`); коммиты
+   апстрима, включая немецкие и подписанные «Claude» за 10–15.10, не трогать. Инструмент —
+   `git-filter-repo` (`uv tool install --managed-python -p 3.12 git-filter-repo`), сообщения
+   переводить по смыслу, без LLM-трейлеров. Перед переписью — свежий клон как резерв, после —
+   `git push --force-with-lease origin main`; хешей в документах нет, ссылок на них править не надо.
+2. **Mac-сьют на слитом `main` не прогнан.** VocabCore 535 из 535 и iOS 252 из 252 зелёные; Mac
+   не запускался, потому что был поднят `~/.claude/ui-blocked`, а тесты открывают окна. Известные
+   падения, когда тестовое приложение не на переднем плане: `CardListViewTests.firstClickIntoTableSelectsRow`
+   и `focusedTableHandsFocusToNewTableWhenSorted`. Отдельный прогон класса проходит, клик и фокус
+   проверены вживую (`vqa`). Любое другое падение — новое.
+3. **Живая проверка на iPhone и Mac**, ни одно из этого на экране ещё не видели:
+   - браузер колод (`DeckWebBrowser`): лист на iPhone, окно на Mac, скачивание `.apkg` с AnkiWeb в
+     импорт. Если кнопка Download у AnkiWeb или MintDeck ведёт на хост вне `DeckSources.all`, файл
+     уйдёт в Safari — добавить хост в эту константу. Как скачивает MintDeck, не проверено;
+   - дневная цель: «N today», «+N to catch up this week», кольцо, этап Catch Up, виджет;
+   - строка пресета Anki в предпросмотре импорта новой колоды;
+   - автоподгонка параметров: колода с 400+ повторениями получает строку «Updated …» или
+     «Checked …» в Options → Advanced на iPhone и в Learning Options на Mac;
+   - виджет (снимок через keychain, тап → учёба), «Open in Mnemit» для `.apkg` из Files, Safari и
+     Mail, «Compute from Review Log», клавиатура и фокус в Add Cards.
+4. **Известное поведение, решать по жалобе:**
+   - backlog из нескольких карточек при пустом сегодняшнем плане просит одну в день
+     (`DailyGoal.backlogShare`: седьмая часть, если `onTime` меньше);
+   - с 23.10.2026 день засчитывается в streak, только если сделан весь план, новые карточки в
+     пределах лимита тоже; дни раньше — с одной оценкой (`DailyGoal.planRuleStart`, маркер `ponytail:`);
+   - лист Learning Options на Mac сохраняет снимок опций: подгонка, пришедшая, пока он открыт,
+     перезаписывается на Save, колода подгоняется снова при следующем открытии.
+5. Mac: новая колода из `.apkg` до сохранения называется в заголовке окна «Untitled», хотя Save As
+   предлагает имя колоды Anki; `.colpkg` пикер не предлагает, хотя `AnkiImport.read` его читает.
+6. Позже: примеры из Tatoeba в Add Cards и на экране карточки (`references/flows.md`); FSRS-7, когда
+   выйдет в релизе fsrs-rs; разброс сиблингов и балансировка нагрузки (сначала хранить выбранную
+   дату в логе, иначе устройства разойдутся); симулятор нагрузки для выбора целевой запоминаемости;
+   режим прослушивания; запоминаемость колоды Anki поверх пресета и `dr` карточки при импорте.
