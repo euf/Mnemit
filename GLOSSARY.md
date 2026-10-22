@@ -248,3 +248,73 @@ Die Vorgänger-App; ihre Dokumente lassen sich als Deck importieren.
 **Level**:
 Die Stufe einer Karte in MacVocTrain 1, die ihren nächsten Abstand fest vorgab. Beim Import
 wird daraus eine Stability. Nur im Zusammenhang mit dem Import benutzen.
+
+## Mnemit: the day, the ring, the streak
+
+Terms of the fork, in English like its code and README. Each entry gives the term in code, the
+words on screen (EN / DE) and the Russian word for CLAUDE.md and HANDOFF.md. The rule behind
+them: **a card is never a review, and a review is never a card.** A day is measured in cards;
+reviews only price the time.
+
+**Review** (on screen: not counted; RU «оценка»):
+One grade of one card, as above: one swipe, button or key. A card can take several reviews on
+one study day: the steps of a new card, an Again and its relearning. The review log
+(`reviews.jsonl`) holds reviews. Counts of reviews are for the optimizer, statistics and pace,
+never for the goal, the ring or the streak.
+_Avoid_: card, answer (the answer is a side of the card), повторение, ответ
+
+**Plan** (today's plan / heutiger Plan; RU «план дня»):
+The cards a study day asks, as FSRS sets them: review cards due on the day, the backlog share,
+cards in learning, and new cards within the day's limits (`StudySession.counts`).
+_Avoid_: session, queue, due count
+
+**Daily goal** (the K of "M of K cards" / „M von K Karten“; RU «цель дня»):
+The number of cards in the plan when the study day began at 04:00. It stays for the day: cards
+added later, "+10 new" and an Again don't raise it. A day that began with an empty plan takes
+the plan as it stands (`DailyGoal.goal`).
+_Avoid_: reviews goal, target, quota
+
+**Done card** (the M of "M of K cards"; RU «сделанная карточка»):
+A card whose last review of the study day left it due on a later day: FSRS let it go. A review
+card answered Hard, Good or Easy is done at once; a new card after its last learning step; a
+card answered Again once it leaves relearning. It counts once a day, however many reviews it
+took (`DeckActivity.done`).
+_Avoid_: reviewed card, answered card, «повторённая карточка»
+
+**Cards left** ("N cards left" / „noch N Karten“; RU «осталось»):
+Cards of the plan not done yet (`StudySession.counts(...).total` now). Done + left = goal as
+long as nothing was added to the plan.
+
+**Backlog** ("+N to catch up this week"; RU «хвост»):
+Review cards that were due before the study day began.
+
+**Backlog share** (RU «доля хвоста»):
+The part of the backlog the plan takes: at least a seventh of it and at least what a normal day
+asks, never more than the backlog (`DailyGoal.backlogShare`). The rest is **catch-up**, worked
+off after the plan.
+
+**Ring** (RU «кольцо»):
+Done cards against the daily goal. Done cards beyond the goal fill **laps** (×2, ×3): catch-up,
+review ahead and extra new cards.
+
+**Streak** (RU «стрик»):
+Study days in a row whose ring was closed (done ≥ goal); an empty plan counts. One missed day is
+repaired by doing the next day's plan; two in a row end the streak.
+
+**Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):
+Seconds per done card: the pauses of up to 120 s between consecutive reviews of a study day,
+summed over the last 7 study days and today, divided by the cards done on those days; 20 s
+while fewer than 20 cards were done (`DailyGoal.secondsPerCard`). Reviews only measure the
+time; the time is spread over done cards, so the steps of a new card and an Again are in its
+price. Time left = cards left × pace, in whole minutes (`DailyGoal.minutesLeft`).
+_Avoid_: seconds per review, seconds per answer
+
+**Stream** (Study; RU «поток»):
+Study without sessions: the plan, then a rest ("Done for today"), then catch-up, review ahead
+and practice (`StudyStream`).
+_Avoid_: session (except for the upstream types that still carry the name)
+
+**Extra new cards** ("+10 new"; RU «новые сверх лимита»):
+New cards beyond the day's limits, taken from the rest screen. Their cost is shown in cards a
+day next week (`NewCardLoad`, which assumes every review Good, so a due day is one review of
+one card).
