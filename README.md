@@ -50,8 +50,10 @@ are in [`references/`](references/).
   card was on screen while the app was in front. New cards and all other cards are priced apart:
   the typical time of a review (a lognormal mean from the median and the spread of the recorded
   times, so a card left open while away barely moves it) times the reviews a done card of that
-  kind took over the last week. Older logs without times are priced from the pauses between
-  reviews the same way; until there is enough data, 30 seconds a new card and 10 any other. The daily goal does not move during the day:
+  kind took over the last week; the reviews of cards begun and left open at the end of a day are
+  in neither count. Older logs without times are priced from the pauses between reviews, by their
+  median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
+  other. The daily goal does not move during the day:
   cards added later and "+10 new" fill laps, as do catch-up and review ahead. The ring keeps
   going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
   streak in days. The streak counts the days whose ring was closed, a day with nothing due

@@ -307,26 +307,32 @@ repaired by doing the next day's plan; two in a row end the streak.
 Seconds per done card, in two prices (`Pace`): one for cards that were new when their study day
 began (no review before the day), one for all others (review, relearning, learning carried over
 from an earlier day). The time of a review is how long its card was on screen, from the question
-shown to the grade, with the app active (`ReviewLogEntry.duration`, measured in
-`SessionDriver`; the time in the background, with the phone locked or behind another app is
-left out, a card left open in the active app is not capped). Where a kind has fewer than 20
-reviews with a duration, as in a log from before they were kept, the gap between consecutive
-reviews of a study day stands in for the time: it goes to the card of the later review, in the
-kind that card had that day: the steps of a new card are new, an Again on a review card and its
-relearning are other. A kind's price is the typical seconds per review times the reviews each of
-its done cards took. The typical seconds are the mean of the lognormal that the times of the kind
-follow, worked out from the median m and the interquartile range of their logarithms (a time is
-at least 1 s, s = IQR / 1.349): exp(m + s² / 2). A break is a rare time far in the tail and moves
-neither statistic while breaks are under a quarter of the times, so no cutoff decides what counts
-as work. The reviews per done card are all reviews of the kind over the last 7 study days and
-today, the first review of each day (it has no gap) included, divided by the cards of that kind
-done on those days; the steps and the Again are in the price. A kind with fewer than 20 times
-or fewer than 10 done cards is priced at 30 s for new and 10 s for other (`DailyGoal.pace`). The
-gaps hold the time between cards (menus, the rest screen) as well, so a price from gaps runs
-higher than one from durations. Time left = new cards left × new price + other cards left × other
-price, in whole minutes (`DailyGoal.minutesLeft`); a new card started today and still in its
-steps is among the new cards left (`StudyCounts.newAtDayStart`). The widget knows only how many
-cards are left, and keeps one price: the time left over the cards left.
+shown to the grade, with the app active (`ReviewLogEntry.duration`, measured in `SessionDriver`;
+the time in the background, with the phone locked or behind another app is left out, a card left
+open in the active app is not capped). Where a kind has fewer than 20 reviews with a duration, as
+in a log from before they were kept, the gap between consecutive reviews of a study day stands in
+for the time: it goes to the card of the later review, in the kind that card had that day: the
+steps of a new card are new, an Again on a review card and its relearning are other. A kind's price
+is the typical seconds per review times the reviews each of its done cards took. With durations the
+typical seconds are the mean of the lognormal that the durations of the kind follow, worked out
+from the median m and the interquartile range of their logarithms (a duration is at least 1 s, s =
+IQR / 1.349): exp(m + s² / 2); a duration has no break in it, as the time in the background is not
+recorded, and the mean prices the long right tail of real times. With gaps the typical seconds are
+their median: a break of minutes to hours is a gap too, over a quarter of the gaps on some days,
+and would spread the logarithms until the lognormal mean ran away from the time a review takes. The
+median ignores breaks while they are under half of the gaps; with a share p of breaks it is the 0.5
+/ (1 − p) quantile of the work gaps, a little above their median. The reviews per done card are the
+reviews of the cards of the kind that were done on the day they were reviewed, over the last 7
+study days and today, the first review of each day (it has no gap) included, divided by those done
+cards. A card left open at the day's end, in its steps or in relearning, is not done: its reviews,
+the Agains among them, are in neither the reviews nor the cards, though the gaps around them still
+count for the time of a review. The steps and the Again of a done card are in its price. A kind
+with fewer than 20 times or fewer than 10 done cards is priced at 30 s for new and 10 s for other
+(`DailyGoal.pace`). The gaps hold the time between cards (menus, the rest screen) as well, so a
+price from gaps runs higher than one from durations. Time left = new cards left × new price + other
+cards left × other price, in whole minutes (`DailyGoal.minutesLeft`); a new card started today and
+still in its steps is among the new cards left (`StudyCounts.newAtDayStart`). The widget knows only
+how many cards are left, and keeps one price: the time left over the cards left.
 _Avoid_: seconds per review, seconds per answer
 
 **Stream** (Study; RU «поток»):
