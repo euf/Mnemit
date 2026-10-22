@@ -116,18 +116,15 @@ struct StudyMotionTests {
         #expect(motion.shownDone == done - 1)
     }
 
-    /// The rest: the ring waits for the card to land, comes down, and the lines come once it has; Next Round takes
-    /// it back up and the cards are dealt as it nears the bar.
-    @Test func theRestIsReachedByTheRingsWayAndLeftBackwards() async throws {
+    /// The rest: the ring waits for the card to land and comes down with the slot showing; Next Round takes it back up
+    /// and applies the round at once. Only the states each call sets are checked: the timed steps between them run on
+    /// the main actor, which a full parallel run can hold up for seconds, and the frozen frames of
+    /// `StudyScreenSnapshotTests` (rest travel half and end, burst peak) show them.
+    @Test func theRestIsReachedByTheRingsWayAndLeftBackwards() {
         let motion = motion()
         motion.restBegan(afterLanding: true, reduceMotion: false)
         #expect(motion.showsRest && motion.travels && !motion.hasArrived && motion.showsSlot)
         #expect(motion.travel == 0)
-        try await wait(for: { motion.travel == 1 })
-        #expect(motion.travel == 1)
-        try await wait(for: { motion.hasArrived })
-        #expect(motion.hasArrived && !motion.showsSlot && motion.burstStartedAt != nil)
-        #expect(motion.isChoreographing == false)
 
         var applied = false
         var dealt = false
@@ -136,10 +133,6 @@ struct StudyMotionTests {
             cardsAfter: 0.2, arrival: .rises, apply: { applied = true }, didLeave: { true }, then: { dealt = true })
         #expect(applied && !dealt && motion.showsRest && !motion.hasArrived && motion.travel == 0)
         #expect(motion.restSnapshot != nil)
-        try await wait(for: { dealt })
-        #expect(dealt && !motion.showsRest && motion.arrival == .rises)
-        try await wait(for: { !motion.travels })
-        #expect(!motion.travels && !motion.isChoreographing)
     }
 
     /// Without travel (Reduce Motion) the rest is there at once, with no ring on the way and no burst.
