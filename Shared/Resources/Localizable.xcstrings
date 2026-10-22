@@ -273,6 +273,46 @@
         }
       }
     },
+    "%lld cards this round": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karte in dieser Runde"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Karten in dieser Runde"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld card this round"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld cards this round"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld cards today": {
       "localizations": {
         "de": {
@@ -6962,6 +7002,16 @@
         }
       }
     },
+    "suspended · leech": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ausgesetzt · Lernbremse"
+          }
+        }
+      }
+    },
     "the butterfly": {
       "localizations": {
         "de": {
@@ -7008,6 +7058,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "diesem Stapel"
+          }
+        }
+      }
+    },
+    "tomorrow": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "morgen"
           }
         }
       }

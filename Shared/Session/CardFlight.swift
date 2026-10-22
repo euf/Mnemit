@@ -57,6 +57,60 @@ final class CardFlight {
     /// is a share of it.
     var size = CGSize.zero
 
+    /// How a card stands at the moment a grade is given: where it was carried to, how it turned and
+    /// what colour it had taken. The iPhone sends the graded card off as a card of its own, from
+    /// this pose, while the next card is already in its place (`StudyMotion.depart`).
+    struct Release {
+        var offset = CGSize.zero
+        var rotation = Angle.zero
+        var pivot = UnitPoint.center
+        var tint: Grade?
+        var tintStrength = 0.0
+        var size = CGSize.zero
+    }
+
+    init() {}
+
+    /// A card standing as `release` says, for the one that leaves.
+    init(release: Release) {
+        offset = release.offset
+        rotation = release.rotation
+        pivot = release.pivot
+        tint = release.tint
+        tintStrength = release.tintStrength
+        size = release.size
+    }
+
+    /// The pose the card has now.
+    var release: Release {
+        Release(offset: offset, rotation: rotation, pivot: pivot, tint: tint, tintStrength: tintStrength, size: size)
+    }
+
+    /// The card has been sent off as a card of its own: the haptic of the grade, and this one is back
+    /// in its place at once, ready for the next card, which takes input while the old one still flies.
+    func didRelease(_ grade: Grade) {
+        if committing != grade { gradeFeedback += 1 }
+        committing = nil
+        zone = nil
+        isInGap = false
+        region = .none
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            offset = .zero
+            rotation = .zero
+            pivot = .center
+            tint = nil
+            tintStrength = 0
+        }
+    }
+
+    /// The card that leaves takes the full tint of its grade, a button's card too.
+    func tintFully(_ grade: Grade) {
+        tint = grade
+        withAnimation(.easeOut(duration: 0.15)) { tintStrength = Self.fullTint }
+    }
+
     /// Where the finger is, for easing the card when it changes: the dead zone, a gap or a zone.
     private enum Region: Equatable {
         case none
@@ -207,11 +261,17 @@ extension Color {
 struct FlightCard<Content: View>: View {
     var flight: CardFlight
     var content: Content
+    /// What rides on the card while it leaves, "in 8 days" (`GradeReceipt.flightLabel`), with how
+    /// much of it shows: it fades in as the card sets off.
+    var badge: String?
+    var badgeOpacity = 1.0
 
     private let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
 
-    init(flight: CardFlight, @ViewBuilder content: () -> Content) {
+    init(flight: CardFlight, badge: String? = nil, badgeOpacity: Double = 1, @ViewBuilder content: () -> Content) {
         self.flight = flight
+        self.badge = badge
+        self.badgeOpacity = badgeOpacity
         self.content = content()
     }
 
@@ -224,6 +284,12 @@ struct FlightCard<Content: View>: View {
                 .animation(.easeOut(duration: 0.12), value: flight.tint)
             text
             shape.strokeBorder(Color.primary.opacity(0.12))
+            if let badge {
+                FlightBadge(text: badge)
+                    .opacity(badgeOpacity)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, Spacing.margin)
+            }
         }
         .compositingGroup()
         .geometryGroup()
@@ -241,6 +307,27 @@ struct FlightCard<Content: View>: View {
         #else
         content
         #endif
+    }
+}
+
+/// The small capsule on a card that leaves: where it goes, "tomorrow", "in 3 months", "again today",
+/// "suspended · leech". The card's tint is a colour of its grade, so the capsule is in the colour of
+/// the card's surface and the label in the primary colour, as the card's own text is.
+struct FlightBadge: View {
+    var text: String
+
+    var body: some View {
+        Text(verbatim: text)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .padding(.horizontal, Spacing.gap)
+            .padding(.vertical, Spacing.hairline + 1)
+            .background { Capsule().fill(Color.cardSurface) }
+            .overlay { Capsule().strokeBorder(Color.primary.opacity(0.12)) }
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+            .accessibilityHidden(true)
     }
 }
 

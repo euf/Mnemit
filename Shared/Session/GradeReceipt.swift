@@ -29,6 +29,39 @@ struct GradeReceipt: Equatable {
         detail.map { "\(title) · \($0)" } ?? title
     }
 
+    /// Where the card goes when it is graded, which decides how it leaves the screen on the iPhone.
+    enum Destination: Equatable {
+        /// To another day, so the card is done: it flies into the ring in the bar.
+        case ring
+        /// Back today, in a learning step or after a lapse: it tucks under the stack of the round.
+        case stack
+        /// Nowhere the screen shows: a practice, which schedules nothing, or a leech, which
+        /// is suspended. The card flies out in the direction of its grade.
+        case away
+    }
+
+    var destination: Destination {
+        if isLeech { return .away }
+        switch interval {
+        case .days: return .ring
+        case .learning: return .stack
+        case nil: return .away
+        }
+    }
+
+    /// What rides on the card while it leaves: "tomorrow", "in 8 days", "in 3 months", "again today",
+    /// "suspended · leech"; `nil` in practice.
+    var flightLabel: String? {
+        if isLeech { return String(localized: "suspended · leech") }
+        if case .days(1) = interval { return String(localized: "tomorrow") }
+        return interval.map { Format.interval($0) }
+    }
+
+    /// What VoiceOver announces as the card leaves, since the label is gone in a moment: "Good, in 8 days".
+    var announcement: String {
+        [title, flightLabel].compactMap { $0 }.joined(separator: ", ")
+    }
+
     /// Stands in for the real one where only the size of a chip matters.
     fileprivate static let sizing = GradeReceipt(grade: .good, interval: .days(1))
 }

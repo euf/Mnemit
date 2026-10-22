@@ -69,7 +69,8 @@ struct StudyModelTests {
         #expect(document.card(withID: card.id) == card)
         #expect(model.currentCard == card)
         #expect(model.session.reviewCount == 0)
-        #expect(model.stage == .asking)
+        // The card returns with its answer showing, ready to be graded again.
+        #expect(model.stage == .revealed)
 
         undoManager.redo()
         #expect(document.card(withID: card.id)?.log.map(\.grade) == [.again])
@@ -212,41 +213,246 @@ struct StudyModelTests {
         #expect(model.questionNumber == 2)
     }
 
-    /// The view pulses its background when this grows: for a grade that sends a card to another
-    /// day, once, and not for one that keeps it today, for practice, or for undo.
-    @Test func progressPulsesOnlyWhenACardGoesToAnotherDay() throws {
-        // A due review card: Good lets it go to another day.
+    /// A document with one due review card: Good sends it to another day, Forgot makes it a lapse.
+    /// `lapses` is how many it has had, so a threshold can be one lapse away.
+    func reviewDocument(lapses: Int = 0, leechThreshold: Int = 8) throws -> (VocabularyDocument, UndoManager) {
         let lastReview = created.addingTimeInterval(-10 * 86400)
-        let state = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: created.addingTimeInterval(-86400), reviews: 1)
-        let due = Card(question: "due", answer: "x", created: created, learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
-        let reviewDocument = try VocabularyDocument(deck: Deck(cards: [due]), clock: StudyClock { [created] in created.addingTimeInterval(60) })
-        let reviewUndo = UndoManager()
-        reviewUndo.groupsByEvent = false
-        reviewDocument.attachUndoManager(reviewUndo)
-        let review = StudyModel(document: reviewDocument)
-        #expect(review.progressPulses == 0)
-        review.reveal()
-        grade(review, .good, undoManager: reviewUndo)
-        #expect(review.progressPulses == 1)
-        reviewUndo.undo()
-        reviewUndo.redo()
-        #expect(review.progressPulses == 1)
+        let state = LearningState(
+            phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: created.addingTimeInterval(-86400), reviews: 1 + lapses, lapses: lapses)
+        let card = Card(question: "due", answer: "x", created: created, learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
+        var options = LearningOptions()
+        options.leechThreshold = leechThreshold
+        let document = try VocabularyDocument(deck: Deck(learningOptions: options, cards: [card]), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+        let undoManager = UndoManager()
+        undoManager.groupsByEvent = false
+        document.attachUndoManager(undoManager)
+        return (document, undoManager)
+    }
 
-        // A new card: Forgot keeps it today, Easy sends it to another day.
+    /// The receipt says where the card goes, and the view lets it leave that way: into the ring when FSRS
+    /// lets it go to another day, under the stack when it comes back today, off the screen for a leech and
+    /// in a practice.
+    @Test func theReceiptDecidesWhereTheCardGoes() throws {
+        // A due review card: Good lets it go to another day.
+        let (reviewDoc, reviewUndo) = try reviewDocument()
+        let review = StudyModel(document: reviewDoc)
+        review.reveal()
+        reviewUndo.beginUndoGrouping()
+        let done = try #require(review.grade(.good))
+        reviewUndo.endUndoGrouping()
+        #expect(done.destination == .ring)
+        reviewUndo.undo()
+
+        // Forgot keeps it today, in relearning.
+        review.reveal()
+        reviewUndo.beginUndoGrouping()
+        let lapsed = try #require(review.grade(.again))
+        reviewUndo.endUndoGrouping()
+        #expect(lapsed.destination == .stack)
+
+        // A new card: a learning step keeps it today, Easy sends it to another day.
         let (document, undoManager) = try makeDocument(questions: ["dom"])
         let model = StudyModel(document: document)
         model.reveal()
         grade(model, .again, undoManager: undoManager)
-        #expect(model.progressPulses == 0)
         model.reveal()
-        grade(model, .easy, undoManager: undoManager)
-        #expect(model.progressPulses == 1)
+        undoManager.beginUndoGrouping()
+        let easy = try #require(model.grade(.easy))
+        undoManager.endUndoGrouping()
+        #expect(easy.destination == .ring)
 
-        // Practice schedules nothing.
+        // Practice schedules nothing: no interval, and the card flies off.
         let practice = StudyModel(document: document, entry: .practiceMistakes)
         practice.reveal()
-        grade(practice, .good, undoManager: undoManager)
-        #expect(practice.progressPulses == 0)
+        undoManager.beginUndoGrouping()
+        let practiced = try #require(practice.grade(.good))
+        undoManager.endUndoGrouping()
+        #expect(practiced.interval == nil)
+        #expect(practiced.destination == .away)
+    }
+
+    @Test func aLeechFliesOffEvenThoughItsGradeIsAnInterval() throws {
+        // One lapse short of the threshold: Forgot makes it a leech, and suspends it.
+        let (document, undoManager) = try reviewDocument(lapses: 7, leechThreshold: 8)
+        let model = StudyModel(document: document)
+        model.reveal()
+        undoManager.beginUndoGrouping()
+        let receipt = try #require(model.grade(.again))
+        undoManager.endUndoGrouping()
+        #expect(receipt.isLeech)
+        #expect(receipt.destination == .away)
+        #expect(receipt.flightLabel == "suspended · leech")
+    }
+
+    @Test func theLabelOnTheCardNamesWhereItGoes() {
+        func label(_ interval: ReviewInterval?, isLeech: Bool = false) -> String? {
+            GradeReceipt(grade: .good, interval: interval, isLeech: isLeech).flightLabel
+        }
+        #expect(label(.days(1)) == "tomorrow")
+        #expect(label(.days(8)) == "in 8 days")
+        #expect(label(.days(91)) == "in 3 months")
+        #expect(label(.days(800)) == "in 2 years")
+        #expect(label(.learning) == "again today")
+        #expect(label(.learning, isLeech: true) == "suspended · leech")
+        #expect(label(nil) == nil)
+        #expect(GradeReceipt(grade: .good, interval: .days(8)).announcement == "Good, in 8 days")
+        #expect(GradeReceipt(grade: .again, interval: .learning).announcement == "Forgot, again today")
+    }
+
+    /// The Undo button and the one in the menu are enabled by the same thing.
+    @Test func undoIsEnabledWhenThereIsAStepToTakeBack() throws {
+        let (document, undoManager) = try makeDocument()
+        let model = StudyModel(document: document)
+        #expect(!model.canUndo)
+
+        model.reveal()
+        #expect(!model.canUndo)
+        grade(model, .good, undoManager: undoManager)
+        #expect(model.canUndo)
+
+        undoManager.undo()
+        #expect(!model.canUndo)
+        undoManager.redo()
+        #expect(model.canUndo)
+
+        // Suspending is a step too.
+        undoManager.beginUndoGrouping()
+        model.suspendCurrentCard()
+        undoManager.endUndoGrouping()
+        #expect(model.canUndo)
+    }
+
+    /// Undo plays the grade backwards: the card comes out of the ring or from under the stack, and across the
+    /// end of a round the ring goes up to the bar first.
+    @Test func undoPlaysTheGradeBackwards() throws {
+        #expect(try StudyModel(document: makeDocument().0).undoReturn == nil)
+
+        // Into the ring, and out of it.
+        let (reviewDoc, reviewUndo) = try reviewDocument()
+        let review = StudyModel(document: reviewDoc)
+        review.reveal()
+        reviewUndo.beginUndoGrouping()
+        review.grade(.good)
+        reviewUndo.endUndoGrouping()
+        #expect(review.undoReturn == UndoReturn(from: .ring, fromRest: review.isResting))
+        review.undoLast()
+        #expect(review.returnedByUndo)
+        #expect(review.stage == .revealed)
+        #expect(review.undoReturn == nil)
+
+        // Under the stack, and up from it.
+        review.reveal()
+        reviewUndo.beginUndoGrouping()
+        review.grade(.again)
+        reviewUndo.endUndoGrouping()
+        #expect(review.undoReturn == UndoReturn(from: .stack, fromRest: false))
+        review.undoLast()
+        #expect(review.stage == .revealed)
+
+        // Each grade has its own way back, the last first.
+        let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d"])
+        let model = StudyModel(document: document)
+        model.reveal()
+        grade(model, .again, undoManager: undoManager)
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.undoReturn?.from == .ring)
+        model.undoLast()
+        #expect(model.undoReturn?.from == .stack)
+        model.undoLast()
+        #expect(model.undoReturn == nil)
+
+        // The grade that ends a round leaves the stream at rest, with the ring down in it.
+        let (roundDoc, roundUndo) = try makeDocument(questions: ["a", "b", "c"])
+        let rounded = StudyModel(document: roundDoc, rounds: RoundGuide(ends: [1, 3]))
+        rounded.reveal()
+        grade(rounded, .easy, undoManager: roundUndo)
+        #expect(rounded.isRoundRest)
+        #expect(rounded.undoReturn == UndoReturn(from: .ring, fromRest: true))
+        rounded.undoLast()
+        #expect(!rounded.isResting)
+        #expect(rounded.stage == .revealed)
+    }
+
+    /// The cards of the round that wait behind the one asked: the stack under the card.
+    @Test func theStackIsTheCardsLeftInTheRound() throws {
+        let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d", "e"])
+        let model = StudyModel(document: document, rounds: RoundGuide(ends: [3, 5]))
+        // Three cards end the first round: this one and two behind it.
+        #expect(model.cardsBehind == 2)
+
+        // Forgot keeps the card in the round: it goes under the stack, and the stack is as it was.
+        model.reveal()
+        grade(model, .again, undoManager: undoManager)
+        #expect(model.cardsBehind == 2)
+
+        // A card done leaves the stack one card shorter.
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.cardsBehind == 1)
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.cardsBehind == 0)
+
+        // Without rounds, and in a practice, there is no stack.
+        #expect(StudyModel(document: document, entry: .practiceMistakes).cardsBehind == 0)
+        let (plain, _) = try makeDocument(questions: ["a", "b", "c"])
+        #expect(StudyModel(document: plain).cardsBehind == 0)
+    }
+
+    /// The ring is evaluated after the stream is opened, say: the rounds count from the next card on.
+    @Test func roundsThatArriveWhileTheStreamIsOpenAreRestedFor() throws {
+        let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d", "e", "f"])
+        let model = StudyModel(document: document)
+        for _ in 0..<2 {
+            model.reveal()
+            grade(model, .easy, undoManager: undoManager)
+        }
+        #expect(!model.isResting)
+
+        // The progress arrives after two cards, with the rounds ending at 3 and 6.
+        model.adoptRounds(RoundGuide(ends: [3, 6]))
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        #expect(model.rest.roundEnd == RoundEnd(round: 1, rounds: 2))
+    }
+
+    /// A boundary already passed stays passed: no rest for it, and no turning back.
+    @Test func aRoundAlreadyEndedIsNotRestedForWhenTheRoundsArrive() throws {
+        let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d", "e", "f"])
+        let model = StudyModel(document: document)
+        for _ in 0..<3 {
+            model.reveal()
+            grade(model, .easy, undoManager: undoManager)
+        }
+        model.adoptRounds(RoundGuide(ends: [3, 6]))
+        #expect(!model.isResting)
+        #expect(model.currentCard != nil)
+        // The same rounds again change nothing.
+        model.adoptRounds(RoundGuide(ends: [3, 6]))
+        #expect(!model.isResting)
+    }
+
+    /// The model follows the ring by itself: the stream opens before the ring is evaluated, and rests at the
+    /// round's end the progress then names (six new cards cut into rounds of four and two).
+    @Test func theStreamFollowsTheRingForItsRounds() async throws {
+        let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d", "e", "f"])
+        let ring = DailyRingModel()
+        #expect(ring.progress == nil)
+        let model = StudyModel(document: document, ring: ring)
+        for _ in 0..<2 {
+            model.reveal()
+            grade(model, .easy, undoManager: undoManager)
+        }
+        await ring.refresh(documents: [document], delay: .zero).value
+        // The change reaches the model on the next turn of the main actor.
+        try await Task.sleep(for: .milliseconds(100))
+        for _ in 0..<2 {
+            model.reveal()
+            grade(model, .easy, undoManager: undoManager)
+        }
+        #expect(model.isRoundRest)
     }
 
     @Test func streamWithoutCardsRests() throws {
@@ -326,7 +532,7 @@ struct StudyModelTests {
         done(1, model, undoManager: undoManager)
         #expect(model.isRoundRest)
 
-        // The chip at the rest takes back the review that ended the round.
+        // Undo at the rest takes back the review that ended the round.
         undoManager.undo()
         #expect(!model.isResting)
         #expect(model.currentCard?.id == second.id)

@@ -38,15 +38,18 @@ final class StudyModel: Identifiable {
     /// Counts the questions asked: one more with every move to another card, also back
     /// after an undo, and to rest. The view speaks a Greek question when it changes.
     private(set) var questionNumber = 0
-    /// Counts the reviews that sent a card to another day, which is a card done: the view pulses
-    /// its background when it grows, once per review, however the grade was given. Undo and redo
-    /// don't count.
-    private(set) var progressPulses = 0
+    /// The question that came with the last move came back by Undo: its answer shows, as it did when the
+    /// card was graded, and nothing is spoken. The view brings the card back by the way it went.
+    private(set) var returnedByUndo = false
+    /// Where each undoable step sent its card, one entry per step: what Undo plays backwards.
+    private var destinations: [GradeReceipt.Destination] = []
+    private var undoIsComing = false
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
     /// same study day. With `rounds`, the plan rests at the end of each round of the day but the
-    /// last, see `SessionDriver`; a practice has none.
-    init(document: VocabularyDocument, entry: Entry = .study, rounds: RoundGuide? = nil) {
+    /// last, see `SessionDriver`; a practice has none. With a `ring`, the rounds come from its progress,
+    /// the one it has now and the ones it evaluates while the stream is open (`adoptRounds(_:)`).
+    init(document: VocabularyDocument, entry: Entry = .study, rounds: RoundGuide? = nil, ring: DailyRingModel? = nil) {
         // Before the first card shows: the voice and the audio session are ready by then, and
         // the stream's speech never sets them up in the middle of an animation. Before the
         // driver too: its stopwatch starts with the first card, and opening the voice isn't on
@@ -64,9 +67,31 @@ final class StudyModel: Identifiable {
             stream = StudyStream(practicingNewestWordsIn: document.deck, at: now)
         }
         self.document = document
-        driver = SessionDriver(document: document, stream: stream, rounds: entry == .study ? rounds : nil)
+        let guide = rounds ?? ring.flatMap { RoundGuide(progress: $0.progress, document: document) }
+        driver = SessionDriver(document: document, stream: stream, rounds: entry == .study ? guide : nil)
         stage = driver.isResting ? .resting : .asking
         driver.delegate = self
+        if entry == .study, let ring { follow(ring) }
+    }
+
+    /// Takes the rounds of the day from the progress of `ring` each time it changes while the stream is open.
+    private func follow(_ ring: DailyRingModel) {
+        withObservationTracking {
+            _ = ring.progress
+        } onChange: { [weak self, weak ring] in
+            // Called before the change: the new progress is there on the next turn.
+            Task { @MainActor in
+                guard let self, let ring else { return }
+                self.adoptRounds(RoundGuide(progress: ring.progress, document: self.document))
+                self.follow(ring)
+            }
+        }
+    }
+
+    /// The progress of the day was evaluated, or evaluated again: the rounds count from the next card on,
+    /// and the stream does not rest for a round the cards done by now have ended.
+    func adoptRounds(_ guide: RoundGuide?) {
+        driver.adoptRounds(guide)
     }
 
     /// The segment running: study, or practice; `SessionMode` is how the core records the
@@ -88,11 +113,11 @@ final class StudyModel: Identifiable {
     /// What the stream shows at rest.
     var rest: StreamRest { driver.rest }
 
-    /// What the last grade did, shown in the chip that offers Undo.
-    var receipt: GradeReceipt? { driver.lastReceipt }
-
-    func dismissReceipt() {
-        driver.dismissReceipt()
+    /// The cards of the current round waiting behind the one being asked, the ones that come back
+    /// today included: the view shows them as a stack of edges under the card. 0 without rounds,
+    /// in practice and once the goal is met.
+    var cardsBehind: Int {
+        max(0, (driver.cardsLeftInRound ?? 0) - 1)
     }
 
     /// Whether the app is active (the scene phase): the time while it isn't is left out of
@@ -106,20 +131,20 @@ final class StudyModel: Identifiable {
         stage = .revealed
     }
 
-    func grade(_ grade: Grade) {
-        guard stage == .revealed, driver.grade(grade) else { return }
-        // FSRS let the card go to another day: progress the learner can feel. Not a card that
-        // comes back today, a practice (no interval) or a leech that was suspended.
-        if let receipt = driver.lastReceipt, !receipt.isLeech, case .days = receipt.interval {
-            progressPulses += 1
-        }
+    /// - Returns: What the grade did, or `nil` if it was not given. Where the receipt sends the
+    ///   card (`GradeReceipt.destination`) decides how the view lets it leave.
+    @discardableResult
+    func grade(_ grade: Grade) -> GradeReceipt? {
+        guard stage == .revealed, driver.grade(grade), let receipt = driver.lastReceipt else { return nil }
+        destinations.append(receipt.destination)
+        return receipt
     }
 
     /// Suspends the card being asked, so no session asks it until the learner resumes
     /// it on the Mac, and moves on (#290). Undo takes it back like a review.
     func suspendCurrentCard() {
         guard stage != .resting else { return }
-        driver.suspendCurrentCard()
+        if driver.suspendCurrentCard() { destinations.append(.away) }
     }
 
     /// Whether the rest is the end of a round, not of the plan: Next Round goes on with the plan.
@@ -150,16 +175,49 @@ final class StudyModel: Identifiable {
         driver.stream.stepCount > 0
     }
 
+    /// Whether Undo can take back a review or suspension of this stream: the condition of the
+    /// button in the bar and of the one in the menu.
+    var canUndo: Bool {
+        hasUndoableSteps && document.undoManager?.canUndo == true
+    }
+
+    /// How the card that Undo brings back went away, so the view plays it backwards; `nil` where Undo
+    /// has nothing to take back. The stream at rest has the card's grade behind it: the ring has gone
+    /// down to the rest, and goes back up before the card returns.
+    var undoReturn: UndoReturn? {
+        guard canUndo, let from = destinations.last else { return nil }
+        return UndoReturn(from: from, fromRest: isResting)
+    }
+
     /// Takes back the last review or suspension of this stream, like Undo in the menu.
     func undoLast() {
-        guard hasUndoableSteps, document.undoManager?.canUndo == true else { return }
+        guard canUndo else { return }
         document.undoManager?.undo()
     }
+}
+
+/// Where the card that Undo brings back comes from, see `StudyModel.undoReturn`.
+struct UndoReturn: Equatable {
+    /// Where its grade sent the card: the ring, under the stack, or away.
+    var from: GradeReceipt.Destination
+    /// The stream rests now.
+    var fromRest: Bool
 }
 
 extension StudyModel: SessionDriverDelegate {
     func sessionDriverDidMoveOn(_ driver: SessionDriver) {
         questionNumber += 1
-        stage = driver.isResting ? .resting : .asking
+        returnedByUndo = undoIsComing
+        undoIsComing = false
+        stage = driver.isResting ? .resting : (returnedByUndo ? .revealed : .asking)
+    }
+
+    /// Undo or redo of a step: the steps of the stream are as many as the stream says now. A card
+    /// that Undo brings back shows its answer.
+    func sessionDriverDidRestore(_ driver: SessionDriver) {
+        let steps = driver.stream.stepCount
+        destinations.removeLast(max(0, destinations.count - steps))
+        while destinations.count < steps { destinations.append(.away) }
+        undoIsComing = document.undoManager?.isUndoing == true
     }
 }

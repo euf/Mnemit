@@ -56,8 +56,9 @@ Root is a `NavigationStack` on Today.
   done", for the first round "Streak kept", "Next round ≈ 2 min", "+4 words in memory today"
   when the day has added any. **Next Round** (default) goes on with the cards that were left;
   **Done for Now** closes the stream. No new cards, catch-up or next deck is offered here.
-  Undo, from the chip or the menu, takes back the review that ended the round and the rest
-  with it; redo brings it back.
+  Undo, from the button in the bar, the menu or a shake, takes back the review that ended the round
+  and the rest with it (on the iPhone the ring goes up to the bar first, then the card comes back
+  out of it); redo brings it back.
 - *Rest at the end of the plan* ("Done for today"): the size of the plan, the share recalled,
   "Ring closed" when the ring is closed, "+N words in memory today", the catch-up or the next
   review; **Keep Going**, "+10 new", **Done**, and **Next: <deck>** when another deck has cards due.

@@ -404,8 +404,8 @@ struct MemoryLine: View {
     var body: some View {
         if let milestone = memory.milestoneLine {
             HStack(spacing: 4) {
-                Image(systemName: "sparkles")
-                    .foregroundStyle(Color.accentColor)
+                // The glyph bursts the first time the line shows for a milestone.
+                MilestoneSparkles(milestone: memory.milestoneReachedToday)
                 Text(milestone)
                     .fontWeight(.semibold)
             }

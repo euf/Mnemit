@@ -15,13 +15,16 @@ struct DailyRingView: View {
     var diameter: CGFloat = 28
     /// Whether the ring sits in the study stream: the middle then counts laps, not days.
     var inStream = false
+    /// What the ring shows as done while it is ahead of the figures, a card having landed in it; `nil`
+    /// shows the figures.
+    var shownDone: Int?
     @State private var isShowingDetails = false
 
     var body: some View {
         Button {
             isShowingDetails = true
         } label: {
-            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: diameter, center: center)
+            ProgressRing(fraction: DailyRingFigure.fraction(progress, shownDone: shownDone), diameter: diameter, center: center)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
