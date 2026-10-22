@@ -14,6 +14,16 @@
         }
       }
     },
+    "%@ to keep your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, um deine Serie zu halten"
+          }
+        }
+      }
+    },
     "%@ → %@": {
       "shouldTranslate": false
     },
@@ -473,6 +483,16 @@
         }
       }
     },
+    "%lld left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noch %lld"
+          }
+        }
+      }
+    },
     "%lld lines without a word and a translation are left out.": {
       "localizations": {
         "de": {
@@ -703,6 +723,46 @@
         }
       }
     },
+    "%lld words in memory!": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wort im Gedächtnis!"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wörter im Gedächtnis!"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld word in memory!"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld words in memory!"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld-day streak": {
       "localizations": {
         "de": {
@@ -743,6 +803,46 @@
         }
       }
     },
+    "%lld-day streak · kept today": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie: %lld Tag · heute gehalten"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie: %lld Tage · heute gehalten"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld-day streak · kept today"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld-day streak · kept today"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "+%lld new": {
       "localizations": {
         "de": {
@@ -759,6 +859,56 @@
           "stringUnit": {
             "state": "translated",
             "value": "+%lld zum Nachholen in dieser Woche"
+          }
+        }
+      }
+    },
+    "+%lld today": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld heute"
+          }
+        }
+      }
+    },
+    "+%lld words in memory today": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "+%lld Wort heute im Gedächtnis"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "+%lld Wörter heute im Gedächtnis"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "+%lld word in memory today"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "+%lld words in memory today"
+                }
+              }
+            }
           }
         }
       }
@@ -2222,6 +2372,16 @@
         }
       }
     },
+    "Done for Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorerst fertig"
+          }
+        }
+      }
+    },
     "Done for today": {
       "localizations": {
         "de": {
@@ -3372,6 +3532,16 @@
         }
       }
     },
+    "Next Round": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Runde"
+          }
+        }
+      }
+    },
     "Next review": {
       "localizations": {
         "de": {
@@ -3388,6 +3558,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nächste Abfrage %@"
+          }
+        }
+      }
+    },
+    "Next round %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Runde %@"
           }
         }
       }
@@ -4452,6 +4632,36 @@
         }
       }
     },
+    "Ring closed": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ring geschlossen"
+          }
+        }
+      }
+    },
+    "Round %lld done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runde %lld geschafft"
+          }
+        }
+      }
+    },
+    "Round %lld of %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runde %1$lld von %2$lld"
+          }
+        }
+      }
+    },
     "Sample card: %@, %@": {
       "localizations": {
         "de": {
@@ -4888,6 +5098,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serie"
+          }
+        }
+      }
+    },
+    "Streak kept": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serie gehalten"
           }
         }
       }
@@ -6205,6 +6425,46 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "≈ %lld min"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "≈ %lld words in memory": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ %lld Wort im Gedächtnis"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ %lld Wörter im Gedächtnis"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ %lld word in memory"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "≈ %lld words in memory"
                 }
               }
             }

@@ -50,7 +50,7 @@ struct SessionView: View {
             if model.isResting {
                 StreamRestView(
                     rest: model.rest, progress: ring.progress,
-                    onKeepGoing: model.keepGoing, onAddNewCards: model.addNewCards, onDone: onClose)
+                    onKeepGoing: model.keepGoing, onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose)
             } else if let card = model.currentCard {
                 cardArea(card)
             }
@@ -188,7 +188,12 @@ struct SessionView: View {
                 .font(.headline)
                 .help("Practice doesn't change when cards come back")
         case .plan, .rest:
-            EmptyView()
+            // Where the learner is in the day: the round, while rounds remain.
+            if let round = ring.progress.flatMap({ RoundStatus($0).round }) {
+                Text(round)
+                    .font(.headline)
+                    .monospacedDigit()
+            }
         }
     }
 

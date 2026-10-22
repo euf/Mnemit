@@ -144,7 +144,7 @@ private struct DeckStream: View {
             if let model {
                 StudyView(model: model, ring: ring, onClose: onClose)
                     .safeAreaInset(edge: .bottom) {
-                        if model.isResting, let next {
+                        if model.isResting, !model.isRoundRest, let next {
                             NextButton(name: next.name, due: next.due, action: onNext)
                         }
                     }
@@ -155,7 +155,7 @@ private struct DeckStream: View {
         .documentSync(document, fileURL: deck.url, isEditable: deck.isEditable, merger: deck.merger, isInSession: model != nil)
         .onChange(of: canEdit, initial: true) {
             if canEdit, model == nil {
-                model = StudyModel(document: document, entry: entry)
+                model = StudyModel(document: document, entry: entry, rounds: RoundGuide(progress: ring.progress, document: document))
                 model?.setActive(scenePhase == .active)
             }
         }

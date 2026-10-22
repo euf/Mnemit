@@ -44,8 +44,9 @@ final class StudyModel: Identifiable {
     private(set) var progressPulses = 0
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
-    /// same study day.
-    init(document: VocabularyDocument, entry: Entry = .study) {
+    /// same study day. With `rounds`, the plan rests at the end of each round of the day but the
+    /// last, see `SessionDriver`; a practice has none.
+    init(document: VocabularyDocument, entry: Entry = .study, rounds: RoundGuide? = nil) {
         // Before the first card shows: the voice and the audio session are ready by then, and
         // the stream's speech never sets them up in the middle of an animation. Before the
         // driver too: its stopwatch starts with the first card, and opening the voice isn't on
@@ -63,7 +64,7 @@ final class StudyModel: Identifiable {
             stream = StudyStream(practicingNewestWordsIn: document.deck, at: now)
         }
         self.document = document
-        driver = SessionDriver(document: document, stream: stream)
+        driver = SessionDriver(document: document, stream: stream, rounds: entry == .study ? rounds : nil)
         stage = driver.isResting ? .resting : .asking
         driver.delegate = self
     }
@@ -119,6 +120,14 @@ final class StudyModel: Identifiable {
     func suspendCurrentCard() {
         guard stage != .resting else { return }
         driver.suspendCurrentCard()
+    }
+
+    /// Whether the rest is the end of a round, not of the plan: Next Round goes on with the plan.
+    var isRoundRest: Bool { isResting && rest.roundEnd != nil }
+
+    /// Goes on with the next round, from the rest at the end of one.
+    func continueRound() {
+        driver.continueRound()
     }
 
     /// Goes on beyond the plan, from rest: catch-up, review ahead, then practice.

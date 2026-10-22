@@ -58,7 +58,12 @@ final class SessionViewModel {
     /// Uses the document's clock, so reviews and the snapshot they update fall on the same study day.
     /// Types by default, so a test doesn't depend on the learner's preference; the app passes it.
     ///
-    init(document: VocabularyDocument, autoAdvance: Bool = Preferences.autoAdvance, studyBy: Preferences.StudyBy = .typing, entry: Entry = .study) {
+    /// With `rounds`, the plan rests at the end of each round of the day but the last, see `SessionDriver`;
+    /// a practice has none.
+    init(
+        document: VocabularyDocument, autoAdvance: Bool = Preferences.autoAdvance, studyBy: Preferences.StudyBy = .typing, entry: Entry = .study,
+        rounds: RoundGuide? = nil
+    ) {
         let now = document.clock.now
         let stream: StudyStream
         switch entry {
@@ -74,7 +79,7 @@ final class SessionViewModel {
         self.document = document
         self.autoAdvance = autoAdvance
         self.studyBy = studyBy
-        driver = SessionDriver(document: document, stream: stream)
+        driver = SessionDriver(document: document, stream: stream, rounds: entry == .study ? rounds : nil)
         stage = driver.isResting ? .resting : .asking
         driver.delegate = self
         let center = NotificationCenter.default
@@ -102,6 +107,11 @@ final class SessionViewModel {
 
     /// What the stream shows at rest.
     var rest: StreamRest { driver.rest }
+
+    /// Goes on with the next round, from the rest at the end of one.
+    func continueRound() {
+        driver.continueRound()
+    }
 
     /// Goes on beyond the plan, from rest: review ahead, then practice.
     func keepGoing() {

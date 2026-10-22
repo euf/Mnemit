@@ -257,4 +257,135 @@ struct StudyModelTests {
         #expect(!model.rest.canKeepGoing)
         #expect(model.extraNew == nil)
     }
+
+    // MARK: Rounds
+
+    /// `count` review cards that are due today, so the plan takes all of them (a backlog from before the day
+    /// would send a share of it) and a Good sends each to another day: a card done.
+    func makeDueDocument(count: Int) throws -> (VocabularyDocument, UndoManager) {
+        let calendar = StudyCalendar()
+        let dueToday = calendar.start(ofDay: calendar.dayNumber(for: created.addingTimeInterval(60)))
+        let lastReview = dueToday.addingTimeInterval(-10 * 86400)
+        let cards = (0..<count).map { index in
+            let state = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: dueToday, reviews: 1)
+            return Card(
+                question: "q\(index)", answer: "x", created: created, learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
+        }
+        let document = try VocabularyDocument(deck: Deck(cards: cards), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+        let undoManager = UndoManager()
+        undoManager.groupsByEvent = false
+        document.attachUndoManager(undoManager)
+        return (document, undoManager)
+    }
+
+    /// Grades the card being asked Good, `times` times, one undo group for each.
+    func done(_ times: Int, _ model: StudyModel, undoManager: UndoManager) {
+        for _ in 0..<times {
+            model.reveal()
+            grade(model, .good, undoManager: undoManager)
+        }
+    }
+
+    @Test func theStreamRestsAtTheEndOfARoundAndNextRoundGoesOn() throws {
+        let (document, undoManager) = try makeDueDocument(count: 5)
+        let model = StudyModel(document: document, rounds: RoundGuide(ends: [2, 4, 5]))
+        done(1, model, undoManager: undoManager)
+        #expect(!model.isResting)
+
+        done(1, model, undoManager: undoManager)
+        #expect(model.isResting && model.isRoundRest)
+        #expect(model.stage == .resting)
+        #expect(model.rest.roundEnd == RoundEnd(round: 1, rounds: 3))
+        #expect(model.currentCard == nil)
+        #expect(!model.rest.canKeepGoing)
+        // Nothing is graded while it rests.
+        model.reveal()
+        grade(model, .good, undoManager: undoManager)
+        #expect(model.session.reviewCount == 2)
+
+        model.continueRound()
+        #expect(!model.isResting)
+        #expect(model.stage == .asking)
+        #expect(model.currentCard != nil)
+        done(2, model, undoManager: undoManager)
+        #expect(model.rest.roundEnd == RoundEnd(round: 2, rounds: 3))
+        model.continueRound()
+        done(1, model, undoManager: undoManager)
+        // The last round ends in the rest of the plan.
+        #expect(model.isResting && !model.isRoundRest)
+        #expect(model.rest.roundEnd == nil)
+        #expect(model.rest.recap.cards == 5)
+    }
+
+    @Test func undoAcrossARoundBoundaryBringsTheCardBackAndTakesTheRestAway() throws {
+        let (document, undoManager) = try makeDueDocument(count: 5)
+        let model = StudyModel(document: document, rounds: RoundGuide(ends: [2, 4, 5]))
+        done(2, model, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        let second = try #require(document.deck.cards.first { $0.log.count == 2 })
+
+        // The chip at the rest takes back the review that ended the round.
+        undoManager.undo()
+        #expect(!model.isResting)
+        #expect(model.currentCard?.id == second.id)
+        #expect(document.card(withID: second.id)?.log.count == 1)
+        undoManager.redo()
+        #expect(model.isRoundRest)
+
+        // After Next Round, undo takes back the card of the new round, and again the one before the boundary.
+        model.continueRound()
+        done(1, model, undoManager: undoManager)
+        undoManager.undo()
+        #expect(!model.isResting)
+        undoManager.undo()
+        #expect(!model.isResting)
+        #expect(model.currentCard?.id == second.id)
+        // Done again, it ends the round again.
+        done(1, model, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        #expect(model.rest.roundEnd?.round == 1)
+    }
+
+    @Test func roundsDoneBeforeTheStreamBeganAreNotRestedFor() throws {
+        let (document, undoManager) = try makeDueDocument(count: 5)
+        // Two cards were done in another deck: round 1 is over, and the next ends at 4 and the last at 6.
+        let model = StudyModel(document: document, rounds: RoundGuide(ends: [2, 4, 6], doneElsewhere: 2))
+        done(1, model, undoManager: undoManager)
+        #expect(!model.isResting)
+        done(1, model, undoManager: undoManager)
+        #expect(model.rest.roundEnd == RoundEnd(round: 2, rounds: 3))
+    }
+
+    @Test func leavingAtARoundRestLosesNothingAndTheNextStreamGoesOn() throws {
+        let (document, undoManager) = try makeDueDocument(count: 5)
+        let model = StudyModel(document: document, rounds: RoundGuide(ends: [2, 4, 5]))
+        done(2, model, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        // Done for Now closes the stream; the reviews are in the deck, and the next stream starts with the
+        // rounds as they are then: round 1 is done, so it asks the third card at once.
+        let next = StudyModel(document: document, rounds: RoundGuide(ends: [2, 4, 5], doneElsewhere: 0))
+        #expect(document.deck.doneCards(onDayOf: document.clock.now, calendar: document.calendar) == 2)
+        #expect(!next.isResting)
+        #expect(next.currentCard != nil)
+        #expect(next.session.totalCount == 3)
+    }
+
+    @Test func aStreamWithoutRoundsOrAPracticeNeverRestsForThem() throws {
+        let (document, undoManager) = try makeDueDocument(count: 3)
+        let plain = StudyModel(document: document)
+        done(2, plain, undoManager: undoManager)
+        #expect(!plain.isResting)
+        #expect(plain.rest.roundEnd == nil)
+
+        let (other, otherUndo) = try makeDueDocument(count: 3)
+        // The cards go wrong first, so there is something to practice.
+        let first = StudyModel(document: other)
+        first.reveal()
+        grade(first, .again, undoManager: otherUndo)
+        let practice = StudyModel(document: other, entry: .practiceMistakes, rounds: RoundGuide(ends: [1, 2]))
+        #expect(!practice.isResting)
+        practice.reveal()
+        grade(practice, .good, undoManager: otherUndo)
+        #expect(!practice.isRoundRest)
+    }
 }

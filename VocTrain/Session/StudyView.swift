@@ -3,10 +3,10 @@ import VocabCore
 
 /// The study stream in the style of flash cards: the question, a touch shows the answer,
 /// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stream has
-/// no end of its own: today's plan, a short rest (`StreamRestView`), then catch-up, review
-/// ahead and practice. Every grade is saved at once, so leaving loses nothing. The bar shows the
-/// close button, today's done cards against the daily goal as a small ring with "14 of 30 cards",
-/// and the menu.
+/// no end of its own: today's plan, which rests at the end of each round (`StreamRestView`, Next
+/// Round goes on), a short rest at the end of the plan, then catch-up, review ahead and practice.
+/// Every grade is saved at once, so leaving loses nothing. The bar shows the close button, today's
+/// done cards against the daily goal as a small ring with "Round 2 of 4", and the menu.
 ///
 /// Once the answer shows, the card can be swiped instead of the buttons: left is Forgot,
 /// right Good, up Easy, down Hard (`GradeSwipe`, four sectors around the axes, with a gap
@@ -67,7 +67,7 @@ struct StudyView: View {
                         chip
                         StreamRestView(
                             rest: model.rest, progress: ring.progress,
-                            onKeepGoing: model.keepGoing, onAddNewCards: model.addNewCards, onDone: onClose)
+                            onKeepGoing: model.keepGoing, onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose)
                     }
                 } else if let card = model.currentCard {
                     cardArea(card)
@@ -181,7 +181,7 @@ struct StudyView: View {
         }
     }
 
-    /// "14 of 30 cards · ≈ 7 min" while the goal is open, "36 cards today" once it is met, beside a small ring.
+    /// "Round 2 of 4" while rounds remain, "36 cards today" after them, beside a small ring.
     @ViewBuilder
     private var ringAndFigures: some View {
         let daily = ring.progress?.ring
@@ -189,7 +189,9 @@ struct StudyView: View {
             StreamRing(progress: ring.progress)
             if let daily {
                 HStack(spacing: 4) {
-                    if daily.isGoalMet {
+                    if let round = ring.progress.flatMap({ RoundStatus($0).round }) {
+                        Text(round)
+                    } else if daily.isGoalMet {
                         Text("\(daily.done) cards today")
                     } else {
                         Text("\(daily.done) of \(daily.goal) cards")

@@ -26,14 +26,20 @@ final class SessionDriver {
     @ObservationIgnored private var deckObservation: AnyCancellable?
     /// Times the card being asked, from the moment `moveOn()` shows it.
     @ObservationIgnored private var stopwatch: ActiveStopwatch
+    /// Where the rounds of the day end, so the stream rests at each; `nil` for a stream that doesn't:
+    /// practice, and a day whose rounds are not known.
+    let rounds: RoundGuide?
 
     /// Starts with the current card of `stream`, or at rest. Tells the delegate of no
     /// move: it isn't set yet. `now` is the monotonic clock that times the cards; a test
-    /// moves it.
-    init(document: VocabularyDocument, stream: StudyStream, now: @escaping () -> SuspendingClock.Instant = { .now }) {
+    /// moves it. With `rounds` the stream rests at the end of each round of the day but the last:
+    /// the rounds that are done by then are not rested for.
+    init(document: VocabularyDocument, stream: StudyStream, rounds: RoundGuide? = nil, now: @escaping () -> SuspendingClock.Instant = { .now }) {
         self.document = document
         self.stream = stream
+        self.rounds = rounds
         stopwatch = ActiveStopwatch(now: now)
+        if let rounds { self.stream.startRounds(at: rounds.roundsDone(cardsDone: rounds.cardsDone(in: document))) }
         advance()
         refreshCurrentCard()
         deckObservation = document.deckDidChange.sink { [weak self] in
@@ -48,7 +54,7 @@ final class SessionDriver {
     var session: Session { stream.session }
 
     /// The stream waits for the learner: today's plan is done, or the practice of a
-    /// practice-only stream.
+    /// practice-only stream, or the plan stops at the end of a round.
     var isResting: Bool { stream.isResting }
 
     /// When the card being asked would be asked next after each grade, if given now; `nil`
@@ -105,7 +111,7 @@ final class SessionDriver {
     ///   nor while the document can't be changed (#305).
     @discardableResult
     func suspendCurrentCard() -> Bool {
-        guard document.isReadyToEdit, let id = session.currentCardID, let card = document.card(withID: id), !card.isSuspended else { return false }
+        guard document.isReadyToEdit, !isResting, let id = session.currentCardID, let card = document.card(withID: id), !card.isSuspended else { return false }
         let before = stream
         stream.perform(.suspend)
         guard document.setSuspended(true, of: [id], alongside: sessionRestore(from: before, to: stream)) else {
@@ -115,6 +121,14 @@ final class SessionDriver {
         lastReceipt = nil
         moveOn()
         return true
+    }
+
+    /// From the rest at the end of a round, goes on with the next one.
+    func continueRound() {
+        guard stream.roundRest != nil else { return }
+        stream.continueRound()
+        lastReceipt = nil
+        moveOn()
     }
 
     /// From rest, goes on beyond the plan: the catch-up, review ahead, practice.
@@ -153,7 +167,8 @@ final class SessionDriver {
             now: document.clock.now,
             catchUp: counts.catchUp,
             canKeepGoing: stream.canKeepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar),
-            extraNew: extraNew)
+            extraNew: extraNew,
+            roundEnd: stream.roundRest.map { RoundEnd(round: $0, rounds: rounds?.rounds ?? $0 + 1) })
     }
 
     /// Moves to the current card, past cards deleted or suspended meanwhile and on to the
@@ -171,6 +186,15 @@ final class SessionDriver {
         repeat {
             skipUnaskableCards()
         } while stream.advance(in: document.deck, at: document.clock.now, calendar: document.calendar)
+        restAtRoundEnd()
+    }
+
+    /// Rests if the cards done, in this deck as it is and in the others as they were, have ended a round
+    /// the learner has not been through. Asked every time the stream moves on, so redo finds the rest
+    /// again and undo, which brings back a stream from before it, finds none.
+    private func restAtRoundEnd() {
+        guard let rounds else { return }
+        stream.restAtRoundEnd(roundsDone: rounds.roundsDone(cardsDone: rounds.cardsDone(in: document)), rounds: rounds.rounds)
     }
 
     /// Cards deleted meanwhile, e.g. by undoing "Add Card" or by a merge, can't be
@@ -186,8 +210,9 @@ final class SessionDriver {
         return !card.isSuspended
     }
 
+    /// No card while the stream rests at the end of a round: the segment keeps it for the next one.
     private func refreshCurrentCard() {
-        currentCard = session.currentCardID.flatMap(document.card(withID:))
+        currentCard = isResting ? nil : session.currentCardID.flatMap(document.card(withID:))
     }
 
     /// Runs after every change to the deck, the session's own reviews included. Moves
@@ -291,5 +316,40 @@ struct ActiveStopwatch {
 
     var elapsed: Duration {
         banked + (since.map { now() - $0 } ?? .zero)
+    }
+}
+
+/// Where the rounds of today end, for a stream to rest at: `DailyProgress.roundEnds`, and how many cards
+/// the other decks have done, since the rounds count the cards of all decks together. The cards done in
+/// the deck the stream runs on are read from the document as it is, after each review.
+struct RoundGuide: Equatable, Sendable {
+    /// The card counts at which the rounds end, the last the goal.
+    var ends: [Int]
+    /// The cards done in the decks other than the one the stream runs on.
+    var doneElsewhere: Int
+
+    init(ends: [Int], doneElsewhere: Int = 0) {
+        self.ends = ends
+        self.doneElsewhere = max(0, doneElsewhere)
+    }
+
+    /// The guide for a stream over `document`, from the progress the app showed when the stream was
+    /// opened; `nil` before there is one, and for a day without rounds.
+    @MainActor
+    init?(progress: DailyProgress?, document: VocabularyDocument) {
+        guard let progress, progress.rounds > 0 else { return nil }
+        let here = document.deck.doneCards(onDayOf: document.clock.now, calendar: document.calendar)
+        self.init(ends: progress.roundEnds, doneElsewhere: progress.ring.done - here)
+    }
+
+    var rounds: Int { ends.count }
+
+    /// How many rounds `cardsDone` cards have ended.
+    func roundsDone(cardsDone: Int) -> Int { ends.filter { $0 <= cardsDone }.count }
+
+    /// The cards done today across the decks, with `document` as it is.
+    @MainActor
+    func cardsDone(in document: VocabularyDocument) -> Int {
+        doneElsewhere + document.deck.doneCards(onDayOf: document.clock.now, calendar: document.calendar)
     }
 }

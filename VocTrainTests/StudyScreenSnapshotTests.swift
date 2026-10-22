@@ -185,6 +185,47 @@ struct StudyScreenSnapshotTests {
         window.isHidden = true
     }
 
+    /// The stop at the end of a round: six new cards cut into two rounds of four and two, and the stream
+    /// rests when the fourth is done. The header before it names the round.
+    @Test(arguments: [false, true])
+    func roundEnd(dark: Bool) async throws {
+        try beSilent()
+        let (document, undoManager) = try makeDocument()
+        let ring = DailyRingModel()
+        ring.refresh(documents: [document], delay: .zero)
+        try await Task.sleep(for: .milliseconds(300))
+        let guide = try #require(RoundGuide(progress: ring.progress, document: document))
+        #expect(guide.ends == [4, 6])
+        let model = StudyModel(document: document, rounds: guide)
+        for _ in 0..<3 {
+            grade(model, .easy, undoManager: undoManager)
+        }
+        ring.refresh(documents: [document], delay: .zero)
+        try await Task.sleep(for: .milliseconds(300))
+        let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
+        try write(window, name: "8-round-header", dark: dark)
+        window.isHidden = true
+
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        ring.refresh(documents: [document], delay: .zero)
+        try await Task.sleep(for: .milliseconds(300))
+        let rest = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
+        try write(rest, name: "8-round-end", dark: dark)
+        rest.isHidden = true
+
+        model.continueRound()
+        #expect(!model.isResting)
+        grade(model, .easy, undoManager: undoManager)
+        grade(model, .easy, undoManager: undoManager)
+        ring.refresh(documents: [document], delay: .zero)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(model.isResting && !model.isRoundRest)
+        let done = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
+        try write(done, name: "8-plan-end", dark: dark)
+        done.isHidden = true
+    }
+
     /// A word that wraps to two lines, as the question and as the head of the answer, with an
     /// example sentence: with the chip, and without it.
     @Test(arguments: [false, true])

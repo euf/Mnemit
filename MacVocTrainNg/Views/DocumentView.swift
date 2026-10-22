@@ -231,7 +231,7 @@ struct DocumentView: View {
     /// Opens the study stream, which rests at once if today's plan is empty.
     private func startSession() {
         guard canEdit, session == nil, !document.deck.cards.isEmpty else { return }
-        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy())
+        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy(), rounds: RoundGuide(progress: ring.progress, document: document))
         session = model
         if model.studyBy == .flashcards {
             shortcutsHelp.showForFirstSession()
@@ -299,15 +299,20 @@ private struct RingChip: View {
         .accessibilityValue(help)
     }
 
-    /// "14 of 20 cards", with "· ≈ 7 min" for the cards left and "· 12-day streak" when there is one.
+    /// The round line, "Round 2 of 4 · ≈ 2 min", then "14 of 20 cards", "· 12-day streak" when there is one,
+    /// and "≈ 28 words in memory · +15 today".
     private var help: String {
         guard let progress else { return "" }
-        var parts = [String(localized: "\(progress.ring.done) of \(progress.ring.goal) cards")]
-        if let minutes = progress.minutesLeft {
-            parts.append(Format.timeLeft(minutes: minutes))
+        var parts: [String] = []
+        if let round = RoundStatus(progress).line {
+            parts.append(round)
         }
+        parts.append(String(localized: "\(progress.ring.done) of \(progress.ring.goal) cards"))
         if progress.streak.days > 0 {
             parts.append(String(localized: "\(progress.streak.days)-day streak"))
+        }
+        if let memory = progress.memory.line {
+            parts.append(memory)
         }
         return parts.joined(separator: " · ")
     }

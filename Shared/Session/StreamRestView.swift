@@ -9,6 +9,14 @@ struct ExtraNewCards {
     var reviewsPerDay: Int
 }
 
+/// The end of a round of the day, where the plan stops for a moment: "Round 1 done".
+struct RoundEnd: Equatable {
+    /// How many rounds are done.
+    var round: Int
+    /// How many the day holds.
+    var rounds: Int
+}
+
 /// What the stream shows while it rests, see `StreamRestView`.
 struct StreamRest {
     /// A practice from the deck screen, not the stream: it ends here.
@@ -25,19 +33,23 @@ struct StreamRest {
     var canKeepGoing: Bool
     /// What the stream could add beyond the daily limits; `nil` if there are no new cards.
     var extraNew: ExtraNewCards?
+    /// The rest is the end of a round, not the end of the plan: the plan goes on with Next Round.
+    var roundEnd: RoundEnd?
 }
 
-/// The short stop between today's plan and the rest of the stream: "Done for today" with
-/// the size of the plan, how many cards were recalled and when the next one is due, the
-/// ring, and what the learner can do from here. "Keep Going" works through the catch-up, then
-/// reviews ahead and practices, and is the default; the new cards beyond the daily limit need
-/// a button of their own, with a line that says what they cost in cards a day. A finished
+/// The short stop in the stream: at the end of a round of the day, "Round 1 done" with what the next one
+/// asks and the words the day has added to memory, and the learner goes on with Next Round or leaves with
+/// Done for Now; and at the end of the plan, "Done for today" with the size of the plan, how many cards were
+/// recalled and when the next one is due, the ring, and what the learner can do from here. "Keep Going" works
+/// through the catch-up, then reviews ahead and practices, and is the default; the new cards beyond the daily
+/// limit need a button of their own, with a line that says what they cost in cards a day. A finished
 /// practice ends with its figures.
 struct StreamRestView: View {
     var rest: StreamRest
     var progress: DailyProgress?
     var onKeepGoing: () -> Void
     var onAddNewCards: () -> Void
+    var onNextRound: () -> Void = {}
     var onDone: () -> Void
 
     var body: some View {
@@ -46,67 +58,130 @@ struct StreamRestView: View {
 
             DailyRingView(progress: progress, diameter: 96)
 
-            Text(rest.isPracticeOnly ? "Practice complete" : "Done for today")
-                .font(.title.weight(.semibold))
-                .padding(.top, Spacing.margin)
-
-            VStack(spacing: Spacing.hairline) {
-                if rest.recap.cards > 0 {
-                    if rest.isPracticeOnly {
-                        Text("\(rest.recap.cards) cards")
-                    } else {
-                        Text("\(rest.recap.cards) cards in today's plan")
-                    }
-                }
-                if let accuracy = rest.recap.accuracy {
-                    Text("\(Format.percent(accuracy)) recalled")
-                }
-                if !rest.isPracticeOnly, rest.catchUp > 0 {
-                    Text("+\(rest.catchUp) to catch up this week")
-                } else if !rest.isPracticeOnly, let nextDue = rest.nextDue {
-                    Text("Next review \(Format.due(nextDue, now: rest.now))")
-                }
+            if let end = rest.roundEnd {
+                roundEnd(end)
+            } else {
+                planEnd
             }
-            .foregroundStyle(.secondary)
-            .monospacedDigit()
-            .padding(.top, Spacing.tight)
-
-            VStack(spacing: Spacing.gap) {
-                if rest.canKeepGoing {
-                    Button(action: onKeepGoing) {
-                        Text("Keep Going")
-                            .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.defaultAction)
-                }
-                if let extra = rest.extraNew {
-                    VStack(spacing: Spacing.hairline) {
-                        Button(action: onAddNewCards) {
-                            Text("+\(extra.cards) new")
-                                .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
-                        }
-                        .buttonStyle(.bordered)
-                        Text("≈ +\(extra.reviewsPerDay) cards/day next week")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Button(action: onDone) {
-                    Text("Done")
-                        .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
-                }
-                .buttonStyle(.bordered)
-                .keyboardShortcut(rest.canKeepGoing ? nil : .defaultAction)
-            }
-            .controlSize(.large)
-            .frame(maxWidth: Metrics.buttonsWidth)
-            .padding(.top, Spacing.section)
 
             Spacer()
         }
         .padding(Spacing.margin)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: The end of a round
+
+    @ViewBuilder
+    private func roundEnd(_ end: RoundEnd) -> some View {
+        Text("Round \(end.round) done")
+            .font(.title.weight(.semibold))
+            .padding(.top, Spacing.margin)
+
+        VStack(spacing: Spacing.hairline) {
+            if end.round == 1 {
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .foregroundStyle(Color.appAccent)
+                        .accessibilityHidden(true)
+                    Text("Streak kept")
+                }
+            }
+            if let minutes = progress?.minutes(ofRound: end.round + 1) {
+                Text("Next round \(Format.timeLeft(minutes: minutes))")
+            }
+            if let gain = progress?.memory.gainSentence {
+                Text(gain)
+            }
+        }
+        .foregroundStyle(.secondary)
+        .monospacedDigit()
+        .padding(.top, Spacing.tight)
+
+        VStack(spacing: Spacing.gap) {
+            Button(action: onNextRound) {
+                Text("Next Round")
+                    .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
+            }
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.defaultAction)
+            Button(action: onDone) {
+                Text("Done for Now")
+                    .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
+            }
+            .buttonStyle(.bordered)
+        }
+        .controlSize(.large)
+        .frame(maxWidth: Metrics.buttonsWidth)
+        .padding(.top, Spacing.section)
+    }
+
+    // MARK: The end of the plan
+
+    @ViewBuilder
+    private var planEnd: some View {
+        Text(rest.isPracticeOnly ? "Practice complete" : "Done for today")
+            .font(.title.weight(.semibold))
+            .padding(.top, Spacing.margin)
+
+        VStack(spacing: Spacing.hairline) {
+            if rest.recap.cards > 0 {
+                if rest.isPracticeOnly {
+                    Text("\(rest.recap.cards) cards")
+                } else {
+                    Text("\(rest.recap.cards) cards in today's plan")
+                }
+            }
+            if let accuracy = rest.recap.accuracy {
+                Text("\(Format.percent(accuracy)) recalled")
+            }
+            if !rest.isPracticeOnly, progress?.ring.isGoalMet == true {
+                Text("Ring closed")
+            }
+            if !rest.isPracticeOnly, let gain = progress?.memory.gainSentence {
+                Text(gain)
+            }
+            if !rest.isPracticeOnly, rest.catchUp > 0 {
+                Text("+\(rest.catchUp) to catch up this week")
+            } else if !rest.isPracticeOnly, let nextDue = rest.nextDue {
+                Text("Next review \(Format.due(nextDue, now: rest.now))")
+            }
+        }
+        .foregroundStyle(.secondary)
+        .monospacedDigit()
+        .padding(.top, Spacing.tight)
+
+        VStack(spacing: Spacing.gap) {
+            if rest.canKeepGoing {
+                Button(action: onKeepGoing) {
+                    Text("Keep Going")
+                        .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+            }
+            if let extra = rest.extraNew {
+                VStack(spacing: Spacing.hairline) {
+                    Button(action: onAddNewCards) {
+                        Text("+\(extra.cards) new")
+                            .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
+                    }
+                    .buttonStyle(.bordered)
+                    Text("≈ +\(extra.reviewsPerDay) cards/day next week")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Button(action: onDone) {
+                Text("Done")
+                    .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
+            }
+            .buttonStyle(.bordered)
+            .keyboardShortcut(rest.canKeepGoing ? nil : .defaultAction)
+        }
+        .controlSize(.large)
+        .frame(maxWidth: Metrics.buttonsWidth)
+        .padding(.top, Spacing.section)
     }
 
     /// The gaps are from `Spacing`: 16 from the ring to the title, 8 to the figures, 24 to the
