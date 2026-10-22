@@ -59,10 +59,12 @@ struct AnkiDestinationSheet: View {
     private func destinations(of package: AnkiImport) -> some View {
         let name = CardImport.deckName(forDecks: package.deckNames, fileName: fileName)
         let file = ImportedFile(ankiAt: url, package: package)
+        var fileForNewDeck = file
+        fileForNewDeck.isNewDeck = true
         return List {
             Section {
                 Button {
-                    choose(file, .newDeck(named: name))
+                    choose(fileForNewDeck, .newDeck(named: name))
                 } label: {
                     RowLabel(title: "New Deck “\(name)”", symbol: "rectangle.stack.badge.plus")
                 }

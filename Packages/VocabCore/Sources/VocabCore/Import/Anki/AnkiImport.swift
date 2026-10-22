@@ -11,9 +11,10 @@ import Foundation
 /// | Legacy 2 | `collection.anki21`    | none        |
 /// | Latest   | `collection.anki21b`   | zstd, with a protobuf `meta` entry |
 ///
-/// Only notes, cards, the review log, the names of the decks and the fields and templates
-/// of the note types are read; scheduling state, media, tags, styles and the other
-/// collection settings are left. Cards come out in the order the notes were created.
+/// Only notes, cards, the review log, the names and presets of the decks and the fields and
+/// templates of the note types are read; scheduling state, media, tags, styles and the
+/// other collection settings are left. Of a preset the FSRS parameters and the desired
+/// retention are read (`AnkiPreset`), which a new deck takes (`learningOptions(applyingTo:)`). Cards come out in the order the notes were created.
 ///
 /// - Front and back are the first and second field of the note type, unless the card's
 ///   question template shows another field first: the second card of "Basic (and reversed
@@ -36,12 +37,16 @@ public struct AnkiImport: Sendable {
         public var reviews: [ReviewLogEntry]
         /// Whether the card is suspended in Anki (buried cards are not).
         public var isSuspended: Bool
+        /// The preset of the card's deck, as an index into `AnkiImport.presets`; `nil` if the
+        /// package doesn't say.
+        public var preset: Int?
 
-        public init(front: String, back: String, reviews: [ReviewLogEntry] = [], isSuspended: Bool = false) {
+        public init(front: String, back: String, reviews: [ReviewLogEntry] = [], isSuspended: Bool = false, preset: Int? = nil) {
             self.front = front
             self.back = back
             self.reviews = reviews
             self.isSuspended = isSuspended
+            self.preset = preset
         }
     }
 
@@ -66,13 +71,18 @@ public struct AnkiImport: Sendable {
     public var skippedEmpty: Int
     /// The decks the notes belong to, as "Parent::Child", sorted.
     public var deckNames: [String]
+    /// The deck presets the notes use, by their number in Anki (see `Note.preset`).
+    public var presets: [AnkiPreset]
 
-    public init(notes: [Note] = [], skippedCloze: Int = 0, skippedMediaRefs: Int = 0, skippedEmpty: Int = 0, deckNames: [String] = []) {
+    public init(
+        notes: [Note] = [], skippedCloze: Int = 0, skippedMediaRefs: Int = 0, skippedEmpty: Int = 0, deckNames: [String] = [], presets: [AnkiPreset] = []
+    ) {
         self.notes = notes
         self.skippedCloze = skippedCloze
         self.skippedMediaRefs = skippedMediaRefs
         self.skippedEmpty = skippedEmpty
         self.deckNames = deckNames
+        self.presets = presets
     }
 
     /// Reads the package at `url`.

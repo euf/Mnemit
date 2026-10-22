@@ -9,6 +9,13 @@ protobuf columns are the real ones:
   greek-legacy1.apkg  Legacy 1: the schema-11 collection of Legacy 2 as collection.anki2, no meta
   greek-latest-cli.apkg  Latest again, with the collection recompressed by the `zstd` command line tool
                       from a pipe, so its frame has no content size in the header (needs `zstd` in PATH)
+The deck of the four packages above uses the preset "Greek FSRS": 21 FSRS-6 parameters
+(`fsrsParams6`) and a desired retention of 0.85.
+  presets-latest.apkg, presets-legacy2.apkg
+                      Two decks with a preset each, as an older Anki leaves them: "Mix::A" (two cards)
+                      with 19 FSRS-5 parameters (`fsrsParams5`) and a retention of 0.95, "Mix::B" (one
+                      card) with 17 FSRS-4.5 parameters (`fsrsWeights`) and 0.8. A card in no deck of
+                      its own preset has none: "Mix::C" uses the stock "Default" preset.
 """
 
 import json
@@ -34,6 +41,31 @@ reversed_ = col.models.by_name("Basic (and reversed card)")
 cloze = col.models.by_name("Cloze")
 
 col.media.write_data("paste-1.jpg", b"\xff\xd8\xff\xd9")
+
+# FSRS-6 parameters in the ranges of the optimizer, not the defaults.
+GREEK_PARAMETERS = [
+    0.3178, 1.4204, 3.1073, 9.3125, 6.0231, 0.9166, 3.2872, 0.0010, 1.7841, 0.1502, 0.8873,
+    1.5340, 0.0580, 0.2487, 1.5792, 0.5538, 1.8995, 0.6270, 0.1024, 0.0701, 0.1730,
+]
+
+
+def make_preset(name, retention, **parameters):
+    """A new deck preset with the FSRS keys of the legacy JSON: fsrsWeights (17 values of
+    FSRS-4.5), fsrsParams5 (19 of FSRS-5), fsrsParams6 (21 of FSRS-6)."""
+    config = col.decks.add_config(name)
+    config["desiredRetention"] = retention
+    config.update(parameters)
+    col.decks.update_config(config)
+    return config["id"]
+
+
+def use_preset(deck_id, config_id):
+    deck_dict = col.decks.get(deck_id)
+    deck_dict["conf"] = config_id
+    col.decks.save(deck_dict)
+
+
+use_preset(deck, make_preset("Greek FSRS", 0.85, fsrsParams6=GREEK_PARAMETERS))
 
 
 def add(model, fields):
@@ -81,6 +113,27 @@ options = lambda legacy: ExportAnkiPackageOptions(
     with_scheduling=True, with_deck_configs=True, with_media=True, legacy=legacy)
 col.export_anki_package(out_path=os.path.join(out_dir, "greek-latest.apkg"), options=options(False), limit=DeckIdLimit(parent))
 col.export_anki_package(out_path=os.path.join(out_dir, "greek-legacy2.apkg"), options=options(True), limit=DeckIdLimit(parent))
+col.close()
+
+# Presets of the older FSRS versions, in a collection of their own.
+col = Collection(os.path.join(work, "presets.anki2"))
+mix = col.decks.id("Mix")
+basic = col.models.by_name("Basic")
+use_preset(col.decks.id("Mix::A"), make_preset(
+    "Five", 0.95, fsrsParams5=[
+        0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.54575, 0.1192,
+        1.01925, 1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621]))
+use_preset(col.decks.id("Mix::B"), make_preset(
+    "Four", 0.8, fsrsWeights=[
+        0.4872, 1.4003, 3.7145, 13.8206, 5.1618, 1.2298, 0.8975, 0.031, 1.6474, 0.1367,
+        1.0461, 2.1072, 0.0793, 0.3246, 1.587, 0.2272, 2.8755]))
+for deck_name, words in [("Mix::A", [("ένα", "one"), ("δύο", "two")]), ("Mix::B", [("τρία", "three")]), ("Mix::C", [("τέσσερα", "four")])]:
+    for front, back in words:
+        note = col.new_note(basic)
+        note.fields[0], note.fields[1] = front, back
+        col.add_note(note, col.decks.id(deck_name))
+col.export_anki_package(out_path=os.path.join(out_dir, "presets-latest.apkg"), options=options(False), limit=DeckIdLimit(mix))
+col.export_anki_package(out_path=os.path.join(out_dir, "presets-legacy2.apkg"), options=options(True), limit=DeckIdLimit(mix))
 col.close()
 
 # Legacy 1: the schema-11 collection of Legacy 2 under the old name, without meta.

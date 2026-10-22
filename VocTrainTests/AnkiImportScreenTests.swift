@@ -29,9 +29,9 @@ struct AnkiImportScreenTests {
         return (document, undoManager)
     }
 
-    private func preview(_ name: String, for document: VocabularyDocument) async throws -> CardImport.Preview {
+    private func preview(_ name: String, for document: VocabularyDocument, isNewDeck: Bool = false) async throws -> CardImport.Preview {
         let package = try await CardImport.loadAnki(at: Self.fixture(name))
-        return await CardImport.ankiPreview(of: package, fileName: "\(name).apkg", for: document)
+        return await CardImport.ankiPreview(of: package, fileName: "\(name).apkg", for: document, isNewDeck: isNewDeck)
     }
 
     // MARK: Routing
@@ -126,8 +126,11 @@ struct AnkiImportScreenTests {
         #expect(preview.candidates.allSatisfy { $0.duplicate == nil })
         // Everything is checked: the cards, the suspended one among them.
         #expect(preview.selection.count == 6)
-        #expect(anki.lines.count == 4)
+        // The package's preset has FSRS settings, which an existing deck doesn't take.
+        #expect(anki.settings == .keptForExistingDeck)
+        #expect(anki.lines.count == 5)
         #expect(anki.lines.first == String(localized: "4 with review history"))
+        #expect(anki.lines[1] == String(localized: "Anki's settings for this deck are not applied to an existing deck."))
     }
 
     @Test func cardsTheTargetDeckHasStartUncheckedAndTheHistoryIsReplayedWithItsOptions() async throws {
@@ -149,6 +152,75 @@ struct AnkiImportScreenTests {
         let replayed = try await self.preview("greek-latest", for: other).candidates[0].card
         #expect(kept.learningState?.phase != replayed.learningState?.phase)
         #expect(kept.log == replayed.log)
+    }
+
+    // MARK: Anki's FSRS settings
+
+    @Test func aNewDeckTakesTheSettingsOfAnkisPresetAndReplaysWithThem() async throws {
+        let (document, undoManager) = try makeDocument()
+        let preview = try await preview("greek-latest", for: document, isNewDeck: true)
+        let options = try #require(preview.learningOptions)
+        #expect(options.targetRecall == 0.85)
+        #expect(options.parameters.weights[0] == 0.3178)
+        #expect(options.parameters.weights[20] == 0.173)
+        // The rest of the deck's options stay.
+        var plain = document.deck.learningOptions
+        plain.parameters = options.parameters
+        plain.targetRecall = options.targetRecall
+        #expect(options == plain)
+
+        let anki = try #require(preview.anki)
+        #expect(anki.settings == .applied(target: 85))
+        #expect(anki.lines[1] == String(localized: "Uses Anki's FSRS settings: \("85 %") target"))
+
+        // The cat is replayed with them: another memory than under the deck's defaults.
+        let defaults = try await self.preview("greek-latest", for: document)
+        #expect(preview.candidates[0].card.learningState?.stability != defaults.candidates[0].card.learningState?.stability)
+
+        undoManager.beginUndoGrouping()
+        document.importCards(preview.selectedCards, learningOptions: preview.learningOptions)
+        undoManager.endUndoGrouping()
+        #expect(document.deck.learningOptions == options)
+        #expect(document.deck.cards.count == 6)
+
+        // One undo takes the cards and the settings back.
+        undoManager.undo()
+        #expect(document.deck.cards.isEmpty)
+        #expect(document.deck.learningOptions == LearningOptions())
+        #expect(!undoManager.canUndo)
+    }
+
+    @Test func anExistingDeckKeepsItsOptions() async throws {
+        let existing = Card(text: CardText(question: "ο κλέφτης", answer: "thief")!, created: created)
+        let (document, undoManager) = try makeDocument([existing])
+        let before = document.deck.learningOptions
+        // Even asked for as a new deck: a deck that has cards is not one.
+        for isNewDeck in [false, true] {
+            let preview = try await self.preview("greek-latest", for: document, isNewDeck: isNewDeck)
+            #expect(preview.learningOptions == nil)
+            #expect(preview.anki?.settings == .keptForExistingDeck)
+            undoManager.beginUndoGrouping()
+            document.importCards(preview.selectedCards, learningOptions: preview.learningOptions)
+            undoManager.endUndoGrouping()
+            #expect(document.deck.learningOptions == before)
+            undoManager.undo()
+        }
+    }
+
+    @Test func thePresetMostCardsUseDecidesAndAPresetWithoutSettingsSaysNothing() async throws {
+        let (document, _) = try makeDocument()
+        // Two cards of the FSRS-5 preset at 95 %, one of FSRS-4.5 at 80 %, one of the stock preset.
+        let five = try await preview("presets-latest", for: document, isNewDeck: true)
+        #expect(five.learningOptions?.targetRecall == 0.95)
+        #expect(five.anki?.settings == .applied(target: 95))
+        #expect(five.learningOptions?.parameters.weights[20] == 0.5)
+
+        // A package whose preset is the stock one: nothing to take, and nothing to say.
+        let package = AnkiImport(notes: [.init(front: "a", back: "b", preset: 0)], presets: [AnkiPreset(name: "Default", desiredRetention: 0.9)])
+        let plain = await CardImport.ankiPreview(of: package, fileName: "a.apkg", for: document, isNewDeck: true)
+        #expect(plain.learningOptions == nil)
+        #expect(plain.anki?.settings == .absent)
+        #expect(plain.anki?.lines.count == 1)
     }
 
     // MARK: Add

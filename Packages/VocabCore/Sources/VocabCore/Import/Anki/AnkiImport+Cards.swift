@@ -41,9 +41,16 @@ extension DeckChange {
     /// an import that brings history along (`adding(_:to:)` takes new cards only). Cards
     /// whose ID `deck` holds already are left out, so it never replaces a card; `nil` if
     /// that leaves none.
-    public static func importing(_ cards: [Card], into deck: Deck) -> DeckChange? {
+    ///
+    /// `learningOptions` are the options the cards were made with, for a deck that is new
+    /// (`AnkiImport.learningOptions(applyingTo:)`): the deck takes them in the same change, so
+    /// one undo takes both back. Pass them only for a deck without cards: the cards of the deck
+    /// are not replayed again.
+    public static func importing(_ cards: [Card], into deck: Deck, learningOptions: LearningOptions? = nil) -> DeckChange? {
         var ids = Set(deck.cards.map(\.id))
         let added = cards.filter { ids.insert($0.id).inserted }
-        return added.isEmpty ? nil : DeckChange(upserts: added)
+        var options = learningOptions
+        options?.sanitize()
+        return added.isEmpty ? nil : DeckChange(upserts: added, learningOptions: options == deck.learningOptions ? nil : options)
     }
 }

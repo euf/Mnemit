@@ -66,7 +66,9 @@ Adopt (decided 22.10.2026):
 2. **Anki preset parameters and desired retention on `.apkg` import.** Loudwalk and StudyDaily
    read each Anki deck preset's FSRS parameters and desired retention; Avorio fits parameters
    to the imported log. **[I]** Without this an imported deck is replayed under Mnemit's
-   defaults and its due dates shift from what Anki showed.
+   defaults and its due dates shift from what Anki showed. **In Mnemit:** a new deck takes the
+   preset most imported cards use (`AnkiImport.learningOptions(applyingTo:)`, 17- and 19-value sets
+   extended as Anki does, see `deck-formats-and-sources.md` §1.5); an existing deck keeps its options.
 
 Later, with the reason:
 

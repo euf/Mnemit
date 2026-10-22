@@ -150,12 +150,22 @@
   партию.
 - Импорт Anki (`.apkg`, `.colpkg`; VocabCore, `Import/Anki`, экраны — следующий пункт): `AnkiImport.read(url)`
   читает три раскладки (`collection.anki2`, `.anki21`, `.anki21b` под zstd с protobuf `meta`) и
-  отдаёт `notes` (front, back, `reviews`, `isSuspended`), счётчики пропусков (`skippedCloze`,
-  `skippedMediaRefs`, `skippedEmpty`) и `deckNames`; синхронный и тяжёлый, звать не с главного
+  отдаёт `notes` (front, back, `reviews`, `isSuspended`, `preset`), счётчики пропусков (`skippedCloze`,
+  `skippedMediaRefs`, `skippedEmpty`), `deckNames` и `presets`; синхронный и тяжёлый, звать не с главного
   потока. Карточки с историей — `AnkiImport.cards(from:learningOptions:calendar:created:)`: состояние
   берётся повтором повторений через `Scheduler.replaying` с параметрами FSRS колоды (память самого
-  Anki не читается), в колоду их кладёт `DeckChange.importing(_:into:)` (`adding` берёт только новые
-  карточки без лога). Зависимость одна: `facebook/zstd` (SwiftPM, BSD, в `THIRD_PARTY_NOTICES.md`);
+  Anki не читается), в колоду их кладёт `DeckChange.importing(_:into:learningOptions:)` (`adding` берёт
+  только новые карточки без лога). Пресеты (`AnkiPreset`: имя, `parameters`, `desiredRetention`) идут
+  из `col.dconf` схемы 11 (ключи `fsrsWeights`, `fsrsParams5`, `fsrsParams6`, `desiredRetention`) и
+  таблицы `deck_config` схемы 18 (protobuf-поля 3, 5, 6 и 37; `decks.kind` ведёт к пресету колоды);
+  берётся самый новый непустой список, как в `DeckConfig::fsrs_params` rslib. `fsrsParameters` даёт
+  21 значение: 17 и 19 дополняются как `check_and_fill_parameters_fsrs6` в fsrs-rs 6.6.2 и
+  прижимаются к диапазонам (`clip_parameters`), другая длина не берётся.
+  `AnkiImport.learningOptions(applyingTo:)` ставит параметры и запоминаемость (в
+  `LearningOptions.sanitize`) пресета, которым пользуется больше всего карточек; пресет без
+  настроек FSRS (нет читаемых параметров, запоминаемость 0.9 как у Anki по умолчанию) даёт `nil`.
+  Не читаются: запоминаемость колоды (`Deck.Normal.desired_retention`) поверх пресета и `dr` карточки
+  из `cards.data`. Зависимость одна: `facebook/zstd` (SwiftPM, BSD, в `THIRD_PARTY_NOTICES.md`);
   Compression zstd не знает. Фикстуры настоящих пакетов — `Tests/VocabCoreTests/Resources/Anki`,
   скрипт их сборки лежит рядом (`uv run --with anki`).
 - Экраны импорта Anki (`Shared/Support/CardImport+Anki.swift`, `.apkg` принимают пикер iPhone,
@@ -166,18 +176,24 @@
   историей, пропуски cloze, медиа, пустых); дубликаты по вопросу против целевой колоды без галки
   (`CardImporter.candidates(of:existing:)`, общий с CSV). Пакет читает `CardImport.loadAnki(at:)`
   вне главного потока (доступ, `NSFileCoordinator`), карточки считает `ankiPreview` там же:
-  параметры FSRS и календарь берутся из целевой колоды. «Add N Cards» — `importCards` →
-  `DeckChange.importing`, один Undo. iPhone: URL разбирает `IncomingLink` (study, ankiPackage, deck)
+  параметры FSRS и календарь берутся из целевой колоды, а у новой колоды (`isNewDeck`, без карточек)
+  параметры и запоминаемость — из пресета Anki (`Preview.learningOptions`). «Add N Cards» —
+  `importCards(_:learningOptions:)` → `DeckChange.importing`, один Undo: карточки и опции новой
+  колоды уходят одним изменением. В предпросмотре строка `AnkiSummary.settings`: «Uses Anki's FSRS
+  settings: 90 % target» у новой колоды, «Anki's settings for this deck are not applied to an
+  existing deck.» у существующей; без настроек FSRS в пресете строки нет. iPhone: URL разбирает `IncomingLink` (study, ankiPackage, deck)
   в `StartScreen.open`; пакет копируется в `tmp/IncomingAnki` (`IncomingPackages`: URL бывает
   scoped, в Inbox или в iCloud), лист `AnkiDestinationSheet` читает его и спрашивает, куда: «New
   Deck “<имя>”» (`DeckFiles.create` в текущей папке, имя — `CardImport.deckName`, занятое
-  получает « 2», « 3») или колода из списка; затем тот же `AddCardsHost` с `ImportPreviewSheet`.
+  получает « 2», « 3»; файл помечен `ImportedFile.isNewDeck`) или колода из списка; затем тот же
+  `AddCardsHost` с `ImportPreviewSheet`.
   Пока накрыто введение или поток Study, пакет ждёт (`waitingAnki`). Ссылка «Shared Decks on
   AnkiWeb» (`AnkiWebLink`, `Link` в Safari) — в меню «+», пустом Today и на экране колоды. Mac:
   `AppDelegate.application(_:open:)` ведёт `.apkg` из Finder тем же путём, что «Import Cards» окна
   приветствия (`WelcomeRequest.requestImportCards(from:)` и новый документ), окно нового документа
-  зовёт `DocumentView.importCards(from:namesDeck:)` и называет безымянную колоду (`displayName`)
-  по колоде Anki; колоды из Finder уходят оттуда в `NSDocumentController.openDocument`.
+  зовёт `DocumentView.importCards(from:namesDeck:)`, называет безымянную колоду (`displayName`)
+  по колоде Anki и берёт настройки пресета (`isNewDeck`: `namesDeck`, документ без файла и карточек);
+  «Import Cards» из меню окна колоды (`namesDeck` ложь) оставляет настройки колоды; колоды из Finder уходят оттуда в `NSDocumentController.openDocument`.
 - Импорт и экспорт CSV/TSV: логика общая, `CardImport` и `CardExport` в `Shared/Support`; на Mac
   к ним добавлены панели файлов (`CardImportPanel`, `CardExportPanel`), на iPhone — листы ниже.
   Выгрузка начинается строками Anki `#separator:tab` (или `comma`), `#html:false`,

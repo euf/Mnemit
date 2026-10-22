@@ -20,14 +20,18 @@ enum CardImport {
         let skippedRows: Int
         /// What an Anki package brought and left out; `nil` for a CSV or TSV file.
         let anki: AnkiSummary?
+        /// The options the cards were made with when Anki's preset sets them, for a new deck: the
+        /// deck takes them with the cards. `nil` keeps the deck's own.
+        let learningOptions: LearningOptions?
         /// The cards to add; duplicates start out unselected.
         var selection: Set<Card.ID>
 
-        init(fileName: String, candidates: [CardImporter.Candidate], skippedRows: Int, anki: AnkiSummary? = nil) {
+        init(fileName: String, candidates: [CardImporter.Candidate], skippedRows: Int, anki: AnkiSummary? = nil, learningOptions: LearningOptions? = nil) {
             self.fileName = fileName
             self.candidates = candidates
             self.skippedRows = skippedRows
             self.anki = anki
+            self.learningOptions = learningOptions
             selection = Set(candidates.filter { $0.duplicate == nil }.map(\.id))
         }
 

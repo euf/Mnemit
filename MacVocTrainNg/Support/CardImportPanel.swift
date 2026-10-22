@@ -14,15 +14,16 @@ extension CardImport {
     }
 
     /// Reads the file at `url` into the preview for the deck of `document`; the cards of an Anki
-    /// package are made off the main thread. `nil`, after telling the learner, if the file can't
-    /// be read or has no cards.
-    static func preview(ofFileAt url: URL, for document: VocabularyDocument) async -> Preview? {
+    /// package are made off the main thread. `isNewDeck`: the document is a new deck for the
+    /// package, which takes Anki's FSRS settings. `nil`, after telling the learner, if the file
+    /// can't be read or has no cards.
+    static func preview(ofFileAt url: URL, for document: VocabularyDocument, isNewDeck: Bool = false) async -> Preview? {
         let name = url.lastPathComponent
         let preview: Preview
         do {
             if url.isAnkiPackage {
                 let package = try await loadAnki(at: url)
-                preview = await ankiPreview(of: package, fileName: name, for: document)
+                preview = await ankiPreview(of: package, fileName: name, for: document, isNewDeck: isNewDeck)
             } else {
                 let data = try Data(contentsOf: url)
                 preview = self.preview(of: data, fileName: name, existing: document.deck.cards, created: document.clock.now)

@@ -64,7 +64,7 @@ struct ImportPreviewView: View {
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Button("Import \(preview.selection.count) Cards") {
-                    document.importCards(preview.selectedCards)
+                    document.importCards(preview.selectedCards, learningOptions: preview.learningOptions)
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
