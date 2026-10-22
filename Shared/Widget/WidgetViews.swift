@@ -51,6 +51,17 @@ extension WidgetState {
         Text("\(done) of \(goal) cards")
     }
 
+    /// What the day asks next, in rounds (`RoundStatus.title`), while cards are left and the snapshot knows the
+    /// rounds; `nil` otherwise, and the headline says the cards left.
+    fileprivate var roundTitle: LocalizedStringResource? {
+        due > 0 ? roundStatus?.title : nil
+    }
+
+    /// "≈ 28 words in memory".
+    fileprivate var wordsLine: LocalizedStringResource? {
+        wordsInMemory.flatMap { MemoryEstimate.wordsLine($0) }
+    }
+
     /// For the circular widget, whose middle holds the cards left: no streak number, and one lap
     /// at most, as the badge of the laps would hang out of the circle the system cuts.
     fileprivate var ringWithoutStreak: DailyProgress {
@@ -66,7 +77,22 @@ private struct HeadlineLine: View {
     var font: Font
 
     var body: some View {
-        if let timeLeft = state.timeLeft {
+        if let title = state.roundTitle {
+            // "Round 2 of 4", the time of the round on the line under it; before the first round the time
+            // is in the title, and long enough to take a second line.
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .font(font)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                if let time = state.roundStatus?.time {
+                    Text(verbatim: time)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        } else if let timeLeft = state.timeLeft {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     state.headline
@@ -101,8 +127,8 @@ private struct StreakLine: View {
         if state.streakDays > 0 {
             HStack(spacing: 4) {
                 Image(systemName: "flame.fill")
-                    .foregroundStyle(state.isGoalMet ? Color.appAccent : Color.secondary)
-                    .widgetAccentable(state.isGoalMet)
+                    .foregroundStyle(state.isStreakKept ? Color.appAccent : Color.secondary)
+                    .widgetAccentable(state.isStreakKept)
                 Text("\(state.streakDays)-day streak")
             }
         }
@@ -113,8 +139,8 @@ private struct SmallWidget: View {
     var state: WidgetState
 
     var body: some View {
-        // With the time under the headline there are three lines of text, and the ring gives up 8 pt.
-        let hasTime = state.timeLeft != nil
+        // With the time under the headline, or a title of two lines, there are three lines of text, and the ring gives up 8 pt.
+        let hasTime = state.timeLeft != nil || state.roundTitle != nil
         VStack(alignment: .leading, spacing: hasTime ? 6 : 8) {
             DailyRingView(progress: state.progress, diameter: hasTime ? 56 : 64)
                 .widgetAccentable()
@@ -124,8 +150,8 @@ private struct SmallWidget: View {
                 state.progressLine
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            .lineLimit(1)
         }
         .monospacedDigit()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -148,6 +174,13 @@ private struct MediumWidget: View {
                 StreakLine(state: state)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if let words = state.wordsLine {
+                    // The column beside the ring and the Study button is about 127 pt wide.
+                    Text(words)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .minimumScaleFactor(0.7)
+                }
                 if let reminder = state.nextReminder {
                     Text("Reminder at \(Text(reminder, style: .time))")
                         .font(.footnote)
@@ -199,9 +232,16 @@ private struct RectangularWidget: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            state.headline
-                .font(.headline)
-                .widgetAccentable()
+            Group {
+                if let title = state.roundTitle {
+                    Text(title)
+                } else {
+                    state.headline
+                }
+            }
+            .font(.headline)
+            .minimumScaleFactor(0.6)
+            .widgetAccentable()
             state.progressLine
                 .font(.caption)
             StreakLine(state: state)

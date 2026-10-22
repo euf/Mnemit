@@ -22,8 +22,29 @@ struct WidgetShotsTests {
 
     /// What a widget shows in the states worth a picture.
     static let states: [(name: String, state: WidgetState?)] = [
-        // Under way: 12 of 20, 42 due, a streak not yet kept today, the reminder ahead.
-        ("progress", WidgetState(date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10)),
+        // Between rounds: round 2 of 4 under way, 12 of 20, 8 left, the streak kept, the words in memory, the reminder ahead.
+        (
+            "progress",
+            WidgetState(
+                date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10, rounds: 4,
+                roundsDone: 1, minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15)
+        ),
+        // Before the first round: the streak is not kept yet.
+        (
+            "first-round",
+            WidgetState(
+                date: now, done: 3, goal: 20, streakDays: 7, isGoalMet: false, due: 17, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 0,
+                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 0)
+        ),
+        // The rounds are done with cards still left: the ring is closed.
+        (
+            "closed",
+            WidgetState(
+                date: now, done: 21, goal: 20, streakDays: 8, isGoalMet: true, due: 6, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 4,
+                wordsInMemory: 120, wordsToday: 9)
+        ),
+        // A snapshot of the old kind, 12 of 20 and 42 due: the cards left stand.
+        ("old", WidgetState(date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10)),
         // Goal reached twice over, nothing left due, the streak kept.
         ("laps", WidgetState(date: now, done: 45, goal: 20, streakDays: 31, isGoalMet: true, due: 0, nextReminder: nil)),
         // A fresh day: nothing reviewed, three digits due, no streak yet.

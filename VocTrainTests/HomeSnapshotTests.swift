@@ -29,6 +29,14 @@ struct HomeSnapshotTests {
         DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil))
     }
 
+    /// The day cut into four rounds, which end at 8, 16, 24 and 30 cards, with `done` of them done, and the words in memory.
+    static func roundsProgress(done: Int, streak: Int, memory: MemoryEstimate = MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2)) -> DailyProgress {
+        let rounds = DayRounds(otherCards: 30, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), capacity: 4)
+        return DailyProgress(
+            ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: streak, repairCards: nil), pace: Pace(newCard: 30, otherCard: 15),
+            roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0, memory: memory)
+    }
+
     func today(
         decks: [KnownDeck] = [greekA1, greekB1], counts: [URL: StudyCounts], progress: DailyProgress?, query: String = "",
         hits: [AllCardsSearch.Hit] = []
@@ -45,6 +53,16 @@ struct HomeSnapshotTests {
         [
             Self.greekA1.url: Self.counts(new: 30, learning: 0, review: 30),
             Self.greekB1.url: Self.counts(new: 20, learning: 4, review: 3),
+        ]
+    }
+
+    /// What is left of the plan when `done` of its 30 cards are done, across the two decks.
+    func leftCounts(done: Int) -> [URL: StudyCounts] {
+        let left = max(0, 30 - done)
+        let first = (left * 2 + 2) / 3
+        return [
+            Self.greekA1.url: Self.counts(new: first / 3, learning: 0, review: first - first / 3, nextDue: Self.now.addingTimeInterval(86_400)),
+            Self.greekB1.url: Self.counts(new: 0, learning: 0, review: left - first, nextDue: Self.now.addingTimeInterval(86_400)),
         ]
     }
 
@@ -147,18 +165,44 @@ struct HomeSnapshotTests {
 
     // MARK: Tests
 
+    /// Between rounds: "Round 2 of 4 · ≈ 2 min", the cards done and left, the streak kept, the words in memory.
     @Test func todayWithCardsDue() async throws {
-        try await shoot("today-due", today(counts: dueCounts, progress: Self.progress(done: 14, goal: 20, streak: 12)))
+        try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)))
     }
 
     @Test func todayWithCardsDueAtLargeTypeSizes() async throws {
-        try await shoot(
-            "today-due", today(counts: dueCounts, progress: Self.progress(done: 14, goal: 20, streak: 12)),
-            types: [.xxxLarge, .accessibility3])
+        try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)), types: [.xxxLarge, .accessibility3])
+    }
+
+    /// Before the first round: the time it takes to keep the streak, which is not kept yet.
+    @Test func todayBeforeTheFirstRound() async throws {
+        try await shoot("today-first-round", today(counts: leftCounts(done: 3), progress: Self.roundsProgress(done: 3, streak: 12)))
+    }
+
+    /// The last round done with cards still left: the ring is closed and the rest goes into laps.
+    @Test func todayWithTheRingClosed() async throws {
+        try await shoot("today-closed", today(counts: leftCounts(done: 28), progress: Self.roundsProgress(done: 31, streak: 13)))
+    }
+
+    /// A milestone of the words in memory passed today.
+    @Test func todayWithAMilestonePassed() async throws {
+        let memory = MemoryEstimate(words: 51.3, wordsAtDayStart: 44)
+        try await shoot("today-milestone", today(counts: leftCounts(done: 9), progress: Self.roundsProgress(done: 9, streak: 4, memory: memory)))
+    }
+
+    /// The very first day: no streak, no words yet.
+    @Test func todayOnTheFirstDay() async throws {
+        let memory = MemoryEstimate(words: 0, wordsAtDayStart: 0)
+        try await shoot("today-first-day", today(counts: leftCounts(done: 0), progress: Self.roundsProgress(done: 0, streak: 0, memory: memory)))
+    }
+
+    /// Before the rounds are known the old lines stand: the cards left and the time they take.
+    @Test func todayWithoutRounds() async throws {
+        try await shoot("today-no-rounds", today(counts: dueCounts, progress: Self.progress(done: 14, goal: 20, streak: 12)))
     }
 
     @Test func todayWithNothingDueAfterReviews() async throws {
-        try await shoot("today-done", today(counts: doneCounts, progress: Self.progress(done: 26, goal: 20, streak: 13)))
+        try await shoot("today-done", today(counts: doneCounts, progress: Self.roundsProgress(done: 31, streak: 13)))
     }
 
     @Test func todayWithNothingDueAndNoReviews() async throws {

@@ -125,6 +125,54 @@ struct WidgetSnapshotTests {
         #expect(old.state(at: Fixtures.date(22, 10)).minutesLeft == nil)
     }
 
+    /// What an older app wrote has no rounds and no words: it still reads, and the widget shows the cards left.
+    @Test func aSnapshotOfAnOlderAppHasNoRoundsAndNoWords() throws {
+        let json = #"{"date":1792663200,"reviews":12,"goal":20,"streakDays":7,"isGoalMet":true,"secondsPerCard":9.5,"due":[{"date":1792663200,"count":42}]}"#
+        let snapshot = try #require(WidgetSnapshot.decoded(from: Data(json.utf8)))
+        #expect(snapshot.rounds == nil && snapshot.roundsDone == nil && snapshot.minutesToNextRound == nil)
+        #expect(snapshot.wordsInMemory == nil && snapshot.wordsToday == nil)
+        let state = snapshot.state(at: Date(timeIntervalSince1970: 1_792_663_200))
+        #expect(state.roundStatus == nil)
+        #expect(state.isStreakKept)
+        #expect(state.due == 42)
+        // And it writes none of them back.
+        let written = try #require(JSONSerialization.jsonObject(with: snapshot.encoded()) as? [String: Any])
+        #expect(Set(written.keys) == ["date", "reviews", "goal", "streakDays", "isGoalMet", "due", "secondsPerCard"])
+    }
+
+    @Test func theSnapshotKeepsTheRoundsAndTheWordsOfTheProgress() throws {
+        let rounds = DayRounds(otherCards: 20, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), capacity: 3)
+        #expect(rounds.ends == [8, 16, 20])
+        let progress = DailyProgress(
+            ring: DailyRing(done: 12, goal: 20), streak: Streak(days: 7, repairCards: nil), roundPlan: rounds, streakKeptToday: true,
+            memory: MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2))
+        let now = Fixtures.date(22, 10, 20)
+        let snapshot = WidgetSnapshot(now: now, progress: progress, dates: [now], dueByDeck: [[8]], nextReminder: nil)
+        #expect(snapshot.rounds == 3 && snapshot.roundsDone == 1)
+        // From 12 done to the end of round 2 at 16: four cards at 15 s.
+        #expect(snapshot.minutesToNextRound == 1)
+        #expect(snapshot.wordsInMemory == 28 && snapshot.wordsToday == 15)
+        #expect(WidgetSnapshot.decoded(from: try snapshot.encoded()) == snapshot)
+
+        let state = snapshot.state(at: now, calendar: Fixtures.studyCalendar)
+        #expect(state.roundStatus == RoundStatus(rounds: 3, roundsDone: 1, minutesToNext: 1))
+        #expect(state.wordsInMemory == 28 && state.wordsToday == 15)
+        // The next study day only has a forecast: no rounds, and the words are not the same after a night.
+        let tomorrow = snapshot.state(at: Fixtures.date(23, 10), calendar: Fixtures.studyCalendar)
+        #expect(tomorrow.roundStatus == nil && tomorrow.wordsInMemory == nil && tomorrow.wordsToday == nil)
+    }
+
+    @Test func theStreakIsKeptOnceTheFirstRoundIsDone() {
+        func state(roundsDone: Int, rounds: Int = 3) -> WidgetState {
+            WidgetState(
+                date: Fixtures.date(22, 10), done: 5, goal: 20, streakDays: 3, isGoalMet: false, due: 15, nextReminder: nil, rounds: rounds, roundsDone: roundsDone)
+        }
+        #expect(!state(roundsDone: 0).isStreakKept)
+        #expect(state(roundsDone: 1).isStreakKept)
+        // A day without a plan keeps it from the start.
+        #expect(state(roundsDone: 0, rounds: 0).isStreakKept)
+    }
+
     @Test func unreadableDataIsNoSnapshot() {
         #expect(WidgetSnapshot.decoded(from: Data("{}".utf8)) == nil)
         #expect(WidgetSnapshot.decoded(from: Data()) == nil)

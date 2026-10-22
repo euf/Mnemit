@@ -8,8 +8,9 @@ enum StudyScope: Hashable {
     case deck(URL)
 }
 
-/// Today: the root of the app. The cards left of today's plan over all decks, the daily ring
-/// and the streak, the decks with what today's plan takes from each, and Study. A tap on Study shows the
+/// Today: the root of the app. The day in rounds over all decks, the cards done and left of today's
+/// plan, the daily ring, the streak and the words in memory, the decks with what today's plan takes from
+/// each, and Study. A tap on Study shows the
 /// first card at once; a tap on a deck opens its screen. The search finds a card in any deck.
 ///
 /// Shows what it is given and holds no state but the search text it is bound to, so the
@@ -203,8 +204,8 @@ struct StudyButton: View {
     }
 }
 
-/// The cards left of today's plan, the daily ring and the streak, and the catch-up the plan
-/// leaves for the days after.
+/// The day in rounds and the cards done and left of today's plan, the daily ring, the streak and the
+/// words in memory, and the catch-up the plan leaves for the days after.
 struct SummaryRow: View {
     /// The cards of the plan not done yet, "N cards left": not the cards that are due in all.
     var due: Int
@@ -239,16 +240,24 @@ struct SummaryRow: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                if let streak = progress?.streak, streak.days > 0 {
+                if let progress, progress.streak.days > 0 {
                     // Not a Label: in a list it puts its icon in a column of its own.
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
-                            .foregroundStyle(progress?.ring.isGoalMet == true ? Color.accentColor : Color.secondary)
-                        Text("\(streak.days)-day streak")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(progress.streakKeptToday ? Color.accentColor : Color.secondary)
+                        Group {
+                            if progress.streakKeptToday {
+                                Text("\(progress.streak.days)-day streak · kept today")
+                            } else {
+                                Text("\(progress.streak.days)-day streak")
+                            }
+                        }
+                        .foregroundStyle(.secondary)
                     }
                     .font(.subheadline)
                 }
+                memoryLine
+                    .font(.subheadline)
             }
             .monospacedDigit()
         }
@@ -263,12 +272,35 @@ struct SummaryRow: View {
         return Format.timeLeft(minutes: minutes)
     }
 
+    /// What the day asks next, in rounds: "≈ 2 min to keep your streak" before the first, "Round 2 of 4 · ≈ 2
+    /// min" after it, "Ring closed" once they are done. Without rounds, which is before the decks are read, the
+    /// cards left, and nothing at all once none is left.
     @ViewBuilder
     private var headline: some View {
-        if due > 0 {
+        let status = progress.map(RoundStatus.init)
+        if due > 0, let title = status?.title {
+            if let time = status?.time {
+                // "Round 2 of 4 · ≈ 2 min", the time under it where the line is too long.
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(title)
+                        Text(verbatim: "· " + time)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(title)
+                        Text(verbatim: time)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                Text(title)
+            }
+        } else if due > 0 {
             let cardsLeft = Text("\(due) cards left")
             if let timeLeft {
-                // "74 cards left · ≈ 7 min", the time under it where the line is too long.
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         cardsLeft
@@ -293,16 +325,44 @@ struct SummaryRow: View {
         }
     }
 
+    /// "12 of 24 cards · 12 left": the done cards against the goal, and what is left of the plan.
     @ViewBuilder
     private var detail: some View {
-        if let ring = progress?.ring, ring.done > 0 {
-            if due > 0 {
-                Text("\(ring.done) of \(ring.goal) cards")
-            } else {
-                Text("\(ring.done) cards today")
-            }
+        if let ring = progress?.ring, due > 0 {
+            Text(verbatim: [String(localized: "\(ring.done) of \(ring.goal) cards"), String(localized: "\(due) left")].joined(separator: " · "))
+        } else if let ring = progress?.ring, ring.done > 0 {
+            Text("\(ring.done) cards today")
         } else if due == 0, let nextDue {
             Text("Next review \(Format.due(nextDue, now: now))")
+        }
+    }
+
+    /// "≈ 28 words in memory · +15 today", or on the day a milestone was passed "50 words in memory!" with a
+    /// glyph in the accent: the accent is never small text.
+    @ViewBuilder
+    private var memoryLine: some View {
+        if let memory = progress?.memory {
+            if let milestone = memory.milestoneLine {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(Color.accentColor)
+                    Text(milestone)
+                        .fontWeight(.semibold)
+                }
+            } else if let words = memory.wordsLine {
+                // "≈ 28 words in memory · +15 today", the gain under the words where the line is too long.
+                ViewThatFits(in: .horizontal) {
+                    Text(verbatim: memory.line ?? "")
+                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(words)
+                        if let gain = memory.gainLine {
+                            Text(gain)
+                        }
+                    }
+                }
+                .foregroundStyle(.secondary)
+            }
         }
     }
 }

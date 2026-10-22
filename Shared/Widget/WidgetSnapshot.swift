@@ -46,6 +46,16 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// of the forecast holds, so it prices them all with it.
     /// `nil` in a snapshot an older app wrote: no time then.
     var secondsPerCard: Double?
+    /// The rounds today holds (`DailyProgress.rounds`) and how many are done, and the minutes to the end of the
+    /// round the learner is in (`DailyProgress.minutesToNextRound`; `nil` once the rounds are done).
+    /// `nil` in a snapshot an older app wrote: the widget then shows the cards left.
+    var rounds: Int?
+    var roundsDone: Int?
+    var minutesToNextRound: Int?
+    /// The words in memory now, rounded down, and what today added (`MemoryEstimate.shownWords`, `.shownGain`).
+    /// `nil` in a snapshot an older app wrote.
+    var wordsInMemory: Int?
+    var wordsToday: Int?
 
     /// How many times the goal was reached: 2 from 200 %.
     var laps: Int { done / max(1, goal) }
@@ -58,9 +68,18 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         case date
         case done = "reviews"
         case goal, streakDays, isGoalMet, due, nextReminder, secondsPerCard
+        case rounds, roundsDone, minutesToNextRound, wordsInMemory, wordsToday
     }
 
-    init(date: Date, done: Int, goal: Int, streakDays: Int, isGoalMet: Bool, due: [Due], nextReminder: Date?, secondsPerCard: Double? = nil) {
+    init(
+        date: Date, done: Int, goal: Int, streakDays: Int, isGoalMet: Bool, due: [Due], nextReminder: Date?, secondsPerCard: Double? = nil,
+        rounds: Int? = nil, roundsDone: Int? = nil, minutesToNextRound: Int? = nil, wordsInMemory: Int? = nil, wordsToday: Int? = nil
+    ) {
+        self.rounds = rounds
+        self.roundsDone = roundsDone
+        self.minutesToNextRound = minutesToNextRound
+        self.wordsInMemory = wordsInMemory
+        self.wordsToday = wordsToday
         self.date = date
         self.done = done
         self.goal = goal
@@ -78,7 +97,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         self.init(
             date: now, done: progress.ring.done, goal: progress.ring.goal, streakDays: progress.streak.days,
             isGoalMet: progress.ring.isGoalMet, due: zip(dates, totals).map { Due(date: $0, count: $1) }, nextReminder: nextReminder,
-            secondsPerCard: progress.secondsPerCardLeft)
+            secondsPerCard: progress.secondsPerCardLeft, rounds: progress.rounds, roundsDone: progress.roundsDone,
+            minutesToNextRound: progress.minutesToNextRound, wordsInMemory: progress.memory.shownWords, wordsToday: progress.memory.shownGain)
     }
 
     /// The moments the forecast looks at: `now`, then each full hour after it.
@@ -135,6 +155,25 @@ struct WidgetState: Equatable, Sendable {
     var nextReminder: Date?
     /// `WidgetSnapshot.secondsPerCard`.
     var secondsPerCard: Double?
+    /// The rounds of the study day the snapshot was made on, as `WidgetSnapshot` has them; `nil` for a day
+    /// after it, whose plan is only forecast, and for a snapshot of an older app.
+    var rounds: Int?
+    var roundsDone: Int?
+    var minutesToNextRound: Int?
+    /// The words in memory and the day's gain; `nil` after the day of the snapshot, as the number falls
+    /// while the learner is away.
+    var wordsInMemory: Int?
+    var wordsToday: Int?
+
+    /// Where the learner stands in the rounds; `nil` when the snapshot has none.
+    var roundStatus: RoundStatus? {
+        guard let rounds, let roundsDone else { return nil }
+        return RoundStatus(rounds: rounds, roundsDone: roundsDone, minutesToNext: minutesToNextRound)
+    }
+
+    /// Whether today keeps the streak: its first round is done, or the plan was empty; the goal being
+    /// met when the snapshot has no rounds.
+    var isStreakKept: Bool { roundStatus?.isStreakKept ?? isGoalMet }
 
     /// The minutes the cards left take (`DailyGoal.minutesLeft`): `nil` for none, or without a pace.
     var minutesLeft: Int? {
@@ -170,7 +209,8 @@ extension WidgetSnapshot {
         guard days > 0 else {
             return WidgetState(
                 date: moment, done: done, goal: goal, streakDays: streakDays, isGoalMet: isGoalMet, due: count, nextReminder: reminder,
-                secondsPerCard: secondsPerCard)
+                secondsPerCard: secondsPerCard, rounds: rounds, roundsDone: roundsDone, minutesToNextRound: minutesToNextRound,
+                wordsInMemory: wordsInMemory, wordsToday: wordsToday)
         }
         let missed = days - (isGoalMet ? 1 : 0)
         let isEmptyPlanMet = count == 0 && missed == 0
