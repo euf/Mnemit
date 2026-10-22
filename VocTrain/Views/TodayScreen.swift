@@ -8,8 +8,8 @@ enum StudyScope: Hashable {
     case deck(URL)
 }
 
-/// Today: the root of the app. What is due over all decks, the daily ring and the streak,
-/// the decks with what today's plan takes from each, and Study. A tap on Study shows the
+/// Today: the root of the app. The cards left of today's plan over all decks, the daily ring
+/// and the streak, the decks with what today's plan takes from each, and Study. A tap on Study shows the
 /// first card at once; a tap on a deck opens its screen. The search finds a card in any deck.
 ///
 /// Shows what it is given and holds no state but the search text it is bound to, so the
@@ -44,12 +44,12 @@ struct TodayScreen: View {
     /// Opens the browser of the shared decks.
     var showAnkiWeb: () -> Void = {}
 
-    /// What today's plan still asks, all decks: its share of the backlog included, never the backlog.
+    /// The cards left of today's plan, all decks: its share of the backlog included, never the backlog.
     private var due: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) }
     }
 
-    /// The overdue cards the plan leaves for the days after.
+    /// The catch-up, the overdue review cards the plan leaves for the days after.
     private var catchUp: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.catchUp ?? 0) }
     }
@@ -198,12 +198,12 @@ struct StudyButton: View {
     }
 }
 
-/// What today's plan asks, today's ring and the streak, and the backlog the plan leaves for the
-/// days after.
+/// The cards left of today's plan, the daily ring and the streak, and the catch-up the plan
+/// leaves for the days after.
 struct SummaryRow: View {
-    /// The cards of the plan still to do: the goal, not the cards that are due in all.
+    /// The cards of the plan not done yet, "N cards left": not the cards that are due in all.
     var due: Int
-    /// The overdue cards beyond today's share of them.
+    /// The overdue review cards beyond today's share of the backlog.
     var catchUp = 0
     var progress: DailyProgress?
     /// When something comes back that today's plans leave out.
@@ -250,7 +250,7 @@ struct SummaryRow: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// "≈ 7 min": the cards left at the learner's own pace, once the decks are read.
+    /// "≈ 7 min": the cards left at the learner's pace, once the decks are read.
     private var timeLeft: String? {
         guard let progress, let minutes = DailyGoal.minutesLeft(cards: due, secondsPerCard: progress.secondsPerCard) else { return nil }
         return Format.timeLeft(minutes: minutes)

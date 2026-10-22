@@ -3,9 +3,10 @@ import VocabCore
 
 /// The study stream in the style of flash cards: the question, a touch shows the answer,
 /// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stream has
-/// no end of its own: today's plan, a short rest (`StreamRestView`), then review ahead and
-/// practice. Every grade is saved at once, so leaving loses nothing. The bar shows the close
-/// button, today's reviews against the goal as a small ring with "14 of 30 today", and the menu.
+/// no end of its own: today's plan, a short rest (`StreamRestView`), then catch-up, review
+/// ahead and practice. Every grade is saved at once, so leaving loses nothing. The bar shows the
+/// close button, today's done cards against the daily goal as a small ring with "14 of 30 cards",
+/// and the menu.
 ///
 /// Once the answer shows, the card can be swiped instead of the buttons: left is Forgot,
 /// right Good, up Easy, down Hard (`GradeSwipe`, four sectors around the axes, with a gap
@@ -157,7 +158,7 @@ struct StudyView: View {
     }
 
     /// The middle of the bar: today's ring with its figures, and the stage before it when the
-    /// learner is not at today's plan: catching up and review ahead don't change the plan but
+    /// learner is not at today's plan: catch-up and review ahead don't change the plan but
     /// fill the ring's laps, and practice changes neither the plan nor the schedule, so it
     /// shows no ring.
     private var header: some View {
@@ -351,8 +352,8 @@ struct StudyView: View {
     private static let pulseFade = 0.4
 }
 
-/// Today's reviews against the goal as a ring in the bar (`ProgressRing`), with the lap in its
-/// middle from the second on: "×2" once the goal is reached. No streak and no popover: the bar
+/// Today's done cards against the daily goal as a ring in the bar (`ProgressRing`), with the
+/// lap in its middle from the second on: "×2" once the goal is reached. No streak and no popover: the bar
 /// is calm. As big as the figures beside it need for "×2", and it grows with the text size up
 /// to a ceiling, as the bar has only so much height. VoiceOver reads the lap ("Lap 2") with the
 /// figures beside it, which the bar combines into one element.

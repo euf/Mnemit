@@ -89,8 +89,8 @@ public struct StudySession: Sendable {
     }
 
     /// How soon `selectCards` introduces a due card; the smallest comes first.
-    /// Due reviews go before new cards, so new cards only fill the rest of a session
-    /// and can't crowd out reviews whose recall probability keeps dropping.
+    /// Due review cards go before new cards, so new cards only fill the rest of a session
+    /// and can't crowd out review cards whose recall probability keeps dropping.
     enum Urgency: Comparable {
         /// Cards in learning or relearning.
         case learning
@@ -167,7 +167,7 @@ public struct StudySession: Sendable {
     /// which takes the plan segment after segment; the plan, and the goal made of it, is all
     /// of it, so nothing the learner sees grows as the segments go.
     ///
-    /// Learning cards, then reviews, then new cards fill the session, so the counts
+    /// Learning cards, then review cards, then new cards fill the session, so the counts
     /// don't depend on the random tie breaks, only which card of a kind is taken does.
     public static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0) -> StudyCounts {
         counts(for: deck, at: now, calendar: calendar, extraNew: extraNew, past: nil)
@@ -206,7 +206,7 @@ public struct StudySession: Sendable {
         return counts
     }
 
-    /// The cards of a session in the order of their `Urgency`, and how many overdue reviews the
+    /// The cards of a session in the order of their `Urgency`, and how many overdue review cards the
     /// share of the backlog leaves for the days after (`StudyCounts.catchUp`).
     private static func selection(
         from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, includingBacklog: Bool = false, capsSize: Bool = true, past: DayIndex? = nil,
@@ -413,8 +413,9 @@ public struct StudySession: Sendable {
     }
 }
 
-/// How many cards a study session started now would take, see
-/// `StudySession.counts(for:at:calendar:)`.
+/// The plan of a study day as it stands at some moment, by kind: the cards a stream started
+/// then would take, see `StudySession.counts(for:at:calendar:)`. At the start of the day its
+/// `total` is the daily goal, later the cards left.
 public struct StudyCounts: Hashable, Sendable {
     /// Never-studied production cards (`CardKind.production`), within
     /// `newProductionPerSession`.
@@ -436,7 +437,8 @@ public struct StudyCounts: Hashable, Sendable {
 
     public var new: Int { newProduction + newOther }
 
-    /// The size of the plan. `cardsPerSession` doesn't cap it: it is the size of a segment of
-    /// the stream.
+    /// The cards of the plan: all of them at the start of the day (the daily goal), the cards
+    /// left later ("N cards left"). `cardsPerSession` doesn't cap it: it is the size of a
+    /// segment of the stream.
     public var total: Int { new + learning + review }
 }

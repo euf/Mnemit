@@ -1,7 +1,7 @@
 import SwiftUI
 import VocabCore
 
-/// The daily ring: today's cards done against the goal (`ProgressRing`). After the goal the ring
+/// The daily ring: today's cards done against the daily goal (`ProgressRing`). After the goal the ring
 /// goes on in laps, the way the Fitness rings do. In its middle the streak in days, or, with
 /// `inStream`, the lap from the second on ("×2"). A tap shows the figures in a popover: today,
 /// the lap, the streak, and the repair of a missed day when one is open.

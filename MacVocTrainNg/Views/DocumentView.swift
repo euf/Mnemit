@@ -32,7 +32,7 @@ struct DocumentView: View {
     @State private var addingLessonWords = false
     @State private var toast: Toast?
     @State private var shortcutsHelp = ShortcutsHelp()
-    /// Today's cards done against the goal and the streak, over all decks open in the app.
+    /// Today's cards done against the daily goal and the streak, over all decks open in the app.
     @State private var ring = DailyRingModel()
     @Environment(\.controlActiveState) private var controlActiveState
 
@@ -265,7 +265,7 @@ struct DocumentView: View {
 }
 
 /// The prominent "Study" button of the toolbar. The stream it opens has no end, so the button
-/// works once the plan is done, too, and offers review ahead and practice; the menu command
+/// works once the plan is done, too, and offers catch-up, review ahead and practice; the menu command
 /// Study ▸ Study is its twin.
 private struct StartStudyButton: View {
     var dueCards: DueCardCounter
@@ -280,7 +280,7 @@ private struct StartStudyButton: View {
     }
 }
 
-/// Today's cards done against the goal as a ring with the streak in its middle and "14/20", beside
+/// Today's cards done against the daily goal as a ring with the streak in its middle and "14/20", beside
 /// the Study button. An indicator, no button: it takes no background in the toolbar.
 private struct RingChip: View {
     var progress: DailyProgress?

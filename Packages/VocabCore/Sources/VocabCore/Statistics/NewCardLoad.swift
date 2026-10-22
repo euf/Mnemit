@@ -1,6 +1,7 @@
 import Foundation
 
-/// What new cards cost in reviews, for the line under "+10 new": a guess, not a forecast.
+/// What new cards add to the cards of each day, for the line under "+10 new": a guess, not a
+/// forecast. Every review is a Good, so each review in the simulation is one card due on that day.
 public enum NewCardLoad {
     /// Days after the one a card is introduced on that the estimate looks at.
     public static let horizonDays = 7

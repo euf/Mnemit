@@ -13,8 +13,8 @@ import VocabCore
 @MainActor @Observable
 final class SessionDriver {
     let document: VocabularyDocument
-    /// The running stream: today's plan, then review ahead and practice. Undo and redo
-    /// bring back the whole of it, so they reach a review of an earlier segment as well.
+    /// The running stream: today's plan, then catch-up, review ahead and practice. Undo and
+    /// redo bring back the whole of it, so they reach a review of an earlier segment as well.
     private(set) var stream: StudyStream
     /// The card being asked, as the deck holds it now. Undoing an edit of the card
     /// during the stream shows up here.
@@ -105,7 +105,7 @@ final class SessionDriver {
         return true
     }
 
-    /// From rest, goes on beyond the plan: the rest of the backlog, review ahead, practice.
+    /// From rest, goes on beyond the plan: the catch-up, review ahead, practice.
     func keepGoing() {
         guard stream.keepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
         lastReceipt = nil
@@ -120,8 +120,8 @@ final class SessionDriver {
         moveOn()
     }
 
-    /// The new cards `addNewCards()` would add now and what they cost; `nil` if there are
-    /// none, and for a practice.
+    /// The new cards `addNewCards()` would add now and what they cost in cards a day next
+    /// week; `nil` if there are none, and for a practice.
     var extraNew: ExtraNewCards? {
         guard !stream.isPracticeOnly else { return nil }
         let count = StudyStream.extraNewCards(in: document.deck, at: document.clock.now, calendar: document.calendar)

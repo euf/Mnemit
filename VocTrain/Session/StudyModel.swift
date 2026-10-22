@@ -5,8 +5,8 @@ import VocabCore
 /// Drives the study stream in the style of flash cards (#258): shows the question,
 /// reveals the answer on request and applies the grade the learner gives. There is no
 /// response to check, so the app suggests no grade; the reviews record `.revealed`. The
-/// stream has no end of its own: today's plan, a short rest, then review ahead and practice,
-/// which changes no card.
+/// stream has no end of its own: today's plan, a short rest, then catch-up, review ahead and
+/// practice, which changes no card.
 ///
 /// Like `SessionViewModel` on the Mac, it leaves applying grades and keeping the
 /// stream's place in step with undo and redo and with every other change to the deck
@@ -24,7 +24,7 @@ final class StudyModel: Identifiable {
 
     /// What the stream starts with.
     enum Entry {
-        /// Today's plan, then review ahead and practice.
+        /// Today's plan, then catch-up, review ahead and practice.
         case study
         /// A practice of the cards that went wrong today, which changes no card.
         case practiceMistakes
@@ -38,8 +38,9 @@ final class StudyModel: Identifiable {
     /// Counts the questions asked: one more with every move to another card, also back
     /// after an undo, and to rest. The view speaks a Greek question when it changes.
     private(set) var questionNumber = 0
-    /// Counts the grades that sent a card to another day: the view pulses its background when
-    /// it grows, once per grade, however the grade was given. Undo and redo don't count.
+    /// Counts the reviews that sent a card to another day, which is a card done: the view pulses
+    /// its background when it grows, once per review, however the grade was given. Undo and redo
+    /// don't count.
     private(set) var progressPulses = 0
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
@@ -70,7 +71,7 @@ final class StudyModel: Identifiable {
 
     var session: Session { driver.session }
 
-    /// Where the stream is: today's plan, review ahead, practice, or at rest.
+    /// Where the stream is: today's plan, catch-up, review ahead, practice, or at rest.
     var streamStage: StudyStream.Stage { driver.stream.stage }
 
     /// The card being asked, as the deck holds it now.
@@ -111,7 +112,7 @@ final class StudyModel: Identifiable {
         driver.suspendCurrentCard()
     }
 
-    /// Goes on beyond the plan, from rest: review ahead, then practice.
+    /// Goes on beyond the plan, from rest: catch-up, review ahead, then practice.
     func keepGoing() {
         driver.keepGoing()
     }

@@ -9,11 +9,13 @@ import Foundation
 /// backlog, the review cards that were already due before the day, asks a share of itself
 /// (`backlogShare(of:onTime:)`), so an import or a long break doesn't pile a thousand cards
 /// on one day. The goal stays for the day: cards added later are no part of it. A card is
-/// done once it was graded on the day and FSRS let it go to another day (`DeckActivity.done`):
-/// it counts once, however many answers it took. A day is met when its ring is closed, an
-/// empty plan included: nothing was due, so memory is where FSRS wants it. Cards done count
-/// in every mode: the plan, catching up, review ahead and anything else a study stream
-/// reviews as a card. Practice changes no card and writes no review, so it doesn't count.
+/// done once its last review of the day left it due on a later day, which is that FSRS let it
+/// go (`DeckActivity.done`): it counts once, however many reviews it took. Reviews, the
+/// grades in the logs, count for the streak's first day and for the pace
+/// (`secondsPerCard(days:done:)`), never for the goal or the ring. A day is met when its ring
+/// is closed, an empty plan included: nothing was due, so memory is where FSRS wants it. Cards
+/// done count in every mode: the plan, catch-up, review ahead and anything else the study
+/// stream asks. Practice changes no card and writes no review, so it doesn't count.
 ///
 /// Everything that sets the size of a day is here: a cap on the goal, or another spread of
 /// the backlog, is a change of this type.
@@ -21,7 +23,7 @@ public enum DailyGoal {
     /// The days over which a backlog is spread: each day asks one part of it.
     public static let backlogSpreadDays = 7
 
-    /// What a day asks of a backlog of `backlog` overdue reviews, when `onTime` review cards
+    /// What a day asks of a backlog of `backlog` overdue review cards, when `onTime` review cards
     /// are due on the day itself: its part of the spread, rounded up so that a backlog is
     /// always worked off, but at least what a normal day asks, `onTime`, so that a small
     /// backlog, one missed day's, is cleared in a day and leaves no week-long tail. Never more
@@ -36,8 +38,8 @@ public enum DailyGoal {
     /// wait (`StudyCounts.total`), and the plan held `plan` cards when the day began.
     ///
     /// The goal is the plan, whatever happens to it after: an Again keeps its card in the plan,
-    /// cards that are added or reviewed beyond it, catching up and review ahead, don't move it,
-    /// so the ring goes on in laps. The one exception is a plan that has nothing left though
+    /// cards that are added, and cards done beyond it in catch-up and review ahead, don't move
+    /// it, so the ring goes on in laps. The one exception is a plan that has nothing left though
     /// fewer cards than planned are done (cards that were suspended or deleted during the
     /// day): it is met at those, so the ring never stands open next to "0 cards left". A day
     /// that began with an empty plan (a first deck, filled in the afternoon) takes the plan as
@@ -48,31 +50,32 @@ public enum DailyGoal {
     }
 
     /// The first study day (2026-10-23) on which a day counts for the streak only when its plan
-    /// was done. A day before it counts with a single answer, which is the rule streaks were
-    /// started under (a fixed number of answers a day), so a streak that reaches back past the
+    /// was done. A day before it counts with a single review, which is the rule streaks were
+    /// started under (a fixed number of reviews a day), so a streak that reaches back past the
     /// change is not cut by it.
     // ponytail: a cutover date and a clause in `Streak.evaluate`, no per-learner migration;
     // delete both once no streak can reach back past the day.
     public static let planRuleStart = CivilDate(year: 2026, month: 10, day: 23).dayNumber
 
-    /// The study days before today whose answers set the pace (`secondsPerCard(days:done:)`).
+    /// The study days before today whose reviews set the pace (`secondsPerCard(days:done:)`).
     public static let paceDays = 7
-    /// A pause between two answers longer than this is a break, not study time.
+    /// A pause between two reviews longer than this is a break, not study time.
     public static let paceBreak: TimeInterval = 120
     /// The cards that must be done in the window for the learner's own pace to count.
     public static let paceMinimumCards = 20
     /// The pace until there is a pace: what a card takes when the learner has not done enough of them lately.
     public static let fallbackSecondsPerCard: Double = 20
 
-    /// How long one done card takes this learner: the seconds between consecutive answers of a
-    /// study day, pauses over `paceBreak` left out, divided by the cards done on those days.
-    /// A card's learning steps and Agains are in the price, because all of a new card's answers
-    /// land on one done card. `days` holds the answer times of each study day of the window,
-    /// today and the `paceDays` before it, across all decks; `done` the cards done on them.
-    /// `fallbackSecondsPerCard` for fewer than `paceMinimumCards`, or answers with no time between them.
-    // ponytail: the gap between answers stands for the time spent, the log holds no durations: a
+    /// The pace, how long one done card takes this learner: the seconds between consecutive
+    /// reviews of a study day, pauses over `paceBreak` left out, divided by the cards done on
+    /// those days. A card's learning steps and Agains are in the price, because all of a new
+    /// card's reviews land on one done card. `days` holds the review times of each study day of
+    /// the window, today and the `paceDays` before it, across all decks; `done` the cards done
+    /// on them. `fallbackSecondsPerCard` for fewer than `paceMinimumCards`, or reviews with no
+    /// time between them.
+    // ponytail: the gap between reviews stands for the time spent, the log holds no durations: a
     // pause shorter than `paceBreak` counts as work, a card read for longer is cut short. Store
-    // the time each answer took (a `reviews.jsonl` field) and sum it, if the estimate misleads.
+    // the time each review took (a `reviews.jsonl` field) and sum it, if the estimate misleads.
     public static func secondsPerCard(days: [[Date]], done: Int) -> Double {
         guard done >= paceMinimumCards else { return fallbackSecondsPerCard }
         var seconds: TimeInterval = 0
@@ -138,16 +141,16 @@ public struct Streak: Hashable, Sendable {
     /// made up by the plan of the day after it: both days count. Two missed days in a row
     /// end the streak. Today is only judged by its own plan, so a day still going never breaks
     /// the streak. The streak starts with the first review. A day before
-    /// `DailyGoal.planRuleStart` is met with a single answer, too.
+    /// `DailyGoal.planRuleStart` is met with a single review, too.
     ///
     /// - Parameters:
-    ///   - reviews: Graded answers by study day: they tell the first day and the days before
+    ///   - reviews: The reviews by study day: they tell the first day and the days before
     ///     `planRuleStart` that count with one, nothing else.
     ///   - today: The study day now.
     ///   - planRuleStart: The first study day judged by its plan alone; the tests move it.
     ///   - owed: The cards of the plan that were left at the end of a study day, for today
     ///     the cards still to do, 0 once today's ring is closed (`DailyProgress.evaluate`).
-    ///     Not asked for a day before `planRuleStart` that has an answer.
+    ///     Not asked for a day before `planRuleStart` that has a review.
     public static func evaluate(reviews: [Int: Int], today: Int, planRuleStart: Int = DailyGoal.planRuleStart, owed: (Int) -> Int) -> Streak {
         guard let first = reviews.filter({ $0.value > 0 }).keys.min() else { return Streak(days: 0, repairCards: nil) }
         func isMet(_ day: Int) -> Bool {
@@ -204,8 +207,9 @@ public struct DeckActivity: Sendable {
     /// card that was studied, or the earliest creation of one that wasn't. Before it, no day
     /// asks anything, whatever the deck's history was.
     private let firstPlanned: Date
-    /// Graded answers by study day, one for each entry of a card's log. They tell on which
-    /// days the learner studied; the ring counts cards (`done(onDayOf:calendar:)`).
+    /// The reviews by study day, one for each entry of a card's log. They tell on which
+    /// days the learner studied and nothing more: the ring counts cards
+    /// (`done(onDayOf:calendar:)`).
     public let reviewsByDay: [Int: Int]
 
     public init(deck: Deck, calendar: StudyCalendar) {
@@ -254,8 +258,8 @@ public struct DeckActivity: Sendable {
     /// The plan of the study day of `now` when the day began: what the deck had to do then,
     /// counted the way `owed(onDayOf:now:calendar:)` counts it, on the deck as it stood: the
     /// cards reviewed since go back to the state of their last review before the day, new if
-    /// there was none, and the cards created since are left out. Reviews beyond the plan,
-    /// catching up and review ahead, are in no plan.
+    /// there was none, and the cards created since are left out. Cards done beyond the plan,
+    /// in catch-up and review ahead, are in no plan.
     public func plan(onDayOf now: Date, calendar: StudyCalendar) -> StudyCounts {
         let start = calendar.start(ofDay: calendar.dayNumber(for: now))
         let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
@@ -270,11 +274,12 @@ public struct DeckActivity: Sendable {
         return StudySession.counts(for: atStart, at: start, calendar: calendar, past: StudySession.DayIndex(deck: atStart, calendar: calendar))
     }
 
-    /// How many cards are done on the study day of `now`: graded on it, and due after its end,
-    /// which is that FSRS let them go to another day. A review card answered Hard, Good or Easy
-    /// is done at once, a new card once its learning steps are through; a card answered Again
-    /// is not until it is through its relearning. A card counts once, however many answers it
-    /// took, and whether the plan or a review ahead asked it. Counted on the deck as it is.
+    /// How many cards are done on the study day of `now`: cards whose last review of the day left
+    /// them due after its end, which is that FSRS let them go to another day. A review card
+    /// graded Hard, Good or Easy is done at once, a new card once its learning steps are
+    /// through; a card graded Again is not until it is through its relearning. A card counts
+    /// once, however many reviews it took, and whether the plan or a review ahead asked it.
+    /// Counted on the deck as it is.
     public func done(onDayOf now: Date, calendar: StudyCalendar) -> Int {
         let day = calendar.dayNumber(for: now)
         let start = calendar.start(ofDay: day)
@@ -285,13 +290,13 @@ public struct DeckActivity: Sendable {
         }
     }
 
-    /// The answers of the study days that set the learner's pace, and the cards done on them
+    /// The review times of the study days that set the learner's pace, and the cards done on them
     /// (`DailyGoal.secondsPerCard(days:done:)`): the study day of `now` and the `DailyGoal.paceDays`
-    /// before it. A card is done on a day when its last answer of that day left it due on a later
+    /// before it. A card is done on a day when its last review of that day left it due on a later
     /// one, which the scheduler replays from its log: a card that was done on an earlier day
-    /// and answered again since is still done on that day. A card whose log doesn't reach back to
+    /// and reviewed again since is still done on that day. A card whose log doesn't reach back to
     /// its first review (`Card.hasCompleteLog`) can't be replayed and counts as done on each day it
-    /// was answered.
+    /// was reviewed.
     func pace(at now: Date, calendar: StudyCalendar) -> Pace {
         let today = calendar.dayNumber(for: now)
         let start = calendar.start(ofDay: today - DailyGoal.paceDays)
@@ -321,7 +326,7 @@ public struct DeckActivity: Sendable {
         return pace
     }
 
-    /// What a deck gives `DailyGoal.secondsPerCard(days:done:)`: answer times by study day, and cards done.
+    /// What a deck gives `DailyGoal.secondsPerCard(days:done:)`: review times by study day, and cards done.
     struct Pace {
         var days: [Int: [Date]] = [:]
         var done = 0
@@ -332,10 +337,10 @@ public struct DeckActivity: Sendable {
 public struct DailyProgress: Hashable, Sendable {
     public var ring: DailyRing
     public var streak: Streak
-    /// The cards of today's plan still to do across the decks: `StudySession.counts(for:at:calendar:).total`,
+    /// The cards of today's plan not done yet across the decks: `StudySession.counts(for:at:calendar:).total`,
     /// the "N cards left".
     public var cardsLeft: Int
-    /// What one done card takes this learner, `DailyGoal.secondsPerCard(days:done:)`.
+    /// The pace, what one done card takes this learner, `DailyGoal.secondsPerCard(days:done:)`.
     public var secondsPerCard: Double
 
     public init(ring: DailyRing, streak: Streak, cardsLeft: Int = 0, secondsPerCard: Double = DailyGoal.fallbackSecondsPerCard) {
