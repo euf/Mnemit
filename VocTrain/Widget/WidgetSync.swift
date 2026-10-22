@@ -89,7 +89,7 @@ final class WidgetSync {
             await previous?.value
             let now = Date()
             let snapshot = await Task.detached(priority: .utility) { Self.snapshot(from: inputs, at: now) }.value
-            if store.write(snapshot) {
+            if StallTrace.measure("widgetStoreWrite", { store.write(snapshot) }) {
                 reload()
             }
         }

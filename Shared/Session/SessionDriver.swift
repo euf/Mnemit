@@ -78,11 +78,11 @@ final class SessionDriver {
         let before = stream
         let interval = gradeIntervals?[grade]
         let duration = stopwatch.elapsed
-        guard let outcome = stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar, duration: duration) else { return false }
+        guard let outcome = StallTrace.measure("stream.grade", { stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar, duration: duration) }) else { return false }
         let restore = sessionRestore(from: before, to: stream)
         switch outcome {
         case let .rescheduled(change):
-            document.applyReview(change, alongside: restore)
+            StallTrace.measure("applyReview") { document.applyReview(change, alongside: restore) }
         case .practiced:
             registerPracticeUndo(restore)
         }
@@ -174,10 +174,10 @@ final class SessionDriver {
     /// Moves to the current card, past cards deleted or suspended meanwhile and on to the
     /// next segment of the stream as the one before runs out, and tells the delegate.
     private func moveOn() {
-        advance()
+        StallTrace.measure("advance") { advance() }
         refreshCurrentCard()
         stopwatch.restart()
-        delegate?.sessionDriverDidMoveOn(self)
+        StallTrace.measure("didMoveOn") { delegate?.sessionDriverDidMoveOn(self) }
     }
 
     /// The stream moves on once the segment has no card to ask, which may be several
@@ -194,7 +194,9 @@ final class SessionDriver {
     /// again and undo, which brings back a stream from before it, finds none.
     private func restAtRoundEnd() {
         guard let rounds else { return }
-        stream.restAtRoundEnd(roundsDone: rounds.roundsDone(cardsDone: rounds.cardsDone(in: document)), rounds: rounds.rounds)
+        StallTrace.measure("roundGuide") {
+            stream.restAtRoundEnd(roundsDone: rounds.roundsDone(cardsDone: rounds.cardsDone(in: document)), rounds: rounds.rounds)
+        }
     }
 
     /// Cards deleted meanwhile, e.g. by undoing "Add Card" or by a merge, can't be

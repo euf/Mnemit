@@ -33,7 +33,7 @@ final class DueCardCounter {
 
     /// Counts the cards of the next session at the time of the document's clock.
     func refresh() {
-        let counts = Self.counts(of: document)
+        let counts = StallTrace.measure("dueCounts") { Self.counts(of: document) }
         if counts != self.counts {
             self.counts = counts
         }

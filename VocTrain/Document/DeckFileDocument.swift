@@ -70,7 +70,7 @@ final class DeckFileDocument: UIDocument {
 
     override func contents(forType typeName: String) throws -> Any {
         guard let document else { throw CocoaError(.fileWriteUnknown) }
-        return try document.fileWrapper()
+        return try StallTrace.measure("saveEncode") { try document.fileWrapper() }
     }
 
     override func handleError(_ error: any Error, userInteractionPermitted: Bool) {

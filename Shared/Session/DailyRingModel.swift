@@ -68,11 +68,13 @@ final class DailyRingModel {
                 return (progress, fileActivities, allowances)
             }.value
             guard !Task.isCancelled, let self else { return }
-            fileActivities = result.1
-            progress = result.0
-            NewCardAllowances.today.merge(result.2)
-            for (document, allowance) in zip(documents, result.0.newCardAllowances) {
-                document.newCardAllowance = allowance
+            StallTrace.measure("ringApply") {
+                fileActivities = result.1
+                progress = result.0
+                NewCardAllowances.today.merge(result.2)
+                for (document, allowance) in zip(documents, result.0.newCardAllowances) {
+                    document.newCardAllowance = allowance
+                }
             }
         }
         self.evaluation = evaluation

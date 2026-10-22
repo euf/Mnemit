@@ -54,6 +54,19 @@ final class GreekSpeech {
     /// stream opens, and kept: a voice installed meanwhile shows after a restart.
     let voice: AVSpeechSynthesisVoice? = GreekSpeech.bestVoice()
 
+    /// What was asked of the speech, kept in a test run only, where nothing is spoken: a card that
+    /// came up and an utterance. A second ask for the same card cuts the first speech off and
+    /// starts it again, which sounds like a stutter.
+    enum Request: Equatable {
+        case cardAppeared(Card.ID?)
+        case speak(String)
+    }
+
+    private(set) var requests: [Request] = []
+
+    var cardAppearedCount: Int { requests.count { if case .cardAppeared = $0 { true } else { false } } }
+    var speakCount: Int { requests.count { if case .speak = $0 { true } else { false } } }
+
     private let synthesizer = AVSpeechSynthesizer()
     /// The speech a card asked for by itself and that waits for the card to settle.
     private var pending: Task<Void, Never>?
@@ -142,7 +155,9 @@ final class GreekSpeech {
     /// stopped or started around it.
     func speak(_ text: String) {
         let word = text.prefix { $0 != "(" && $0 != "," && !$0.isNewline }.trimmingCharacters(in: .whitespaces)
-        guard !Self.isUnderTest, let voice, !word.isEmpty else { return }
+        guard !word.isEmpty else { return }
+        if Self.isUnderTest { requests.append(.speak(word)) }
+        guard !Self.isUnderTest, let voice else { return }
         pending?.cancel()
         pending = nil
         if synthesizer.isSpeaking {
@@ -167,6 +182,7 @@ final class GreekSpeech {
     /// if it is Greek, after `settleDelay`. A card with another question speaks its answer
     /// once that shows, see `answerRevealed(of:)`.
     func cardAppeared(_ card: Card?) {
+        if Self.isUnderTest { requests.append(.cardAppeared(card?.id)) }
         stop()
         guard Self.autoSpeak, let card, canSpeak(card.question) else { return }
         pending = Task { @MainActor in
