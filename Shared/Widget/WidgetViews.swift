@@ -4,8 +4,8 @@ import VocabCore
 import WidgetKit
 
 /// The picture of the widget in each family, from the figures of one timeline entry: the
-/// daily ring (`DailyRingView`, which shows the streak in its middle), what today's plan
-/// still asks, how far today's goal is. `nil` before the app wrote a snapshot.
+/// daily ring (`DailyRingView`, which shows the streak in its middle), the cards left of
+/// today's plan, how far the daily goal is. `nil` before the app wrote a snapshot.
 ///
 /// In `Shared` and not in the extension, so the tests of the app can draw it with fixed
 /// sizes; the extension only puts a timeline under it. Everything that opens the app is the
@@ -36,10 +36,10 @@ struct WidgetContent: View {
 }
 
 extension WidgetState {
-    /// "42 cards left", what the plan still asks, or what stands in for it when it is empty: never the whole backlog.
+    /// "42 cards left", the cards of the plan not done yet, or what stands in for it when none is left: never the whole backlog.
     fileprivate var headline: Text {
         if due > 0 { return Text("\(due) cards left") }
-        return reviews > 0 ? Text("All done") : Text("Nothing due")
+        return done > 0 ? Text("All done") : Text("Nothing due")
     }
 
     /// "≈ 7 min", the time the cards left take; `nil` when there is nothing to price.
@@ -48,13 +48,13 @@ extension WidgetState {
     }
 
     fileprivate var progressLine: Text {
-        Text("\(reviews) of \(goal) cards")
+        Text("\(done) of \(goal) cards")
     }
 
-    /// For the circular widget, whose middle holds the due count: no streak number, and one lap
+    /// For the circular widget, whose middle holds the cards left: no streak number, and one lap
     /// at most, as the badge of the laps would hang out of the circle the system cuts.
     fileprivate var ringWithoutStreak: DailyProgress {
-        DailyProgress(ring: DailyRing(done: min(reviews, goal), goal: goal), streak: Streak(days: 0, repairCards: nil))
+        DailyProgress(ring: DailyRing(done: min(done, goal), goal: goal), streak: Streak(days: 0, repairCards: nil))
     }
 }
 

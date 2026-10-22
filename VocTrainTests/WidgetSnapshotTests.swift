@@ -70,12 +70,12 @@ enum WidgetFixtures {
 
     /// A snapshot made at `now` whose due count is `count(date)`, hourly for two days.
     static func snapshot(
-        now: Date, reviews: Int, goal: Int = 20, streak: Int, isGoalMet: Bool, reminder: Date? = nil, secondsPerCard: Double? = nil,
+        now: Date, done: Int, goal: Int = 20, streak: Int, isGoalMet: Bool, reminder: Date? = nil, secondsPerCard: Double? = nil,
         count: (Date) -> Int
     ) -> WidgetSnapshot {
         let dates = WidgetSnapshot.forecastDates(from: now, calendar: calendar)
         return WidgetSnapshot(
-            date: now, reviews: reviews, goal: goal, streakDays: streak, isGoalMet: isGoalMet,
+            date: now, done: done, goal: goal, streakDays: streak, isGoalMet: isGoalMet,
             due: dates.map { .init(date: $0, count: count($0)) }, nextReminder: reminder, secondsPerCard: secondsPerCard)
     }
 }
@@ -87,7 +87,7 @@ struct WidgetSnapshotTests {
 
     @Test func snapshotSurvivesJSON() throws {
         let snapshot = Fixtures.snapshot(
-            now: Fixtures.date(22, 10, 20), reviews: 12, streak: 7, isGoalMet: false, reminder: Fixtures.date(23, 9)
+            now: Fixtures.date(22, 10, 20), done: 12, streak: 7, isGoalMet: false, reminder: Fixtures.date(23, 9)
         ) { _ in 42 }
         let data = try snapshot.encoded()
         #expect(WidgetSnapshot.decoded(from: data) == snapshot)
@@ -96,7 +96,7 @@ struct WidgetSnapshotTests {
     }
 
     @Test func snapshotKeysAreTheFormat() throws {
-        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 10), reviews: 3, streak: 2, isGoalMet: false) { _ in 1 }
+        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 10), done: 3, streak: 2, isGoalMet: false) { _ in 1 }
         let json = try #require(JSONSerialization.jsonObject(with: snapshot.encoded()) as? [String: Any])
         // No reminder: no key.
         #expect(Set(json.keys) == ["date", "reviews", "goal", "streakDays", "isGoalMet", "due"])
@@ -105,13 +105,21 @@ struct WidgetSnapshotTests {
         #expect(json["date"] as? Double == Fixtures.date(22, 10).timeIntervalSince1970)
     }
 
+    /// The cards done are stored under the key "reviews", the one a stored snapshot has.
+    @Test func aStoredSnapshotWithTheReviewsKeyDecodesIntoDone() throws {
+        let json = #"{"date":1792663200,"reviews":12,"goal":20,"streakDays":7,"isGoalMet":false,"due":[{"date":1792663200,"count":42}]}"#
+        let snapshot = try #require(WidgetSnapshot.decoded(from: Data(json.utf8)))
+        #expect(snapshot.done == 12 && snapshot.goal == 20 && snapshot.streakDays == 7 && !snapshot.isGoalMet)
+        #expect(snapshot.due.map(\.count) == [42])
+    }
+
     @Test func thePriceOfACardIsInTheFormatOnlyWhenThereIsOne() throws {
-        let priced = Fixtures.snapshot(now: Fixtures.date(22, 10), reviews: 3, streak: 2, isGoalMet: false, secondsPerCard: 9.5) { _ in 1 }
+        let priced = Fixtures.snapshot(now: Fixtures.date(22, 10), done: 3, streak: 2, isGoalMet: false, secondsPerCard: 9.5) { _ in 1 }
         let json = try #require(JSONSerialization.jsonObject(with: priced.encoded()) as? [String: Any])
         #expect(json["secondsPerCard"] as? Double == 9.5)
         #expect(WidgetSnapshot.decoded(from: try priced.encoded()) == priced)
         // What an older app wrote has no price: it still reads, and there is no time to show.
-        let unpriced = Fixtures.snapshot(now: Fixtures.date(22, 10), reviews: 3, streak: 2, isGoalMet: false) { _ in 1 }
+        let unpriced = Fixtures.snapshot(now: Fixtures.date(22, 10), done: 3, streak: 2, isGoalMet: false) { _ in 1 }
         let old = try #require(WidgetSnapshot.decoded(from: try unpriced.encoded()))
         #expect(old.secondsPerCard == nil)
         #expect(old.state(at: Fixtures.date(22, 10)).minutesLeft == nil)
@@ -123,8 +131,8 @@ struct WidgetSnapshotTests {
     }
 
     @Test func lapsCountTheGoalReachedAgain() {
-        let snapshot = { (reviews: Int) in
-            Fixtures.snapshot(now: Fixtures.date(22, 10), reviews: reviews, goal: 20, streak: 1, isGoalMet: reviews >= 20) { _ in 0 }
+        let snapshot = { (done: Int) in
+            Fixtures.snapshot(now: Fixtures.date(22, 10), done: done, goal: 20, streak: 1, isGoalMet: done >= 20) { _ in 0 }
         }
         #expect(snapshot(19).laps == 0)
         #expect(snapshot(20).laps == 1)
@@ -168,7 +176,7 @@ struct WidgetSnapshotTests {
             now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7), dates: dates, dueByDeck: [[7, 7, 8], [1, 2, 3]], nextReminder: nil)
         #expect(snapshot.due.map(\.count) == [8, 9, 11])
         #expect(snapshot.due.map(\.date) == dates)
-        #expect(snapshot.reviews == 12 && snapshot.goal == 20 && snapshot.streakDays == 7 && !snapshot.isGoalMet)
+        #expect(snapshot.done == 12 && snapshot.goal == 20 && snapshot.streakDays == 7 && !snapshot.isGoalMet)
     }
 
     @Test func theSnapshotKeepsThePriceOfACardFromWhenItWasMade() {
@@ -181,7 +189,7 @@ struct WidgetSnapshotTests {
 
     /// The minutes follow the cards due at each hour of the forecast, priced by the one price of the snapshot.
     @Test func theMinutesLeftFollowTheDueCountOfTheMoment() {
-        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), reviews: 12, streak: 7, isGoalMet: false, secondsPerCard: 10) {
+        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), done: 12, streak: 7, isGoalMet: false, secondsPerCard: 10) {
             $0 < Fixtures.date(22, 12) ? 42 : $0 < Fixtures.date(22, 16) ? 100 : 0
         }
         let state = { snapshot.state(at: $0, calendar: Fixtures.studyCalendar) }
@@ -190,7 +198,7 @@ struct WidgetSnapshotTests {
         // Nothing due: nothing to say.
         #expect(state(Fixtures.date(22, 16)).minutesLeft == nil)
         // Five cards at ten seconds: under a minute.
-        let few = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), reviews: 12, streak: 7, isGoalMet: false, secondsPerCard: 10) { _ in 5 }
+        let few = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), done: 12, streak: 7, isGoalMet: false, secondsPerCard: 10) { _ in 5 }
         #expect(few.state(at: Fixtures.date(22, 11), calendar: Fixtures.studyCalendar).minutesLeft == 0)
         // The timeline carries the price into the next study day.
         #expect(snapshot.timeline(from: Fixtures.date(22, 10, 20), calendar: Fixtures.studyCalendar).allSatisfy { $0.secondsPerCard == 10 })
@@ -224,23 +232,23 @@ struct WidgetSnapshotTests {
     /// 22:30 on the 22nd: the goal is met, 20 of 20, a streak of 5, nothing due until the new
     /// study day brings 33 cards at 04:00.
     private var evening: WidgetSnapshot {
-        Fixtures.snapshot(now: Fixtures.date(22, 22, 30), reviews: 20, streak: 5, isGoalMet: true, reminder: Fixtures.date(23, 9)) {
+        Fixtures.snapshot(now: Fixtures.date(22, 22, 30), done: 20, streak: 5, isGoalMet: true, reminder: Fixtures.date(23, 9)) {
             $0 >= Fixtures.date(23, 4) ? 33 : 0
         }
     }
 
     @Test func theFiguresStayUntilTheStudyDayChanges() {
         let late = evening.state(at: Fixtures.date(22, 23, 59), calendar: Fixtures.studyCalendar)
-        #expect(late.reviews == 20 && late.goal == 20 && late.isGoalMet && late.streakDays == 5 && late.due == 0)
-        // Midnight is not the turn of the study day: until 04:00 the reviews still count for the 22nd.
+        #expect(late.done == 20 && late.goal == 20 && late.isGoalMet && late.streakDays == 5 && late.due == 0)
+        // Midnight is not the turn of the study day: until 04:00 the cards done still count for the 22nd.
         let night = evening.state(at: Fixtures.date(23, 3, 59), calendar: Fixtures.studyCalendar)
-        #expect(night.reviews == 20 && night.isGoalMet && night.streakDays == 5)
+        #expect(night.done == 20 && night.isGoalMet && night.streakDays == 5)
         #expect(night.nextReminder == Fixtures.date(23, 9))
     }
 
     @Test func theNewStudyDayStartsAtZeroWithThePlanAsGoal() {
         let morning = evening.state(at: Fixtures.date(23, 4), calendar: Fixtures.studyCalendar)
-        #expect(morning.reviews == 0)
+        #expect(morning.done == 0)
         #expect(morning.goal == 33)
         #expect(!morning.isGoalMet)
         #expect(morning.due == 33)
@@ -250,14 +258,14 @@ struct WidgetSnapshotTests {
     }
 
     @Test func theGoalOfANewDayIsThePlanWhateverItsSize() {
-        let small = Fixtures.snapshot(now: Fixtures.date(22, 22), reviews: 20, streak: 1, isGoalMet: true) { $0 >= Fixtures.date(23, 4) ? 5 : 0 }
+        let small = Fixtures.snapshot(now: Fixtures.date(22, 22), done: 20, streak: 1, isGoalMet: true) { $0 >= Fixtures.date(23, 4) ? 5 : 0 }
         #expect(small.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).goal == 5)
-        let big = Fixtures.snapshot(now: Fixtures.date(22, 22), reviews: 20, streak: 1, isGoalMet: true) { $0 >= Fixtures.date(23, 4) ? 180 : 0 }
+        let big = Fixtures.snapshot(now: Fixtures.date(22, 22), done: 20, streak: 1, isGoalMet: true) { $0 >= Fixtures.date(23, 4) ? 180 : 0 }
         #expect(big.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).goal == 180)
     }
 
     @Test func aNewDayWithAnEmptyPlanIsMetAndCountsForTheStreak() {
-        let none = Fixtures.snapshot(now: Fixtures.date(22, 22), reviews: 20, streak: 1, isGoalMet: true) { _ in 0 }
+        let none = Fixtures.snapshot(now: Fixtures.date(22, 22), done: 20, streak: 1, isGoalMet: true) { _ in 0 }
         let morning = none.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar)
         #expect(morning.goal == 0)
         #expect(morning.isGoalMet)
@@ -265,19 +273,19 @@ struct WidgetSnapshotTests {
         // A day the snapshot didn't see could have asked something: the streak is not counted on.
         #expect(none.state(at: Fixtures.date(24, 5), calendar: Fixtures.studyCalendar).streakDays == 1)
         // A plan that is not empty is not met, and the streak waits for it.
-        let some = Fixtures.snapshot(now: Fixtures.date(22, 22), reviews: 20, streak: 1, isGoalMet: true) { $0 >= Fixtures.date(23, 4) ? 3 : 0 }
+        let some = Fixtures.snapshot(now: Fixtures.date(22, 22), done: 20, streak: 1, isGoalMet: true) { $0 >= Fixtures.date(23, 4) ? 3 : 0 }
         #expect(some.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).streakDays == 1)
         #expect(!some.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).isGoalMet)
     }
 
     @Test func aMissedDayKeepsTheStreakForOneDayAndThenEndsIt() {
         // The 22nd's goal was not met: the 23rd can still make it up, the 24th cannot.
-        let unmet = Fixtures.snapshot(now: Fixtures.date(22, 20), reviews: 6, streak: 4, isGoalMet: false) { _ in 10 }
+        let unmet = Fixtures.snapshot(now: Fixtures.date(22, 20), done: 6, streak: 4, isGoalMet: false) { _ in 10 }
         #expect(unmet.state(at: Fixtures.date(22, 23), calendar: Fixtures.studyCalendar).streakDays == 4)
         #expect(unmet.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).streakDays == 4)
         #expect(unmet.state(at: Fixtures.date(24, 5), calendar: Fixtures.studyCalendar).streakDays == 0)
         // Met on the 22nd, nothing on the 23rd: the 24th still holds it, the 25th does not.
-        let met = Fixtures.snapshot(now: Fixtures.date(22, 20), reviews: 20, streak: 4, isGoalMet: true) { _ in 10 }
+        let met = Fixtures.snapshot(now: Fixtures.date(22, 20), done: 20, streak: 4, isGoalMet: true) { _ in 10 }
         #expect(met.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).streakDays == 4)
         #expect(met.state(at: Fixtures.date(24, 5), calendar: Fixtures.studyCalendar).streakDays == 4)
         #expect(met.state(at: Fixtures.date(25, 5), calendar: Fixtures.studyCalendar).streakDays == 0)
@@ -288,12 +296,12 @@ struct WidgetSnapshotTests {
         let entries = evening.timeline(from: now, calendar: Fixtures.studyCalendar)
         #expect(entries.first?.date == now)
         #expect(entries.map(\.date) == entries.map(\.date).sorted())
-        // Now; the start of the study day, where the reviews turn 0 and 33 cards come due; the
+        // Now; the start of the study day, where the cards done turn 0 and 33 cards come due; the
         // reminder, after which the line is gone. The hours between change nothing, and the
         // start of the day after, 04:00 on the 24th, looks like the 23rd.
         #expect(entries.map(\.date) == [now, Fixtures.date(23, 4), Fixtures.date(23, 9)])
         #expect(entries.map(\.due) == [0, 33, 33])
-        #expect(entries.map(\.reviews) == [20, 0, 0])
+        #expect(entries.map(\.done) == [20, 0, 0])
         #expect(entries.map(\.nextReminder) == [Fixtures.date(23, 9), Fixtures.date(23, 9), nil])
         #expect(entries.allSatisfy { $0.date >= now })
     }
@@ -307,25 +315,25 @@ struct WidgetSnapshotTests {
             now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7), dates: dates, dueByDeck: [counts], nextReminder: nil)
         let entries = snapshot.timeline(from: now, calendar: Fixtures.studyCalendar)
         // Now (7 in the plan), 12:00 (8), 16:00 (10), and the next study day, which resets the
-        // reviews and makes the five reviews of the 22nd backlog: a seventh of it, one card.
+        // cards done and makes the five review cards of the 22nd backlog: a seventh of it, one card.
         #expect(entries.map(\.due).prefix(3) == [7, 8, 10])
         #expect(entries.prefix(3).map(\.date) == [now, Fixtures.date(22, 12), Fixtures.date(22, 16)])
-        #expect(entries.prefix(3).allSatisfy { $0.reviews == 12 })
+        #expect(entries.prefix(3).allSatisfy { $0.done == 12 })
         let next = entries.first { $0.date == Fixtures.date(23, 4) }
-        #expect(next?.reviews == 0)
+        #expect(next?.done == 0)
         #expect(next?.due == 6)
         #expect(next?.goal == 6)
         #expect(entries.count <= 5)
     }
 
     @Test func anOldSnapshotStillGivesAnEntryAtTheNextStudyDay() {
-        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 22), reviews: 20, streak: 5, isGoalMet: true) { _ in 12 }
+        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 22), done: 20, streak: 5, isGoalMet: true) { _ in 12 }
         // Three days later: the forecast is used up, its last count stands, the streak is over.
         let now = Fixtures.date(25, 9)
         let entries = snapshot.timeline(from: now, calendar: Fixtures.studyCalendar)
         #expect(entries.first?.streakDays == 0)
         #expect(entries.first?.due == 12)
-        #expect(entries.first?.reviews == 0)
+        #expect(entries.first?.done == 0)
     }
 
     // MARK: Deep link
@@ -352,11 +360,11 @@ struct WidgetSnapshotTests {
         let store = KeychainSnapshotStore(service: "com.euf.mnemit.tests.\(UUID().uuidString)")
         defer { store.remove() }
         #expect(store.read() == nil)
-        let first = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), reviews: 12, streak: 7, isGoalMet: false) { _ in 42 }
+        let first = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), done: 12, streak: 7, isGoalMet: false) { _ in 42 }
         try #require(store.write(first), "the keychain of this test host refuses the shared access group")
         #expect(store.read() == first)
         // Written over, not added.
-        let second = Fixtures.snapshot(now: Fixtures.date(22, 11), reviews: 13, streak: 7, isGoalMet: false) { _ in 41 }
+        let second = Fixtures.snapshot(now: Fixtures.date(22, 11), done: 13, streak: 7, isGoalMet: false) { _ in 41 }
         #expect(store.write(second))
         #expect(store.read() == second)
         store.remove()

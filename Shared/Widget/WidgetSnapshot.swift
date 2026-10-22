@@ -12,15 +12,15 @@ enum WidgetLink {
 }
 
 /// What the widget shows, written by the app and read by the widget extension, which can't
-/// read the decks itself: the figures of the daily ring, the streak, and how many cards fall
-/// due in each of the next hours, so the timeline grows without the app running.
+/// read the decks itself: the figures of the daily ring, the streak, and the cards left of the
+/// plan at each of the next hours, so the timeline grows without the app running.
 ///
 /// Stored as JSON in a keychain item both targets share (`SnapshotStore`). A snapshot is
 /// small, a few kilobytes.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
-    /// The cards of the plan across all known decks at `date`, as a study session counts
+    /// The cards of the plan across all known decks at `date`, as the day's plan counts
     /// them (`StudySession.counts(for:at:calendar:)`): the share of the backlog included, the
-    /// rest of it not.
+    /// rest of it, the catch-up, not.
     struct Due: Codable, Equatable, Sendable {
         var date: Date
         var count: Int
@@ -28,32 +28,39 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
 
     /// When the snapshot was made.
     var date: Date
-    /// The cards done today (the study day), and the goal of the day: the cards of its plan
+    /// The cards done today (the study day), and the daily goal: the cards of the plan
     /// as FSRS set it when the day began (`DailyGoal`). The unit of both is the card.
-    var reviews: Int
+    var done: Int
     var goal: Int
     /// Days in the streak, today's included once its goal is met.
     var streakDays: Int
     /// Whether today's goal is met, so today keeps the streak.
     var isGoalMet: Bool
-    /// Cards due at `date`, then at each full hour after it, in order.
+    /// The cards left of the plan at `date`, then of the plan at each full hour after it, in order.
     var due: [Due]
     /// The next daily reminder, if one is scheduled.
     var nextReminder: Date?
-    /// What one done card takes this learner when the snapshot is made (`DailyGoal.secondsPerCard`):
-    /// the widget can't read the logs, and prices the cards left of each hour of the forecast with it.
+    /// The pace when the snapshot is made (`DailyGoal.secondsPerCard`), the seconds a done card
+    /// takes: the widget can't read the logs, and prices the cards left of each hour of the forecast with it.
     /// `nil` in a snapshot an older app wrote: no time then.
     var secondsPerCard: Double?
 
     /// How many times the goal was reached: 2 from 200 %.
-    var laps: Int { reviews / max(1, goal) }
+    var laps: Int { done / max(1, goal) }
 
     /// How far ahead the forecast reaches.
     static let forecastHours = 48
 
-    init(date: Date, reviews: Int, goal: Int, streakDays: Int, isGoalMet: Bool, due: [Due], nextReminder: Date?, secondsPerCard: Double? = nil) {
+    /// The JSON key of `done` is "reviews": a snapshot stored by an older app has that key.
+    private enum CodingKeys: String, CodingKey {
+        case date
+        case done = "reviews"
+        case goal, streakDays, isGoalMet, due, nextReminder, secondsPerCard
+    }
+
+    init(date: Date, done: Int, goal: Int, streakDays: Int, isGoalMet: Bool, due: [Due], nextReminder: Date?, secondsPerCard: Double? = nil) {
         self.date = date
-        self.reviews = reviews
+        self.done = done
         self.goal = goal
         self.streakDays = streakDays
         self.isGoalMet = isGoalMet
@@ -67,7 +74,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     init(now: Date, progress: DailyProgress, dates: [Date], dueByDeck: [[Int]], nextReminder: Date?) {
         let totals = dates.indices.map { index in dueByDeck.reduce(0) { $0 + ($1.indices.contains(index) ? $1[index] : 0) } }
         self.init(
-            date: now, reviews: progress.ring.done, goal: progress.ring.goal, streakDays: progress.streak.days,
+            date: now, done: progress.ring.done, goal: progress.ring.goal, streakDays: progress.streak.days,
             isGoalMet: progress.ring.isGoalMet, due: zip(dates, totals).map { Due(date: $0, count: $1) }, nextReminder: nextReminder,
             secondsPerCard: progress.secondsPerCard)
     }
@@ -80,7 +87,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         return [now] + (0..<hours).map { first.addingTimeInterval(Double($0) * 3600) }
     }
 
-    /// The cards due across `decks` at each of `dates`.
+    /// The cards of the plan across `decks` at each of `dates`.
     static func dueCounts(of decks: [Deck], at dates: [Date], calendar: StudyCalendar) -> [Int] {
         dates.map { date in decks.reduce(0) { $0 + StudySession.counts(for: $1, at: date, calendar: calendar).total } }
     }
@@ -116,24 +123,25 @@ extension WidgetSnapshot {
 /// The figures of one timeline entry.
 struct WidgetState: Equatable, Sendable {
     var date: Date
-    var reviews: Int
+    var done: Int
     var goal: Int
     var streakDays: Int
     var isGoalMet: Bool
+    /// The cards left of the plan.
     var due: Int
     /// The next reminder, `nil` once it is past.
     var nextReminder: Date?
     /// `WidgetSnapshot.secondsPerCard`.
     var secondsPerCard: Double?
 
-    /// The minutes the cards due take (`DailyGoal.minutesLeft`): `nil` for none, or without a price.
+    /// The minutes the cards left take (`DailyGoal.minutesLeft`): `nil` for none, or without a pace.
     var minutesLeft: Int? {
         secondsPerCard.flatMap { DailyGoal.minutesLeft(cards: due, secondsPerCard: $0) }
     }
 
     /// The ring and the streak as `DailyRingView` takes them.
     var progress: DailyProgress {
-        DailyProgress(ring: DailyRing(done: reviews, goal: goal), streak: Streak(days: streakDays, repairCards: nil))
+        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streakDays, repairCards: nil))
     }
 
     /// The same figures at another moment of the timeline.
@@ -147,7 +155,7 @@ struct WidgetState: Equatable, Sendable {
 extension WidgetSnapshot {
     /// How the figures stand at `moment`, `date` or later.
     ///
-    /// On the study day of the snapshot they are the snapshot's, with the due count that was
+    /// On the study day of the snapshot they are the snapshot's, with the cards left that were
     /// forecast for the hour. Once a study day has begun, today's cards done are 0 and its goal
     /// is the plan, as forecast for the moment; a day whose plan is empty is met, and counts
     /// for the streak. The streak holds through one missed day, which the plan of the next
@@ -159,17 +167,17 @@ extension WidgetSnapshot {
         let days = calendar.dayNumber(for: moment) - calendar.dayNumber(for: date)
         guard days > 0 else {
             return WidgetState(
-                date: moment, reviews: reviews, goal: goal, streakDays: streakDays, isGoalMet: isGoalMet, due: count, nextReminder: reminder,
+                date: moment, done: done, goal: goal, streakDays: streakDays, isGoalMet: isGoalMet, due: count, nextReminder: reminder,
                 secondsPerCard: secondsPerCard)
         }
         let missed = days - (isGoalMet ? 1 : 0)
         let isEmptyPlanMet = count == 0 && missed == 0
         return WidgetState(
-            date: moment, reviews: 0, goal: count, streakDays: missed >= 2 ? 0 : streakDays + (isEmptyPlanMet ? 1 : 0),
+            date: moment, done: 0, goal: count, streakDays: missed >= 2 ? 0 : streakDays + (isEmptyPlanMet ? 1 : 0),
             isGoalMet: count == 0, due: count, nextReminder: reminder, secondsPerCard: secondsPerCard)
     }
 
-    /// The cards due at `moment`: the last forecast at or before it, the first one if none is.
+    /// The cards left of the plan at `moment`: the last forecast at or before it, the first one if none is.
     func dueCount(at moment: Date) -> Int {
         (due.last { $0.date <= moment } ?? due.first)?.count ?? 0
     }

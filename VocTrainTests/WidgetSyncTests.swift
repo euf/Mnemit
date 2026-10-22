@@ -15,9 +15,9 @@ struct WidgetSyncTests {
         var count = 0
     }
 
-    private func inputs(reviews: Int) -> WidgetSync.Inputs {
+    private func inputs(done: Int) -> WidgetSync.Inputs {
         WidgetSync.Inputs(
-            progress: Fixtures.progress(done: reviews, goal: 20, streak: 3), decks: [.open(Fixtures.deck(), Fixtures.studyCalendar)], nextReminder: nil)
+            progress: Fixtures.progress(done: done, goal: 20, streak: 3), decks: [.open(Fixtures.deck(), Fixtures.studyCalendar)], nextReminder: nil)
     }
 
     private func sync(_ store: FakeSnapshotStore, _ reloads: Reloads, isEnabled: Bool = true) -> WidgetSync {
@@ -35,8 +35,8 @@ struct WidgetSyncTests {
         let store = FakeSnapshotStore()
         let reloads = Reloads()
         let sync = sync(store, reloads)
-        for reviews in 1...5 {
-            sync.request(inputs(reviews: reviews))
+        for done in 1...5 {
+            sync.request(inputs(done: done))
             try await Task.sleep(for: .milliseconds(10))
         }
         try await wait { store.writes > 0 }
@@ -44,17 +44,17 @@ struct WidgetSyncTests {
         try await Task.sleep(for: .milliseconds(250))
         #expect(store.writes == 1)
         #expect(reloads.count == 1)
-        #expect(store.read()?.reviews == 5)
+        #expect(store.read()?.done == 5)
     }
 
     @Test func aFlushWritesAtOnceAndTakesTheWaitingRequestWithIt() async throws {
         let store = FakeSnapshotStore()
         let reloads = Reloads()
         let sync = sync(store, reloads)
-        sync.request(inputs(reviews: 1))
-        await sync.flush(inputs(reviews: 2))
+        sync.request(inputs(done: 1))
+        await sync.flush(inputs(done: 2))
         #expect(store.writes == 1)
-        #expect(store.read()?.reviews == 2)
+        #expect(store.read()?.done == 2)
         #expect(reloads.count == 1)
         try await Task.sleep(for: .milliseconds(250))
         #expect(store.writes == 1)
@@ -64,7 +64,7 @@ struct WidgetSyncTests {
         let store = FakeSnapshotStore()
         store.succeeds = false
         let reloads = Reloads()
-        await sync(store, reloads).flush(inputs(reviews: 1))
+        await sync(store, reloads).flush(inputs(done: 1))
         #expect(store.writes == 0)
         #expect(reloads.count == 0)
     }
@@ -73,8 +73,8 @@ struct WidgetSyncTests {
         let store = FakeSnapshotStore()
         let reloads = Reloads()
         let sync = sync(store, reloads, isEnabled: false)
-        sync.request(inputs(reviews: 1))
-        await sync.flush(inputs(reviews: 2))
+        sync.request(inputs(done: 1))
+        await sync.flush(inputs(done: 2))
         try await Task.sleep(for: .milliseconds(250))
         #expect(store.writes == 0)
         #expect(reloads.count == 0)
@@ -85,8 +85,8 @@ struct WidgetSyncTests {
     @Test func theSyncOfAnAppUnderTestIsDisabledByDefault() async throws {
         let store = FakeSnapshotStore()
         let sync = WidgetSync(store: store, delay: .milliseconds(10), reload: { Issue.record("a test run reloaded the widgets") })
-        sync.request(inputs(reviews: 1))
-        await sync.flush(inputs(reviews: 2))
+        sync.request(inputs(done: 1))
+        await sync.flush(inputs(done: 2))
         try await Task.sleep(for: .milliseconds(100))
         #expect(store.writes == 0)
     }
