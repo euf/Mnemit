@@ -6212,7 +6212,7 @@
         }
       }
     },
-    "≈ +%lld reviews/day next week": {
+    "≈ +%lld cards/day next week": {
       "localizations": {
         "de": {
           "variations": {
@@ -6220,13 +6220,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ +%lld Abfrage pro Tag in der nächsten Woche"
+                  "value": "≈ +%lld Karte/Tag nächste Woche"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ +%lld Abfragen pro Tag in der nächsten Woche"
+                  "value": "≈ +%lld Karten/Tag nächste Woche"
                 }
               }
             }
@@ -6238,13 +6238,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ +%lld review/day next week"
+                  "value": "≈ +%lld card/day next week"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ +%lld reviews/day next week"
+                  "value": "≈ +%lld cards/day next week"
                 }
               }
             }

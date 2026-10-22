@@ -5,7 +5,7 @@ import VocabCore
 struct ExtraNewCards {
     /// At most `StudyStream.newCardChunk`.
     var cards: Int
-    /// What they add to the reviews of each day of the next week, rounded; see `NewCardLoad`.
+    /// What they add to the cards of each day of the next week, rounded; see `NewCardLoad`.
     var reviewsPerDay: Int
 }
 
@@ -18,9 +18,10 @@ struct StreamRest {
     /// When cards come back that today's plan leaves out; `nil` if no card has been studied.
     var nextDue: Date?
     var now: Date
-    /// Overdue cards the plan left for the days after: Keep Going works through them first.
+    /// The catch-up, the overdue review cards the plan left for the days after: Keep Going works
+    /// through them first.
     var catchUp = 0
-    /// The backlog, review ahead or practice has something to go on with.
+    /// The catch-up, review ahead or practice has something to go on with.
     var canKeepGoing: Bool
     /// What the stream could add beyond the daily limits; `nil` if there are no new cards.
     var extraNew: ExtraNewCards?
@@ -28,9 +29,9 @@ struct StreamRest {
 
 /// The short stop between today's plan and the rest of the stream: "Done for today" with
 /// the size of the plan, how many cards were recalled and when the next one is due, the
-/// ring, and what the learner can do from here. "Keep Going" works through the rest of the
-/// backlog, then reviews ahead and practices, and is the default; the new cards beyond the
-/// daily limit need a button of their own, with a line that says what they cost. A finished
+/// ring, and what the learner can do from here. "Keep Going" works through the catch-up, then
+/// reviews ahead and practices, and is the default; the new cards beyond the daily limit need
+/// a button of their own, with a line that says what they cost in cards a day. A finished
 /// practice ends with its figures.
 struct StreamRestView: View {
     var rest: StreamRest
@@ -86,7 +87,7 @@ struct StreamRestView: View {
                                 .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
                         }
                         .buttonStyle(.bordered)
-                        Text("≈ +\(extra.reviewsPerDay) reviews/day next week")
+                        Text("≈ +\(extra.reviewsPerDay) cards/day next week")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }

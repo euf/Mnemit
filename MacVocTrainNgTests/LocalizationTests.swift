@@ -95,17 +95,17 @@ struct LocalizationTests {
         }
     }
 
-    /// The lines of the stream at rest: "≈ +1 review/day" but "≈ +2 reviews/day".
+    /// The lines of the stream at rest: "≈ +1 card/day" but "≈ +2 cards/day".
     @Test func streamPhrasesAreSingularForOne() throws {
         let english: [(String.LocalizationValue, String)] = [
-            ("≈ +\(1) reviews/day next week", "≈ +1 review/day next week"),
-            ("≈ +\(2) reviews/day next week", "≈ +2 reviews/day next week"),
+            ("≈ +\(1) cards/day next week", "≈ +1 card/day next week"),
+            ("≈ +\(2) cards/day next week", "≈ +2 cards/day next week"),
             ("\(1) cards in today's plan", "1 card in today's plan"),
             ("\(2) cards in today's plan", "2 cards in today's plan"),
         ]
         let german: [(String.LocalizationValue, String)] = [
-            ("≈ +\(1) reviews/day next week", "≈ +1 Abfrage pro Tag in der nächsten Woche"),
-            ("≈ +\(2) reviews/day next week", "≈ +2 Abfragen pro Tag in der nächsten Woche"),
+            ("≈ +\(1) cards/day next week", "≈ +1 Karte/Tag nächste Woche"),
+            ("≈ +\(2) cards/day next week", "≈ +2 Karten/Tag nächste Woche"),
             ("\(1) cards in today's plan", "1 Karte im heutigen Plan"),
             ("\(2) cards in today's plan", "2 Karten im heutigen Plan"),
         ]

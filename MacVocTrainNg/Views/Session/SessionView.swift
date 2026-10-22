@@ -153,7 +153,7 @@ struct SessionView: View {
                         model.addNewCards()
                     } label: {
                         Text("+\(extra.cards) new")
-                        Text("≈ +\(extra.reviewsPerDay) reviews/day next week")
+                        Text("≈ +\(extra.reviewsPerDay) cards/day next week")
                     }
                 }
             }
