@@ -9,9 +9,31 @@ struct AnkiCollection {
     struct NoteType {
         var isCloze = false
         var fieldNames: [String] = []
+        /// How many card templates the note type has: the cards a note makes, at most.
+        var templateCount = 0
         /// The question and the answer template of each card, by `cards.ord`.
         var questionFormats: [Int: String] = [:]
         var answerFormats: [Int: String] = [:]
+
+        /// Whether the note type is a reverse pair: two templates, the second of which asks from
+        /// the field the first answers with ("Basic (and reversed card)", "Basic (optional reversed
+        /// card)"). A template that can't be read makes it no pair.
+        var isReversePair: Bool {
+            guard templateCount == 2, let asks = questionFormats[0], let answers = answerFormats[0], let reverse = questionFormats[1] else { return false }
+            let asked = AnkiCollection.fields(shownBy: asks, in: fieldNames, showsTyped: false)
+            let answer = AnkiCollection.fields(shownBy: answers, in: fieldNames, showsTyped: true).first { !asked.contains($0) }
+            return answer != nil && answer == AnkiCollection.fields(shownBy: reverse, in: fieldNames, showsTyped: false).first
+        }
+
+        /// The word key and the direction of the card `ord` of the note `guid`, which make the cards
+        /// of one note siblings (`Card.note`, `Card.kind`). A note type with one template has
+        /// neither. One with several shares the key of the note, so that the siblings are buried for
+        /// the day; the second card of a reverse pair asks the other way (`.production`, which waits
+        /// for the first to be learned), every other card is `.recognition`.
+        func sibling(ofCardAt ord: Int, guid: String) -> (note: String?, kind: CardKind?) {
+            guard templateCount > 1, let note = Card.normalized(guid) else { return (nil, nil) }
+            return (note, ord == 1 && isReversePair ? .production : .recognition)
+        }
     }
 
     /// One side of a card as plain text, and whether an image or a sound was stripped from it.
@@ -39,13 +61,13 @@ struct AnkiCollection {
         // The deck a filtered card came from is `odid`.
         let cards = try database.rows(
             """
-            SELECT c.id, c.ord, c.queue, CASE WHEN c.odid != 0 THEN c.odid ELSE c.did END, n.mid, n.flds
+            SELECT c.id, c.ord, c.queue, CASE WHEN c.odid != 0 THEN c.odid ELSE c.did END, n.mid, n.flds, n.guid
             FROM cards c JOIN notes n ON n.id = c.nid
             ORDER BY n.id, c.ord, c.id
             """
-        ) { ($0.int(0), $0.int(1), $0.int(2), $0.int(3), $0.int(4), $0.text(5)) }
+        ) { ($0.int(0), $0.int(1), $0.int(2), $0.int(3), $0.int(4), $0.text(5), $0.text(6)) }
 
-        for (id, ord, queue, deck, noteType, fields) in cards {
+        for (id, ord, queue, deck, noteType, fields, guid) in cards {
             let type = noteTypes[noteType] ?? NoteType()
             if type.isCloze {
                 result.skippedCloze += 1
@@ -64,8 +86,11 @@ struct AnkiCollection {
             usedDecks.insert(deck)
             // For now the preset is its number in Anki, which `presetNumbers` turns into an index below.
             let preset = decks[deck]?.preset.flatMap { presets[$0] == nil ? nil : $0 }
+            let sibling = type.sibling(ofCardAt: ord, guid: guid)
             result.notes.append(
-                AnkiImport.Note(front: question.text, back: answer.text, reviews: log.removeValue(forKey: id) ?? [], isSuspended: queue == -1, preset: preset))
+                AnkiImport.Note(
+                    front: question.text, back: answer.text, reviews: log.removeValue(forKey: id) ?? [], isSuspended: queue == -1, preset: preset,
+                    note: sibling.note, kind: sibling.kind))
         }
         result.deckNames = usedDecks.compactMap { decks[$0]?.name }.sorted()
         let presetNumbers = Set(result.notes.compactMap(\.preset)).sorted()
@@ -181,7 +206,9 @@ struct AnkiCollection {
             type.isCloze = (model["type"] as? Int) == 1
             let fields = (model["flds"] as? [[String: Any]]) ?? []
             type.fieldNames = fields.sorted { ($0["ord"] as? Int ?? 0) < ($1["ord"] as? Int ?? 0) }.map { $0["name"] as? String ?? "" }
-            for template in (model["tmpls"] as? [[String: Any]]) ?? [] {
+            let templates = (model["tmpls"] as? [[String: Any]]) ?? []
+            type.templateCount = templates.count
+            for template in templates {
                 if let ord = template["ord"] as? Int {
                     type.questionFormats[ord] = template["qfmt"] as? String
                     type.answerFormats[ord] = template["afmt"] as? String
@@ -229,6 +256,7 @@ struct AnkiCollection {
         }
         for (id, ord, config) in try database.rows("SELECT ntid, ord, config FROM templates", { ($0.int(0), $0.int(1), $0.data(2)) }) {
             // Template.Config.q_format is field 1, a_format field 2.
+            result[id]?.templateCount += 1
             let fields = ProtobufFields(config)
             result[id]?.questionFormats[ord] = fields.bytes(1).map { String(decoding: $0, as: UTF8.self) }
             result[id]?.answerFormats[ord] = fields.bytes(2).map { String(decoding: $0, as: UTF8.self) }

@@ -21,7 +21,7 @@ extension AnkiImport {
         let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
         return notes.compactMap { note in
             guard let text = CardText(question: note.front, answer: note.back) else { return nil }
-            var card = scheduler.replaying(note.reviews, of: Card(text: text, created: created))
+            var card = scheduler.replaying(note.reviews, of: Card(text: text, note: note.note, kind: note.kind, created: created))
             if note.isSuspended {
                 card.suspend(at: created)
             }
