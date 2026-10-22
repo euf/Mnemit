@@ -41,7 +41,9 @@ are in [`references/`](references/).
   counts cards, one unit everywhere: a card is done once it was graded that day and FSRS let
   it go to another day, so a review answered Hard, Good or Easy is done at once, a new card
   after its learning steps, and a card answered Forgot when it is through relearning. Today
-  and the widget say "75 of 218 cards" and "143 cards left", which add up. The goal does not
+  and the widget say "75 of 218 cards" and "143 cards left", which add up, and the cards left come
+  with "≈ 7 min", priced from the learner's own pace over the last week (20 seconds a card until
+  20 are done). The goal does not
   move during the day: cards added later and "+10 new" are laps, as are catching up and
   reviewing ahead. The ring keeps going round after the goal; during study its centre shows
   ×2, ×3 for the laps, elsewhere the streak in days. The streak counts the days whose ring
