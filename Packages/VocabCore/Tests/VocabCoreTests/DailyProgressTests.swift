@@ -571,9 +571,12 @@ struct DailyProgressTests {
         }
     }
 
-    /// By default every day is judged by its plan alone, whatever date the test is set on.
-    func evaluate(_ decks: [Deck], at date: Date? = nil, planRuleStart: Int = .min) -> DailyProgress {
-        DailyProgress.evaluate(decks.map { DeckActivity(deck: $0, calendar: calendar) }, at: date ?? now, calendar: calendar, planRuleStart: planRuleStart)
+    /// By default every day is judged by its plan alone, whatever date the test is set on. The sizes are those of
+    /// `DailyGoal.RingRule.rounds` unless a test names `.follows`: the arithmetic of the plans and of the streak in
+    /// these suites is set for the rounds that rule gives their short histories. The rule that follows the work has
+    /// `RingRuleTests` for its step and the tests of `.follows` in `DailyRoundsProgressTests` for the days.
+    func evaluate(_ decks: [Deck], at date: Date? = nil, planRuleStart: Int = .min, rule: DailyGoal.RingRule = .rounds) -> DailyProgress {
+        DailyProgress.evaluate(decks.map { DeckActivity(deck: $0, calendar: calendar) }, at: date ?? now, calendar: calendar, planRuleStart: planRuleStart, rule: rule)
     }
 
     @Test func reviewsAreCountedByStudyDayWithTheRolloverAtFourInTheMorning() throws {

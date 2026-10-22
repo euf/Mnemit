@@ -4,9 +4,10 @@ import Foundation
 /// nothing is stored, so every device that reads the deck files shows the same.
 ///
 /// The unit is the card, and the day is cut into rounds of two minutes of work at the learner's own
-/// pace (`roundSeconds`, `Pace`). How many rounds a day holds is its capacity, which the logs teach
-/// (`nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`); new cards are admitted only up to the
-/// time the capacity leaves after the day's reviews (`newCardsAllowed(capacity:otherCards:pace:)`).
+/// pace (`roundSeconds`, `Pace`). How many rounds a day holds is its capacity, which the logs teach:
+/// the size of a day follows the work the learner did (`nextTime(for:after:)`, `RingRule.follows`);
+/// new cards are admitted only up to the time the capacity leaves after the day's reviews
+/// (`newCardsAllowed(capacity:otherCards:pace:)`).
 /// The plan of a study day is what FSRS sets when the day begins, `StudySession.counts(for:at:calendar:)`
 /// with those allowances: the cards due that day, overdue ones included, and the new cards within the day's
 /// limits and allowance. Only the backlog, the review cards that were already due before the day, asks a
@@ -164,9 +165,121 @@ public enum DailyGoal {
     /// The capacity of a study day, in rounds, one step from the day before: one more if the ring was
     /// closed on each of the two days before (`yesterdayClosed`, `dayBeforeClosed`), one fewer if it was
     /// open on the day before, a day without study included, and the same otherwise. Within `capacityRange`.
+    /// The rule of `RingRule.rounds`.
     public static func nextCapacity(after capacity: Int, yesterdayClosed: Bool, dayBeforeClosed: Bool) -> Int {
         let step = yesterdayClosed ? (dayBeforeClosed ? 1 : 0) : -1
         return min(max(capacity + step, capacityRange.lowerBound), capacityRange.upperBound)
+    }
+
+    /// Which rule sets the capacity of a study day.
+    public enum RingRule: Hashable, Sendable {
+        /// The day is as long as the work the learner has been doing (`nextTime(for:after:)`).
+        case follows
+        /// One round at a time (`nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`).
+        case rounds
+    }
+
+    /// The rule `DailyProgress.evaluate` uses unless a caller names one: the one place that decides.
+    public static let ringRule: RingRule = .follows
+
+    /// The study days a base is the median of.
+    public static let baseDays = 7
+    /// The factor a probe asks over the base.
+    public static let probeFactor = 1.10
+    /// The study days with a closed ring in a row before a probe.
+    public static let probeAfterClosed = 3
+    /// The calendar days after a failed probe in which none is made.
+    public static let probeRestDays = 7
+    /// The factor the day after a missed day asks of the base.
+    public static let softenFactor = 0.7
+
+    /// Why a day has the size it has.
+    public enum SizeReason: Hashable, Sendable {
+        /// No study day before it to go by: `initialCapacity` rounds.
+        case start
+        /// The median of the work of the last study days.
+        case median
+        /// The median and a tenth more, after three closed rings.
+        case probe
+        /// The day before was missed: the median less three tenths.
+        case afterMiss
+    }
+
+    /// One day of the ring as the size rule reads it, plain values: the size it had and what came of it.
+    public struct RingDay: Hashable, Sendable {
+        public var day: Int
+        /// The rounds the day held.
+        public var capacity: Int
+        /// Why; `nil` under `RingRule.rounds`, which has no reasons.
+        public var reason: SizeReason?
+        /// The cards done on the day at the day's own prices, in seconds (`pace.seconds(newCards:otherCards:)`).
+        public var worked: Double
+        /// The ring was closed.
+        public var closed: Bool
+        /// Something was done: `done > 0`.
+        public var studied: Bool
+        /// The plan had cards and nothing was done.
+        public var missed: Bool
+        /// The day asked a tenth over the base: if its ring stays open the probe failed.
+        public var probe: Bool { reason == .probe }
+        /// The day came after a missed day and asked less, which keeps it out of later bases.
+        public var softened: Bool { reason == .afterMiss }
+
+        public init(day: Int, capacity: Int = DailyGoal.initialCapacity, reason: SizeReason? = nil, worked: Double, closed: Bool, studied: Bool, missed: Bool = false) {
+            self.day = day
+            self.capacity = capacity
+            self.reason = reason
+            self.worked = worked
+            self.closed = closed
+            self.studied = studied
+            self.missed = missed
+        }
+    }
+
+    /// The time of day `day`, in seconds, from the days before it (`days`, oldest first, every day from the first
+    /// study day): the base, the median of the work of the last `baseDays` study days, leaving out the days that
+    /// came after a missed one, or `initialCapacity` rounds without any. After a missed day the time is the base
+    /// less 30 %; after the rings of the last three study days all closed, and no failed probe in the `probeRestDays`
+    /// days before, the base and 10 % more, the probe.
+    public static func nextTime(for day: Int, after days: [RingDay]) -> (time: Double, reason: SizeReason) {
+        var worked: [Double] = []
+        var closedRings: [Bool] = []
+        var yesterdayMissed = false
+        var probeFailed = false
+        for earlier in days.reversed() {
+            if earlier.day == day - 1 { yesterdayMissed = earlier.missed }
+            if earlier.day >= day - probeRestDays && earlier.probe && !earlier.closed { probeFailed = true }
+            if earlier.studied {
+                if closedRings.count < probeAfterClosed { closedRings.append(earlier.closed) }
+                if !earlier.softened && worked.count < baseDays { worked.append(earlier.worked) }
+            }
+            if earlier.day < day - probeRestDays && worked.count == baseDays && closedRings.count == probeAfterClosed { break }
+        }
+        worked.sort()
+        let middle = worked.count / 2
+        let base = worked.isEmpty ? Double(initialCapacity) * roundSeconds : worked.count.isMultiple(of: 2) ? (worked[middle - 1] + worked[middle]) / 2 : worked[middle]
+        if yesterdayMissed { return (base * softenFactor, .afterMiss) }
+        if closedRings.count == probeAfterClosed && !closedRings.contains(false) && !probeFailed { return (base * probeFactor, .probe) }
+        return (base, worked.isEmpty ? .start : .median)
+    }
+
+    /// The rounds a time of `seconds` holds, whole, within `capacityRange`.
+    public static func rounds(ofTime seconds: Double) -> Int {
+        max(capacityRange.lowerBound, min(capacityRange.upperBound, Int((seconds / roundSeconds).rounded())))
+    }
+
+    /// The capacity of `day` under `rule`, and why, from the days before it (`days`, oldest first, from the first
+    /// study day; none on the first). The one place that tells the rules apart.
+    public static func size(on day: Int, after days: [RingDay], rule: RingRule) -> (capacity: Int, reason: SizeReason?) {
+        switch rule {
+        case .follows:
+            let next = nextTime(for: day, after: days)
+            return (rounds(ofTime: next.time), next.reason)
+        case .rounds:
+            guard let yesterday = days.last else { return (initialCapacity, nil) }
+            let capacity = nextCapacity(after: yesterday.capacity, yesterdayClosed: yesterday.closed, dayBeforeClosed: days.dropLast().last?.closed ?? false)
+            return (capacity, nil)
+        }
     }
 
     /// How many new cards a day admits: what is left of `capacity` rounds once the `otherCards` of the
@@ -905,12 +1018,14 @@ public final class DailyProgressCache: @unchecked Sendable {
         var first: Int
         var today: Int
         var calendar: StudyCalendar
+        var rule: DailyGoal.RingRule
     }
 
     /// The study days before today, stepped through from the first.
     struct Before {
-        /// How many rounds the day before today held.
-        var capacity: Int
+        /// Every day before today, from the first: its size, why, the work done on it and how its ring stood, which
+        /// is what the size of the next day is worked out from (`DailyGoal.size(on:after:rule:)`).
+        var days: [DailyGoal.RingDay]
         var kept: [Int: Bool]
         var closed: [Int: Bool]
         /// The day's goal and the cards done on it, for the `DayRecord`s.
@@ -1084,8 +1199,12 @@ public struct DailyProgress: Hashable, Sendable {
     /// What one done card takes this learner, new cards and others, `DailyGoal.pace(days:newDone:otherDone:)`.
     public var pace: Pace
     /// How many rounds the learner takes in a day, worked out from their logs: the time the day admits
-    /// new cards up to (`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`).
+    /// new cards up to (`DailyGoal.size(on:after:rule:)`).
     public var capacity: Int
+    /// The rule that sized the days, and the days it sized: every study day from the first through today, today
+    /// last and with its live figures, which "How Today Works" tells the capacity from.
+    public var ringRule: DailyGoal.RingRule
+    public var ringDays: [DailyGoal.RingDay]
     /// Today's cards cut into rounds, as the plan stood when the day began.
     public var roundPlan: DayRounds
     /// Whether today keeps the streak: its first round is done, or its plan was empty.
@@ -1113,8 +1232,11 @@ public struct DailyProgress: Hashable, Sendable {
         ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace(), capacity: Int = DailyGoal.initialCapacity,
         roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), capacity: DailyGoal.initialCapacity), streakKeptToday: Bool = false,
         newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
-        ladder: [Int] = [], climbedToday: Int = 0, records: [DayRecord] = [], achievements: [Achievement] = []
+        ladder: [Int] = [], climbedToday: Int = 0, records: [DayRecord] = [], achievements: [Achievement] = [],
+        ringRule: DailyGoal.RingRule = DailyGoal.ringRule, ringDays: [DailyGoal.RingDay] = []
     ) {
+        self.ringRule = ringRule
+        self.ringDays = ringDays
         self.records = records
         self.achievements = achievements
         self.week = week
@@ -1165,7 +1287,7 @@ public struct DailyProgress: Hashable, Sendable {
     /// for the learner, however many decks they study.
     ///
     /// The logs are replayed forward from the first study day (`DeckActivity.history(from:at:calendar:)`).
-    /// Each day has a capacity (`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`), which
+    /// Each day has a capacity (`DailyGoal.size(on:after:rule:)`, by the `rule`), which
     /// sets the time of the day: the cards of its plan that were not new, at the pace the day began with
     /// (the seven study days before it), leave the rest to new cards (`DailyGoal.newCardsAllowed`). The
     /// goal of the day is the plan that fits (`DayRounds`); the ring is closed at the goal, and the first
@@ -1179,7 +1301,8 @@ public struct DailyProgress: Hashable, Sendable {
     /// With a `cache` that an earlier call over the same decks filled, the days before today that the decks'
     /// own caches kept (`DeckHistoryCache`) are not stepped through again: only today is.
     public static func evaluate(
-        _ given: [DeckActivity], at now: Date, calendar: StudyCalendar, planRuleStart: Int = DailyGoal.planRuleStart, cache: DailyProgressCache? = nil
+        _ given: [DeckActivity], at now: Date, calendar: StudyCalendar, planRuleStart: Int = DailyGoal.planRuleStart,
+        rule: DailyGoal.RingRule = DailyGoal.ringRule, cache: DailyProgressCache? = nil
     ) -> DailyProgress {
         let decks = given.filter { !$0.isPaused }
         let today = calendar.dayNumber(for: now)
@@ -1204,34 +1327,37 @@ public struct DailyProgress: Hashable, Sendable {
                 otherDone: days.reduce(0) { $0 + (otherDoneByDay[$1] ?? 0) })
         }
 
-        /// How many rounds the day before today held, and which days before it kept the streak and closed
-        /// their rings.
+        /// How each day before today was sized and stood, and which of them kept the streak and closed their rings.
         func daysBeforeToday() -> DailyProgressCache.Before {
-            var capacity = DailyGoal.initialCapacity
+            var days: [DailyGoal.RingDay] = []
             var kept: [Int: Bool] = [:]
             var closed: [Int: Bool] = [:]
             var goals: [Int: Int] = [:]
             var dones: [Int: Int] = [:]
             for day in first..<today {
-                if day > first {
-                    capacity = DailyGoal.nextCapacity(after: capacity, yesterdayClosed: closed[day - 1] ?? false, dayBeforeClosed: closed[day - 2] ?? false)
-                }
+                let size = DailyGoal.size(on: day, after: days, rule: rule)
                 let pace = pace(over: (day - DailyGoal.paceDays)...(day - 1))
                 let other = histories.reduce(0) { $0 + ($1.starts[day]?.other ?? 0) }
-                let allowed = DailyGoal.newCardsAllowed(capacity: capacity, otherCards: other, pace: pace)
-                let rounds = DayRounds(otherCards: other, newCards: min(allowed, histories.reduce(0) { $0 + ($1.starts[day]?.new ?? 0) }), pace: pace, capacity: capacity)
-                let done = (newDoneByDay[day] ?? 0) + (otherDoneByDay[day] ?? 0)
+                let allowed = DailyGoal.newCardsAllowed(capacity: size.capacity, otherCards: other, pace: pace)
+                let rounds = DayRounds(otherCards: other, newCards: min(allowed, histories.reduce(0) { $0 + ($1.starts[day]?.new ?? 0) }), pace: pace, capacity: size.capacity)
+                let newDone = newDoneByDay[day] ?? 0
+                let otherDone = otherDoneByDay[day] ?? 0
+                let done = newDone + otherDone
                 closed[day] = done >= rounds.goal
                 kept[day] = rounds.ends.first.map { done >= $0 } ?? true
                 goals[day] = rounds.goal
                 dones[day] = done
+                days.append(
+                    DailyGoal.RingDay(
+                        day: day, capacity: size.capacity, reason: size.reason, worked: pace.seconds(newCards: newDone, otherCards: otherDone),
+                        closed: done >= rounds.goal, studied: done > 0, missed: done == 0 && rounds.goal > 0))
             }
-            return DailyProgressCache.Before(capacity: capacity, kept: kept, closed: closed, goals: goals, done: dones)
+            return DailyProgressCache.Before(days: days, kept: kept, closed: closed, goals: goals, done: dones)
         }
         // The days before today are the same while the decks' own days before today are: each history says
         // which it comes from.
         let pasts = histories.compactMap(\.pastID)
-        let key = pasts.count == histories.count ? DailyProgressCache.Key(pasts: pasts, first: first, today: today, calendar: calendar) : nil
+        let key = pasts.count == histories.count ? DailyProgressCache.Key(pasts: pasts, first: first, today: today, calendar: calendar, rule: rule) : nil
         let before: DailyProgressCache.Before
         if let key, let known = cache?.before(for: key) {
             before = known
@@ -1239,13 +1365,11 @@ public struct DailyProgress: Hashable, Sendable {
             before = daysBeforeToday()
             if let key { cache?.keep(before, for: key) }
         }
-        var capacity = before.capacity
         var kept = before.kept
         var closed = before.closed
 
-        if today > first {
-            capacity = DailyGoal.nextCapacity(after: capacity, yesterdayClosed: closed[today - 1] ?? false, dayBeforeClosed: closed[today - 2] ?? false)
-        }
+        let size = DailyGoal.size(on: today, after: before.days, rule: rule)
+        let capacity = size.capacity
         let startPace = pace(over: (today - DailyGoal.paceDays)...(today - 1))
         let other = histories.reduce(0) { $0 + ($1.starts[today]?.other ?? 0) }
         let allowed = DailyGoal.newCardsAllowed(capacity: capacity, otherCards: other, pace: startPace)
@@ -1271,6 +1395,10 @@ public struct DailyProgress: Hashable, Sendable {
         let (streak, steps) = Streak.walk(
             reviews: reviews, today: today, planRuleStart: planRuleStart, isKept: { kept[$0] ?? false }, isClosed: { closed[$0] ?? false },
             repairCards: max(0, ring.goal - ring.done))
+        let ringToday = DailyGoal.RingDay(
+            day: today, capacity: capacity, reason: size.reason,
+            worked: startPace.seconds(newCards: newDoneByDay[today] ?? 0, otherCards: otherDoneByDay[today] ?? 0), closed: ring.isGoalMet, studied: ring.done > 0,
+            missed: false)  // today is not over: nothing is missed yet
         let records = (first...today).map { day in
             DayRecord(
                 day: day, done: day == today ? ring.done : before.done[day] ?? 0, goal: day == today ? ring.goal : before.goals[day] ?? 0,
@@ -1289,6 +1417,6 @@ public struct DailyProgress: Hashable, Sendable {
                 for index in sum.indices { sum[index] += steps[index] }
             },
             climbedToday: decks.reduce(0) { $0 + $1.climbs(onDayOf: now, calendar: calendar) }, records: records,
-            achievements: Achievements.earned(over: records))
+            achievements: Achievements.earned(over: records), ringRule: rule, ringDays: before.days + [ringToday])
     }
 }

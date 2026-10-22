@@ -277,9 +277,10 @@ _Avoid_: session, lap, segment
 **Capacity** (RU «ёмкость дня»):
 How many rounds the day holds, 1 to 15 (`DailyProgress.capacity`). It comes from the review logs
 alone, forward from the first study day, so every device that reads the same logs gets the same: 2
-on the first day; each later day takes one step from the day before: one more if the ring was
-closed on each of the two days before it, one fewer if the day before ended with its ring open (a
-day without study is open when its plan had cards), else the same
+on the first day; each later day follows the work done (`DailyGoal.ringRule` is `.follows`,
+`DailyGoal.nextTime(for:after:)`): the median of the work of the last seven study days, a tenth more
+(a probe) after three closed rings in a row, 30 % less the day after a missed day, in whole rounds.
+`.rounds`, the earlier rule, stepped one round from the day before
 (`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`). The capacity sets the day's
 time, capacity × 120 s.
 _Avoid_: limit, quota, level

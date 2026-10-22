@@ -73,8 +73,9 @@ Study ▸ How Today Works, over the open decks, which it names Deck 1, Deck 2.)
   and each deck's ceiling with its limits (new / production), a paused deck as "Paused: <name>" with no figures;
   the daily goal in cards; the rounds and where each ends, in cards; cards done; cards left; catch-up beyond the
   plan.
-- **Capacity**: the rounds of today and their time; the last 14 days, newest first, with rounds, ring
-  (Closed or Open) and step (+1, 0, −1).
+- **Capacity**: the rounds of today and their time; the last 14 days, newest first, with the minutes the
+  ring asked, the minutes worked, the ring (Closed or Open) and why the size (Start, Median, Probe +10 %,
+  After a miss −30 %). Under `DailyGoal.RingRule.rounds` the columns are rounds, ring and step (+1, 0, −1).
 - **Pace**: seconds for a new card and for another card, each with its source (Durations (n), Gaps (n) or
   Default) and the reviews each done card took.
 - **Streak**: days, whether today is kept, the cards that would repair yesterday.

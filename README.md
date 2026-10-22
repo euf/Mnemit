@@ -59,10 +59,10 @@ are in [`references/`](references/).
   "Ring closed". The streak is kept once the first round is done, and Study rests there once
   ("Streak kept": Keep Going or Done for Now); the next rest is the closed ring, with the rings of
   the last seven days. How many rounds a day holds, its capacity, comes from
-  your review logs: two on the first day, one more when the ring was closed on each of the two
-  days before, one fewer after a day that ended with the ring open. New cards are admitted up
-  to the time the capacity leaves after the day's reviews, so a break does not turn into a wall
-  of work.
+  your review logs: two on the first day, then the work you did, the median of your last seven
+  study days, a tenth more after three closed rings in a row, 30 % less the day after a missed
+  day. New cards are admitted up to the time the capacity leaves after the day's reviews, so a
+  break does not turn into a wall of work.
 - **The ring counts cards, and every answer recalled moves it.** A ring in the manner of Apple
   Fitness fills to the daily goal: the
   cards of the day's plan as FSRS set it when the day began that fit the day's rounds, the

@@ -4,9 +4,9 @@ import Foundation
 /// parts of the plan, how the day's new cards are shared among the decks, the capacity and the ring of
 /// the last days, and what the pace is worked out from. Read-only, and derived from the same decks and
 /// logs as the progress it is made for, so it shows what the progress holds and nothing else.
-// ponytail: the per-day loop and the pace window below follow `DailyProgress.evaluate` and
-// `DailyGoal.pace(days:newDone:otherDone:)` line by line, because those keep their steps to themselves;
-// `DayBreakdownTests` holds the two together. Let `evaluate` build on this loop if the rules change again.
+// ponytail: the pace window below follows `DailyGoal.pace(days:newDone:otherDone:)` line by line, because
+// that keeps its steps to itself; `DayBreakdownTests` holds the two together. The days of the capacity are
+// the ones `DailyProgress.evaluate` stepped through (`DailyProgress.ringDays`), not a second loop.
 public struct DayBreakdown: Hashable, Sendable {
     /// The plan as it stood when the study day began, over all decks.
     public struct Plan: Hashable, Sendable {
@@ -36,12 +36,16 @@ public struct DayBreakdown: Hashable, Sendable {
     public struct Day: Hashable, Sendable {
         /// When the study day began.
         public var start: Date
-        /// How many rounds the day held.
+        /// How many rounds the day held: the ring asked that many times `DailyGoal.roundSeconds`.
         public var capacity: Int
         /// The step from the capacity of the day before: +1, 0 or -1; 0 on the first day.
         public var step: Int
         /// Whether the day's ring was closed (done at least the goal); today's only for now.
         public var isClosed: Bool
+        /// The seconds of work the day's cards took at the day's own prices; today's so far.
+        public var worked: Double = 0
+        /// Why the day had its size; `nil` under `DailyGoal.RingRule.rounds`.
+        public var reason: DailyGoal.SizeReason?
     }
 
     /// Where a kind of card gets its price in seconds (`DailyGoal.pace(days:newDone:otherDone:)`).
@@ -79,6 +83,8 @@ public struct DayBreakdown: Hashable, Sendable {
         }
     }
 
+    /// The rule that sized the days.
+    public var rule: DailyGoal.RingRule = DailyGoal.ringRule
     public var plan: Plan
     /// One entry for each deck, in the order of the decks given.
     public var decks: [DeckNewCards]
@@ -111,35 +117,15 @@ extension DayBreakdown {
             newDoneByDay.merge(history.paced.newDoneByDay, uniquingKeysWith: +)
             otherDoneByDay.merge(history.paced.otherDoneByDay, uniquingKeysWith: +)
         }
-        /// The pace over the study days `window`, as `DailyProgress.evaluate` takes it.
-        func pace(over window: ClosedRange<Int>) -> Pace {
-            DailyGoal.pace(
-                days: window.compactMap { paced[$0] }, newDone: window.reduce(0) { $0 + (newDoneByDay[$1] ?? 0) },
-                otherDone: window.reduce(0) { $0 + (otherDoneByDay[$1] ?? 0) })
+        // The size and the ring of every day, from the first study day on, as `evaluate` stepped through them.
+        let sized = progress.ringDays
+        rule = progress.ringRule
+        days = sized.indices.suffix(lastDays).map { index in
+            let day = sized[index]
+            return Day(
+                start: calendar.start(ofDay: day.day), capacity: day.capacity, step: index > 0 ? day.capacity - sized[index - 1].capacity : 0, isClosed: day.closed,
+                worked: day.worked, reason: day.reason)
         }
-
-        // The capacity and the ring of every day, from the first study day on, as `evaluate` steps through them.
-        var capacity = DailyGoal.initialCapacity
-        var closed: [Int: Bool] = [:]
-        var history: [Day] = []
-        for day in first...today {
-            let before = capacity
-            if day > first {
-                capacity = DailyGoal.nextCapacity(after: capacity, yesterdayClosed: closed[day - 1] ?? false, dayBeforeClosed: closed[day - 2] ?? false)
-            }
-            if day < today {
-                let other = histories.reduce(0) { $0 + ($1.starts[day]?.other ?? 0) }
-                let new = histories.reduce(0) { $0 + ($1.starts[day]?.new ?? 0) }
-                let pace = pace(over: (day - DailyGoal.paceDays)...(day - 1))
-                let allowed = DailyGoal.newCardsAllowed(capacity: capacity, otherCards: other, pace: pace)
-                let rounds = DayRounds(otherCards: other, newCards: min(allowed, new), pace: pace, capacity: capacity)
-                closed[day] = (newDoneByDay[day] ?? 0) + (otherDoneByDay[day] ?? 0) >= rounds.goal
-            } else {
-                closed[day] = progress.ring.isGoalMet
-            }
-            history.append(Day(start: calendar.start(ofDay: day), capacity: capacity, step: day > first ? capacity - before : 0, isClosed: closed[day] ?? false))
-        }
-        days = Array(history.suffix(lastDays))
 
         // The plan at the day's start, by kind, and each deck's part of the new cards.
         var plan = Plan()

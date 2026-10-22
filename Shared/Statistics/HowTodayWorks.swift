@@ -89,25 +89,55 @@ struct HowTodayWorks: Equatable, Sendable {
 
     private static func capacity(_ progress: DailyProgress, _ breakdown: DayBreakdown) -> Section {
         let minutes = Int((Double(progress.capacity) * DailyGoal.roundSeconds / 60).rounded())
-        let header = [String(localized: "Day"), String(localized: "Rounds"), String(localized: "Ring"), String(localized: "Step")]
-        let table = breakdown.days.reversed().enumerated().map { offset, day in
-            [
-                offset == 0 ? String(localized: "Today") : day.start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)),
-                day.capacity.formatted(),
-                day.isClosed ? String(localized: "Closed") : String(localized: "Open"),
-                day.step > 0 ? "+\(day.step)" : day.step < 0 ? "−\(-day.step)" : "0",
-            ]
+        func dayName(_ offset: Int, _ day: DayBreakdown.Day) -> String {
+            offset == 0 ? String(localized: "Today") : day.start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+        }
+        func ring(_ day: DayBreakdown.Day) -> String { day.isClosed ? String(localized: "Closed") : String(localized: "Open") }
+        let header: [String]
+        let table: [[String]]
+        let footer: String
+        switch breakdown.rule {
+        case .follows:
+            header = [String(localized: "Day"), String(localized: "Asked (min)"), String(localized: "Worked (min)"), String(localized: "Ring"), String(localized: "Why")]
+            table = breakdown.days.reversed().enumerated().map { offset, day in
+                [
+                    dayName(offset, day),
+                    Int((Double(day.capacity) * DailyGoal.roundSeconds / 60).rounded()).formatted(),
+                    Int((day.worked / 60).rounded()).formatted(),
+                    ring(day),
+                    day.reason.map(Self.text(of:)) ?? "–",
+                ]
+            }
+            footer = String(
+                localized:
+                    "A round is two minutes of work. A day asks the median of the work of the last seven study days, in whole rounds: a tenth more after three closed rings in a row unless a try in the last week left its ring open, and 30 % less the day after a missed one."
+            )
+        case .rounds:
+            header = [String(localized: "Day"), String(localized: "Rounds"), String(localized: "Ring"), String(localized: "Step")]
+            table = breakdown.days.reversed().enumerated().map { offset, day in
+                [dayName(offset, day), day.capacity.formatted(), ring(day), day.step > 0 ? "+\(day.step)" : day.step < 0 ? "−\(-day.step)" : "0"]
+            }
+            footer = String(
+                localized:
+                    "A round is two minutes of work. A day takes one step from the day before: one round more if the ring was closed on each of the two days before, one fewer if the day before ended open, else the same."
+            )
         }
         let rows: [Row] = [
             .value(label: String(localized: "Capacity (rounds)"), value: progress.capacity.formatted()),
             .value(label: String(localized: "Time of the day"), value: String(localized: "\(minutes) min")),
             .table(header: header, rows: table),
         ]
-        let footer = String(
-            localized:
-                "A round is two minutes of work. A day takes one step from the day before: one round more if the ring was closed on each of the two days before, one fewer if the day before ended open, else the same."
-        )
         return Section(title: String(localized: "Capacity"), rows: rows, footer: footer)
+    }
+
+    /// Why a day had the size it had.
+    private static func text(of reason: DailyGoal.SizeReason) -> String {
+        switch reason {
+        case .start: String(localized: "Start")
+        case .median: String(localized: "Median")
+        case .probe: String(localized: "Probe +10 %")
+        case .afterMiss: String(localized: "After a miss −30 %")
+        }
     }
 
     private static func pace(_ progress: DailyProgress, _ breakdown: DayBreakdown) -> Section {

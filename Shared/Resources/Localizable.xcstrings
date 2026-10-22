@@ -3593,6 +3593,28 @@
         }
       }
     },
+    "A round is two minutes of work. A day asks the median of the work of the last seven study days, in whole rounds: a tenth more after three closed rings in a row unless a try in the last week left its ring open, and 30 % less the day after a missed one.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Runde sind zwei Minuten Arbeit. Ein Tag verlangt den Median der Arbeit der letzten sieben Lerntage, in ganzen Runden: ein Zehntel mehr nach drei geschlossenen Ringen in Folge, außer ein Versuch in der letzten Woche ließ seinen Ring offen, und 30 % weniger am Tag nach einem verpassten."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ένας γύρος είναι δύο λεπτά δουλειάς. Η ημέρα ζητά τη διάμεσο της δουλειάς των τελευταίων επτά ημερών μελέτης, σε ακέραιους γύρους: ένα δέκατο παραπάνω μετά από τρεις κλειστούς κύκλους στη σειρά, εκτός αν μια δοκιμή της τελευταίας εβδομάδας άφησε τον κύκλο της ανοιχτό, και 30 % λιγότερο την ημέρα μετά από μια χαμένη."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Раунд — это две минуты работы. День просит медиану работы за последние семь дней учёбы, целыми раундами: на десятую часть больше после трёх закрытых колец подряд, если за последнюю неделю такая проба не оставила кольцо открытым, и на 30 % меньше на следующий день после пропущенного."
+          }
+        }
+      }
+    },
     "A round is two minutes of work. A day takes one step from the day before: one round more if the ring was closed on each of the two days before, one fewer if the day before ended open, else the same.": {
       "localizations": {
         "de": {
@@ -4363,6 +4385,28 @@
         }
       }
     },
+    "After a miss −30 %": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach einem Fehltag −30 %"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μετά από χαμένη ημέρα −30 %"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После пропуска −30 %"
+          }
+        }
+      }
+    },
     "Again": {
       "localizations": {
         "de": {
@@ -4799,6 +4843,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Снова спрашивать эти карточки в учебных сессиях"
+          }
+        }
+      }
+    },
+    "Asked (min)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verlangt (Min.)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ζητήθηκαν (λεπτά)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Задано (мин)"
           }
         }
       }
@@ -9668,6 +9734,28 @@
         }
       }
     },
+    "Median": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Median"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Διάμεσος"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Медиана"
+          }
+        }
+      }
+    },
     "Memory": {
       "localizations": {
         "de": {
@@ -11688,6 +11776,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Предыдущее:"
+          }
+        }
+      }
+    },
+    "Probe +10 %": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probe +10 %"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δοκιμή +10 %"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проба +10 %"
           }
         }
       }
@@ -14156,6 +14266,28 @@
         }
       }
     },
+    "Start": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αρχή"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Старт"
+          }
+        }
+      }
+    },
     "State": {
       "localizations": {
         "de": {
@@ -16444,6 +16576,28 @@
         }
       }
     },
+    "Why": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grund"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Γιατί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Почему"
+          }
+        }
+      }
+    },
     "Word Key": {
       "localizations": {
         "de": {
@@ -16550,6 +16704,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Слов в памяти"
+          }
+        }
+      }
+    },
+    "Worked (min)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gearbeitet (Min.)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μελέτη (λεπτά)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сделано (мин)"
           }
         }
       }

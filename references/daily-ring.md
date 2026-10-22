@@ -59,10 +59,30 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 ## Capacity
 
 - **Capacity**: the number of rounds in the day, 1…15 (`DailyProgress.capacity`), from the log,
-  forward from the first study day, the same on every device. 2 on the first day; each next day steps
-  from the previous one: +1 if the ring was closed on each of the two previous days, −1 if the previous
-  day ended with the ring open (a day without study with a non-empty plan too), otherwise the same
-  (`DailyGoal.nextCapacity`).
+  forward from the first study day, the same on every device. `DailyGoal.ringRule` picks the rule, one
+  switch, `DailyGoal.size(on:after:rule:)`; `evaluate(rule:)` names one for a test. `.follows` is the
+  default, `.rounds` the earlier rule: ±1 round a day from the previous one (`DailyGoal.nextCapacity`: +1
+  after two closed rings, −1 after an open day).
+- `.follows`, one pure step per study day `d`, `DailyGoal.nextTime(for:after:)`, over the days before it
+  as plain values (`DailyGoal.RingDay`):
+  - worked(d) is the cards done on `d` at the day's own prices, new × new price + other × other price at
+    the pace of the seven study days before `d`; laps count. A day is studied when something was done
+    and missed when its plan had cards and nothing was.
+  - base is the median of worked over the last seven studied days before `d`, softened days left out;
+    `initialCapacity` × 120 s without any.
+  - Probe: base × 1.10 when the rings of the last three studied days all closed and no probe failed in
+    the seven calendar days before `d`. A probe fails when its day's ring stays open.
+  - After a missed day: base × 0.7, no probe, and that day stays out of later bases.
+  - capacity = the time in whole rounds (rounded), within 1…15: the plan is priced as before.
+- A day is sized in whole rounds, so below five rounds the 10 % probe rounds away (2.2 rounds is 2): a
+  learner who works exactly the ring stays at its size, and only work beyond the ring (laps count) lifts
+  the median.
+- Model learners (`RingRuleTests`): one who works the ring up to 10 min and 10 min beyond it leaves the
+  ring open on 0 days of 28 under `.follows` and on 8 under `.rounds` (10 → 12 → 10 min); one who works 10
+  min whatever the ring asks has 10 min from the second day and an open ring every eighth day, the failed
+  probe (4 of 28); one who works 20 min has 20 min on the second day.
+- `DailyProgress.ringDays` holds every day's `RingDay` (size, reason, work, ring) with today live;
+  `DailyProgressCache.Before.days` keeps the days before today, and the rule is part of the cache key.
 - A day's ring is closed when done ≥ that day's goal.
 - The pace that prices a day's cards is the seven study days before it (`DailyProgress.pace` still
   counts today as well, for "≈ 7 min"), so the goal doesn't drift during the day.
@@ -188,8 +208,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - Suspend, options, adding and deleting a card, note and kind, reset, reviewing a card with an
   incomplete log and a new study day mean a full recount (the first review of a never-reviewed card
   doesn't change the key).
-- `DailyProgressCache` keeps the same for the per-day steps of `evaluate` (capacity, closed rings,
-  streak) over the set of `Past` of all decks.
+- `DailyProgressCache` keeps the same for the per-day steps of `evaluate` (capacity and why, work, closed
+  rings, streak) over the set of `Past` of all decks and the rule.
 - The reference is the full recount: `DeckHistoryCacheTests` compares both paths on random reviews and
   edits of two decks.
 
@@ -223,7 +243,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - Sections in order:
   1. Day's plan: the parts of the plan at the start of the day, the backlog share taken, each deck's
      allowance and ceiling, goal, rounds, done, left, catch-up.
-  2. Capacity: 14 days of rounds, ring closed or open, step.
+  2. Capacity: today's rounds and time; 14 days with the minutes asked, the minutes worked, ring closed
+     or open and why the size (`.follows`), or rounds, ring and step (`.rounds`).
   3. Pace: new and other price, the price's source (durations, gaps or the default), reviews per done
      card.
   4. Streak.
@@ -233,8 +254,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
      degrees. The Mac has no such section.
   7. FSRS per deck: retention, 21 parameters, fit, steps, maximum interval.
 - Numbers come from `DailyProgress`, `MemoryEstimate`, the deck settings and `DayBreakdown` (VocabCore,
-  `Statistics/DayBreakdown.swift`). Its loop over days repeats `DailyProgress.evaluate`, and
-  `DayBreakdownTests` keeps them together. `StudyCounts.backlogTaken` is the backlog share the plan
+  `Statistics/DayBreakdown.swift`). Its days are `DailyProgress.ringDays`; only the pace window repeats
+  `DailyGoal.pace`, and `DayBreakdownTests` keeps them together. `StudyCounts.backlogTaken` is the backlog share the plan
   took.
 - iPhone: the info button on the left of the Today bar (`HowTodayWorksButton` and the sheet
   `HowTodayWorksSheet`, `VocTrain/Views/HowTodayWorksSheet.swift`); decks are read from files when the

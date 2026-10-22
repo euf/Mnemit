@@ -29,11 +29,12 @@ struct HowTodayWorksTests {
 
     static var breakdown: DayBreakdown {
         let days = [
-            DayBreakdown.Day(start: day.addingTimeInterval(-2 * 86400), capacity: 3, step: 0, isClosed: true),
-            DayBreakdown.Day(start: day.addingTimeInterval(-86400), capacity: 4, step: 1, isClosed: false),
-            DayBreakdown.Day(start: day, capacity: 3, step: -1, isClosed: false),
+            DayBreakdown.Day(start: day.addingTimeInterval(-2 * 86400), capacity: 3, step: 0, isClosed: true, worked: 360, reason: .median),
+            DayBreakdown.Day(start: day.addingTimeInterval(-86400), capacity: 4, step: 1, isClosed: false, worked: 420, reason: .probe),
+            DayBreakdown.Day(start: day, capacity: 3, step: -1, isClosed: false, worked: 150, reason: .afterMiss),
         ]
         return DayBreakdown(
+            rule: .follows,
             plan: DayBreakdown.Plan(reviewsDue: 20, backlogTaken: 8, backlog: 30, learning: 2, newAdmitted: 6),
             decks: [DayBreakdown.DeckNewCards(allowance: 6, ceiling: 27, admitted: 6)], catchUp: 22, days: days,
             newCards: DayBreakdown.PaceBasis(durations: 214, gaps: 120, reviews: 500, doneCards: 200),
@@ -78,11 +79,13 @@ struct HowTodayWorksTests {
         #expect(values(capacity)["Capacity (rounds)"] == "4")
         #expect(values(capacity)["Time of the day"] == "8 min")
         let table = try #require(capacity.rows.compactMap { row -> ([String], [[String]])? in if case let .table(header, rows) = row { (header, rows) } else { nil } }.first)
-        #expect(table.0 == ["Day", "Rounds", "Ring", "Step"])
-        // The newest day first, with the sign of the step.
+        #expect(table.0 == ["Day", "Asked (min)", "Worked (min)", "Ring", "Why"])
+        // The newest day first: the minutes the ring asked and the minutes worked, the ring, and why the size.
         let earlier = Self.day.addingTimeInterval(-86400).formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
         #expect(table.1.map { $0[0] }.first == "Today" && table.1.map { $0[0] }[1] == earlier)
-        #expect(table.1.map { Array($0.dropFirst()) } == [["3", "Open", "−1"], ["4", "Open", "+1"], ["3", "Closed", "0"]])
+        #expect(
+            table.1.map { Array($0.dropFirst()) } == [["6", "3", "Open", "After a miss −30 %"], ["8", "7", "Open", "Probe +10 %"], ["6", "6", "Closed", "Median"]])
+        #expect(capacity.footer.hasPrefix("A round is two minutes of work. A day asks the median"))
 
         let pace = content.sections[2].rows
         #expect(pace[0] == .value(label: "New card", value: "31 s", note: "Durations (214)"))
@@ -125,6 +128,18 @@ struct HowTodayWorksTests {
         let numbers = try #require(fsrs.rows.compactMap { row -> String? in if case let .numbers(text) = row { text } else { nil } }.first)
         #expect(numbers.split(separator: " ").count == FSRSParameters.count)
         #expect(numbers.hasPrefix("0.2120 1.2931 2.3065 8.2956"))
+    }
+
+    @Test func theRoundsRuleTellsTheStepInsteadOfTheWork() throws {
+        var breakdown = Self.breakdown
+        breakdown.rule = .rounds
+        let content = HowTodayWorks(progress: Self.progress, breakdown: breakdown, memory: Self.memory, swipes: nil, decks: [])
+        let capacity = content.sections[1]
+        let table = try #require(capacity.rows.compactMap { row -> ([String], [[String]])? in if case let .table(header, rows) = row { (header, rows) } else { nil } }.first)
+        #expect(table.0 == ["Day", "Rounds", "Ring", "Step"])
+        // The newest day first, with the sign of the step.
+        #expect(table.1.map { Array($0.dropFirst()) } == [["3", "Open", "−1"], ["4", "Open", "+1"], ["3", "Closed", "0"]])
+        #expect(capacity.footer.contains("one round more if the ring was closed on each of the two days before"))
     }
 
     @Test func aStreakToRepairAndDecksWithoutNamesAreTold() {
