@@ -84,7 +84,7 @@ struct DailyGoalTests {
 
     /// Reviews `seconds` after a start, of cards that were new when their study day began or of others.
     func reviews(_ seconds: [Double], new isNew: Bool = false) -> [DailyGoal.PacedReview] {
-        seconds.map { (Date(timeIntervalSince1970: 1_791_216_000 + $0), isNew) }
+        seconds.map { (Date(timeIntervalSince1970: 1_791_216_000 + $0), isNew, nil) }
     }
 
     /// A review at `start` and one after each of `gaps`, seconds apart.
@@ -116,6 +116,11 @@ struct DailyGoalTests {
             let radius = (-2 * log(Double.random(in: Double.ulpOfOne..<1, using: &generator))).squareRoot()
             return exp(mu + sigma * radius * cos(2 * .pi * Double.random(in: 0..<1, using: &generator)))
         }
+    }
+
+    /// Reviews of `durations` seconds each, `spacing` seconds apart, of new cards or of others.
+    func timed(_ durations: [Double], spacing: Double = 100, new isNew: Bool = false, from start: Double = 0) -> [DailyGoal.PacedReview] {
+        durations.enumerated().map { (Date(timeIntervalSince1970: 1_791_216_000 + start + Double($0.offset) * spacing), isNew, .seconds($0.element)) }
     }
 
     /// The other price of a day of `gaps`, one review each and one done card for each review.
@@ -179,7 +184,7 @@ struct DailyGoalTests {
         // others 6 s after the new: the gaps before a review are its card's.
         var times: [Double] = [0]
         for _ in 0..<25 { times += [times.last! + 10, times.last! + 16] }
-        let day = reviews(times).enumerated().map { (date: $0.element.date, isNew: $0.offset % 2 == 1) }
+        let day: [DailyGoal.PacedReview] = reviews(times).enumerated().map { (date: $0.element.date, isNew: $0.offset % 2 == 1, duration: nil) }
         // 25 new reviews of 10 s, one per done card; 26 others of 6 s, the first with no gap, two per done card.
         let pace = DailyGoal.pace(days: [day], newDone: 25, otherDone: 13)
         #expect(abs(pace.newCard - 10) < 1e-9)
@@ -215,6 +220,45 @@ struct DailyGoalTests {
         #expect(DailyGoal.pace(days: [short], newDone: 40, otherDone: 40) == Pace())
         // Enough cards but no time between the reviews of a kind: its fallback, too.
         #expect(DailyGoal.pace(days: [reviews([0, 500, 1000], new: true)], newDone: 40, otherDone: 40) == Pace())
+    }
+
+    @Test func durationsOfExactlyFourSecondsPriceAReviewAtFour() {
+        // The gaps between the reviews are 100 s: the price comes from the durations, not from them.
+        let day = timed([Double](repeating: 4, count: 20))
+        #expect(abs(DailyGoal.pace(days: [day], newDone: 0, otherDone: 20).otherCard - 4) < 1e-9)
+        // Twice the reviews over the same cards: twice the price.
+        #expect(abs(DailyGoal.pace(days: [day], newDone: 0, otherDone: 10).otherCard - 8) < 1e-9)
+        // Each kind has its own.
+        let both = timed([Double](repeating: 3, count: 20), new: true) + timed([Double](repeating: 6, count: 20), new: false, from: 5000)
+        let pace = DailyGoal.pace(days: [both], newDone: 20, otherDone: 20)
+        #expect(abs(pace.newCard - 3) < 1e-9 && abs(pace.otherCard - 6) < 1e-9)
+    }
+
+    @Test func fewerThanTwentyDurationsLeaveThePriceToTheGaps() {
+        // 25 reviews 5 s apart: 24 gaps of 5 s. Nineteen of them have a duration of 2 s, which is too few.
+        let day = spaced([Double](repeating: 5, count: 24)).enumerated().map { (date: $0.element.date, isNew: false, duration: $0.offset < 19 ? Duration.seconds(2) : nil) }
+        #expect(abs(DailyGoal.pace(days: [day], newDone: 0, otherDone: 25).otherCard - 5) < 1e-9)
+        // With a twentieth, the durations take over; the reviews without one stay in the count of reviews.
+        let more = day.enumerated().map { (date: $0.element.date, isNew: false, duration: $0.offset < 20 ? Duration.seconds(2) : nil) }
+        #expect(abs(DailyGoal.pace(days: [more], newDone: 0, otherDone: 25).otherCard - 2) < 1e-9)
+        // Durations don't excuse a kind with fewer than ten done cards.
+        #expect(DailyGoal.pace(days: [timed([Double](repeating: 4, count: 30))], newDone: 0, otherDone: 9) == Pace())
+    }
+
+    @Test func oneTwentyMinuteDurationAmongFortyMovesThePriceByLessThanATenth() {
+        let durations = lognormalGaps(40, mu: log(4), sigma: 0.4)
+        let usual = DailyGoal.pace(days: [timed(durations)], newDone: 0, otherDone: 40).otherCard
+        #expect(abs(usual - 4 * exp(0.4 * 0.4 / 2)) < 1)
+        for index in [0, 17, 39] {
+            var withBreak = durations
+            withBreak[index] = 1200
+            let price = DailyGoal.pace(days: [timed(withBreak)], newDone: 0, otherDone: 40).otherCard
+            #expect(abs(price / usual - 1) < 0.1)
+        }
+        // Steady learner: no move at all.
+        var steady = [Double](repeating: 4, count: 40)
+        steady[20] = 1200
+        #expect(abs(DailyGoal.pace(days: [timed(steady)], newDone: 0, otherDone: 40).otherCard - 4) < 1e-9)
     }
 
     @Test func minutesLeftRoundUpAndASliverIsUnderAMinute() {
@@ -494,8 +538,8 @@ struct DailyProgressTests {
     }
 
     /// A card learned by `grades` at `dates`, as the scheduler replays its log.
-    func answered(_ question: String, _ grades: [Grade], at dates: [Date], options: LearningOptions? = nil) -> Card {
-        let log = zip(grades, dates).map { ReviewLogEntry(date: $1, grade: $0, mode: .revealed) }
+    func answered(_ question: String, _ grades: [Grade], at dates: [Date], options: LearningOptions? = nil, duration: Duration? = nil) -> Card {
+        let log = zip(grades, dates).map { ReviewLogEntry(date: $1, grade: $0, mode: .revealed, duration: duration) }
         return Scheduler(learningOptions: options ?? self.options(), calendar: calendar).replaying(log, of: Card(question: question, answer: question))
     }
 
@@ -581,6 +625,18 @@ struct DailyProgressTests {
         #expect(progress.minutesLeft == nil)
         // One deck alone has too few cards done and too few gaps (16 of them are in the other): the fallbacks.
         #expect(evaluate([decks[0]]).pace == Pace())
+    }
+
+    @Test func theLoggedDurationsPriceThePaceInsteadOfTheGaps() throws {
+        // The same day as above, with 4 s logged for every review: the cards are 20 s apart, but a review took 4 s.
+        let cards = (0..<25).map { index in
+            answered("c\(index)", [.good, .good], at: [at(0, 9).addingTimeInterval(Double(index) * 20), at(0, 9).addingTimeInterval(Double(index) * 20 + 10)], duration: .seconds(4))
+        }
+        let deck = try Deck(learningOptions: options(), cards: cards)
+        let log = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
+        #expect(log.days[today]?.compactMap(\.duration) == [Duration](repeating: .seconds(4), count: 50))
+        // 4 s a review, two reviews a card.
+        #expect(abs(evaluate([deck]).pace.newCard - 8) < 1e-9)
     }
 
     @Test func newCardsAndOthersAreEachPricedFromTheirOwnGaps() throws {
