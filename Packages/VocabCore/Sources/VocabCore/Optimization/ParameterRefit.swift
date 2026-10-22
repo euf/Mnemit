@@ -2,36 +2,49 @@ import Foundation
 
 /// When the app fits a deck's FSRS parameters to its review log again by itself, and when
 /// it keeps the fit. The learner gets the parameters of the optimizer without opening the
-/// options, and never worse ones: a fit that doesn't predict the reviews clearly better
-/// than the parameters the deck has is thrown away, and only the attempt is noted
-/// (`LearningOptions.lastAutoFit`).
+/// options, and never worse ones: the fit is trained on the older 80 % of the log and has to
+/// beat the parameters the deck has on the newest 20 %, which it never saw. A fit that doesn't
+/// is thrown away, and only the attempt is noted (`LearningOptions.lastAutoFit`).
 ///
 /// Pure: the apps decide where and when to call `fit(cards:options:calendar:now:)`, which
 /// is the heavy part, and apply its `Result` through the document.
 public enum ParameterRefit {
-    /// Usable reviews a deck needs before the first fit: the optimizer's own minimum, which
-    /// the options screens show.
+    /// Usable reviews a deck needs for the first fit: the optimizer's own minimum, which the
+    /// options screens show.
     public static let minimumReviewCount = FSRSOptimizer.minimumReviewCount
-    /// Days after which a deck is fitted again, whatever its reviews.
+    /// Usable reviews at which a deck first fitted below it is fitted for the second time.
+    /// Measured gains of fitted over default parameters grow with the log: about 0.004 log
+    /// loss up to 1,500 reviews, 0.014 up to 10,000.
+    public static let secondFitReviewCount = 1500
+    /// From then on a deck waits this many days after its last fit, at the most ...
     public static let intervalDays = 30
-    /// New usable reviews after which a deck is fitted again, whatever the date.
+    /// ... or this many new usable reviews, whichever comes first.
     public static let reviewStep = 1000
-    /// By how much, relative to the log loss of the current parameters, the fitted ones
-    /// must be lower to be kept.
+    /// The share of the log, the newest reviews by time, that the fit is judged on.
+    public static let holdoutShare = 0.2
+    /// By how much, relative to the log loss of the current parameters on those reviews, the
+    /// fitted ones must be lower to be kept.
     public static let requiredImprovement = 0.01
 
-    /// Whether a deck with `reviewCount` usable reviews is due for a fit at `now`: it has
-    /// the minimum, and since the last automatic fit `intervalDays` days or `reviewStep`
-    /// reviews have passed, whichever comes first. A deck never fitted is due at once.
+    /// Whether a deck with `reviewCount` usable reviews is due for a fit at `now`.
+    ///
+    /// The first fit comes at `minimumReviewCount`, the second at `secondFitReviewCount`.
+    /// A deck last fitted at or after that count is due once `intervalDays` days or
+    /// `reviewStep` reviews have passed since, whichever comes first. A deck that was never
+    /// fitted is due at once, wherever its count stands, so one that arrives with 3,000
+    /// reviews gets one fit and then the monthly rhythm.
     public static func isDue(reviewCount: Int, lastFit: LearningOptions.AutoFit?, at now: Date) -> Bool {
         guard reviewCount >= minimumReviewCount else { return false }
         guard let lastFit else { return true }
+        if lastFit.reviewCount < secondFitReviewCount {
+            return reviewCount >= secondFitReviewCount
+        }
         let days = now.timeIntervalSince(lastFit.date) / 86400
         return days >= Double(intervalDays) || reviewCount - lastFit.reviewCount >= reviewStep
     }
 
-    /// Whether to keep fitted parameters: their log loss is lower than the current one by
-    /// at least `requiredImprovement`, relative to it.
+    /// Whether to keep fitted parameters: their log loss on the newest reviews is lower than
+    /// that of the current ones by at least `requiredImprovement`, relative to it.
     public static func keeps(_ comparison: FSRSOptimizer.Comparison) -> Bool {
         comparison.computed.logLoss <= comparison.current.logLoss * (1 - requiredImprovement)
     }
@@ -67,7 +80,7 @@ public enum ParameterRefit {
 
         let date = Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down))
         do {
-            let comparison = try optimizer.compare(with: options.parameters)
+            let comparison = try optimizer.compareOnNewest(share: holdoutShare, with: options.parameters)
             let adopted = keeps(comparison)
             return Result(
                 parameters: adopted ? comparison.parameters : nil,

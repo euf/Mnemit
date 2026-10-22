@@ -41,28 +41,49 @@ struct ParameterRefitTests {
         #expect(!ParameterRefit.isDue(reviewCount: minimum - 1, lastFit: fit(daysAgo: 400, count: 0), at: now))
     }
 
-    @Test func aFittedDeckWaitsThirtyDaysOrAThousandReviews() {
-        let last = fit(daysAgo: 29.9, count: 500)
-        #expect(!ParameterRefit.isDue(reviewCount: 1499, lastFit: last, at: now))
-        #expect(ParameterRefit.isDue(reviewCount: 1500, lastFit: last, at: now))
-
-        #expect(ParameterRefit.isDue(reviewCount: 500, lastFit: fit(daysAgo: 30, count: 500), at: now))
-        #expect(!ParameterRefit.isDue(reviewCount: 500, lastFit: fit(daysAgo: 29.99, count: 500), at: now))
+    /// The first fit at 400 reviews, the second at 1,500, whatever the dates.
+    @Test func theSecondFitComesAtFifteenHundredReviews() {
+        #expect(ParameterRefit.secondFitReviewCount == 1500)
+        let first = fit(daysAgo: 1, count: 450)
+        #expect(!ParameterRefit.isDue(reviewCount: 1499, lastFit: first, at: now))
+        #expect(ParameterRefit.isDue(reviewCount: 1500, lastFit: first, at: now))
+        // A year does not bring the second fit forward.
+        let old = fit(daysAgo: 400, count: 450)
+        #expect(!ParameterRefit.isDue(reviewCount: 1499, lastFit: old, at: now))
+        #expect(ParameterRefit.isDue(reviewCount: 1500, lastFit: old, at: now))
     }
 
-    /// Whichever comes first, and an attempt that kept the parameters counts like a fit.
-    @Test func eitherConditionAloneDuesTheDeckAndAKeptAttemptStartsTheWaitAnew() {
-        let kept = fit(daysAgo: 1, count: 800, adopted: false)
-        #expect(!ParameterRefit.isDue(reviewCount: 1000, lastFit: kept, at: now))
-        #expect(ParameterRefit.isDue(reviewCount: 1800, lastFit: kept, at: now))
-        #expect(ParameterRefit.isDue(reviewCount: 800, lastFit: fit(daysAgo: 31, count: 800, adopted: false), at: now))
+    /// After that: 30 days or 1,000 new reviews, whichever comes first.
+    @Test func afterTheSecondFitADeckWaitsThirtyDaysOrAThousandReviews() {
+        let last = fit(daysAgo: 29.9, count: 1500)
+        #expect(!ParameterRefit.isDue(reviewCount: 2499, lastFit: last, at: now))
+        #expect(ParameterRefit.isDue(reviewCount: 2500, lastFit: last, at: now))
+
+        #expect(ParameterRefit.isDue(reviewCount: 1500, lastFit: fit(daysAgo: 30, count: 1500), at: now))
+        #expect(!ParameterRefit.isDue(reviewCount: 1500, lastFit: fit(daysAgo: 29.99, count: 1500), at: now))
+        #expect(!ParameterRefit.isDue(reviewCount: 1999, lastFit: fit(daysAgo: 1, count: 1500), at: now))
+    }
+
+    /// A deck that arrives with a long log is fitted once at once, then keeps the monthly rhythm.
+    @Test func aDeckWithALongLogIsFittedOnceAndThenWaits() {
+        #expect(ParameterRefit.isDue(reviewCount: 5000, lastFit: nil, at: now))
+        #expect(!ParameterRefit.isDue(reviewCount: 5999, lastFit: fit(daysAgo: 29, count: 5000), at: now))
+        #expect(ParameterRefit.isDue(reviewCount: 6000, lastFit: fit(daysAgo: 29, count: 5000), at: now))
+    }
+
+    /// An attempt that kept the parameters counts like a fit.
+    @Test func aKeptAttemptStartsTheWaitAnew() {
+        let kept = fit(daysAgo: 1, count: 1800, adopted: false)
+        #expect(!ParameterRefit.isDue(reviewCount: 2799, lastFit: kept, at: now))
+        #expect(ParameterRefit.isDue(reviewCount: 2800, lastFit: kept, at: now))
+        #expect(ParameterRefit.isDue(reviewCount: 1800, lastFit: fit(daysAgo: 31, count: 1800, adopted: false), at: now))
     }
 
     @Test func aClockThatWentBackwardsAndFewerReviewsThanBeforeWaitForTheOtherCondition() {
-        let future = LearningOptions.AutoFit(date: now.addingTimeInterval(86400), reviewCount: 900, adopted: true)
-        #expect(!ParameterRefit.isDue(reviewCount: 900, lastFit: future, at: now))
+        let future = LearningOptions.AutoFit(date: now.addingTimeInterval(86400), reviewCount: 1600, adopted: true)
+        #expect(!ParameterRefit.isDue(reviewCount: 1600, lastFit: future, at: now))
         // The learner switched off "Learn from revealed reviews": fewer usable reviews than at the last fit.
-        #expect(!ParameterRefit.isDue(reviewCount: 450, lastFit: fit(daysAgo: 2, count: 900), at: now))
+        #expect(!ParameterRefit.isDue(reviewCount: 1500, lastFit: fit(daysAgo: 2, count: 2000), at: now))
     }
 
     // MARK: - Keeping the fit
@@ -82,6 +103,35 @@ struct ParameterRefitTests {
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.5)))
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.52)))
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: .nan)))
+    }
+
+    // MARK: - The holdout
+
+    /// The fit is judged on the newest 20 % of the reviews by time: the comparison is of both
+    /// parameter sets on those reviews alone, not on the whole log.
+    @Test func aFitIsJudgedOnTheNewestReviews() throws {
+        #expect(ParameterRefit.holdoutShare == 0.2)
+        let options = LearningOptions()
+        let optimizer = FSRSOptimizer(cards: cards(), learningOptions: options, calendar: calendar)
+        let newestCount = Int((Double(optimizer.items.count) * ParameterRefit.holdoutShare).rounded())
+        let newest = FSRSOptimizer(items: Array(optimizer.items.suffix(newestCount)), relearningSteps: options.steps, revealedRecallWeight: options.revealedRecallWeight)
+
+        let comparison = try optimizer.compareOnNewest(share: ParameterRefit.holdoutShare, with: .default)
+        // By log loss: the RMSE sums over a dictionary, in an order that differs between instances.
+        #expect(comparison.current.logLoss == newest.evaluate(.default)?.logLoss)
+        #expect(comparison.computed.logLoss == newest.evaluate(comparison.parameters)?.logLoss)
+        // Not the evaluation on the whole log.
+        #expect(comparison.current.logLoss != optimizer.evaluate(.default)?.logLoss)
+        // Trained on the older part only: not the parameters of the whole log.
+        #expect(comparison.parameters != (try optimizer.computeParameters()))
+        #expect(ParameterRefit.keeps(comparison))
+    }
+
+    @Test func aLogTooShortToSplitIsNoFit() {
+        let optimizer = FSRSOptimizer(items: [], relearningSteps: 2, revealedRecallWeight: 1)
+        #expect(throws: FSRSOptimizer.Error.notEnoughData) {
+            try optimizer.compareOnNewest(share: 0.2, with: .default)
+        }
     }
 
     // MARK: - Fitting
