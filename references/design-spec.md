@@ -49,8 +49,8 @@ Rejected: auto-start of the stream at launch. The learner would not see what is 
 │                                  ( … )│ nav bar 44: ellipsis menu (trailing)
 │ Today                                 │ large title 34 bold, system
 │ ┌───────────────────────────────────┐ │ insetGrouped section, margin 16
-│ │  ╭─────╮   87 today                │ │ title2 semibold, monospaced digits
-│ │  │  ◔  │   14 of 36 today          │ │ subheadline, secondary
+│ │  ╭─────╮   87 cards left           │ │ title2 semibold, monospaced digits
+│ │  │  ◔  │   14 of 101 cards         │ │ subheadline, secondary
 │ │  ╰─────╯   [flame] 12-day streak   │ │ subheadline; flame = accent when goal met
 │ └───────────────────────────────────┘ │ ring 72, line 10, round caps
 │  DECKS                                │ system section header
@@ -91,7 +91,7 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + summary 88 + 
 
 | State | Summary row | Button |
 |---|---|---|
-| Cards due | `87 today`, `14 of 36 today`, streak; with a backlog `+1,320 to catch up this week` | `Study`, `.glassProminent` |
+| Cards due | `87 cards left · ≈ 7 min`, `14 of 101 cards` once a card is done, streak; with catch-up `+1,320 to catch up this week` | `Study`, `.glassProminent` |
 | Nothing due, cards done today | ring full with checkmark, `All done`, `N cards today`, streak | `Keep Going`, `.glass` (not prominent), opens the stream at `rest`, which offers keep going and new cards |
 | Nothing due, no cards done today | track only, `Nothing due`, `Next review <relative date>`, no `x of y` line | `Keep Going`, `.glass` |
 | No decks | `ContentUnavailableView` as now; title `No Decks`; prominent `Choose Mnemit Folder…`, plain `Open Deck…` | – |
@@ -99,7 +99,7 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + summary 88 + 
 | Deck unreadable (iCloud) | row without counts | row stays tappable; the stream cover shows the existing failure view |
 | Accessibility sizes (`isAccessibilitySize`) | ring above the text (`AnyLayout` switch) | unchanged |
 
-The ring and every line beside it count cards. The goal is the number of cards in the day's plan when the day began (`StudyCounts.total` of that plan, `DeckActivity.plan(onDayOf:calendar:)`), fixed for the day: cards added later raise nothing. A card is done once it was graded that day and FSRS let it go to another day (`DeckActivity.done(onDayOf:calendar:)`): a review answered Hard, Good or Easy at once, a new card after its last learning step, a card answered Forgot only after it leaves relearning. Cards done beyond the goal, catching up, review ahead and "+10 new", fill the laps. "N cards left" is the plan still owed now (`StudyCounts.total`), so goal, done and left are one unit. The "nothing done, nothing due" case has a goal of 0 (`DailyGoal.goal(done: 0, owed: 0, plan: 0)`), which counts as met, so the ring is a track and the row hides the goal. A day that began with an empty plan and then got cards (a first deck filled in the afternoon) takes the plan as it stands, `done + owed`, so its ring has a goal instead of laps. The count is the plan of the day (`StudyCounts.total`), its share of the backlog included (`DailyGoal.backlogShare(of:onTime:)`: a seventh of it, but at least what a normal day asks), never the whole backlog; the cards beyond the share are `StudyCounts.catchUp`, shown as a secondary line on Today, in the deck rows and on the rest screen. "N cards left" carries "· ≈ 7 min" after it on Today (the time drops under the line where it does not fit), after the headline of the small and medium widgets (under it where the two do not fit side by side, which on a 155-pt small widget is always, and then the ring there is 56 pt), and in the stream header beside "14 of 36 cards" while the goal is open; the Mac ring chip adds it to its help text; the minutes are `DailyGoal.minutesLeft(cards:secondsPerCard:)`, the price per card `DailyGoal.secondsPerCard(days:done:)` from the gaps between answers of the last seven study days and today, 20 s a card under 20 done cards, "< 1 min" under a minute, and no line without cards left.
+The ring and every line beside it count cards; reviews do not enter. The daily goal is the number of cards in the day's plan when the day began (`StudyCounts.total` of that plan, `DeckActivity.plan(onDayOf:calendar:)`), fixed for the day: cards added later raise nothing. A card is done once its last review of the day left it due on a later day, so that FSRS let it go (`DeckActivity.done(onDayOf:calendar:)`): a review card graded Hard, Good or Easy at once, a new card after its last learning step, a card graded Forgot only after it leaves relearning. It counts once, however many reviews it took. Cards done beyond the goal, in catch-up, review ahead and "+10 new", fill the laps. "N cards left" is the cards of the plan not done yet (`StudyCounts.total` now), so goal, done and left are one unit. The "nothing done, nothing due" case has a goal of 0 (`DailyGoal.goal(done: 0, owed: 0, plan: 0)`), which counts as met, so the ring is a track and the row hides the goal. A day that began with an empty plan and then got cards (a first deck filled in the afternoon) takes the plan as it stands, `done + owed`, so its ring has a goal instead of laps. The count is the plan (`StudyCounts.total`), its share of the backlog included (`DailyGoal.backlogShare(of:onTime:)`: a seventh of it, but at least what a normal day asks), never the whole backlog; the cards beyond the share are the catch-up, `StudyCounts.catchUp`, shown as a secondary line on Today, in the deck rows and on the rest screen. "N cards left" carries "· ≈ 7 min" after it on Today (the time drops under the line where it does not fit), after the headline of the small and medium widgets (under it where the two do not fit side by side, which on a 155-pt small widget is always, and then the ring there is 56 pt), and in the stream header beside "14 of 36 cards" while the goal is open; the Mac ring chip adds it to its help text; the minutes are `DailyGoal.minutesLeft(cards:secondsPerCard:)`, the pace `DailyGoal.secondsPerCard(days:done:)` in seconds per done card, from the pauses between reviews of the last seven study days and today, 20 s a card under 20 done cards, "< 1 min" under a minute, and no line without cards left.
 
 ### 2.5 Scope of Study
 
@@ -697,11 +697,11 @@ Replaces the Welcome window (`WelcomeWindow`, `WelcomeView`); opens at launch wh
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ ● ● ●  ◫       Today                     ◔ 14/36     [ Study ]   │ title Today, subtitle 14 of 36 cards
+│ ● ● ●  ◫       Today                     ◔ 14/101    [ Study ]   │ title Today, subtitle 14 of 101 cards
 ├────────────────┬─────────────────────────────────────────────────┤
 │ (o) Today      │ ┌ Form, .grouped ───────────────────────────┐   │
-│                │ │ ╭──╮ 87 today                             │   │
-│ Decks          │ │ │◔ │ 14 of 36 today · [flame] 12-day streak│   │
+│                │ │ ╭──╮ 87 cards left                        │   │
+│ Decks          │ │ │◔ │ 14 of 101 cards [flame] 12-day streak │   │
 │ ▤ Greek A1–A2 60│ └───────────────────────────────────────────┘   │
 │ ▤ Greek B1    27│ ┌ Decks ────────────────────────────────────┐   │
 │                │ │ Greek A1–A2  30 new · 0 learning · 30 review│   │
@@ -791,7 +791,7 @@ Dependencies on the stream agent: `DailyProgress`, `DailyRing`, `Streak`; a `Stu
 
 ### 7.2 New strings (Shared/Resources/Localizable.xcstrings, German in state `translated`)
 
-`Today` and `Study` exist (`Heute`, `Lernen`). New: `Decks`, `Keep Going`, `All done`, `Nothing due`, `+%lld to catch up this week`, `Catch Up`, `%lld of %lld today`, `%lld today`, `%lld-day streak` (plural), `Deck Details`, `Practice Newest Words`, `Practice Today's Mistakes`, `What today's plan takes from this deck.`, `Next: %@`, `Goal reached`, `No Decks`, `Open Deck`.
+`Today` and `Study` exist (`Heute`, `Lernen`). New: `Decks`, `Keep Going`, `All done`, `Nothing due`, `+%lld to catch up this week`, `Catch Up`, `%lld of %lld cards`, `%lld cards left`, `%lld cards today`, `%lld-day streak` (plural), `Deck Details`, `Practice Newest Words`, `Practice Today's Mistakes`, `What today's plan takes from this deck.`, `Next: %@`, `Goal reached`, `No Decks`, `Open Deck`.
 
 ### 7.3 Check matrix (on the 13 mini simulator or device; Mac with `vqa`)
 

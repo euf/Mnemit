@@ -30,7 +30,9 @@ code today is mapped in the inventory of 21.10.2026 (anchors in the commit that 
 Root is a `NavigationStack` on Today.
 
 **Today**
-- Ring, the plan of the day (not the raw due count), streak; **Study** (all decks).
+- Ring and streak; "N cards left" with "≈ N min", the cards of today's plan not done yet (not the
+  raw due count), and "M of K cards" against the daily goal; "+N to catch up this week" when
+  a backlog is left; **Study** (all decks).
 - Decks section: a row per deck with its counts. Tapping a row pushes the Deck screen.
 - Toolbar **+** menu: Add Cards (to the last deck used), New Deck, Import.
 - `.searchable` over every card of every deck; a result pushes Card Detail.
@@ -38,7 +40,8 @@ Root is a `NavigationStack` on Today.
   the Mac.
 
 **Deck** (pushed; replaces the details sheet)
-- Header: due today, new, learning; **Study This Deck**.
+- Header: what today's plan takes from the deck (new, learning, review) and "+N to catch up
+  this week"; **Study This Deck**.
 - Rows: Cards (count) → Card Browser; Add Cards; Import Cards…; Practice Newest; Practice Mistakes;
   Statistics; Options.
 - Toolbar menu: Rename, Export…, Delete Deck (moves the file to the Trash).

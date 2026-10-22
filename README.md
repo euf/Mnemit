@@ -30,35 +30,35 @@ are in [`references/`](references/).
 
 ### Studying
 
-- **No sessions.** Study is one stream: due learning cards, then reviews (lowest recall
-  probability first), then new cards within the day's limits. When the plan is done the
-  stream rests ("Done for today") and offers the rest of the backlog, reviewing ahead,
-  practice that does not touch the schedule, and "+10 new" with an estimate of the extra
-  daily load next week.
+- **No sessions.** Study is one stream: the day's plan (cards in learning, then review cards
+  with the lowest recall probability first, then new cards within the day's limits). When the
+  plan is done the stream rests ("Done for today") and offers catch-up on the backlog, review
+  ahead, practice that does not touch the schedule, and "+10 new" with the extra cards a day it
+  adds next week.
 - **Rings instead of a session count.** A ring in the manner of Apple Fitness fills to the
-  day's goal: the number of cards in the day's plan as FSRS set it when the day began, the
-  cards due, overdue ones included, and the new cards within the day's limits. The ring
-  counts cards, one unit everywhere: a card is done once it was graded that day and FSRS let
-  it go to another day, so a review answered Hard, Good or Easy is done at once, a new card
-  after its learning steps, and a card answered Forgot when it is through relearning. Today
-  and the widget say "75 of 218 cards" and "143 cards left", which add up, and the cards left come
-  with "≈ 7 min", priced from the learner's own pace over the last week (20 seconds a card until
-  20 are done). The goal does not
-  move during the day: cards added later and "+10 new" are laps, as are catching up and
-  reviewing ahead. The ring keeps going round after the goal; during study its centre shows
-  ×2, ×3 for the laps, elsewhere the streak in days. The streak counts the days whose ring
-  was closed, a day with nothing due included. A missed day is repaired by completing the
-  plan of the next one, which holds what the missed day left over; two missed days in a row
-  end the streak. Everything is computed from the review logs; nothing extra is stored. A
-  study day starts at 4:00.
+  daily goal: the number of cards in the day's plan as FSRS set it when the day began, the
+  review cards due, overdue ones included, and the new cards within the day's limits. The ring
+  counts cards, one unit everywhere: a card is done once its last review of the day left it due
+  on a later day, so a review card graded Hard, Good or Easy is done at once, a new card after
+  its learning steps, and a card graded Forgot when it is through relearning. A card counts
+  once, however many reviews it took. Today and the widget say "75 of 218 cards" and "143 cards
+  left", which add up, and the cards left come with "≈ 7 min": the pace is the seconds a done
+  card took over the last week, the pauses of up to two minutes between reviews divided by the
+  cards done (20 seconds a card until 20 are done). The daily goal does not move during the day:
+  cards added later and "+10 new" fill laps, as do catch-up and review ahead. The ring keeps
+  going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
+  streak in days. The streak counts the days whose ring was closed, a day with nothing due
+  included. A missed day is repaired by completing the plan of the next one, which holds what
+  the missed day left over; two missed days in a row end the streak. Everything is computed
+  from the review logs; nothing extra is stored. A study day starts at 4:00.
 - **A backlog does not pile up on one day.** After an import or a break, the review cards
   that were already due before today ask a seventh of themselves, rounded up, of a day, the
   most forgotten first: 1,500 overdue cards add about 215 to the day's own cards, and the
   count shown is the plan, never the whole backlog. A backlog is never asked for less than a
   normal day asks, so one missed day is made up the next day: five overdue cards beside
   thirty due today are thirty-five. Today says "+1,320 to catch up this week" under the
-  plan. "Keep Going" after "Done for today" works through the rest; those cards are due, so
-  the cards are ordinary reviews and count towards the laps. The size of a study session
+  plan. "Keep Going" after "Done for today" works through the rest, the catch-up; those cards are
+  due, so their reviews are ordinary ones and the cards done fill the laps. The size of a study session
   in the deck options is the size of one segment of the stream and does not cut the plan.
 - **Two directions per word, one after the other.** Each word has a recognition card
   (Greek → meaning) and a production card (meaning → Greek). Production cards unlock only
@@ -71,8 +71,8 @@ are in [`references/`](references/).
 - **FSRS-6, fitted per deck, without a button.** Each deck starts with the default
   parameters, or with the FSRS settings of the Anki preset it was imported from. The
   optimizer (a Swift port of fsrs-rs 6.6.2, checked against it and against py-fsrs reference
-  values) fits them in the background at 400 answers, again at 1,500, then every 30 days or
-  1,000 answers. It trains on the older 80 % of the log; the new parameters replace the
+  values) fits them in the background at 400 reviews, again at 1,500, then every 30 days or
+  1,000 reviews. It trains on the older 80 % of the log; the new parameters replace the
   current ones only if they predict the newest 20 %, which it did not see, better. Fitted
   FSRS-6 beats
   Anki's SM-2 for 99.6 % of users and SuperMemo's SM-17 in 16 of 19 collections; FSRS-7 is
