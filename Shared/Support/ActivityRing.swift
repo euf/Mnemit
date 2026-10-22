@@ -52,8 +52,8 @@ struct ActivityRing: View, Animatable {
         GeometryReader { geometry in
             let radius = (min(geometry.size.width, geometry.size.height) - lineWidth) / 2
             let angle = Angle.degrees(360 * progress).radians
-            // The part of the lap the head is in: the gradient runs over it, from the top to the head. A
-            // whole number of laps leaves the head at the top, which has no tip: it is a closed ring.
+            // The part of the lap the head is in: the gradient runs over it, from the top to the head. At a
+            // whole number of laps the head is at the top, and its tip covers the seam there, as in Fitness.
             let rest = progress.truncatingRemainder(dividingBy: 1)
             let lap = progress > 1 && rest > 0 ? rest : min(progress, 1)
             ZStack {
@@ -81,7 +81,7 @@ struct ActivityRing: View, Animatable {
                     .frame(width: lineWidth, height: lineWidth)
                     .shadow(color: .black.opacity(0.5), radius: lineWidth * 0.3, x: lineWidth * 0.2 * cos(angle), y: lineWidth * 0.2 * sin(angle))
                     .clipShape(RingClipShape(radius: radius, thickness: lineWidth))
-                    .opacity(progress > 1 && rest > 0 ? 1 : 0)
+                    .opacity(progress >= 1 ? 1 : 0)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
