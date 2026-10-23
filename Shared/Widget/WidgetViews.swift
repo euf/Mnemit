@@ -36,8 +36,10 @@ struct WidgetContent: View {
 }
 
 extension WidgetState {
-    /// "42 cards left", the cards of the plan not done yet, or what stands in for it when none is left: never the whole backlog.
+    /// "6 cards left", the cards left to close the ring; "Ring closed" once it is; never the whole plan or backlog.
     fileprivate var headline: Text {
+        if toRing > 0 { return Text("\(toRing) cards left") }
+        if goal > 0 && done >= goal { return Text("Ring closed") }
         if due > 0 { return Text("\(due) cards left") }
         return done > 0 ? Text("All done") : Text("Nothing due")
     }
@@ -47,8 +49,9 @@ extension WidgetState {
         minutesLeft.map { Format.timeLeft(minutes: $0) }
     }
 
-    fileprivate var progressLine: Text {
-        done >= goal ? Text("\(done) cards today") : Text("\(done) of \(goal) cards")
+    /// "49 cards today" once the ring is closed; while it is open the ring itself shows how far it is.
+    fileprivate var progressLine: Text? {
+        done > 0 && done >= goal ? Text("\(done) cards today") : nil
     }
 
     /// What the day asks next (`RoundStatus.title`), "≈ 2 min to keep your streak", while cards are left and the
@@ -138,7 +141,7 @@ private struct SmallWidget: View {
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: 0) {
                 HeadlineLine(state: state, font: .title3.weight(.semibold))
-                state.progressLine
+                state.progressLine?
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -159,7 +162,7 @@ private struct MediumWidget: View {
                 .widgetAccentable()
             VStack(alignment: .leading, spacing: 2) {
                 HeadlineLine(state: state, font: .title2.weight(.semibold))
-                state.progressLine
+                state.progressLine?
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 StreakLine(state: state)
@@ -233,7 +236,7 @@ private struct RectangularWidget: View {
             .font(.headline)
             .minimumScaleFactor(0.6)
             .widgetAccentable()
-            state.progressLine
+            state.progressLine?
                 .font(.caption)
             StreakLine(state: state)
                 .font(.caption)

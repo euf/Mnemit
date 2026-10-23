@@ -231,9 +231,10 @@ struct WidgetSnapshotTests {
     @Test func theSnapshotKeepsTheOnePriceOfTheCardsLeftWhenItWasMade() {
         let now = Fixtures.date(22, 10, 20)
         let dates = Array(WidgetSnapshot.forecastDates(from: now, calendar: Fixtures.calendar).prefix(3))
+        // A goal far enough that every card left is a card to the ring: the minutes price them all.
         func snapshot(cardsLeft: Int, newCardsLeft: Int, pace: Pace = Pace(newCard: 30, otherCard: 12.5)) -> WidgetSnapshot {
             WidgetSnapshot(
-                now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7, cardsLeft: cardsLeft, newCardsLeft: newCardsLeft, pace: pace),
+                now: now, progress: Fixtures.progress(done: 12, goal: 12 + cardsLeft, streak: 7, cardsLeft: cardsLeft, newCardsLeft: newCardsLeft, pace: pace),
                 dates: dates, dueByDeck: [[cardsLeft, cardsLeft, cardsLeft / 2]], nextReminder: nil)
         }
         // 3 new cards at 30 s and 5 others at 12.5 s: 152.5 s over 8 cards.
@@ -251,9 +252,17 @@ struct WidgetSnapshotTests {
         #expect(exact.minutesLeft == 15)
     }
 
+    /// "N cards left" counts the cards to the ring, not the whole plan: 12 of 20 done with 42 due leaves 8.
+    @Test func theCardsLeftAreTheCardsToTheRing() {
+        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), done: 12, streak: 7, isGoalMet: false, secondsPerCard: 10) { _ in 42 }
+        let state = snapshot.state(at: Fixtures.date(22, 10, 20), calendar: Fixtures.studyCalendar)
+        #expect(state.toRing == 8)
+        #expect(state.minutesLeft == 2)
+    }
+
     /// The minutes follow the cards due at each hour of the forecast, priced by the one price of the snapshot.
     @Test func theMinutesLeftFollowTheDueCountOfTheMoment() {
-        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), done: 12, streak: 7, isGoalMet: false, secondsPerCard: 10) {
+        let snapshot = Fixtures.snapshot(now: Fixtures.date(22, 10, 20), done: 12, goal: 200, streak: 7, isGoalMet: false, secondsPerCard: 10) {
             $0 < Fixtures.date(22, 12) ? 42 : $0 < Fixtures.date(22, 16) ? 100 : 0
         }
         let state = { snapshot.state(at: $0, calendar: Fixtures.studyCalendar) }

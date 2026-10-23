@@ -38,17 +38,18 @@ extension MaturityCategory {
         }
     }
 
-    /// An ordinal one-hue ramp (validated for colour-vision deficiencies in light
-    /// and dark mode): the higher the maturity, the more prominent the blue.
+    /// An ordinal one-hue ramp in the accent's indigo (OKLCH hue 278, lightness 0.86 to 0.40 in light mode and
+    /// 0.42 to 0.85 in dark, adjacent steps 10 to 13.5 ΔE2000 apart): the higher the maturity, the more prominent
+    /// the indigo, so memory reads in the colour of the ring, apart from the grades' red and greens.
     /// New cards are neutral grey, outside the ramp.
     var color: Color {
         switch self {
         case .new: Color(light: 0xB4B2AC, dark: 0x5E5D59)
-        case .shaky: Color(light: 0x86B6EF, dark: 0x1C5CAB)
-        case .young: Color(light: 0x5598E7, dark: 0x2A78D6)
-        case .maturing: Color(light: 0x2A78D6, dark: 0x5598E7)
-        case .mature: Color(light: 0x1C5CAB, dark: 0x86B6EF)
-        case .mastered: Color(light: 0x104281, dark: 0xB7D3F6)
+        case .shaky: Color(light: 0xC6CDFF, dark: 0x3F3F97)
+        case .young: Color(light: 0x9AA3F6, dark: 0x5758C7)
+        case .maturing: Color(light: 0x7277EA, dark: 0x7277EA)
+        case .mature: Color(light: 0x5350CF, dark: 0x959EF8)
+        case .mastered: Color(light: 0x3932A0, dark: 0xC2CAFF)
         }
     }
 }

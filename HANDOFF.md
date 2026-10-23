@@ -2,11 +2,16 @@
 
 ## State
 
-- Version 4.0 on `main`; the iPhone runs 4.0.0 (7ccc87e), signed until 29.10. What the app does and
-  why: README, section "Design choices"; terms of the day, ring, streak and pace: `GLOSSARY.md`,
-  section "Mnemit" (a card is never a review); screens of both apps: `references/flows.md`; FSRS
-  research: `references/fsrs-research.md` and `references/fsrs-vs-sm17.md`. Brief sub-agents by
-  `references/agent-lessons-rings.md`: one source, a ceiling, a stop rule, a test baseline.
+- Version 5.3 on `main`; the iPhone runs IPHONE_RUNS, signed for 7 days. The day's model (one ring, the
+  stack, partial credit, the streak step, two rests, medals, the Progress screen) is
+  `references/learning-flow.md`; the ring's size (seconds, the median of the work, probes) is
+  `references/daily-ring.md`; why: `references/learning-flow-research.md`, `goal-setting-research.md`,
+  `speech-stutter-research.md`. Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review).
+  Screens: `references/flows.md`, `references/screens.md`. Brief sub-agents by
+  `references/agent-lessons-rings.md` and `agent-token-costs.md`.
+- Speech: words are rendered ahead and played from memory (`GreekSpeech`, `SpeechLog` writes
+  `Library/Caches/speech.log`, read off the iPhone with `devicectl device copy from`); EF heard no stutter.
+- Strings in en, de, ru, el; `Tools/check-localizations.swift` requires all four.
 - Mac: `~/Applications/Mnemit.app`, `com.euf.mnemit`, installed by `Scripts/install-mac.sh`.
 - iPhone 13 mini (UDID `00008110-000411010C68401E`): Mnemit `com.euf.mnemit.ios` with the widget
   `com.euf.mnemit.ios.widget`, installed by `~/dotfiles/ios-renew --force` (see "iPhone signing").
@@ -43,50 +48,33 @@ deck folder is chosen in the file picker. Team limits: 3 apps per device (now Fi
 ## Open
 
 In order of importance to EF. Brief sub-agents by `references/agent-token-costs.md` and
-`references/agent-lessons-rings.md`; the `agent-budget.py` hook stops an agent at 120 min / 40 M tokens.
+`references/agent-lessons-rings.md`.
 
-1. **Showing media on the card** (core in 3.3: `Card.questionImage/Audio`, `answerImage/Audio`,
-   `Deck.media.contents(of:)`, the `media/` folder in the package). To do: the image on its side of the
-   card (iPhone stream, Card Detail, Mac); the deck's sound on the speaker button and, with auto-speech,
-   instead of the synthesizer; browser rows and the edit sheet for sides with only an image or a sound
-   (the row is empty now, and the edit sheet requires question text); prep2go's question template
-   doesn't show the `Audio` field, so the answer has sound and the question doesn't. Own photos and
-   recordings in Add Cards come later.
-2. **Rewrite the git history in English.** Only the fork's commits (`git log --author=euf`); leave
-   upstream's commits alone, including the German ones and those signed "Claude" from 10–15.10.
-   `git-filter-repo` (`uv tool install --managed-python -p 3.12 git-filter-repo`); translate messages by
-   meaning, no LLM trailers. Before: a fresh clone as a reserve; after: `git push --force-with-lease
-   origin main`; fix the "iPhone runs" hash in State after the rewrite. Do it when there are no agent
-   branches.
-3. **Live check on the iPhone** (not seen on screen, only tests and snapshots):
-   - 4.0: one Study stream over all active decks (the card from the deck whose next card is more
-     urgent; Undo goes to the deck of the last step; rounds count all decks; "Done for today" when the
-     plan has ended everywhere);
-   - card motion: a done card flies into the ring with an interval label, "again today" goes under the
-     stack, the next one rises from the stack, input doesn't wait for the flight; round end: the ring
-     descends into the empty slot, lines one by one; Undo plays in reverse; the ↶ button in the bar;
-     Reduce Motion; VoiceOver speaks the grade. Snapshots: `VocTrainTests/StudyScreenSnapshotTests`;
-   - speech without stutter (speech window 0.3–2 s without main-thread work; `SpeechWindowStallTests`
-     with `TEST_RUNNER_MNEMIT_PERF=1`): EF checks by ear;
-   - deck overlaps: "Also in <deck>" and "Similar to …" in the import preview, Add Cards and Card
-     Detail; words in memory count a word once;
-   - pausing a deck (swipe, menu, Paused section), swipe zones and the miss counter in "How Today
-     Works", prep2go import (75 cards, images and sound, examples in the answer), rounds and capacity,
-     widget.
-4. **The Mac suite on `main` hasn't been run** (the tests open windows). Known failures when the test
-   app isn't in front: `CardListViewTests.firstClickIntoTableSelectsRow` and
-   `focusedTableHandsFocusToNewTableWhenSorted`. Any other failure is new.
-5. **`~/Documents/greek-lessons/vocab/merge.py` `key()`** gives the pairs "ο/η" and "ο" for one word
-   (6 pairs in EF's decks): Mnemit links them through `WordKey`, the generator doesn't.
-6. **Known behaviour, decide on complaint:**
-   - after "Done for today" in all decks, Keep Going runs on the deck of the last card (its catch-up and
-     review ahead), the other decks through a new Study;
-   - pace from durations starts with 20 reviews with `ms` in a category; before that the median of the
-     gaps between reviews, with no data 30 s for new, 10 s for the rest;
-   - `AnkiImportTests.leavesNoTemporaryDatabaseBehind` sometimes fails (shared tmp); a rerun passes;
-   - xcodebuild 27.1 sometimes hangs after the iOS run's summary; the summary in the log is right;
-   - a backlog of a few cards with an empty plan for today asks for one a day;
-   - the Mac Learning Options sheet overwrites a parameter fit that arrived while it was open.
-7. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
+1. **Progress must not depend on the decks in the list.** The ring, the streak and the medals are worked
+   out from the logs of the active decks: deleting or pausing a deck, or deleting a card, rewrites past
+   days. Plan: a progress ledger in the deck folder, one line per study day (done, goal, kept, closed),
+   frozen at the day's change, merged by day across devices, filled from the logs on first run; past days
+   read from it, today from the logs.
+2. **Share Deck**: a clean `.mnemit` copy (cards and media, no states, no log, no fitted parameters) from
+   the deck's menu on both apps; sending the package today sends one's history.
+3. **How Today Works → "Under the Hood"**: a short "Today" section in plain words on top, the tables folded.
+4. **From the reviews of three personas (23.10: Anki veteran, newcomer, no-decks learner)**: a new
+   word's first showing as an introduction, not a red Forgot; an empty Today whose first button is "Add
+   Words" and makes a deck; FSRS figures (RMSE, log loss) for Anki users; Anki import fidelity (cloze,
+   several media per side) and an export back with history.
+5. **Rewrite the git history in English.** Only the fork's commits (`git log --author=euf`, 112 with
+   Russian messages); upstream's stay. `git-filter-repo` with a commit callback mapping hash → message;
+   a fresh clone as a reserve; `git push --force-with-lease origin main`; then fix the hash in State. Do it
+   when no agent branches exist (`git branch | grep worktree-agent` empty).
+6. **The Mac suite on `main` hasn't been run** (the tests open windows; `~/.claude/ui-blocked` was up).
+   Known failures when the test app isn't in front: `CardListViewTests.firstClickIntoTableSelectsRow` and
+   `focusedTableHandsFocusToNewTableWhenSorted`.
+7. **Known behaviour, decide on complaint:** after "Done for today" in all decks, Keep Going runs on the
+   deck of the last card; pace starts from defaults until 20 timed reviews; xcodebuild 27.1 sometimes hangs
+   after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
+   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another.
+8. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
+   duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
+9. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
    (store the chosen date in the log first); hiding siblings across decks once pairs exceed 1 %
    (`references/cross-deck-overlap.md`); a listening mode.

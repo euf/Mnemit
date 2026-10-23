@@ -184,8 +184,12 @@ struct WidgetState: Equatable, Sendable {
 
     /// The minutes the cards left take (`DailyGoal.minutesLeft`): `nil` for none, or without a pace.
     var minutesLeft: Int? {
-        secondsPerCard.flatMap { DailyGoal.minutesLeft(cards: due, secondsPerCard: $0) }
+        secondsPerCard.flatMap { DailyGoal.minutesLeft(cards: toRing > 0 ? toRing : due, secondsPerCard: $0) }
     }
+
+    /// The cards left to close the ring: what "N cards left" counts while it is open. The plan may hold more, after a
+    /// break, and those come after the ring.
+    var toRing: Int { goal > 0 && done < goal ? min(due, goal - done) : 0 }
 
     /// The ring and the streak as `DailyRingView` takes them.
     var progress: DailyProgress {
