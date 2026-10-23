@@ -132,6 +132,26 @@ struct SessionView: View {
         }
     }
 
+    /// Today's ring and beside it what the iPhone's bar says: the time left, "≈ 4 min", while the goal is open, and
+    /// "36 cards today" once it is met.
+    private var ringAndFigures: some View {
+        HStack(spacing: 8) {
+            DailyRingView(progress: ring.progress, showsStreak: false)
+            if let progress = ring.progress {
+                Group {
+                    if progress.ring.isGoalMet {
+                        Text("\(progress.ring.done) cards today")
+                    } else if let minutes = progress.minutesLeft {
+                        Text(verbatim: Format.timeLeft(minutes: minutes))
+                    }
+                }
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
     /// The same controls in every state, question, answer and rest, so the bar never changes
     /// and nothing below it moves; what doesn't apply is disabled.
     private var header: some View {
@@ -162,7 +182,7 @@ struct SessionView: View {
             .labelStyle(.iconOnly)
             .fixedSize()
             .help("More")
-            DailyRingView(progress: ring.progress, showsStreak: false)
+            ringAndFigures
             Button("Done", action: onClose)
                 // With flash cards Esc takes back a review, see `keys`.
                 .keyboardShortcut(model.studyBy == .flashcards ? nil : .cancelAction)

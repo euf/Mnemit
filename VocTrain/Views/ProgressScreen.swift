@@ -64,10 +64,12 @@ struct ProgressScreen: View {
                 Image(systemName: "flame.fill")
                     .foregroundStyle(progress.isStreakLit ? Color.streak : Color.secondary)
                     .accessibilityHidden(true)
-                Text(progress.streak.days, format: .number)
+                Text("\(progress.streak.days)-day streak")
                     .monospacedDigit()
             }
             .font(.largeTitle.weight(.bold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("\(progress.streak.days)-day streak"))
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 2), alignment: .leading, spacing: Spacing.tight) {

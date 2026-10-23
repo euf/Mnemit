@@ -16,16 +16,25 @@ enum ReminderPlan {
         return (0..<count).compactMap { calendar.date(byAdding: .day, value: $0, to: first) }
     }
 
-    /// "B1: 23 · A1–A2: 60": each deck with cards to study and the size of its session, in
-    /// the order given; `nil` when nothing is due, and then no reminder is due either.
-    static func body(_ decks: [(name: String, total: Int)]) -> String? {
-        let due = decks.filter { $0.total > 0 }
-        return due.isEmpty ? nil : due.map { "\($0.name): \($0.total)" }.joined(separator: " · ")
+    /// What a reminder says, in the words of Today: the streak it keeps, "Keep your 12-day streak", and the streak
+    /// step, "≈ 2 min is enough."; without a streak, a start. `nil` when no deck has cards, and then no reminder is
+    /// due either. A count of the cards due, which after a break can be hundreds, is never in it.
+    static func content(_ decks: [(name: String, total: Int)], streak: Int) -> (title: String, body: String)? {
+        guard decks.contains(where: { $0.total > 0 }) else { return nil }
+        guard streak > 0 else { return (String(localized: "Time to study"), String(localized: "≈ 2 min is enough to start.")) }
+        return (String(localized: "Keep your \(streak)-day streak"), String(localized: "≈ 2 min is enough."))
+    }
+
+    /// The number on the icon: the cards left to close today's ring, as Today's headline counts them, never the whole
+    /// plan; 0 once the ring is closed. Without the ring's figures, the cards due.
+    static func badge(due: Int, progress: DailyProgress?) -> Int {
+        guard let ring = progress?.ring, ring.goal > 0 else { return due }
+        return min(due, max(0, ring.goal - ring.done))
     }
 }
 
-/// The daily reminder to study: a local notification at the learner's time that tells how
-/// much is due in each known deck, and the number on the app icon, the total due today.
+/// The daily reminder to study: a local notification at the learner's time with the streak it keeps, and the number
+/// on the app icon, the cards left to close today's ring (`ReminderPlan`).
 /// Local notifications only; the app has no push entitlement.
 ///
 /// The reminders of the next few days are scheduled at once, each with the counts of its
@@ -97,11 +106,11 @@ final class Reminders {
     /// Schedules the reminders for `decks` and sets the number on the app icon; takes away
     /// both when the reminder is off. `open` is the deck that is open now: its counts come
     /// from the document, which holds changes the file doesn't yet.
-    func reschedule(decks: [KnownDeck], open: OpenDeck?) async {
+    func reschedule(decks: [KnownDeck], open: OpenDeck?, progress: DailyProgress? = nil) async {
         let previous = lastRun
         let run = Task { @MainActor in
             await previous?.value
-            await schedule(decks: decks, open: open, now: Date())
+            await schedule(decks: decks, open: open, progress: progress, now: Date())
         }
         lastRun = run
         await run.value
@@ -109,20 +118,20 @@ final class Reminders {
 
     /// Like `reschedule(decks:open:)`, for the moment the app goes to the background: iOS
     /// gets asked for the time to finish, as it suspends the app soon after.
-    func rescheduleBeforeSuspending(decks: [KnownDeck], open: OpenDeck?) {
+    func rescheduleBeforeSuspending(decks: [KnownDeck], open: OpenDeck?, progress: DailyProgress? = nil) {
         let time = BackgroundTime()
         time.identifier = UIApplication.shared.beginBackgroundTask(withName: "Reminders") { [time] in
             MainActor.assumeIsolated { time.end() }
         }
         Task {
-            await reschedule(decks: decks, open: open)
+            await reschedule(decks: decks, open: open, progress: progress)
             time.end()
         }
     }
 
     private static let identifiers = (0..<ReminderPlan.days).map { "daily-reminder-\($0)" }
 
-    private func schedule(decks: [KnownDeck], open: OpenDeck?, now: Date) async {
+    private func schedule(decks: [KnownDeck], open: OpenDeck?, progress: DailyProgress?, now: Date) async {
         center.removePendingNotificationRequests(withIdentifiers: Self.identifiers)
         await refreshStatus()
         guard isEnabled, isAllowed else {
@@ -141,18 +150,22 @@ final class Reminders {
                 days[day].append((deck.name, count.total))
             }
         }
-        await setBadge(days[0].reduce(0) { $0 + $1.total })
+        await setBadge(ReminderPlan.badge(due: days[0].reduce(0) { $0 + $1.total }, progress: progress))
 
         var first: Date?
         for (index, fire) in fires.enumerated() {
             let day = days[index + 1]
-            guard let body = ReminderPlan.body(day) else { continue }
+            // A streak holds through one missed day; a reminder further ahead than that names none.
+            let streak = index < 2 ? progress?.streak.days ?? 0 : 0
+            guard let text = ReminderPlan.content(day, streak: streak) else { continue }
             first = first ?? fire
             let content = UNMutableNotificationContent()
-            content.title = String(localized: "Time to study")
-            content.body = body
+            content.title = text.title
+            content.body = text.body
             content.sound = .default
-            content.badge = NSNumber(value: day.reduce(0) { $0 + $1.total })
+            // That day's ring is about the size of today's.
+            let due = day.reduce(0) { $0 + $1.total }
+            content.badge = NSNumber(value: progress.map { $0.ring.goal > 0 ? min(due, $0.ring.goal) : due } ?? due)
             let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             try? await center.add(UNNotificationRequest(identifier: Self.identifiers[index], content: content, trigger: trigger))

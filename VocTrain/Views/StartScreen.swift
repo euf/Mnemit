@@ -191,7 +191,7 @@ struct StartScreen: View {
                 run?.deck.suspend()
                 pushed.suspend()
                 addingCards?.suspend()
-                reminders.rescheduleBeforeSuspending(decks: knownDecks.byName, open: openDeck)
+                reminders.rescheduleBeforeSuspending(decks: knownDecks.byName, open: openDeck, progress: ring.progress)
                 if let inputs = widgetInputs { widget.flushBeforeSuspending(inputs) }
             case .active:
                 run?.deck.resume()
@@ -653,7 +653,7 @@ struct StartScreen: View {
     }
 
     private func rescheduleReminders() async {
-        await reminders.reschedule(decks: knownDecks.byName, open: openDeck)
+        await reminders.reschedule(decks: knownDecks.byName, open: openDeck, progress: ring.progress)
     }
 
     private func showIntroductionAfterSettings() {

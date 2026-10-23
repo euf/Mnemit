@@ -69,6 +69,8 @@ struct DeckContent: View {
     /// The file of "Import Cards…", for its preview sheet.
     @State private var importedFile: ImportedFile?
     @State private var deleteFailure: String?
+    /// Whether Add Cards came up by itself for this screen's empty deck, once.
+    @State private var offeredAddCards = false
 
     var body: some View {
         List {
@@ -93,6 +95,12 @@ struct DeckContent: View {
             }
         }
         .listStyle(.insetGrouped)
+        // An empty deck has one thing to do: a new deck goes straight on to its first cards.
+        .onChange(of: canEdit && document?.deck.cards.isEmpty == true, initial: true) { _, isEmpty in
+            guard isEmpty, !offeredAddCards else { return }
+            offeredAddCards = true
+            showsAddCards = true
+        }
         .navigationTitle(name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
