@@ -347,9 +347,17 @@ struct SummaryRow: View {
             .font(.subheadline)
     }
 
-    /// "≈ 7 min": the cards left at the learner's pace, new cards and others each at its own, once the decks are read.
+    /// The cards left to close the ring, which "N cards left" counts while it is open: the plan may hold more after a
+    /// break, and those come after the ring.
+    private var toRing: Int {
+        guard let ring = progress?.ring, ring.goal > 0, ring.done < ring.goal else { return 0 }
+        return min(due, ring.goal - ring.done)
+    }
+
+    /// "≈ 7 min": the cards left to the ring at the learner's pace, once the decks are read.
     private var timeLeft: String? {
-        guard let progress, let minutes = DailyGoal.minutesLeft(newCards: newDue, otherCards: due - newDue, pace: progress.pace) else { return nil }
+        guard let progress, let minutes = DailyGoal.minutesLeft(cards: toRing > 0 ? toRing : due, secondsPerCard: progress.secondsPerCardLeft)
+        else { return nil }
         return Format.timeLeft(minutes: minutes)
     }
 
@@ -368,7 +376,7 @@ struct SummaryRow: View {
         } else if due > 0, let title = progress.flatMap({ RoundStatus($0).title }) {
             Text(title)
         } else if due > 0 {
-            let cardsLeft = Text("\(due) cards left")
+            let cardsLeft = Text("\(toRing > 0 ? toRing : due) cards left")
             if let timeLeft {
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -398,9 +406,10 @@ struct SummaryRow: View {
     /// closed, "49 cards today · 3 left", as the goal is behind and the ring shows the laps.
     @ViewBuilder
     private var detail: some View {
-        if let ring = progress?.ring, due > 0 {
-            let done = ring.isGoalMet ? String(localized: "\(ring.done) cards today") : String(localized: "\(ring.done) of \(ring.goal) cards")
-            Text(verbatim: [done, String(localized: "\(due) left")].joined(separator: " · "))
+        if let ring = progress?.ring, due > 0, !ring.isGoalMet {
+            Text("\(ring.done) of \(ring.goal) cards")
+        } else if let ring = progress?.ring, due > 0 {
+            Text(verbatim: [String(localized: "\(ring.done) cards today"), String(localized: "\(due) left")].joined(separator: " · "))
         } else if let ring = progress?.ring, ring.done > 0 {
             Text("\(ring.done) cards today")
         } else if due == 0, let nextDue {
