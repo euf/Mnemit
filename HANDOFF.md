@@ -62,8 +62,9 @@ In order of importance to EF. Brief sub-agents by `references/agent-token-costs.
    word's first showing as an introduction, not a red Forgot; an empty Today whose first button is "Add
    Words" and makes a deck; FSRS figures (RMSE, log loss) for Anki users; Anki import fidelity (cloze,
    several media per side) and an export back with history.
-5. **Decisions to revisit by evidence** (`references/decisions-evidence.md`, 23.10: ten checked, none to
-   change, four to measure on EF's own log):
+5. **Decisions to revisit by evidence** (`references/decisions-evidence.md`, 23.10: ten checked; medals
+   changed in 5.3.6 after Deci, Koestner & Ryan 1999, the next medal shows no progress count; four to
+   measure on EF's own log):
    - The day's time (§2): replay the ring rule's variants (probe +10 % / +5 % / none, cooldown 7 / 14 / 21
      days, after-miss factor 0.7 / 0.85 / 1.0) on the log; keep the closure rate at 80-90 % of study days;
      needs 60 study days.

@@ -161,13 +161,20 @@ Decision: streak milestones, laps, big days, comeback, perfect week, first ring;
   https://researchprofiles.ku.dk/en/publications/do-points-levels-and-leaderboards-harm-intrinsic-motivation-an-em/.
   Single report (online task).
 - Streak milestone screen: day-7 retention +1.7 % (Duolingo, section 3). Measured (company).
-- Overjustification: Deci, Koestner & Ryan 1999, https://psycnet.apa.org/doi/10.1037/0033-2909.125.6.627.
-  Not read (publisher pages gated, the PDF had no text layer); the reading that expected tangible
-  rewards undermine and unexpected ones do not is from memory, unverified.
+- Overjustification: Deci, Koestner & Ryan 1999, Psychological Bulletin 125(6):627–668,
+  https://psycnet.apa.org/doi/10.1037/0033-2909.125.6.627, 128 studies. Expected rewards undermine free-choice
+  intrinsic motivation: engagement-contingent d = −0.40, completion-contingent −0.36, performance-contingent
+  −0.28. Unexpected tangible rewards: d = 0.01 (9 studies, ns); task-noncontingent: d = −0.14 (ns). Positive
+  feedback enhances it: d = 0.33 free choice, 0.31 self-reported interest. Symbolic awards count as tangible
+  (the "Good Player Award" of Lepper, Greene & Nisbett 1973). Tangible rewards harm children more than
+  college students. Measured (meta-analysis), read from the PDF.
 - No source found for the tier numbers, or for a recap screen.
 
-**Keep.** Small average effects, no found harm from progress indicators, built from the log at no
-storage cost. The tiers are a choice. Revisit if EF turns celebrations off.
+**Change (small).** A medal is a symbolic reward; it stays on the safe side of Deci, Koestner & Ryan when
+it comes unexpected and reads as feedback on what was done. So: the next medal shows as a grey silhouette
+with its name and no progress count ("12 of 14 days" turned it into an expected reward for completing a
+task); medal texts name the achievement ("Two rings in a day", "Saved your streak after a missed day"), never
+a price to pay. Done in 5.3.6. The tiers themselves remain a choice; revisit if EF turns celebrations off.
 
 ## 9. Grading: one "no", three "yes", swipes, no intervals on the buttons
 
@@ -214,6 +221,6 @@ step spacing is already measured.
 | 5 Backlog spread | measure | simulate ascending against descending R at the first backlog over 100 cards |
 | 6 Production cards | measure | Forgot share on first two production reviews, 100 reviews minimum |
 | 7 One stream | keep | none |
-| 8 Medals | keep | none |
+| 8 Medals | change (small) | the next medal without a progress count; texts as feedback, not a price |
 | 9 Grading | keep | after a refit, compare w15 and w16 and the lapse rate after Hard |
 | 10 Maturity ramp | keep | none |

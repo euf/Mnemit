@@ -96,7 +96,7 @@ struct ProgressScreen: View {
         let latest = progress.achievements.recentMedals
         if latest.isEmpty {
             if let next = AchievementLine.single.lazy.compactMap({ NextTier.of($0, earned: [], records: records, streak: progress.streak.days) }).first {
-                Medal(kind: next.kind, isEarned: false, hint: next.hint)
+                Medal(kind: next.kind, isEarned: false)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.tight)
             }

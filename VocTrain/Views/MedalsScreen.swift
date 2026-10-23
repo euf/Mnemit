@@ -39,7 +39,7 @@ private struct MedalLine: View {
                     Medal(kind: medal.kind, date: calendar.start(ofDay: medal.day), count: medal.count)
                 }
                 if let next, !(line.repeats && !earned.isEmpty) {
-                    Medal(kind: next.kind, isEarned: false, hint: next.hint)
+                    Medal(kind: next.kind, isEarned: false)
                 }
             }
         }
