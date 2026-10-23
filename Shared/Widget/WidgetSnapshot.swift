@@ -58,9 +58,6 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// The cards by step of the ladder of memory (`DailyProgress.ladder`); `nil` in a snapshot an older app wrote.
     var ladder: [Int]?
 
-    /// How many times the goal was reached: 2 from 200 %.
-    var laps: Int { done / max(1, goal) }
-
     /// How far ahead the forecast reaches.
     static let forecastHours = 48
 
@@ -192,7 +189,7 @@ struct WidgetState: Equatable, Sendable {
 
     /// The ring and the streak as `DailyRingView` takes them.
     var progress: DailyProgress {
-        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streakDays, repairCards: nil))
+        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streakDays, repairCards: nil), streakKeptToday: isStreakKept)
     }
 
     /// The same figures at another moment of the timeline.

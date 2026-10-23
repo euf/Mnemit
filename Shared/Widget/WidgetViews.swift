@@ -65,11 +65,8 @@ extension WidgetState {
         wordsInMemory.flatMap { MemoryEstimate.wordsLine($0) }
     }
 
-    /// For the circular widget, whose middle holds the cards left: no streak number, and one lap
-    /// at most, as the badge of the laps would hang out of the circle the system cuts.
-    fileprivate var ringWithoutStreak: DailyProgress {
-        DailyProgress(ring: DailyRing(done: min(done, goal), goal: goal), streak: Streak(days: 0, repairCards: nil))
-    }
+    /// The figure the headline counts, "8 cards left": the cards left to the ring, else of the plan.
+    fileprivate var cardsLeft: Int { toRing > 0 ? toRing : due }
 }
 
 /// The headline, "42 cards left", with the time they take after it: on the same line where the
@@ -113,7 +110,8 @@ private struct HeadlineLine: View {
     }
 }
 
-/// The flame and the days of the streak; the flame in the accent once today's goal keeps it.
+/// The flame and the days of the streak, for the lock screen's rectangle, which has no ring; the flame is lit once
+/// today keeps the streak.
 private struct StreakLine: View {
     var state: WidgetState
 
@@ -121,7 +119,7 @@ private struct StreakLine: View {
         if state.streakDays > 0 {
             HStack(spacing: 4) {
                 Image(systemName: "flame.fill")
-                    .foregroundStyle(state.isStreakKept ? Color.appAccent : Color.secondary)
+                    .foregroundStyle(state.isStreakKept ? Color.streak : Color.secondary)
                     .widgetAccentable(state.isStreakKept)
                 Text("\(state.streakDays)-day streak")
             }
@@ -153,6 +151,8 @@ private struct SmallWidget: View {
     }
 }
 
+/// The ring with the streak in its middle, the headline, one line under it, the words in memory, and Study while the
+/// ring is open; once it is closed the headline has the width (the whole widget still opens the stream).
 private struct MediumWidget: View {
     var state: WidgetState
 
@@ -165,18 +165,8 @@ private struct MediumWidget: View {
                 state.progressLine?
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                StreakLine(state: state)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
                 if let words = state.wordsLine {
-                    // The column beside the ring and the Study button is about 127 pt wide.
                     Text(words)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .minimumScaleFactor(0.7)
-                }
-                if let reminder = state.nextReminder {
-                    Text("Reminder at \(Text(reminder, style: .time))")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.top, 2)
@@ -184,15 +174,17 @@ private struct MediumWidget: View {
             }
             .lineLimit(1)
             .minimumScaleFactor(0.8)
-            Spacer(minLength: 0)
-            Link(destination: WidgetLink.study) {
-                Text("Study")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.appAccent, in: Capsule())
-                    .widgetAccentable()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if state.due > 0 && !state.isGoalMet {
+                Link(destination: WidgetLink.study) {
+                    Text("Study")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color.appAccent, in: Capsule())
+                        .widgetAccentable()
+                }
             }
         }
         .monospacedDigit()
@@ -201,20 +193,35 @@ private struct MediumWidget: View {
     }
 }
 
+/// The ring and, in its middle, the cards left; once none are, the streak's flame and days.
 private struct CircularWidget: View {
     var state: WidgetState
 
     var body: some View {
         ZStack {
             AccessoryWidgetBackground()
-            DailyRingView(progress: state.ringWithoutStreak, diameter: 58)
+            ProgressRing(fraction: state.progress.ring.fraction, diameter: 58)
                 .widgetAccentable()
-            Text(state.due, format: .number)
-                .font(.system(.title3, design: .rounded).weight(.semibold))
-                .monospacedDigit()
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-                .frame(width: 38)
+            Group {
+                if state.cardsLeft > 0 {
+                    Text(state.cardsLeft, format: .number)
+                        .font(.system(.title3, design: .rounded).weight(.semibold))
+                } else if state.streakDays > 0 {
+                    VStack(spacing: -2) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text(state.streakDays, format: .number)
+                            .font(.system(.headline, design: .rounded).weight(.semibold))
+                    }
+                } else {
+                    Image(systemName: "checkmark")
+                        .font(.system(.title3, design: .rounded).weight(.semibold))
+                }
+            }
+            .monospacedDigit()
+            .minimumScaleFactor(0.5)
+            .lineLimit(1)
+            .frame(width: 38)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(state.headline)

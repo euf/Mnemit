@@ -69,7 +69,7 @@ struct DocumentView: View {
                 }
                 .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .primaryAction) {
-                    StartStudyButton(dueCards: document.dueCards, hasCards: !document.deck.cards.isEmpty, action: startSession)
+                    StartStudyButton(dueCards: document.dueCards, hasCards: !document.deck.cards.isEmpty) { startSession($0) }
                         .disabled(!canEdit)
                 }
                 // A text button beside symbol buttons reads as one control without a gap.
@@ -128,7 +128,10 @@ struct DocumentView: View {
             if canEdit, let request = WelcomeRequest.takeImportCards() {
                 Task { importCards(from: request.file, namesDeck: true) }
             }
+            takeStudyRequest()
         }
+        // Today's Study, Catch Up or Push On, for this deck while its window was open already.
+        .onReceive(NotificationCenter.default.publisher(for: WelcomeRequest.studyRequested)) { _ in takeStudyRequest() }
         .attachingUndoManager(to: document)
         // The deck opened: its parameters are fitted again if it is due, in the background and
         // never into a study stream (`ParameterRefit`).
@@ -159,7 +162,7 @@ struct DocumentView: View {
                 isInSession: session != nil,
                 isEditable: canEdit,
                 canStartSession: canEdit && session == nil && !document.deck.cards.isEmpty,
-                startSession: startSession,
+                startSession: { startSession() },
                 canPracticeMistakes: canEdit && session == nil && !document.deck.mistakes(onDayOf: document.clock.now, calendar: document.calendar).isEmpty,
                 practiceMistakes: practiceMistakes,
                 canPracticeNewest: canEdit && session == nil && !document.deck.newestBatchIDs.isEmpty,
@@ -240,10 +243,11 @@ struct DocumentView: View {
         fileURL?.deletingPathExtension().lastPathComponent ?? String(localized: "this deck")
     }
 
-    /// Opens the study stream, which rests at once if today's plan is empty.
-    private func startSession() {
+    /// Opens the study stream, which rests at once if today's plan is empty; Push On adds ten new cards at once.
+    private func startSession(_ entry: SessionViewModel.Entry = .study) {
         guard canEdit, session == nil, !document.deck.cards.isEmpty else { return }
-        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy(), rounds: RoundGuide(progress: ring.progress, document: document))
+        let model = SessionViewModel(
+            document: document, studyBy: Preferences.studyBy(), entry: entry, rounds: RoundGuide(progress: ring.progress, document: document))
         session = model
         if model.studyBy == .flashcards {
             shortcutsHelp.showForFirstSession()
@@ -270,39 +274,60 @@ struct DocumentView: View {
         }
     }
 
-    /// Evaluates the ring for every deck open in the app.
+    /// Starts the stream that Today asked of this deck, once the document can be edited.
+    private func takeStudyRequest() {
+        guard canEdit, session == nil, let fileURL, let entry = WelcomeRequest.takeStudy(of: fileURL) else { return }
+        // On the next turn, once the view attached the undo manager.
+        Task { startSession(entry) }
+    }
+
+    /// Evaluates the ring for every deck of the Mnemit folder, the open ones as their documents have them, as the
+    /// iPhone does: the ring and the streak are one over all decks, whichever window shows them.
     private func refreshRing() {
-        ring.refresh(documents: OpenDecks.shared.documents)
+        let documents = OpenDecks.shared.documents
+        let open = Set(documents.compactMap { $0.packageURL?.standardizedFileURL })
+        let files = DeckFolder.shared.decks.filter { !open.contains($0.standardizedFileURL) }
+        ring.refresh(documents: documents, files: files)
     }
 }
 
-/// The prominent "Study" button of the toolbar. Once the plan is done it opens the stack at its
-/// end, where Push On offers new cards; the menu command
-/// Study ▸ Study is its twin.
+/// The button of the toolbar, as the iPhone's deck screen has it: the prominent **Study** while the deck has cards
+/// in today's plan, **Push On** once it has none, ten new cards at once. The menu command Study ▸ Study is its twin.
 private struct StartStudyButton: View {
     var dueCards: DueCardCounter
     var hasCards: Bool
-    var action: () -> Void
+    var action: (SessionViewModel.Entry) -> Void
 
     var body: some View {
-        Button("Study", action: action)
-            .buttonStyle(.borderedProminent)
-            .disabled(!hasCards)
-            .help(dueCards.count > 0 ? "Study today's plan" : "Done for today")
+        if dueCards.count > 0 {
+            Button("Study") { action(.study) }
+                .buttonStyle(.borderedProminent)
+                .disabled(!hasCards)
+                .help("Study today's plan")
+        } else {
+            Button("Push On") { action(.pushOn) }
+                .disabled(!hasCards)
+                .help("Ten new cards now, more reviews in the days ahead")
+        }
     }
 }
 
-/// Today's cards done against the daily goal as a ring with the streak in its middle and "14/20", beside
-/// the Study button. An indicator, no button: it takes no background in the toolbar.
+/// Today's cards done against the daily goal as a ring, and beside it the streak, the flame and its days, next to
+/// the Study button. An indicator, no button: it takes no background in the toolbar. The figures are in its help.
 private struct RingChip: View {
     var progress: DailyProgress?
 
     var body: some View {
         HStack(spacing: 6) {
-            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: 24, center: RingCenter(progress, inStream: false))
-            if let ring = progress?.ring {
-                Text(verbatim: "\(ring.done)/\(ring.goal)")
-                    .monospacedDigit()
+            ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: 22)
+            if let progress, progress.streak.days > 0 {
+                HStack(spacing: 2) {
+                    Image(systemName: "flame.fill")
+                        .foregroundStyle(progress.isStreakLit ? Color.streak : Color.secondary)
+                    Text(progress.streak.days, format: .number)
+                        .monospacedDigit()
+                        .fontWeight(.semibold)
+                }
             }
         }
         .help(help)

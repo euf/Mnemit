@@ -26,6 +26,9 @@ final class SessionViewModel {
     enum Entry {
         /// Today's stack: the plan, which ends; past it only Push On.
         case study
+        /// Today's stack once it is done: Push On, ten new cards at once, without the rest at the end of the plan
+        /// first.
+        case pushOn
         /// A practice of the cards that went wrong today, which changes no card.
         case practiceMistakes
         /// A practice of the newest words, which changes no card.
@@ -67,7 +70,7 @@ final class SessionViewModel {
         let now = document.clock.now
         let stream: StudyStream
         switch entry {
-        case .study:
+        case .study, .pushOn:
             stream = StudyStream(
                 deck: document.deck, at: now, calendar: document.calendar, reviewMode: studyBy == .flashcards ? .revealed : .typed,
                 newCardAllowance: document.newCardAllowance)
@@ -79,7 +82,10 @@ final class SessionViewModel {
         self.document = document
         self.autoAdvance = autoAdvance
         self.studyBy = studyBy
-        driver = SessionDriver(document: document, stream: stream, rounds: entry == .study ? rounds : nil)
+        driver = SessionDriver(document: document, stream: stream, rounds: entry == .practiceMistakes || entry == .practiceNewest ? nil : rounds)
+        if entry == .pushOn {
+            driver.addNewCards()
+        }
         stage = driver.isResting ? .resting : .asking
         driver.delegate = self
         let center = NotificationCenter.default

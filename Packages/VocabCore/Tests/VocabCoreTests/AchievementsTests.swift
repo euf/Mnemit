@@ -64,20 +64,6 @@ struct AchievementsTests {
         #expect(days(of: .perfectWeek, in: Achievements.earned(over: records)) == [111])
     }
 
-    @Test func aLapTierIsEarnedOnTheFirstDayThatReachesItAndADayCanReachSeveral() {
-        let records = [day(100, done: 25, goal: 10), day(101, done: 31, goal: 10), day(102, done: 55, goal: 10), day(103, done: 30, goal: 10)]
-        let earned = Achievements.earned(over: records)
-        #expect(days(of: .laps(2), in: earned) == [100])
-        #expect(days(of: .laps(3), in: earned) == [101])
-        #expect(days(of: .laps(5), in: earned) == [102])
-        #expect(days(of: .laps(10), in: earned) == [])
-    }
-
-    @Test func aDayWithoutAGoalHasNoLaps() {
-        let earned = Achievements.earned(over: [day(100, done: 40, goal: 0)])
-        #expect(!earned.contains { if case .laps = $0.kind { true } else { false } })
-    }
-
     @Test func aBigDayTierIsEarnedOnceOnTheFirstDayThatReachesIt() {
         let records = [day(100, done: 49, goal: 49), day(101, done: 50, goal: 50), day(102, done: 120, goal: 120), day(103, done: 500, goal: 500), day(104, done: 500, goal: 500)]
         let earned = Achievements.earned(over: records)
@@ -97,7 +83,6 @@ struct AchievementsTests {
         #expect(earned.map(\.day) == earned.map(\.day).sorted())
         #expect(earned.first == Achievement(kind: .firstRing, day: 100))
         #expect(earned.last == Achievement(kind: .bigDay(cards: 50), day: 114))
-        #expect(earned.contains(Achievement(kind: .laps(3), day: 114)))
     }
 
     @Test func aMonthRecapAddsUpTheDaysOfThatCalendarMonthOnly() throws {

@@ -162,7 +162,7 @@ struct SessionView: View {
             .labelStyle(.iconOnly)
             .fixedSize()
             .help("More")
-            DailyRingView(progress: ring.progress, inStream: true)
+            DailyRingView(progress: ring.progress, showsStreak: false)
             Button("Done", action: onClose)
                 // With flash cards Esc takes back a review, see `keys`.
                 .keyboardShortcut(model.studyBy == .flashcards ? nil : .cancelAction)

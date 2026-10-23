@@ -178,15 +178,6 @@ struct WidgetSnapshotTests {
         #expect(WidgetSnapshot.decoded(from: Data()) == nil)
     }
 
-    @Test func lapsCountTheGoalReachedAgain() {
-        let snapshot = { (done: Int) in
-            Fixtures.snapshot(now: Fixtures.date(22, 10), done: done, goal: 20, streak: 1, isGoalMet: done >= 20) { _ in 0 }
-        }
-        #expect(snapshot(19).laps == 0)
-        #expect(snapshot(20).laps == 1)
-        #expect(snapshot(45).laps == 2)
-    }
-
     // MARK: Forecast
 
     @Test func forecastLooksAtTheNextFullHours() {
@@ -290,7 +281,7 @@ struct WidgetSnapshotTests {
             nextReminder: Fixtures.date(23, 9))
         let snapshot = WidgetSync.snapshot(from: inputs, at: now, calendar: Fixtures.calendar)
         #expect(snapshot.date == now)
-        #expect(snapshot.isGoalMet && snapshot.laps == 1)
+        #expect(snapshot.isGoalMet && snapshot.done == 20)
         #expect(snapshot.nextReminder == Fixtures.date(23, 9))
         #expect(Array(snapshot.due.map(\.count).prefix(7)) == [7, 7, 8, 8, 8, 8, 10])
         // A deck whose file is missing adds nothing.

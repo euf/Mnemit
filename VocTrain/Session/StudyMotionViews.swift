@@ -266,9 +266,10 @@ struct CardStack: View {
     private func page(_ level: Int, size: CGSize, spread: Bool) -> some View {
         Self.page(
             width: spread ? StackPose.width(level, cardWidth: size.width) : size.width, height: size.height, faintness: StackPose.faintness(level),
-            shade: StackPose.shade(Double(level)))
-            .offset(y: spread ? StackPose.drop(level) : 0)
-            .animation(.spring(duration: 0.4, bounce: 0.2).delay(0.05 * Double(level)), value: spread)
+            shade: StackPose.shade(Double(level))
+        )
+        .offset(y: spread ? StackPose.drop(level) : 0)
+        .animation(.spring(duration: 0.4, bounce: 0.2).delay(0.05 * Double(level)), value: spread)
     }
 
     /// A blank sheet: the card's shape, its surface a `shade` darker (lighter in dark mode), a hairline round it
@@ -370,7 +371,7 @@ struct RingTraveler: View {
                 let origin = proxy.frame(in: .global).origin
                 let width = home.width + (rest.width - home.width) * travel
                 RingBurst(startedAt: reduceMotion ? nil : motion.burstStartedAt, diameter: Self.diameter) {
-                    DailyRingView(progress: progress, diameter: Self.diameter, inStream: !motion.hasArrived, shown: motion.shown)
+                    DailyRingView(progress: progress, diameter: Self.diameter, shown: motion.shown, showsStreak: motion.hasArrived)
                 }
                 .ringBump(motion.landings, reduceMotion: reduceMotion)
                 .scaleEffect(width / Self.diameter)

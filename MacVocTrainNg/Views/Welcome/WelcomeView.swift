@@ -1,28 +1,137 @@
 import AppKit
 import SwiftUI
+import VocabCore
 
-/// The content of the welcome window: what to do on the left, the decks to open on the
-/// right: those in the Mnemit folder, once the learner chose it, and the recent ones.
+/// The Mac's Today, the window of the welcome: reads the Mnemit folder, the day's ring over its decks and their
+/// counts, and hands them to `TodayWindowContent`, which draws them. Reads again whenever the window comes to the
+/// front and once a minute, as the day turns.
 struct WelcomeView: View {
     private var folder = DeckFolder.shared
     @State private var recent = NSDocumentController.shared.recentDocumentURLs
+    @State private var ring = DailyRingModel()
+    @State private var counts = KnownDeckCounts()
 
     var body: some View {
-        HStack(spacing: 0) {
-            actions
-                .frame(width: 340)
-            Divider()
-            decks
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.quaternary.opacity(0.5))
-        }
-        .frame(width: 760, height: 440)
+        TodayWindowContent(
+            folder: folder.url, decks: folder.decks, recent: recent, progress: ring.progress, counts: counts.counts, paused: counts.paused,
+            isRead: counts.isRead, now: Date(), chooseFolder: { folder.choose() }, study: study
+        )
         .onAppear(perform: refresh)
         // The decks may have changed while the window was behind others.
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in refresh() }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                refresh()
+            }
+        }
     }
 
-    private var actions: some View {
+    /// Opens the deck the day goes on with and starts its stream there: the deck with cards left that was used
+    /// last, or the first; for Push On the deck used last.
+    private func study(_ action: DayAction) {
+        let active = folder.decks.filter { !counts.paused.contains($0) }
+        let used = recent.map(\.standardizedFileURL)
+        let byUse = active.sorted { (used.firstIndex(of: $0.standardizedFileURL) ?? .max) < (used.firstIndex(of: $1.standardizedFileURL) ?? .max) }
+        let deck = action == .pushOn ? byUse.first : byUse.first { (counts.counts[$0]?.total ?? 0) > 0 }
+        guard let deck else { return }
+        WelcomeRequest.requestStudy(of: deck, entry: action == .pushOn ? .pushOn : .study)
+    }
+
+    /// Reads the folder, the day's ring over its decks and their counts, the open decks as their documents have them.
+    private func refresh() {
+        folder.refresh()
+        recent = NSDocumentController.shared.recentDocumentURLs
+        let documents = OpenDecks.shared.documents
+        let open = Set(documents.compactMap { $0.packageURL?.standardizedFileURL })
+        let files = folder.decks.filter { !open.contains($0.standardizedFileURL) }
+        let urls = folder.decks
+        Task {
+            await ring.refresh(documents: documents, files: files, reloadFiles: true, delay: .zero).value
+            await counts.refresh(urls)
+        }
+    }
+}
+
+/// What the Today window shows, from what it is given, so a test can draw it: the day over every deck of the
+/// folder on the left, as the iPhone's Today has it (`SummaryRow`: the ring with the streak, what the day asks next,
+/// the words in memory), and the one button of the day (`DayAction`: Study, Catch Up or Push On); the decks with
+/// what today's plan takes from each on the right. Before the learner chose the folder, the app's name and the ways in.
+struct TodayWindowContent: View {
+    var folder: URL?
+    var decks: [URL]
+    var recent: [URL]
+    var progress: DailyProgress?
+    var counts: [URL: StudyCounts]
+    var paused: Set<URL>
+    var isRead: Bool
+    var now: Date
+    var chooseFolder: () -> Void
+    var study: (DayAction) -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Group {
+                if folder == nil {
+                    welcome
+                } else {
+                    today
+                }
+            }
+            .frame(width: 340)
+            Divider()
+            deckList
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.quaternary.opacity(0.5))
+        }
+        .frame(width: 760, height: 460)
+    }
+
+    // MARK: The day
+
+    /// The decks the day counts: those of the folder that are not paused.
+    private var active: [URL] { decks.filter { !paused.contains($0) } }
+
+    /// The cards left of today's plan, all decks.
+    private var due: Int { active.reduce(0) { $0 + (counts[$1]?.total ?? 0) } }
+
+    private var isDayReady: Bool { progress != nil && isRead }
+
+    private var action: DayAction { isDayReady ? DayAction(due: due, progress: progress) : .study }
+
+    private var today: some View {
+        VStack(alignment: .leading, spacing: Spacing.section) {
+            SummaryRow(
+                due: due, newDue: active.reduce(0) { $0 + (counts[$1]?.newAtDayStart ?? 0) }, progress: isDayReady ? progress : nil,
+                nextDue: counts.values.compactMap(\.nextDue).min(), now: now, isLoaded: isDayReady, ringSize: 80
+            )
+            VStack(spacing: Spacing.hairline) {
+                Button {
+                    study(action)
+                } label: {
+                    Text(action.title)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(action == .study ? nil : .secondary)
+                .controlSize(.extraLarge)
+                .keyboardShortcut(.defaultAction)
+                .disabled(active.isEmpty)
+                if action == .pushOn {
+                    Text("More reviews in the days ahead")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 0)
+            ways
+        }
+        .padding(Spacing.section)
+    }
+
+    // MARK: Before the folder
+
+    private var welcome: some View {
         VStack(spacing: 6) {
             Spacer()
             Image(nsImage: NSApp.applicationIconImage)
@@ -36,52 +145,56 @@ struct WelcomeView: View {
             Text("Version \(version)")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
-            VStack(spacing: 8) {
-                Button {
-                    folder.choose()
-                } label: {
-                    Text("Open Mnemit Folder…")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                Button {
-                    importCards()
-                } label: {
-                    Text("Import Cards…")
-                        .frame(maxWidth: .infinity)
-                }
-                Button("Open Deck…") {
-                    NSDocumentController.shared.openDocument(nil)
-                }
-                .buttonStyle(.link)
-                Button("Shared Decks on AnkiWeb…") {
-                    DeckWebWindow.show()
-                }
-                .buttonStyle(.link)
+            Button(action: chooseFolder) {
+                Text("Open Mnemit Folder…")
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .frame(width: 240)
             .padding(.top, 20)
+            ways
+                .padding(.top, Spacing.tight)
             Spacer()
         }
         .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
     }
 
-    private var decks: some View {
+    /// The other ways in, as links: the same on both sides of the folder.
+    private var ways: some View {
+        VStack(alignment: folder == nil ? .center : .leading, spacing: Spacing.hairline) {
+            if folder != nil {
+                Button("Choose Mnemit Folder…", action: chooseFolder)
+            }
+            Button("Import Cards…", action: importCards)
+            Button("Open Deck…") { NSDocumentController.shared.openDocument(nil) }
+            Button("Shared Decks on AnkiWeb…") { DeckWebWindow.show() }
+        }
+        .buttonStyle(.link)
+    }
+
+    // MARK: The decks
+
+    private var deckList: some View {
         List {
-            if let url = folder.url {
+            if let folder {
                 Section {
-                    ForEach(folder.decks, id: \.self) { deck in
-                        DeckRow(deck: deck, subtitle: url.lastPathComponent)
+                    ForEach(decks, id: \.self) { deck in
+                        DeckRow(name: deck.deletingPathExtension().lastPathComponent, subtitle: subtitle(of: deck), count: counts[deck]?.total) {
+                            DeckFolder.open(deck)
+                        }
                     }
                 } header: {
-                    Text("Decks in “\(url.lastPathComponent)”")
+                    Text("Decks in “\(folder.lastPathComponent)”")
                 }
             }
             if !others.isEmpty {
                 Section {
                     ForEach(others, id: \.self) { deck in
-                        DeckRow(deck: deck, subtitle: deck.deletingLastPathComponent().lastPathComponent)
+                        DeckRow(name: deck.deletingPathExtension().lastPathComponent, subtitle: Text(verbatim: deck.deletingLastPathComponent().lastPathComponent)) {
+                            DeckFolder.open(deck)
+                        }
                     }
                 } header: {
                     Text("Recent Decks")
@@ -90,7 +203,7 @@ struct WelcomeView: View {
         }
         .scrollContentBackground(.hidden)
         .overlay {
-            if folder.url == nil, recent.isEmpty {
+            if folder == nil, recent.isEmpty {
                 ContentUnavailableView {
                     Label("No Decks Yet", systemImage: "rectangle.stack")
                 } description: {
@@ -100,18 +213,22 @@ struct WelcomeView: View {
         }
     }
 
+    /// What today's plan takes from the deck, "4 new · 10 review"; when nothing, the next review; "Paused" for a
+    /// paused deck; nothing until it is read.
+    private func subtitle(of deck: URL) -> Text? {
+        if paused.contains(deck) { return Text("Paused") }
+        guard let deckCounts = counts[deck] else { return nil }
+        if deckCounts.total > 0 { return Text(verbatim: deckCounts.parts) }
+        return deckCounts.nextDue.map { Text("Next review \(Format.due($0, now: now))") }
+    }
+
     /// The recent decks that the folder doesn't list already.
     private var others: [URL] {
-        recent.filter { deck in folder.decks.allSatisfy { $0.standardizedFileURL != deck.standardizedFileURL } }
+        recent.filter { deck in decks.allSatisfy { $0.standardizedFileURL != deck.standardizedFileURL } }
     }
 
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-    }
-
-    private func refresh() {
-        folder.refresh()
-        recent = NSDocumentController.shared.recentDocumentURLs
     }
 
     /// Imports into a new deck, which the learner saves after: the import starts as its
@@ -122,29 +239,41 @@ struct WelcomeView: View {
     }
 }
 
-/// A deck of the list: a click opens it, and the welcome window has done its work.
+/// A deck of the list: its name, what today asks of it, and the cards left or a checkmark; a click opens it.
 private struct DeckRow: View {
-    var deck: URL
-    var subtitle: String
+    var name: String
+    var subtitle: Text?
+    var count: Int?
+    var open: () -> Void
 
     var body: some View {
-        Button {
-            DeckFolder.open(deck)
-            WelcomeWindow.close()
-        } label: {
+        Button(action: open) {
             HStack(spacing: 10) {
                 Image(systemName: "rectangle.stack")
                     .font(.title2)
                     .foregroundStyle(.tint)
                     .frame(width: 30)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(deck.deletingPathExtension().lastPathComponent)
+                    Text(verbatim: name)
                         .fontWeight(.semibold)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if let subtitle {
+                        subtitle
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
                 }
                 Spacer()
+                if let count {
+                    if count > 0 {
+                        Text(count, format: .number)
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Image(systemName: "checkmark")
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             .contentShape(Rectangle())
         }

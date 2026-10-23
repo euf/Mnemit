@@ -10,6 +10,8 @@ import VocabCore
 /// into it across decks, the deck statistics do it for one deck.
 struct ProgressScreen: View {
     var progress: DailyProgress
+    /// The decks How Today Works reads, the last row.
+    var decks: [KnownDeck] = []
     var calendar = StudyCalendar()
 
     private var records: [DayRecord] { progress.records }
@@ -33,6 +35,13 @@ struct ProgressScreen: View {
             if progress.ladder.reduce(0, +) > 0 {
                 Section("Memory") { ladder }
             }
+            if !decks.isEmpty {
+                Section {
+                    HowTodayWorksButton(decks: decks, now: Date())
+                } footer: {
+                    Text("The plan, the day's time and the FSRS parameters behind the ring.")
+                }
+            }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Progress")
@@ -48,16 +57,12 @@ struct ProgressScreen: View {
         records.filter { $0.closed && $0.done > 0 }.count
     }
 
-    private var isAtRisk: Bool {
-        progress.streak.repairCards != nil && !progress.ring.isGoalMet
-    }
-
     /// The streak large, and under it the main totals, two by two.
     private var streak: some View {
         VStack(alignment: .leading, spacing: Spacing.gap) {
             HStack(spacing: Spacing.tight) {
                 Image(systemName: "flame.fill")
-                    .foregroundStyle(progress.streakKeptToday && !isAtRisk ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(progress.isStreakLit ? Color.streak : Color.secondary)
                     .accessibilityHidden(true)
                 Text(progress.streak.days, format: .number)
                     .monospacedDigit()

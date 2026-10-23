@@ -1509,6 +1509,28 @@
         }
       }
     },
+    "%lld learning": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld lernend"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld σε εκμάθηση"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld в обучении"
+          }
+        }
+      }
+    },
     "%lld left": {
       "localizations": {
         "de": {
@@ -1637,6 +1659,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld мин"
+          }
+        }
+      }
+    },
+    "%lld new": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld neu"
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld νέα"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld νέες"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld новая"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld новые"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld новых"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld новых"
+                }
+              }
+            }
           }
         }
       }
@@ -2201,6 +2281,28 @@
         }
       }
     },
+    "%lld review": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld zu wiederholen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld προς επανάληψη"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld к повторению"
+          }
+        }
+      }
+    },
     "%lld rings closed": {
       "localizations": {
         "de": {
@@ -2282,94 +2384,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld кольца закрыто"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld rings in a day": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Ring an einem Tag"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Ringe an einem Tag"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld κύκλος σε μία μέρα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld κύκλοι σε μία μέρα"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld ring in a day"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld rings in a day"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld кольца за день"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld колец за день"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld кольцо за день"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld кольца за день"
                 }
               }
             }
@@ -2593,94 +2607,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld приостановлено"
-          }
-        }
-      }
-    },
-    "%lld times the day's goal": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld-faches Tagesziel"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld-faches Tagesziel"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld φορά ο ημερήσιος στόχος"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld φορές ο ημερήσιος στόχος"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld time the day's goal"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld times the day's goal"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В %lld раза больше цели дня"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В %lld раз больше цели дня"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В %lld раз больше цели дня"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В %lld раза больше цели дня"
-                }
-              }
-            }
           }
         }
       }
@@ -8194,28 +8120,6 @@
         }
       }
     },
-    "Goal reached": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ziel erreicht"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ο στόχος επιτεύχθηκε"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цель достигнута"
-          }
-        }
-      }
-    },
     "Good": {
       "localizations": {
         "de": {
@@ -9004,50 +8908,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вид"
-          }
-        }
-      }
-    },
-    "Lap": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runde"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Γύρος"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Круг"
-          }
-        }
-      }
-    },
-    "Lap %lld": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runde %lld"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Γύρος %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Круг %lld"
           }
         }
       }
@@ -12484,28 +12344,6 @@
         }
       }
     },
-    "Repair: %lld today": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufholen: heute %lld"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αναπλήρωση: σήμερα %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наверстать: сегодня %lld"
-          }
-        }
-      }
-    },
     "Reset": {
       "localizations": {
         "de": {
@@ -14662,6 +14500,28 @@
         }
       }
     },
+    "Ten new cards now, more reviews in the days ahead": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zehn neue Karten jetzt, mehr Wiederholungen in den nächsten Tagen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δέκα νέες κάρτες τώρα, περισσότερες επαναλήψεις τις επόμενες μέρες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Десять новых карточек сейчас, больше повторений в ближайшие дни"
+          }
+        }
+      }
+    },
     "The Deck Could Not Be Deleted": {
       "localizations": {
         "de": {
@@ -14966,6 +14826,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "План — это то, что FSRS назначает на день: карточки к повторению, просроченные включены, и карточки в обучении. Новые карточки заполняют то, что остаётся от времени дня после повторений, вплоть до потолка каждой колоды."
+          }
+        }
+      }
+    },
+    "The plan, the day's time and the FSRS parameters behind the ring.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Plan, die Zeit des Tages und die FSRS-Parameter hinter dem Ring."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το πλάνο, ο χρόνος της ημέρας και οι παράμετροι FSRS πίσω από τον κύκλο."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "План, время дня и параметры FSRS, на которых держится кольцо."
           }
         }
       }
@@ -15692,28 +15574,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Попробуй жесты"
-          }
-        }
-      }
-    },
-    "Twice the day's goal": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doppeltes Tagesziel"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Διπλάσιος ο ημερήσιος στόχος"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вдвое больше цели дня"
           }
         }
       }
@@ -16916,50 +16776,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Молодая"
-          }
-        }
-      }
-    },
-    "day": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tag"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ημέρα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "день"
-          }
-        }
-      }
-    },
-    "days": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tage"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ημέρες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "дн."
           }
         }
       }

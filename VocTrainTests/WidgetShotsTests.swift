@@ -46,7 +46,7 @@ struct WidgetShotsTests {
         // A snapshot of the old kind, 12 of 20 and 42 due: the cards left stand.
         ("old", WidgetState(date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10)),
         // Goal reached twice over, nothing left due, the streak kept.
-        ("laps", WidgetState(date: now, done: 45, goal: 20, streakDays: 31, isGoalMet: true, due: 0, nextReminder: nil)),
+        ("beyond-goal", WidgetState(date: now, done: 45, goal: 20, streakDays: 31, isGoalMet: true, due: 0, nextReminder: nil)),
         // A fresh day: nothing reviewed, three digits due, no streak yet.
         ("fresh", WidgetState(date: now, done: 0, goal: 20, streakDays: 0, isGoalMet: false, due: 120, nextReminder: nil, secondsPerCard: 20)),
         // No snapshot yet.

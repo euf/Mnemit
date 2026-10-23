@@ -12,9 +12,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard WelcomeWindow.isEnabled else { return }
-        NotificationCenter.default.addObserver(forName: NSWindow.didBecomeMainNotification, object: nil, queue: .main) { _ in
-            MainActor.assumeIsolated { WelcomeWindow.closeIfDocumentIsOpen() }
-        }
         Task { await WelcomeWindow.showAtLaunchIfNoDocumentOpens() }
     }
 

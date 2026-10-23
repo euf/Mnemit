@@ -20,7 +20,7 @@ struct HowTodayWorksSheet: View {
     }
 }
 
-/// The info button of Today. The sheet it opens reads the files of the decks when it appears and replays
+/// The last row of the Progress screen. The sheet it opens reads the files of the decks when it appears and replays
 /// their logs off the main actor, so it shows the figures Today shows.
 struct HowTodayWorksButton: View {
     var decks: [KnownDeck]
@@ -29,7 +29,7 @@ struct HowTodayWorksButton: View {
     @State private var content: HowTodayWorks?
 
     var body: some View {
-        Button("How Today Works", systemImage: "info.circle") {
+        Button("How Today Works", systemImage: "gauge.with.dots.needle.33percent") {
             content = nil
             isShown = true
         }

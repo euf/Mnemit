@@ -95,7 +95,7 @@ struct PausedDecksTests {
 
         let counts = KnownDeckCounts()
         #expect(!counts.isRead)
-        await counts.refresh([KnownDeck(url: active), KnownDeck(url: paused)], allowances: NewCardAllowances())
+        await counts.refresh([active, paused], allowances: NewCardAllowances())
         #expect(counts.isRead)
         #expect(counts.counts[active]?.new == 10)
         #expect(counts.counts[paused] == nil)
@@ -103,7 +103,7 @@ struct PausedDecksTests {
 
         // Only paused decks: the figures are read all the same.
         let onlyPaused = KnownDeckCounts()
-        await onlyPaused.refresh([KnownDeck(url: paused)], allowances: NewCardAllowances())
+        await onlyPaused.refresh([paused], allowances: NewCardAllowances())
         #expect(onlyPaused.isRead)
     }
 
@@ -112,10 +112,10 @@ struct PausedDecksTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let url = try write(try deck(fresh(4), isPaused: true), named: "Greek", in: directory)
         let counts = KnownDeckCounts()
-        await counts.refresh([KnownDeck(url: url)], allowances: NewCardAllowances())
+        await counts.refresh([url], allowances: NewCardAllowances())
         #expect(counts.paused == [url])
         _ = try write(try deck(fresh(4), isPaused: false), named: "Greek", in: directory)
-        await counts.refresh([KnownDeck(url: url)], allowances: NewCardAllowances())
+        await counts.refresh([url], allowances: NewCardAllowances())
         #expect(counts.paused.isEmpty)
         #expect(counts.counts[url]?.new == 4)
     }

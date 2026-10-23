@@ -515,12 +515,10 @@ private struct StudyHeader: View {
     }
 }
 
-/// Today's done cards against the daily goal as a ring in the bar (`ProgressRing`), with the
-/// lap in its middle from the second on: "×2" once the goal is reached. No streak and no popover: the bar
-/// is calm. As big as the figures beside it need for "×2", and it grows with the text size up
-/// to a ceiling, as the bar has only so much height. VoiceOver reads the lap ("Lap 2") with the
-/// figures beside it, which the bar combines into one element. `shown` is what the ring shows as
-/// done when it is ahead of the figures, a grade having stepped it. `burstAt` starts the small burst around it.
+/// Today's done cards against the daily goal as a ring in the bar (`ProgressRing`), empty in its middle: the bar
+/// is calm, and the streak shows on the rests. It grows with the text size up to a ceiling, as the bar has only so
+/// much height. `shown` is what the ring shows as done when it is ahead of the figures, a grade having stepped it.
+/// `burstAt` starts the small burst around it.
 struct StreamRing: View {
     var progress: DailyProgress?
     var shown: Double?
@@ -530,8 +528,7 @@ struct StreamRing: View {
     var body: some View {
         RingBurst(startedAt: burstAt, diameter: min(diameter, 44)) {
             ProgressRing(
-                fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44), center: RingCenter(progress, inStream: true),
-                speaksCenter: true)
+                fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44))
         }
     }
 }

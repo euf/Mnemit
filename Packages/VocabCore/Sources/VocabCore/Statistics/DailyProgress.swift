@@ -11,7 +11,7 @@ import Foundation
 /// with those allowances: the cards due that day, overdue ones included, and the new cards within the day's
 /// limits and allowance. The goal of the day is the cards of that plan that fit its time (`DayRounds`), most
 /// forgotten first, so an import or a long break doesn't pile a thousand cards on one day: reviews beyond it
-/// stay in the plan and what is done beyond the goal fills laps. The goal stays for the day: cards added
+/// stay in the plan (Catch Up) and what is done beyond the goal counts as cards done. The goal stays for the day: cards added
 /// later are no part of it. A card is done once its last review of the day left it due on a later day,
 /// which is that FSRS let it go (`DeckActivity.done`): it counts once, however many reviews it took.
 /// Reviews, the grades in the logs, count for the streak's first day and for the pace
@@ -28,12 +28,12 @@ public enum DailyGoal {
     /// day began (`DayRounds.goal`).
     ///
     /// The goal is those cards, whatever happens to the plan after: an Again keeps its card in the plan,
-    /// cards that are added, and cards done beyond it in catch-up and review ahead, don't move
-    /// it, so the ring goes on in laps. The one exception is a plan that has nothing left though
+    /// cards that are added, and cards done beyond it in Catch Up and Push On, don't move
+    /// it, so the ring stays closed. The one exception is a plan that has nothing left though
     /// fewer cards than planned are done (cards that were suspended or deleted during the
     /// day): it is met at those, so the ring never stands open next to "0 cards left". A day
     /// that began with an empty plan (a first deck, filled in the afternoon) takes the plan as
-    /// it stands, `done + owed`, so the first day has a goal and its ring doesn't count laps.
+    /// it stands, `done + owed`, so the first day has a goal its work can close.
     public static func goal(done: Int, owed: Int, plan: Int) -> Int {
         guard plan > 0 else { return done + owed }
         return owed > 0 ? plan : min(plan, done)
@@ -296,7 +296,7 @@ public enum DailyGoal {
 /// The plan is `otherCards`, learning cards and reviews, then `newCards`, in the order the stream takes
 /// them; a card costs the pace of its kind. The goal is the cards of the plan that fit the day's time in
 /// seconds, at least one card if the plan has any: what is more stays in the plan, and what is done beyond
-/// the goal fills laps. The streak step ends at the first card where the cost reaches
+/// the goal counts as cards done. The streak step ends at the first card where the cost reaches
 /// `DailyGoal.streakSeconds`, and the goal ends the day; the two coincide when the plan is that short.
 public struct DayRounds: Hashable, Sendable {
     /// The card counts at which the streak step and the day end, increasing; the last is the goal, and there
@@ -399,9 +399,8 @@ public struct Pace: Hashable, Sendable {
 }
 
 /// The ring of a study day: cards done against the goal, both in cards. The ring is full at
-/// the goal and goes on filling in laps, as the Fitness rings do at 200 % and 300 %. A day
-/// whose plan is empty has a goal of 0, which is met; the ring then counts a lap for each
-/// card done.
+/// the goal and stays full: work beyond it shows as cards done, never as laps. A day whose
+/// plan is empty has a goal of 0, which is met.
 public struct DailyRing: Hashable, Sendable {
     public var done: Int
     public var goal: Int
@@ -415,13 +414,10 @@ public struct DailyRing: Hashable, Sendable {
         self.underway = max(0, underway)
     }
 
-    /// 0.5 at half the goal, 2.25 in the third lap; the cards on their way count with their parts.
-    public var fraction: Double { (Double(done) + underway) / Double(max(1, goal)) }
+    /// 0.5 at half the goal, 1 from the goal on; the cards on their way count with their parts.
+    public var fraction: Double { min(1, (Double(done) + underway) / Double(max(1, goal))) }
 
     public var isGoalMet: Bool { done >= goal }
-
-    /// How many times the goal has been reached: 2 from 200 %.
-    public var laps: Int { done / max(1, goal) }
 }
 
 /// The days in a row on which the learner kept their streak: a day counts once its first round is done.
@@ -1331,7 +1327,7 @@ public struct DailyProgress: Hashable, Sendable {
             startRounds.goal > 0
             ? startRounds : DayRounds(otherCards: owed - owedNew, newCards: done + owedNew, pace: startPace, seconds: time)
         let isKeptToday = startRounds.ends.first.map { done >= $0 } ?? true
-        // Today is closed by its ring: cards added after the day began are laps, not debt.
+        // Today is closed by its ring: cards added after the day began are extra work, not debt.
         kept[today] = isKeptToday
         closed[today] = ring.isGoalMet
         let (streak, steps) = Streak.walk(

@@ -1,52 +1,44 @@
 import SwiftUI
 import VocabCore
 
-/// What stands in the middle of a ring. Streak or lap, never both: the stream shows the lap
-/// the learner is in, every other place the streak.
+/// What stands in the middle of a ring: the streak, a flame over its days, or nothing. The flame is the streak's
+/// sign everywhere it shows (Today, the rests, the widget, the Mac), lit in `Color.streak` once today keeps it.
 enum RingCenter: Equatable {
     case none
-    /// The streak in days, 1 or more.
-    case streak(days: Int)
-    /// The lap the ring is in, 2 or more: the first lap shows nothing.
-    case lap(Int)
+    /// The streak in days, 1 or more; `isLit` once today keeps it and no missed day waits for the ring.
+    case streak(days: Int, isLit: Bool)
 
-    /// The middle of the ring for `progress`. `inStream` picks the lap: empty during the first
-    /// lap, "×2" once the goal is reached, "×3" after the second lap. Otherwise the streak, and
-    /// nothing at 0 days. Nothing before the first evaluation.
-    init(_ progress: DailyProgress?, inStream: Bool) {
-        guard let progress else {
+    /// The streak of `progress`; nothing at 0 days, and nothing before the first evaluation.
+    init(_ progress: DailyProgress?) {
+        guard let progress, progress.streak.days > 0 else {
             self = .none
             return
         }
-        if inStream {
-            self = progress.ring.laps >= 1 ? .lap(progress.ring.laps + 1) : .none
-        } else {
-            self = progress.streak.days > 0 ? .streak(days: progress.streak.days) : .none
-        }
+        self = .streak(days: progress.streak.days, isLit: progress.isStreakLit)
     }
 
-    /// The big figure: "12", "×2".
+    /// The days: "12".
     var text: String? {
-        switch self {
-        case .none: nil
-        case .streak(let days): days.formatted(.number.grouping(.never))
-        case .lap(let lap): "×" + lap.formatted(.number.grouping(.never))
-        }
+        guard case .streak(let days, _) = self else { return nil }
+        return days.formatted(.number.grouping(.never))
     }
 
-    /// The small word under a streak, where the ring is big enough for one.
-    var caption: String? {
-        guard case .streak(let days) = self else { return nil }
-        return days == 1 ? String(localized: "day") : String(localized: "days")
-    }
-
-    /// What VoiceOver reads for the ring, before the progress: "Day streak: 5 days", "Lap 2".
+    /// What VoiceOver reads for the ring, before the progress: "Day streak: 5 days".
     var spokenLabel: String? {
-        switch self {
-        case .none: nil
-        case .streak(let days): String(localized: "Day streak: \(days) days")
-        case .lap(let lap): String(localized: "Lap \(lap)")
-        }
+        guard case .streak(let days, _) = self else { return nil }
+        return String(localized: "Day streak: \(days) days")
+    }
+}
+
+extension DailyProgress {
+    /// Whether the streak's flame is lit: today keeps the streak, and no missed day waits for the ring to close.
+    var isStreakLit: Bool {
+        streakKeptToday && !isStreakAtRisk
+    }
+
+    /// The day after a missed day, until the ring closes: the streak survives only if it does.
+    var isStreakAtRisk: Bool {
+        streak.repairCards != nil && !ring.isGoalMet
     }
 }
 
@@ -65,11 +57,11 @@ enum DailyRingFigure {
 /// Decoration only, the text beside it says the figures; the caller combines them for
 /// VoiceOver. `fraction` animates, except under Reduce Motion.
 struct ProgressRing: View {
-    /// 0.4 is two fifths of the goal, 1.6 the second lap at three fifths.
+    /// 0.4 is two fifths of the goal; 1 and more is a closed ring.
     var fraction: Double
     var diameter: CGFloat
     var center: RingCenter = .none
-    /// Whether VoiceOver reads what is in the middle ("Lap 2") as part of the element this ring
+    /// Whether VoiceOver reads what is in the middle ("Day streak: 5 days") as part of the element this ring
     /// sits in, for a caller that combines the ring with its figures. Otherwise the ring is hidden.
     var speaksCenter = false
     /// How the ring fills to a new fraction: quick in the study bar, slow enough to watch on Today.
@@ -84,7 +76,7 @@ struct ProgressRing: View {
     var body: some View {
         let lineWidth = Self.lineWidth(diameter: diameter)
         let ring = ZStack {
-            ActivityRing(progress: max(0, fraction), color: .dailyRing, tipColor: .dailyRingTail, lineWidth: lineWidth)
+            ActivityRing(progress: min(1, max(0, fraction)), color: .dailyRing, tipColor: .dailyRingTail, lineWidth: lineWidth)
                 .animation(reduceMotion ? nil : filling, value: fraction)
             RingCenterLabel(center: center, diameter: diameter, lineWidth: lineWidth)
         }
@@ -99,27 +91,29 @@ struct ProgressRing: View {
     }
 }
 
-/// The figure in the middle of a ring, with its caption where the ring is big enough.
+/// The streak in the middle of a ring: a flame over the days where the ring is big enough for both, the days alone
+/// in a small one.
 private struct RingCenterLabel: View {
     var center: RingCenter
     var diameter: CGFloat
     var lineWidth: CGFloat
 
-    /// From this diameter on, a streak has its word under the number.
-    private static let captionDiameter: CGFloat = 56
+    /// From this diameter on, the flame stands over the days.
+    private static let flameDiameter: CGFloat = 44
 
     var body: some View {
-        if let text = center.text {
-            let caption = diameter >= Self.captionDiameter ? center.caption : nil
-            VStack(spacing: 0) {
-                Text(verbatim: text)
-                    .font(.system(size: diameter * (caption == nil ? 0.38 : 0.34), weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                if let caption {
-                    Text(verbatim: caption)
-                        .font(.system(size: max(9, diameter * 0.14), weight: .semibold, design: .rounded))
-                        .foregroundStyle(.secondary)
+        if case .streak(_, let isLit) = center, let text = center.text {
+            let showsFlame = diameter >= Self.flameDiameter
+            VStack(spacing: -diameter * 0.03) {
+                if showsFlame {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: diameter * 0.23, weight: .semibold))
+                        .foregroundStyle(isLit ? Color.streak : Color.secondary)
+                        .symbolRenderingMode(.monochrome)
                 }
+                Text(verbatim: text)
+                    .font(.system(size: diameter * (showsFlame ? 0.3 : 0.38), weight: .bold, design: .rounded))
+                    .monospacedDigit()
             }
             .lineLimit(1)
             .minimumScaleFactor(0.5)

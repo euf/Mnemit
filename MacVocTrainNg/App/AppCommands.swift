@@ -56,7 +56,8 @@ struct AppCommands: Commands {
         }
 
         CommandGroup(after: .windowList) {
-            Button("Welcome to Mnemit") { WelcomeWindow.show() }
+            Button("Today") { WelcomeWindow.show() }
+                .keyboardShortcut("0")
         }
 
         CommandGroup(after: .help) {

@@ -34,8 +34,6 @@ public enum AchievementKind: Hashable, Sendable {
     case firstRing
     /// Seven closed rings in a row; earned again at every further run of seven.
     case perfectWeek
-    /// `done >= n * goal` (with a goal), tiers `Achievements.lapTiers`.
-    case laps(Int)
     /// `done >= cards`, tiers `Achievements.bigDayTiers`.
     case bigDay(cards: Int)
     /// A day with `DayRecord.savedStreak`; earned every time.
@@ -70,13 +68,12 @@ public struct MonthRecap: Hashable, Sendable {
 /// Milestones and achievements, worked out from the days of `DailyProgress.records` alone.
 public enum Achievements {
     public static let streakMilestones = [3, 7, 14, 30, 61, 91, 183, 365, 548, 730]
-    public static let lapTiers = [2, 3, 5, 10]
     public static let bigDayTiers = [50, 100, 200, 500]
 
     /// Everything earned over `records` (oldest first, one per study day from the first study day to today,
     /// days without study included), oldest first. A tier of a line is earned once, on the first day it is
     /// reached (a day that reaches several tiers earns all of them); perfectWeek and comeback are earned each
-    /// time. Within a day: streak, first ring, perfect week, laps, big day, comeback.
+    /// time. Within a day: streak, first ring, perfect week, big day, comeback.
     public static func earned(over records: [DayRecord]) -> [Achievement] {
         var earned: [Achievement] = []
         var tiers = Set<AchievementKind>()
@@ -93,7 +90,6 @@ public enum Achievements {
             previous = record.day
             run = worked ? run + 1 : 0
             if run > 0, run % 7 == 0 { earn(.perfectWeek) }
-            if record.goal > 0 { for n in lapTiers where record.done >= n * record.goal { earnOnce(.laps(n)) } }
             for cards in bigDayTiers where record.done >= cards { earnOnce(.bigDay(cards: cards)) }
             if record.savedStreak { earn(.comeback) }
         }

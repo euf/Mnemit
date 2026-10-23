@@ -54,8 +54,20 @@ extension MaturityCategory {
     }
 }
 
+extension StudyCounts {
+    /// "4 new · 10 review": what today's plan takes from a deck, the kinds it has none of left out.
+    var parts: String {
+        [
+            new > 0 ? String(localized: "\(new) new") : nil,
+            learning > 0 ? String(localized: "\(learning) learning") : nil,
+            review > 0 ? String(localized: "\(review) review") : nil,
+        ]
+        .compactMap { $0 }.joined(separator: " · ")
+    }
+}
+
 extension AchievementKind {
-    /// "A week in a row", "First ring", "3 rings in a day", "50 cards in a day": a streak is named in words, never in days.
+    /// "A week in a row", "First ring", "50 cards in a day": a streak is named in words, never in days.
     var title: String {
         switch self {
         case let .streak(days):
@@ -73,7 +85,6 @@ extension AchievementKind {
             }
         case .firstRing: String(localized: "First ring")
         case .perfectWeek: String(localized: "Perfect week")
-        case let .laps(times): String(localized: "\(times) rings in a day")
         case let .bigDay(cards): String(localized: "\(cards) cards in a day")
         case .comeback: String(localized: "Comeback")
         }
@@ -85,7 +96,6 @@ extension AchievementKind {
         case .streak, .bigDay: nil
         case .firstRing: String(localized: "Closed the ring for the first time")
         case .perfectWeek: String(localized: "Seven rings in a row")
-        case let .laps(times): times == 2 ? String(localized: "Twice the day's goal") : String(localized: "\(times) times the day's goal")
         case .comeback: String(localized: "Saved your streak after a missed day")
         }
     }
@@ -108,13 +118,6 @@ extension AchievementKind {
             }
         case .firstRing: "\u{1F3AF}"
         case .perfectWeek: "\u{1F308}"
-        case let .laps(times):
-            switch times {
-            case 2: "\u{26A1}\u{FE0F}"
-            case 3: "\u{1F680}"
-            case 5: "\u{1F30B}"
-            default: "\u{1FA90}"
-            }
         case let .bigDay(cards):
             switch cards {
             case 50: "\u{1F4DA}"
@@ -132,19 +135,17 @@ extension AchievementKind {
         case let .streak(days): "streak-\(days)"
         case .firstRing: "firstRing"
         case .perfectWeek: "perfectWeek"
-        case let .laps(times): "laps-\(times)"
         case let .bigDay(cards): "bigDay-\(cards)"
         case .comeback: "comeback"
         }
     }
 
-    /// How notable a medal is where there is room for one: a streak above the comeback, laps, the big day, the
+    /// How notable a medal is where there is room for one: a streak above the comeback, the big day, the
     /// perfect week and the first ring; within a line the higher tier.
     var notability: Int {
         switch self {
         case let .streak(days): 6000 + days
         case .comeback: 5000
-        case let .laps(times): 4000 + times
         case let .bigDay(cards): 3000 + cards
         case .perfectWeek: 2000
         case .firstRing: 1000
@@ -159,7 +160,6 @@ extension AchievementKind {
         case .streak: .streak
         case .firstRing: .firstRing
         case .perfectWeek: .perfectWeek
-        case .laps: .laps
         case .bigDay: .bigDay
         case .comeback: .comeback
         }
@@ -168,19 +168,18 @@ extension AchievementKind {
 
 /// The lines of achievements.
 enum AchievementLine: CaseIterable, Hashable {
-    case streak, firstRing, perfectWeek, laps, bigDay, comeback
+    case streak, firstRing, perfectWeek, bigDay, comeback
 
     /// The lines of one medal each, which the Progress screen gathers in one row.
     static let single: [AchievementLine] = [.firstRing, .perfectWeek, .comeback]
     /// The lines of tiers, a row each.
-    static let tiered: [AchievementLine] = [.streak, .laps, .bigDay]
+    static let tiered: [AchievementLine] = [.streak, .bigDay]
 
     var symbol: String {
         switch self {
         case .streak: "flame"
         case .firstRing: "circle.circle"
         case .perfectWeek: "calendar"
-        case .laps: "repeat"
         case .bigDay: "rectangle.stack"
         case .comeback: "arrow.uturn.up"
         }
@@ -233,26 +232,25 @@ extension Array where Element == Achievement {
 /// The tier a line offers next and how far the learner is from it: the grey medal of the Progress screen.
 struct NextTier: Hashable {
     var kind: AchievementKind
-    /// Where the learner stands: the streak's days, the rings of the run, the best lap or the cards of the best day.
+    /// Where the learner stands: the streak's days, the rings of the run or the cards of the best day.
     var value = 0
     /// What the tier asks; `nil` for a tier with no count to work toward.
     var goal: Int?
 
-    /// "12 of 14 days", "2 of 3 rings", "76 of 100 cards"; `nil` without a goal.
+    /// "12 of 14 days", "3 of 7 rings", "76 of 100 cards"; `nil` without a goal.
     var hint: String? {
         guard let goal else { return nil }
         switch kind {
         case .streak: return String(localized: "\(value) of \(goal) days")
         case .perfectWeek: return String(localized: "\(value) of \(goal) rings")
-        case .laps: return String(localized: "\(value) of \(goal) rings")
         case .bigDay: return String(localized: "\(value) of \(goal) cards")
         case .firstRing, .comeback: return nil
         }
     }
 
     /// The next unearned tier of `line`, `nil` once all are earned. A line that repeats always has one: the
-    /// comeback, which can't be worked toward, and the perfect week, whose run of rings counts. Laps and the big
-    /// day count the best day on record, as a tier is reached in one day, never added up over days.
+    /// comeback, which can't be worked toward, and the perfect week, whose run of rings counts. The big
+    /// day counts the best day on record, as a tier is reached in one day, never added up over days.
     static func of(_ line: AchievementLine, earned: [Achievement], records: [DayRecord], streak: Int) -> NextTier? {
         let kinds = Set(earned.map(\.kind))
         switch line {
@@ -263,9 +261,6 @@ struct NextTier: Hashable {
             return kinds.contains(.firstRing) ? nil : NextTier(kind: .firstRing)
         case .perfectWeek:
             return NextTier(kind: .perfectWeek, value: ringRun(records) % 7, goal: 7)
-        case .laps:
-            let best = records.map { $0.goal > 0 ? $0.done / $0.goal : 0 }.max() ?? 0
-            return Achievements.lapTiers.first { !kinds.contains(.laps($0)) }.map { NextTier(kind: .laps($0), value: best, goal: $0) }
         case .bigDay:
             let best = records.map(\.done).max() ?? 0
             return Achievements.bigDayTiers.first { !kinds.contains(.bigDay(cards: $0)) }.map { NextTier(kind: .bigDay(cards: $0), value: best, goal: $0) }
@@ -565,6 +560,12 @@ extension Color {
     /// keeps 3:1 on the light grouped grey (a third does not); `AccentContrastTests` holds the
     /// tail to 3:1 on the surfaces and to 1.3:1 against the accent.
     static var dailyRingTail: Color { Color.appAccent.mix(with: .white, by: 0.25, in: .device) }
+
+    /// The streak's flame once today keeps it: orange, the one hue of the app that means the habit (red is Forgot,
+    /// the greens are recalled, indigo is the ring and the accent). `#E05A00` holds 3.7:1 on white and 3.3:1 on the
+    /// light grouped grey, `#FF9F0A` (system orange) 8:1 on the dark raised grey, above the 3:1 a glyph needs. A
+    /// streak not kept yet, or at risk, has a grey flame.
+    static let streak = Color(light: 0xE05A00, dark: 0xFF9F0A)
 
     /// The face of a flash card: a little off the background, so the card stands out
     /// from the screen it is swiped across. On iOS the grouped pair, as on the Today screen:

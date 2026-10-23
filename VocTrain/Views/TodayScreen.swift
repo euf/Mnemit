@@ -37,6 +37,8 @@ struct TodayScreen: View {
     /// would take it up again.
     var canForget: (KnownDeck) -> Bool
     var study: (StudyScope) -> Void
+    /// Push On from Today, once the day's stack is done: ten new cards from all the decks, at once.
+    var pushOn: () -> Void = {}
     var showDeck: (KnownDeck) -> Void
     var showCard: (AllCardsSearch.Hit) -> Void
     var forget: (KnownDeck) -> Void
@@ -87,11 +89,20 @@ struct TodayScreen: View {
                 } description: {
                     Text("Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.")
                 } actions: {
-                    Button("New Deck", action: newDeck)
-                        .buttonStyle(.borderedProminent)
-                    Button("Use iCloud Drive Folder", action: chooseFolder)
-                    Button("Open Deck…", action: openDeck)
-                    AnkiWebLink(action: showAnkiWeb)
+                    VStack(spacing: Spacing.gap) {
+                        Button(action: newDeck) {
+                            Text("New Deck").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.glassProminent)
+                        Button(action: chooseFolder) {
+                            Text("Use iCloud Drive Folder").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.glass)
+                        AnkiWebLink(action: showAnkiWeb)
+                            .padding(.top, Spacing.hairline)
+                    }
+                    .controlSize(.large)
+                    .frame(maxWidth: 320)
                 }
             } else {
                 // One view carries the search field, so it keeps its focus as the first letter
@@ -108,9 +119,6 @@ struct TodayScreen: View {
         }
         .navigationTitle("Today")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                HowTodayWorksButton(decks: decks, now: now)
-            }
             ToolbarItemGroup(placement: .primaryAction) {
                 Menu("Add", systemImage: "plus") {
                     Button("Add Cards", systemImage: "plus.rectangle.on.rectangle", action: addCards)
@@ -188,8 +196,10 @@ struct TodayScreen: View {
         .onChange(of: isDayReady) { celebrateMissedMedals() }
         .medalToast(toasts)
         .safeAreaBar(edge: .bottom) {
-            StudyButton(isDue: due > 0 || !isDayReady, due: due) { study(.all) }
-                .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
+            StudyButton(stage: isDayReady ? DayAction(due: due, progress: progress) : .study, due: due) { stage in
+                stage == .pushOn ? pushOn() : study(.all)
+            }
+            .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
         }
     }
 
@@ -254,188 +264,43 @@ struct TodayScreen: View {
     }
 }
 
-/// The one prominent button of the screen. With nothing due it is not prominent: Keep Going
-/// opens the stack at its end, where Push On offers new cards.
+/// The one button of the screen, named after what it does next, with the words of the rests: **Study** while the
+/// ring is open, the one prominent button; **Catch Up** once the ring is closed and the plan has cards left;
+/// **Push On** once the day's stack is done, ten new cards at once, with what they cost under it.
 struct StudyButton: View {
-    /// Whether to study: cards are due, or the decks are not read yet.
-    var isDue: Bool
+    var stage: DayAction
     var due: Int
-    /// What the button says while cards are due.
-    var title: LocalizedStringKey = "Study"
-    var action: () -> Void
+    /// What the button says while the ring is open.
+    var studyTitle: LocalizedStringKey = "Study"
+    var action: (DayAction) -> Void
+
+    private var title: LocalizedStringKey { stage == .study ? studyTitle : stage.title }
 
     var body: some View {
-        let label = Button(action: action) {
-            Text(isDue ? title : "Keep Going")
+        let label = Button {
+            action(stage)
+        } label: {
+            Text(title)
                 .frame(maxWidth: .infinity)
         }
-        Group {
-            if isDue {
-                label.buttonStyle(.glassProminent)
-            } else {
-                label.buttonStyle(.glass)
+        VStack(spacing: Spacing.hairline) {
+            Group {
+                if stage == .study {
+                    label.buttonStyle(.glassProminent)
+                } else {
+                    label.buttonStyle(.glass)
+                }
+            }
+            .controlSize(.large)
+            if stage == .pushOn {
+                Text("More reviews in the days ahead")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
-        .controlSize(.large)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
-    }
-}
-
-/// The daily ring with the streak in its centre, what the day asks next in a headline and one detail line, and
-/// the words in memory. The streak's record, the ladder of memory and the rest are on the Progress screen.
-struct SummaryRow: View {
-    /// The cards of the plan not done yet, "N cards left": not the cards that are due in all.
-    var due: Int
-    /// Of `due`, the cards that were new when the day began.
-    var newDue = 0
-    var progress: DailyProgress?
-    /// When something comes back that today's plans leave out.
-    var nextDue: Date?
-    var now: Date
-    /// `false` until the decks are read: the figures are placeholders then.
-    var isLoaded: Bool
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @ScaledMetric(relativeTo: .title2) private var diameter = 72
-
-    var body: some View {
-        let layout =
-            typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-            : AnyLayout(HStackLayout(spacing: 16))
-        // The words in memory take the width of the row under the ring: beside it, on a 375 pt screen, "+15 today"
-        // would not fit on the line of the words.
-        VStack(alignment: .leading, spacing: 8) {
-            layout {
-                ProgressRing(
-                    fraction: progress?.ring.fraction ?? 0, diameter: min(diameter, 96), center: RingCenter(progress, inStream: false),
-                    filling: .smooth(duration: 1.4))
-                VStack(alignment: .leading, spacing: 2) {
-                    if !isLoaded {
-                        placeholderLines
-                    } else {
-                        headline
-                            .font(.title2.weight(.semibold))
-                        detail
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .monospacedDigit()
-            }
-            if let memory = progress?.memory {
-                MemoryLine(memory: memory)
-                    .font(.subheadline)
-                    .monospacedDigit()
-            } else if !isLoaded {
-                Text("≈ \(0) words in memory")
-                    .font(.subheadline)
-            }
-        }
-        .padding(.vertical, 8)
-        .redacted(reason: isLoaded ? [] : .placeholder)
-    }
-
-    /// Until the decks are read, the lines the day will have, as placeholders: the headline and the cards take
-    /// their room, so nothing below moves when the figures come.
-    @ViewBuilder
-    private var placeholderLines: some View {
-        Text("Ring closed")
-            .font(.title2.weight(.semibold))
-        Text(verbatim: [String(localized: "\(12) of \(24) cards"), String(localized: "\(12) left")].joined(separator: " · "))
-            .font(.subheadline)
-    }
-
-    /// The cards left to close the ring, which "N cards left" counts while it is open: the plan may hold more after a
-    /// break, and those come after the ring.
-    private var toRing: Int {
-        guard let ring = progress?.ring, ring.goal > 0, ring.done < ring.goal else { return 0 }
-        return min(due, ring.goal - ring.done)
-    }
-
-    /// "≈ 7 min": the cards left to the ring at the learner's pace, once the decks are read.
-    private var timeLeft: String? {
-        guard let progress, let minutes = DailyGoal.minutesLeft(cards: toRing > 0 ? toRing : due, secondsPerCard: progress.secondsPerCardLeft)
-        else { return nil }
-        return Format.timeLeft(minutes: minutes)
-    }
-
-    /// The day after a missed day, until the ring closes: the streak survives only if it does.
-    private var isAtRisk: Bool {
-        guard let progress else { return false }
-        return progress.streak.repairCards != nil && !progress.ring.isGoalMet
-    }
-
-    /// What the day asks next: "≈ 2 min to keep your streak" before the first round, then the cards left with
-    /// their time, "Ring closed" once the ring is, "Close the ring to save your streak" while a missed day waits for it; nothing at all once no card is left.
-    @ViewBuilder
-    private var headline: some View {
-        if isAtRisk {
-            Text("Close the ring to save your streak")
-        } else if due > 0, let title = progress.flatMap({ RoundStatus($0).title }) {
-            Text(title)
-        } else if due > 0 {
-            let cardsLeft = Text("\(toRing > 0 ? toRing : due) cards left")
-            if let timeLeft {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        cardsLeft
-                        Text(verbatim: "· " + timeLeft)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    VStack(alignment: .leading, spacing: 0) {
-                        cardsLeft
-                        Text(verbatim: timeLeft)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            } else {
-                cardsLeft
-            }
-        } else if let ring = progress?.ring, ring.done > 0 {
-            Text("All done")
-        } else {
-            Text("Nothing due")
-        }
-    }
-
-    /// "12 of 24 cards · 12 left": the done cards against the goal, and what is left of the plan; once the ring is
-    /// closed, "49 cards today · 3 left", as the goal is behind and the ring shows the laps.
-    @ViewBuilder
-    private var detail: some View {
-        if let ring = progress?.ring, due > 0, !ring.isGoalMet {
-            Text("\(ring.done) of \(ring.goal) cards")
-        } else if let ring = progress?.ring, due > 0 {
-            Text(verbatim: [String(localized: "\(ring.done) cards today"), String(localized: "\(due) left")].joined(separator: " · "))
-        } else if let ring = progress?.ring, ring.done > 0 {
-            Text("\(ring.done) cards today")
-        } else if due == 0, let nextDue {
-            Text("Next review \(Format.due(nextDue, now: now))")
-        }
-    }
-}
-
-/// "≈ 28 words in memory · +15 today" on one line, or on the day a milestone was passed "50 words in memory!"
-/// with a glyph in the accent: the accent is never small text. Where the line is too long, at a large type size,
-/// it is one text that wraps, not the gain stacked under the words.
-struct MemoryLine: View {
-    var memory: MemoryEstimate
-
-    var body: some View {
-        if let milestone = memory.milestoneLine {
-            HStack(spacing: 4) {
-                // The glyph bursts the first time the line shows for a milestone.
-                MilestoneSparkles(milestone: memory.milestoneReachedToday)
-                Text(milestone)
-                    .fontWeight(.semibold)
-            }
-        } else if let line = memory.line {
-            Text(verbatim: line)
-                .foregroundStyle(.secondary)
-        }
     }
 }
 
@@ -494,7 +359,7 @@ struct DeckRow: View {
         if isPaused { return Text("Paused") }
         guard let counts else { return nil }
         if counts.total > 0 {
-            return Text("\(counts.new) new · \(counts.learning) learning · \(counts.review) review")
+            return Text(verbatim: counts.parts)
         }
         return counts.nextDue.map { Text("Next review \(Format.due($0, now: now))") }
     }

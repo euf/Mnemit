@@ -10,45 +10,38 @@ private func progress(done: Int, goal: Int = 20, streak: Int = 0) -> DailyProgre
     DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil))
 }
 
-/// What stands in the middle of the ring: the streak outside the study stream, the lap inside it.
+/// What stands in the middle of the ring: the streak, its flame lit once today keeps it, and never laps.
 struct RingCenterTests {
-    @Test func streakOutsideTheStream() {
-        #expect(RingCenter(nil, inStream: false) == .none)
-        #expect(RingCenter(progress(done: 5, streak: 0), inStream: false) == .none, "a streak of 0 shows nothing")
-        #expect(RingCenter(progress(done: 5, streak: 1), inStream: false) == .streak(days: 1))
-        #expect(RingCenter(progress(done: 5, streak: 12), inStream: false) == .streak(days: 12))
-        // The laps do not show outside the stream, however far the ring has gone.
-        #expect(RingCenter(progress(done: 70, streak: 12), inStream: false) == .streak(days: 12))
+    @Test func streak() {
+        #expect(RingCenter(nil) == .none)
+        #expect(RingCenter(progress(done: 5, streak: 0)) == .none, "a streak of 0 shows nothing")
+        #expect(RingCenter(progress(done: 5, streak: 1)) == .streak(days: 1, isLit: false))
+        #expect(RingCenter(progress(done: 70, streak: 12)) == .streak(days: 12, isLit: false), "work beyond the goal shows no lap")
+        var kept = progress(done: 5, streak: 12)
+        kept.streakKeptToday = true
+        #expect(RingCenter(kept) == .streak(days: 12, isLit: true))
     }
 
-    @Test func lapInTheStream() {
-        #expect(RingCenter(nil, inStream: true) == .none)
-        #expect(RingCenter(progress(done: 0, streak: 9), inStream: true) == .none)
-        #expect(RingCenter(progress(done: 19, streak: 9), inStream: true) == .none, "the first lap is empty")
-        #expect(RingCenter(progress(done: 20, streak: 9), inStream: true) == .lap(2), "×2 once the goal is reached")
-        #expect(RingCenter(progress(done: 39, streak: 9), inStream: true) == .lap(2))
-        #expect(RingCenter(progress(done: 40, streak: 9), inStream: true) == .lap(3), "×3 after the second lap")
-        // A small plan: the goal is the plan.
-        #expect(RingCenter(progress(done: 6, goal: 6), inStream: true) == .lap(2))
+    @Test func aStreakAtRiskHasItsFlameOut() {
+        var atRisk = DailyProgress(ring: DailyRing(done: 5, goal: 20), streak: Streak(days: 12, repairCards: 15))
+        atRisk.streakKeptToday = true
+        #expect(atRisk.isStreakAtRisk)
+        #expect(RingCenter(atRisk) == .streak(days: 12, isLit: false))
+        atRisk.ring = DailyRing(done: 20, goal: 20)
+        #expect(!atRisk.isStreakAtRisk, "the closed ring saves it")
+        #expect(RingCenter(atRisk) == .streak(days: 12, isLit: true))
     }
 
     @Test func texts() {
         #expect(RingCenter.none.text == nil)
-        #expect(RingCenter.streak(days: 5).text == "5")
-        #expect(RingCenter.streak(days: 1234).text == "1234", "no grouping separator in a ring")
-        #expect(RingCenter.lap(2).text == "×2")
-        #expect(RingCenter.lap(10).text == "×10")
-        #expect(RingCenter.lap(2).caption == nil, "only a streak has a word under it")
-        #expect(RingCenter.none.caption == nil)
-        #expect(RingCenter.streak(days: 5).caption == "days")
-        #expect(RingCenter.streak(days: 1).caption == "day")
+        #expect(RingCenter.streak(days: 5, isLit: true).text == "5")
+        #expect(RingCenter.streak(days: 1234, isLit: false).text == "1234", "no grouping separator in a ring")
     }
 
     @Test func spokenLabels() {
         #expect(RingCenter.none.spokenLabel == nil)
-        #expect(RingCenter.streak(days: 5).spokenLabel == "Day streak: 5 days")
-        #expect(RingCenter.streak(days: 1).spokenLabel == "Day streak: 1 day")
-        #expect(RingCenter.lap(2).spokenLabel == "Lap 2")
+        #expect(RingCenter.streak(days: 5, isLit: true).spokenLabel == "Day streak: 5 days")
+        #expect(RingCenter.streak(days: 1, isLit: true).spokenLabel == "Day streak: 1 day")
     }
 }
 
@@ -118,7 +111,7 @@ struct RingSnapshotTests {
     @Test(arguments: [false, true])
     func today(dark: Bool) async throws {
         let view = row(spacing: 20) { progress in
-            ProgressRing(fraction: progress.ring.fraction, diameter: 72, center: RingCenter(progress, inStream: false))
+            ProgressRing(fraction: progress.ring.fraction, diameter: 72, center: RingCenter(progress))
         }
         .padding(16)
         .background(Color(.systemGroupedBackground))
@@ -147,7 +140,7 @@ struct RingSnapshotTests {
     func chip(dark: Bool) async throws {
         let view = row(spacing: 16) { progress in
             HStack(spacing: 6) {
-                ProgressRing(fraction: progress.ring.fraction, diameter: 24, center: RingCenter(progress, inStream: false))
+                ProgressRing(fraction: progress.ring.fraction, diameter: 24, center: RingCenter(progress))
                 Text(verbatim: "\(progress.ring.done)/\(progress.ring.goal)")
                     .monospacedDigit()
             }
@@ -169,13 +162,13 @@ struct RingSnapshotTests {
         try write(try await image(view, size: CGSize(width: 5 * 96 + 4 * 16 + 32, height: 96 + 30 + 32), dark: dark), name: "4-rest", dark: dark)
     }
 
-    /// The places where the drawing changes kind: a sliver, almost closed, closed, a sliver of the
-    /// second lap, whole laps (the head at the top again).
+    /// The places where the drawing changes kind: a sliver, almost closed, closed, and beyond the goal,
+    /// which stays closed.
     @Test(arguments: [false, true])
     func edges(dark: Bool) async throws {
         let fractions: [Double] = [0.05, 0.95, 1.0, 1.05, 1.5, 2.0, 3.0]
         let view = row(fractions, spacing: 20) { progress in
-            ProgressRing(fraction: progress.ring.fraction, diameter: 72, center: RingCenter(progress, inStream: true))
+            ProgressRing(fraction: progress.ring.fraction, diameter: 72, center: RingCenter(progress))
         }
         .padding(16)
         .background(Color(.systemBackground))

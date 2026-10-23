@@ -70,7 +70,7 @@ struct StartScreen: View {
             TodayScreen(
                 decks: knownDecks.byName, counts: deckCounts.counts, paused: deckCounts.paused, progress: ring.progress, now: Date(), query: $query,
                 hits: search.hits(for: query), isSearching: !search.isLoaded,
-                canForget: { !knownDecks.isInFolder($0.url) }, study: study, showDeck: showDeck, showCard: showCard,
+                canForget: { !knownDecks.isInFolder($0.url) }, study: { study($0) }, pushOn: { study(.all, entry: .pushOn) }, showDeck: showDeck, showCard: showCard,
                 forget: { knownDecks.forget($0.url) }, setPaused: setPaused, addCards: { openLastDeck(importing: nil) },
                 newDeck: { showsNewDeck = true },
                 chooseFolder: { choose(folder: true) }, openDeck: { choose(folder: false) },
@@ -276,7 +276,7 @@ struct StartScreen: View {
             }
         case .progress:
             if let progress = ring.progress {
-                ProgressScreen(progress: progress)
+                ProgressScreen(progress: progress, decks: knownDecks.byName)
             }
         }
     }
@@ -302,16 +302,18 @@ struct StartScreen: View {
 
     // MARK: Study
 
-    /// Starts the stream of one deck, or of every deck with cards due, one after the other.
-    private func study(_ scope: StudyScope) {
+    /// Starts the stream of one deck, or of every deck with cards due, one after the other. Push On takes
+    /// every active deck, as each may give new cards.
+    private func study(_ scope: StudyScope, entry: StudyModel.Entry = .study) {
         guard run == nil else { return }
         let urls: [URL]
         switch scope {
         case let .deck(url): urls = [url]
+        case .all where entry == .pushOn: urls = TodayDecks(knownDecks.byName, paused: deckCounts.paused).active.map(\.url)
         case .all: urls = queue()
         }
         guard let first = urls.first else { return }
-        run = StudyRun(deck: OpenDeck(url: first), upcoming: Array(urls.dropFirst()))
+        run = StudyRun(deck: OpenDeck(url: first), entry: entry, upcoming: Array(urls.dropFirst()))
     }
 
     /// Starts the stream of the deck whose screen is open, on the deck the screen holds.
@@ -605,7 +607,7 @@ struct StartScreen: View {
     private func refreshCounts() async {
         // The ring first: the new cards each deck takes today are its allowance, which the ring works out.
         await ring.refresh(documents: [], files: knownDecks.byName.map(\.url), reloadFiles: true, delay: .zero).value
-        await deckCounts.refresh(knownDecks.byName)
+        await deckCounts.refresh(knownDecks.byName.map(\.url))
         await rescheduleReminders()
     }
 

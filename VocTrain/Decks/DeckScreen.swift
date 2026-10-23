@@ -108,7 +108,7 @@ struct DeckContent: View {
             }
         }
         .safeAreaBar(edge: .bottom) {
-            StudyButton(isDue: studyIsDue, due: due, title: "Study This Deck") { start(.study) }
+            StudyButton(stage: studyIsDue ? .study : .pushOn, due: due, studyTitle: "Study This Deck") { start($0 == .pushOn ? .pushOn : .study) }
                 .disabled(!canEdit || (document?.deck.cards.isEmpty ?? true))
         }
         .sheet(isPresented: $showsRename) {
@@ -155,7 +155,7 @@ struct DeckContent: View {
 
     private var due: Int { counts?.total ?? 0 }
 
-    /// Study, or Keep Going when nothing is due: the stream then opens at its rest.
+    /// Study This Deck, or Push On when nothing is due: ten new cards of the deck at once.
     private var studyIsDue: Bool { counts.map { $0.total > 0 } ?? true }
 }
 

@@ -9,7 +9,7 @@ import Testing
 @MainActor
 struct AchievementPresentationTests {
     static let allKinds: [AchievementKind] =
-        Achievements.streakMilestones.map { .streak(days: $0) } + [.firstRing, .perfectWeek] + Achievements.lapTiers.map { .laps($0) }
+        Achievements.streakMilestones.map { .streak(days: $0) } + [.firstRing, .perfectWeek]
         + Achievements.bigDayTiers.map { .bigDay(cards: $0) } + [.comeback]
 
     /// A day of study: its ring closed with `done` of `goal`, or not.
@@ -44,11 +44,7 @@ struct AchievementPresentationTests {
             ])
     }
 
-    @Test func lapsAndBigDaysNameTheirTier() {
-        #expect(AchievementKind.laps(3).title == "3 rings in a day")
-        #expect(AchievementKind.laps(10).title == "10 rings in a day")
-        #expect(AchievementKind.laps(2).detail == "Twice the day's goal")
-        #expect(AchievementKind.laps(5).detail == "5 times the day's goal")
+    @Test func bigDaysNameTheirTier() {
         #expect(AchievementKind.bigDay(cards: 50).title == "50 cards in a day")
         #expect(AchievementKind.perfectWeek.detail == "Seven rings in a row")
         #expect(AchievementKind.comeback.detail == "Saved your streak after a missed day")
@@ -58,7 +54,7 @@ struct AchievementPresentationTests {
     @Test func everyMedalHasItsOwnKey() {
         let keys = Self.allKinds.map(\.key)
         #expect(Set(keys).count == keys.count)
-        #expect(keys.contains("streak-7") && keys.contains("laps-3") && keys.contains("bigDay-50"))
+        #expect(keys.contains("streak-7") && keys.contains("bigDay-50"))
         #expect(AchievementKind.firstRing.key == "firstRing" && AchievementKind.comeback.key == "comeback")
     }
 
@@ -66,18 +62,18 @@ struct AchievementPresentationTests {
     @Test func theFacesAreWhatTheTableSays() {
         #expect(AchievementKind.comeback.face.unicodeScalars.map(\.value) == [0x1F426, 0x200D, 0x1F525])
         #expect(AchievementKind.streak(days: 7).face.unicodeScalars.map(\.value) == [0x2B50, 0xFE0F])
-        #expect(AchievementKind.laps(10).face.unicodeScalars.map(\.value) == [0x1FA90])
+        #expect(AchievementKind.bigDay(cards: 500).face.unicodeScalars.map(\.value) == [0x1F418])
     }
 
     /// A rest has room for one medal: the most notable, and how many others there are.
     @Test func theRestFeaturesTheMostNotableMedal() {
         let earned = [
-            Achievement(kind: .firstRing, day: 1), Achievement(kind: .bigDay(cards: 50), day: 1), Achievement(kind: .laps(2), day: 1),
+            Achievement(kind: .firstRing, day: 1), Achievement(kind: .bigDay(cards: 50), day: 1), Achievement(kind: .perfectWeek, day: 1),
             Achievement(kind: .comeback, day: 1),
         ]
         #expect(earned.featured?.medal == .comeback && earned.featured?.others == 3)
         #expect((earned + [Achievement(kind: .streak(days: 7), day: 1)]).featured?.medal == .streak(days: 7))
-        #expect([Achievement(kind: .laps(2), day: 1), Achievement(kind: .laps(5), day: 1)].featured?.medal == .laps(5))
+        #expect([Achievement(kind: .bigDay(cards: 50), day: 1), Achievement(kind: .bigDay(cards: 100), day: 1)].featured?.medal == .bigDay(cards: 100))
         #expect([Achievement]().featured == nil)
     }
 
@@ -85,11 +81,11 @@ struct AchievementPresentationTests {
     @Test func theLatestMedalsAreTheNewestFirst() {
         let earned = [
             Achievement(kind: .firstRing, day: 1), Achievement(kind: .perfectWeek, day: 8), Achievement(kind: .streak(days: 3), day: 9),
-            Achievement(kind: .laps(2), day: 10), Achievement(kind: .bigDay(cards: 50), day: 10), Achievement(kind: .comeback, day: 11),
+            Achievement(kind: .firstRing, day: 10), Achievement(kind: .bigDay(cards: 50), day: 10), Achievement(kind: .comeback, day: 11),
             Achievement(kind: .perfectWeek, day: 15),
         ]
         let latest = earned.recentMedals
-        #expect(latest.map(\.kind) == [.perfectWeek, .comeback, .bigDay(cards: 50), .laps(2), .streak(days: 3)])
+        #expect(latest.map(\.kind) == [.perfectWeek, .comeback, .bigDay(cards: 50), .firstRing, .streak(days: 3)])
         #expect(latest[0] == EarnedMedal(kind: .perfectWeek, day: 15, count: 2))
         #expect([Achievement]().recentMedals.isEmpty)
     }
@@ -141,16 +137,6 @@ struct AchievementPresentationTests {
         // A day with an empty plan closes its ring but is no work.
         let empty = Self.closedDays(from: 100, count: 3) + [DayRecord(day: 103, done: 0, goal: 0, kept: true, closed: true, streak: 4)]
         #expect(NextTier.of(.perfectWeek, earned: [], records: empty, streak: 4)?.value == 3)
-    }
-
-    @Test func lapsCountTheBestDay() throws {
-        let records = [Self.day(1, done: 25), Self.day(2, done: 12)]
-        let next = try #require(NextTier.of(.laps, earned: [Achievement(kind: .laps(2), day: 1)], records: records, streak: 2))
-        #expect(next == NextTier(kind: .laps(3), value: 2, goal: 3))
-        #expect(next.hint == "2 of 3 rings")
-
-        let all = Achievements.lapTiers.map { Achievement(kind: .laps($0), day: 1) }
-        #expect(NextTier.of(.laps, earned: all, records: records, streak: 2) == nil)
     }
 
     @Test func theBigDayCountsTheCardsOfTheBestDay() throws {
@@ -276,7 +262,7 @@ struct AchievementPresentationTests {
         progress.records[progress.records.count - 1].closed = true
         progress.records[progress.records.count - 1].savedStreak = true
         progress.ring = DailyRing(done: 24, goal: 24)
-        progress.achievements += [Achievement(kind: .laps(2), day: today), Achievement(kind: .bigDay(cards: 50), day: today), Achievement(kind: .comeback, day: today)]
+        progress.achievements += [Achievement(kind: .bigDay(cards: 50), day: today), Achievement(kind: .comeback, day: today)]
         let rest = StreamRest(isPracticeOnly: false, recap: recap2, nextDue: nil, now: Date())
         try await shots.shoot("rest-medals", StreamRestView(rest: rest, progress: progress, onAddNewCards: {}, onDone: {}))
     }

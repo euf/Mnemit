@@ -234,7 +234,7 @@ extension DailyProgressTests {
         #expect(progress.cardsToNextRound == nil)
         #expect(progress.minutesToNextRound == nil)
         #expect(progress.ring.isGoalMet)
-        // The rest of the plan is laps.
+        // The rest of the plan is Catch Up.
         review(185, of: &deck, at: noon)
         #expect(evaluate([deck], at: noon).ring == DailyRing(done: 200, goal: 15))
     }

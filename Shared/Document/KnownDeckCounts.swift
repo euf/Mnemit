@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import VocabCore
 
-/// What today's session takes from each known deck, for the start screen's deck list.
+/// What today's session takes from each known deck, for the deck lists of Today on the iPhone and the Mac.
 ///
 /// Reads the packages without opening them as documents (`DeckFileReader`): the start
 /// screen shows while no deck is open, and a document per deck would keep every file
@@ -23,9 +23,8 @@ final class KnownDeckCounts {
 
     /// Reads the decks one after the other, off the main actor. The allowances are those the daily
     /// ring worked out; the call comes after its evaluation.
-    func refresh(_ decks: [KnownDeck], allowances: NewCardAllowances = NewCardAllowances.today) async {
-        for deck in decks {
-            let url = deck.url
+    func refresh(_ urls: [URL], allowances: NewCardAllowances = NewCardAllowances.today) async {
+        for url in urls {
             let allowance = allowances[url]
             let read = await Task.detached(priority: .utility) { Self.read(at: url, on: [Date()], allowance: allowance) }.value
             counts[url] = read.flatMap { $0.isPaused ? nil : $0.counts.first }

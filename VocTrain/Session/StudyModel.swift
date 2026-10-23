@@ -31,6 +31,9 @@ final class StudyModel: Identifiable {
     enum Entry {
         /// Today's stack: the plan, which ends; past it only Push On.
         case study
+        /// Today's stack once it is done: Push On from Today, ten new cards at once, without the rest at the end
+        /// of the plan first.
+        case pushOn
         /// A practice of the cards that went wrong today, which changes no card.
         case practiceMistakes
         /// A practice of the newest words, which changes no card.
@@ -86,7 +89,8 @@ final class StudyModel: Identifiable {
         // driver too: its stopwatch starts with the first card, and opening the voice isn't on
         // the card's account.
         GreekSpeech.shared.open()
-        let decks = entry == .study ? documents : [documents[0]]
+        let isPlan = entry == .study || entry == .pushOn
+        let decks = isPlan ? documents : [documents[0]]
         let progress = ring?.progress
         let doneHere = decks.map { $0.deck.doneCards(onDayOf: $0.clock.now, calendar: $0.calendar) }
         // A guide given outright (a test, say) already counts the cards done elsewhere.
@@ -95,7 +99,7 @@ final class StudyModel: Identifiable {
             let now = document.clock.now
             let stream: StudyStream
             switch entry {
-            case .study:
+            case .study, .pushOn:
                 stream = StudyStream(
                     deck: document.deck, at: now, calendar: document.calendar, reviewMode: .revealed, newCardAllowance: document.newCardAllowance)
             case .practiceMistakes:
@@ -110,15 +114,18 @@ final class StudyModel: Identifiable {
                 let elsewhere = doneInOthers + doneHere.enumerated().filter { $0.offset != index }.map(\.element).reduce(0, +)
                 guide = RoundGuide(ends: progress.roundEnds, doneElsewhere: elsewhere)
             }
-            return Lane(document: document, driver: SessionDriver(document: document, stream: stream, rounds: entry == .study ? guide : nil))
+            return Lane(document: document, driver: SessionDriver(document: document, stream: stream, rounds: isPlan ? guide : nil))
         }
         doneInOtherDecks = doneInOthers
         stage = .asking
+        if entry == .pushOn {
+            for (index, count) in pushOnCounts.enumerated() where count > 0 { lanes[index].driver.addNewCards(count) }
+        }
         for lane in lanes { lane.driver.delegate = self }
         current = mostUrgentLane() ?? 0
         stage = driver.isResting ? .resting : .asking
         activateCurrentLane()
-        if entry == .study, let ring { follow(ring) }
+        if isPlan, let ring { follow(ring) }
     }
 
     /// Takes the rounds of the day from the progress of `ring` each time it changes while the stream is open.

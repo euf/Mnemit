@@ -21,7 +21,7 @@ struct DailyGoalTests {
     }
 
     /// A day that began with nothing planned (a first deck filled in the afternoon, a day with
-    /// nothing due) takes the plan as it stands: the first day gets a goal, not laps.
+    /// nothing due) takes the plan as it stands: the first day gets a goal.
     @Test func anEmptyPlanAtDayStartTakesThePlanAsItStands() {
         #expect(DailyGoal.goal(done: 0, owed: 0, plan: 0) == 0)
         #expect(DailyGoal.goal(done: 12, owed: 0, plan: 0) == 12)
@@ -34,26 +34,23 @@ struct DailyGoalTests {
         #expect(DailyGoal.goal(done: 3, owed: 0, plan: 8) == 3)
     }
 
-    @Test func theRingFillsInLaps() {
+    @Test func theRingFillsToTheGoalAndStaysFull() {
         var ring = DailyRing(done: 5, goal: 20)
         #expect(ring.fraction == 0.25)
         #expect(!ring.isGoalMet)
-        #expect(ring.laps == 0)
         ring.done = 20
         #expect(ring.isGoalMet)
-        #expect(ring.laps == 1)
+        #expect(ring.fraction == 1)
         ring.done = 45
-        #expect(ring.fraction == 2.25)
-        #expect(ring.laps == 2)
+        #expect(ring.fraction == 1, "work beyond the goal is cards done, not laps")
     }
 
-    @Test func aRingWithoutAGoalIsMetAndCountsEachCardAsALap() {
+    @Test func aRingWithoutAGoalIsMet() {
         #expect(DailyRing(done: 0, goal: 0).isGoalMet)
         #expect(DailyRing(done: 0, goal: 0).fraction == 0)
-        #expect(DailyRing(done: 0, goal: 0).laps == 0)
         let ring = DailyRing(done: 3, goal: 0)
         #expect(ring.isGoalMet)
-        #expect(ring.laps == 3)
+        #expect(ring.fraction == 1)
         #expect(DailyRing(done: -2, goal: -1) == DailyRing(done: 0, goal: 0))
     }
 
@@ -935,14 +932,13 @@ struct DailyProgressTests {
         // ...but the goal of the day was set when it began.
         #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 8))
         reviewPlan(of: &deck, at: now)
-        // Everything is learned, the added cards too: the extra five are a lap, not debt.
+        // Everything is learned, the added cards too: the extra five are extra work, not debt.
         let ring = evaluate([deck]).ring
         #expect(ring == DailyRing(done: 13, goal: 8))
-        #expect(ring.laps == 1)
         #expect(ring.isGoalMet)
     }
 
-    @Test func extraNewCardsBeyondThePlanGoToLapsAndDoNotRaiseTheGoal() throws {
+    @Test func extraNewCardsBeyondThePlanCountAsDoneAndDoNotRaiseTheGoal() throws {
         var options = options()
         options.newCardsPerSession = 3
         var deck = try Deck(learningOptions: options, cards: (0..<5).map { due("c\($0)", onDay: today) } + (0..<10).map { new("n\($0)") })
@@ -957,11 +953,10 @@ struct DailyProgressTests {
         }
         let ring = evaluate([deck]).ring
         #expect(ring == DailyRing(done: 13, goal: 8))
-        #expect(ring.laps == 1)
-        #expect(ring.fraction > 1.4)
+        #expect(ring.fraction == 1)
     }
 
-    @Test func cardsBeyondThePlanCountTowardTheLaps() throws {
+    @Test func cardsBeyondThePlanCountAsDone() throws {
         // A plan of 6, then 14 cards not due until tomorrow, reviewed all the same.
         var deck = try Deck(learningOptions: options(), cards: (0..<6).map { due("c\($0)", onDay: today) } + (0..<14).map { due("a\($0)", onDay: today + 1) })
         reviewPlan(of: &deck, at: now)
@@ -972,7 +967,6 @@ struct DailyProgressTests {
         }
         let ring = evaluate([deck]).ring
         #expect(ring == DailyRing(done: 20, goal: 6))
-        #expect(ring.laps == 3)
         #expect(ring.isGoalMet)
     }
 
@@ -1078,7 +1072,7 @@ struct DailyProgressTests {
         #expect(evaluate([deck]).ring == DailyRing(done: 13, goal: 13))
         #expect(evaluate([deck]).ring.isGoalMet)
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 1499)
-        // Work beyond the goal fills laps, and the goal stays.
+        // Work beyond the goal counts as cards done, and the goal stays.
         reviewPlan(of: &deck, at: now)
         #expect(evaluate([deck]).ring == DailyRing(done: 1512, goal: 13))
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 0)

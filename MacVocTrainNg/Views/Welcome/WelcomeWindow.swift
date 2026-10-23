@@ -1,10 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// The window at launch while no document is open, instead of the bare Open panel: it
-/// opens the folder with the learner's decks, imports cards and lists recent decks. A
-/// document window that opens closes it. The Window menu brings it back, and so does a
-/// click on the Dock icon while no document is open.
+/// Today, the window at launch while no document is open, instead of the bare Open panel: the day over the decks
+/// of the Mnemit folder and the decks themselves, or, before the folder is chosen, the ways in (`WelcomeView`). It
+/// stays open beside the deck windows, as the iPhone's Today stays under a deck. Window ▸ Today (⌘0) brings it
+/// back, and so does a click on the Dock icon while no document is open.
 ///
 /// `defaults write <bundle id> showsWelcomeWindow -bool NO` goes back to AppKit's own
 /// behaviour at launch.
@@ -25,7 +25,7 @@ enum WelcomeWindow {
         }
         let window = NSWindow(contentViewController: NSHostingController(rootView: WelcomeView()))
         window.styleMask = [.titled, .closable, .fullSizeContentView]
-        window.title = String(localized: "Welcome to Mnemit")
+        window.title = String(localized: "Today")
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
@@ -54,13 +54,6 @@ enum WelcomeWindow {
             panel.cancel(nil)
         }
         show()
-    }
-
-    /// Whichever way a document opened, the welcome window has done its work.
-    static func closeIfDocumentIsOpen() {
-        if !NSDocumentController.shared.documents.isEmpty {
-            close()
-        }
     }
 }
 
@@ -97,5 +90,27 @@ enum WelcomeRequest {
     /// The request of the import the welcome window made, once; windows take them in order.
     static func takeImportCards() -> Request? {
         pending.isEmpty ? nil : pending.removeFirst()
+    }
+
+    /// Posted when Today asks a deck to study; the deck's window takes it with `takeStudy(of:)`.
+    static let studyRequested = Notification.Name("MnemitStudyRequested")
+
+    private static var studies: [String: SessionViewModel.Entry] = [:]
+
+    /// Asks the window of the deck at `url` to start `entry`, opening the deck if it isn't open.
+    static func requestStudy(of url: URL, entry: SessionViewModel.Entry) {
+        studies[key(url)] = entry
+        NotificationCenter.default.post(name: studyRequested, object: nil)
+        DeckFolder.open(url)
+    }
+
+    /// What Today asked of the deck at `url`, once.
+    static func takeStudy(of url: URL) -> SessionViewModel.Entry? {
+        studies.removeValue(forKey: key(url))
+    }
+
+    /// The same file however its URL is spelled.
+    private static func key(_ url: URL) -> String {
+        url.standardizedFileURL.resolvingSymlinksInPath().path
     }
 }

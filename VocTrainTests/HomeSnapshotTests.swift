@@ -190,7 +190,7 @@ struct HomeSnapshotTests {
         try await shoot("today-first-round", today(counts: leftCounts(done: 3), progress: Self.roundsProgress(done: 3, streak: 12)))
     }
 
-    /// The last round done with cards still left: the ring is closed and the rest goes into laps.
+    /// The last round done with cards still left: the ring is closed and the rest waits in Catch Up.
     @Test func todayWithTheRingClosed() async throws {
         try await shoot("today-closed", today(counts: leftCounts(done: 28), progress: Self.roundsProgress(done: 31, streak: 13)))
     }

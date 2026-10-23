@@ -216,7 +216,7 @@ struct StreamRestView: View {
 
     private var lines: [Line] {
         if rest.isPracticeOnly { return practiceLines }
-        if let end = rest.roundEnd, !end.closesRing { return [medalLine, leftLine].compactMap { $0 } }
+        if let end = rest.roundEnd, !end.closesRing { return [streakLine, medalLine, leftLine].compactMap { $0 } }
         return dayLines
     }
 
@@ -247,6 +247,22 @@ struct StreamRestView: View {
             lines.append(Line("week") { WeekRings(week: progress.week, today: progress.ring.fraction, now: rest.now).padding(.vertical, Spacing.tight) })
         }
         return lines
+    }
+
+    /// "12-day streak" under the title of the Streak kept rest, with the flame lit: the moment the streak grows.
+    private var streakLine: Line? {
+        guard let days = progress?.streak.days, days > 0 else { return nil }
+        return Line("streak") {
+            Label {
+                Text("\(days)-day streak")
+            } icon: {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(Color.streak)
+            }
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(.primary)
+            .padding(.bottom, Spacing.hairline)
+        }
     }
 
     /// "12 cards left · ≈ 4 min": what is left to the ring.
