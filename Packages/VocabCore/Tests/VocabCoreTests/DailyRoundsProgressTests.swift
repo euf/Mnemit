@@ -69,7 +69,7 @@ extension DailyProgressTests {
         // A day that was missed has no work, a studied day has.
         #expect(days[6].worked == 0 && days.enumerated().allSatisfy { $0.offset == 6 || $0.offset == 9 || $0.element.worked > 0 })
         // The day after the miss asks what the missed day asked.
-        #expect(days[7].reason == .median && days[7].time == days[6].time)
+        #expect(days[7].reason == .recentWork && days[7].time == days[6].time)
         // Each day's time is what the rule gives from the days before it; today's is the progress's own.
         for index in days.indices {
             #expect(days[index].time == DailyGoal.nextTime(after: Array(days[..<index])).time)
@@ -211,29 +211,30 @@ extension DailyProgressTests {
     @Test func theStreakStepAndTheGoalDoneAndTheWayToTheNextOneFollowTheCardsDone() throws {
         var deck = try Deck(learningOptions: options(), cards: (0..<200).map { due("r\($0)", onDay: today) })
         let noon = at(day: today, hour: 12)
-        // Thirty minutes hold 180 reviews of 10 s; the plan is 200. The streak step ends at 12, two minutes, the day at 180.
+        // The 200 cards were learned on one day of 6000 s, which counts as 480, twice the 240 asked: 312 s hold 31
+        // reviews of 10 s; the plan is 200. The streak step ends at 12, two minutes, the day at 31.
         var progress = evaluate([deck], at: noon)
-        #expect(progress.time == 1800)
-        #expect(progress.roundEnds == [12, 180])
+        #expect(progress.time == 312)
+        #expect(progress.roundEnds == [12, 31])
         review(5, of: &deck, at: noon)
         progress = evaluate([deck], at: noon)
-        #expect(progress.ring == DailyRing(done: 5, goal: 180))
+        #expect(progress.ring == DailyRing(done: 5, goal: 31))
         #expect(progress.roundsDone == 0)
         #expect(progress.cardsToNextRound == 7)
         #expect(progress.minutesToNextRound == 2)
         review(7, of: &deck, at: noon)
         progress = evaluate([deck], at: noon)
         #expect(progress.roundsDone == 1)
-        #expect(progress.cardsToNextRound == 168)
-        review(168, of: &deck, at: noon)
+        #expect(progress.cardsToNextRound == 19)
+        review(19, of: &deck, at: noon)
         progress = evaluate([deck], at: noon)
         #expect(progress.roundsDone == 2)
         #expect(progress.cardsToNextRound == nil)
         #expect(progress.minutesToNextRound == nil)
         #expect(progress.ring.isGoalMet)
         // The rest of the plan is laps.
-        review(20, of: &deck, at: noon)
-        #expect(evaluate([deck], at: noon).ring == DailyRing(done: 200, goal: 180))
+        review(169, of: &deck, at: noon)
+        #expect(evaluate([deck], at: noon).ring == DailyRing(done: 200, goal: 31))
     }
 
     @Test func theRoundsKeepTheirPlaceThroughTheDay() throws {

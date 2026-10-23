@@ -145,15 +145,19 @@ public enum DailyGoal {
     /// The time of a day, in seconds, whatever the learner did: two to thirty minutes.
     public static let timeRange: ClosedRange<Double> = 120...1800
 
-    /// The study days a base is the median of.
-    public static let baseDays = 7
+    /// How far the time moves toward the work when the work was longer: growth comes from the learner.
+    public static let risingWeight = 0.3
+    /// How far it moves when the work was shorter: one short day shouldn't shrink the ring.
+    public static let fallingWeight = 0.2
+    /// A day counts for at most this many times what it asked: one marathon day shouldn't triple the ring.
+    public static let dayCountsAtMost = 2.0
 
     /// Why a day has the size it has.
     public enum SizeReason: Hashable, Sendable {
         /// No study day before it to go by: `initialSeconds`.
         case start
-        /// The median of the work of the last study days.
-        case median
+        /// The time of the last study day moved toward the work done on it.
+        case recentWork
     }
 
     /// One day of the ring as the size rule reads it, plain values: the size it had and what came of it.
@@ -170,7 +174,7 @@ public enum DailyGoal {
         /// Something was done: `done > 0`.
         public var studied: Bool
 
-        public init(day: Int, time: Double = DailyGoal.initialSeconds, reason: SizeReason = .median, worked: Double, closed: Bool, studied: Bool) {
+        public init(day: Int, time: Double = DailyGoal.initialSeconds, reason: SizeReason = .recentWork, worked: Double, closed: Bool, studied: Bool) {
             self.day = day
             self.time = time
             self.reason = reason
@@ -181,18 +185,17 @@ public enum DailyGoal {
     }
 
     /// The time of the next day, in seconds, from the days before it (`days`, oldest first, every day from the first
-    /// study day): the median of the work of the last `baseDays` study days, a day with work, within `timeRange`;
-    /// `initialSeconds` without any. A day without work, missed or not, is no part of it.
+    /// study day): an exponentially weighted average, asymmetric, of the work. The last study day asked `T` (its
+    /// `time`, which carries the average of the days before it, so a cached run equals a recount) and worked `W`; with
+    /// `W' = min(W, dayCountsAtMost × T)` the next time is `T + a × (W' − T)`, `a` being `risingWeight` when `W' > T`
+    /// and `fallingWeight` otherwise, within `timeRange`; `initialSeconds` before any study day. A day without work,
+    /// missed or not, changes nothing.
     public static func nextTime(after days: [RingDay]) -> (time: Double, reason: SizeReason) {
-        var worked: [Double] = []
-        for earlier in days.reversed() where earlier.studied {
-            worked.append(earlier.worked)
-            if worked.count == baseDays { break }
-        }
-        worked.sort()
-        let middle = worked.count / 2
-        let base = worked.isEmpty ? initialSeconds : worked.count.isMultiple(of: 2) ? (worked[middle - 1] + worked[middle]) / 2 : worked[middle]
-        return (min(max(base, timeRange.lowerBound), timeRange.upperBound), worked.isEmpty ? .start : .median)
+        guard let last = days.last(where: \.studied) else { return (initialSeconds, .start) }
+        let counted = min(last.worked, dayCountsAtMost * last.time)
+        let weight = counted > last.time ? risingWeight : fallingWeight
+        let next = last.time + weight * (counted - last.time)
+        return (min(max(next, timeRange.lowerBound), timeRange.upperBound), .recentWork)
     }
 
     /// How many new cards a day admits: what is left of its `seconds` once the `otherCards` of the
