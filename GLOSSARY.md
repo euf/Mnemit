@@ -292,7 +292,9 @@ least 0 (`DailyGoal.newCardsAllowed`). The decks' own limits (`newCardsPerSessio
 `newProductionPerSession`) are ceilings. Across all decks the allowance is shared in proportion to
 the ceilings, by largest remainder (`DailyGoal.split`); each deck's share is its
 `newCardAllowance`, which the plan takes (`DailyProgress.newCardAllowances`). Cards first reviewed
-today count against it, and "+10 new" comes beyond it.
+today count against it, and "+10 new" comes beyond it. Today's admission is also held to what the
+next 7 study days can take (`DailyGoal.newCardsAllowedAhead`, only for today): the reviews already due
+then plus those the new cards bring must fit the day's time.
 _Avoid_: new-card limit, daily new cards
 
 **Daily goal** (the K of "M of K cards" / „M von K Karten“; RU «цель дня»):

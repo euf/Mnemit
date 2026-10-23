@@ -58,6 +58,14 @@ struct HowTodayWorks: Equatable, Sendable {
             .value(label: String(localized: "Cards in learning"), value: plan.learning.formatted()),
             .value(label: String(localized: "New cards admitted"), value: plan.newAdmitted.formatted()),
         ]
+        // Which bound set the new cards, with what the next week already holds: nothing where it isn't looked at.
+        if let week = progress.nextWeekSeconds {
+            rows.append(
+                .value(
+                    label: progress.newCardLimit == .nextWeek ? String(localized: "New cards: limited by next week") : String(localized: "New cards: limited by today's time"),
+                    value: String(localized: "\(minutes(week)) min"),
+                    note: String(localized: "Reviews already due in the next 7 days, averaged by the day")))
+        }
         for (index, deck) in decks.enumerated() where breakdown.decks.indices.contains(index) {
             // A paused deck is no part of the plan: it is named, with no share.
             if deck.options.isPaused {
@@ -84,8 +92,10 @@ struct HowTodayWorks: Equatable, Sendable {
         return Section(title: String(localized: "Today's Plan"), rows: rows, footer: footer)
     }
 
+    /// Seconds as minutes with a decimal.
+    private static func minutes(_ seconds: Double) -> String { (seconds / 60).formatted(.number.precision(.fractionLength(1))) }
+
     private static func time(_ progress: DailyProgress, _ breakdown: DayBreakdown) -> Section {
-        func minutes(_ seconds: Double) -> String { (seconds / 60).formatted(.number.precision(.fractionLength(1))) }
         let header = [String(localized: "Day"), String(localized: "Asked (min)"), String(localized: "Worked (min)"), String(localized: "Ring"), String(localized: "Why")]
         let table = breakdown.days.reversed().enumerated().map { offset, day in
             [

@@ -24,7 +24,8 @@ struct HowTodayWorksTests {
         DailyProgress(
             ring: DailyRing(done: 18, goal: 34), streak: Streak(days: 12, repairCards: nil), cardsLeft: 22, newCardsLeft: 5,
             pace: Pace(newCard: 31.4, otherCard: 9.2), time: 480,
-            roundPlan: DayRounds(otherCards: 28, newCards: 12, pace: Pace(), seconds: 480), streakKeptToday: true, newCardAllowances: [6])
+            roundPlan: DayRounds(otherCards: 28, newCards: 12, pace: Pace(), seconds: 480), streakKeptToday: true, newCardAllowances: [6],
+            newCardLimit: .nextWeek, nextWeekSeconds: 492)
     }
 
     static var breakdown: DayBreakdown {
@@ -66,6 +67,8 @@ struct HowTodayWorksTests {
         #expect(plan["Overdue cards taken"] == "8 of 30")
         #expect(plan["Cards in learning"] == "2")
         #expect(plan["New cards admitted"] == "6")
+        #expect(plan["New cards: limited by next week"] == "\((8.2).formatted(.number.precision(.fractionLength(1)))) min")
+        #expect(plan["New cards: limited by today's time"] == nil)
         #expect(plan["Greek B1"] == "6")
         #expect(content.sections[0].rows.contains(.value(label: "Greek B1", value: "6", note: "Ceiling 27 (limits 20 new / 7 production)")))
         #expect(plan["Cards done"] == "18")
@@ -155,6 +158,18 @@ struct HowTodayWorksTests {
         #expect(values(content.sections[5])["Parameters"] == "Default")
         #expect(values(content.sections[6])["Parameters"] == "Fitted")
         #expect(values(content.sections[6])["Last automatic fit"] == "None yet")
+    }
+
+    /// The row says which bound set the day's new cards; it is left out where the next week isn't looked at.
+    @Test func theNewCardsRowSaysWhichBoundWonAndIsLeftOutWithoutTheWeekAhead() throws {
+        var progress = Self.progress
+        progress.newCardLimit = .time
+        let time = HowTodayWorks(progress: progress, breakdown: Self.breakdown, memory: Self.memory, swipes: nil, decks: [])
+        #expect(values(time.sections[0])["New cards: limited by today's time"] == "\((8.2).formatted(.number.precision(.fractionLength(1)))) min")
+        #expect(values(time.sections[0])["New cards: limited by next week"] == nil)
+        progress.nextWeekSeconds = nil
+        let none = HowTodayWorks(progress: progress, breakdown: Self.breakdown, memory: Self.memory, swipes: nil, decks: [])
+        #expect(values(none.sections[0]).keys.filter { $0.hasPrefix("New cards: limited") }.isEmpty)
     }
 
     /// A paused deck is named in the plan as "Paused: <name>", with no share of the new cards, and the figures are

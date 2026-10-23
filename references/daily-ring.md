@@ -86,8 +86,22 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 
 ## New-card allowance
 
-- **Allowance**: the day's time minus the plan's non-new cards at the start of the
-  day at the other price, divided by the price of a new card, at least 0 (`DailyGoal.newCardsAllowed`).
+- **Allowance**: today it is the smaller of two bounds. The first is the day's time minus the plan's
+  non-new cards at the start of the day at the other price, divided by the price of a new card, at least 0
+  (`DailyGoal.newCardsAllowed`). The second looks a week ahead (`DailyGoal.newCardsAllowedAhead`): the
+  most new cards `N` for which the review cards already due on the next 7 study days (averaged by the day,
+  across the active decks, suspended cards out, counted on the decks as they stood when the day began so
+  the day's own reviews don't move it: `DeckActivity.History.dueAhead`) plus the extra reviews a day next
+  week that `N` new cards bring (`NewCardLoad.reviewsPerDay` for one card, averaged over the decks weighted
+  by their ceilings), at the other price, still fit the day's time. A learner with nothing scheduled ahead
+  gets the first bound.
+- **Today only**: past days keep the first bound, so the goals, rings, streaks and medals of the history
+  don't change (`DailyProgress.evaluate(admitsAhead:)`, default `DailyGoal.admitsAhead`, a static switch).
+  `DailyProgress.newCardLimit` says which bound won and `nextWeekSeconds` is the week's average, which
+  "How Today Works" shows in the row "New cards: limited by next week / by today's time".
+- **Why**: under FSRS the reviews are fixed by the schedule and new cards are the only free input, and
+  every card admitted comes back as reviews for weeks. The Anki manual sizes new cards by the review
+  workload one can sustain; the second bound applies that to the next week.
 - The decks' limits (`newCardsPerSession`, `newProductionPerSession`) are ceilings. The allowance is
   split between decks in proportion to their ceilings by largest remainder (`DailyGoal.split`). A
   deck's ceiling is the new cards its limits would take at the start of the day plus those created

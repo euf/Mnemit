@@ -35,8 +35,8 @@ nothing, and nothing is taken back. A new word is half a card after its first Go
 the ring stays in whole cards; the closing screen joins the two: "10 cards · 22 answers".
 
 FSRS decides what is urgent; the learner decides only whether to go on. Due cards are the work owed;
-new cards are the only free input, and the app admits as many as the learner's time holds, so the ring
-is a size the learner has shown they finish. The size is learned, never asked: no budget, no slider.
+new cards are the only free input, and the app admits as many as the learner's time holds, counting the
+reviews already due next week as well as today's, so the ring is a size the learner has shown they finish. The size is learned, never asked: no budget, no slider.
 
 ## Horizons
 
