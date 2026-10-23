@@ -25,6 +25,29 @@ with no settings.
 Changed from 5.4: the start (4 minutes), the ceiling (30 minutes), the hold on a smaller plan (5.4 grew T on every closed ring),
 and the bound that held today's new cards to what the next week could carry (removed).
 
+## How load is managed elsewhere, and where the ring stands
+
+The way to keep the load of spaced repetition in hand is settled; the ring uses it. What no tool does is learn the
+budget from the learner's behaviour: everyone else asks for it.
+
+| Lever | How it works | Source | In Mnemit |
+|---|---|---|---|
+| A review limit with new cards under it | When the day's review limit is reached no new card is shown (Anki's default: "New cards ignore review limit" off); with a backlog, stop introducing new cards, as they "can make the backlog worse" | [Anki Manual, Deck Options](https://docs.ankiweb.net/deck-options.html) | The ring: T is the limit in seconds, due cards come first, new cards take what is left |
+| The retention target | The main lever on the load: above 90 % it climbs fast, above 97 % it can overwhelm; the manual's simulator ("Help Me Decide") draws a personal retention-workload graph and asks how many minutes a day one can really spend | same | Fixed per deck (0.9); the ring does not move it |
+| Spreading the load | Anki's built-in load balancer (since 24.11) picks the due day inside the fuzz range by the load of each day; Easy Days lightens chosen weekdays; FSRS Helper adds flatten, postpone and advance | `rslib/src/scheduler/states/load_balancer.rs`; [Anki Forums, 2025](https://forums.ankiweb.net/t/force-load-balancing-with-lots-of-unbalanced-reviews/54894) | Fuzz only, no balancing (measured below) |
+| New cards by a leading signal | New cards are released while the pool of young cards is under a cap | the add-on Limit New by Young (`ring-design-research.md` §3) | No |
+| The reason for all of it | A queueing model of the Leitner system shows a sharp phase transition: once new items arrive faster than reviews can serve, learning collapses; a Mechanical Turk experiment confirmed it | Reddy, Labutov, Banerjee, Joachims, KDD 2016, [arXiv:1602.07032](https://arxiv.org/abs/1602.07032) | New cards stay under the time, as above |
+
+Anki's load balancer, as its source code has it: only intervals up to 90 days are balanced, within the usual fuzz range; a
+day with nothing due weighs 1, any other (1 / its cards)^2.15 × (1 / the interval)^3, times a sibling factor (a day that
+holds a card of the same note weighs almost nothing) and the Easy Days factor; the day is drawn at random by weight with the
+card's fuzz seed; only cards of the same preset count.
+
+The FSRS simulation behind every number here agrees with an independent one. Noos's FSRS simulator (20 new cards a day for a
+year, all due cards answered, FSRS-6 defaults, grades drawn from the Anki simulator's defaults) gives 133, 161, 204 and 308
+answers a day at retention 80, 85, 90 and 95 %; the same routine in `cards.py`'s model gives 134, 161, 211 and 339, and the
+cards remembered match within 0.5 % ([noosflashcards.com/resources/fsrs-simulator](https://noosflashcards.com/resources/fsrs-simulator)).
+
 ## The two learners
 
 **A newcomer.** The first day asks 2.5 minutes, about five new words at the 30 s a new card costs before the learner's own pace
