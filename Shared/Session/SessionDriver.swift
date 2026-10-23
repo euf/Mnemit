@@ -13,7 +13,7 @@ import VocabCore
 @MainActor @Observable
 final class SessionDriver {
     let document: VocabularyDocument
-    /// The running stream: today's plan, then catch-up, review ahead and practice. Undo and
+    /// The running stream: today's plan, then practice. Undo and
     /// redo bring back the whole of it, so they reach a review of an earlier segment as well.
     private(set) var stream: StudyStream
     /// The card being asked, as the deck holds it now. Undoing an edit of the card
@@ -176,7 +176,7 @@ final class SessionDriver {
         moveOn()
     }
 
-    /// From rest, goes on beyond the plan: the catch-up, review ahead, practice.
+    /// From rest, goes on beyond the plan: practice.
     func keepGoing() {
         guard stream.keepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
         lastReceipt = nil
@@ -210,7 +210,6 @@ final class SessionDriver {
             recap: stream.recap,
             nextDue: counts.nextDue,
             now: document.clock.now,
-            catchUp: counts.catchUp,
             canKeepGoing: stream.canKeepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar),
             extraNew: extraNew,
             roundEnd: stream.roundRest.map { RoundEnd(round: $0, rounds: rounds?.rounds ?? $0 + 1) })

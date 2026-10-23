@@ -289,9 +289,6 @@ private struct StatusBar: View {
                 Text("\(total) cards")
             }
             Text("Today: \(today.new) new · \(today.learning) learning · \(today.review) review")
-            if today.catchUp > 0 {
-                Text("+\(today.catchUp) to catch up this week")
-            }
             Spacer()
         }
         .font(.callout)

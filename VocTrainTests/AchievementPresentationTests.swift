@@ -278,6 +278,6 @@ struct AchievementPresentationTests {
         progress.ring = DailyRing(done: 24, goal: 24)
         progress.achievements += [Achievement(kind: .laps(2), day: today), Achievement(kind: .bigDay(cards: 50), day: today), Achievement(kind: .comeback, day: today)]
         let rest = StreamRest(isPracticeOnly: false, recap: recap2, nextDue: nil, now: Date(), canKeepGoing: false)
-        try await shots.shoot("rest-medals", StreamRestView(rest: rest, progress: progress, onKeepGoing: {}, onAddNewCards: {}, onDone: {}))
+        try await shots.shoot("rest-medals", StreamRestView(rest: rest, progress: progress, onAddNewCards: {}, onDone: {}))
     }
 }

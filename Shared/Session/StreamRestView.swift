@@ -30,10 +30,7 @@ struct StreamRest {
     /// When cards come back that today's plan leaves out; `nil` if no card has been studied.
     var nextDue: Date?
     var now: Date
-    /// The catch-up, the overdue review cards the plan left for the days after: Keep Going works
-    /// through them first.
-    var catchUp = 0
-    /// The catch-up, review ahead or practice has something to go on with.
+    /// Practice has something to go on with.
     var canKeepGoing: Bool
     /// What the stream could add beyond the daily limits; `nil` if there are no new cards.
     var extraNew: ExtraNewCards?
@@ -45,12 +42,11 @@ struct StreamRest {
 /// the first round: the streak, the words the day has added, the cards left to the ring; Keep Going or Done
 /// for Now. "Ring closed" when today's cards are done: the cards and the answers they took, the share
 /// recalled, the words, the streak and the week's rings, then one way on, the most useful first: Catch Up
-/// when due cards are left, else the new cards beyond the daily limit with what they cost in cards a day,
-/// else practice. A finished practice ends with its figures.
+/// when the plan has cards left, else the new cards beyond the daily limit with what they cost in cards a
+/// day. A finished practice ends with its figures.
 struct StreamRestView: View {
     var rest: StreamRest
     var progress: DailyProgress?
-    var onKeepGoing: () -> Void
     var onAddNewCards: () -> Void
     var onNextRound: () -> Void = {}
     var onDone: () -> Void
@@ -287,7 +283,7 @@ struct StreamRestView: View {
         }
     }
 
-    /// The ring is closed and the plan has cards beyond it, as after a break: they are the catch-up.
+    /// The ring is closed and the plan has cards left, as after a break: Catch Up goes on with them.
     private var ringButtons: some View {
         VStack(spacing: Spacing.gap) {
             button("Done", prominent: true, action: onDone)
@@ -295,14 +291,11 @@ struct StreamRestView: View {
         }
     }
 
-    /// Done, and under it at most one way on: the catch-up when due cards are left, else the new cards beyond
-    /// the daily limits with what they cost.
+    /// Done, and under it at most one way on: the new cards beyond the daily limits with what they cost.
     private var planEndButtons: some View {
         VStack(spacing: Spacing.gap) {
             button("Done", prominent: true, action: onDone)
-            if rest.canKeepGoing, rest.catchUp > 0 {
-                button("Catch Up", prominent: false, action: onKeepGoing)
-            } else if let extra = rest.extraNew {
+            if let extra = rest.extraNew {
                 VStack(spacing: Spacing.hairline) {
                     button("+\(extra.cards) new", prominent: false, action: onAddNewCards)
                     Text("≈ +\(extra.reviewsPerDay) cards/day next week")

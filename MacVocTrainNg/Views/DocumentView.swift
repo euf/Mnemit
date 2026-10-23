@@ -277,7 +277,7 @@ struct DocumentView: View {
 }
 
 /// The prominent "Study" button of the toolbar. The stream it opens has no end, so the button
-/// works once the plan is done, too, and offers catch-up, review ahead and practice; the menu command
+/// works once the plan is done, too, and offers practice; the menu command
 /// Study ▸ Study is its twin.
 private struct StartStudyButton: View {
     var dueCards: DueCardCounter

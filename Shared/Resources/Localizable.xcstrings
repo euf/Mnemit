@@ -1751,28 +1751,6 @@
         }
       }
     },
-    "%lld of %lld": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld von %2$lld"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld από %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld из %lld"
-          }
-        }
-      }
-    },
     "%lld of %lld cards": {
       "localizations": {
         "de": {
@@ -3209,28 +3187,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "+%lld новых"
-          }
-        }
-      }
-    },
-    "+%lld to catch up this week": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld zum Nachholen in dieser Woche"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld για να προλάβεις αυτή την εβδομάδα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld догнать на этой неделе"
           }
         }
       }
@@ -5444,28 +5400,6 @@
         }
       }
     },
-    "Cards that were due before today, beyond today's share of them": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten, die vor heute fällig waren, über den heutigen Anteil hinaus"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες που ήταν προς επανάληψη πριν από σήμερα, πέρα από το σημερινό μερίδιό τους"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки, которые должны были повторяться до сегодняшнего дня, сверх доли на сегодня"
-          }
-        }
-      }
-    },
     "Cards to repair yesterday": {
       "localizations": {
         "de": {
@@ -5572,28 +5506,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Догнать"
-          }
-        }
-      }
-    },
-    "Catch-up beyond the plan": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nachholen über den Plan hinaus"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Προλάβε πέρα από το πρόγραμμα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Догнать сверх плана"
           }
         }
       }
@@ -7420,6 +7332,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "К повторению сейчас"
+          }
+        }
+      }
+    },
+    "Due today, overdue included": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute fällig, überfällige eingeschlossen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Προς επανάληψη σήμερα, με τις εκπρόθεσμες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "К повторению сегодня, с просроченными"
           }
         }
       }
@@ -11318,28 +11252,6 @@
         }
       }
     },
-    "Overdue cards taken": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Überfällige Karten im Plan"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Εκπρόθεσμες κάρτες στο πρόγραμμα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Просроченные карточки в плане"
-          }
-        }
-      }
-    },
     "Pace": {
       "localizations": {
         "de": {
@@ -13074,28 +12986,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Повторения, уже назначенные на ближайшие 7 дней, в среднем за день"
-          }
-        }
-      }
-    },
-    "Reviews due today": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heute fällige Abfragen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Προς επανάληψη σήμερα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "К повторению сегодня"
           }
         }
       }
@@ -15102,24 +14992,24 @@
         }
       }
     },
-    "The plan is what FSRS sets for the day: the reviews due and the cards in learning. Of the overdue cards it takes a share, at least a seventh and at least what a normal day asks. New cards fill what the day's time leaves after reviews, up to each deck's ceiling. The rest of the overdue cards is catch-up.": {
+    "The plan is what FSRS sets for the day: the reviews due, overdue ones included, and the cards in learning. New cards fill what the day's time leaves after reviews, up to each deck's ceiling.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Der Plan ist, was FSRS für den Tag ansetzt: die fälligen Abfragen und die lernenden Karten. Von den überfälligen Karten übernimmt er einen Anteil, mindestens ein Siebtel und mindestens so viele, wie ein normaler Tag verlangt. Neue Karten füllen, was die Zeit des Tages nach den Abfragen übrig lässt, bis zur Obergrenze jedes Stapels. Der Rest der überfälligen Karten ist Nachholen."
+            "value": "Der Plan ist, was FSRS für den Tag ansetzt: die fälligen Abfragen, überfällige eingeschlossen, und die lernenden Karten. Neue Karten füllen, was die Zeit des Tages nach den Abfragen übrig lässt, bis zur Obergrenze jedes Stapels."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Το πρόγραμμα είναι ό,τι ορίζει το FSRS για την ημέρα: οι κάρτες προς επανάληψη και οι κάρτες σε εκμάθηση. Από τις εκπρόθεσμες κάρτες παίρνει ένα μερίδιο, τουλάχιστον το ένα έβδομο και τουλάχιστον όσες ζητά μια κανονική ημέρα. Οι νέες κάρτες γεμίζουν ό,τι αφήνει ο χρόνος της ημέρας μετά τις επαναλήψεις, μέχρι το ανώτατο όριο κάθε τράπουλας. Τις υπόλοιπες εκπρόθεσμες κάρτες τις προλαβαίνεις πέρα από το πρόγραμμα."
+            "value": "Το πρόγραμμα είναι ό,τι ορίζει το FSRS για την ημέρα: οι κάρτες προς επανάληψη, μαζί με τις εκπρόθεσμες, και οι κάρτες σε εκμάθηση. Οι νέες κάρτες γεμίζουν ό,τι αφήνει ο χρόνος της ημέρας μετά τις επαναλήψεις, μέχρι το ανώτατο όριο κάθε τράπουλας."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "План — это то, что FSRS назначает на день: карточки к повторению и карточки в обучении. Из просроченных карточек он берёт долю: не меньше седьмой части и не меньше того, что просит обычный день. Новые карточки заполняют то, что остаётся от времени дня после повторений, вплоть до потолка каждой колоды. Остальные просроченные карточки можно догнать сверх плана."
+            "value": "План — это то, что FSRS назначает на день: карточки к повторению, просроченные включены, и карточки в обучении. Новые карточки заполняют то, что остаётся от времени дня после повторений, вплоть до потолка каждой колоды."
           }
         }
       }

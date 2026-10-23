@@ -50,7 +50,7 @@ struct SessionView: View {
             if model.isResting {
                 StreamRestView(
                     rest: model.rest, progress: ring.progress,
-                    onKeepGoing: model.keepGoing, onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose)
+                    onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose)
             } else if let card = model.currentCard {
                 cardArea(card)
             }
@@ -175,10 +175,6 @@ struct SessionView: View {
     @ViewBuilder
     private var stageLabel: some View {
         switch model.streamStage {
-        case .catchUp:
-            Text("Catch Up")
-                .font(.headline)
-                .help("Cards that were due before today, beyond today's share of them")
         case .practiceMistakes, .practiceNewest:
             Text("Practice")
                 .font(.headline)

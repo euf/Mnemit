@@ -53,8 +53,7 @@ struct HowTodayWorks: Equatable, Sendable {
     private static func plan(_ progress: DailyProgress, _ breakdown: DayBreakdown, _ decks: [DeckInfo]) -> Section {
         let plan = breakdown.plan
         var rows: [Row] = [
-            .value(label: String(localized: "Reviews due today"), value: plan.reviewsDue.formatted()),
-            .value(label: String(localized: "Overdue cards taken"), value: String(localized: "\(plan.backlogTaken) of \(plan.backlog)")),
+            .value(label: String(localized: "Due today, overdue included"), value: plan.reviewsDue.formatted()),
             .value(label: String(localized: "Cards in learning"), value: plan.learning.formatted()),
             .value(label: String(localized: "New cards admitted"), value: plan.newAdmitted.formatted()),
         ]
@@ -83,11 +82,10 @@ struct HowTodayWorks: Equatable, Sendable {
         rows += [
             .value(label: String(localized: "Cards done"), value: progress.ring.done.formatted()),
             .value(label: String(localized: "Cards left"), value: progress.cardsLeft.formatted()),
-            .value(label: String(localized: "Catch-up beyond the plan"), value: breakdown.catchUp.formatted()),
         ]
         let footer = String(
             localized:
-                "The plan is what FSRS sets for the day: the reviews due and the cards in learning. Of the overdue cards it takes a share, at least a seventh and at least what a normal day asks. New cards fill what the day's time leaves after reviews, up to each deck's ceiling. The rest of the overdue cards is catch-up."
+                "The plan is what FSRS sets for the day: the reviews due, overdue ones included, and the cards in learning. New cards fill what the day's time leaves after reviews, up to each deck's ceiling."
         )
         return Section(title: String(localized: "Today's Plan"), rows: rows, footer: footer)
     }

@@ -35,8 +35,8 @@ struct HowTodayWorksTests {
             DayBreakdown.Day(start: day, time: 330, isClosed: false, worked: 150, reason: .median),
         ]
         return DayBreakdown(
-            plan: DayBreakdown.Plan(reviewsDue: 20, backlogTaken: 8, backlog: 30, learning: 2, newAdmitted: 6),
-            decks: [DayBreakdown.DeckNewCards(allowance: 6, ceiling: 27, admitted: 6)], catchUp: 22, days: days,
+            plan: DayBreakdown.Plan(reviewsDue: 28, learning: 2, newAdmitted: 6),
+            decks: [DayBreakdown.DeckNewCards(allowance: 6, ceiling: 27, admitted: 6)], days: days,
             newCards: DayBreakdown.PaceBasis(durations: 214, gaps: 120, reviews: 500, doneCards: 200),
             otherCards: DayBreakdown.PaceBasis(durations: 5, gaps: 12, reviews: 40, doneCards: 40))
     }
@@ -62,8 +62,8 @@ struct HowTodayWorksTests {
         #expect(content.sections.allSatisfy { !$0.footer.isEmpty })
 
         let plan = values(content.sections[0])
-        #expect(plan["Reviews due today"] == "20")
-        #expect(plan["Overdue cards taken"] == "8 of 30")
+        #expect(plan["Due today, overdue included"] == "28")
+        #expect(plan["Overdue cards taken"] == nil)
         #expect(plan["Cards in learning"] == "2")
         #expect(plan["New cards admitted"] == "6")
         #expect(plan["New cards: limited by next week"] == "\((8.2).formatted(.number.precision(.fractionLength(1)))) min")
@@ -72,7 +72,7 @@ struct HowTodayWorksTests {
         #expect(content.sections[0].rows.contains(.value(label: "Greek B1", value: "6", note: "Ceiling 27 (limits 20 new / 7 production)")))
         #expect(plan["Cards done"] == "18")
         #expect(plan["Cards left"] == "22")
-        #expect(plan["Catch-up beyond the plan"] == "22")
+        #expect(plan["Catch-up beyond the plan"] == nil)
 
         let time = content.sections[1]
         #expect(values(time)["Time of the day"] == "\((8.0).formatted(.number.precision(.fractionLength(1)))) min")

@@ -137,9 +137,9 @@ struct StudyModelTests {
         #expect(document.deck == before)
     }
 
-    /// The plan is done: the stream rests, then catches up on the backlog the plan left, with ordinary
-    /// reviews that undo takes back across the segments. Eight cards overdue ask two of themselves today.
-    @Test func afterThePlanTheStreamRestsAndCatchesUp() throws {
+    /// The plan is done: the stream rests, and undo takes the last review back into the plan. Eight cards
+    /// overdue are all of today's plan.
+    @Test func anOverdueBacklogIsAllOfThePlanAndTheStreamRestsAfterIt() throws {
         // Learned with two Goods on a day such that they fell due yesterday, as the log replays them.
         let calendar = StudyCalendar()
         var options = LearningOptions()
@@ -160,25 +160,22 @@ struct StudyModelTests {
         document.attachUndoManager(undoManager)
         let model = StudyModel(document: document)
         #expect(model.streamStage == .plan)
+        #expect(model.session.totalCount == 8)
+        var last = try #require(model.currentCard)
         while !model.isResting {
+            last = try #require(model.currentCard)
             model.reveal()
             grade(model, .good, undoManager: undoManager)
         }
-        #expect(model.rest.recap.cards == 2)
-        #expect(model.rest.catchUp == 6)
-        #expect(model.rest.canKeepGoing)
-
-        model.keepGoing()
-        #expect(model.streamStage == .catchUp)
-        let card = try #require(model.currentCard)
-        model.reveal()
-        grade(model, .good, undoManager: undoManager)
-        #expect(document.card(withID: card.id)?.log.count == 3)
+        #expect(model.streamStage == .rest)
+        #expect(model.rest.recap.cards == 8)
+        #expect(document.deck.cards.allSatisfy { $0.log.count == 3 })
         #expect(model.hasUndoableSteps)
 
         undoManager.undo()
-        #expect(model.streamStage == .catchUp)
-        #expect(document.card(withID: card.id) == card)
+        #expect(model.streamStage == .plan)
+        #expect(model.currentCard?.id == last.id)
+        #expect(document.card(withID: last.id)?.log.count == 2)
     }
 
     /// "+10 new" offers the cards beyond the daily limit, with what they cost, and asks them.

@@ -5,8 +5,7 @@ import VocabCore
 /// Drives the study stream in the style of flash cards (#258): shows the question,
 /// reveals the answer on request and applies the grade the learner gives. There is no
 /// response to check, so the app suggests no grade; the reviews record `.revealed`. The
-/// stream has no end of its own: today's plan, a short rest, then catch-up, review ahead and
-/// practice, which changes no card.
+/// stream has no end of its own: today's plan, a short rest, then practice, which changes no card.
 ///
 /// Like `SessionViewModel` on the Mac, it leaves applying grades and keeping the
 /// stream's place in step with undo and redo and with every other change to the deck
@@ -30,7 +29,7 @@ final class StudyModel: Identifiable {
 
     /// What the stream starts with.
     enum Entry {
-        /// Today's plan, then catch-up, review ahead and practice.
+        /// Today's plan, then practice.
         case study
         /// A practice of the cards that went wrong today, which changes no card.
         case practiceMistakes
@@ -194,7 +193,7 @@ final class StudyModel: Identifiable {
 
     var session: Session { driver.session }
 
-    /// Where the stream is: today's plan, catch-up, review ahead, practice, or at rest.
+    /// Where the stream is: today's plan, practice, or at rest.
     var streamStage: StudyStream.Stage { driver.stream.stage }
 
     /// The card being asked, as the deck holds it now.
@@ -266,7 +265,7 @@ final class StudyModel: Identifiable {
         driver.continueRound()
     }
 
-    /// Goes on beyond the plan, from rest: catch-up, review ahead, then practice.
+    /// Goes on beyond the plan, from rest: practice.
     func keepGoing() {
         driver.keepGoing()
     }

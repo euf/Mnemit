@@ -208,11 +208,10 @@ struct WidgetSnapshotTests {
         // 3 reviews and 4 new cards now; the learning card from 11:30, so at 12:00; the two
         // reviews from 15:30, so at 16:00. The far and the suspended card never.
         #expect(Array(counts.prefix(7)) == [7, 7, 8, 8, 8, 8, 10])
-        // The plan of the 22nd that is still open when the study day turns at 04:00 is backlog on
-        // the 23rd: the five reviews ask a seventh of themselves, one, beside the learning card
-        // and the four new cards.
+        // The plan of the 22nd that is still open when the study day turns at 04:00 is overdue on the
+        // 23rd and still all of its plan: the five reviews, the learning card and the four new cards.
         for (date, count) in zip(dates, counts).dropFirst(6) {
-            #expect(count == (date < Fixtures.date(23, 4) ? 10 : 6), "\(date)")
+            #expect(count == 10, "\(date)")
         }
         #expect(counts.count == dates.count)
     }
@@ -388,14 +387,14 @@ struct WidgetSnapshotTests {
             now: now, progress: Fixtures.progress(done: 12, goal: 20, streak: 7), dates: dates, dueByDeck: [counts], nextReminder: nil)
         let entries = snapshot.timeline(from: now, calendar: Fixtures.studyCalendar)
         // Now (7 in the plan), 12:00 (8), 16:00 (10), and the next study day, which resets the
-        // cards done and makes the five review cards of the 22nd backlog: a seventh of it, one card.
+        // cards done and keeps the five review cards of the 22nd in the plan, overdue.
         #expect(entries.map(\.due).prefix(3) == [7, 8, 10])
         #expect(entries.prefix(3).map(\.date) == [now, Fixtures.date(22, 12), Fixtures.date(22, 16)])
         #expect(entries.prefix(3).allSatisfy { $0.done == 12 })
         let next = entries.first { $0.date == Fixtures.date(23, 4) }
         #expect(next?.done == 0)
-        #expect(next?.due == 6)
-        #expect(next?.goal == 6)
+        #expect(next?.due == 10)
+        #expect(next?.goal == 10)
         #expect(entries.count <= 5)
     }
 

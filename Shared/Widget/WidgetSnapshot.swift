@@ -19,8 +19,7 @@ enum WidgetLink {
 /// small, a few kilobytes.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// The cards of the plan across all known decks at `date`, as the day's plan counts
-    /// them (`StudySession.counts(for:at:calendar:newCardAllowance:)`): the share of the backlog included, the
-    /// rest of it, the catch-up, not.
+    /// them (`StudySession.counts(for:at:calendar:newCardAllowance:)`): every card due, overdue ones included.
     struct Due: Codable, Equatable, Sendable {
         var date: Date
         var count: Int

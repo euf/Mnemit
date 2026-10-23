@@ -4,7 +4,7 @@ import VocabCore
 /// The study stream in the style of flash cards: the question, a touch shows the answer,
 /// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stream has
 /// no end of its own: today's plan, which rests at the end of each round (`StreamRestView`, Next
-/// Round goes on), a short rest at the end of the plan, then catch-up, review ahead and practice.
+/// Round goes on), a short rest at the end of the plan, then practice.
 /// Every grade is saved at once, so leaving loses nothing. The bar shows the close button, today's
 /// done cards against the daily goal as a small ring with "Round 2 of 4", and the menu.
 ///
@@ -370,7 +370,7 @@ struct StudyView: View {
     private var restLayer: some View {
         StreamRestView(
             rest: motion.restSnapshot ?? model.rest, progress: ring.progress,
-            onKeepGoing: { leaveRest(model.keepGoing) }, onAddNewCards: { leaveRest(model.addNewCards) },
+            onAddNewCards: { leaveRest(model.addNewCards) },
             onNextRound: { leaveRest(model.continueRound) }, onDone: onClose,
             ringPlace: reduceMotion ? nil : { motion.ringRest = $0 }, staggers: !reduceMotion, arrived: motion.hasArrived || reduceMotion,
             frozenStep: motion.frozen?.lines
@@ -443,8 +443,7 @@ struct StudyView: View {
 }
 
 /// The middle of the bar: today's ring with its figures, and the stage before it when the
-/// learner is not at today's plan: catch-up and review ahead don't change the plan but
-/// fill the ring's laps, and practice changes neither the plan nor the schedule, so it
+/// learner is not at today's plan: practice changes neither the plan nor the schedule, so it
 /// shows no ring.
 ///
 /// A view of its own, so a new figure of the ring, which comes a moment after each grade, redraws
@@ -463,10 +462,6 @@ private struct StudyHeader: View {
             case .practiceMistakes, .practiceNewest:
                 Text("Practice")
                     .font(.subheadline.weight(.semibold))
-            case .catchUp:
-                Text("Catch Up")
-                    .font(.subheadline.weight(.semibold))
-                ringAndFigures
             case .plan, .rest:
                 ringAndFigures
             }

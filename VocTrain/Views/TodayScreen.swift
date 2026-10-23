@@ -69,7 +69,7 @@ struct TodayScreen: View {
         progress != nil && decks.allSatisfy { counts[$0.url] != nil } && (!decks.isEmpty || !paused.isEmpty)
     }
 
-    /// The cards left of today's plan, all decks: its share of the backlog included, never the backlog.
+    /// The cards left of today's plan, all decks: every card due, overdue ones included.
     private var due: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) }
     }
@@ -468,12 +468,6 @@ struct DeckRow: View {
                         Text("\(0) new · \(0) learning · \(0) review")
                             .font(.subheadline)
                             .redacted(reason: .placeholder)
-                    }
-                    if let catchUp = counts?.catchUp, catchUp > 0 {
-                        Text("+\(catchUp) to catch up this week")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
                     }
                 }
                 Spacer(minLength: 0)
