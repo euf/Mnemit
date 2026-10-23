@@ -17,14 +17,17 @@ the ring is closed.
 
 | # | Rule | Answers | Evidence |
 |---|---|---|---|
-| 1 | Your time is the median of the minutes you worked on your last 7 study days (4 minutes before any) | how much the learner really does | past performance as the base (Apple, Garmin; `goal-setting-research.md`); an achievable goal keeps people better than a hard one (Duolingo, `learning-flow-research.md`) |
+| 1 | Your time follows your recent work: each study day moves it toward the minutes you worked, 30 % of the way up and 20 % of the way down, and a day counts for at most twice what it asked (4 minutes before any) | how much the learner really does | an exponentially weighted average, as in training-load monitoring (Williams et al., Br J Sports Med 2017, "Better way to determine the acute:chronic workload ratio?"; the Banister impulse-response model); past performance as the base (Apple, Garmin; `goal-setting-research.md`); an achievable goal keeps people better than a hard one (Duolingo, `learning-flow-research.md`) |
 | 2 | The goal is the cards FSRS has due, most forgotten first, as many as fit your time | what to do today | FSRS: reviews are the work owed; the Anki manual caps reviews so a return after a break is manageable |
 | 3 | If time is left, new cards fill it, as many as next week can carry | how many new | new cards are FSRS's only free input; the Anki manual sizes them by the workload one can sustain |
 | 4 | The ring closes when the goal is done; work beyond it fills laps and raises your time | how to grow | growth comes from the learner |
 | 5 | The first two minutes keep the streak; one missed day is forgiven when the next ring closes | the habit | a low bar keeps the habit (Duolingo A/B, +3.3 % day-14 retention); slack keeps a streak (Streak Freeze, Apple's paused rings) |
 | 6 | Once the ring is closed: Catch Up while due cards are left, else "+10 new" with its cost next week | what next | an informed choice instead of a hidden one |
 
-Five numbers remain as choices to check on the owner's log: the 7-day window of the median, 4 minutes on
+The average is the sourced part. The asymmetry and the cap are our choices: growth comes from the learner, so the
+step up is the larger one (0.3 against 0.2); one short day shouldn't shrink the ring; one marathon day shouldn't
+triple it (a day counts for at most twice what it asked, so one step raises the time by at most 30 %).
+Five numbers remain as choices to check on the owner's log: the weights 0.3 and 0.2 with the cap of twice the ask, 4 minutes on
 the first day, the range of 2 to 30 minutes, the 2-minute streak step and the 7-day horizon of the week
 ahead. `decisions-evidence.md` holds the evidence for each and the measurement that would settle it.
 
@@ -60,7 +63,7 @@ reviews already due next week as well as today's, so the ring is a size the lear
 | Seconds | swipes one card | the card leaves past the edge; recalled, the ring steps by its share; done, the stack loses a sheet, the ring bumps and "in 8 days" shows beside it; back today, the card comes in again from the edge it left by and slides under the stack | done = FSRS sent the card to another day; partial credit by steps |
 | ≈ 2 min | the first cards of the day | the streak screen: "Streak kept", the streak in days | streak step of the day done (Duolingo: one lesson keeps the streak, apart from the goal) |
 | The day | today's cards | the ring closes: the ring screen with the day's figures and the week | done ≥ goal |
-| The week | closes rings on most days | seven rings in a row, Monday to Sunday, on the ring screen | ring per day from the log; the day's time follows the work of the last seven study days |
+| The week | closes rings on most days | seven rings in a row, Monday to Sunday, on the ring screen | ring per day from the log; the day's time follows the recent work |
 | Months | keeps the streak, learns | the streak in days in the ring's centre; words-in-memory milestones (50, 100, 250, 500, 1,000 …) | FSRS recall, the log |
 
 A missed day is forgiven when the next day closes its ring (the streak survives; Duolingo's Freeze

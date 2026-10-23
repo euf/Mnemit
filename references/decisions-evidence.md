@@ -27,8 +27,9 @@ memory; the ring shows effort and counts as done only what FSRS sent away.
 
 ## 2. The day's time
 
-Decision: median of the seconds worked over the last 7 study days, clamped to 2-30 minutes, 4 minutes
-before any work; nothing else changes it.
+Decision: an exponentially weighted average of the seconds worked, 0.3 of the way up and 0.2 down, a day
+counting for at most twice what it asked, clamped to 2-30 minutes, 4 minutes before any work; nothing else
+changes it.
 
 - `goal-setting-research.md` ("Implications for the ring rule") finds the learned base sound, the probe
   size, the 14 days and the 70 % unsourced. Opinion.
@@ -42,15 +43,17 @@ before any work; nothing else changes it.
   (https://blog.duolingo.com/improving-the-streak/, via `learning-flow-research.md`). Measured (company).
 - Lally 2010: one missed day moved automaticity by under half a point, repeated misses untested
   (`goal-setting-research.md` §2). Single study.
-- No source found for the 7-day window, the 2-30 minute clamp or the 4 minutes.
+- No source found for the two weights, the cap of twice, the 2-30 minute clamp or the 4 minutes.
 
 **Removed.** The probe (+10 % after three closed rings, with its 14-day rest) and the 70 % after a miss
 went for lack of evidence: the one trial of a 10 % climb (Buist 2008) found no gain in injuries or
-compliance, and one missed day is harmless (Lally 2010). A missed day now stays out of the median, as it
-has no work. The numbers that remain, 7 days, 2-30 minutes and 4 minutes, are choices, not findings:
-check them on EF's log by replaying `DailyGoal.nextTime` over `reviews.jsonl` with other windows and
+compliance, and one missed day is harmless (Lally 2010). A missed day stays out of the average, as it
+has no work. The numbers that remain, 0.3 and 0.2, the cap of twice, 2-30 minutes and 4 minutes, are choices, not findings:
+check them on EF's log by replaying `DailyGoal.nextTime` over `reviews.jsonl` with other weights, caps and
 clamps, and look at the share of study days with a closed ring (target 80-90 %). Change a number only when another
 variant beats it by 5 points of closure rate on at least 60 study days (our threshold).
+
+The average is the one of training-load monitoring (Williams et al., Br J Sports Med 2017, "Better way to determine the acute:chronic workload ratio?") and of the Banister impulse-response model; measured in other domains. The asymmetry and the cap are ours: growth comes from the learner, one short day shouldn't shrink the ring, one marathon day shouldn't triple it.
 
 ## 3. The streak step
 
@@ -219,7 +222,7 @@ step spacing is already measured.
 | Decision | Verdict | Action |
 |---|---|---|
 | 1 Partial credit | keep | none |
-| 2 The day's time | measure | replay the window and the clamp on EF's log |
+| 2 The day's time | measure | replay the weights, the cap and the clamp on EF's log |
 | 3 Streak step | keep | optional check of streak-only days (5-40 % band) |
 | 4 Two rests | measure | Forgot rate and `ms` by minute in streams of 15+ min |
 | 5 Backlog spread | measure | simulate ascending against descending R at the first backlog over 100 cards |

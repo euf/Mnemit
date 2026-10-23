@@ -4,7 +4,7 @@
 
 - Version 5.3 on `main`; the iPhone runs 5.4.1 (e779f28), signed until 30.10 The day's model (one ring, the
   stack, partial credit, the streak step, two rests, medals, the Progress screen) is
-  `references/learning-flow.md`; the ring's size (seconds, the median of the work) is
+  `references/learning-flow.md`; the ring's size (seconds, a weighted average of the work) is
   `references/daily-ring.md`; why: `references/learning-flow-research.md`, `goal-setting-research.md`,
   `speech-stutter-research.md`. Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review).
   Screens: `references/flows.md`, `references/screens.md`. Brief sub-agents by
@@ -65,7 +65,7 @@ In order of importance to EF. Brief sub-agents by `references/agent-token-costs.
 5. **Decisions to revisit by evidence** (`references/decisions-evidence.md`, 23.10: ten checked; medals
    changed in 5.3.6 after Deci, Koestner & Ryan 1999, the next medal shows no progress count; four to
    measure on EF's own log):
-   - The day's time (§2): replay the window (5 / 7 / 10 study days) and the clamp on the log; keep the
+   - The day's time (§2): replay the weights 0.3 / 0.2 and the cap of twice the ask on the log; keep the
      closure rate at 80-90 % of study days;
      needs 60 study days.
    - Rests (§4): Forgot rate and `ms` by minute in streams of 15+ minutes against 1 - R; add a skippable

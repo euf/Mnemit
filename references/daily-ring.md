@@ -62,23 +62,31 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   first study day, the same on every device, never rounded. The goal is the cards of the plan that fit
   it, and new cards fill what the plan's other cards leave.
 - **The rule**, one pure step per study day, `DailyGoal.nextTime(after:)`, over the days before it as plain
-  values (`DailyGoal.RingDay`): the median of the seconds worked on the last 7 study days, a study day
-  being a day with work, clamped to 120…1800 s; 240 s before any work. Nothing else changes it: a day
-  without work is out of the median and the days after it ask what they would have asked without it.
+  values (`DailyGoal.RingDay`): an exponentially weighted average of the seconds worked, asymmetric. The last
+  study day (a day with work) asked T (its `RingDay.time`) and worked W; W' = min(W, 2 × T)
+  (`dayCountsAtMost`); the next time is T + a × (W' − T), a = 0.3 (`risingWeight`) when W' > T and 0.2
+  (`fallingWeight`) otherwise, clamped to 120…1800 s; 240 s before any work. Nothing else changes it: a day
+  without work is no step and the days after it ask what they would have asked without it.
   worked(d) is the cards done on `d` at the day's own prices, new × new price + other × other price at
   the pace of the seven study days before `d`; laps count.
 - **Why**: the base is past work, as Apple's activity goal and Garmin's Auto Goal take it
   (`goal-setting-research.md`). An achievable ring keeps people: at Duolingo the highest daily-goal tier
   produced the fewest streaks (`learning-flow-research.md`). Growth comes from the learner's own extra
-  work, which the median takes in, and from the "+10 new" choice after the ring; the ring itself never
-  asks for more than the learner did. The +10 % probe and the 70 % after a miss are gone for want of
-  evidence (`decisions-evidence.md` §2). The 7 days, the 2–30 minutes and the 4 minutes are choices to
-  check on EF's log.
-- Model learners (`RingRuleTests`): one who works exactly the ring keeps it constant; one who works 20 min
-  a day has 20 min from the second day; a day without work changes nothing; ten seconds of work a day
-  leave 2 minutes and ten thousand 30.
+  work, which the average takes in, and from the "+10 new" choice after the ring; the ring itself never
+  asks for more than the learner did. The average is the exponentially weighted one of training-load
+  monitoring (Williams et al., Br J Sports Med 2017) and of the Banister impulse-response model: one number
+  carries the history. The asymmetry and the cap are our choices: the step up is the larger because growth
+  comes from the learner; the step down is smaller so that one short day doesn't shrink the ring; a day
+  counts for at most twice what it asked so that one marathon day doesn't triple it. The +10 % probe and the
+  70 % after a miss are gone for want of evidence (`decisions-evidence.md` §2). The weights 0.3 and 0.2, the
+  cap, the 2–30 minutes and the 4 minutes are choices to check on EF's log.
+- Model learners (`RingRuleTests`): one who works exactly the ring keeps it constant; one who works 10 min
+  a day from the first is asked 583 s on day 10 and never more than 600; one 3-minute day in a 10-minute run
+  lowers the next to 516 s, and 571 s are back on the fourth day after; one 25-minute day raises the next to
+  780 s (1.3 × T, the cap) and the excess falls by a fifth a day; a day without work changes nothing; ten
+  seconds of work a day leave 2 minutes from day 5 and ten thousand reach 30 on day 9.
 - `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring) with today live, and the
-  reason is `start` or `median`; `DailyProgressCache.Before.days` keeps the days before today.
+  reason is `start` or `recentWork`; `DailyProgressCache.Before.days` keeps the days before today.
 
 ## New-card allowance
 
