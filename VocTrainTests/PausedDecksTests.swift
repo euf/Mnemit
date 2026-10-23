@@ -167,7 +167,7 @@ struct PausedDecksTests {
     @Test func theRoundsOfTheDayAreNoneOfAPausedDecksStream() throws {
         let progress = DailyProgress(
             ring: DailyRing(done: 3, goal: 10), streak: Streak(days: 1, repairCards: nil),
-            roundPlan: DayRounds(otherCards: 10, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), capacity: 2))
+            roundPlan: DayRounds(otherCards: 10, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), seconds: 240))
         let active = try VocabularyDocument(deck: deck(fresh(3), isPaused: false))
         let paused = try VocabularyDocument(deck: deck(fresh(3), isPaused: true))
         #expect(RoundGuide(progress: progress, document: active) != nil)

@@ -4,6 +4,28 @@
     "%@ %@": {
       "shouldTranslate": false
     },
+    "%@ min": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Min."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ λεπ."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ мин"
+          }
+        }
+      }
+    },
     "%@ recalled": {
       "localizations": {
         "de": {
@@ -3527,6 +3549,28 @@
         }
       }
     },
+    "A day asks the median of the work of the last seven study days, a tenth more after three closed rings in a row unless a try in the last two weeks left its ring open, and 30 % less the day after a missed one. The streak step is the cards that fit the first two minutes of the plan.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Tag verlangt den Median der Arbeit der letzten sieben Lerntage, ein Zehntel mehr nach drei geschlossenen Ringen in Folge, außer ein Versuch in den letzten zwei Wochen ließ seinen Ring offen, und 30 % weniger am Tag nach einem verpassten. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η ημέρα ζητά τη διάμεσο της δουλειάς των τελευταίων επτά ημερών μελέτης, ένα δέκατο παραπάνω μετά από τρεις κλειστούς κύκλους στη σειρά, εκτός αν μια δοκιμή των τελευταίων δύο εβδομάδων άφησε τον κύκλο της ανοιχτό, και 30 % λιγότερο την ημέρα μετά από μια χαμένη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "День просит медиану работы за последние семь дней учёбы, на десятую часть больше после трёх закрытых колец подряд, если за последние две недели такая проба не оставила кольцо открытым, и на 30 % меньше на следующий день после пропущенного. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
+          }
+        }
+      }
+    },
     "A deck name can't be empty, start with a dot or contain “/” or “:”.": {
       "localizations": {
         "de": {
@@ -3611,28 +3655,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Карточка на воспроизведение (с родного языка на иностранный) остаётся закрытой, пока у карточки на узнавание её слова (с иностранного на родной) интервал не станет не меньше этого значения. Из карточек одного слова в день спрашивается только одна. «Новых карточек в день» учитывает все остальные новые карточки."
-          }
-        }
-      }
-    },
-    "A round is two minutes of work. A day takes one step from the day before: one round more if the ring was closed on each of the two days before, one fewer if the day before ended open, else the same.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Runde sind zwei Minuten Arbeit. Ein Tag macht einen Schritt vom Vortag: eine Runde mehr, wenn der Ring an jedem der zwei Tage davor geschlossen war, eine weniger, wenn der Vortag mit offenem Ring endete, sonst gleich viele."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ένας γύρος είναι δύο λεπτά δουλειάς. Κάθε ημέρα κάνει ένα βήμα από την προηγούμενη: ένας γύρος παραπάνω αν ο κύκλος είχε κλείσει και τις δύο προηγούμενες ημέρες, ένας λιγότερος αν η προηγούμενη ημέρα έληξε με ανοιχτό κύκλο, αλλιώς τόσοι όσοι."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Раунд — это две минуты работы. День делает один шаг от предыдущего: на раунд больше, если кольцо было закрыто в каждый из двух предыдущих дней, на раунд меньше, если предыдущий день закончился с открытым кольцом, иначе столько же."
           }
         }
       }
@@ -4385,6 +4407,28 @@
         }
       }
     },
+    "After a miss −30 %": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach einem Fehltag −30 %"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μετά από χαμένη ημέρα −30 %"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После пропуска −30 %"
+          }
+        }
+      }
+    },
     "Again": {
       "localizations": {
         "de": {
@@ -4847,6 +4891,28 @@
         }
       }
     },
+    "Asked (min)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verlangt (Min.)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ζητήθηκαν (λεπτά)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Задано (мин)"
+          }
+        }
+      }
+    },
     "At the start of the day": {
       "localizations": {
         "de": {
@@ -5066,50 +5132,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отмена"
-          }
-        }
-      }
-    },
-    "Capacity": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kapazität"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Χωρητικότητα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ёмкость дня"
-          }
-        }
-      }
-    },
-    "Capacity (rounds)": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kapazität (Runden)"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Χωρητικότητα (γύροι)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ёмкость дня (раунды)"
           }
         }
       }
@@ -9778,6 +9800,28 @@
         }
       }
     },
+    "Median": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Median"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Διάμεσος"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Медиана"
+          }
+        }
+      }
+    },
     "Memory": {
       "localizations": {
         "de": {
@@ -11758,6 +11802,28 @@
         }
       }
     },
+    "Probe +10 %": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probe +10 %"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δοκιμή +10 %"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проба +10 %"
+          }
+        }
+      }
+    },
     "Production": {
       "localizations": {
         "de": {
@@ -13122,50 +13188,6 @@
         }
       }
     },
-    "Round ends (cards)": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ende der Runden (Karten)"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τέλος γύρων (κάρτες)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Конец раундов (карточки)"
-          }
-        }
-      }
-    },
-    "Rounds": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runden"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Γύροι"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Раунды"
-          }
-        }
-      }
-    },
     "Sample card: %@, %@": {
       "localizations": {
         "de": {
@@ -14178,6 +14200,28 @@
         }
       }
     },
+    "Start": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αρχή"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Старт"
+          }
+        }
+      }
+    },
     "State": {
       "localizations": {
         "de": {
@@ -14218,28 +14262,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Статистика"
-          }
-        }
-      }
-    },
-    "Step": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schritt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Βήμα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Шаг"
           }
         }
       }
@@ -14328,6 +14350,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Стрик спасён"
+          }
+        }
+      }
+    },
+    "Streak step (cards)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serienschritt (Karten)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βήμα σερί (κάρτες)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шаг стрика (карточки)"
           }
         }
       }
@@ -14948,28 +14992,6 @@
         }
       }
     },
-    "The first round of a day keeps the streak. One missed day is repaired when the next day closes its ring; two missed days in a row end it.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die erste Runde eines Tages sichert die Serie. Ein verpasster Tag wird ausgeglichen, wenn der nächste Tag seinen Ring schließt; zwei verpasste Tage hintereinander beenden sie."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ο πρώτος γύρος της ημέρας κρατά το σερί. Μία χαμένη ημέρα αναπληρώνεται όταν η επόμενη ημέρα κλείσει τον κύκλο της· δύο χαμένες ημέρες στη σειρά το τερματίζουν."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Первый раунд дня сохраняет стрик. Один пропущенный день наверстывается, когда следующий день закрывает своё кольцо; два пропущенных дня подряд обрывают стрик."
-          }
-        }
-      }
-    },
     "The first two minutes keep your streak. Close the ring, and the day is done.": {
       "localizations": {
         "de": {
@@ -15058,24 +15080,24 @@
         }
       }
     },
-    "The plan is what FSRS sets for the day: the reviews due and the cards in learning. Of the overdue cards it takes a share, at least a seventh and at least what a normal day asks. New cards fill what the day's capacity leaves after reviews, up to each deck's ceiling. The rest of the overdue cards is catch-up.": {
+    "The plan is what FSRS sets for the day: the reviews due and the cards in learning. Of the overdue cards it takes a share, at least a seventh and at least what a normal day asks. New cards fill what the day's time leaves after reviews, up to each deck's ceiling. The rest of the overdue cards is catch-up.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Der Plan ist, was FSRS für den Tag ansetzt: die fälligen Abfragen und die lernenden Karten. Von den überfälligen Karten übernimmt er einen Anteil, mindestens ein Siebtel und mindestens so viele, wie ein normaler Tag verlangt. Neue Karten füllen, was die Kapazität des Tages nach den Abfragen übrig lässt, bis zur Obergrenze jedes Stapels. Der Rest der überfälligen Karten ist Nachholen."
+            "value": "Der Plan ist, was FSRS für den Tag ansetzt: die fälligen Abfragen und die lernenden Karten. Von den überfälligen Karten übernimmt er einen Anteil, mindestens ein Siebtel und mindestens so viele, wie ein normaler Tag verlangt. Neue Karten füllen, was die Zeit des Tages nach den Abfragen übrig lässt, bis zur Obergrenze jedes Stapels. Der Rest der überfälligen Karten ist Nachholen."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Το πρόγραμμα είναι ό,τι ορίζει το FSRS για την ημέρα: οι κάρτες προς επανάληψη και οι κάρτες σε εκμάθηση. Από τις εκπρόθεσμες κάρτες παίρνει ένα μερίδιο, τουλάχιστον το ένα έβδομο και τουλάχιστον όσες ζητά μια κανονική ημέρα. Οι νέες κάρτες γεμίζουν ό,τι αφήνει η χωρητικότητα της ημέρας μετά τις επαναλήψεις, μέχρι το ανώτατο όριο κάθε τράπουλας. Τις υπόλοιπες εκπρόθεσμες κάρτες τις προλαβαίνεις πέρα από το πρόγραμμα."
+            "value": "Το πρόγραμμα είναι ό,τι ορίζει το FSRS για την ημέρα: οι κάρτες προς επανάληψη και οι κάρτες σε εκμάθηση. Από τις εκπρόθεσμες κάρτες παίρνει ένα μερίδιο, τουλάχιστον το ένα έβδομο και τουλάχιστον όσες ζητά μια κανονική ημέρα. Οι νέες κάρτες γεμίζουν ό,τι αφήνει ο χρόνος της ημέρας μετά τις επαναλήψεις, μέχρι το ανώτατο όριο κάθε τράπουλας. Τις υπόλοιπες εκπρόθεσμες κάρτες τις προλαβαίνεις πέρα από το πρόγραμμα."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "План — это то, что FSRS назначает на день: карточки к повторению и карточки в обучении. Из просроченных карточек он берёт долю: не меньше седьмой части и не меньше того, что просит обычный день. Новые карточки заполняют то, что остаётся от ёмкости дня после повторений, вплоть до потолка каждой колоды. Остальные просроченные карточки можно догнать сверх плана."
+            "value": "План — это то, что FSRS назначает на день: карточки к повторению и карточки в обучении. Из просроченных карточек он берёт долю: не меньше седьмой части и не меньше того, что просит обычный день. Новые карточки заполняют то, что остаётся от времени дня после повторений, вплоть до потолка каждой колоды. Остальные просроченные карточки можно догнать сверх плана."
           }
         }
       }
@@ -15208,6 +15230,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Лог оценок этой колоды повреждён (строка %lld)."
+          }
+        }
+      }
+    },
+    "The streak step of a day, the cards that fit the first two minutes of its plan, keeps the streak. One missed day is repaired when the next day closes its ring; two missed days in a row end it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Serienschritt eines Tages, die Karten der ersten zwei Minuten seines Plans, sichert die Serie. Ein verpasster Tag wird ausgeglichen, wenn der nächste Tag seinen Ring schließt; zwei verpasste Tage hintereinander beenden sie."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το βήμα του σερί μιας ημέρας, οι κάρτες των πρώτων δύο λεπτών του προγράμματός της, κρατά το σερί. Μία χαμένη ημέρα αναπληρώνεται όταν η επόμενη ημέρα κλείσει τον κύκλο της· δύο χαμένες ημέρες στη σειρά το τερματίζουν."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шаг стрика дня, карточки первых двух минут его плана, сохраняет стрик. Один пропущенный день наверстывается, когда следующий день закрывает своё кольцо; два пропущенных дня подряд обрывают стрик."
           }
         }
       }
@@ -15582,6 +15626,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "План дня"
+          }
+        }
+      }
+    },
+    "Today's time": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeit von heute"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο χρόνος της ημέρας"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Время сегодня"
           }
         }
       }
@@ -16466,6 +16532,28 @@
         }
       }
     },
+    "Why": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grund"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Γιατί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Почему"
+          }
+        }
+      }
+    },
     "Word Key": {
       "localizations": {
         "de": {
@@ -16572,6 +16660,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Слов в памяти"
+          }
+        }
+      }
+    },
+    "Worked (min)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gearbeitet (Min.)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μελέτη (λεπτά)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сделано (мин)"
           }
         }
       }

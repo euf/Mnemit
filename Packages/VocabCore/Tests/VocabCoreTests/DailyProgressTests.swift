@@ -571,9 +571,12 @@ struct DailyProgressTests {
         }
     }
 
-    /// By default every day is judged by its plan alone, whatever date the test is set on.
-    func evaluate(_ decks: [Deck], at date: Date? = nil, planRuleStart: Int = .min) -> DailyProgress {
-        DailyProgress.evaluate(decks.map { DeckActivity(deck: $0, calendar: calendar) }, at: date ?? now, calendar: calendar, planRuleStart: planRuleStart)
+    /// By default every day is judged by its plan alone, whatever date the test is set on. The sizes are those of
+    /// `DailyGoal.RingRule.rounds` unless a test names `.follows`: the arithmetic of the plans and of the streak in
+    /// these suites is set for the rounds that rule gives their short histories. The rule that follows the work has
+    /// `RingRuleTests` for its step and the tests of `.follows` in `DailyRoundsProgressTests` for the days.
+    func evaluate(_ decks: [Deck], at date: Date? = nil, planRuleStart: Int = .min, rule: DailyGoal.RingRule = .rounds) -> DailyProgress {
+        DailyProgress.evaluate(decks.map { DeckActivity(deck: $0, calendar: calendar) }, at: date ?? now, calendar: calendar, planRuleStart: planRuleStart, rule: rule)
     }
 
     @Test func reviewsAreCountedByStudyDayWithTheRolloverAtFourInTheMorning() throws {
@@ -832,7 +835,7 @@ struct DailyProgressTests {
         var deck = try Deck(learningOptions: options(), cards: (0..<50).map { due("c\($0)", onDay: today) })
         let progress = evaluate([deck])
         // Three rounds of two minutes hold 36 reviews of 10 s; the plan, and the cards left, are 50.
-        #expect(progress.capacity == 3)
+        #expect(progress.time == 3 * 120)
         #expect(progress.ring == DailyRing(done: 0, goal: 36))
         #expect(progress.cardsLeft == 50)
         reviewPlan(of: &deck, at: now)
@@ -1070,7 +1073,7 @@ struct DailyProgressTests {
         var deck = try Deck(learningOptions: options(), cards: onTime + backlog)
         let progress = evaluate([deck])
         // The plan is the on-time cards and the share of the backlog; the goal is the 48 reviews of four rounds.
-        #expect(progress.capacity == 4)
+        #expect(progress.time == 4 * 120)
         #expect(progress.ring == DailyRing(done: 0, goal: 48))
         #expect(progress.cardsLeft == 12 + 215)
         let counts = StudySession.counts(for: deck, at: now, calendar: calendar)

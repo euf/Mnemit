@@ -3,16 +3,19 @@ import Testing
 
 @testable import VocabCore
 
-/// The day cut into rounds: how many a learner can take (capacity), how many new cards it admits, and
-/// where each round ends.
+/// The day's time and where it ends: the streak step and the goal in cards, how many new cards the time admits,
+/// and the rounds of the earlier rule (`DailyGoal.RingRule.rounds`).
 struct DailyRoundsTests {
     /// A learner whose new card takes 30 s and any other 10 s.
     let pace = Pace(newCard: 30, otherCard: 10)
 
     // MARK: Capacity
 
-    @Test func aRoundIsTwoMinutesAndTheFirstDayHoldsTwo() {
-        #expect(DailyGoal.roundSeconds == 120)
+    @Test func theStreakStepIsTwoMinutesAndTheFirstDayHoldsFour() {
+        #expect(DailyGoal.streakSeconds == 120)
+        #expect(DailyGoal.initialSeconds == 240)
+        #expect(DailyGoal.timeRange == 120...1800)
+        // The rounds rule: two rounds of the step to begin with, one to fifteen.
         #expect(DailyGoal.initialCapacity == 2)
         #expect(DailyGoal.capacityRange == 1...15)
     }
@@ -40,22 +43,22 @@ struct DailyRoundsTests {
     // MARK: Admission
 
     @Test func newCardsFillTheTimeThatTheReviewsLeave() {
-        // Two rounds, 240 s: 60 reviews take 150 s at 10 s a card, 90 s are left for new cards of 30 s.
-        #expect(DailyGoal.newCardsAllowed(capacity: 2, otherCards: 15, pace: pace) == 3)
-        #expect(DailyGoal.newCardsAllowed(capacity: 2, otherCards: 0, pace: pace) == 8)
-        #expect(DailyGoal.newCardsAllowed(capacity: 5, otherCards: 20, pace: pace) == 13)
+        // 240 s: 60 reviews take 150 s at 10 s a card, 90 s are left for new cards of 30 s.
+        #expect(DailyGoal.newCardsAllowed(seconds: 2 * 120, otherCards: 15, pace: pace) == 3)
+        #expect(DailyGoal.newCardsAllowed(seconds: 2 * 120, otherCards: 0, pace: pace) == 8)
+        #expect(DailyGoal.newCardsAllowed(seconds: 5 * 120, otherCards: 20, pace: pace) == 13)
     }
 
     @Test func aDayWithMoreReviewsThanItsTimeAdmitsNoNewCards() {
-        #expect(DailyGoal.newCardsAllowed(capacity: 2, otherCards: 24, pace: pace) == 0)
-        #expect(DailyGoal.newCardsAllowed(capacity: 2, otherCards: 25, pace: pace) == 0)
-        #expect(DailyGoal.newCardsAllowed(capacity: 1, otherCards: 500, pace: pace) == 0)
+        #expect(DailyGoal.newCardsAllowed(seconds: 2 * 120, otherCards: 24, pace: pace) == 0)
+        #expect(DailyGoal.newCardsAllowed(seconds: 2 * 120, otherCards: 25, pace: pace) == 0)
+        #expect(DailyGoal.newCardsAllowed(seconds: 1 * 120, otherCards: 500, pace: pace) == 0)
     }
 
     @Test func aSliverOfTimeDoesNotAdmitACard() {
         // 240 − 23 × 10 = 10 s: a third of a new card.
-        #expect(DailyGoal.newCardsAllowed(capacity: 2, otherCards: 23, pace: pace) == 0)
-        #expect(DailyGoal.newCardsAllowed(capacity: 2, otherCards: 21, pace: pace) == 1)
+        #expect(DailyGoal.newCardsAllowed(seconds: 2 * 120, otherCards: 23, pace: pace) == 0)
+        #expect(DailyGoal.newCardsAllowed(seconds: 2 * 120, otherCards: 21, pace: pace) == 1)
     }
 
     @Test func theAllowanceIsSharedByTheCeilingsOfTheDecksByLargestRemainder() {
@@ -84,56 +87,62 @@ struct DailyRoundsTests {
         }
     }
 
-    // MARK: Rounds
+    // MARK: The streak step and the goal
 
-    @Test func aPlanOfNewCardsEndsARoundEveryFourCards() {
-        let rounds = DayRounds(otherCards: 0, newCards: 8, pace: pace, capacity: 2)
+    @Test func aPlanOfNewCardsHasTheStreakStepAtTheFirstCardThatReachesTwoMinutes() {
+        let rounds = DayRounds(otherCards: 0, newCards: 8, pace: pace, seconds: 240)
         #expect(rounds.ends == [4, 8])
         #expect(rounds.goal == 8)
         #expect(rounds.rounds == 2)
     }
 
-    @Test func aMixOfReviewsAndNewCardsEndsEachRoundAtTheFirstCardThatReachesIt() {
-        // 10 s a review: 12 reviews take 120 s. Then new cards of 30 s: 4 more per round.
-        let rounds = DayRounds(otherCards: 12, newCards: 5, pace: pace, capacity: 3)
-        #expect(rounds.ends == [12, 16, 17])
-        // The last round is short: it ends at the goal, not at a full round.
+    @Test func aMixOfReviewsAndNewCardsHasItsStreakStepAtTheFirstCardThatReachesTwoMinutes() {
+        // 10 s a review: 12 reviews take 120 s: the streak step. The five new cards of 30 s fit the 360 s: the goal.
+        let rounds = DayRounds(otherCards: 12, newCards: 5, pace: pace, seconds: 360)
+        #expect(rounds.ends == [12, 17])
         #expect(rounds.goal == 17)
-        // Reviews that don't divide a round: 7 reviews take 70 s, the 4th new card reaches 120 s at 70 + 30 + 30 = 130.
-        let uneven = DayRounds(otherCards: 7, newCards: 6, pace: pace, capacity: 3)
+        // Reviews that don't divide the step: 7 reviews take 70 s, the 2nd new card reaches 120 s at 70 + 30 + 30 = 130.
+        let uneven = DayRounds(otherCards: 7, newCards: 6, pace: pace, seconds: 360)
         #expect(uneven.ends == [9, 13])
         #expect(uneven.goal == 13)
     }
 
-    @Test func theGoalIsTheCardsThatFitAndMoreReviewsThanTheTimeStayInThePlanOnly() {
-        // Capacity 2 holds 24 reviews of 10 s: the goal is those, the plan has 100.
-        let rounds = DayRounds(otherCards: 100, newCards: 0, pace: pace, capacity: 2)
+    @Test func theGoalIsTheCardsThatFitTheSecondsAndMoreReviewsThanTheTimeStayInThePlanOnly() {
+        // 240 s hold 24 reviews of 10 s: the goal is those, the plan has 100.
+        let rounds = DayRounds(otherCards: 100, newCards: 0, pace: pace, seconds: 240)
         #expect(rounds.goal == 24)
         #expect(rounds.ends == [12, 24])
         // New cards are admitted after the reviews only: none fit behind a full day of them.
-        #expect(DayRounds(otherCards: 100, newCards: 10, pace: pace, capacity: 2).goal == 24)
+        #expect(DayRounds(otherCards: 100, newCards: 10, pace: pace, seconds: 240).goal == 24)
+    }
+
+    @Test func theSecondsAreNotRoundedIntoSteps() {
+        #expect(DayRounds(otherCards: 100, newCards: 0, pace: pace, seconds: 250).goal == 25)
+        #expect(DayRounds(otherCards: 0, newCards: 10, pace: pace, seconds: 269).goal == 8)
+        #expect(DayRounds(otherCards: 0, newCards: 10, pace: pace, seconds: 270).goal == 9)
+        #expect(DailyGoal.newCardsAllowed(seconds: 269, otherCards: 0, pace: pace) == 8)
     }
 
     @Test func aPlanThatDoesNotFillItsTimeEndsAtItself() {
-        let rounds = DayRounds(otherCards: 5, newCards: 0, pace: pace, capacity: 4)
+        let rounds = DayRounds(otherCards: 5, newCards: 0, pace: pace, seconds: 480)
         #expect(rounds.ends == [5])
         #expect(rounds.rounds == 1)
     }
 
-    @Test func aCardThatCostsMoreThanARoundIsItsOwnRoundsAndATinyPlanHasAGoalOfOne() {
+    @Test func aCardThatCostsMoreThanTheStreakStepIsItsEndAndATinyPlanHasAGoalOfOne() {
         let slow = Pace(newCard: 300, otherCard: 10)
-        let rounds = DayRounds(otherCards: 0, newCards: 3, pace: slow, capacity: 2)
-        // One card takes 300 s and fills the two rounds there are: the goal is that one card.
+        let rounds = DayRounds(otherCards: 0, newCards: 3, pace: slow, seconds: 240)
+        // One card takes 300 s and fills the day: the goal is that one card, and it is the streak step too.
         #expect(rounds.goal == 1)
         #expect(rounds.ends == [1])
-        // Within a longer day a card of 300 s ends the rounds it spans: two cards fill the five rounds of 600 s.
-        #expect(DayRounds(otherCards: 0, newCards: 3, pace: slow, capacity: 5).ends == [1, 2])
+        // Within a longer day the first card ends the streak step and two cards fill the 600 s.
+        #expect(DayRounds(otherCards: 0, newCards: 3, pace: slow, seconds: 600).ends == [1, 2])
         // The plan has a card, so the goal is at least one even when it costs more than the whole day.
-        #expect(DayRounds(otherCards: 0, newCards: 3, pace: Pace(newCard: 900, otherCard: 10), capacity: 1).goal == 1)
+        #expect(DayRounds(otherCards: 0, newCards: 3, pace: Pace(newCard: 900, otherCard: 10), seconds: 120).goal == 1)
     }
 
-    @Test func aPlanWithoutCardsHasNoRounds() {
-        let rounds = DayRounds(otherCards: 0, newCards: 0, pace: pace, capacity: 3)
+    @Test func aPlanWithoutCardsHasNoEnds() {
+        let rounds = DayRounds(otherCards: 0, newCards: 0, pace: pace, seconds: 360)
         #expect(rounds.ends.isEmpty)
         #expect(rounds.goal == 0)
         #expect(rounds.rounds == 0)
@@ -141,40 +150,40 @@ struct DailyRoundsTests {
         #expect(rounds.minutesToNextRound(cardsDone: 0) == nil)
     }
 
-    @Test func theRoundsDoneAndTheWayToTheNextOneFollowTheCardsDone() {
-        let rounds = DayRounds(otherCards: 12, newCards: 5, pace: pace, capacity: 3)
+    @Test func theEndsDoneAndTheWayToTheNextOneFollowTheCardsDone() {
+        let rounds = DayRounds(otherCards: 12, newCards: 5, pace: pace, seconds: 360)
         #expect(rounds.roundsDone(cardsDone: 0) == 0)
         #expect(rounds.roundsDone(cardsDone: 11) == 0)
         #expect(rounds.roundsDone(cardsDone: 12) == 1)
-        #expect(rounds.roundsDone(cardsDone: 16) == 2)
-        #expect(rounds.roundsDone(cardsDone: 17) == 3)
-        #expect(rounds.roundsDone(cardsDone: 60) == 3)
+        #expect(rounds.roundsDone(cardsDone: 16) == 1)
+        #expect(rounds.roundsDone(cardsDone: 17) == 2)
+        #expect(rounds.roundsDone(cardsDone: 60) == 2)
         #expect(rounds.cardsToNextRound(cardsDone: 0) == 12)
         #expect(rounds.cardsToNextRound(cardsDone: 5) == 7)
-        #expect(rounds.cardsToNextRound(cardsDone: 12) == 4)
+        #expect(rounds.cardsToNextRound(cardsDone: 12) == 5)
         #expect(rounds.cardsToNextRound(cardsDone: 17) == nil)
         // 12 reviews at 10 s are 2 minutes; from 6 done, 60 s are left, one minute.
         #expect(rounds.minutesToNextRound(cardsDone: 0) == 2)
         #expect(rounds.minutesToNextRound(cardsDone: 6) == 1)
         #expect(rounds.minutesToNextRound(cardsDone: 11) == 0)
-        #expect(rounds.minutesToNextRound(cardsDone: 12) == 2)
+        // Five new cards at 30 s are 150 s: three minutes up.
+        #expect(rounds.minutesToNextRound(cardsDone: 12) == 3)
         #expect(rounds.minutesToNextRound(cardsDone: 17) == nil)
     }
 
-    @Test func eachRoundHasItsMinutesAtTheDaysPace() {
-        // 12 reviews at 10 s are 2 minutes; 4 new cards at 30 s are 2 more; the last new card, 30 s, is under one: 0.
-        let rounds = DayRounds(otherCards: 12, newCards: 5, pace: pace, capacity: 3)
-        #expect(rounds.ends == [12, 16, 17])
+    @Test func eachStretchHasItsMinutesAtTheDaysPace() {
+        // 12 reviews at 10 s are 2 minutes; the five new cards at 30 s are 150 s, three minutes up.
+        let rounds = DayRounds(otherCards: 12, newCards: 5, pace: pace, seconds: 360)
+        #expect(rounds.ends == [12, 17])
         #expect(rounds.minutes(ofRound: 1) == 2)
-        #expect(rounds.minutes(ofRound: 2) == 2)
-        #expect(rounds.minutes(ofRound: 3) == 0)
+        #expect(rounds.minutes(ofRound: 2) == 3)
         #expect(rounds.minutes(ofRound: 0) == nil)
-        #expect(rounds.minutes(ofRound: 4) == nil)
-        #expect(DayRounds(otherCards: 0, newCards: 0, pace: pace, capacity: 2).minutes(ofRound: 1) == nil)
+        #expect(rounds.minutes(ofRound: 3) == nil)
+        #expect(DayRounds(otherCards: 0, newCards: 0, pace: pace, seconds: 240).minutes(ofRound: 1) == nil)
     }
 
     @Test func aPriceBelowASecondIsASecond() {
         #expect(Pace(newCard: 0, otherCard: -3) == Pace(newCard: 1, otherCard: 1))
-        #expect(DayRounds(otherCards: 3, newCards: 3, pace: Pace(newCard: 0, otherCard: 0), capacity: 1).goal == 6)
+        #expect(DayRounds(otherCards: 3, newCards: 3, pace: Pace(newCard: 0, otherCard: 0), seconds: 120).goal == 6)
     }
 }

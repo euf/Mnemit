@@ -16,7 +16,7 @@ extension DailyProgressTests {
     /// Everything a progress holds but the allowances, which have a place for each deck given.
     func figures(_ progress: DailyProgress) -> [AnyHashable] {
         [
-            progress.ring, progress.streak, progress.cardsLeft, progress.newCardsLeft, progress.pace, progress.capacity, progress.roundPlan,
+            progress.ring, progress.streak, progress.cardsLeft, progress.newCardsLeft, progress.pace, progress.time, progress.roundPlan,
             progress.streakKeptToday, progress.memory,
         ]
     }

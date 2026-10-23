@@ -18,22 +18,23 @@ struct HowTodayWorksTests {
         return options
     }
 
-    /// Four rounds of a plan of 28 cards that are not new and six that are, at the default pace: the rounds
-    /// end at cards 12, 24, 31 and 34.
+    /// Eight minutes of a plan of 28 cards that are not new and six that are, at the default pace: the streak
+    /// step ends at card 12 and the day at 34.
     static var progress: DailyProgress {
         DailyProgress(
             ring: DailyRing(done: 18, goal: 34), streak: Streak(days: 12, repairCards: nil), cardsLeft: 22, newCardsLeft: 5,
-            pace: Pace(newCard: 31.4, otherCard: 9.2), capacity: 4,
-            roundPlan: DayRounds(otherCards: 28, newCards: 12, pace: Pace(), capacity: 4), streakKeptToday: true, newCardAllowances: [6])
+            pace: Pace(newCard: 31.4, otherCard: 9.2), time: 480,
+            roundPlan: DayRounds(otherCards: 28, newCards: 12, pace: Pace(), seconds: 480), streakKeptToday: true, newCardAllowances: [6])
     }
 
     static var breakdown: DayBreakdown {
         let days = [
-            DayBreakdown.Day(start: day.addingTimeInterval(-2 * 86400), capacity: 3, step: 0, isClosed: true),
-            DayBreakdown.Day(start: day.addingTimeInterval(-86400), capacity: 4, step: 1, isClosed: false),
-            DayBreakdown.Day(start: day, capacity: 3, step: -1, isClosed: false),
+            DayBreakdown.Day(start: day.addingTimeInterval(-2 * 86400), time: 360, isClosed: true, worked: 360, reason: .median),
+            DayBreakdown.Day(start: day.addingTimeInterval(-86400), time: 480, isClosed: false, worked: 420, reason: .probe),
+            DayBreakdown.Day(start: day, time: 360, isClosed: false, worked: 150, reason: .afterMiss),
         ]
         return DayBreakdown(
+            rule: .follows,
             plan: DayBreakdown.Plan(reviewsDue: 20, backlogTaken: 8, backlog: 30, learning: 2, newAdmitted: 6),
             decks: [DayBreakdown.DeckNewCards(allowance: 6, ceiling: 27, admitted: 6)], catchUp: 22, days: days,
             newCards: DayBreakdown.PaceBasis(durations: 214, gaps: 120, reviews: 500, doneCards: 200),
@@ -57,7 +58,7 @@ struct HowTodayWorksTests {
 
     @Test func theRowsAreTheFiguresOfTheObjectsInTheOrderOfTheScreen() throws {
         let content = Self.content()
-        #expect(content.sections.map(\.title) == ["Today's Plan", "Capacity", "Pace", "Streak", "Words in Memory", "Swipes", "FSRS"])
+        #expect(content.sections.map(\.title) == ["Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Swipes", "FSRS"])
         #expect(content.sections.allSatisfy { !$0.footer.isEmpty })
 
         let plan = values(content.sections[0])
@@ -67,22 +68,25 @@ struct HowTodayWorksTests {
         #expect(plan["New cards admitted"] == "6")
         #expect(plan["Greek B1"] == "6")
         #expect(content.sections[0].rows.contains(.value(label: "Greek B1", value: "6", note: "Ceiling 27 (limits 20 new / 7 production)")))
-        #expect(plan["Daily goal (cards)"] == "34")
-        #expect(plan["Rounds"] == "4")
-        #expect(plan["Round ends (cards)"] == "12 · 24 · 31 · 34")
         #expect(plan["Cards done"] == "18")
         #expect(plan["Cards left"] == "22")
         #expect(plan["Catch-up beyond the plan"] == "22")
 
-        let capacity = content.sections[1]
-        #expect(values(capacity)["Capacity (rounds)"] == "4")
-        #expect(values(capacity)["Time of the day"] == "8 min")
-        let table = try #require(capacity.rows.compactMap { row -> ([String], [[String]])? in if case let .table(header, rows) = row { (header, rows) } else { nil } }.first)
-        #expect(table.0 == ["Day", "Rounds", "Ring", "Step"])
-        // The newest day first, with the sign of the step.
+        let time = content.sections[1]
+        #expect(values(time)["Time of the day"] == "\((8.0).formatted(.number.precision(.fractionLength(1)))) min")
+        #expect(values(time)["Streak step (cards)"] == "12")
+        #expect(values(time)["Daily goal (cards)"] == "34")
+        let table = try #require(time.rows.compactMap { row -> ([String], [[String]])? in if case let .table(header, rows) = row { (header, rows) } else { nil } }.first)
+        #expect(table.0 == ["Day", "Asked (min)", "Worked (min)", "Ring", "Why"])
+        // The newest day first: the minutes the ring asked and the minutes worked, the ring, and why the time.
         let earlier = Self.day.addingTimeInterval(-86400).formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
         #expect(table.1.map { $0[0] }.first == "Today" && table.1.map { $0[0] }[1] == earlier)
-        #expect(table.1.map { Array($0.dropFirst()) } == [["3", "Open", "−1"], ["4", "Open", "+1"], ["3", "Closed", "0"]])
+        func one(_ value: Double) -> String { value.formatted(.number.precision(.fractionLength(1))) }
+        #expect(
+            table.1.map { Array($0.dropFirst()) } == [
+                [one(6), one(2.5), "Open", "After a miss −30 %"], [one(8), one(7), "Open", "Probe +10 %"], [one(6), one(6), "Closed", "Median"],
+            ])
+        #expect(time.footer.hasPrefix("A day asks the median of the work of the last seven study days"))
 
         let pace = content.sections[2].rows
         #expect(pace[0] == .value(label: "New card", value: "31 s", note: "Durations (214)"))
@@ -127,6 +131,15 @@ struct HowTodayWorksTests {
         #expect(numbers.hasPrefix("0.2120 1.2931 2.3065 8.2956"))
     }
 
+    @Test func aDayWithoutAReasonShowsADash() throws {
+        var breakdown = Self.breakdown
+        breakdown.rule = .rounds
+        breakdown.days = breakdown.days.map { var day = $0; day.reason = nil; return day }
+        let content = HowTodayWorks(progress: Self.progress, breakdown: breakdown, memory: Self.memory, swipes: nil, decks: [])
+        let table = try #require(content.sections[1].rows.compactMap { row -> [[String]]? in if case let .table(_, rows) = row { rows } else { nil } }.first)
+        #expect(table.map { $0.last } == ["–", "–", "–"])
+    }
+
     @Test func aStreakToRepairAndDecksWithoutNamesAreTold() {
         var progress = Self.progress
         progress.streak = Streak(days: 5, repairCards: 7)
@@ -138,7 +151,7 @@ struct HowTodayWorksTests {
             decks: [HowTodayWorks.DeckInfo(name: nil, options: LearningOptions()), HowTodayWorks.DeckInfo(name: "Greek", options: fitted)])
         #expect(values(content.sections[3]) == ["Days": "5", "Today": "Not yet", "Cards to repair yesterday": "7"])
         // Where nothing is swiped (the Mac) there is no section of swipes.
-        #expect(content.sections.map(\.title) == ["Today's Plan", "Capacity", "Pace", "Streak", "Words in Memory", "FSRS · Deck 1", "FSRS · Greek"])
+        #expect(content.sections.map(\.title) == ["Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "FSRS · Deck 1", "FSRS · Greek"])
         #expect(values(content.sections[5])["Parameters"] == "Default")
         #expect(values(content.sections[6])["Parameters"] == "Fitted")
         #expect(values(content.sections[6])["Last automatic fit"] == "None yet")
