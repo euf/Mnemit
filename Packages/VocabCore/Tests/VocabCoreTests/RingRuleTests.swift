@@ -46,24 +46,24 @@ struct RingRuleTests {
         #expect(abs(DailyGoal.nextTime(after: [closed, open]).time - 199.95) < 1e-9)
     }
 
-    @Test func aLearnerWhoStopsAtTheRingGrowsFromFourMinutesBySevenAndAHalfPercentAClosedDay() {
+    @Test func aLearnerWhoStopsAtTheRingGrowsFromTwoAndAHalfMinutesBySevenAndAHalfPercentAClosedDay() {
         let days = simulate(days: 12) { $0 }
         #expect(days.allSatisfy { $0.closed })
-        // Day 1 asks the 240 s of the start; day 2, 240 × 1.075 = 258 s; day 10, 240 × 1.075^9 = 460.137 s.
-        #expect(days[0].time == 240 && days[0].reason == .start)
-        #expect(abs(days[1].time - 258) < 1e-9)
-        #expect(abs(days[9].time - 460.137_278_994_912_2) < 1e-9)
+        // Day 1 asks the 150 s of the start; day 2, 150 × 1.075 = 161.25 s; day 10, 150 × 1.075^9 = 287.586 s.
+        #expect(days[0].time == 150 && days[0].reason == .start)
+        #expect(abs(days[1].time - 161.25) < 1e-9)
+        #expect(abs(days[9].time - 287.585_799_371_820_14) < 1e-9)
         for (index, day) in days.enumerated() {
-            #expect(abs(day.time - 240 * pow(1.075, Double(index))) < 1e-9)
+            #expect(abs(day.time - 150 * pow(1.075, Double(index))) < 1e-9)
             #expect(day.reason == (index == 0 ? .start : .ringClosed))
         }
     }
 
     @Test func aLearnerWhoWorksLessThanTheRingAsksIsAskedLessAndLessDownToTwoMinutes() {
         let days = simulate(days: 6) { _ in 60 }
-        // 240, 240 × 0.775 = 186, 186 × 0.775 = 144.15, then 111.7 would be under two minutes, so 120 s from the fourth day.
-        for (day, asked) in zip(days, [240, 186, 144.15]) { #expect(abs(day.time - asked) < 1e-9) }
-        #expect(days[3...].allSatisfy { $0.time == 120 })
+        // 150, then 150 × 0.775 = 116.25 would be under two minutes, so 120 s from the second day.
+        #expect(abs(days[0].time - 150) < 1e-9)
+        #expect(days[1...].allSatisfy { $0.time == 120 })
         #expect(days.dropFirst().allSatisfy { $0.reason == .ringOpen })
         #expect(days.allSatisfy { !$0.closed })
     }
@@ -83,15 +83,42 @@ struct RingRuleTests {
         #expect(rested[11...].map(\.time) == plain[10..<27].map(\.time))
     }
 
-    @Test func theTimeStaysBetweenTwoAndThirtyMinutes() {
-        // Ring open every day: 240, 186, 144.15, then 111.7 is under two minutes, so 120 s from the fourth day on.
+    @Test func aRingClosedOnAPlanSmallerThanItsTimeKeepsTheTime() {
+        // A deck's new-card limit set the goal below the time: the closed ring asked less than the time, so it says
+        // nothing of more, and the next day asks the same; a closed ring on a full plan grows as before.
+        let small = Day(day: 0, time: 600, worked: 300, closed: true, studied: true, filled: false)
+        #expect(DailyGoal.nextTime(after: [small]) == (600, .smallPlan))
+        let full = Day(day: 0, time: 600, worked: 600, closed: true, studied: true, filled: true)
+        #expect(abs(DailyGoal.nextTime(after: [full]).time - 600 * DailyGoal.grows) < 1e-9)
+        // An open ring shrinks whatever set its goal.
+        let open = Day(day: 0, time: 600, worked: 100, closed: false, studied: true, filled: false)
+        #expect(DailyGoal.nextTime(after: [open]).reason == .ringOpen)
+    }
+
+    @Test func theGoalFillsTheTimeOnlyWhenTheTimeCutThePlan() {
+        let pace = Pace(newCard: 30, otherCard: 10)
+        // 600 s: 20 reviews take 200 s, 13 new cards 390 s, 10 s are left, under a new card: the time set the goal.
+        #expect(DayRounds(otherCards: 20, newCards: 13, pace: pace, seconds: 600).filled)
+        // Five new cards are all the deck allows: 350 s of 600, the plan set the goal.
+        #expect(!DayRounds(otherCards: 20, newCards: 5, pace: pace, seconds: 600).filled)
+        // Reviews alone over the time are cut by it.
+        #expect(DayRounds(otherCards: 100, newCards: 0, pace: pace, seconds: 600).filled)
+        // Cut inside the reviews the next card is a review, whatever a new card costs: 19 reviews of 10 s leave 3.5 s of
+        // 193.5, under the review but over a new card of 2 s.
+        #expect(DayRounds(otherCards: 100, newCards: 0, pace: Pace(newCard: 2, otherCard: 10), seconds: 193.5).filled)
+        // No plan, no goal.
+        #expect(!DayRounds(otherCards: 0, newCards: 0, pace: pace, seconds: 600).filled)
+    }
+
+    @Test func theTimeStaysBetweenTwoMinutesAndAnHour() {
+        // Ring open every day: 150, then 116.25 is under two minutes, so 120 s from the second day on.
         let tiny = simulate(days: 20) { _ in 10 }
-        #expect(tiny[2].time > 120 && tiny[3...].allSatisfy { $0.time == 120 })
+        #expect(tiny[0].time > 120 && tiny[1...].allSatisfy { $0.time == 120 })
         #expect(DailyGoal.nextTime(after: [Day(day: 0, time: 120, worked: 10, closed: false, studied: true)]).time == 120)
-        // Ring closed every day: 240 × 1.075^27 = 1691.4 on the 28th day, whose step, 1818.2, is cut to 1800 s on the 29th.
-        let huge = simulate(days: 40) { _ in 10_000 }
-        #expect(huge[27].time < 1800 && huge[28...].allSatisfy { $0.time == 1800 })
-        #expect(DailyGoal.nextTime(after: [Day(day: 0, time: 1800, worked: 10_000, closed: true, studied: true)]).time == 1800)
+        // Ring closed every day: 150 × 1.075^43 = 3362.4 on the 44th day, whose step, 3614.6, is cut to 3600 s on the 45th.
+        let huge = simulate(days: 60) { _ in 10_000 }
+        #expect(huge[43].time < 3600 && huge[44...].allSatisfy { $0.time == 3600 })
+        #expect(DailyGoal.nextTime(after: [Day(day: 0, time: 3600, worked: 10_000, closed: true, studied: true)]).time == 3600)
         // From the floor a closed day grows again: 120 × 1.075 = 129.
         #expect(abs(DailyGoal.nextTime(after: [Day(day: 0, time: 120, worked: 120, closed: true, studied: true)]).time - 129) < 1e-9)
     }

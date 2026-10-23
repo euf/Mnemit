@@ -275,11 +275,11 @@ A day that began with an empty plan cuts the cards as they stand. Only How Today
 _Avoid_: round, session, lap, segment
 
 **Day's time** (RU «время дня»):
-The seconds of work the day asks, 120 to 1800, never rounded (`DailyProgress.time`). It comes from the
+The seconds of work the day asks, 120 to 3600, never rounded (`DailyProgress.time`). It comes from the
 review logs alone, forward from the first study day, so every device that reads the same logs gets the
-same: 240 s before any study; then the time of the last study day (a day with work) times 1.075 when its ring
-closed and times 0.775 when it stayed open, held to 120 to 1800 (`DailyGoal.nextTime(after:)`). Nothing else
-changes it. The day's time
+same: 150 s before any study; then the time of the last study day (a day with work) times 1.075 when its ring
+closed on a goal that filled the time, the same time when it closed on a smaller plan, and times 0.775 when it
+stayed open, held to 120 to 3600 (`DailyGoal.nextTime(after:)`). Nothing else changes it. The day's time
 sets the goal and the admission of new cards.
 _Avoid_: capacity, limit, quota, level
 
@@ -290,9 +290,7 @@ least 0 (`DailyGoal.newCardsAllowed`). The decks' own limits (`newCardsPerSessio
 `newProductionPerSession`) are ceilings. Across all decks the allowance is shared in proportion to
 the ceilings, by largest remainder (`DailyGoal.split`); each deck's share is its
 `newCardAllowance`, which the plan takes (`DailyProgress.newCardAllowances`). Cards first reviewed
-today count against it, and "+10 new" comes beyond it. Today's admission is also held to what the
-next 7 study days can take (`DailyGoal.newCardsAllowedAhead`, only for today): the reviews already due
-then plus those the new cards bring must fit the day's time.
+today count against it, and "+10 new" comes beyond it.
 _Avoid_: new-card limit, daily new cards
 
 **Daily goal** (the K of "M of K cards" / „M von K Karten“; RU «цель дня»):

@@ -153,13 +153,13 @@ struct PausedDecksTests {
 
         await ring.refresh(documents: [pausedDocument, activeDocument], files: [pausedFile, activeFile], reloadFiles: true, delay: .zero).value
         let progress = try #require(ring.progress)
-        // Two rounds hold eight new cards, shared by the two decks that take part.
-        #expect(progress.newCardAllowances == [0, 4, 0, 4])
-        #expect(progress.ring.goal == 8)
+        // The first day's 150 s hold five new cards, shared by the two decks that take part: three and two.
+        #expect(progress.newCardAllowances == [0, 3, 0, 2])
+        #expect(progress.ring.goal == 5)
         #expect(pausedDocument.newCardAllowance == nil)
-        #expect(activeDocument.newCardAllowance == 4)
+        #expect(activeDocument.newCardAllowance == 3)
         #expect(NewCardAllowances.today[pausedFile] == nil)
-        #expect(NewCardAllowances.today[activeFile] == 4)
+        #expect(NewCardAllowances.today[activeFile] == 2)
         // The paused deck's own screen takes the plan of its limits.
         #expect(pausedDocument.dueCards.counts.new == 20)
     }

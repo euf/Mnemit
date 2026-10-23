@@ -188,7 +188,7 @@ struct StudyScreenSnapshotTests {
         window.isHidden = true
     }
 
-    /// The stop at the end of a round: six new cards cut into two rounds of four and two, and the stream
+    /// The stop at the end of a round: five new cards cut into two rounds of four and one, and the stream
     /// rests when the fourth is done. The header before it names the round.
     @Test(arguments: [false, true])
     func roundEnd(dark: Bool) async throws {
@@ -197,7 +197,7 @@ struct StudyScreenSnapshotTests {
         let ring = DailyRingModel()
         await ring.refresh(documents: [document], delay: .zero).value
         let guide = try #require(RoundGuide(progress: ring.progress, document: document))
-        #expect(guide.ends == [4, 6])
+        #expect(guide.ends == [4, 5])
         let model = StudyModel(document: document, rounds: guide)
         for _ in 0..<3 {
             grade(model, .easy, undoManager: undoManager)
@@ -216,7 +216,6 @@ struct StudyScreenSnapshotTests {
 
         model.continueRound()
         #expect(!model.isResting)
-        grade(model, .easy, undoManager: undoManager)
         grade(model, .easy, undoManager: undoManager)
         await ring.refresh(documents: [document], delay: .zero).value
         #expect(model.isResting && !model.isRoundRest)
@@ -269,7 +268,7 @@ struct StudyScreenSnapshotTests {
 
     // MARK: What moves
 
-    /// A model with six new cards cut into rounds of four and two, `done` of them graded Easy, so the
+    /// A model with five new cards cut into rounds of four and one, `done` of them graded Easy, so the
     /// stack under the card holds the rest of the round, and the ring evaluated for them.
     private func prepareRound(done: Int) async throws -> (StudyModel, DailyRingModel, VocabularyDocument, UndoManager) {
         try beSilent()
@@ -277,7 +276,7 @@ struct StudyScreenSnapshotTests {
         let ring = DailyRingModel()
         await ring.refresh(documents: [document], delay: .zero).value
         let guide = try #require(RoundGuide(progress: ring.progress, document: document))
-        #expect(guide.ends == [4, 6])
+        #expect(guide.ends == [4, 5])
         let model = StudyModel(document: document, rounds: guide)
         for _ in 0..<done {
             grade(model, .easy, undoManager: undoManager)

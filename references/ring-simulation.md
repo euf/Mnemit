@@ -1,20 +1,22 @@
-# Ring simulation: how the day's time is learned
+# Ring simulation: rules for the day's time, on minutes alone
 
-The day's time T is the minutes the ring asks. This file records a simulation that compares rules for learning T from the work a
-learner did, the numbers behind the choice, and the reasoning for each rule family. The tool is `Tools/ring-sim/sim.py`
-(`--selftest`, `--detail`, `--real <folder>`; the grid of 706 rules takes 15 s). Every number below comes from it: 200 seeds per
-scenario, rng seed 307; a second run with seed 308 reproduces the top rules within 0.005 in closure and capture.
+The day's time T is the minutes the ring asks. This file compares families of rules for learning T from the work a learner did,
+on minutes alone: no cards, no FSRS. The decision, which also weighs cards, memory and the first weeks, is `ring-design.md`. The
+tool is `Tools/ring-sim/sim.py` (`--selftest`, `--detail`, `--real <folder>`; the grid of 706 rules takes 15 s, with 2,000 real
+users about a minute). Every number below comes from it: 200 seeds per scenario, rng seed 307; a second run with seed 308
+reproduces the top rules within 0.005 in closure and capture. The simulation keeps the start and range of 5.4 (4 minutes,
+2-30); `cards.py` measures the 2.5 minutes and the hour of the decision.
 
-## Verdict
+## Result
 
-- Chosen rule: Kaplan-Meier censored quantile, q = 0.15 over the last 21 study days. Mean closure 0.805, lowest cell 0.709, capture
-  0.668, lag 15.8 days, 9.1 flips per 30 days.
-- The current rule, the median of the last 7 study days, is infeasible: closure 0.721, lowest cell 0.452, capture 0.618. An eager
-  learner's ring closes on 51 % of days, and a learner who stops at the ring is never asked for more than the 4 minutes of the start.
-- Runner-up: the closure tracker with q 0.25, k 0.3: closure 0.801, lowest cell 0.778, capture 0.660, lag 8.5. It trails by 0.008 of
-  capture and is a three-line rule that reads only closed or open. Third: asymmetric EWMA with a probe (0.1 / 0.4, c 1.5, u 0.2),
-  capture 0.642.
-- Real data: not obtained; the dataset is gated (section "Real data"). The choice rests on 14 synthetic scenarios.
+- Feasible families by synthetic capture: Kaplan-Meier censored quantile (q 0.15, 21 study days: closure 0.805, lowest cell 0.709,
+  capture 0.668, lag 15.8 days), the closure tracker (q 0.25, k 0.3, the app's 1.075 / 0.775: closure 0.801, lowest cell 0.778,
+  capture 0.660, lag 8.5), the asymmetric EWMA with a probe (capture 0.642), AIMD (0.633). The median of the last 7 study days, the
+  app's rule before the tracker, is infeasible: closure 0.721, lowest cell 0.452.
+- Real users, 1,921 of the 2,000 Anki users with 60 study days or more (section "Real data"): the tracker closes 0.775 of days and
+  takes the larger share of their minutes (capture 0.296 against 0.270 for Kaplan-Meier).
+- Kaplan-Meier leads the tracker on synthetic capture by 0.008, below what the model resolves, and trails it on real users; the
+  tracker reads only closed or open, needs no window and no ring-stop test. `ring-design.md` takes the tracker.
 
 ## Question and criterion
 
@@ -72,7 +74,7 @@ An oracle that knows L_t and sigma and sets T to the true q-quantile of that day
 | 0.20 | 0.799 | 0.795 | 0.740 |
 
 At closure 0.8 the ceiling is 0.74 because the noise itself caps what a ring below the 20th percentile can ask. The erratic
-scenarios sit near 0.46 and the alternating ones near 0.34 for the chosen rule. The chosen rule reaches 0.668 at closure 0.805, 90 % of
+scenarios sit near 0.46 and the alternating ones near 0.34 for Kaplan-Meier. Kaplan-Meier reaches 0.668 at closure 0.805, 90 % of
 the ceiling at that closure; the tracker reaches 89 %.
 
 ## The rule families
@@ -128,10 +130,10 @@ median.
 At k 14, s 1, u 0: closure 0.700, lowest cell 0.36 (decline, E), capture 0.633, lag 36.5, flips 8.8. S: 0.972 / 0.377. E: 0.466 /
 0.856. The mean of right-skewed work lies above its median, so the E closure is 0.47 where the median gives 0.51. With s 0.7 the
 rule reads closure 0.907, capture 0.450, lowest cell 0.50 (alternating, E). With a probe of 0.5-0.7 and s 0.7-0.75 the mean reaches
-closure 0.802 and capture 0.668 (k 14, s 0.7, u 0.7; k 10, s 0.75, u 0.5, lag 20.2), the same capture as the chosen rule, and
+closure 0.802 and capture 0.668 (k 14, s 0.7, u 0.7; k 10, s 0.75, u 0.5, lag 20.2), the same capture as Kaplan-Meier, and
 fails the floor at 0.50 on alternating. Censoring works as for the median: S capture 0.20-0.38 unless a large probe is added.
 
-Verdict: no feasible rule in 48. If the floor were 0.5, the mean with a large probe would tie the winner on capture; the floor is
+Verdict: no feasible rule in 48. If the floor were 0.5, the mean with a large probe would tie Kaplan-Meier on capture; the floor is
 the brief's.
 
 ### EWMA, symmetric
@@ -225,7 +227,7 @@ rule at k 7. All 12 rules:
 | 0.25 | 14 | 0.717 | 0.715 | 0.734 | 0.721 | 0.726 | 0.64 | 0.718 | 11.0 | 11.8 |
 | 0.25 | 21 | 0.717 | 0.714 | 0.729 | 0.720 | 0.724 | 0.60 | 0.717 | 15.8 | 11.7 |
 
-Censoring is handled: S and E differ by 0.015 in closure and 0.002 in capture for the chosen rule. The rule is late exactly where
+Censoring is handled: S and E differ by 0.015 in closure and 0.002 in capture for q 0.15, k 21. The rule is late exactly where
 willingness falls: its lowest cells are the decline and step-down scenarios (E 0.709 and 0.745), because the 21-day window still
 holds old high values; a shorter window lags less (11 days at k 14, 7 at k 7) and flips more. A ring-stopper's T climbs by 10 % a day
 while the window shows no open day (4 to 15 minutes in 14 days); an eager learner's T jumps to the work seen on the first days.
@@ -253,14 +255,14 @@ T", and the level moves by the expected excess through the inverse Mills ratio).
 T = exp(level - d). Grid: Q 0.005-0.1, R 0.06, 0.15, 0.3, d 0.1-0.4, ring-stop as Tobit or skipped (96 rules).
 
 32 rules lie in the band, none is feasible. The best in-band rule by capture (Tobit, Q 0.02, R 0.06, d 0.3) gives closure 0.805, capture
-0.671, higher than the chosen rule, lag 6.0, flips 10.5, with S 0.802 / 0.670 and E 0.811 / 0.672: the Tobit update neutralises
+0.671, higher than Kaplan-Meier, lag 6.0, flips 10.5, with S 0.802 / 0.670 and E 0.811 / 0.672: the Tobit update neutralises
 censoring. It fails the floor in two cells: alternating E closes on 0.51 of days, erratic E on 0.67. A fixed offset is a quantile only
 for one spread of the day-to-day noise; the alternating series has a log standard deviation near 0.7 and the erratic one 0.6,
 against 0.25 elsewhere. A larger d protects those cells at a cost elsewhere: the best lowest cell in the band is 0.541 (Q 0.005, R 0.3,
 d 0.4: closure 0.804, capture 0.666, lag 38.5). Skipping the ring-stop days gives the median's pathology: S 0.987 / 0.348 for the best
 in-band skip rule, capture 0.577 overall. An online estimate of the spread (adaptive d) would remove the failure; it was not tried.
 
-Verdict: infeasible on the floor, with the best lag and a capture equal to the winner's. With the floor at 0.5 it would rank first.
+Verdict: infeasible on the floor, with the best lag and a capture equal to Kaplan-Meier's. With the floor at 0.5 it would rank first.
 
 ## Best of each family
 
@@ -277,9 +279,9 @@ Verdict: infeasible on the floor, with the best lag and a capture equal to the w
 
 For an infeasible family the row is its best in-band rule by capture, or the closest to the band when none is in band.
 
-## Decision
+## The two top rules
 
-### The chosen rule
+### Kaplan-Meier, the best synthetic capture
 
 Kaplan-Meier censored quantile, q = 0.15, last 21 study days, T clamped 2-30 minutes, start 4 minutes. It has the highest capture of
 the 18 feasible rules (0.668) and the closure of a closure-driven rule in every cell: S 0.797 and E 0.812 overall, 0.709-0.882 across
@@ -305,20 +307,18 @@ cells. By scenario:
 Lag after the step at day 30: step up 16 days (S) and 19 (E), step down 14 and 14. Flips run 5.9-12.1 per 30 days (chance at closure
 0.8: 9.6). The M cells (eager on 30 % of days) give closure 0.804 and capture 0.671 overall, the same as S and E.
 
-### Runner-up and why not it
+### The closure tracker, the app's rule
 
-By the criterion the runner-up is the closure tracker, q 0.25, k 0.3 (capture 0.660). It was not chosen because it trails by 0.008 of
-capture, 1.2 % of the winner's. In its favour: lag 8.5 against 15.8, lowest cell 0.778 against 0.709, one multiplication per day,
-no window, no ring-stop test. The difference between them is a choice of implementation cost, since 0.008 is below what the model
-can resolve; the tracker is the fallback if Kaplan-Meier proves expensive in `DailyGoal`. Both recover 89-90 % of the oracle's capture
-at their own closure. The third rule, the asymmetric EWMA with probe (capture 0.642), has a lag of 20.2 and a lowest cell of
+The closure tracker, q 0.25, k 0.3 (capture 0.660), trails Kaplan-Meier by 0.008 of synthetic capture, 1.2 %, below what the model
+resolves. In its favour: lag 8.5 against 15.8, lowest cell 0.778 against 0.709, a higher capture on real users (0.296 against 0.270),
+one multiplication per day, no window, no ring-stop test. Both recover 89-90 % of the oracle's capture at their own closure. The third rule, the asymmetric EWMA with probe (capture 0.642), has a lag of 20.2 and a lowest cell of
 0.701, on the floor. AIMD (0.633) fails on scale, and the Kalman filter (0.671) on the floor.
 
 ### Sensitivity around the optimum
 
 | rule | closure | lowest cell | capture | lag | flips/30 d | feasible |
 |---|---|---|---|---|---|---|
-| q 0.15, k 21 (chosen) | 0.805 | 0.709 | 0.668 | 15.8 | 9.1 | yes |
+| q 0.15, k 21 | 0.805 | 0.709 | 0.668 | 15.8 | 9.1 | yes |
 | q 0.10, k 21 | 0.847 | 0.767 | 0.638 | 16.0 | 7.5 | yes |
 | q 0.15, k 14 | 0.791 | 0.718 | 0.680 | 11.2 | 9.8 | no |
 | q 0.15, k 7 | 0.752 | 0.705 | 0.703 | 7.0 | 11.4 | no |
@@ -329,25 +329,36 @@ The optimum sits on the lower edge of the band: capture rises as closure falls, 
 band. Closure moves by about 0.04 and capture by about 0.03 per step of q. The shorter window k 14 at q 0.15 misses the band by
 0.009. If a real log shows closure under 0.8, q 0.10 gives 0.847 and 0.638 and keeps every cell at 0.767 or above.
 
-Start value of T, chosen rule: T0 of 2, 4, 8, 12 minutes gives closure 0.814, 0.805, 0.797, 0.793 and capture 0.651, 0.668, 0.679,
-0.682. The start matters over the first weeks; 4 minutes stays.
+Start value of T, Kaplan-Meier: T0 of 2, 4, 8, 12 minutes gives closure 0.814, 0.805, 0.797, 0.793 and capture 0.651, 0.668, 0.679,
+0.682. Minutes alone cannot see what the start does to a newcomer's first week; `ring-design.md` measures it with cards.
 
 ## Real data
 
-What was tried. `open-spaced-repetition/anki-revlogs-10k` is gated (`"gated": "auto"` in the Hugging Face API): the dataset card asks for
-a login and acceptance of the dataset's conditions, and a file URL answers 401 without them. `anki-revlogs-10k-raw` and `-id` are gated
-the same way, and a search of the Hub found no ungated copy. Logging in and accepting conditions is an account action for EF; none was
-taken and nothing was downloaded. The real data changed nothing in this choice and confirmed nothing.
+`open-spaced-repetition/anki-revlogs-10k` (Hugging Face, gated: an account accepts the conditions and its read token sits in
+`~/.cache/huggingface/token`). `Tools/ring-sim/fetch.py N` downloads users 1..N into `~/Library/Caches/anki-revlogs-10k`, eight at
+a time, resuming a cut run; 2,000 users take 2.4 GB. `--real` takes each user with 60 or more study days, daily minutes = the sum of
+review durations capped at 60 s, the first 90 study days, S response. 1,921 users qualify; the median of their first-week minutes is
+10.4. Statistics of the same users: `Tools/ring-sim/real.py`, output in `Tools/ring-sim/real-stats.md`.
 
-What the path does. `--real <folder>` follows the dataset card (`day_offset`, `duration` in ms, files `**/*.parquet`): per user with
-60 or more study days, daily minutes = sum of durations capped at 60 s, the first 90 study days, S response. Real users enter the
-selection as a 15th scenario, and the median first-week minutes print as a start value. It ran on a synthetic folder of 60 parquet files
-to check the path, which is no evidence. To use it: accept the conditions on the dataset page, download a sample of
-`revlogs/user_id=*/data.parquet` into a new folder, run `Tools/ring-sim/sim.py --real <folder>`.
+| rule | closure, mean over users | user at p10 | capture |
+|---|---|---|---|
+| tracker q 0.25, k 0.3 (1.075 / 0.775) | 0.775 | 0.678 | 0.296 |
+| tracker q 0.25, k 0.2 | 0.781 | 0.678 | 0.276 |
+| Kaplan-Meier q 0.15, 21 days | 0.791 | 0.700 | 0.270 |
+| AIMD x 0.5, m 0.7 | 0.784 | 0.644 | 0.281 |
+| Kalman, Tobit, Q 0.005, R 0.3, d 0.4 | 0.810 | 0.700 | 0.232 |
+| asymmetric EWMA 0.1 / 0.4, c 1.5, u 0.2 | 0.847 | 0.711 | 0.166 |
+| median of 14 days × 0.7 | 0.876 | 0.744 | 0.106 |
 
-What it could say. Anki users stop when the queue is empty, so their daily minutes are limited by the queue and the new-card limit,
-and understate willingness. A real series tests a rule's closure against real day-to-day variation (heavy tails, runs, gaps) and
-says little about capture; the S response is the right reading for them, since their stopping point does not depend on a ring.
+The tracker's closure on real users, 0.775, is its equilibrium: closed days move log T up by ln 1.075 and open days down by
+ln(1/0.775), so the share of closed days settles at ln(1/0.775) / (ln 1.075 + ln(1/0.775)) = 0.779 whatever the work. Its synthetic
+0.801 is that plus the climb of the first weeks, when every ring closes. Real days vary far more than the synthetic ones (log
+standard deviation of a user's daily minutes: median 1.34, against 0.25 in most scenarios) and come in runs (lag-1 autocorrelation
+0.37); the rules that read the size of the work lose most there. Capture is low for every rule because a third of these users
+work over 30 minutes a day, above the clamp of this simulation.
+
+What the real series cannot say: Anki users stop when their queue is empty, so their minutes are bounded by the queue and
+understate what they would give a ring.
 
 ## Limits of the model
 
@@ -357,33 +368,21 @@ says little about capture; the S response is the right reading for them, since t
 - Noise is lognormal with one sigma per scenario. Real daily time has heavier tails and more zeros than 14 scenarios show.
 - The ring in the app is cards at the day's prices. A ring-stopper's work lands within one card of T, below it when the goal rounds
   down. The simulation takes exactly T; the app needs a tolerance to tell a ring-stop from a lap.
-- T and the new-card allowance are coupled in the app (the day's time bounds new cards); a change of T moves the load. Not modeled.
+- T and the new-card allowance are coupled in the app (the day's time bounds new cards); a change of T moves the load. Not modeled
+  here; `Tools/ring-sim/cards.py` models it (`ring-design.md`).
 - Capture counts minutes asked of a willing learner. It is no learning outcome, and more minutes are not better by themselves.
 - The hold-out reruns the same 14 scenarios on fresh seeds; it tests noise, not the choice of scenarios. The optimum lies on the band
   edge, so a different mix of scenarios can move it by one grid step.
 
 ## What would make us revisit
 
-- The closure measured on EF's own log over six weeks or more falls outside 0.75-0.9: move q (0.10 raises closure by about 0.04).
-- The real revlogs, once obtained, give a mean closure under 0.75 or a capture far below the synthetic 0.67: re-run the choice with
-  real users in the selection.
-- Ring-stop days cannot be told from laps in the app: switch to the closure tracker, which needs no such test.
-- Evidence that willingness reacts to T (missed days after open rings): raise the closure target and shorten the window.
-- Lag matters more than capture for the product: take the tracker (lag 8.5) or a variance-adaptive Kalman filter (lag 6.0, tied on
-  capture, untested beyond the grid).
+- The closure measured on EF's own log over 60 study days falls outside 0.7-0.85: move the tracker's target (`target(c)` in
+  `cards.py` gives the two factors of a closure c).
+- Evidence that willingness reacts to T (missed days after open rings): raise the closure target.
+- Lag matters more than it does now: a variance-adaptive Kalman filter (lag 6.0, tied on capture, untested beyond the grid).
 - A scenario that the 14 miss, such as a learner who works in bursts every few days, if EF's log shows one.
 
 ## For Mnemit
 
-Replace the median in `DailyGoal.nextTime(after:)` with the Kaplan-Meier censored quantile.
-
-- Window: the last 21 study days. Inputs per day, all in `RingDay`: `time` (that day's T), `worked`, `closed`.
-- Open day (`worked < time`): exact value `worked`. Ring-stop (closed, `worked` within 10 % of `time`): censored at `time`. Closed day with
-  more work (a lap): exact value `worked`. The 10 % is an assumption; the simulation takes ring-stops at exactly T.
-- T = the 0.15 quantile of the Kaplan-Meier estimate: the smallest value whose cumulative share reaches 0.15, events before censored
-  values at ties. When the curve does not reach 0.15, T = 1.1 * the largest value in the window.
-- Keep the clamp 120-1800 s and the 240 s start; a day without work stays out of the window.
-- Dial: q. If the closure measured on EF's own log lands under 0.8, set q to 0.10 (closure 0.847, capture 0.638).
-- Fallback if the estimator is too costly: closed day T *= 1.075, open day T *= 0.775 (tracker q 0.25, k 0.3), clamped 120-1800 s, start 240 s.
-- The +10 % probe was removed for want of evidence (`decisions-evidence.md`, section 2). The simulation is that evidence: a rule that
-  reads only the work leaves a ring-stopper at the start; a censored or closed/open reading replaces the probe.
+The app runs the tracker (`DailyGoal.nextTime(after:)`) with the additions of `ring-design.md`: a ring closed on a plan smaller
+than its time holds T, the start is 2.5 minutes and the range 2 minutes to an hour.

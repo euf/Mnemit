@@ -24,8 +24,7 @@ struct HowTodayWorksTests {
         DailyProgress(
             ring: DailyRing(done: 18, goal: 34), streak: Streak(days: 12, repairCards: nil), cardsLeft: 22, newCardsLeft: 5,
             pace: Pace(newCard: 31.4, otherCard: 9.2), time: 480,
-            roundPlan: DayRounds(otherCards: 28, newCards: 12, pace: Pace(), seconds: 480), streakKeptToday: true, newCardAllowances: [6],
-            newCardLimit: .nextWeek, nextWeekSeconds: 492)
+            roundPlan: DayRounds(otherCards: 28, newCards: 12, pace: Pace(), seconds: 480), streakKeptToday: true, newCardAllowances: [6])
     }
 
     static var breakdown: DayBreakdown {
@@ -66,8 +65,8 @@ struct HowTodayWorksTests {
         #expect(plan["Overdue cards taken"] == nil)
         #expect(plan["Cards in learning"] == "2")
         #expect(plan["New cards admitted"] == "6")
-        #expect(plan["New cards: limited by next week"] == "\((8.2).formatted(.number.precision(.fractionLength(1)))) min")
-        #expect(plan["New cards: limited by today's time"] == nil)
+        // The plan has no row for a bound on the new cards: the day's time is the only one, told in its own section.
+        #expect(plan.keys.filter { $0.hasPrefix("New cards: limited") }.isEmpty)
         #expect(plan["Greek B1"] == "6")
         #expect(content.sections[0].rows.contains(.value(label: "Greek B1", value: "6", note: "Ceiling 27 (limits 20 new / 7 production)")))
         #expect(plan["Cards done"] == "18")
@@ -89,6 +88,8 @@ struct HowTodayWorksTests {
                 [one(199.95 / 60), one(2.5), "Open", "Ring open"], [one(258.0 / 60), one(5), "Open", "Ring closed"], [one(4), one(6), "Closed", "Start"],
             ])
         #expect(time.footer.hasPrefix("Each day you close the ring, the next asks 7.5 % more time"))
+        #expect(time.footer.contains("a ring closed on a plan smaller than the time, or a day without study, changes nothing"))
+        #expect(time.footer.contains("two and a half minutes before any study"))
 
         let pace = content.sections[2].rows
         #expect(pace[0] == .value(label: "New card", value: "31 s", note: "Durations (214)"))
@@ -150,16 +151,13 @@ struct HowTodayWorksTests {
         #expect(values(content.sections[6])["Last automatic fit"] == "None yet")
     }
 
-    /// The row says which bound set the day's new cards; it is left out where the next week isn't looked at.
-    @Test func theNewCardsRowSaysWhichBoundWonAndIsLeftOutWithoutTheWeekAhead() throws {
-        var progress = Self.progress
-        progress.newCardLimit = .time
-        let time = HowTodayWorks(progress: progress, breakdown: Self.breakdown, memory: Self.memory, swipes: nil, decks: [])
-        #expect(values(time.sections[0])["New cards: limited by today's time"] == "\((8.2).formatted(.number.precision(.fractionLength(1)))) min")
-        #expect(values(time.sections[0])["New cards: limited by next week"] == nil)
-        progress.nextWeekSeconds = nil
-        let none = HowTodayWorks(progress: progress, breakdown: Self.breakdown, memory: Self.memory, swipes: nil, decks: [])
-        #expect(values(none.sections[0]).keys.filter { $0.hasPrefix("New cards: limited") }.isEmpty)
+    /// A ring closed on a plan smaller than its time is told as "Plan under the time" in the days' table.
+    @Test func aRingClosedOnASmallPlanIsToldWhy() throws {
+        var breakdown = Self.breakdown
+        breakdown.days[1] = DayBreakdown.Day(start: Self.day.addingTimeInterval(-86400), time: 240, isClosed: true, worked: 200, reason: .smallPlan)
+        let content = HowTodayWorks(progress: Self.progress, breakdown: breakdown, memory: Self.memory, swipes: nil, decks: [])
+        let table = try #require(content.sections[1].rows.compactMap { row -> [[String]]? in if case let .table(_, rows) = row { rows } else { nil } }.first)
+        #expect(table.map { $0.last } == ["Ring open", "Plan under the time", "Start"])
     }
 
     /// A paused deck is named in the plan as "Paused: <name>", with no share of the new cards, and the figures are

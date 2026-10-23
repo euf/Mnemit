@@ -49,15 +49,15 @@ struct NewCardAllowancesTests {
         let document = try VocabularyDocument(deck: Deck(cards: fresh(20)))
         let ring = DailyRingModel()
 
-        // Two rounds of two minutes at the first pace of 30 s a new card hold eight of them, shared by the ceilings of the two decks.
+        // The 150 s of the first day at the first pace of 30 s a new card hold five of them, shared by the ceilings of the two decks: 2.5 and 2.5, and the odd card goes to the earlier.
         await ring.refresh(documents: [document], files: [url], reloadFiles: true, delay: .zero).value
         let progress = try #require(ring.progress)
-        #expect(progress.newCardAllowances.reduce(0, +) == 8)
-        #expect(progress.newCardAllowances == [4, 4])
-        #expect(document.newCardAllowance == 4)
-        #expect(NewCardAllowances.today[url] == 4)
+        #expect(progress.newCardAllowances.reduce(0, +) == 5)
+        #expect(progress.newCardAllowances == [3, 2])
+        #expect(document.newCardAllowance == 3)
+        #expect(NewCardAllowances.today[url] == 2)
         // The document's counter shows the plan of that allowance, not the 20 cards of the deck.
-        #expect(document.dueCards.counts.new == 4)
+        #expect(document.dueCards.counts.new == 3)
     }
 
     @Test func theRowOfTodayTakesTheNewCardsOfTheDecksAllowance() throws {
@@ -79,7 +79,7 @@ struct NewCardAllowancesTests {
         let ring = DailyRingModel()
         await ring.refresh(documents: [], files: [url], reloadFiles: true, delay: .zero).value
         let expected = try #require(NewCardAllowances.today[url])
-        #expect(expected == 8)
+        #expect(expected == 5)
         let deck = OpenDeck(url: url)
         let document = try #require(await deck.editableDocument())
         #expect(document.newCardAllowance == expected)

@@ -17,19 +17,16 @@ the ring is closed.
 
 | # | Rule | Answers | Evidence |
 |---|---|---|---|
-| 1 | Your time follows your rings: each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less (× 0.775); a day without study changes nothing (4 minutes before any study) | how much the learner really does | a closure tracker, Robbins–Monro quantile tracking: each day multiplies the time by a fixed factor, so the share of closed rings settles near 0.8 whatever the work; chosen by simulation over 14 scenarios (`ring-simulation.md`), where averages of the work stall for a learner who stops at the ring, because censoring hides everything above the ask; an achievable goal keeps people better than a hard one (Duolingo, `learning-flow-research.md`) |
+| 1 | Your time follows your rings: each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less (× 0.775); a ring closed on a plan smaller than the time, or a day without study, changes nothing; 2.5 minutes before any study, 2 minutes to an hour | how much the learner really does | a closure tracker: fixed factors put the share of closed rings at 0.78 whatever the work (0.78 on the logs of 2,000 Anki users); averages of the work stall for a learner who stops at the ring; 2.5 minutes are reached on 77 % of a newcomer's first-week study days, the same share; an hour holds the usual day of nine in ten Anki users (`ring-design.md`) |
 | 2 | The goal is the cards FSRS has due, most forgotten first, as many as fit your time | what to do today | FSRS: reviews are the work owed; the Anki manual caps reviews so a return after a break is manageable |
-| 3 | If time is left, new cards fill it, as many as next week can carry | how many new | new cards are FSRS's only free input; the Anki manual sizes them by the workload one can sustain |
+| 3 | If time is left, new cards fill it | how many new | new cards are FSRS's only free input; the Anki manual sizes them by the workload one can sustain, and the time already holds it: the reviews of earlier new cards leave less time for new ones |
 | 4 | The ring closes when the goal is done; work beyond it fills laps, and the closed ring raises the next day's time | how to grow | growth comes from closing the ring |
 | 5 | The first two minutes keep the streak; one missed day is forgiven when the next ring closes | the habit | a low bar keeps the habit (Duolingo A/B, +3.3 % day-14 retention); slack keeps a streak (Streak Freeze, Apple's paused rings) |
 | 6 | Once the ring is closed: Catch Up while due cards are left, else "+10 new" with its cost next week | what next | an informed choice instead of a hidden one |
 
-The tracker is the sourced part: stochastic approximation of a quantile of the work (Robbins–Monro), read only through
-closed or open. The factors 1.075 and 0.775 come from the simulation (`ring-simulation.md`: closure 0.801 over 14 scenarios,
-lag 8.5 days); real Anki data is pending. A learner who stops at the ring has closed it, so the day's time grows.
-Five numbers remain as choices to check on the owner's log: the two factors, 4 minutes on
-the first day, the range of 2 to 30 minutes, the 2-minute streak step and the 7-day horizon of the week
-ahead. `decisions-evidence.md` holds the evidence for each and the measurement that would settle it.
+Every number of the day's time comes from a measurement on synthetic learners and on the logs of 2,000 Anki users,
+with the alternatives that lost: `ring-design.md`. A learner who stops at the ring has closed it, so the day's time
+grows. The 2-minute streak step stays a choice (`decisions-evidence.md` §3).
 
 ## The model
 
@@ -53,8 +50,8 @@ nothing, and nothing is taken back. A new word is half a card after its first Go
 the ring stays in whole cards; the closing screen joins the two: "10 cards · 22 answers".
 
 FSRS decides what is urgent; the learner decides only whether to go on. Due cards are the work owed;
-new cards are the only free input, and the app admits as many as the learner's time holds, counting the
-reviews already due next week as well as today's, so the ring is a size the learner has shown they finish. The size is learned, never asked: no budget, no slider.
+new cards are the only free input, and the app admits as many as the learner's time holds after today's
+reviews, so the ring is a size the learner has shown they finish. The size is learned, never asked: no budget, no slider.
 
 ## Horizons
 

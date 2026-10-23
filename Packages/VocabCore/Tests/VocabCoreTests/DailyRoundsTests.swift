@@ -10,10 +10,10 @@ struct DailyRoundsTests {
 
     // MARK: Time
 
-    @Test func theStreakStepIsTwoMinutesAndTheFirstDayHoldsFour() {
+    @Test func theStreakStepIsTwoMinutesAndTheFirstDayHoldsTwoAndAHalf() {
         #expect(DailyGoal.streakSeconds == 120)
-        #expect(DailyGoal.initialSeconds == 240)
-        #expect(DailyGoal.timeRange == 120...1800)
+        #expect(DailyGoal.initialSeconds == 150)
+        #expect(DailyGoal.timeRange == 120...3600)
     }
 
     // MARK: Admission

@@ -3118,12 +3118,6 @@
         "ru": {
           "variations": {
             "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld поднялась сегодня"
-                }
-              },
               "few": {
                 "stringUnit": {
                   "state": "translated",
@@ -3134,6 +3128,12 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "+%lld поднялись сегодня"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "+%lld поднялась сегодня"
                 }
               },
               "other": {
@@ -7358,24 +7358,24 @@
         }
       }
     },
-    "Each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less; a day without study changes nothing. Between two and thirty minutes, and four minutes before any study. The streak step is the cards that fit the first two minutes of the plan.": {
+    "Each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less; a ring closed on a plan smaller than the time, or a day without study, changes nothing. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "An jedem Tag, an dem du den Ring schließt, verlangt der nächste 7,5 % mehr Zeit; an einem Tag, an dem er offen bleibt, ein Viertel weniger; ein Tag ohne Lernen ändert nichts. Zwischen zwei und dreißig Minuten, und vier Minuten vor jedem Lernen. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
+            "value": "An jedem Tag, an dem du den Ring schließt, verlangt der nächste 7,5 % mehr Zeit; an einem Tag, an dem er offen bleibt, ein Viertel weniger; ein Ring, der bei einem Plan unter der Zeit geschlossen wird, und ein Tag ohne Lernen ändern nichts. Zwischen zwei Minuten und einer Stunde, und zweieinhalb Minuten vor jedem Lernen. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Κάθε ημέρα που κλείνεις τον κύκλο, η επόμενη ζητά 7,5 % περισσότερο χρόνο· μια ημέρα που μένει ανοιχτός, ένα τέταρτο λιγότερο· μια ημέρα χωρίς μελέτη δεν αλλάζει τίποτα. Ανάμεσα σε δύο και τριάντα λεπτά, και τέσσερα λεπτά πριν από κάθε μελέτη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
+            "value": "Κάθε ημέρα που κλείνεις τον κύκλο, η επόμενη ζητά 7,5 % περισσότερο χρόνο· μια ημέρα που μένει ανοιχτός, ένα τέταρτο λιγότερο· ένας κύκλος που κλείνει με πρόγραμμα μικρότερο από τον χρόνο ή μια ημέρα χωρίς μελέτη δεν αλλάζουν τίποτα. Από δύο λεπτά έως μία ώρα, και δυόμισι λεπτά πριν από κάθε μελέτη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Каждый день, когда ты закрываешь кольцо, следующий просит на 7,5 % больше времени; день, когда оно остаётся открытым, — на четверть меньше; день без учёбы ничего не меняет. От двух до тридцати минут, а до первой учёбы — четыре минуты. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
+            "value": "Каждый день, когда ты закрываешь кольцо, следующий просит на 7,5 % больше времени; день, когда оно остаётся открытым, — на четверть меньше; кольцо, закрытое на плане меньше времени, и день без учёбы ничего не меняют. От двух минут до часа, а до первой учёбы — две с половиной минуты. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
           }
         }
       }
@@ -10086,50 +10086,6 @@
         }
       }
     },
-    "New cards: limited by next week": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Karten: begrenzt durch die nächste Woche"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Νέες κάρτες: περιορίζονται από την επόμενη εβδομάδα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые карточки: ограничены следующей неделей"
-          }
-        }
-      }
-    },
-    "New cards: limited by today's time": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Karten: begrenzt durch die Zeit von heute"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Νέες κάρτες: περιορίζονται από τον χρόνο της ημέρας"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые карточки: ограничены временем сегодняшнего дня"
-          }
-        }
-      }
-    },
     "New per day": {
       "localizations": {
         "de": {
@@ -11446,6 +11402,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Выбери или создай папку с названием Mnemit."
+          }
+        }
+      }
+    },
+    "Plan under the time": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan unter der Zeit"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πρόγραμμα κάτω από τον χρόνο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "План меньше времени"
           }
         }
       }
@@ -12942,28 +12920,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оценки"
-          }
-        }
-      }
-    },
-    "Reviews already due in the next 7 days, averaged by the day": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bereits fällige Wiederholungen in den nächsten 7 Tagen, im Durchschnitt pro Tag"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επαναλήψεις που είναι ήδη προγραμματισμένες για τις επόμενες 7 ημέρες, κατά μέσο όρο την ημέρα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Повторения, уже назначенные на ближайшие 7 дней, в среднем за день"
           }
         }
       }

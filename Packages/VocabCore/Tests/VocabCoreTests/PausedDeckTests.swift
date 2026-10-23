@@ -36,13 +36,14 @@ extension DailyProgressTests {
     @Test func theDaysNewCardsAreSharedOverTheDecksThatTakePart() throws {
         let first = try deck((0..<30).map { fresh("a\($0)") })
         let second = try deck((0..<30).map { fresh("b\($0)") })
-        // Eight new cards over equal ceilings: four and four.
-        #expect(evaluate([first, second]).newCardAllowances == [4, 4])
+        // Five new cards (150 s) over equal ceilings: 2.5 and 2.5, rounded down to two and two, and the card that is left
+        // goes to the earlier deck: three and two.
+        #expect(evaluate([first, second]).newCardAllowances == [3, 2])
         let pausedSecond = try deck((0..<30).map { fresh("b\($0)") }, isPaused: true)
         let progress = evaluate([first, pausedSecond])
-        #expect(progress.newCardAllowances == [8, 0])
-        #expect(progress.ring == DailyRing(done: 0, goal: 8))
-        #expect(evaluate([pausedSecond, first]).newCardAllowances == [0, 8])
+        #expect(progress.newCardAllowances == [5, 0])
+        #expect(progress.ring == DailyRing(done: 0, goal: 5))
+        #expect(evaluate([pausedSecond, first]).newCardAllowances == [0, 5])
     }
 
     @Test func aDayWithOnlyPausedDecksIsADayWithNoDecks() throws {

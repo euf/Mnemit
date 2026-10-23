@@ -18,7 +18,7 @@ W = np.array([0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.87
 DECAY = -W[20]; FACTOR = 0.9 ** (1 / DECAY) - 1
 N = 5000  # words in the deck
 P_NEW, P_OTHER = 30., 10.  # seconds per done card, new and other: DailyGoal's fallbacks; --prices changes them
-A_NEW = 0.22  # share of new cards whose first answer is Again: median of the real users (p25 0.05, p75 0.39)
+A_NEW = 0.22  # share of new cards whose first answer is Again: median of 2,000 real users 0.225 (p25 0.057, p75 0.407)
 LOAD = 2 / 7  # reviews a day over the next week from one new card, NewCardLoad with default options (days 1-7: 2 reviews)
 CEIL = 20  # a deck's new-card ceiling a day (newCardsPerSession)
 H = 30  # days ahead that EF's idea 1 reserves for a new card's reviews
@@ -35,7 +35,7 @@ def sforget(D, S, R): return np.minimum(W[11] * D ** -W[12] * ((S + 1) ** W[13] 
 
 
 # ---------- rules for the day's time T (seconds): mk(B) -> step(T, study, closed, informative, worked, goal) -> T ----------
-LO, HI, T0 = 120., 3600., 180.  # DailyGoal.timeRange and initialSeconds
+LO, HI, T0 = 120., 3600., 150.  # DailyGoal.timeRange and initialSeconds
 
 def tracker(up, down, hold=False, lo=LO, hi=HI, t0=T0, slow=None, flat=0):
     """Closed ring: T * up; open: T * down. hold: a closed ring whose goal didn't fill T (the plan was smaller) holds T.
@@ -116,12 +116,12 @@ def load30():
         t += max(1, round(S)); n += 1; S, D = srecall(D, S, .9), dnext(D, 3)
     return n / .9
 
-def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=None):
+def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=None, refill=None, ceil=None):
     """Wm[B, days]: willingness in minutes (0 = no study). E[B, days]: the learner goes on past the ring (catch up,
     then more new cards). vet[B]: rows that start with an Anki collection. comp: 'cut' (the app: the plan's
     cards that fit T, new cards only in what T and next week leave), 'all' (every card due, new cards in what T
     leaves), 'anki' (every card due up to 200 + `ceil` new, T unused)."""
-    B, days = Wm.shape; ix = np.arange(N)[None]; R30 = load30(); heavy = np.zeros(B, bool) if heavy is None else heavy; rows = np.arange(B); size = np.full(B, N) if size is None else size; ceil = CEIL
+    B, days = Wm.shape; ix = np.arange(N)[None]; R30 = load30(); refill = np.full(B, 1 << 30) if refill is None else refill; heavy = np.zeros(B, bool) if heavy is None else heavy; rows = np.arange(B); size = np.full(B, N) if size is None else size; ceil = np.full(B, CEIL) if ceil is None else ceil
     S, D = np.full((B, N), 1.), np.full((B, N), 5.)
     last, due, nn = np.zeros((B, N), int), np.full((B, N), 1 << 30), np.zeros(B, int)
     nv = vet.sum()
@@ -135,7 +135,7 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
     log = {k: np.zeros((B, days)) for k in ('study', 'closed', 'goal', 'worked', 'T', 'due', 'overdue', 'new', 'rev', 'ok', 'week')}
     for t in range(days):
         st = (Wm[:, t] > 0) & ~(wasopen & (rng.random(B) < SKIP)); intro = ix < nn[:, None]; isdue = intro & (due <= t); R = retr(t - last, S)
-        nd = isdue.sum(1); ahead = (intro & (due > t) & (due <= t + 7)).sum(1); rem = size - nn
+        nd = isdue.sum(1); ahead = (intro & (due > t) & (due <= t + 7)).sum(1); rem = np.where(t >= refill, N, size) - nn
         a30 = (intro & (due > t) & (due <= t + H)).sum(1) / H
         room = T / P_OTHER - ahead / 7
         week = np.where(room >= 0, np.floor(room / LOAD + 1e-9), 0) if weekly else np.full(B, np.inf)
@@ -161,7 +161,7 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
             if comp == 'cutload':
                 x = np.floor(np.maximum(T - a30 * P_OTHER, 0) / (P_NEW + R30 * P_OTHER) + 1e-9)
                 left = np.minimum(left, np.maximum(x, 1) * P_NEW); week = np.full(B, np.inf)
-            newok = np.minimum.reduce([np.floor(np.maximum(left, 0) / P_NEW + 1e-9), week, np.full(B, ceil), rem])
+            newok = np.minimum.reduce([np.floor(np.maximum(left, 0) / P_NEW + 1e-9), week, ceil * 1., rem])
             cut = (nd * P_OTHER > T) & (comp in ('cut', 'cutload'))
             go = np.where(cut, np.floor(T / P_OTHER + 1e-9), nd); gn = np.where(cut, 0, newok)
             go = np.where((go + gn == 0) & (nd + newok > 0), 1, go)
@@ -212,14 +212,16 @@ def scenarios(seeds, days, rng):
         'ramp 5-15': (np.interp(d, [0, 30], [5, 15]), .5, .15, 0), 'decline 15-6': (np.interp(d, [0, 30], [15, 6]), .5, .15, 0),
         'vacation 10 d': (np.where((d >= 50) & (d < 60), 0., 10.), .5, .15, 0),
         'erratic 10': (c(10), .9, .3, 0), 'small deck 400, 15': (c(15), .5, .15, 2),
+        'small deck 400, new deck on day 60': (c(15), .5, .15, 6),
+        'deck limit 10 new, 10-day break at day 60': (np.where((d >= 60) & (d < 70), 0., 20.), .5, .15, 7),
         'veteran 25': (c(25), .4, .1, 1), 'veteran 45': (c(45), .4, .1, 1),
         'veteran 25, history': (c(25), .4, .1, 3), 'veteran 45, history': (c(45), .4, .1, 4),
         'heavy veteran 60, history': (c(60), .4, .1, 5)}
-    Wm, vet, names, size, vt0, heavy = [], [], [], [], [], []
+    Wm, vet, names, size, vt0, heavy, refill, ceil = [], [], [], [], [], [], [], []
     for name, (lv, sg, skip, v) in sc.items():
         x = lv * np.exp(sg * rng.standard_normal((seeds, days))) * (rng.random((seeds, days)) >= skip)
-        Wm.append(x); vet += [v in (1, 3, 4, 5)] * seeds; vt0 += [{3: 1080., 4: 1800., 5: 3000.}.get(v, np.nan)] * seeds; heavy += [v == 5] * seeds; names += [name] * seeds; size += [400 if v == 2 else N] * seeds
-    return np.concatenate(Wm), np.array(vet, bool), np.array(names), list(sc), np.array(size), np.array(vt0), np.array(heavy)
+        Wm.append(x); vet += [v in (1, 3, 4, 5)] * seeds; vt0 += [{3: 1080., 4: 1800., 5: 3000.}.get(v, np.nan)] * seeds; heavy += [v == 5] * seeds; names += [name] * seeds; size += [400 if v in (2, 6) else N] * seeds; refill += [60 if v == 6 else 1 << 30] * seeds; ceil += [10 if v == 7 else CEIL] * seeds
+    return np.concatenate(Wm), np.array(vet, bool), np.array(names), list(sc), np.array(size), np.array(vt0), np.array(heavy), np.array(refill), np.array(ceil)
 
 def load_real(folder, days):
     """Each user's minutes a calendar day (durations capped at 60 s) over the first `days` days of the log."""
@@ -235,7 +237,7 @@ def load_real(folder, days):
 
 C = target(.779)  # 1.075 / 0.775
 RULES = {  # the chosen rule first, then each alternative changed in one respect; (rule, ring, next-week bound)
-    'chosen: tracker 1.075/0.775, hold, 3 min, 2-60': (tracker(*C, hold=True), 'cut', False),
+    'chosen: tracker 1.075/0.775, hold, 2.5 min, 2-60': (tracker(*C, hold=True), 'cut', False),
     'Mnemit 5.4: no hold, 4 min, 2-30, next-week bound': (tracker(*C, t0=240, hi=1800), 'cut', True),
     'closure .70': (tracker(*target(.70), hold=True), 'cut', False),
     'closure .85': (tracker(*target(.85), hold=True), 'cut', False),
@@ -243,6 +245,7 @@ RULES = {  # the chosen rule first, then each alternative changed in one respect
     'closure .95': (tracker(*target(.95), hold=True), 'cut', False),
     'no hold': (tracker(*C), 'cut', False),
     'start 2 min': (tracker(*C, hold=True, t0=120), 'cut', False),
+    'start 3 min': (tracker(*C, hold=True, t0=180), 'cut', False),
     'start 4 min': (tracker(*C, hold=True, t0=240), 'cut', False),
     'start 8 min': (tracker(*C, hold=True, t0=480), 'cut', False),
     'flat first week': (tracker(*C, hold=True, t0=240, flat=7), 'cut', False),
@@ -284,10 +287,10 @@ def main():
     if a.prices: P_NEW, P_OTHER = a.prices
     SKIP = a.skip
     rng = np.random.default_rng(307)
-    Wm, vet, names, scen, size, vt0, heavy = scenarios(a.seeds, a.days, rng)
+    Wm, vet, names, scen, size, vt0, heavy, refill, ceil = scenarios(a.seeds, a.days, rng)
     if a.real:
         R = load_real(a.real, a.days); print(f'real users with {a.days} days: {len(R)}\n')
-        Wm = np.concatenate([Wm, R]); vet = np.append(vet, np.zeros(len(R), bool)); names = np.append(names, ['real'] * len(R)); size = np.append(size, np.full(len(R), N)); vt0 = np.append(vt0, np.full(len(R), np.nan)); heavy = np.append(heavy, np.zeros(len(R), bool))
+        Wm = np.concatenate([Wm, R]); vet = np.append(vet, np.zeros(len(R), bool)); names = np.append(names, ['real'] * len(R)); size = np.append(size, np.full(len(R), N)); vt0 = np.append(vt0, np.full(len(R), np.nan)); heavy = np.append(heavy, np.zeros(len(R), bool)); refill = np.append(refill, np.full(len(R), 1 << 30)); ceil = np.append(ceil, np.full(len(R), CEIL))
     groups = [(s, names == s) for s in scen] + ([('real users', names == 'real')] if a.real else [])
     rules = {k: v for k, v in RULES.items() if not a.rules or any(s in k for s in a.rules.split(';'))}
     for resp in a.resp:
@@ -295,7 +298,7 @@ def main():
         print(f"\n## Response {resp}, skip after an open ring {SKIP} ({'stops at the ring' if resp == 'S' else 'goes on: catch up, then more new cards'})")
         res = {}
         for name, (rule, comp, *ah) in rules.items():
-            log, w, nn = run(rule, comp, Wm, E, vet, np.random.default_rng(308), size, *ah, vt0=vt0, heavy=heavy); res[name] = metrics(log, w)
+            log, w, nn = run(rule, comp, Wm, E, vet, np.random.default_rng(308), size, *ah, vt0=vt0, heavy=heavy, refill=refill, ceil=ceil); res[name] = metrics(log, w)
         table(['rule'] + list(COLS), [[n] + fmt(m, ~vet & (names != 'real')) for n, m in res.items()])
         for g, sel in groups:
             print(f'\n### {g}'); table(['rule'] + list(COLS), [[n] + fmt(m, sel) for n, m in res.items()])

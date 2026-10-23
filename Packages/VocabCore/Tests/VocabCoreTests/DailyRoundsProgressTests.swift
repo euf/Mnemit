@@ -50,11 +50,11 @@ extension DailyProgressTests {
 
     // MARK: Time
 
-    @Test func theFirstStudyDayAsksFourMinutes() throws {
+    @Test func theFirstStudyDayAsksTwoAndAHalfMinutes() throws {
         var deck = try Deck(learningOptions: options(), cards: (0..<30).map { fresh("n\($0)") })
-        #expect(evaluate([deck], at: at(day: today)).time == 240)
+        #expect(evaluate([deck], at: at(day: today)).time == 150)
         study(&deck, onDay: today, until: { done, _ in done >= 3 })
-        #expect(evaluate([deck], at: at(day: today, hour: 12)).time == 240)
+        #expect(evaluate([deck], at: at(day: today, hour: 12)).time == 150)
     }
 
     @Test func aDayFollowsTheRingOfTheLastStudyDayAndAMissedDayIsNoPartOfTheBase() throws {
@@ -113,34 +113,34 @@ extension DailyProgressTests {
     // MARK: Admission
 
     @Test func newCardsFillTheTimeOfTheDayAfterItsReviews() throws {
-        // First day, two rounds, 240 s: 15 reviews of 10 s leave 90 s, which are three new cards of 30 s.
-        let deck = try Deck(learningOptions: options(), cards: (0..<15).map { waiting("r\($0)") } + (0..<20).map { fresh("n\($0)") })
+        // First day, 150 s: 9 reviews of 10 s leave 60 s, which are two new cards of 30 s.
+        let deck = try Deck(learningOptions: options(), cards: (0..<9).map { waiting("r\($0)") } + (0..<20).map { fresh("n\($0)") })
         let progress = evaluate([deck])
-        #expect(progress.time == 240)
-        #expect(progress.newCardAllowances == [3])
-        #expect(progress.cardsLeft == 18)
-        #expect(progress.ring == DailyRing(done: 0, goal: 18))
-        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: progress.newCardAllowances[0]).new == 3)
+        #expect(progress.time == 150)
+        #expect(progress.newCardAllowances == [2])
+        #expect(progress.cardsLeft == 11)
+        #expect(progress.ring == DailyRing(done: 0, goal: 11))
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: progress.newCardAllowances[0]).new == 2)
     }
 
     @Test func aDayWithMoreReviewsThanItsTimeAdmitsNoNewCards() throws {
         let deck = try Deck(learningOptions: options(), cards: (0..<40).map { waiting("r\($0)") } + (0..<20).map { fresh("n\($0)") })
         let progress = evaluate([deck])
         #expect(progress.newCardAllowances == [0])
-        // The reviews beyond the day's time stay in the plan; the goal is the 24 that fit two rounds.
+        // The reviews beyond the day's time stay in the plan; the goal is the 15 that fit its 150 s.
         #expect(progress.cardsLeft == 40)
-        #expect(progress.ring == DailyRing(done: 0, goal: 24))
-        #expect(progress.roundEnds == [12, 24])
+        #expect(progress.ring == DailyRing(done: 0, goal: 15))
+        #expect(progress.roundEnds == [12, 15])
     }
 
     @Test func theLimitsOfTheDeckAreCeilingsOfTheAllowance() throws {
         var options = options()
-        options.newCardsPerSession = 5
+        options.newCardsPerSession = 3
         let deck = try Deck(learningOptions: options, cards: (0..<20).map { fresh("n\($0)") })
-        // Eight would fit two rounds; the deck's own limit is five.
+        // Five would fit the 150 s; the deck's own limit is three.
         let progress = evaluate([deck])
-        #expect(progress.newCardAllowances == [5])
-        #expect(progress.ring == DailyRing(done: 0, goal: 5))
+        #expect(progress.newCardAllowances == [3])
+        #expect(progress.ring == DailyRing(done: 0, goal: 3))
     }
 
     @Test func theAllowanceIsSharedByTheCeilingsOfTheDecks() throws {
@@ -148,28 +148,29 @@ extension DailyProgressTests {
         small.newCardsPerSession = 10
         let first = try Deck(learningOptions: small, cards: (0..<30).map { fresh("a\($0)") })
         let second = try Deck(learningOptions: options(), cards: (0..<30).map { fresh("b\($0)") })
-        // Eight new cards over ceilings of 10 and 30: 2 and 6.
+        // Five new cards over ceilings of 10 and 30: shares of 1.25 and 3.75, rounded down to 1 and 3, and the card that
+        // is left goes to the larger remainder: 1 and 4.
         let progress = evaluate([first, second])
-        #expect(progress.newCardAllowances == [2, 6])
-        #expect(progress.cardsLeft == 8)
-        #expect(progress.ring == DailyRing(done: 0, goal: 8))
-        // The reviews of either deck take their time from all.
-        let busy = try Deck(learningOptions: options(), cards: (0..<15).map { waiting("r\($0)") } + (0..<30).map { fresh("c\($0)") })
-        #expect(evaluate([first, busy]).newCardAllowances.reduce(0, +) == 3)
+        #expect(progress.newCardAllowances == [1, 4])
+        #expect(progress.cardsLeft == 5)
+        #expect(progress.ring == DailyRing(done: 0, goal: 5))
+        // The reviews of either deck take their time from all: 9 of them leave 60 s of 150, two new cards.
+        let busy = try Deck(learningOptions: options(), cards: (0..<9).map { waiting("r\($0)") } + (0..<30).map { fresh("c\($0)") })
+        #expect(evaluate([first, busy]).newCardAllowances.reduce(0, +) == 2)
     }
 
     @Test func theCardsIntroducedTodayCountAgainstTheAllowanceAndTheGoalStaysForTheDay() throws {
         var deck = try Deck(learningOptions: options(), cards: (0..<30).map { fresh("n\($0)") })
         let before = evaluate([deck], at: at(day: today, hour: 6))
-        #expect(before.ring.goal == 8)
+        #expect(before.ring.goal == 5)
         study(&deck, onDay: today, until: { done, _ in done >= 3 })
         let during = evaluate([deck], at: at(day: today, hour: 12))
-        #expect(during.ring.goal == 8)
+        #expect(during.ring.goal == 5)
         #expect(during.newCardAllowances == before.newCardAllowances)
         // What the stream takes now is what is left of the allowance, not the allowance again.
         let counts = StudySession.counts(for: deck, at: at(day: today, hour: 12), calendar: calendar, newCardAllowance: during.newCardAllowances[0])
         #expect(counts.newAtDayStart == during.newCardsLeft)
-        #expect(deck.cards.filter { !$0.isNew }.count + counts.new == 8)
+        #expect(deck.cards.filter { !$0.isNew }.count + counts.new == 5)
     }
 
     @Test func aDeckThatBeganTheDayWithoutNewCardsGetsItsShareOfThemOnceTheyAreAdded() throws {
@@ -178,30 +179,30 @@ extension DailyProgressTests {
         let late = (0..<10).map { Card(id: UUID(), question: "n\($0)", answer: "x", created: now.addingTimeInterval(-3600)) }
         let deck = try Deck(learningOptions: options(), cards: (0..<5).map { waiting("r\($0)") } + late)
         let progress = evaluate([deck])
-        // Five reviews take 50 s of 240: 190 s are six new cards.
-        #expect(progress.newCardAllowances == [6])
-        #expect(progress.cardsLeft == 11)
+        // Five reviews take 50 s of 150: 100 s are three new cards.
+        #expect(progress.newCardAllowances == [3])
+        #expect(progress.cardsLeft == 8)
         #expect(progress.ring == DailyRing(done: 0, goal: 5))
     }
 
     @Test func aFirstDayWithoutAnyPlanTakesTheCardsItAdmitsAsItsGoal() throws {
         let late = (0..<20).map { Card(id: UUID(), question: "n\($0)", answer: "x", created: now.addingTimeInterval(-3600)) }
         let progress = evaluate([try Deck(learningOptions: options(), cards: late)])
-        #expect(progress.newCardAllowances == [8])
-        #expect(progress.ring == DailyRing(done: 0, goal: 8))
+        #expect(progress.newCardAllowances == [5])
+        #expect(progress.ring == DailyRing(done: 0, goal: 5))
         // Its rounds are those of the cards as they stand: four new cards of 30 s a round.
-        #expect(progress.roundEnds == [4, 8])
+        #expect(progress.roundEnds == [4, 5])
         #expect(progress.streakKeptToday)
     }
 
     // MARK: Rounds
 
     @Test func theRoundsAreCutAtTheCostOfEachKindOfCard() throws {
-        // 12 reviews fill the first round, four new cards the second.
+        // 12 reviews fill the first round, one new card (30 s left of 150) the second.
         let deck = try Deck(learningOptions: options(), cards: (0..<12).map { waiting("r\($0)") } + (0..<20).map { fresh("n\($0)") })
         let progress = evaluate([deck])
-        #expect(progress.newCardAllowances == [4])
-        #expect(progress.roundEnds == [12, 16])
+        #expect(progress.newCardAllowances == [1])
+        #expect(progress.roundEnds == [12, 13])
         #expect(progress.rounds == 2)
         #expect(progress.roundsDone == 0)
         #expect(progress.cardsToNextRound == 12)
@@ -211,30 +212,31 @@ extension DailyProgressTests {
     @Test func theStreakStepAndTheGoalDoneAndTheWayToTheNextOneFollowTheCardsDone() throws {
         var deck = try Deck(learningOptions: options(), cards: (0..<200).map { due("r\($0)", onDay: today) })
         let noon = at(day: today, hour: 12)
-        // The 200 cards were learned on one day of 6000 s, its ring closed: today asks 240 × 1.075 = 258 s, which hold
-        // 25 reviews of 10 s; the plan is 200. The streak step ends at 12, two minutes, the day at 25.
+        // The 200 cards were learned on one day of 6000 s whose plan, at its start, had none of them: its ring closed
+        // on a plan smaller than the time, so today asks the same 150 s, which hold 15 reviews of 10 s; the plan is 200.
+        // The streak step ends at 12, two minutes, the day at 15.
         var progress = evaluate([deck], at: noon)
-        #expect(progress.time == 240 * DailyGoal.grows)
-        #expect(progress.roundEnds == [12, 25])
+        #expect(progress.time == 150 && progress.ringDays.last?.reason == .smallPlan)
+        #expect(progress.roundEnds == [12, 15])
         review(5, of: &deck, at: noon)
         progress = evaluate([deck], at: noon)
-        #expect(progress.ring == DailyRing(done: 5, goal: 25))
+        #expect(progress.ring == DailyRing(done: 5, goal: 15))
         #expect(progress.roundsDone == 0)
         #expect(progress.cardsToNextRound == 7)
         #expect(progress.minutesToNextRound == 2)
         review(7, of: &deck, at: noon)
         progress = evaluate([deck], at: noon)
         #expect(progress.roundsDone == 1)
-        #expect(progress.cardsToNextRound == 13)
-        review(13, of: &deck, at: noon)
+        #expect(progress.cardsToNextRound == 3)
+        review(3, of: &deck, at: noon)
         progress = evaluate([deck], at: noon)
         #expect(progress.roundsDone == 2)
         #expect(progress.cardsToNextRound == nil)
         #expect(progress.minutesToNextRound == nil)
         #expect(progress.ring.isGoalMet)
         // The rest of the plan is laps.
-        review(175, of: &deck, at: noon)
-        #expect(evaluate([deck], at: noon).ring == DailyRing(done: 200, goal: 25))
+        review(185, of: &deck, at: noon)
+        #expect(evaluate([deck], at: noon).ring == DailyRing(done: 200, goal: 15))
     }
 
     @Test func theRoundsKeepTheirPlaceThroughTheDay() throws {

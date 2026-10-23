@@ -63,46 +63,34 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   it, and new cards fill what the plan's other cards leave.
 - **The rule**, one pure step per study day, `DailyGoal.nextTime(after:)`, over the days before it as plain
   values (`DailyGoal.RingDay`): a closure tracker. The last study day (a day with work) asked T (its
-  `RingDay.time`); the next time is T × 1.075 (`DailyGoal.grows`) when its ring closed (done ≥ goal) and
-  T × 0.775 (`DailyGoal.shrinks`) when it stayed open, clamped to 120…1800 s; 240 s before any study day.
-  Nothing else changes it: a day without work is no step and the days after it ask what they would have asked
-  without it. The rule reads only `closed`. worked(d) is the cards done on `d` at the day's own prices, new ×
-  new price + other × other price at the pace of the seven study days before `d`, laps included; How Today
-  Works shows it.
-- **Why**: the ring is judged by whether it closes, so the rule steers that. Each day multiplies T by a
-  fixed factor and the share of closed rings settles near 0.8 whatever the work (Robbins–Monro quantile
-  tracking; `ring-simulation.md`: closure 0.801 over 14 simulated scenarios). An average of the work stalls
-  for a learner who stops at the ring: the work equals the ask, so the average never passes the start. The
-  tracker reads closed or open, and a ring-stopper's day is closed. An achievable ring keeps people: at
-  Duolingo the highest daily-goal tier produced the fewest streaks (`learning-flow-research.md`). Growth
-  comes from closed rings and from the "+10 new" choice after the ring. The +10 % probe and the 70 % after
-  a miss are gone for want of evidence (`decisions-evidence.md` §2). The two factors, the 2–30 minutes and
-  the 4 minutes are choices from the simulation, to check on EF's log (`Tools/ring-sim/sim.py --real`).
-- Model learners (`RingRuleTests`): one who stops at the ring grows from 4 min by 7.5 % a closed day, 258 s
-  on day 2 and 460 s on day 10; one who works less than the ring asks falls × 0.775 a day, 240, 186, 144 s,
-  and holds 2 minutes from day 4; a day without work changes nothing; a ring closed every day reaches 30
-  minutes on day 29.
-- `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring) with today live, and the
-  reason is `start`, `ringClosed` or `ringOpen`; `DailyProgressCache.Before.days` keeps the days before today.
+  `RingDay.time`); the next time is T × 1.075 (`DailyGoal.grows`) when its ring closed on a goal that filled T,
+  T when it closed on a plan smaller than T (`RingDay.filled` false: a deck's new-card limit or an exhausted deck
+  set the goal; reason `smallPlan`), and T × 0.775 (`DailyGoal.shrinks`) when it stayed open; clamped to
+  120…3600 s; 150 s before any study day. A day without work is no step, and the days after it ask what they
+  would have asked without it. worked(d) is the cards done on `d` at the day's own prices, new × new price +
+  other × other price at the pace of the seven study days before `d`, laps included; How Today Works shows it.
+- **Filled** (`DayRounds.filled`): the goal's cost plus one new card's price exceeds T, so the time, not the
+  plan, set the goal. A closed ring on a smaller plan says nothing about more time and moves nothing.
+- **Why**: `ring-design.md`. The two factors put the share of closed rings where p ln 1.075 = (1 - p) ln(1/0.775),
+  0.78, whatever the work: 0.78 on the logs of 2,000 Anki users. Two and a half minutes are reached on 77 % of
+  the first week's study days of Anki newcomers, the same share; two minutes to an hour hold the usual day of nine
+  in ten Anki users.
+- Model learners (`RingRuleTests`): one who stops at the ring grows from 2.5 min by 7.5 % a closed day, 161.25 s
+  on day 2 and 287.6 s on day 10; one who works less than the ring asks falls to 2 minutes on day 2 (150 × 0.775 =
+  116.25 is under the floor) and holds there; a ring closed on a small plan keeps its time; a day without work
+  changes nothing.
+- `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring, filled) with today live, and
+  the reason is `start`, `ringClosed`, `smallPlan` or `ringOpen`; `DailyProgressCache.Before.days` keeps the
+  days before today.
 
 ## New-card allowance
 
-- **Allowance**: today it is the smaller of two bounds. The first is the day's time minus the plan's
-  non-new cards at the start of the day at the other price, divided by the price of a new card, at least 0
-  (`DailyGoal.newCardsAllowed`). The second looks a week ahead (`DailyGoal.newCardsAllowedAhead`): the
-  most new cards `N` for which the review cards already due on the next 7 study days (averaged by the day,
-  across the active decks, suspended cards out, counted on the decks as they stood when the day began so
-  the day's own reviews don't move it: `DeckActivity.History.dueAhead`) plus the extra reviews a day next
-  week that `N` new cards bring (`NewCardLoad.reviewsPerDay` for one card, averaged over the decks weighted
-  by their ceilings), at the other price, still fit the day's time. A learner with nothing scheduled ahead
-  gets the first bound.
-- **Today only**: past days keep the first bound, so the goals, rings, streaks and medals of the history
-  don't change.
-  `DailyProgress.newCardLimit` says which bound won and `nextWeekSeconds` is the week's average, which
-  "How Today Works" shows in the row "New cards: limited by next week / by today's time".
-- **Why**: under FSRS the reviews are fixed by the schedule and new cards are the only free input, and
-  every card admitted comes back as reviews for weeks. The Anki manual sizes new cards by the review
-  workload one can sustain; the second bound applies that to the next week.
+- **Allowance**: the day's time minus the plan's non-new cards at the start of the day at the other price,
+  divided by the price of a new card, at least 0 (`DailyGoal.newCardsAllowed`). Today and past days alike.
+- **Why**: under FSRS the reviews are fixed by the schedule and new cards are the only free input; the Anki manual
+  sizes them by the review workload one can sustain, and the day's time already holds that workload: as the
+  reviews of earlier new cards grow, the time left for new ones shrinks. A second bound that looked a week ahead
+  never set the allowance on any simulated or real learner and is gone (`ring-design.md`).
 - The decks' limits (`newCardsPerSession`, `newProductionPerSession`) are ceilings. The allowance is
   split between decks in proportion to their ceilings by largest remainder (`DailyGoal.split`). A
   deck's ceiling is the new cards its limits would take at the start of the day plus those created

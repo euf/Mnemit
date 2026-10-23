@@ -27,34 +27,21 @@ memory; the ring shows effort and counts as done only what FSRS sent away.
 
 ## 2. The day's time
 
-Decision: a closure tracker: the day after a study day whose ring closed asks 1.075 times its time, after one
-that stayed open 0.775 times, clamped to 2-30 minutes, 4 minutes before any study; nothing else changes it.
+Decision: a closure tracker: the day after a study day whose ring closed on a goal that filled its time asks 1.075
+times that time, after a ring closed on a smaller plan the same time, after an open ring 0.775 times; 2 minutes to
+an hour, 2.5 minutes before any study.
 
-- `goal-setting-research.md` ("Implications for the ring rule") finds the learned base sound, the probe
-  size, the 14 days and the 70 % unsourced. Opinion.
-- The +10 % step is the running "10 % rule". Its one randomised trial (GRONORUN, 532 novice runners): a
-  13-week programme raising volume by 10 % a week against a standard 8-week one gave the same injury rate,
-  20.8 % against 20.3 % (P = .90), and the same compliance, 66.4 % against 64.5 % of the sessions done.
-  Buist et al., Am J Sports Med 2008;36(1):33–39, doi 10.1177/0363546507307505, read from the PDF. Measured,
-  other domain: a slower climb neither protected nor kept people at it, so the 10 % carries no evidence of
-  its own.
-- Duolingo: the highest daily-goal tier produced the fewest streaks
-  (https://blog.duolingo.com/improving-the-streak/, via `learning-flow-research.md`). Measured (company).
-- Lally 2010: one missed day moved automaticity by under half a point, repeated misses untested
-  (`goal-setting-research.md` §2). Single study.
-- No source found for the two factors (they come from the simulation, `ring-simulation.md`), the 2-30 minute clamp or the 4 minutes.
+- Measured, `ring-design.md`: the factors put the share of closed rings at 0.78 on the logs of 2,000 Anki users
+  and on 13 synthetic learner types; 2.5 minutes against 4 raise a newcomer's chance of a perfect first week; an
+  hour against 30 minutes holds the usual day of nine in ten Anki users and stops a backlog for heavy veterans.
+- Adaptive daily goals beat fixed ones in the trials that compared them; the trials met their goals on 33-58 % of
+  days, and no source ties the share of met goals to persistence (`ring-design-research.md`). Measured, walking.
+- The +10 % probe and the 70 % after a miss are gone: the one trial of a 10 % climb (Buist 2008, GRONORUN, 532
+  runners) found the same injuries, 20.8 % against 20.3 %, and the same compliance, 66.4 % against 64.5 %; one
+  missed day is harmless (Lally 2010).
 
-**Removed.** The probe (+10 % after three closed rings, with its 14-day rest) and the 70 % after a miss
-went for lack of evidence: the one trial of a 10 % climb (Buist 2008) found no gain in injuries or
-compliance, and one missed day is harmless (Lally 2010). A missed day is no step, as it
-has no work. The numbers that remain, 1.075 and 0.775, 2-30 minutes and 4 minutes, are choices, not findings:
-check them on EF's log by replaying `DailyGoal.nextTime` over `reviews.jsonl` with other factors and
-clamps, and look at the share of study days with a closed ring (target about 80 %). Change a number only when another
-variant beats it by 5 points of closure rate on at least 60 study days (our threshold).
-
-The tracker is Robbins–Monro quantile tracking: each day multiplies the time by a fixed factor, so the share of closed rings is set by the factors whatever the work; it reads closed or open, so a learner who stops at the ring is no problem, where an average of the work stalls (censoring). The factors give closure 0.801 over 14 simulated scenarios.
-
-Decided by simulation (`ring-simulation.md`, 200 seeds per scenario); real Anki data pending access to the Hugging Face dataset.
+**Settled by measurement.** Revisit when Mnemit's own log (60 study days or more) shows a closure share outside
+0.7-0.85 (the Progress calendar, How Today Works §2).
 
 ## 3. The streak step
 
@@ -223,7 +210,7 @@ step spacing is already measured.
 | Decision | Verdict | Action |
 |---|---|---|
 | 1 Partial credit | keep | none |
-| 2 The day's time | measure | replay the weights, the cap and the clamp on EF's log |
+| 2 The day's time | settled by measurement | `ring-design.md`; count closed rings at 60 study days |
 | 3 Streak step | keep | optional check of streak-only days (5-40 % band) |
 | 4 Two rests | measure | Forgot rate and `ms` by minute in streams of 15+ min |
 | 5 Backlog spread | measure | simulate ascending against descending R at the first backlog over 100 cards |

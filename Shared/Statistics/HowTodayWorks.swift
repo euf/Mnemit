@@ -57,14 +57,6 @@ struct HowTodayWorks: Equatable, Sendable {
             .value(label: String(localized: "Cards in learning"), value: plan.learning.formatted()),
             .value(label: String(localized: "New cards admitted"), value: plan.newAdmitted.formatted()),
         ]
-        // Which bound set the new cards, with what the next week already holds: nothing where it isn't looked at.
-        if let week = progress.nextWeekSeconds {
-            rows.append(
-                .value(
-                    label: progress.newCardLimit == .nextWeek ? String(localized: "New cards: limited by next week") : String(localized: "New cards: limited by today's time"),
-                    value: String(localized: "\(minutes(week)) min"),
-                    note: String(localized: "Reviews already due in the next 7 days, averaged by the day")))
-        }
         for (index, deck) in decks.enumerated() where breakdown.decks.indices.contains(index) {
             // A paused deck is no part of the plan: it is named, with no share.
             if deck.options.isPaused {
@@ -112,7 +104,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "Each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less; a day without study changes nothing. Between two and thirty minutes, and four minutes before any study. The streak step is the cards that fit the first two minutes of the plan."
+                "Each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less; a ring closed on a plan smaller than the time, or a day without study, changes nothing. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan."
         )
         return Section(title: String(localized: "Today's time"), rows: rows, footer: footer)
     }
@@ -123,6 +115,7 @@ struct HowTodayWorks: Equatable, Sendable {
         case .start: String(localized: "Start")
         case .ringClosed: String(localized: "Ring closed")
         case .ringOpen: String(localized: "Ring open")
+        case .smallPlan: String(localized: "Plan under the time")
         }
     }
 

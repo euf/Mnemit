@@ -140,14 +140,17 @@ public enum DailyGoal {
     /// The streak step: the cards of the plan that fit the first `streakSeconds` of work at the learner's own
     /// pace. A day keeps the streak when they are done, and Study rests there once.
     public static let streakSeconds: Double = 120
-    /// The time of the first study day, in seconds.
-    public static let initialSeconds: Double = 240
-    /// The time of a day, in seconds, whatever the learner did: two to thirty minutes.
-    public static let timeRange: ClosedRange<Double> = 120...1800
+    /// The time of the first study day, in seconds: two and a half minutes, which 77 % of the first week's study days of
+    /// Anki newcomers reach, the share of closed rings that `grows` and `shrinks` settle at (`references/ring-design.md`).
+    public static let initialSeconds: Double = 150
+    /// The time of a day, in seconds, whatever the learner did: two minutes to an hour, which holds the usual day
+    /// of nine in ten Anki users (`references/ring-design.md`).
+    public static let timeRange: ClosedRange<Double> = 120...3600
 
-    /// What a closed ring multiplies the next time by: closure about 0.8 across 14 simulated scenarios (`references/ring-simulation.md`).
+    /// What a closed ring multiplies the next time by. With `shrinks` the share of closed rings settles where
+    /// p ln(grows) = (1 - p) ln(1 / shrinks), 0.78, whatever the work (`references/ring-design.md`).
     public static let grows = 1.075
-    /// What an open ring multiplies the next time by: the same simulation, a quarter less.
+    /// What an open ring multiplies the next time by: a quarter less.
     public static let shrinks = 0.775
 
     /// Why a day has the size it has.
@@ -158,6 +161,8 @@ public enum DailyGoal {
         case ringClosed
         /// The last study day left its ring open: its time times `shrinks`.
         case ringOpen
+        /// The last study day closed its ring on a plan smaller than its time (`RingDay.filled` false): its time again.
+        case smallPlan
     }
 
     /// One day of the ring as the size rule reads it, plain values: the size it had and what came of it.
@@ -173,24 +178,33 @@ public enum DailyGoal {
         public var closed: Bool
         /// Something was done: `done > 0`.
         public var studied: Bool
+        /// The goal took the day's time (`DayRounds.filled`): the plan held more than the time. A ring closed on a
+        /// smaller plan says nothing of more time.
+        public var filled: Bool
 
-        public init(day: Int, time: Double = DailyGoal.initialSeconds, reason: SizeReason = .start, worked: Double, closed: Bool, studied: Bool) {
+        public init(
+            day: Int, time: Double = DailyGoal.initialSeconds, reason: SizeReason = .start, worked: Double, closed: Bool, studied: Bool,
+            filled: Bool = true
+        ) {
             self.day = day
             self.time = time
             self.reason = reason
             self.worked = worked
             self.closed = closed
             self.studied = studied
+            self.filled = filled
         }
     }
 
     /// The time of the next day, in seconds, from the days before it (`days`, oldest first, every day from the first
     /// study day): a closure tracker. The last study day asked `T` (its `time`, which carries the steps of the days
     /// before it, so a cached run equals a recount); the next time is `T × grows` when its ring closed and
-    /// `T × shrinks` when it stayed open, within `timeRange`; `initialSeconds` before any study day. A day without
-    /// work, missed or not, changes nothing.
+    /// `T × shrinks` when it stayed open, within `timeRange`; `initialSeconds` before any study day. A ring closed on a
+    /// plan smaller than its time (`RingDay.filled` false: a deck's new-card limit or an exhausted deck set the goal)
+    /// keeps `T`: the learner was not asked for it. A day without work, missed or not, changes nothing.
     public static func nextTime(after days: [RingDay]) -> (time: Double, reason: SizeReason) {
         guard let last = days.last(where: \.studied) else { return (initialSeconds, .start) }
+        if last.closed && !last.filled { return (last.time, .smallPlan) }
         let next = last.time * (last.closed ? grows : shrinks)
         return (min(max(next, timeRange.lowerBound), timeRange.upperBound), last.closed ? .ringClosed : .ringOpen)
     }
@@ -202,25 +216,6 @@ public enum DailyGoal {
         let left = seconds - Double(max(0, otherCards)) * pace.otherCard
         // A sliver is added so that exact multiples of the price don't fall short in the last digit.
         return max(0, Int((left / pace.newCard + 1e-9).rounded(.down)))
-    }
-
-    /// The bound that set today's new cards.
-    public enum NewCardLimit: Hashable, Sendable {
-        /// The day's time, `newCardsAllowed`.
-        case time
-        /// The reviews of the next week, `newCardsAllowedAhead`.
-        case nextWeek
-    }
-
-    /// How many new cards the next week can take: the most `N` for which the reviews already due over the next
-    /// `NewCardLoad.horizonDays` study days (`dueAhead` of them in all), averaged by the day, and the `N` cards'
-    /// own reviews of a day (`loadPerNewCard` each, `NewCardLoad.reviewsPerDay`), at the price of an other card,
-    /// still fit the day's `seconds`. 0 where the reviews due alone don't fit.
-    public static func newCardsAllowedAhead(seconds: Double, dueAhead: Int, loadPerNewCard: Double, pace: Pace) -> Int {
-        let room = seconds / pace.otherCard - Double(max(0, dueAhead)) / Double(NewCardLoad.horizonDays)
-        guard room >= 0 else { return 0 }
-        guard loadPerNewCard > 0 else { return Int.max }
-        return Int(min(room / loadPerNewCard + 1e-9, 1e9).rounded(.down))
     }
 
     /// `total` new cards shared among decks in proportion to their `ceilings`, the new cards each deck's own
@@ -320,7 +315,14 @@ public struct DayRounds: Hashable, Sendable {
         }
         if goal > 0, ends.last != goal { ends.append(goal) }
         self.ends = ends
+        let next = goal < otherCards ? pace.otherCard : pace.newCard
+        filled = goal > 0 && Double(min(goal, otherCards)) * pace.otherCard + Double(max(0, goal - otherCards)) * pace.newCard + next > budget + 1e-9
     }
+
+    /// The time, not the plan, set the goal: what the goal costs leaves less of the day's seconds than the plan's next
+    /// card would take, a review while the goal ends inside the reviews, else a new card. False when the plan was smaller
+    /// (a deck's new-card limit, no new cards left) or empty.
+    public let filled: Bool
 
     /// The cards of the goal; 0 for a plan without cards.
     public var goal: Int { ends.last ?? 0 }
@@ -631,11 +633,6 @@ public struct DeckActivity: Sendable {
         deck.cardsUnderway(onDayOf: now, calendar: calendar)
     }
 
-    /// The reviews a day, over the next week, that one new card of this deck adds (`NewCardLoad`).
-    func loadPerNewCard(at now: Date, calendar: StudyCalendar) -> Double {
-        NewCardLoad.reviewsPerDay(addingNewCards: 1, options: deck.learningOptions, at: now, calendar: calendar)
-    }
-
     /// The words this deck has in memory at `now`, `MemoryEstimate`.
     public func memory(at now: Date, calendar: StudyCalendar) -> MemoryEstimate {
         MemoryEstimate(deck: deck, at: now, calendar: calendar)
@@ -793,10 +790,6 @@ public struct DeckActivity: Sendable {
         /// The new cards the deck's own limits take on the study day of `now` if it began now: the
         /// cards created since it began are in this plan, which `starts` leaves them out of.
         var newCeilingToday: Int
-        /// The review cards due on the `NewCardLoad.horizonDays` study days after today, on the deck as it stood when
-        /// today began (suspended cards left out): what the next week already holds, which doesn't move with
-        /// the day's own reviews (`DailyGoal.newCardsAllowedAhead`).
-        var dueAhead: Int
         /// Which `Past` the days before today are from, if they are kept for the next change; two histories that
         /// name the same hold the same days before today.
         var pastID: UUID?
@@ -918,8 +911,7 @@ public struct DeckActivity: Sendable {
         let past = Past(key: key, paced: paced.without(day: today), starts: starts, stood: stood, locks: locks)
         starts[today] = Self.dayStart(on: today, of: stood, locks: locks, calendar: calendar)
         let history = History(
-            paced: paced, starts: starts, newCeilingToday: Self.newCeiling(on: today, of: stood, locks: locks, calendar: calendar),
-            dueAhead: Self.dueAhead(after: today, of: stood, calendar: calendar), pastID: past.id)
+            paced: paced, starts: starts, newCeilingToday: Self.newCeiling(on: today, of: stood, locks: locks, calendar: calendar), pastID: past.id)
         return (history, past)
     }
 
@@ -931,7 +923,7 @@ public struct DeckActivity: Sendable {
         starts[today] = Self.dayStart(on: today, of: past.stood, locks: past.locks, calendar: calendar)
         return History(
             paced: past.paced.adding(reviews), starts: starts, newCeilingToday: Self.newCeiling(on: today, of: past.stood, locks: past.locks, calendar: calendar),
-            dueAhead: Self.dueAhead(after: today, of: past.stood, calendar: calendar), pastID: past.id)
+            pastID: past.id)
     }
 
     /// The plan of study day `day` when it began, over `stood`, the deck as it was then.
@@ -939,17 +931,6 @@ public struct DeckActivity: Sendable {
         let counts = StudySession.counts(
             for: stood, at: calendar.start(ofDay: day), calendar: calendar, past: StudySession.DayIndex(lockedNotes: locks.notes))
         return DayStart(other: counts.learning + counts.review, new: counts.new)
-    }
-
-    /// The review cards of `stood`, the deck as it was when `day` began, that fall due on the `NewCardLoad.horizonDays`
-    /// study days after `day`. Suspended cards are never due; learning cards are today's.
-    private static func dueAhead(after day: Int, of stood: Deck, calendar: StudyCalendar) -> Int {
-        let from = calendar.start(ofDay: day + 1)
-        let until = calendar.start(ofDay: day + 1 + NewCardLoad.horizonDays)
-        return stood.cards.reduce(0) { count, card in
-            guard !card.isSuspended, let state = card.learningState, state.phase == .review, state.due >= from, state.due < until else { return count }
-            return count + 1
-        }
     }
 
     /// The new cards the deck's limits take on `day` if it began now: the cards created since it began count.
@@ -1162,11 +1143,6 @@ public struct DailyProgress: Hashable, Sendable {
     /// `evaluate(_:at:calendar:)`: the plan takes them as `newCardAllowance`. A paused deck has 0
     /// here and no share of the day's new cards; whoever builds its plan leaves the allowance out.
     public var newCardAllowances: [Int]
-    /// Which bound set `newCardAllowances`: the day's time, or the week ahead (`DailyGoal.newCardsAllowedAhead`).
-    public var newCardLimit: DailyGoal.NewCardLimit
-    /// The seconds a day, on average over the next seven study days, of the reviews already due then at the price
-    /// of an other card; `nil` with no deck to look at.
-    public var nextWeekSeconds: Double?
     /// The words in memory across the decks now, and when the day began (`MemoryEstimate`).
     public var memory: MemoryEstimate
     /// The rings of the last seven study days, today last: closed or not, `nil` before the first study day.
@@ -1187,11 +1163,8 @@ public struct DailyProgress: Hashable, Sendable {
         roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), seconds: DailyGoal.initialSeconds), streakKeptToday: Bool = false,
         newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
         ladder: [Int] = [], climbedToday: Int = 0, records: [DayRecord] = [], achievements: [Achievement] = [],
-        ringDays: [DailyGoal.RingDay] = [],
-        newCardLimit: DailyGoal.NewCardLimit = .time, nextWeekSeconds: Double? = nil
+        ringDays: [DailyGoal.RingDay] = []
     ) {
-        self.newCardLimit = newCardLimit
-        self.nextWeekSeconds = nextWeekSeconds
         self.ringDays = ringDays
         self.records = records
         self.achievements = achievements
@@ -1247,9 +1220,8 @@ public struct DailyProgress: Hashable, Sendable {
     /// sets the time of the day: the cards of its plan that were not new, at the pace the day began with
     /// (the seven study days before it), leave the rest to new cards (`DailyGoal.newCardsAllowed`). The
     /// goal of the day is the plan that fits (`DayRounds`); the ring is closed at the goal, and the first
-    /// round keeps the streak. Today's new cards are no more than the next week can take either
-    /// (`DailyGoal.newCardsAllowedAhead`; past days keep the time alone, their goals, rings and streaks are history),
-    /// and are shared among the decks, by their own limits, as `newCardAllowances`.
+    /// round keeps the streak. Today's new cards are shared among the decks, by their own limits, as
+    /// `newCardAllowances`.
     ///
     /// A paused deck (`DeckActivity.isPaused`) takes no part in any of it: not in the plan, the goal, the
     /// rounds, the time, the admission of new cards, the streak, the words in memory or the cards done.
@@ -1307,7 +1279,7 @@ public struct DailyProgress: Hashable, Sendable {
                 days.append(
                     DailyGoal.RingDay(
                         day: day, time: size.time, reason: size.reason, worked: pace.seconds(newCards: newDone, otherCards: otherDone),
-                        closed: done >= rounds.goal, studied: done > 0))
+                        closed: done >= rounds.goal, studied: done > 0, filled: rounds.filled))
             }
             return DailyProgressCache.Before(days: days, kept: kept, closed: closed, goals: goals, done: dones)
         }
@@ -1329,24 +1301,7 @@ public struct DailyProgress: Hashable, Sendable {
         let time = size.time
         let startPace = pace(over: (today - DailyGoal.paceDays)...(today - 1))
         let other = histories.reduce(0) { $0 + ($1.starts[today]?.other ?? 0) }
-        var allowed = DailyGoal.newCardsAllowed(seconds: time, otherCards: other, pace: startPace)
-        var limit = DailyGoal.NewCardLimit.time
-        var nextWeekSeconds: Double?
-        if !decks.isEmpty {
-            // Today only: the week ahead of a past day isn't known as it was. The cards a deck may introduce weigh its
-            // load, so a deck with a small limit counts for little.
-            let dueAhead = histories.reduce(0) { $0 + $1.dueAhead }
-            let ceilings = histories.map { Double(max(0, $0.newCeilingToday)) }
-            let loads = decks.map { $0.loadPerNewCard(at: now, calendar: calendar) }
-            let weight = ceilings.reduce(0, +)
-            let load = weight > 0 ? zip(ceilings, loads).reduce(0) { $0 + $1.0 * $1.1 } / weight : loads.reduce(0, +) / Double(loads.count)
-            let ahead = DailyGoal.newCardsAllowedAhead(seconds: time, dueAhead: dueAhead, loadPerNewCard: load, pace: startPace)
-            if ahead < allowed {
-                allowed = ahead
-                limit = .nextWeek
-            }
-            nextWeekSeconds = Double(dueAhead) / Double(NewCardLoad.horizonDays) * startPace.otherCard
-        }
+        let allowed = DailyGoal.newCardsAllowed(seconds: time, otherCards: other, pace: startPace)
         let allowances = DailyGoal.split(allowed, overCeilings: histories.map(\.newCeilingToday))
         let startNew = zip(allowances, histories).reduce(0) { $0 + min($1.0, $1.1.starts[today]?.new ?? 0) }
         let startRounds = DayRounds(otherCards: other, newCards: startNew, pace: startPace, seconds: time)
@@ -1371,7 +1326,8 @@ public struct DailyProgress: Hashable, Sendable {
             repairCards: max(0, ring.goal - ring.done))
         let ringToday = DailyGoal.RingDay(
             day: today, time: time, reason: size.reason,
-            worked: startPace.seconds(newCards: newDoneByDay[today] ?? 0, otherCards: otherDoneByDay[today] ?? 0), closed: ring.isGoalMet, studied: ring.done > 0)
+            worked: startPace.seconds(newCards: newDoneByDay[today] ?? 0, otherCards: otherDoneByDay[today] ?? 0), closed: ring.isGoalMet, studied: ring.done > 0,
+            filled: startRounds.filled)
         let records = (first...today).map { day in
             DayRecord(
                 day: day, done: day == today ? ring.done : before.done[day] ?? 0, goal: day == today ? ring.goal : before.goals[day] ?? 0,
@@ -1390,7 +1346,6 @@ public struct DailyProgress: Hashable, Sendable {
                 for index in sum.indices { sum[index] += steps[index] }
             },
             climbedToday: decks.reduce(0) { $0 + $1.climbs(onDayOf: now, calendar: calendar) }, records: records,
-            achievements: Achievements.earned(over: records), ringDays: before.days + [ringToday], newCardLimit: limit,
-            nextWeekSeconds: nextWeekSeconds)
+            achievements: Achievements.earned(over: records), ringDays: before.days + [ringToday])
     }
 }

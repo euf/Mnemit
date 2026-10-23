@@ -15,13 +15,13 @@ extension DailyProgressTests {
         let start = calendar.start(ofDay: today)
         let learning = LearningState(phase: .learning, stability: 1, difficulty: 5, lastReview: start.addingTimeInterval(-7200), due: start.addingTimeInterval(-3600), reviews: 1)
         let cards =
-            (0..<10).map { waiting("r\($0)") } + (0..<5).map { waiting("o\($0)", onDay: today - 3) } + [Card(question: "l", answer: "l", learningState: learning)]
+            (0..<3).map { waiting("r\($0)") } + (0..<5).map { waiting("o\($0)", onDay: today - 3) } + [Card(question: "l", answer: "l", learningState: learning)]
             + (0..<40).map { fresh("n\($0)") }
         let (progress, breakdown) = breakdown([try Deck(learningOptions: options(), cards: cards)])
-        // 5 are overdue, 10 are due on the day: all 15 are due today.
-        #expect(breakdown.plan.reviewsDue == 15)
+        // 5 are overdue, 3 are due on the day: all 8 are due today.
+        #expect(breakdown.plan.reviewsDue == 8)
         #expect(breakdown.plan.learning == 1)
-        // Two rounds are 240 s; 16 cards at 10 s leave 80 s, which are two new cards of 30 s.
+        // The day is 150 s; 9 cards at 10 s leave 60 s, which are two new cards of 30 s.
         #expect(breakdown.plan.newAdmitted == 2)
         #expect(breakdown.decks == [DayBreakdown.DeckNewCards(allowance: 2, ceiling: 40, admitted: 2)])
         #expect(progress.newCardAllowances == [2])

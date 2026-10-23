@@ -5,8 +5,9 @@
 - Version 5.4 on `main`; the iPhone runs 5.4.7 (42b298f), signed until 30.10. The day's model (one ring, the
   stack, partial credit, the streak step, two rests, medals, the Progress screen) is
   `references/learning-flow.md`; the ring's size (seconds, a tracker of the closed rings) is
-  `references/daily-ring.md`; why: `references/learning-flow-research.md`, `goal-setting-research.md`,
-  `speech-stutter-research.md`. Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review).
+  `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
+  and the logs of 2,000 Anki users: `references/ring-design.md`; why the rest:
+  `references/learning-flow-research.md`, `goal-setting-research.md`, `speech-stutter-research.md`. Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review).
   Screens: `references/flows.md`, `references/screens.md`. Brief sub-agents by
   `references/agent-lessons-rings.md` and `agent-token-costs.md`.
 - Speech: words are rendered ahead and played from memory (`GreekSpeech`, `SpeechLog` writes
@@ -65,10 +66,8 @@ In order of importance to EF. Brief sub-agents by `references/agent-token-costs.
 5. **Decisions to revisit by evidence** (`references/decisions-evidence.md`, 23.10: ten checked; medals
    changed in 5.3.6 after Deci, Koestner & Ryan 1999, the next medal shows no progress count; four to
    measure on EF's own log):
-   - The day's time (§2): chosen by simulation (`references/ring-simulation.md`); rerun
-     `Tools/ring-sim/sim.py --real <folder>` once the Hugging Face dataset is accessible, the parameters
-     (1.075 / 0.775) may move; then replay the factors on EF's log, keep the closure rate near 80 % of study
-     days; needs 60 study days.
+   - The day's time (§2): settled by measurement (`references/ring-design.md`). At 60 study days count the
+     closed rings in the Progress calendar: a share outside 0.7-0.85 reopens it.
    - Rests (§4): Forgot rate and `ms` by minute in streams of 15+ minutes against 1 - R; add a skippable
      rest at the minute where either climbs.
    - Backlog order (§5): ascending against descending retrievability in the open-spaced-repetition
