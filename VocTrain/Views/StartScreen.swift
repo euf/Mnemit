@@ -276,7 +276,7 @@ struct StartScreen: View {
             }
         case .progress:
             if let progress = ring.progress {
-                ProgressScreen(progress: progress, decks: knownDecks.byName)
+                ProgressScreen(progress: progress) { HowTodayWorksButton(decks: knownDecks.byName, now: Date()) }
             }
         }
     }

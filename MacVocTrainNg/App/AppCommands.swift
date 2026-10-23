@@ -58,6 +58,7 @@ struct AppCommands: Commands {
         CommandGroup(after: .windowList) {
             Button("Today") { WelcomeWindow.show() }
                 .keyboardShortcut("0")
+            Button("Progress") { ProgressWindow.show() }
         }
 
         CommandGroup(after: .help) {

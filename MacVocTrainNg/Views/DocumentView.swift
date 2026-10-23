@@ -284,10 +284,7 @@ struct DocumentView: View {
     /// Evaluates the ring for every deck of the Mnemit folder, the open ones as their documents have them, as the
     /// iPhone does: the ring and the streak are one over all decks, whichever window shows them.
     private func refreshRing() {
-        let documents = OpenDecks.shared.documents
-        let open = Set(documents.compactMap { $0.packageURL?.standardizedFileURL })
-        let files = DeckFolder.shared.decks.filter { !open.contains($0.standardizedFileURL) }
-        ring.refresh(documents: documents, files: files)
+        ring.refreshAllDecks()
     }
 }
 
@@ -313,11 +310,21 @@ private struct StartStudyButton: View {
 }
 
 /// Today's cards done against the daily goal as a ring, and beside it the streak, the flame and its days, next to
-/// the Study button. An indicator, no button: it takes no background in the toolbar. The figures are in its help.
+/// the Study button. A click opens Progress, as a tap on Today's ring does on the iPhone; the figures are in its help.
 private struct RingChip: View {
     var progress: DailyProgress?
 
     var body: some View {
+        Button(action: ProgressWindow.show) {
+            chip
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(Text("Progress"))
+        .accessibilityValue(help)
+    }
+
+    private var chip: some View {
         HStack(spacing: 6) {
             ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: 22)
             if let progress, progress.streak.days > 0 {
@@ -330,10 +337,7 @@ private struct RingChip: View {
                 }
             }
         }
-        .help(help)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("Daily Goal"))
-        .accessibilityValue(help)
+        .contentShape(Rectangle())
     }
 
     /// The day's headline, "≈ 2 min to keep your streak" or "Ring closed", then "14 of 20 cards", "· 12-day streak" when there is one,

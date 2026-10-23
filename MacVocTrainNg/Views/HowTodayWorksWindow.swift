@@ -2,21 +2,19 @@ import AppKit
 import SwiftUI
 import VocabCore
 
-/// The window "How Today Works" of the Study menu: the figures under the ring and the rounds, for the decks
-/// that are open (`OpenDecks`, as the ring on the Mac counts them). One window; asking again brings it to the
-/// front and works the figures out anew.
-// ponytail: the decks are named by their place, Deck 1, Deck 2, as `OpenDecks` holds documents without names;
-// give `OpenDecks.add` the file name if two decks open at once are hard to tell apart here.
+/// The window "How Today Works" of the Study menu and of Progress: the figures under the ring and the rounds, for
+/// every deck of the Mnemit folder (`AllDecks`, as the ring on the Mac counts them), each named by its file. One
+/// window; asking again brings it to the front and works the figures out anew.
 @MainActor
 enum HowTodayWorksWindow {
     private static var window: NSWindow?
 
     static func show() {
-        let documents = OpenDecks.shared.documents
-        let sources = documents.map { HowTodayWorks.Source(name: nil, deck: $0.deck) }
-        let calendar = documents.first?.calendar ?? StudyCalendar()
-        let now = documents.first?.clock.now ?? Date()
-        let content = NSHostingController(rootView: Loader(sources: sources, now: now, calendar: calendar))
+        let decks = AllDecks.current()
+        let sources = decks.documents.map { HowTodayWorks.Source(name: $0.packageURL?.deletingPathExtension().lastPathComponent, deck: $0.deck) }
+        let calendar = decks.documents.first?.calendar ?? StudyCalendar()
+        let now = decks.documents.first?.clock.now ?? Date()
+        let content = NSHostingController(rootView: Loader(sources: sources, files: decks.files, now: now, calendar: calendar))
         if let window {
             window.contentViewController = content
             window.makeKeyAndOrderFront(nil)
@@ -35,9 +33,10 @@ enum HowTodayWorksWindow {
         window.makeKeyAndOrderFront(nil)
     }
 
-    /// Replays the logs off the main actor, then shows the figures.
+    /// Reads the decks that aren't open and replays the logs off the main actor, then shows the figures.
     private struct Loader: View {
         var sources: [HowTodayWorks.Source]
+        var files: [URL]
         var now: Date
         var calendar: StudyCalendar
         @State private var content: HowTodayWorks?
@@ -45,8 +44,13 @@ enum HowTodayWorksWindow {
         var body: some View {
             HowTodayWorksView(content: content)
                 .task {
-                    let (sources, now, calendar) = (sources, now, calendar)
-                    content = await Task.detached(priority: .utility) { HowTodayWorks.make(sources, at: now, calendar: calendar, swipes: nil) }.value
+                    let (sources, files, now, calendar) = (sources, files, now, calendar)
+                    content = await Task.detached(priority: .utility) {
+                        let read = files.compactMap { url in
+                            DeckFileReader.deck(at: url).map { HowTodayWorks.Source(name: url.deletingPathExtension().lastPathComponent, deck: $0) }
+                        }
+                        return HowTodayWorks.make(sources + read, at: now, calendar: calendar, swipes: nil)
+                    }.value
                 }
         }
     }

@@ -80,4 +80,19 @@ struct TodayWindowSnapshotTests {
             name: "paused")
         try write(content(folder: nil, counts: [:], progress: nil), name: "welcome")
     }
+
+    /// The Progress window's screen over a month of study.
+    @Test func progress() throws {
+        let today = 20_000
+        let records = (0..<40).map { offset in
+            let day = today - 39 + offset
+            let missed = offset == 12
+            return DayRecord(day: day, done: missed ? 0 : 20 + offset % 7, goal: 20, kept: !missed, closed: !missed && offset % 5 != 3, streak: missed ? 0 : offset < 12 ? offset + 1 : offset - 12)
+        }
+        let progress = DailyProgress(
+            ring: DailyRing(done: 12, goal: 20), streak: Streak(days: 27, repairCards: nil), streakKeptToday: true,
+            memory: MemoryEstimate(words: 412.4, wordsAtDayStart: 397), ladder: [180, 36, 64, 85, 42, 9], records: records,
+            achievements: Achievements.earned(over: records))
+        try write(NavigationStack { ProgressScreen(progress: progress) }.frame(width: 460, height: 900), name: "progress")
+    }
 }

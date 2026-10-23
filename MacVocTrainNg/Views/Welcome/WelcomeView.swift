@@ -42,12 +42,9 @@ struct WelcomeView: View {
     private func refresh() {
         folder.refresh()
         recent = NSDocumentController.shared.recentDocumentURLs
-        let documents = OpenDecks.shared.documents
-        let open = Set(documents.compactMap { $0.packageURL?.standardizedFileURL })
-        let files = folder.decks.filter { !open.contains($0.standardizedFileURL) }
         let urls = folder.decks
         Task {
-            await ring.refresh(documents: documents, files: files, reloadFiles: true, delay: .zero).value
+            await ring.refreshAllDecks(reloadFiles: true, delay: .zero).value
             await counts.refresh(urls)
         }
     }
@@ -101,10 +98,24 @@ struct TodayWindowContent: View {
 
     private var today: some View {
         VStack(alignment: .leading, spacing: Spacing.section) {
-            SummaryRow(
-                due: due, newDue: active.reduce(0) { $0 + (counts[$1]?.newAtDayStart ?? 0) }, progress: isDayReady ? progress : nil,
-                nextDue: counts.values.compactMap(\.nextDue).min(), now: now, isLoaded: isDayReady, ringSize: 80
-            )
+            // The day is a button with a chevron, as on the iPhone: it opens Progress.
+            Button(action: ProgressWindow.show) {
+                HStack(spacing: Spacing.gap) {
+                    SummaryRow(
+                        due: due, newDue: active.reduce(0) { $0 + (counts[$1]?.newAtDayStart ?? 0) }, progress: isDayReady ? progress : nil,
+                        nextDue: counts.values.compactMap(\.nextDue).min(), now: now, isLoaded: isDayReady, ringSize: 80
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "chevron.forward")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Progress")
+            .disabled(progress == nil)
             VStack(spacing: Spacing.hairline) {
                 Button {
                     study(action)
