@@ -100,3 +100,31 @@ Durations: 1356051 reviews (0.94%) exceed 60 s and are capped to 60 s; 96009 rev
 | 1.5-2 | 81139 | 0.827 | 0.027 | 1886 | 0.805 | 0.018 |
 | >2 | 125334 | 0.791 | 0.039 | 1947 | 0.792 | 0.032 |
 
+### 8. Days without a new card while still learning (some new card in the previous 30 study days; >= 30 study days of history; last study day excluded)
+| study days (pooled) | days | P(next day studied) | P(gap >= 7 starts) |
+|---|---|---|---|
+| with new cards | 467337 | 0.833 | 0.030 |
+| without a new card | 258188 | 0.747 | 0.052 |
+| without, size <0.5 | 91347 | 0.661 | 0.083 |
+| without, size 0.5-1 | 85237 | 0.809 | 0.031 |
+| without, size 1-1.5 | 43382 | 0.805 | 0.031 |
+| without, size 1.5-2 | 16551 | 0.766 | 0.042 |
+| without, size >2 | 21671 | 0.729 | 0.052 |
+| with, size <0.5 | 55961 | 0.674 | 0.085 |
+| with, size 0.5-1 | 132402 | 0.856 | 0.021 |
+| with, size 1-1.5 | 130851 | 0.883 | 0.016 |
+| with, size 1.5-2 | 57087 | 0.852 | 0.021 |
+| with, size >2 | 91036 | 0.813 | 0.033 |
+| without, run of 1 | 88906 | 0.742 | 0.056 |
+| without, run of 2-3 | 66879 | 0.742 | 0.055 |
+| without, run of 4-7 | 47027 | 0.749 | 0.050 |
+| without, run of 8-14 | 30549 | 0.752 | 0.046 |
+| without, run of 15-30 | 24827 | 0.765 | 0.039 |
+
+### Per user (>= 10 days of each kind): the same, without a new card minus with
+| statistic (per user) | N users | median | p10 | p25 | p75 | p90 |
+|---|---|---|---|---|---|---|
+| share of days without a new card | 1813 | 0.324 | 0.148 | 0.219 | 0.458 | 0.589 |
+| no-new minus new: P(next day) | 1813 | -0.101 | -0.261 | -0.180 | -0.039 | 0.021 |
+| no-new minus new: P(gap >= 7) | 1813 | 0.030 | -0.012 | 0.004 | 0.075 | 0.138 |
+

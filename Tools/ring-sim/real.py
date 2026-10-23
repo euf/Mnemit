@@ -89,7 +89,30 @@ def bigdays(u):
         out['gap>=7 starts after %s' % name] = float(g7[ok].mean()) if ok.sum() >= 5 else NAN
     return out
 
-STATS = (activity, daily, prices, newload, fresh, returns, bigdays)
+NR, NN = [1, 2, 4, 8, 15], ['1', '2-3', '4-7', '8-14', '15-30']  # runs of study days without a new card
+
+def novelty(u):
+    """Days without a new card while the user is still learning new ones (some introduced in the previous 30 study days):
+    what follows them, against days with new cards, by the size of the day and by the run of such days."""
+    d, m, b = u['days'], u['mins'], u['med14']; n = len(d)
+    new = np.bincount(np.searchsorted(d, u['fd']), minlength=n)
+    j = np.arange(30, n - 1)  # 30 study days of history; the last study day has no known successor
+    if not len(j):
+        return {}
+    c = np.concatenate([[0], np.cumsum(new > 0)]); active = c[j] - c[j - 30] > 0
+    run = np.zeros(n, int)
+    for i in range(n):
+        run[i] = 0 if new[i] else (run[i - 1] + 1 if i else 1)
+    j = j[active]; gp = d[j + 1] - d[j] - 1; none = new[j] == 0
+    nx, g7, k = (gp == 0).astype(float), (gp >= 7).astype(float), np.digitize(m[j] / np.maximum(b[j], MIN), BB)
+    out = {'P:nv_none': none, 'P:nv_next': nx, 'P:nv_g7': g7, 'P:nv_size': k, 'P:nv_run': np.where(none, np.digitize(run[j], NR), -1)}
+    if none.sum() >= 10 and (~none).sum() >= 10:
+        out['no-new minus new: P(next day)'] = nx[none].mean() - nx[~none].mean()
+        out['no-new minus new: P(gap >= 7)'] = g7[none].mean() - g7[~none].mean()
+        out['share of days without a new card'] = none.mean()
+    return out
+
+STATS = (activity, daily, prices, newload, fresh, returns, bigdays, novelty)
 
 def user(c):
     u = prep(c); out = {}
@@ -153,6 +176,14 @@ def report(S, P, tally, ids, per):
         a, c = a[~np.isnan(a)], c[~np.isnan(c)]
         rows.append([name, int((k == i).sum()), fmt(nx[k == i].mean()), fmt(g7[k == i].mean()), len(a), fmt(np.median(a)) if len(a) else '-', fmt(np.median(c)) if len(c) else '-'])
     table(['bin', 'user-days (pooled)', 'P(next day studied), pooled', 'P(gap >= 7 starts), pooled', 'users (>= 5 days in bin)', 'P(next day), user median', 'P(gap >= 7), user median'], rows)
+    print('### 8. Days without a new card while still learning (some new card in the previous 30 study days; >= 30 study days of history; last study day excluded)')
+    none, nx, g7, k, rn = (np.concatenate(P['nv_' + x]) for x in ('none', 'next', 'g7', 'size', 'run'))
+    rows = [[lab, int(sel.sum()), fmt(nx[sel].mean()), fmt(g7[sel].mean())] for lab, sel in [('with new cards', ~none), ('without a new card', none)]]
+    rows += [['without, size ' + name, int((none & (k == i)).sum()), fmt(nx[none & (k == i)].mean()), fmt(g7[none & (k == i)].mean())] for i, name in enumerate(BN)]
+    rows += [['with, size ' + name, int((~none & (k == i)).sum()), fmt(nx[~none & (k == i)].mean()), fmt(g7[~none & (k == i)].mean())] for i, name in enumerate(BN)]
+    rows += [['without, run of ' + name, int((rn == i + 1).sum()), fmt(nx[rn == i + 1].mean()), fmt(g7[rn == i + 1].mean())] for i, name in enumerate(NN)]
+    table(['study days (pooled)', 'days', 'P(next day studied)', 'P(gap >= 7 starts)'], rows)
+    dist(S, ['share of days without a new card', 'no-new minus new: P(next day)', 'no-new minus new: P(gap >= 7)'], 'Per user (>= 10 days of each kind): the same, without a new card minus with')
     appendix(per)
 
 def appendix(per):

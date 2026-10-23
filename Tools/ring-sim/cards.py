@@ -77,6 +77,32 @@ def logmean(k):
         return np.full(B, T0), step
     return mk
 
+def newwin(k, up, down, n0, lo=1., hi=100.):
+    """EF's queue: the state is N, the new cards of a day. After each study day, all of the last k rings closed: N * up; most
+    of them open: N * down; else N stays. With k 1 it is the closure tracker on N."""
+    def mk(B):
+        h, n = np.zeros((B, k)), np.zeros(B, int)
+        def step(N, st, cl, inf, wk, g):
+            h[st] = np.roll(h[st], 1, 1); h[st, 0] = cl[st]; n[st] = np.minimum(n[st] + 1, k)
+            p = h.sum(1) / np.maximum(n, 1)
+            f = np.where(p >= 1 - 1e-9, up, np.where(p < 0.5, down, 1.))
+            return np.where(st, np.clip(N * f, lo, hi), N)
+        return np.full(B, n0), step
+    return mk
+
+def staircase(k, up, down, hold=True, lo=LO, hi=HI, t0=T0):
+    """T grows by up only after k closed rings in a row that filled T, an open ring takes it down by down, anything else
+    keeps it: the ring tests the learner once a run of k days instead of after every closed ring."""
+    def mk(B):
+        run = np.zeros(B, int)
+        def step(T, st, cl, inf, wk, g):
+            ok = st & cl & (inf | (not hold)); run[ok] += 1; run[st & ~cl] = 0
+            grow = run >= k; run[grow] = 0
+            f = np.where(st & ~cl, down, np.where(grow, up, 1.))
+            return np.where(st, np.clip(T * f, lo, hi), T)
+        return np.full(B, t0), step
+    return mk
+
 def fixed(t):
     return lambda B: (np.full(B, t), lambda T, *a: T)
 
@@ -132,7 +158,7 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
         nn[vet] = np.where(heavy[vet], 4000, 2000)
     T, step = rule(B); wasopen = np.zeros(B, bool)
     if vt0 is not None: T = np.where(np.isnan(vt0), T, vt0)
-    log = {k: np.zeros((B, days)) for k in ('study', 'closed', 'goal', 'worked', 'T', 'due', 'overdue', 'new', 'rev', 'ok', 'week')}
+    log = {k: np.zeros((B, days)) for k in ('study', 'closed', 'goal', 'worked', 'T', 'due', 'overdue', 'new', 'rev', 'ok', 'week', 'none')}
     for t in range(days):
         st = (Wm[:, t] > 0) & ~(wasopen & (rng.random(B) < SKIP)); intro = ix < nn[:, None]; isdue = intro & (due <= t); R = retr(t - last, S)
         nd = isdue.sum(1); ahead = (intro & (due > t) & (due <= t + 7)).sum(1); rem = np.where(t >= refill, N, size) - nn
@@ -140,10 +166,13 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
         room = T / P_OTHER - ahead / 7
         week = np.where(room >= 0, np.floor(room / LOAD + 1e-9), 0) if weekly else np.full(B, np.inf)
         if comp == 'anki':
-            go, gn = np.minimum(nd, 200), np.minimum(ceil, rem); inf = np.ones(B, bool); wb = np.zeros(B, bool)
+            go, gn = np.minimum(nd, 200), np.minimum(ceil, rem); inf = np.ones(B, bool); wb = np.zeros(B, bool); none = gn == 0
+        elif comp in ('queue', 'queue200'):  # EF's queue: every card due (up to 200 a day in queue200) + N new, N from the rule
+            go = np.minimum(nd, 200) if comp == 'queue200' else nd; gn = np.minimum(np.round(T), rem)
+            inf = np.ones(B, bool); wb = np.zeros(B, bool); none = gn == 0
         elif comp == 'load':  # EF's idea 1: every card due + X new, X the steady intake that T carries with its later reviews, at least 1
             x = np.floor(np.maximum(T - a30 * P_OTHER, 0) / (P_NEW + R30 * P_OTHER) + 1e-9)
-            go, gn = nd, np.minimum(np.maximum(x, 1), np.minimum(ceil, rem)); inf = x <= np.minimum(ceil, rem); wb = np.zeros(B, bool)
+            go, gn = nd, np.minimum(np.maximum(x, 1), np.minimum(ceil, rem)); inf = x <= np.minimum(ceil, rem); wb = np.zeros(B, bool); none = gn == 0
         elif comp == 'memory':  # EF's idea 4: the ring is the cards, in stream order, whose expected recall tomorrow makes up
             # for the day's forgetting: words in memory tomorrow morning at least those of this morning
             loss = np.where(intro, R - retr(t + 1 - last, S), 0).sum(1)
@@ -155,17 +184,21 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
             k = np.where(cg[:, -1] >= loss, (cg < loss[:, None]).sum(1) + 1, nd)
             go = np.minimum(k, nd); gn = np.where(cg[:, -1] >= loss, 0, np.minimum(np.ceil(np.maximum(loss - cg[:, -1], 0) / gnew), rem))
             go = np.where((go + gn == 0) & (rem > 0), 0, go); gn = np.where((go + gn == 0) & (rem > 0), 1, gn)
-            inf = np.ones(B, bool); wb = np.zeros(B, bool)
+            inf = np.ones(B, bool); wb = np.zeros(B, bool); none = gn == 0
         else:
-            left = T - nd * P_OTHER if comp in ('cut', 'cutload') else np.maximum(T - nd * P_OTHER, 0)
+            left = T - nd * P_OTHER if comp in ('cut', 'cutload', 'cut1in', 'cut1top') else np.maximum(T - nd * P_OTHER, 0)
             if comp == 'cutload':
                 x = np.floor(np.maximum(T - a30 * P_OTHER, 0) / (P_NEW + R30 * P_OTHER) + 1e-9)
                 left = np.minimum(left, np.maximum(x, 1) * P_NEW); week = np.full(B, np.inf)
             newok = np.minimum.reduce([np.floor(np.maximum(left, 0) / P_NEW + 1e-9), week, ceil * 1., rem])
-            cut = (nd * P_OTHER > T) & (comp in ('cut', 'cutload'))
+            cut = (nd * P_OTHER > T) & (comp in ('cut', 'cutload', 'cut1in', 'cut1top'))
             go = np.where(cut, np.floor(T / P_OTHER + 1e-9), nd); gn = np.where(cut, 0, newok)
             go = np.where((go + gn == 0) & (nd + newok > 0), 1, go)
             inf = go * P_OTHER + gn * P_NEW + P_NEW >= T  # the goal filled T: a closed ring says the learner gave T
+            none = (gn == 0) & (np.minimum(ceil, rem) > 0)  # the time admitted no new card though the decks had some
+            if comp in ('cut1in', 'cut1top'):  # at least one new card a day: inside T, in place of the last reviews, or on top of it
+                if comp == 'cut1in': go = np.where(none, np.minimum(go, np.floor(np.maximum(T - P_NEW, 0) / P_OTHER + 1e-9)), go)
+                gn = np.where(none, 1, gn)
             wb = week < np.minimum(np.floor(np.maximum(left, 0) / P_NEW + 1e-9), np.minimum(ceil, rem))  # next week set the new cards
         gc = go * P_OTHER + gn * P_NEW; ws = Wm[:, t] * 60 * st; e = E[:, t]
         closed = st & (ws >= gc - 1e-9)
@@ -185,7 +218,7 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
         upd = done | new; last = np.where(upd, t, last); due = np.where(upd, t + np.maximum(1, np.round(S)).astype(int), due)
         nn = nn + nw; wk = no * P_OTHER + nw * P_NEW
         for k, x in (('study', st), ('closed', closed), ('goal', gc), ('worked', wk), ('T', T), ('due', nd),
-                     ('overdue', (intro & (due < t)).sum(1)), ('new', nw), ('rev', done.sum(1)), ('ok', ok.sum(1)), ('week', wb & st)):
+                     ('overdue', (intro & (due < t)).sum(1)), ('new', nw), ('rev', done.sum(1)), ('ok', ok.sum(1)), ('week', wb & st), ('none', none & st)):
             log[k][:, t] = x
         T = step(T, st & (gc > 0), closed, inf, wk, gc); wasopen = np.where(st & (gc > 0), ~closed, wasopen)
     words = np.where(ix < nn[:, None], retr(days - last, S), 0).sum(1)
@@ -195,13 +228,15 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
 def metrics(log, words):
     st = log['study'] > 0; ns = np.maximum(st.sum(1), 1); cl = log['closed'] > 0
     first = st[:, :14]; o7 = np.cumsum(st, 1) <= 7; runs = np.zeros(st.shape[0]); cur = np.zeros(st.shape[0])
-    for t in range(st.shape[1]):  # the longest run of open rings over study days
+    nr, ncur, no = np.zeros(st.shape[0]), np.zeros(st.shape[0]), log['none'] > 0
+    for t in range(st.shape[1]):  # the longest runs of open rings and of rings without a new card, over study days
         cur = np.where(st[:, t], np.where(cl[:, t], 0, cur + 1), cur); runs = np.maximum(runs, cur)
+        ncur = np.where(st[:, t], np.where(no[:, t], ncur + 1, 0), ncur); nr = np.maximum(nr, ncur)
     return dict(closure=cl.sum(1) / ns, c14=(cl[:, :14] & first).sum(1) / np.maximum(first.sum(1), 1),
                 words=words, minutes=log['worked'].sum(1) / ns / 60, openrun=runs,
                 retention=log['ok'].sum(1) / np.maximum(log['rev'].sum(1), 1),
                 overdue=(log['overdue'] * st).sum(1) / ns, T14=log['T'][:, 13] / 60,
-                peak=(log['goal'].max(1) / 60), week1=(cl | ~st | ~o7).all(1) * 1., goalcv=np.array([np.std(g[x]) / max(np.mean(g[x]), 1e-9) for g, x in zip(log['goal'], st)]), wkbound=log['week'].sum(1) / ns, new1=(log['new'][:, :7] * st[:, :7]).sum(1) / np.maximum(st[:, :7].sum(1), 1), new4=(log['new'][:, 30:] * st[:, 30:]).sum(1) / np.maximum(st[:, 30:].sum(1), 1))
+                peak=(log['goal'].max(1) / 60), week1=(cl | ~st | ~o7).all(1) * 1., goalcv=np.array([np.std(g[x]) / max(np.mean(g[x]), 1e-9) for g, x in zip(log['goal'], st)]), wkbound=log['week'].sum(1) / ns, nonew=log['none'].sum(1) / ns, nonewrun=nr, new1=(log['new'][:, :7] * st[:, :7]).sum(1) / np.maximum(st[:, :7].sum(1), 1), new4=(log['new'][:, 30:] * st[:, 30:]).sum(1) / np.maximum(st[:, 30:].sum(1), 1))
 
 
 # ---------- learners ----------
@@ -253,21 +288,33 @@ RULES = {  # the chosen rule first, then each alternative changed in one respect
     '2-30 min': (tracker(*C, hold=True, hi=1800), 'cut', False),
     'next-week bound': (tracker(*C, hold=True), 'cut', True),
     'every card due': (tracker(*C, hold=True), 'all', False),
+    'at least 1 new card, inside T': (tracker(*C, hold=True), 'cut1in', False),
+    'at least 1 new card, on top of T': (tracker(*C, hold=True), 'cut1top', False),
     'new cards for 30 days ahead': (tracker(*C, hold=True), 'cutload', False),
     'EF1: every card due + X new for 30 days ahead': (tracker(*C, hold=True), 'load', False),
     'EF2: closed share of 7 days': (window(.779), 'cut', False),
     'EF3 max: every card due, new up to the log-mean': (logmean(14), 'all', False),
     'EF3 min: the plan cut at the log-mean': (logmean(14), 'cut', False),
     'EF4: the ring holds words in memory': (fixed(600), 'memory', False),
+    'staircase 7, x1.10 / x0.775': (staircase(7, 1.10, .775), 'cut', False),
+    'staircase 7, x1.15 / x0.85': (staircase(7, 1.15, .85), 'cut', False),
+    'staircase 5, x1.10 / x0.85': (staircase(5, 1.10, .85), 'cut', False),
+    'staircase 3, x1.10 / x0.85': (staircase(3, 1.10, .85), 'cut', False),
+    'queue: all due + N new, N tracker 1.075/0.775, start 20': (newwin(1, 1.075, .775, 20), 'queue', False),
+    'queue: all due + N new, N by last 5 rings, start 20': (newwin(5, 1.15, .8, 20), 'queue', False),
+    'queue: all due + N new, N by last 5 rings, start 10': (newwin(5, 1.15, .8, 10), 'queue', False),
+    'queue: all due + N new, N by last 5 rings, start 5': (newwin(5, 1.15, .8, 5), 'queue', False),
+    'queue: all due + N new, N by last 3 rings, start 10': (newwin(3, 1.15, .8, 10), 'queue', False),
+    'queue: up to 200 due + N new, N by last 5 rings, start 10': (newwin(5, 1.15, .8, 10), 'queue200', False),
     'Kaplan-Meier q .15, 21 d': (km(.15, 21), 'cut', False),
     'median of 7 study days': (median(7), 'cut', False),
     'fixed 10 min': (fixed(600), 'cut', False),
     'Anki: all due + 20 new': (fixed(600), 'anki', False),
 }
-COLS = ('closure', 'c14', 'week1', 'openrun', 'words', 'minutes', 'retention', 'overdue', 'T14', 'peak', 'goalcv', 'wkbound', 'new1', 'new4')
+COLS = ('closure', 'cl_p10', 'cl_p90', 'c14', 'week1', 'openrun', 'words', 'minutes', 'retention', 'overdue', 'T14', 'peak', 'goalcv', 'wkbound', 'nonew', 'nonewrun', 'new1', 'new4')
 
 def table(head, rows): print('| ' + ' | '.join(head) + ' |\n|' + '---|' * len(head)); [print('| ' + ' | '.join(map(str, r)) + ' |') for r in rows]
-def fmt(m, sel): return [f"{m[k][sel].mean():.3f}" if k in ('closure', 'c14', 'retention', 'week1', 'wkbound', 'goalcv') else f"{m[k][sel].mean():.1f}" for k in COLS]
+def fmt(m, sel): return [f"{np.percentile(m['closure'][sel], 10):.3f}" if k == 'cl_p10' else f"{np.percentile(m['closure'][sel], 90):.3f}" if k == 'cl_p90' else f"{m[k][sel].mean():.3f}" if k in ('closure', 'c14', 'retention', 'week1', 'wkbound', 'goalcv', 'nonew') else f"{m[k][sel].mean():.1f}" for k in COLS]
 
 def selftest():
     assert abs(retr(10, 10.) - .9) < 1e-12  # R falls to 0.9 after S days, so the interval at 0.9 is S
