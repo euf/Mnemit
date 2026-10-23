@@ -142,7 +142,7 @@
 ## Deck site browser
 
 - `Shared/Web/DeckWebBrowser` and `DeckWebBrowserView`: a sheet on the iPhone, the window
-  `DeckWebWindow` on the Mac (from the welcome window and File ▸ "Shared Decks on AnkiWeb…").
+  `DeckWebWindow` on the Mac (from the Today window and File ▸ "Shared Decks on AnkiWeb…").
 - A plain `WKWebView` driven by the person: no scripts in pages, no custom user agent, no page parsing
   or preloading. The app gets only the file the person downloaded.
 - Sources: one constant `DeckSources.all` in `Shared/Support/DeckSources.swift` (AnkiWeb Shared Decks as

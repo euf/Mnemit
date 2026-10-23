@@ -56,7 +56,9 @@ are in [`references/`](references/).
   [`learning-flow.md`](references/learning-flow.md). Inside, the day has a time in minutes of work at your own pace,
   and its first two minutes are the streak step; only How Today Works names them. Today shows the next small goal: "≈ 2
   min to keep your streak" before the streak step, then the cards left and their time, then
-  "Ring closed". The streak is kept once the streak step is done, and Study rests there once
+  "Ring closed". The button under it says the same: Study while the ring is open, Catch Up once it is
+  closed and the plan has cards left, Push On once the plan is done. The streak is kept once the streak
+  step is done, and Study rests there once
   ("Streak kept": Keep Going or Done for Now); the next rest is the closed ring, with the rings of
   the last seven days. The time of a day comes from
   your review logs: two and a half minutes on the first day, then more after rings you close (15 % after every
@@ -70,7 +72,8 @@ are in [`references/`](references/).
   once its last review of the day left it due on a later day, so a review card graded Hard,
   Good or Easy is done at once, a new card after its learning steps, and a card graded Forgot
   when it is through relearning. A card counts once, however many reviews it took. Today says
-  "12 of 24 cards · 12 left", which add up. The ring also shows the cards on their way: an
+  "12 of 24 cards" and, once the ring is closed, "24 cards today · 3 left"; done and left add up to the
+  plan. The ring also shows the cards on their way: an
   answer recalled moves its card by the answers recalled today over those plus the steps still
   needed, so a new word is half a card after its first Good; Forgot moves nothing, and nothing
   is taken back (`Card.credit`). Each review records how long its
@@ -81,9 +84,9 @@ are in [`references/`](references/).
   in neither count. Older logs without times are priced from the pauses between reviews, by their
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
-  cards added later and Push On fill laps, as does Catch Up. The ring keeps
-  going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
-  streak in days. A missed day is repaired when the next day closes its ring, the streak step
+  cards added later, Push On and Catch Up count as cards done beyond it ("31 cards today"). The ring is
+  full at the goal and stays full. The streak is the flame in the middle of every ring, over its days: lit
+  once the day keeps the streak, grey otherwise; the ring in the study bar is empty in the middle. A missed day is repaired when the next day closes its ring, the streak step
   is not enough then; two missed days in a row end the streak. Everything is computed
   from the review logs; nothing extra is stored. A study day starts at 4:00.
 - **Words in memory.** "≈ 28 words in memory · +15 today" is the number of words you would
@@ -95,7 +98,7 @@ are in [`references/`](references/).
   plan, overdue ones included, the most forgotten first. The goal is the cards of the plan that
   fit the day's time: 1,500 overdue cards with a six-minute day give a goal of about 36 at 10
   seconds a card, and the rest wait in the plan. When the ring closes, "Catch Up" goes on with
-  them; those cards are due, so their reviews are ordinary ones and the cards done fill the laps.
+  them; those cards are due, so their reviews are ordinary ones and the cards done count beyond the goal.
   The size of a study session in the deck options is the size of one segment of the stream and does not cut the plan.
 - **Two directions per word, production one spaced review behind.** Each word has a
   recognition card (Greek → meaning) and a production card (meaning → Greek). Production is the
@@ -207,11 +210,11 @@ are in [`references/`](references/).
 ### Look
 
 - **One accent, semantic colours.** Indigo `#5856D6` for the app and its widget (red means
-  "no" and the greens mean "yes", so the accent is neither); counts are neutral. On the Mac the
+  "no", the greens mean "yes" and orange means the streak, so the accent is none of them); counts are neutral. On the Mac the
   system accent setting applies.
 - **Rings drawn as Fitness draws them.** The drawing is MKRingProgressView's Core Graphics
-  code transcribed into a SwiftUI `Canvas`: gradient to the head, solid laps underneath, the
-  head's shadow on the ring it overlaps.
+  code transcribed into a SwiftUI `Canvas`: gradient to the head, the head's shadow clipped to
+  the ring, a dim track.
 - **An introduction that teaches the swipes.** Four practice cards in four languages, one
   per direction, before anything about folders; then where to keep the decks (iCloud Drive
   or this iPhone only).
@@ -228,8 +231,9 @@ are in [`references/`](references/).
 - **iPhone** (iOS 26): study, browse and edit cards, add words after a lesson (one card or
   a pasted `word = translation` list), decks, options, import and export, reminders, widget.
 - **Mac** (macOS 26): the same plus the card table with filters and inspector, statistics,
-  the optimizer, study by typing.
-- **How Today Works** (a sheet from Today on the iPhone, a window in the Study menu on the Mac): the numbers
+  the optimizer, study by typing, and a Today window (Window ▸ Today, ⌘0): the day's ring over the decks
+  of the Mnemit folder, with the same Study, Catch Up and Push On button.
+- **How Today Works** (a sheet from the last row of the Progress screen on the iPhone, a window in the Study menu on the Mac): the numbers
   and rules under the ring, read-only: the plan, the day's time, pace, streak, words in memory and each deck's FSRS settings.
 
 ## Build and test

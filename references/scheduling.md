@@ -88,7 +88,9 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
   the limits. Over several decks `StudyModel` shares them out one at a time to the deck that has given the
   fewest new cards (`pushOnCounts`), and the stack asks them mixed (`mostUrgentLane()`). Push On puts every
   round behind the stream (`roundsPassed = .max`): its cards lie beyond a closed ring, and no rest of a round
-  comes after them.
+  comes after them. Today's Push On button (`StudyModel.Entry.pushOn` on the iPhone,
+  `SessionViewModel.Entry.pushOn` on the Mac, from the Today window and the deck window's toolbar) opens
+  the stream with the ten cards at once, without the plan-end rest first.
 - Undo runs through the whole stream: the `UndoCompanion` snapshot is the whole `StudyStream` value.
 - "Practice Mistakes" and "Practice Newest Words" are entries to separate streams
   (`practicingMistakesIn:`, `practicingNewestWordsIn:`) from the deck screen and the Mac's menu; they

@@ -21,7 +21,7 @@ only Push On puts more cards in it.
 | 1 | Your time follows your rings, out of sight: two rings closed in a row make the next day ask 15 % more time; a ring left open, a quarter less (× 0.775); a ring closed on a plan smaller than the time, or a day without study, changes nothing; 2.5 minutes before any study, 2 minutes to an hour | how much the learner really does | a staircase on closed and open rings (Levitt's transformed up-down): the share of closed rings settles near 0.8 whatever the work, and the ring changes on half the study days; averages and quantiles of the work stall for a learner who stops at the ring, since the work of a closed day is the ring itself; 2.5 minutes are reached on 77 % of a newcomer's first-week study days; an hour holds the usual day of nine in ten Anki users (`ring-design.md`) |
 | 2 | The goal is the cards FSRS has due, most forgotten first, as many as fit your time | what to do today | FSRS: reviews are the work owed; the Anki manual caps reviews so a return after a break is manageable |
 | 3 | If time is left, new cards fill it | how many new | new cards are FSRS's only free input; the Anki manual sizes them by the workload one can sustain, and the time already holds it: the reviews of earlier new cards leave less time for new ones |
-| 4 | The ring closes when the goal is done; work beyond it fills laps, and closed rings raise the next days' time | how to grow | growth comes from closing the ring |
+| 4 | The ring closes when the goal is done and stays full; work beyond it counts as cards done, and closed rings raise the next days' time | how to grow | growth comes from closing the ring |
 | 5 | The first two minutes keep the streak; one missed day is forgiven when the next ring closes | the habit | a low bar keeps the habit (Duolingo A/B, +3.3 % day-14 retention); slack keeps a streak (Streak Freeze, Apple's paused rings) |
 | 6 | Once the ring is closed: Catch Up while the plan has cards left; once the stack is done, Push On: ten new words, whose reviews make the next days harder | what next | FSRS decides which cards come; the learner decides only whether to raise the stakes, and the button says what it costs |
 
@@ -63,6 +63,8 @@ up the count, and Study goes on where the stack was.
   ordinary one: raising the time to what the learner did (at least 0.6 of the work) cut the closed share of real users
   from 0.81 to 0.70 and perfect first weeks from 41 % to 28 % (`ring-design.md`).
 - **The button.** "Push On", and under it "More reviews in the days ahead": more words now, harder days next.
+  From Today it opens the stack with the ten cards at once, over every active deck, without the plan-end rest
+  first.
 
 ### The day after
 
@@ -127,7 +129,7 @@ there. The learner feels swipes, not cards: a right answer that moved nothing wo
 So the ring counts cards with partial credit (`Card.credit`): an answer recalled (Hard, Good, Easy)
 moves its card by the answers recalled today over those plus the steps still needed, Forgot moves
 nothing, and nothing is taken back. A new word is half a card after its first Good. The count beside
-the ring stays in whole cards; the closing screen joins the two: "10 cards · 22 answers".
+the ring stays in whole cards.
 
 FSRS decides what is urgent; the learner decides only whether to go on. Due cards are the work owed;
 new cards are the only free input, and the app admits as many as the learner's time holds after today's
@@ -141,7 +143,7 @@ reviews, so the ring is a size the learner has shown they finish. The size is le
 | ≈ 2 min | the first cards of the day | the streak screen: "Streak kept", the streak in days | streak step of the day done (Duolingo: one lesson keeps the streak, apart from the goal) |
 | The day | today's cards | the ring closes: the ring screen with the day's figures and the week | done ≥ goal |
 | The week | closes rings on most days | seven rings in a row, Monday to Sunday, on the ring screen | ring per day from the log; the day's time follows the recent work |
-| Months | keeps the streak, learns | the streak in days in the ring's centre; words-in-memory milestones (50, 100, 250, 500, 1,000 …) | FSRS recall, the log |
+| Months | keeps the streak, learns | the flame with the streak's days in the ring's middle; words-in-memory milestones (50, 100, 250, 500, 1,000 …) | FSRS recall, the log |
 
 A missed day is forgiven when the next day closes its ring (the streak survives; Duolingo's Freeze
 and Apple's paused rings are the same slack). Pausing a deck takes it out of the day.
@@ -154,16 +156,21 @@ Today ──Study──► card ─► card ─► … ─► Streak kept ──
   └──────────────────────────────────────┴─────────────────────────────────────┴─ Done
 ```
 
-**Today.** The ring (centre: the streak in days), one headline, one detail line, Study.
+**Today.** The ring (middle: the flame over the streak's days), one headline, one detail line, the words in
+memory, and the button at the bottom, named by what the day asks next (`DayAction`): **Study** while the ring is
+open; **Catch Up** once the ring is closed and the plan has cards left; **Push On** once the plan is done, with
+"More reviews in the days ahead" under it.
 
 | State | Headline | Detail |
 |---|---|---|
-| before the streak step | ≈ 2 min to keep your streak | 12 of 24 cards · 12 left |
-| streak kept, ring open | 12 cards left · ≈ 4 min | 12 of 24 cards · 12 left |
-| ring closed | Ring closed | 24 cards today |
+| before the streak step | ≈ 2 min to keep your streak | 12 of 24 cards |
+| streak kept, ring open | 12 cards left · ≈ 4 min | 12 of 24 cards |
+| ring closed, cards left | Ring closed | 24 cards today · 3 left |
+| plan done | All done | 31 cards today |
 | nothing due | Nothing due | Next review tomorrow |
 
-Under them: "13-day streak · kept today" and "≈ 412 words in memory · +15 today".
+Under them: "≈ 412 words in memory · +15 today". The day after a missed day the headline reads "Close the
+ring to save your streak" and the flame is grey.
 
 **Study.** The stack in the middle, the small ring in the bar with "≈ 4 min" (after a done card, for
 a moment, "in 8 days"), the close button. Closing loses nothing; Today picks up the count.
@@ -186,17 +193,17 @@ a long day looks thick and the last five thin out one line at a time.
 - Reduce Motion: the card fades in place, the ring steps without a bump, nothing travels.
 
 **Streak kept** (once a day, after the first ≈ 2 min; not when the day's cards end there too): the
-ring, "Streak kept", the streak in days, "+4 words in memory today", "12 cards left · ≈ 4 min".
-**Keep Going** (default), **Done for Now**.
+ring, "Streak kept" (a streak milestone gives the title), "12-day streak" with the lit flame under the title, a
+medal when one was earned, "12 cards left · ≈ 4 min". **Keep Going** (default), **Done for Now**.
 
 **Ring closed** (when today's cards are done, and when the plan has run out): the ring closes with its
-burst, then the day: "10 cards · 22 answers", the share recalled, "+15 words in memory today", the streak, the
-week's seven rings; a milestone when one was passed today. One way on, the most useful first:
+burst, then the day: the medal earned today, one line (the words' milestone when one was passed today, else
+"+15 words in memory today", else "10 cards today") and the week's seven rings. One way on, the most useful first:
 **Catch Up** when the plan has cards left beyond the ring; else **Push On**, with "More reviews in the days ahead"
 under it; and **Done**. The week is seven small rings, today last, with the weekday initials.
 
-**How Today Works** keeps everything for the learner who knows FSRS: the plan and its parts, the
-the day's time and the streak step, pace, the streak's repair, FSRS parameters.
+**How Today Works**, the last row of the Progress screen, keeps everything for the learner who knows FSRS: the plan
+and its parts, the day's time and the streak step, pace, the streak's repair, FSRS parameters.
 
 ## Progression: the ladder of memory
 
@@ -225,7 +232,7 @@ them per day (`DailySnapshot`). No points, no levels of our own: the steps are F
   the last 30 days against the target.
 
 Not added, as they reward volume over memory and pull against FSRS: points, leagues, hearts, reviewing
-ahead for a bigger number. The laps and big-day medals count done cards, cards FSRS sent to another day,
+ahead for a bigger number. The big-day medals count done cards, cards FSRS sent to another day,
 never answers: grading fast or reviewing early earns nothing.
 
 ## Milestones, achievements and the Progress screen
@@ -248,13 +255,12 @@ They are named in words, never as a count of days; the widget and Today only sho
 | Streak | the milestones above | the streak reaches the tier |
 | First ring | one | the first day a ring closes |
 | Perfect week | one, then again each time | seven rings closed in a row |
-| Laps | 2, 3, 5, 10 rings in a day | the cards done in a day reach that many times the day's goal |
 | Big day | 50, 100, 200, 500 cards | the cards done in a day (cards FSRS sent to another day) |
 | Comeback | one, then counted | a missed day made up by closing the next day's ring: the streak survived |
 
 **The comeback scenario.** The day after a missed day, Today's headline says "Close the ring to save
-your streak" (with the cards it takes) instead of "≈ 2 min to keep your streak", and the streak line
-reads "12-day streak · at risk" with a grey flame. When that ring closes, the Ring closed screen's
+your streak" (with the cards it takes) instead of "≈ 2 min to keep your streak", and the flame in the ring
+is grey. When that ring closes, the Ring closed screen's
 title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
 
 **Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
@@ -273,17 +279,16 @@ records and figures, the lines of the rests. The faces:
 | Streak | 🔥 3 days · ⭐️ a week · 🌟 2 weeks · 🌙 a month · 🌿 2 months · 🌳 3 months · ⛰️ half a year · 🏆 a year · 💎 a year and a half · 👑 2 years | `flame` |
 | First ring | 🎯 | `circle.circle` |
 | Perfect week | 🌈 | `calendar` |
-| Laps | ⚡️ 2 rings · 🚀 3 · 🌋 5 · 🪐 10 | `repeat` |
 | Big day | 📚 50 · 🧠 100 · 🦉 200 · 🐘 500 | `rectangle.stack` |
 | Comeback | 🐦‍🔥 | `arrow.uturn.up` |
 
 **The Progress screen**, from Today (a tap on the ring's panel, which gets a chevron), top to bottom: the
-streak large, with "Longest: 30 days · 24 rings closed"; the achievements (one row for the lines of one
-medal, then a row per line of tiers); the calendar, Monday to Sunday under the weekday initials, a row per
-week from the one of the first study day, at most 13 ("Last 13 weeks" once there are 13, else "Calendar");
-the ladder of memory, a bar of the cards started with "N not started" under it and a legend of the five
-steps; the records: most cards in a day, most rings in a day, rings closed, days studied, cards done. For the Anki user the same screen ends with the FSRS
-figures: true retention of the last 30 days against the target, cards by step.
+streak large (the flame, in the streak's orange while the day keeps it, grey otherwise, and the days), with the
+totals Longest streak, Rings closed, Days studied, Cards done; the medals (the latest up to five, and All Medals:
+one row for the lines of one medal, then a row per line of tiers); the calendar, Monday to Sunday under the weekday
+initials, a row per week from the one of the first study day, at most 13 ("Last 13 weeks" once there are 13, else
+"Calendar"); the ladder of memory, a bar of the cards started with "N not started" under it and a legend of the
+five steps; and How Today Works as the last row.
 
 **Celebrations.** A medal is celebrated the moment it is earned: in the stack a toast slides down under the
 bar for 2.5 s (one after another), the ring in the bar bumps and bursts, and a success haptic plays; a rest
@@ -307,6 +312,6 @@ cards done, the best streak of the month, the achievements of the month, and See
 | "+10 new" with "≈ +2 cards/day next week" | Push On, with "More reviews in the days ahead" | the learner decides whether to raise the stakes, FSRS which cards come; the count and the forecast asked for a choice the learner can't weigh |
 | The ring closing in the middle of a stream after a break | the stack stops at the ring | the ring is the day's goal; the cards beyond it stay in the plan and Catch Up goes on with them |
 
-Kept as they are: one stack over all decks, the 04:00 day, the ring in cards, laps (×2, ×3) for
-work beyond the goal, the streak's repair by a closed ring, words in
+Kept as they are: one stack over all decks, the 04:00 day, the ring in cards, work beyond the goal counted
+as cards done, the streak's repair by a closed ring, words in
 memory, pausing a deck, practice from the deck screen.

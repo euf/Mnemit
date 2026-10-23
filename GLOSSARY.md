@@ -298,8 +298,8 @@ _Avoid_: new-card limit, daily new cards
 The cards of the plan, as it stood when the study day began at 04:00, that fit the day's time:
 learning cards and reviews in the stream's order, then new cards, at the day's prices, up to the
 time in seconds; at least one card if the plan has any (`DayRounds.goal`). With admission the
-plan normally fits. After a break the reviews beyond the day's time stay in the plan and go to the
-laps. The goal stays for the day: cards added later, Push On and an Again don't raise it. A day
+plan normally fits. After a break the reviews beyond the day's time stay in the plan and are done
+beyond the goal. The goal stays for the day: cards added later, Push On and an Again don't raise it. A day
 that began with an empty plan takes the plan as it stands (`DailyGoal.goal`).
 _Avoid_: reviews goal, target, quota
 
@@ -321,15 +321,17 @@ Overdue cards, part of the plan, worked off as the day's time allows.
 Done cards against the daily goal, with the **cards underway**: a card reviewed today and still due
 today counts as the part of a card its answers recalled made, recalled answers over those plus the
 steps it still needs (`Card.credit`), so every answer recalled moves the ring and Forgot moves
-nothing. Done cards beyond the goal fill **laps** (×2, ×3): Catch Up and extra new cards. The ring is
-closed at done ≥ goal, in whole cards.
+nothing. The ring is full at done ≥ goal, in whole cards, and stays full: done cards beyond the goal
+(Catch Up, extra new cards) count as cards done ("31 cards today"). `DailyRing.fraction` is capped
+at 1.
 
 **Streak** (RU «стрик»):
 Study days in a row that kept it. A day keeps it with its streak step done (done ≥ the first end of
 `DayRounds.ends`); an empty plan counts. One missed day is repaired when the next day closes its ring
 (done ≥ goal): the streak step of that day is not enough, and then the streak starts anew with
 it. Two missed days in a row end the streak. Days before `DailyGoal.planRuleStart` (23.10.2026)
-count with one review.
+count with one review. The streak is the flame in the middle of every ring: lit once the day has kept it
+and is not at risk (`DailyProgress.isStreakLit`), grey otherwise.
 
 **Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):
 Seconds per done card, in two prices (`Pace`): one for cards that were new when their study day
