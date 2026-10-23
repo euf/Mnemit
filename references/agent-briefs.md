@@ -1,10 +1,64 @@
-# Agent run review: Fitness-style rings
+# Briefing sub-agents: costs and lessons
+
+Two parts: the cost structure every sub-agent shares, and the review of one agent's run that lost most of its time. Each part ends in rules for
+the brief.
+
+## Part 1. Where sub-agents' tokens go
+
+Measured on 22.10.2026 over the transcripts of the 77 sub-agents of one session (the Mnemit 1.4 → 3.2
+work), each model call counted once by message id. This part covers the cost structure all agents share; Part 2 covers one agent's wasted time.
+
+### Numbers
+
+| | Value |
+|---|---|
+| Sub-agents | 77 |
+| Model calls | 7,020, about 90 per agent |
+| Context tokens processed | 1.87 billion, 24 M per agent on average, up to ~90 M |
+| Context at an agent's first call | 76 k on average |
+| Context at an agent's last call | 314 k on average, up to 607 k |
+| Mean context per call | 228 k |
+| Tool results over 6,000 characters | 960; `cat` of whole files 3.5 M characters, `sed -n` ranges 1.9 M, logs and other `cd …` commands 1.4 M |
+
+Every call re-sends the whole context. An agent that reads a 25 k-character Swift file at call 10 pays
+for it again at each of the 80 calls after, so the cost grows with calls × context, not with what
+the agent produces (output tokens are under 1 % of the total).
+
+### What makes the context
+
+1. **Baseline, ~76 k before any work:** the system prompt and tools, the global `CLAUDE.md`
+   (~17 k tokens), `MEMORY.md` (~9 k), and this repository's `CLAUDE.md` (~27 k at the measurement, with the
+   fork's details as 75 KB of dense Russian that every agent loaded whatever its task; ~3 k as the short index it is now).
+2. **Whole files read to explore,** the largest growth: `cat` of `SessionDriver.swift`,
+   `StartScreen.swift`, `StudyView.swift`, `DailyProgress.swift`, `Card.swift` plus neighbours,
+   several per call, 20–30 k characters each, kept in context to the end.
+3. **Long ranges and logs:** `sed -n 200,664p` of test files, full test output.
+4. **Many calls:** about 90 per agent. Each exploratory read, small edit and single-test rerun is a
+   call that re-reads everything before it.
+
+### Rules for briefs
+
+- **Read narrowly.** `grep -n` for the symbol, then `sed -n a,bp` of at most ~80 lines around it;
+  never `cat` a whole source file over ~200 lines, never several at once. Name the files and
+  symbols in the brief so the agent doesn't have to look.
+- **Keep logs out of context.** Test runs go to a log file; read only `grep -E "Test run with|error:|recorded an issue"`.
+- **Batch the work.** Plan the edits, then apply them in few calls: one Python script that makes
+  all edits of a file, not one Edit call per line.
+- **Size the agent to the task.** A one-file change doesn't need its own agent: the 76 k baseline
+  and the exploration cost more than doing it in the parent with known line numbers. Mechanical
+  passes (terminology, docs) suit haiku.
+- **Shrink the baseline.** This repository's `CLAUDE.md` is a short index; the details live in
+  topic files under `references/`, and agents read the topic they work on.
+- **Restart instead of growing.** An agent past ~250 k context with work left should write its
+  state to a scratch file and report; a fresh agent continues from the file.
+
+## Part 2. Run review: Fitness-style rings
 
 Review of one coding-agent run (agent `afa0ca1d878f2a4ad`, worktree `agent-afa0ca1d878f2a4ad`,
 branch `worktree-agent-afa0ca1d878f2a4ad`, 21-22.10.2026). Sources: its full transcript and
 `git log -p d59b3ca..HEAD`. Times are UTC; the machine's clock is UTC+3.
 
-## Numbers
+### Numbers of the run
 
 | | Stint 1 | Stint 2 | Whole run |
 |---|---|---|---|
@@ -23,7 +77,7 @@ Final diff: 16 files, +819 / -143. Ring drawing and centre label: `ActivityRing.
 `ProgressRing.swift` 118 lines, against a 35-line `ProgressRing.swift` before. New test code: 394
 lines. Also 80 lines of strings, 63 changed lines in design-spec, 34 lines of notices.
 
-## Timeline
+### Timeline
 
 | # | Window | Calls | What it did |
 |---|---|---|---|
@@ -39,7 +93,7 @@ lines. Also 80 lines of strings, 63 changed lines in design-spec, 34 lines of no
 | 9 | 23:41-00:12 | 26 | Full suite fails again with 7 issues. Bisected with `-skip-testing`, found its own contrast test, rewrote it, loosened one flaky animation assertion, 118 of 118 green. 31 min, two of them 10 min blocks. |
 | 10 | 00:12-00:14 | 21 | Mac suite (only the 6 known failures), copied Mac PNGs out of the sandbox container, lint, three commits, report. |
 
-## Where the time went
+### Where the time went
 
 **Waiting on xcodebuild.** 85 of 113 active minutes sit in gaps of more than 45 s between tool
 calls (one of them, 3.9 min at 20:51, is the agent's own design reasoning). Five gaps are 9.4-9.9
@@ -100,7 +154,7 @@ that someone else had launched the Fitness app in the live-check simulator, so o
 were using simulators. The same commands ran in 47-97 s (ring-only) and 1-2 min (full suite: 23:41,
 00:09, 00:11) when nothing else got in the way.
 
-## What in the brief invited the complexity
+### What in the brief invited the complexity
 
 | Brief text | Effect |
 |---|---|
@@ -113,7 +167,7 @@ were using simulators. The same commands ran in 47-97 s (ring-only) and 1-2 min 
 | No budget, stop rule or definition of done; nothing about machine load; nothing saying unrelated failures are out of scope | Nothing told the agent to stop chasing the file-merge failures or to cap fix runs. |
 | Mid-run messages: a Fitness-launch accusation (20:59, not the agent), the third reference (23:25), "you're overengineering" (23:33) | The owner had a preferred library by 23:25. The custom drawing, written at 20:57, was discarded at 23:35. |
 
-## Cheapest path in hindsight
+### Cheapest path in hindsight
 
 1. Brief: port WolfActivityRing into `Shared/Support/ActivityRing.swift` and keep its header (the
    repo has no LICENSE file; the permission notice sits in the source file; add the
@@ -132,7 +186,7 @@ were using simulators. The same commands ran in 47-97 s (ring-only) and 1-2 min 
 Estimate: 35-50 calls, 4-6 xcodebuild runs, 25-30 min on a quiet machine and about 45 min on a
 loaded one, against 338 calls and 113 min. Only step 1 is measured.
 
-## Lessons for briefs
+### Lessons for briefs
 
 1. Name one source and one deliverable ("port this file as is, keep its notice") and check the
    source before sending: URL description, language, licence. Attach a reference image for any

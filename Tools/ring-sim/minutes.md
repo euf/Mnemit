@@ -1,22 +1,24 @@
 # Ring simulation: rules for the day's time, on minutes alone
 
-The day's time T is the minutes the ring asks. This file compares families of rules for learning T from the work a learner did,
-on minutes alone: no cards, no FSRS. The decision, which also weighs cards, memory and the first weeks, is `ring-design.md`. The
-tool is `Tools/ring-sim/sim.py` (`--selftest`, `--detail`, `--real <folder>`; the grid of 706 rules takes 15 s, with 2,000 real
-users about a minute). Every number below comes from it: 200 seeds per scenario, rng seed 307; a second run with seed 308
-reproduces the top rules within 0.005 in closure and capture. The simulation keeps the start and range of 5.4 (4 minutes,
-2-30); `cards.py` measures the 2.5 minutes and the hour of the decision.
+The day's time T is the minutes the ring asks. This file reports what `sim.py` measured on minutes alone in the 5.3 and 5.4
+versions: families of rules for learning T from the work a learner did, no cards, no FSRS. The rule in force, which also weighs
+cards, memory and the first weeks, is in `references/ring-design.md`. The tool is `Tools/ring-sim/sim.py` (`--selftest`,
+`--detail`, `--real <folder>`; the grid of 706 rules takes 15 s, with 2,000 real users about a minute). Every number below comes
+from it: 200 seeds per scenario, rng seed 307; a second run with seed 308 reproduces the top rules within 0.005 in closure and
+capture. The simulation keeps the start and range of 5.4 (4 minutes, 2-30); `cards.py` measures the 2.5 minutes and the hour of
+the rule in force.
 
 ## Result
 
 - Feasible families by synthetic capture: Kaplan-Meier censored quantile (q 0.15, 21 study days: closure 0.805, lowest cell 0.709,
-  capture 0.668, lag 15.8 days), the closure tracker (q 0.25, k 0.3, the app's 1.075 / 0.775: closure 0.801, lowest cell 0.778,
+  capture 0.668, lag 15.8 days), the closure tracker (q 0.25, k 0.3, the 1.075 / 0.775 of 5.4: closure 0.801, lowest cell 0.778,
   capture 0.660, lag 8.5), the asymmetric EWMA with a probe (capture 0.642), AIMD (0.633). The median of the last 7 study days, the
-  app's rule before the tracker, is infeasible: closure 0.721, lowest cell 0.452.
+  app's rule of 5.3, is infeasible: closure 0.721, lowest cell 0.452.
 - Real users, 1,921 of the 2,000 Anki users with 60 study days or more (section "Real data"): the tracker closes 0.775 of days and
   takes the larger share of their minutes (capture 0.296 against 0.270 for Kaplan-Meier).
 - Kaplan-Meier leads the tracker on synthetic capture by 0.008, below what the model resolves, and trails it on real users; the
-  tracker reads only closed or open, needs no window and no ring-stop test. `ring-design.md` takes the tracker.
+  tracker reads only closed or open, needs no window and no ring-stop test. The 5.5 decision (`references/ring-design.md`, which holds the
+  rule in force) took the tracker.
 
 ## Question and criterion
 
@@ -82,13 +84,13 @@ the ceiling at that closure; the tracker reaches 89 %.
 Each section gives why the family was a candidate, the numbers, where it fails or wins, and what censoring did to it. "Lowest
 cell" is the lowest closure of any selected cell, with the cell named.
 
-### Median of the last k study days (the current rule)
+### Median of the last k study days (the rule of 5.3)
 
-Why a candidate: it is the rule in the app, with k = 7. Apple's activity goal and Garmin's Auto Goal also take past work as the
-base (`goal-setting-research.md`), and a median ignores a single lap day. Grid: k 5, 7, 10, 14; shrink s 1, 0.9, 0.8, 0.7 (T = s *
+Why a candidate: it was the rule in the app (5.3), with k = 7. Apple's activity goal and Garmin's Auto Goal also take past work as the
+base (`references/day-model-research.md`, Part 2 §3), and a median ignores a single lap day. Grid: k 5, 7, 10, 14; shrink s 1, 0.9, 0.8, 0.7 (T = s *
 median); probe u 0, 0.1, 0.2.
 
-The current rule (k 7, s 1, u 0): closure 0.721, lowest cell 0.452 (decline, E), capture 0.618, lag 33.0, flips 9.3. By response:
+The rule of 5.3 (k 7, s 1, u 0): closure 0.721, lowest cell 0.452 (decline, E), capture 0.618, lag 33.0, flips 9.3. By response:
 
 | response | closure | capture |
 |---|---|---|
@@ -307,7 +309,7 @@ cells. By scenario:
 Lag after the step at day 30: step up 16 days (S) and 19 (E), step down 14 and 14. Flips run 5.9-12.1 per 30 days (chance at closure
 0.8: 9.6). The M cells (eager on 30 % of days) give closure 0.804 and capture 0.671 overall, the same as S and E.
 
-### The closure tracker, the app's rule
+### The closure tracker, the rule of 5.4
 
 The closure tracker, q 0.25, k 0.3 (capture 0.660), trails Kaplan-Meier by 0.008 of synthetic capture, 1.2 %, below what the model
 resolves. In its favour: lag 8.5 against 15.8, lowest cell 0.778 against 0.709, a higher capture on real users (0.296 against 0.270),
@@ -330,7 +332,7 @@ band. Closure moves by about 0.04 and capture by about 0.03 per step of q. The s
 0.009. If a real log shows closure under 0.8, q 0.10 gives 0.847 and 0.638 and keeps every cell at 0.767 or above.
 
 Start value of T, Kaplan-Meier: T0 of 2, 4, 8, 12 minutes gives closure 0.814, 0.805, 0.797, 0.793 and capture 0.651, 0.668, 0.679,
-0.682. Minutes alone cannot see what the start does to a newcomer's first week; `ring-design.md` measures it with cards.
+0.682. Minutes alone cannot see what the start does to a newcomer's first week; `references/ring-design.md` measures it with cards.
 
 ## Real data
 
@@ -367,22 +369,22 @@ understate what they would give a ring.
 - Days are independent. Real days come in runs, which favours the faster rules and shortens the best window.
 - Noise is lognormal with one sigma per scenario. Real daily time has heavier tails and more zeros than 14 scenarios show.
 - The ring in the app is cards at the day's prices. A ring-stopper's work lands within one card of T, below it when the goal rounds
-  down. The simulation takes exactly T; the app needs a tolerance to tell a ring-stop from a lap.
+  down. The simulation takes exactly T; a rule that tells a ring-stop from a lap (Kaplan-Meier) needs a tolerance for it.
 - T and the new-card allowance are coupled in the app (the day's time bounds new cards); a change of T moves the load. Not modeled
-  here; `Tools/ring-sim/cards.py` models it (`ring-design.md`).
+  here; `Tools/ring-sim/cards.py` models it (`references/ring-design.md`).
 - Capture counts minutes asked of a willing learner. It is no learning outcome, and more minutes are not better by themselves.
 - The hold-out reruns the same 14 scenarios on fresh seeds; it tests noise, not the choice of scenarios. The optimum lies on the band
   edge, so a different mix of scenarios can move it by one grid step.
 
-## What would make us revisit
+## What this model leaves open
 
-- The closure measured on EF's own log over 60 study days falls outside 0.7-0.85: move the tracker's target (`target(c)` in
-  `cards.py` gives the two factors of a closure c).
-- Evidence that willingness reacts to T (missed days after open rings): raise the closure target.
-- Lag matters more than it does now: a variance-adaptive Kalman filter (lag 6.0, tied on capture, untested beyond the grid).
-- A scenario that the 14 miss, such as a learner who works in bursts every few days, if EF's log shows one.
+- A closure measured on a real log over 60 study days outside 0.7-0.85 would move the closure target (`target(c)` in `cards.py` gives the
+  two factors of a closure c); the condition for the rule in force is in `references/ring-design.md`, "What would reopen it".
+- Evidence that willingness reacts to T (missed days after open rings) would call for a higher closure target.
+- If lag mattered more, a variance-adaptive Kalman filter (lag 6.0, tied on capture, untested beyond the grid) is the candidate.
+- A scenario that the 14 miss, such as a learner who works in bursts every few days, if a real log shows one.
 
-## For Mnemit
+## The rule in force
 
-The app runs the tracker (`DailyGoal.nextTime(after:)`) with the additions of `ring-design.md`: a ring closed on a plan smaller
-than its time holds T, the start is 2.5 minutes and the range 2 minutes to an hour.
+`references/ring-design.md` holds it (`DailyGoal.nextTime(after:)`), with the alternatives measured on cards, in the first two weeks and on
+real users. As the tracker measured here does, the staircase reads the ring's closed or open, with whether the goal filled T.
