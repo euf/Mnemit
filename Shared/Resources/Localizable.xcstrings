@@ -3059,182 +3059,6 @@
         }
       }
     },
-    "%lld-day streak · at risk": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Serie: %lld Tag · in Gefahr"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Serie: %lld Tage · in Gefahr"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Σερί: %lld ημέρα · σε κίνδυνο"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Σερί: %lld ημέρες · σε κίνδυνο"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld-day streak · at risk"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld-day streak · at risk"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Стрик: %lld дня · под угрозой"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Стрик: %lld дней · под угрозой"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Стрик: %lld день · под угрозой"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Стрик: %lld дня · под угрозой"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld-day streak · kept today": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Serie: %lld Tag · heute gehalten"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Serie: %lld Tage · heute gehalten"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Σερί: %lld ημέρα · διατηρήθηκε σήμερα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Σερί: %lld ημέρες · διατηρήθηκε σήμερα"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld-day streak · kept today"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld-day streak · kept today"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Стрик: %lld дня · сохранён сегодня"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Стрик: %lld дней · сохранён сегодня"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Стрик: %lld день · сохранён сегодня"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Стрик: %lld дня · сохранён сегодня"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "+%lld climbed today": {
       "localizations": {
         "de": {
@@ -3319,6 +3143,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "+%lld more": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld weitere"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld ακόμη"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld ещё"
           }
         }
       }
@@ -4601,6 +4447,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Все"
+          }
+        }
+      }
+    },
+    "All Medals": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Medaillen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όλα τα μετάλλια"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все медали"
           }
         }
       }
@@ -9734,90 +9602,24 @@
         }
       }
     },
-    "Longest: %lld days": {
+    "Longest streak": {
       "localizations": {
         "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Längste Serie: %lld Tag"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Längste Serie: %lld Tage"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Längste Serie"
           }
         },
         "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Μεγαλύτερο σερί: %lld ημέρα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Μεγαλύτερο σερί: %lld ημέρες"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Longest: %lld day"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Longest: %lld days"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μεγαλύτερο σερί"
           }
         },
         "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Рекорд: %lld дня"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Рекорд: %lld дней"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Рекорд: %lld день"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Рекорд: %lld дня"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рекорд стрика"
           }
         }
       }
@@ -9954,6 +9756,28 @@
         }
       }
     },
+    "Medals": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medaillen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μετάλλια"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Медали"
+          }
+        }
+      }
+    },
     "Memory": {
       "localizations": {
         "de": {
@@ -10060,50 +9884,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ещё"
-          }
-        }
-      }
-    },
-    "Most cards in a day": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meiste Karten an einem Tag"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Περισσότερες κάρτες σε μία ημέρα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Больше всего карточек за день"
-          }
-        }
-      }
-    },
-    "Most laps in a day": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meiste Runden an einem Tag"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Περισσότεροι γύροι σε μία ημέρα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Больше всего кругов за день"
           }
         }
       }
@@ -10368,28 +10148,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новых карточек в день"
-          }
-        }
-      }
-    },
-    "New medals": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Medaillen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Νέα μετάλλια"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые медали"
           }
         }
       }
@@ -12370,28 +12128,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Карточки на узнавание"
-          }
-        }
-      }
-    },
-    "Records": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rekorde"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ρεκόρ"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Рекорды"
           }
         }
       }

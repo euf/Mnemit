@@ -69,6 +69,31 @@ struct AchievementPresentationTests {
         #expect(AchievementKind.laps(10).face.unicodeScalars.map(\.value) == [0x1FA90])
     }
 
+    /// A rest has room for one medal: the most notable, and how many others there are.
+    @Test func theRestFeaturesTheMostNotableMedal() {
+        let earned = [
+            Achievement(kind: .firstRing, day: 1), Achievement(kind: .bigDay(cards: 50), day: 1), Achievement(kind: .laps(2), day: 1),
+            Achievement(kind: .comeback, day: 1),
+        ]
+        #expect(earned.featured?.medal == .comeback && earned.featured?.others == 3)
+        #expect((earned + [Achievement(kind: .streak(days: 7), day: 1)]).featured?.medal == .streak(days: 7))
+        #expect([Achievement(kind: .laps(2), day: 1), Achievement(kind: .laps(5), day: 1)].featured?.medal == .laps(5))
+        #expect([Achievement]().featured == nil)
+    }
+
+    /// The latest medals of the Progress screen: one per kind, the newest first, five at most.
+    @Test func theLatestMedalsAreTheNewestFirst() {
+        let earned = [
+            Achievement(kind: .firstRing, day: 1), Achievement(kind: .perfectWeek, day: 8), Achievement(kind: .streak(days: 3), day: 9),
+            Achievement(kind: .laps(2), day: 10), Achievement(kind: .bigDay(cards: 50), day: 10), Achievement(kind: .comeback, day: 11),
+            Achievement(kind: .perfectWeek, day: 15),
+        ]
+        let latest = earned.recentMedals
+        #expect(latest.map(\.kind) == [.perfectWeek, .comeback, .bigDay(cards: 50), .laps(2), .streak(days: 3)])
+        #expect(latest[0] == EarnedMedal(kind: .perfectWeek, day: 15, count: 2))
+        #expect([Achievement]().recentMedals.isEmpty)
+    }
+
     @Test func aMedalEarnedAgainIsOneWithACount() {
         let earned = [
             Achievement(kind: .perfectWeek, day: 10), Achievement(kind: .comeback, day: 12), Achievement(kind: .perfectWeek, day: 17),

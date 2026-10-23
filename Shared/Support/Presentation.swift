@@ -137,6 +137,19 @@ extension AchievementKind {
         }
     }
 
+    /// How notable a medal is where there is room for one: a streak above the comeback, laps, the big day, the
+    /// perfect week and the first ring; within a line the higher tier.
+    var notability: Int {
+        switch self {
+        case let .streak(days): 6000 + days
+        case .comeback: 5000
+        case let .laps(times): 4000 + times
+        case let .bigDay(cards): 3000 + cards
+        case .perfectWeek: 2000
+        case .firstRing: 1000
+        }
+    }
+
     /// The SF Symbol of the line, which the grey medal of the next tier shows while its emoji stays a surprise.
     var symbol: String { line.symbol }
 
@@ -196,6 +209,23 @@ extension Array where Element == Achievement {
             }
         }
         return medals
+    }
+}
+
+extension Array where Element == Achievement {
+    /// The medals earned last, up to five, the newest first: one per kind, with the day of the last time and how
+    /// often it was earned.
+    var recentMedals: [EarnedMedal] {
+        let counts = Dictionary(grouping: self, by: \.kind).mapValues(\.count)
+        var seen = Set<AchievementKind>()
+        return reversed().filter { seen.insert($0.kind).inserted }.prefix(5).map { EarnedMedal(kind: $0.kind, day: $0.day, count: counts[$0.kind] ?? 1) }
+    }
+
+    /// The most notable medal, for a screen with room for one, and how many others there are.
+    var featured: (medal: AchievementKind, others: Int)? {
+        let kinds = Set(map(\.kind))
+        guard let best = kinds.max(by: { $0.notability < $1.notability }) else { return nil }
+        return (best, kinds.count - 1)
     }
 }
 

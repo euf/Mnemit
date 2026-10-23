@@ -176,15 +176,28 @@ struct StreamRestView: View {
         earnedToday.last { $0.kind.line == .streak }?.kind
     }
 
-    /// The medals earned today, at most three, the newest.
-    private var medalsLine: Line? {
-        let medals = earnedToday.medals.suffix(3)
-        guard !medals.isEmpty else { return nil }
-        return Line("medals") {
-            HStack(alignment: .top, spacing: Spacing.tight) {
-                ForEach(Array(medals), id: \.kind) { Medal(kind: $0.kind, count: $0.count, size: 36) }
+    /// The most notable medal earned today at 56 pt with its name under it, and "+2 more" when there were others.
+    /// The streak kept rest names the milestone in its title, so the medal comes without a name there.
+    private var medalLine: Line? {
+        guard let (medal, others) = earnedToday.featured else { return nil }
+        let isTitle = rest.roundEnd.map { !$0.closesRing } == true && medal.line == .streak
+        return Line("medal") {
+            VStack(spacing: Spacing.hairline) {
+                MedalDisc(kind: medal, size: 56)
+                if !isTitle {
+                    Text(verbatim: medal.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
+                if others > 0 {
+                    Text("+\(others) more")
+                        .font(.caption2)
+                }
             }
             .padding(.vertical, Spacing.tight)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(
+                Text(verbatim: [medal.title, medal.detail, others > 0 ? String(localized: "+\(others) more") : nil].compactMap { $0 }.joined(separator: ", ")))
         }
     }
 
@@ -211,7 +224,7 @@ struct StreamRestView: View {
 
     private var lines: [Line] {
         if rest.isPracticeOnly { return practiceLines }
-        if let end = rest.roundEnd, !end.closesRing { return [medalsLine, streakLine, gainLine, leftLine].compactMap { $0 } }
+        if let end = rest.roundEnd, !end.closesRing { return [medalLine, leftLine].compactMap { $0 } }
         return dayLines
     }
 
@@ -226,61 +239,22 @@ struct StreamRestView: View {
         return lines
     }
 
-    /// The day: "10 cards · 22 answers", the share recalled, the words or their milestone, the streak, the
-    /// week's rings, and the catch-up or when cards come back.
+    /// The day: its medal, one line (the words or their milestone, else the cards of today) and the week's rings.
     private var dayLines: [Line] {
         var lines: [Line] = []
-        if let medalsLine { lines.append(medalsLine) }
-        if rest.recap.cards > 0 {
-            let cards = [String(localized: "\(rest.recap.cards) cards"), String(localized: "\(rest.recap.reviews) answers")]
-            lines.append(Line("cards") { Text(verbatim: cards.joined(separator: " · ")) })
-        }
-        if let accuracy = rest.recap.accuracy {
-            lines.append(Line("accuracy") { Text("\(Format.percent(accuracy)) recalled") })
-        }
+        if let medalLine { lines.append(medalLine) }
         if let milestone = progress?.memory.milestoneLine {
             lines.append(Line("milestone") { Text(milestone).foregroundStyle(Color.appAccent) })
-        } else if let gainLine {
-            lines.append(gainLine)
+        } else if let gain = progress?.memory.gainSentence {
+            lines.append(Line("gain") { Text(gain) })
+        } else {
+            let cards = progress?.ring.done ?? rest.recap.cards
+            if cards > 0 { lines.append(Line("cards") { Text("\(cards) cards today") }) }
         }
-        if let streakLine { lines.append(streakLine) }
         if let progress, progress.week.count == 7 {
             lines.append(Line("week") { WeekRings(week: progress.week, today: progress.ring.fraction, now: rest.now).padding(.vertical, Spacing.tight) })
         }
-        if let progress, progress.ladder.reduce(0, +) > 0 {
-            lines.append(
-                Line("ladder") {
-                    VStack(spacing: Spacing.hairline) {
-                        LadderBar(ladder: progress.ladder)
-                            .frame(maxWidth: 240)
-                        if progress.climbedToday > 0 {
-                            Text("+\(progress.climbedToday) climbed today")
-                        }
-                    }
-                })
-        }
-        if rest.catchUp > 0 {
-            lines.append(Line("catchup") { Text("+\(rest.catchUp) to catch up this week") })
-        } else if let nextDue = rest.nextDue {
-            lines.append(Line("next") { Text("Next review \(Format.due(nextDue, now: rest.now))") })
-        }
         return lines
-    }
-
-    private var streakLine: Line? {
-        guard let days = progress?.streak.days, days > 0 else { return nil }
-        return Line("streak") {
-            HStack(spacing: 4) {
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(Color.appAccent)
-                    .accessibilityHidden(true)
-                Text("\(days)-day streak")
-            }
-        }
-    }
-
-    private var gainLine: Line? {
-        progress?.memory.gainSentence.map { gain in Line("gain") { Text(gain) } }
     }
 
     /// "12 cards left · ≈ 4 min": what is left to the ring.
@@ -316,29 +290,26 @@ struct StreamRestView: View {
     /// The ring is closed and the plan has cards beyond it, as after a break: they are the catch-up.
     private var ringButtons: some View {
         VStack(spacing: Spacing.gap) {
-            button("Catch Up", prominent: true, action: onNextRound)
-            button("Done", prominent: false, action: onDone)
+            button("Done", prominent: true, action: onDone)
+            button("Catch Up", prominent: false, action: onNextRound)
         }
     }
 
+    /// Done, and under it at most one way on: the catch-up when due cards are left, else the new cards beyond
+    /// the daily limits with what they cost.
     private var planEndButtons: some View {
-        let catchesUp = rest.canKeepGoing && rest.catchUp > 0
-        return VStack(spacing: Spacing.gap) {
-            if catchesUp {
-                button("Catch Up", prominent: true, action: onKeepGoing)
-            }
-            if let extra = rest.extraNew {
+        VStack(spacing: Spacing.gap) {
+            button("Done", prominent: true, action: onDone)
+            if rest.canKeepGoing, rest.catchUp > 0 {
+                button("Catch Up", prominent: false, action: onKeepGoing)
+            } else if let extra = rest.extraNew {
                 VStack(spacing: Spacing.hairline) {
-                    button("+\(extra.cards) new", prominent: !catchesUp, action: onAddNewCards)
+                    button("+\(extra.cards) new", prominent: false, action: onAddNewCards)
                     Text("≈ +\(extra.reviewsPerDay) cards/day next week")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-            if rest.canKeepGoing, !catchesUp {
-                button("Practice", prominent: false, action: onKeepGoing)
-            }
-            button("Done", prominent: !catchesUp && rest.extraNew == nil, action: onDone)
         }
     }
 

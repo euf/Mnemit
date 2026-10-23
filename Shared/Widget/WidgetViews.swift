@@ -172,10 +172,6 @@ private struct MediumWidget: View {
                         .foregroundStyle(.secondary)
                         .minimumScaleFactor(0.7)
                 }
-                if let ladder = state.ladder, ladder.reduce(0, +) > 0 {
-                    LadderBar(ladder: ladder, height: 4)
-                        .padding(.top, 4)
-                }
                 if let reminder = state.nextReminder {
                     Text("Reminder at \(Text(reminder, style: .time))")
                         .font(.footnote)

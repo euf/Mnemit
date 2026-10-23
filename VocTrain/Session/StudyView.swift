@@ -95,7 +95,7 @@ struct StudyView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.systemGroupedBackground))
             // Under the bar, over the top of the card.
-            .overlay(alignment: .top) { medalToast }
+            .medalToast(toasts)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     closeButton
@@ -170,31 +170,12 @@ struct StudyView: View {
         .onChange(of: motion.showsRest) { _, showsRest in
             if showsRest { toasts.clear() }
         }
-        .onChange(of: toasts.shown) {
-            guard let medal = toasts.current else { return }
-            motion.celebrate()
-            AccessibilityNotification.Announcement(medal.kind.title).post()
-        }
-        .sensoryFeedback(.success, trigger: toasts.shown)
+        // The ring in the bar plays what a card landing in it does.
+        .onChange(of: toasts.shown) { motion.celebrate() }
         .onDisappear {
             GreekSpeech.shared.close()
             toasts.clear()
         }
-    }
-
-    /// The toast of the medal that was just earned: it slides down and fades in, and goes up and out; with
-    /// Reduce Motion it only fades.
-    private var medalToast: some View {
-        ZStack {
-            if let medal = toasts.current {
-                MedalToast(kind: medal.kind)
-                    .id(medal)
-                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .animation(reduceMotion ? .easeInOut(duration: 0.25) : .smooth(duration: 0.4), value: toasts.current)
-        .padding(.top, Spacing.tight)
-        .allowsHitTesting(false)
     }
 
     /// The standard Close button of the platform; an `xmark` before iOS 26 has none.

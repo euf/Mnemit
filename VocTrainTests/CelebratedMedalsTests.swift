@@ -45,4 +45,45 @@ struct CelebratedMedalsTests {
         let again = CelebratedMedals(defaults: defaults)
         #expect(again.pending([past, today, Achievement(kind: .laps(2), day: 5)], today: 10) == [Achievement(kind: .laps(2), day: 5)])
     }
+
+    // MARK: The toasts
+
+    /// Today's progress with a medal from three days ago and two earned today.
+    private func progress() throws -> (DailyProgress, today: Int) {
+        var progress = AchievementPresentationTests.sampleProgress()
+        let today = try #require(progress.records.last?.day)
+        progress.achievements = [
+            Achievement(kind: .firstRing, day: today - 3), Achievement(kind: .laps(2), day: today), Achievement(kind: .bigDay(cards: 50), day: today),
+        ]
+        return (progress, today)
+    }
+
+    @Test func aToastShowsTheFirstMedalOfTodayAndMarksIt() async throws {
+        let (progress, today) = try progress()
+        let store = CelebratedMedals(defaults: nil)
+        _ = store.pending([], today: today)
+        let toasts = MedalToasts(store: store)
+        toasts.offer(progress)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(toasts.current == Achievement(kind: .laps(2), day: today))
+        #expect(toasts.shown == 1)
+        // The second waits its turn, and the one of the earlier day is not today's.
+        #expect(store.pending(progress.achievements, today: today) == [Achievement(kind: .firstRing, day: today - 3), Achievement(kind: .bigDay(cards: 50), day: today)])
+        // A rest drops the queue; it marks what it shows itself.
+        toasts.clear()
+        #expect(toasts.current == nil)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(toasts.current == nil && toasts.shown == 1)
+    }
+
+    @Test func todayCelebratesTheMedalsOfEarlierDays() async throws {
+        let (progress, today) = try progress()
+        let store = CelebratedMedals(defaults: nil)
+        _ = store.pending([], today: today)
+        let toasts = MedalToasts(store: store)
+        toasts.offer(progress, earlierDays: true)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(toasts.current == Achievement(kind: .firstRing, day: today - 3))
+        toasts.clear()
+    }
 }

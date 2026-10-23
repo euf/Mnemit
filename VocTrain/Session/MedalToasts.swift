@@ -26,10 +26,13 @@ final class MedalToasts {
         current = frozen
     }
 
-    /// Queues what `progress` holds of today not celebrated yet.
-    func offer(_ progress: DailyProgress?) {
+    /// Queues what `progress` holds not celebrated yet: of today, or with `earlierDays` of the days before it, the
+    /// medals earned on another device.
+    func offer(_ progress: DailyProgress?, earlierDays: Bool = false) {
         guard let progress, let today = progress.records.last?.day else { return }
-        let fresh = store.pending(progress.achievements, today: today).filter { $0.day == today && !queue.contains($0) }
+        let fresh = store.pending(progress.achievements, today: today).filter {
+            (earlierDays ? $0.day < today : $0.day == today) && !queue.contains($0)
+        }
         queue += fresh
         if task == nil, !queue.isEmpty { task = Task { await run() } }
     }
@@ -54,6 +57,37 @@ final class MedalToasts {
             try? await Task.sleep(for: .seconds(Timing.gap))
         }
         if !Task.isCancelled { task = nil }
+    }
+}
+
+extension View {
+    /// The toasts of `toasts` over the top of the view, under the bar.
+    func medalToast(_ toasts: MedalToasts) -> some View {
+        overlay(alignment: .top) { MedalToastLayer(toasts: toasts) }
+    }
+}
+
+/// The toast on screen: it slides down and fades in, and goes up and out; with Reduce Motion it only fades. A
+/// success haptic plays as it comes, and VoiceOver hears the medal's title.
+private struct MedalToastLayer: View {
+    var toasts: MedalToasts
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            if let medal = toasts.current {
+                MedalToast(kind: medal.kind)
+                    .id(medal)
+                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(reduceMotion ? .easeInOut(duration: 0.25) : .smooth(duration: 0.4), value: toasts.current)
+        .padding(.top, Spacing.tight)
+        .allowsHitTesting(false)
+        .sensoryFeedback(.success, trigger: toasts.shown)
+        .onChange(of: toasts.shown) {
+            if let medal = toasts.current { AccessibilityNotification.Announcement(medal.kind.title).post() }
+        }
     }
 }
 

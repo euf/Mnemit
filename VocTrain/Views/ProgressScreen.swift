@@ -1,9 +1,10 @@
 import SwiftUI
 import VocabCore
 
-/// Progress, pushed from the header of Today: the streak and its record, the achievements, the calendar of the
-/// last 13 weeks, the ladder of memory and the records (`references/learning-flow.md`, "Milestones, achievements
-/// and the Progress screen"). Everything is worked out from the review logs as the ring is, `DailyProgress.records`.
+/// Progress, pushed from the header of Today, a summary of four blocks (`references/learning-flow.md`,
+/// "Milestones, achievements and the Progress screen"): the streak with the main totals, the latest medals and the
+/// way to all of them, the calendar of the last 13 weeks, and the ladder of memory. Everything is worked out from
+/// the review logs as the ring is, `DailyProgress.records`.
 ///
 /// The true retention of the last 30 days is not here: no screen of the iPhone app reads the decks' review logs
 /// into it across decks, the deck statistics do it for one deck.
@@ -16,10 +17,12 @@ struct ProgressScreen: View {
     var body: some View {
         List {
             Section { streak }
-            Section("Achievements") {
-                MedalLine(lines: AchievementLine.single, progress: progress, calendar: calendar)
-                ForEach(AchievementLine.tiered, id: \.self) { line in
-                    MedalLine(lines: [line], progress: progress, calendar: calendar)
+            Section("Medals") {
+                latestMedals
+                NavigationLink {
+                    MedalsScreen(progress: progress, calendar: calendar)
+                } label: {
+                    Text("All Medals")
                 }
             }
             Section {
@@ -30,7 +33,6 @@ struct ProgressScreen: View {
             if progress.ladder.reduce(0, +) > 0 {
                 Section("Memory") { ladder }
             }
-            Section("Records") { recordRows }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Progress")
@@ -50,17 +52,9 @@ struct ProgressScreen: View {
         progress.streak.repairCards != nil && !progress.ring.isGoalMet
     }
 
-    /// "Longest: 30 days · 24 rings closed".
-    private var recordLine: String? {
-        var parts: [String] = []
-        if longest > 0 { parts.append(String(localized: "Longest: \(longest) days")) }
-        if ringsClosed > 0 { parts.append(String(localized: "\(ringsClosed) rings closed")) }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
-    }
-
-    /// The streak large, with its record and the rings closed under it.
+    /// The streak large, and under it the main totals, two by two.
     private var streak: some View {
-        VStack(alignment: .leading, spacing: Spacing.hairline) {
+        VStack(alignment: .leading, spacing: Spacing.gap) {
             HStack(spacing: Spacing.tight) {
                 Image(systemName: "flame.fill")
                     .foregroundStyle(progress.streakKeptToday && !isAtRisk ? Color.accentColor : Color.secondary)
@@ -69,16 +63,54 @@ struct ProgressScreen: View {
                     .monospacedDigit()
             }
             .font(.largeTitle.weight(.bold))
-            if let recordLine {
-                Text(verbatim: recordLine)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("\(progress.streak.days)-day streak"))
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 2), alignment: .leading, spacing: Spacing.tight) {
+                total("Longest streak") { Text("\(longest) days") }
+                total("Rings closed") { Text(ringsClosed, format: .number) }
+                total("Days studied") { Text(records.filter { $0.done > 0 }.count, format: .number) }
+                total("Cards done") { Text(records.reduce(0) { $0 + $1.done }, format: .number) }
             }
         }
         .padding(.vertical, Spacing.hairline)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(progress.streak.days)-day streak"))
-        .accessibilityValue(Text(verbatim: recordLine ?? ""))
+    }
+
+    /// A figure of the totals: its title in footnote over the number.
+    private func total(_ title: LocalizedStringKey, @ViewBuilder value: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(title)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            value()
+                .font(.subheadline)
+                .monospacedDigit()
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: The medals
+
+    /// The medals earned last, up to five, the newest first; before the first, the one to earn first in grey.
+    @ViewBuilder
+    private var latestMedals: some View {
+        let latest = progress.achievements.recentMedals
+        if latest.isEmpty {
+            if let next = AchievementLine.single.lazy.compactMap({ NextTier.of($0, earned: [], records: records, streak: progress.streak.days) }).first {
+                Medal(kind: next.kind, isEarned: false, hint: next.hint)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.tight)
+            }
+        } else {
+            HStack(spacing: Spacing.gap) {
+                ForEach(latest, id: \.kind) { medal in
+                    MedalDisc(kind: medal.kind, count: medal.count)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(
+                            Text(verbatim: [medal.kind.title, calendar.start(ofDay: medal.day).formatted(date: .long, time: .omitted)].joined(separator: ", ")))
+                }
+            }
+            .padding(.vertical, Spacing.tight)
+        }
     }
 
     // MARK: The ladder of memory
@@ -117,51 +149,6 @@ struct ProgressScreen: View {
             }
         }
         .padding(.vertical, Spacing.hairline)
-    }
-
-    // MARK: Records
-
-    @ViewBuilder
-    private var recordRows: some View {
-        let mostLaps = records.map { $0.goal > 0 ? $0.done / $0.goal : 0 }.max() ?? 0
-        row("Most cards in a day", symbol: "rectangle.stack") { Text(records.map(\.done).max() ?? 0, format: .number) }
-        row("Most laps in a day", symbol: "repeat") { Text(mostLaps, format: .number) }
-        row("Rings closed", symbol: "circle.circle") { Text(ringsClosed, format: .number) }
-        row("Days studied", symbol: "calendar") { Text(records.filter { $0.done > 0 }.count, format: .number) }
-        row("Cards done", symbol: "checkmark.circle") { Text(records.reduce(0) { $0 + $1.done }, format: .number) }
-    }
-
-    private func row(_ title: LocalizedStringKey, symbol: String, @ViewBuilder value: () -> some View) -> some View {
-        LabeledContent {
-            value().monospacedDigit()
-        } label: {
-            Label(title, systemImage: symbol)
-        }
-    }
-}
-
-/// The medals of some lines in one grid: of each line the earned ones in order, then the next as a grey medal
-/// with how far there is to go, and nothing beyond it. A line that repeats shows one medal with its count as a
-/// badge, or the grey one before the first.
-private struct MedalLine: View {
-    var lines: [AchievementLine]
-    var progress: DailyProgress
-    var calendar: StudyCalendar
-
-    var body: some View {
-        LazyVGrid(columns: medalColumns, spacing: Spacing.gap) {
-            ForEach(lines, id: \.self) { line in
-                let earned = progress.achievements.filter { $0.kind.line == line }.medals
-                let next = NextTier.of(line, earned: progress.achievements, records: progress.records, streak: progress.streak.days)
-                ForEach(earned, id: \.kind) { medal in
-                    Medal(kind: medal.kind, date: calendar.start(ofDay: medal.day), count: medal.count)
-                }
-                if let next, !(line.repeats && !earned.isEmpty) {
-                    Medal(kind: next.kind, isEarned: false, hint: next.hint)
-                }
-            }
-        }
-        .padding(.vertical, Spacing.tight)
     }
 }
 

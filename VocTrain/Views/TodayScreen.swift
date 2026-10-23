@@ -54,8 +54,8 @@ struct TodayScreen: View {
     /// Opens the browser of the shared decks.
     var showAnkiWeb: () -> Void = {}
 
-    /// The medals earned on earlier days and not celebrated yet, say on the Mac: shown once, here, and marked.
-    @State private var newMedals: [Achievement] = []
+    /// The medals earned on earlier days and not celebrated yet, say on the Mac, come once as a toast over the list.
+    @State private var toasts = MedalToasts()
 
     /// Whether the decks were read: until then the figures are placeholders.
     private var isRead: Bool {
@@ -77,11 +77,6 @@ struct TodayScreen: View {
     /// Of `due`, the cards that were new when the day began, which the time left prices as new.
     private var newDue: Int {
         decks.reduce(0) { $0 + (counts[$1.url]?.newAtDayStart ?? 0) }
-    }
-
-    /// The catch-up, the overdue review cards the plan leaves for the days after.
-    private var catchUp: Int {
-        decks.reduce(0) { $0 + (counts[$1.url]?.catchUp ?? 0) }
     }
 
     var body: some View {
@@ -135,53 +130,19 @@ struct TodayScreen: View {
         }
     }
 
-    /// Takes what was earned before today and not celebrated, shows it and marks it.
-    private func collectNewMedals() {
-        guard isDayReady, let progress, let today = progress.records.last?.day else { return }
-        let pending = CelebratedMedals.shared.pending(progress.achievements, today: today).filter { $0.day < today && !newMedals.contains($0) }
-        guard !pending.isEmpty else { return }
-        newMedals += pending
-        CelebratedMedals.shared.mark(pending)
-    }
-
-    /// "New medals" with up to three of them, and the way to Progress.
-    private var newMedalsRow: some View {
-        Button {
-            newMedals = []
-            showProgress()
-        } label: {
-            HStack(spacing: Spacing.gap) {
-                VStack(alignment: .leading, spacing: Spacing.tight) {
-                    Text("New medals")
-                        .font(.headline)
-                    HStack(alignment: .top, spacing: Spacing.tight) {
-                        ForEach(Array(newMedals.medals.suffix(3)), id: \.kind) { medal in
-                            Medal(kind: medal.kind, date: StudyCalendar().start(ofDay: medal.day), count: medal.count, size: 36)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "chevron.forward")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+    /// Queues the medals of earlier days this device never celebrated, once the day is shown.
+    private func celebrateMissedMedals() {
+        if isDayReady { toasts.offer(progress, earlierDays: true) }
     }
 
     private var list: some View {
         List {
-            if !newMedals.isEmpty {
-                Section { newMedalsRow }
-            }
             Section {
                 // A button with the chevron of the deck rows, which draw it by hand too.
                 Button(action: showProgress) {
                     HStack(spacing: 12) {
                         SummaryRow(
-                            due: due, newDue: newDue, catchUp: catchUp, progress: isDayReady ? progress : nil,
+                            due: due, newDue: newDue, progress: isDayReady ? progress : nil,
                             nextDue: counts.values.compactMap(\.nextDue).min(), now: now, isLoaded: isDayReady
                         )
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -223,8 +184,9 @@ struct TodayScreen: View {
         }
         .listStyle(.insetGrouped)
         .refreshable { await refresh() }
-        .onChange(of: progress, initial: true) { collectNewMedals() }
-        .onChange(of: isDayReady) { collectNewMedals() }
+        .onChange(of: progress, initial: true) { celebrateMissedMedals() }
+        .onChange(of: isDayReady) { celebrateMissedMedals() }
+        .medalToast(toasts)
         .safeAreaBar(edge: .bottom) {
             StudyButton(isDue: due > 0 || !isDayReady, due: due) { study(.all) }
                 .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
@@ -321,15 +283,13 @@ struct StudyButton: View {
     }
 }
 
-/// The day in rounds and the cards done and left of today's plan, the daily ring, the streak and the
-/// words in memory, and the catch-up the plan leaves for the days after.
+/// The daily ring with the streak in its centre, what the day asks next in a headline and one detail line, and
+/// the words in memory. The streak's record, the ladder of memory and the rest are on the Progress screen.
 struct SummaryRow: View {
     /// The cards of the plan not done yet, "N cards left": not the cards that are due in all.
     var due: Int
     /// Of `due`, the cards that were new when the day began.
     var newDue = 0
-    /// The overdue review cards beyond today's share of the backlog.
-    var catchUp = 0
     var progress: DailyProgress?
     /// When something comes back that today's plans leave out.
     var nextDue: Date?
@@ -360,29 +320,6 @@ struct SummaryRow: View {
                         detail
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                        if catchUp > 0 {
-                            Text("+\(catchUp) to catch up this week")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        if let progress, progress.streak.days > 0 {
-                            // Not a Label: in a list it puts its icon in a column of its own.
-                            HStack(spacing: 4) {
-                                Image(systemName: "flame.fill")
-                                    .foregroundStyle(progress.streakKeptToday && !isAtRisk ? Color.accentColor : Color.secondary)
-                                Group {
-                                    if isAtRisk {
-                                        Text("\(progress.streak.days)-day streak · at risk")
-                                    } else if progress.streakKeptToday {
-                                        Text("\(progress.streak.days)-day streak · kept today")
-                                    } else {
-                                        Text("\(progress.streak.days)-day streak")
-                                    }
-                                }
-                                .foregroundStyle(.secondary)
-                            }
-                            .font(.subheadline)
-                        }
                     }
                 }
                 .monospacedDigit()
@@ -395,30 +332,19 @@ struct SummaryRow: View {
                 Text("≈ \(0) words in memory")
                     .font(.subheadline)
             }
-            // The ladder of memory, thin: the shape of the collection, filling to the right over the weeks.
-            if let progress, progress.ladder.reduce(0, +) > 0 {
-                LadderBar(ladder: progress.ladder, height: 4)
-            } else if !isLoaded {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.25))
-                    .frame(height: 4)
-            }
         }
         .padding(.vertical, 8)
         .redacted(reason: isLoaded ? [] : .placeholder)
     }
 
-    /// Until the decks are read, the lines the day will have, as placeholders: the headline, the cards and the
-    /// streak take their room, so nothing below moves when the figures come.
+    /// Until the decks are read, the lines the day will have, as placeholders: the headline and the cards take
+    /// their room, so nothing below moves when the figures come.
     @ViewBuilder
     private var placeholderLines: some View {
         Text("Ring closed")
             .font(.title2.weight(.semibold))
         Text(verbatim: [String(localized: "\(12) of \(24) cards"), String(localized: "\(12) left")].joined(separator: " · "))
             .font(.subheadline)
-        Text("\(0)-day streak")
-            .font(.subheadline)
-            .accessibilityElement(children: .combine)
     }
 
     /// "≈ 7 min": the cards left at the learner's pace, new cards and others each at its own, once the decks are read.
