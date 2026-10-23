@@ -2,7 +2,7 @@
 
 ## State
 
-- Version 5.6 on `main`; the iPhone runs 5.6.0 (c74d183), signed until 30.10; the Mac app 5.6.0 (c74d183). The day's model (one ring, the
+- Version 5.6 on `main`; the iPhone runs 5.6.3 (64d0f16), signed until 30.10; the Mac app 5.6.3 (64d0f16). The day's model (one ring, the
   stack that ends with the plan, Push On, partial credit, the streak step, two rests, medals, the Progress screen)
   and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
   ring's size (seconds, a staircase on closed and open rings) is `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
