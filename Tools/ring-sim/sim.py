@@ -232,6 +232,11 @@ def main():
     table(['scenario', 'response', 'closure', 'capture', 'flips/30 d'], [[n, rr, f"{w['m']['cl'][i]:.3f}", f"{w['m']['cap'][i]:.3f}", f"{w['m']['fl'][i]:.1f}"] for i, (n, rr) in enumerate(names)])
     if ds['lc']: print(); table(['step scenario', 'response', 'lag (days)'], [[*names[i], int(l)] for i, l in zip(ds['lc'], w['m']['lag'])])
     if rd: print(f"\nreal users: closure {w['rcl']:.3f}, capture {w['rcap']:.3f}")
+    if rd:
+        print('\n## Real users by rule (closure: mean over users, and the user at p10)')
+        app = next(x for x in res if x['rule']['fam'] == 'tracker' and x['rule']['p'] == (.25, .3))
+        rows = [app] + [x for x in best.values() if x is not app]
+        table(['rule', 'closure', 'p10 user', 'capture'], [[label(x['rule']), f"{x['rcl']:.3f}", f"{np.percentile(ev(x['rule'], rd)['cl'], 10):.3f}", f"{x['rcap']:.3f}"] for x in rows])
     cur = next(x for x in res if x['rule']['fam'] == 'median' and x['rule']['p'] == (7, 1, 0))
     print('\n## Current rule (median of the last 7 study days) against the winner, by response')
     table(['rule', 'response', 'closure', 'capture'], [[l, rr, *(f"{x['m'][k][[i for i, n in enumerate(names) if n[1] == rr]].mean():.3f}" for k in ('cl', 'cap'))]
