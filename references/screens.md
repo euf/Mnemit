@@ -376,7 +376,7 @@ parameters with "Compute from Review Log".
   window title "Today", Window ▸ Today ⌘0; shown at launch while no document is open, and by a click on
   the Dock icon then; to turn it off: `defaults write <bundle id> showsWelcomeWindow -bool NO`). It
   stays open beside the deck windows. Left: `SummaryRow` (the same view as the iPhone's Today header,
-  ring 80 pt), the `DayAction` button (extra large, the default action) and the links Choose Mnemit
+  ring 80 pt, a button with a chevron that opens Progress), the `DayAction` button (extra large, the default action) and the links Choose Mnemit
   Folder…, Import Cards…, Open Deck…, Shared Decks on AnkiWeb…. Right: the decks of the Mnemit folder
   with what today's plan takes from each (`StudyCounts.parts`, else "Next review …", "Paused" for a
   paused deck) and the cards left or a checkmark; Recent Decks below. Before the folder is chosen: the
@@ -387,8 +387,14 @@ parameters with "Compute from Review Log".
   (`KnownDeckCounts.refresh(_:)`). Import Cards… takes CSV, TSV, `.apkg`
   and `.colpkg`; a package makes a new deck named after the Anki deck, in the window title as well as
   in Save As. Opening an `.apkg` from Finder does the same, not a document window.
-- **Deck window**: Cards | Statistics. The toolbar carries the ring chip and the button: **Study**
+- **Progress window** (`ProgressWindow`): the iPhone's `ProgressScreen` (`Shared/Statistics`) with All
+  Medals and, in its last section, a link to How Today Works. From the day in the Today window, the ring
+  chip of a deck window and Window ▸ Progress; it reads the decks again when it becomes key.
+- The Mac's day counts `AllDecks`: the open documents and the rest of the Mnemit folder. The ring chip,
+  the session header, Today, Progress and How Today Works all count them.
+- **Deck window**: Cards | Statistics. The toolbar carries the ring chip (a click opens Progress) and the button: **Study**
   (prominent) while the deck has cards due, else **Push On** (`design-spec.md` §6.2); the session header
   shows the day's ring, `DailyRingView(progress:, showsStreak: false)`. Cards, filters, inspector and
   edit sheet: Card browser. Study ▸ Pause Deck / Resume Deck: Pausing a deck.
-- How Today Works: its own window.
+- How Today Works: its own window (Study ▸ How Today Works, or the link at the end of Progress), over
+  `AllDecks`, each deck named by its file.
