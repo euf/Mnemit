@@ -32,7 +32,7 @@ times that time, after a ring closed on a smaller plan the same time, after an o
 an hour, 2.5 minutes before any study.
 
 - Measured, `ring-design.md`: the factors put the share of closed rings at 0.78 on the logs of 2,000 Anki users
-  and on 13 synthetic learner types; 2.5 minutes against 4 raise a newcomer's chance of a perfect first week; an
+  and on 15 synthetic learner types; 2.5 minutes against 4 raise a newcomer's chance of a perfect first week; an
   hour against 30 minutes holds the usual day of nine in ten Anki users and stops a backlog for heavy veterans.
 - Adaptive daily goals beat fixed ones in the trials that compared them; the trials met their goals on 33-58 % of
   days, and no source ties the share of met goals to persistence (`ring-design-research.md`). Measured, walking.

@@ -2,7 +2,7 @@
 
 ## State
 
-- Version 5.4 on `main`; the iPhone runs 5.4.7 (42b298f), signed until 30.10. The day's model (one ring, the
+- Version 5.5 on `main`; the iPhone runs 5.5.0 (838a7ce), signed until 30.10. The day's model (one ring, the
   stack, partial credit, the streak step, two rests, medals, the Progress screen) is
   `references/learning-flow.md`; the ring's size (seconds, a tracker of the closed rings) is
   `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
