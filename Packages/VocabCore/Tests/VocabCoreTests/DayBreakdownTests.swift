@@ -5,9 +5,9 @@ import Testing
 
 /// What the figures of the day are made of (`DayBreakdown`), against the progress the same decks give.
 extension DailyProgressTests {
-    func breakdown(_ decks: [Deck], at date: Date? = nil, rule: DailyGoal.RingRule = .follows) -> (progress: DailyProgress, breakdown: DayBreakdown) {
+    func breakdown(_ decks: [Deck], at date: Date? = nil) -> (progress: DailyProgress, breakdown: DayBreakdown) {
         let activities = decks.map { DeckActivity(deck: $0, calendar: calendar) }
-        let progress = DailyProgress.evaluate(activities, at: date ?? now, calendar: calendar, planRuleStart: .min, rule: rule)
+        let progress = DailyProgress.evaluate(activities, at: date ?? now, calendar: calendar, planRuleStart: .min)
         return (progress, DayBreakdown(activities, progress: progress, at: date ?? now, calendar: calendar))
     }
 
@@ -38,40 +38,25 @@ extension DailyProgressTests {
         #expect(breakdown.decks == [DayBreakdown.DeckNewCards(allowance: 5, ceiling: 5, admitted: 5)])
     }
 
-    @Test func underTheRoundsRuleTheLastDaysTellTheTimeAndWhetherTheRingWasClosed() throws {
+    @Test func theLastDaysTellWhatTheRingAskedWhatWasWorkedAndWhy() throws {
         var deck = try Deck(learningOptions: options(), cards: (0..<400).map { fresh("n\($0)") })
-        // As `twoClosedDaysInARowAddARoundAndAnOpenDayTakesOneAway`: nine days, the seventh not studied.
         for offset in 0..<9 where offset != 6 { study(&deck, onDay: today - 9 + offset) }
-        let early = at(day: today, hour: 5)
-        let (progress, breakdown) = breakdown([deck], at: early, rule: .rounds)
-        #expect(breakdown.rule == .rounds)
-        #expect(breakdown.days.map(\.time) == [240, 240, 360, 480, 600, 720, 840, 720, 720, 840])
-        #expect(breakdown.days.map(\.isClosed) == [true, true, true, true, true, true, false, true, true, false])
-        #expect(breakdown.days.map(\.reason) == [DailyGoal.SizeReason?](repeating: nil, count: 10))
-        #expect(breakdown.days.map(\.start) == (today - 9...today).map { calendar.start(ofDay: $0) })
-        // The loop that tells it is the one of the progress: today's time and ring are the same.
-        #expect(breakdown.days.last?.time == progress.time)
-        #expect(breakdown.days.last?.isClosed == progress.ring.isGoalMet)
-        let shorter = DayBreakdown([DeckActivity(deck: deck, calendar: calendar)], progress: progress, at: early, calendar: calendar, lastDays: 3)
-        #expect(shorter.days == Array(breakdown.days.suffix(3)))
-    }
-
-    @Test func underTheFollowsRuleTheLastDaysTellWhatTheRingAskedWhatWasWorkedAndWhy() throws {
-        var deck = try Deck(learningOptions: options(), cards: (0..<400).map { fresh("n\($0)") })
-        for offset in 0..<9 where offset != 6 { study(&deck, onDay: today - 9 + offset, rule: .follows) }
         let early = at(day: today, hour: 5)
         let (progress, breakdown) = breakdown([deck], at: early)
         let days = breakdown.days
-        #expect(breakdown.rule == .follows && days.count == 10)
+        #expect(days.count == 10)
         #expect(days.first?.reason == .start && days.first?.time == DailyGoal.initialSeconds)
-        // The seventh day was not studied: no work, an open ring; the day after it asks 70 % of the base.
+        // The seventh day was not studied: no work, an open ring; the day after it asks what it asked.
         #expect(days[6].worked == 0 && !days[6].isClosed)
-        #expect(days[7].reason == .afterMiss)
+        #expect(days[7].reason == .median && days[7].time == days[6].time)
         // Told from the days the progress stepped through: the same times and work, the last as today's.
         #expect(days.map(\.time) == progress.ringDays.map(\.time))
         #expect(days.map(\.worked) == progress.ringDays.map(\.worked))
         #expect(days.map(\.reason) == progress.ringDays.map(\.reason))
         #expect(days.last?.time == progress.time && days.last?.isClosed == progress.ring.isGoalMet)
+        #expect(days.map(\.start) == (today - 9...today).map { calendar.start(ofDay: $0) })
+        let shorter = DayBreakdown([DeckActivity(deck: deck, calendar: calendar)], progress: progress, at: early, calendar: calendar, lastDays: 3)
+        #expect(shorter.days == Array(days.suffix(3)))
     }
 
     @Test func aLearnerWithNoHistoryHasTodayAloneAndNothingToPrice() throws {

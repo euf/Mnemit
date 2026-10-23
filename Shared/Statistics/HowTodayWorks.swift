@@ -103,7 +103,7 @@ struct HowTodayWorks: Equatable, Sendable {
                 minutes(day.time),
                 minutes(day.worked),
                 day.isClosed ? String(localized: "Closed") : String(localized: "Open"),
-                day.reason.map(Self.text(of:)) ?? "–",
+                Self.text(of: day.reason),
             ]
         }
         let rows: [Row] = [
@@ -114,7 +114,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "A day asks the median of the work of the last seven study days, a tenth more after three closed rings in a row unless a try in the last two weeks left its ring open, and 30 % less the day after a missed one. The streak step is the cards that fit the first two minutes of the plan."
+                "A day asks the median of the work of the last seven study days, between two and thirty minutes, and four minutes before any work. A day without work is left out. The streak step is the cards that fit the first two minutes of the plan."
         )
         return Section(title: String(localized: "Today's time"), rows: rows, footer: footer)
     }
@@ -124,8 +124,6 @@ struct HowTodayWorks: Equatable, Sendable {
         switch reason {
         case .start: String(localized: "Start")
         case .median: String(localized: "Median")
-        case .probe: String(localized: "Probe +10 %")
-        case .afterMiss: String(localized: "After a miss −30 %")
         }
     }
 

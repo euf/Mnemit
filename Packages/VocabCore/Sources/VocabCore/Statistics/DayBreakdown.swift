@@ -42,8 +42,8 @@ public struct DayBreakdown: Hashable, Sendable {
         public var isClosed: Bool
         /// The seconds of work the day's cards took at the day's own prices; today's so far.
         public var worked: Double = 0
-        /// Why the day had its size; `nil` under `DailyGoal.RingRule.rounds`.
-        public var reason: DailyGoal.SizeReason?
+        /// Why the day had its size.
+        public var reason: DailyGoal.SizeReason
     }
 
     /// Where a kind of card gets its price in seconds (`DailyGoal.pace(days:newDone:otherDone:)`).
@@ -81,8 +81,6 @@ public struct DayBreakdown: Hashable, Sendable {
         }
     }
 
-    /// The rule that sized the days.
-    public var rule: DailyGoal.RingRule = DailyGoal.ringRule
     public var plan: Plan
     /// One entry for each deck, in the order of the decks given.
     public var decks: [DeckNewCards]
@@ -117,7 +115,6 @@ extension DayBreakdown {
         }
         // The size and the ring of every day, from the first study day on, as `evaluate` stepped through them.
         let sized = progress.ringDays
-        rule = progress.ringRule
         days = sized.suffix(lastDays).map { day in
             Day(
                 start: calendar.start(ofDay: day.day), time: day.time, isClosed: day.closed, worked: day.worked, reason: day.reason)

@@ -3,41 +3,17 @@ import Testing
 
 @testable import VocabCore
 
-/// The day's time and where it ends: the streak step and the goal in cards, how many new cards the time admits,
-/// and the rounds of the earlier rule (`DailyGoal.RingRule.rounds`).
+/// The day's time and where it ends: the streak step and the goal in cards, and how many new cards the time admits.
 struct DailyRoundsTests {
     /// A learner whose new card takes 30 s and any other 10 s.
     let pace = Pace(newCard: 30, otherCard: 10)
 
-    // MARK: Capacity
+    // MARK: Time
 
     @Test func theStreakStepIsTwoMinutesAndTheFirstDayHoldsFour() {
         #expect(DailyGoal.streakSeconds == 120)
         #expect(DailyGoal.initialSeconds == 240)
         #expect(DailyGoal.timeRange == 120...1800)
-        // The rounds rule: two rounds of the step to begin with, one to fifteen.
-        #expect(DailyGoal.initialCapacity == 2)
-        #expect(DailyGoal.capacityRange == 1...15)
-    }
-
-    @Test func twoClosedDaysInARowAddARound() {
-        #expect(DailyGoal.nextCapacity(after: 2, yesterdayClosed: true, dayBeforeClosed: true) == 3)
-        #expect(DailyGoal.nextCapacity(after: 7, yesterdayClosed: true, dayBeforeClosed: true) == 8)
-    }
-
-    @Test func anOpenDayTakesARoundAwayWhateverCameBefore() {
-        #expect(DailyGoal.nextCapacity(after: 5, yesterdayClosed: false, dayBeforeClosed: true) == 4)
-        #expect(DailyGoal.nextCapacity(after: 5, yesterdayClosed: false, dayBeforeClosed: false) == 4)
-    }
-
-    @Test func aSingleClosedDayAfterAnOpenOneLeavesTheCapacity() {
-        #expect(DailyGoal.nextCapacity(after: 4, yesterdayClosed: true, dayBeforeClosed: false) == 4)
-    }
-
-    @Test func theCapacityStaysBetweenOneAndFifteen() {
-        #expect(DailyGoal.nextCapacity(after: 1, yesterdayClosed: false, dayBeforeClosed: false) == 1)
-        #expect(DailyGoal.nextCapacity(after: 15, yesterdayClosed: true, dayBeforeClosed: true) == 15)
-        #expect(DailyGoal.nextCapacity(after: 14, yesterdayClosed: true, dayBeforeClosed: true) == 15)
     }
 
     // MARK: Admission

@@ -3549,24 +3549,24 @@
         }
       }
     },
-    "A day asks the median of the work of the last seven study days, a tenth more after three closed rings in a row unless a try in the last two weeks left its ring open, and 30 % less the day after a missed one. The streak step is the cards that fit the first two minutes of the plan.": {
+    "A day asks the median of the work of the last seven study days, between two and thirty minutes, and four minutes before any work. A day without work is left out. The streak step is the cards that fit the first two minutes of the plan.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ein Tag verlangt den Median der Arbeit der letzten sieben Lerntage, ein Zehntel mehr nach drei geschlossenen Ringen in Folge, außer ein Versuch in den letzten zwei Wochen ließ seinen Ring offen, und 30 % weniger am Tag nach einem verpassten. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
+            "value": "Ein Tag verlangt den Median der Arbeit der letzten sieben Lerntage, zwischen zwei und dreißig Minuten, und vier Minuten vor jeder Arbeit. Ein Tag ohne Arbeit bleibt außen vor. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Η ημέρα ζητά τη διάμεσο της δουλειάς των τελευταίων επτά ημερών μελέτης, ένα δέκατο παραπάνω μετά από τρεις κλειστούς κύκλους στη σειρά, εκτός αν μια δοκιμή των τελευταίων δύο εβδομάδων άφησε τον κύκλο της ανοιχτό, και 30 % λιγότερο την ημέρα μετά από μια χαμένη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
+            "value": "Η ημέρα ζητά τη διάμεσο της δουλειάς των τελευταίων επτά ημερών μελέτης, ανάμεσα σε δύο και τριάντα λεπτά, και τέσσερα λεπτά πριν από κάθε δουλειά. Μια ημέρα χωρίς δουλειά μένει έξω. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "День просит медиану работы за последние семь дней учёбы, на десятую часть больше после трёх закрытых колец подряд, если за последние две недели такая проба не оставила кольцо открытым, и на 30 % меньше на следующий день после пропущенного. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
+            "value": "День просит медиану работы за последние семь дней учёбы, от двух до тридцати минут, а до первой работы — четыре минуты. День без работы в расчёт не идёт. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
           }
         }
       }
@@ -4403,28 +4403,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Дополнительно"
-          }
-        }
-      }
-    },
-    "After a miss −30 %": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nach einem Fehltag −30 %"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μετά από χαμένη ημέρα −30 %"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "После пропуска −30 %"
           }
         }
       }
@@ -11842,28 +11820,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Предыдущее:"
-          }
-        }
-      }
-    },
-    "Probe +10 %": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Probe +10 %"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Δοκιμή +10 %"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проба +10 %"
           }
         }
       }

@@ -30,12 +30,11 @@ struct HowTodayWorksTests {
 
     static var breakdown: DayBreakdown {
         let days = [
-            DayBreakdown.Day(start: day.addingTimeInterval(-2 * 86400), time: 360, isClosed: true, worked: 360, reason: .median),
-            DayBreakdown.Day(start: day.addingTimeInterval(-86400), time: 480, isClosed: false, worked: 420, reason: .probe),
-            DayBreakdown.Day(start: day, time: 360, isClosed: false, worked: 150, reason: .afterMiss),
+            DayBreakdown.Day(start: day.addingTimeInterval(-2 * 86400), time: 240, isClosed: true, worked: 360, reason: .start),
+            DayBreakdown.Day(start: day.addingTimeInterval(-86400), time: 360, isClosed: false, worked: 300, reason: .median),
+            DayBreakdown.Day(start: day, time: 330, isClosed: false, worked: 150, reason: .median),
         ]
         return DayBreakdown(
-            rule: .follows,
             plan: DayBreakdown.Plan(reviewsDue: 20, backlogTaken: 8, backlog: 30, learning: 2, newAdmitted: 6),
             decks: [DayBreakdown.DeckNewCards(allowance: 6, ceiling: 27, admitted: 6)], catchUp: 22, days: days,
             newCards: DayBreakdown.PaceBasis(durations: 214, gaps: 120, reviews: 500, doneCards: 200),
@@ -87,7 +86,7 @@ struct HowTodayWorksTests {
         func one(_ value: Double) -> String { value.formatted(.number.precision(.fractionLength(1))) }
         #expect(
             table.1.map { Array($0.dropFirst()) } == [
-                [one(6), one(2.5), "Open", "After a miss −30 %"], [one(8), one(7), "Open", "Probe +10 %"], [one(6), one(6), "Closed", "Median"],
+                [one(5.5), one(2.5), "Open", "Median"], [one(6), one(5), "Open", "Median"], [one(4), one(6), "Closed", "Start"],
             ])
         #expect(time.footer.hasPrefix("A day asks the median of the work of the last seven study days"))
 
@@ -132,15 +131,6 @@ struct HowTodayWorksTests {
         let numbers = try #require(fsrs.rows.compactMap { row -> String? in if case let .numbers(text) = row { text } else { nil } }.first)
         #expect(numbers.split(separator: " ").count == FSRSParameters.count)
         #expect(numbers.hasPrefix("0.2120 1.2931 2.3065 8.2956"))
-    }
-
-    @Test func aDayWithoutAReasonShowsADash() throws {
-        var breakdown = Self.breakdown
-        breakdown.rule = .rounds
-        breakdown.days = breakdown.days.map { var day = $0; day.reason = nil; return day }
-        let content = HowTodayWorks(progress: Self.progress, breakdown: breakdown, memory: Self.memory, swipes: nil, decks: [])
-        let table = try #require(content.sections[1].rows.compactMap { row -> [[String]]? in if case let .table(_, rows) = row { rows } else { nil } }.first)
-        #expect(table.map { $0.last } == ["–", "–", "–"])
     }
 
     @Test func aStreakToRepairAndDecksWithoutNamesAreTold() {

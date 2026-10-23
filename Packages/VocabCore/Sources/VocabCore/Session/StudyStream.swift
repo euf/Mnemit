@@ -188,10 +188,6 @@ public struct StudyStream: Sendable {
         roundsPassed = max(0, rounds)
     }
 
-    /// Whether the stream rests at the end of every round but the last, as in 4.0, instead of at the
-    /// first and the last only.
-    public static let restsAtEveryRound = false
-
     /// Rests inside the plan if the cards done have ended a round that the learner has not been
     /// through: `roundsDone` of the day's `rounds`. Only the first round of the day rests, which keeps
     /// the streak, and the last, which closes the ring; the last only while the plan has cards left,
@@ -203,7 +199,7 @@ public struct StudyStream: Sendable {
     @discardableResult
     public mutating func restAtRoundEnd(roundsDone: Int, rounds: Int) -> Bool {
         guard stage == .plan, !isPracticeOnly, roundRest == nil, roundsDone > roundsPassed else { return roundRest != nil }
-        guard Self.restsAtEveryRound ? roundsDone < rounds : roundsPassed == 0 || roundsDone >= rounds else { return false }
+        guard roundsPassed == 0 || roundsDone >= rounds else { return false }
         roundRest = roundsDone
         return true
     }
