@@ -203,6 +203,28 @@ struct StudyModelTests {
         #expect(model.currentCard?.isNew == true)
     }
 
+    /// Push On from Today: a stack that is done for the day starts with the new cards, without the rest first.
+    @Test func pushOnFromTodayAsksTheNewCardsAtOnce() throws {
+        var learningOptions = LearningOptions()
+        learningOptions.newCardsPerSession = 1
+        let cards = (0..<15).map { Card(text: CardText(question: "q\($0)", answer: "x")!, created: created) }
+        let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: cards), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+        let undoManager = UndoManager()
+        undoManager.groupsByEvent = false
+        document.attachUndoManager(undoManager)
+        let study = StudyModel(document: document)
+        for _ in 0..<learningOptions.steps {
+            study.reveal()
+            grade(study, .good, undoManager: undoManager)
+        }
+        #expect(StudyModel(document: document).isResting, "the plan is done: Study opens at its end")
+
+        let model = StudyModel(document: document, entry: .pushOn)
+        #expect(!model.isResting)
+        #expect(model.session.totalCount == StudyStream.newCardChunk)
+        #expect(model.currentCard?.isNew == true)
+    }
+
     /// The view speaks a Greek question when this changes: once per move to a card, also
     /// when undo brings a card back, and not for a reveal.
     @Test func questionNumberCountsEveryMoveOnce() throws {
