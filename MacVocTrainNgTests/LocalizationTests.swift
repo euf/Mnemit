@@ -98,29 +98,20 @@ struct LocalizationTests {
     /// The lines of the stream at rest: "≈ +1 card/day" but "≈ +2 cards/day".
     @Test func streamPhrasesAreSingularForOne() throws {
         let english: [(String.LocalizationValue, String)] = [
-            ("≈ +\(1) cards/day next week", "≈ +1 card/day next week"),
-            ("≈ +\(2) cards/day next week", "≈ +2 cards/day next week"),
             ("\(1) answers", "1 answer"),
             ("\(2) answers", "2 answers"),
         ]
         let german: [(String.LocalizationValue, String)] = [
-            ("≈ +\(1) cards/day next week", "≈ +1 Karte/Tag nächste Woche"),
-            ("≈ +\(2) cards/day next week", "≈ +2 Karten/Tag nächste Woche"),
             ("\(1) answers", "1 Antwort"),
             ("\(2) answers", "2 Antworten"),
         ]
         let russian: [(String.LocalizationValue, String)] = [
-            ("≈ +\(1) cards/day next week", "≈ +1 карточка/день на следующей неделе"),
-            ("≈ +\(2) cards/day next week", "≈ +2 карточки/день на следующей неделе"),
-            ("≈ +\(5) cards/day next week", "≈ +5 карточек/день на следующей неделе"),
             ("\(1) answers", "1 ответ"),
             ("\(2) answers", "2 ответа"),
             ("\(5) answers", "5 ответов"),
             ("\(21) answers", "21 ответ"),
         ]
         let greek: [(String.LocalizationValue, String)] = [
-            ("≈ +\(1) cards/day next week", "≈ +1 κάρτα/ημέρα την επόμενη εβδομάδα"),
-            ("≈ +\(2) cards/day next week", "≈ +2 κάρτες/ημέρα την επόμενη εβδομάδα"),
             ("\(1) answers", "1 απάντηση"),
             ("\(2) answers", "2 απαντήσεις"),
         ]

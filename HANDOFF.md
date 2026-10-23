@@ -2,10 +2,10 @@
 
 ## State
 
-- Version 5.5 on `main`; the iPhone runs 5.5.0 (838a7ce), signed until 30.10. The day's model (one ring, the
-  stack, partial credit, the streak step, two rests, medals, the Progress screen) is
-  `references/learning-flow.md`; the ring's size (seconds, a tracker of the closed rings) is
-  `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
+- Version 5.6 on `main`; the iPhone runs 5.5.0 (838a7ce), signed until 30.10. The day's model (one ring, the
+  stack that ends with the plan, Push On, partial credit, the streak step, two rests, medals, the Progress screen)
+  and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
+  ring's size (seconds, a staircase on closed and open rings) is `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
   and the logs of 2,000 Anki users: `references/ring-design.md`; why the rest:
   `references/learning-flow-research.md`, `goal-setting-research.md`, `speech-stutter-research.md`. Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review).
   Screens: `references/flows.md`, `references/screens.md`. Brief sub-agents by
@@ -81,8 +81,8 @@ In order of importance to EF. Brief sub-agents by `references/agent-token-costs.
 7. **The Mac suite on `main` hasn't been run** (the tests open windows; `~/.claude/ui-blocked` was up).
    Known failures when the test app isn't in front: `CardListViewTests.firstClickIntoTableSelectsRow` and
    `focusedTableHandsFocusToNewTableWhenSorted`.
-8. **Known behaviour, decide on complaint:** after "Done for today" in all decks, Keep Going runs on the
-   deck of the last card; pace starts from defaults until 20 timed reviews; xcodebuild 27.1 sometimes hangs
+8. **Known behaviour, decide on complaint:** pace starts from defaults until 20 timed reviews; a deck with
+   nothing in today's plan doesn't open with the stack, so Push On can't take its new cards; xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
    arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another.
 9. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
@@ -91,38 +91,18 @@ In order of importance to EF. Brief sub-agents by `references/agent-token-costs.
    (store the chosen date in the log first); hiding siblings across decks once pairs exceed 1 %
    (`references/cross-deck-overlap.md`); a listening mode.
 
-## In progress (23.10, session "Дизайн логики кольца")
+## Next for the ring
 
-Decided with EF, measured in `Tools/ring-sim/cards.py` (2,000 Anki users, `--real ~/Library/Caches/anki-revlogs-10k`),
-not yet in the app:
+Drafts from 23.10, not approved by EF; the decisions and everything measured are in `references/ring-design.md`.
 
-1. **Size rule: Levitt's transformed staircase instead of the tracker.** Two closed rings in a row (that filled the time)
-   → T × 1.15; an open ring → T × 0.775 and the run restarts; a ring closed on a smaller plan doesn't count (hold). It
-   converges to √(ln(1/0.775) / (ln 1.15 + ln(1/0.775))) = 0.804 closed rings. Against the tracker (×1.075 / ×0.775, 0.779):
-   the ring changes size on half as many days (50 % against 90 %), closure +1.5-2 points, perfect first week +1.5 (a
-   5-minute newcomer +10: 0.375 against 0.275), words −4 % for a learner who stops at the ring, equal for one who goes on;
-   same miss depth and open runs. Code: `DailyGoal.nextTime(after:)` reads the run of closed filled days; tests in
-   `RingRuleTests`; docs `daily-ring.md`, `learning-flow.md`, `ring-design.md`, `GLOSSARY.md`, How Today Works footer.
-2. **Replace "+10 new" with "Go on".** FSRS (the plan) decides: after the ring, Catch Up while the plan has due cards,
-   then more of the day's stream; flows: 0 → streak kept → ring closed → Catch Up → stack empty, or 0 → streak kept →
-   ring closed → stack empty. Open question to settle before coding: what "Go on" serves once the plan is empty (FSRS has
-   nothing due; only new cards remain, sized by whom). Rethink the user flow and a newcomer's first week with a new deck.
-3. **Plain-language texts** (EF asked "по-человечески"; draft, not yet approved): the ring is "the cards due so you don't
-   forget them, as many as fit your usual time; if time is left, new words fill it"; two modes of Catch Up: a rare day
-   (7-10 % of study days, 5-30 cards: "more than usual is due today: 12 more cards wait in Catch Up") and a lasting
-   backlog (veterans, hundreds of cards: "480 cards have piled up; the ring takes the most forgotten first; at this pace
-   about 3 weeks"). Russian Catch Up is «Наверстать» (done, 406fb7f).
-4. **Show the ring's size as progress** on the Progress screen ("Your ring: 12 min a day. You started at 2.5"): the
-   closure share is fixed by any adaptive rule, the size is what differs between people.
-5. **Forecast** in How Today Works: what the current intake of new words costs in a month and a year (as Anki's
-   simulator and Noos do).
-
-Measured and rejected (write into `ring-design.md` "The alternatives"): Anki's load balancer (fuzz + weights from
-`load_balancer.rs`: no-new days 9.8 → 8.7 %, nothing else moves; the time cap already cuts peaks); one new card a day
-first in the queue (only correlational evidence: real logs, days without new cards are followed by a 7+ day gap 5.2 %
-against 3.0 %; patch kept at the session's scratchpad `one-new-card-first.patch`); intake smoothing (1.25-2× the recent
-average: Catch Up −1.5 points, words −5…−16 %); a "kept up with FSRS" counter (depends on retention and intake, punishes
-learners who add more); PEST steps (words +9-17 %, perfect first week 0.69 against 0.83); a QUEST-like Bayesian rule
-(first week 0.14, oversized rings for eager learners); the FSRS queue + N new by recent rings (closure 0.66-0.75, first
-week ≤ 0.44, a veteran's first ring 543 min); staircases of 3-7 rings (closure ↑, words −17…−67 %). `cards.py --noos`
-reproduces Noos's FSRS simulator within 0-4 % at retention 80-90 %.
+1. **Plain-language texts** (EF asked for them "по-человечески"): the ring is "the cards due so you don't forget them, as
+   many as fit your usual time; if time is left, new words fill it"; two modes of Catch Up: a rare day (7-10 % of study
+   days, 5-30 cards: "more than usual is due today: 12 more cards wait in Catch Up") and a lasting backlog (veterans,
+   hundreds of cards: "480 cards have piled up; the ring takes the most forgotten first; at this pace about 3 weeks").
+2. **The ring's size as progress** on the Progress screen ("Your ring: 12 min a day. You started at 2.5"): any adaptive
+   rule fixes the closure share, the size is what differs between people.
+3. **Forecast** in How Today Works: what the current intake of new words costs in a month and a year (as Anki's simulator
+   and Noos do).
+4. **Push On rings without new words**: a learner who pushes on one day in three has no new word in the ring on 46 % of
+   study days (the reviews of earlier Push On cards fill the time); new words then come only through Push On. Watch it in
+   Mnemit's own log before changing anything.

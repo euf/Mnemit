@@ -24,7 +24,7 @@ final class SessionViewModel {
 
     /// What the stream starts with.
     enum Entry {
-        /// Today's plan, then review ahead and practice.
+        /// Today's stack: the plan, which ends; past it only Push On.
         case study
         /// A practice of the cards that went wrong today, which changes no card.
         case practiceMistakes
@@ -113,18 +113,12 @@ final class SessionViewModel {
         driver.continueRound()
     }
 
-    /// Goes on beyond the plan, from rest: review ahead, then practice.
-    func keepGoing() {
-        driver.keepGoing()
-    }
-
-    /// Adds 10 new cards beyond the daily limits, from rest or in the middle of the stream.
+    /// Push On: adds 10 new cards beyond the daily limits to the stack that is done for the day.
     func addNewCards() {
         driver.addNewCards()
     }
 
-    /// The new cards `addNewCards()` would add and what they cost; `nil` if there are none
-    /// and for a practice.
+    /// The new cards `addNewCards()` would add; `nil` if there are none and for a practice.
     var extraNew: ExtraNewCards? { driver.extraNew }
 
     /// What the last grade did, shown in the chip that offers Undo.

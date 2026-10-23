@@ -1,7 +1,7 @@
-# Scheduling and the study stream
+# Scheduling and the day's stack
 
-Today's counts and limits, revealed reviews, leeches, the automatic FSRS refit, the endless Study
-stream and its practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
+Today's counts and limits, revealed reviews, leeches, the automatic FSRS refit, the day's stack
+(Study) and the practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
 `references/daily-ring.md`.
 
 ## Today's counts and daily limits
@@ -61,10 +61,12 @@ stream and its practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
 - The switch and the line about the last fit: `ParametersSection` (iPhone: Options → Advanced; Mac: the
   Learning Options sheet).
 
-## The Study stream
+## The day's stack
 
-- Study opens an endless stream; there are no sessions (`StudyStream` in VocabCore, driven by
-  `SessionDriver` in both apps). Every review is written at once, and leaving loses nothing.
+What the learner sees and the paths through a day: `learning-flow.md`, "The journey". The mechanics:
+
+- Study opens the day's stack, which ends with the plan; there are no sessions (`StudyStream` in
+  VocabCore, driven by `SessionDriver` in both apps). Every review is written at once, and leaving loses nothing.
 - Within the plan the stream rests twice a day at most (`StudyStream.roundRest`,
   `restAtRoundEnd(roundsDone:rounds:)`, `continueRound()`): at the end of the first round ("Streak
   kept", Keep Going or Done for Now) and at the end of the last while the plan has cards beyond the
@@ -78,19 +80,17 @@ stream and its practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
   computed yet) and in practice the stream doesn't rest.
 - While resting there is no card (`currentCard == nil`): speech doesn't say the hidden word, and grades
   and Suspend are refused (`StudyModel.isRoundRest`).
-- Order:
-  1. The day's plan (`StudySession.counts`, same selection and limits, every card due, overdue ones
-     included; while the plan is not empty it is recounted after every segment).
-  2. Pause "Done for today": plan size, share recalled, "Ring closed" if the ring is closed, "+N words
-     in memory today", next date; buttons "Keep Going" and "+10 new".
-  3. Practice that doesn't touch the schedule: `Deck.mistakes(onDayOf:calendar:)`, then
-     `Deck.newestBatchIDs`, round and round.
-- New cards beyond the limit come only through `addNewCards(10)`, with the line "≈ +N cards/day next
-  week" (cards per day next week; `NewCardLoad`: an FSRS simulation, every grade Good, no lapses, a due
-  day is one review and one plan card).
+- The stack is the day's plan (`StudySession.counts`, same selection and limits, every card due, overdue
+  ones included; while the plan is not empty it is recounted after every segment). When it is empty the
+  stream rests for good: "Ring closed" (or "Done for today") with Done and, while a deck has new cards
+  left, Push On.
+- Push On is the only way past the end: `addNewCards(_:)`, `StudyStream.newCardChunk` (10) new cards beyond
+  the limits. Over several decks `StudyModel` shares them out one at a time to the deck that has given the
+  fewest new cards (`pushOnCounts`), and the stack asks them mixed (`mostUrgentLane()`).
 - Undo runs through the whole stream: the `UndoCompanion` snapshot is the whole `StudyStream` value.
 - "Practice Mistakes" and "Practice Newest Words" are entries to separate streams
-  (`practicingMistakesIn:`, `practicingNewestWordsIn:`); they end in a pause with the results.
+  (`practicingMistakesIn:`, `practicingNewestWordsIn:`) from the deck screen and the Mac's menu; they
+  change no card, practice once and end in a pause with the results.
 
 ## Newest batch
 

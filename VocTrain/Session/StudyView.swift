@@ -2,9 +2,9 @@ import SwiftUI
 import VocabCore
 
 /// The study stream in the style of flash cards: the question, a touch shows the answer,
-/// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stream has
-/// no end of its own: today's plan, which rests at the end of each round (`StreamRestView`, Next
-/// Round goes on), a short rest at the end of the plan, then practice.
+/// and the learner grades with Forgot, or with Hard, Good and Easy below it. The stack is
+/// today's plan, which rests at the streak step and at the ring (`StreamRestView`) and ends with
+/// the plan; Push On adds new cards past the end.
 /// Every grade is saved at once, so leaving loses nothing. The bar shows the close button, today's
 /// done cards against the daily goal as a small ring with "Round 2 of 4", and the menu.
 ///

@@ -3,7 +3,7 @@ import Testing
 
 @testable import VocabCore
 
-/// The study stream: today's plan, then review ahead and practice, new cards on request.
+/// The day's stack: today's plan, which ends; new cards past it on request (Push On).
 struct StudyStreamTests {
     let calendar = StudyCalendar.testing
     /// 2026-10-05 18:00 in Berlin.
@@ -189,74 +189,21 @@ struct StudyStreamTests {
         #expect(run.deck.cards.allSatisfy { $0.log.count == 3 })
         #expect(StudySession.counts(for: run.deck, at: now, calendar: calendar).total == 0)
 
-        // Beyond the plan there is no catch-up stage: nothing is due, so the stream goes to practice.
-        let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
-        #expect(keptGoing)
-        stages.append(run.stream.stage)
-        #expect(stages == [.plan, .rest, .practiceNewest])
-        #expect(stages.allSatisfy { String(describing: $0) != "catchUp" })
+        // The plan done, the stack is done: no catch-up stage, no practice.
+        #expect(stages == [.plan, .rest])
     }
 
-    @Test func withoutABacklogKeepGoingGoesStraightToPractice() throws {
-        var run = try run([review("r1"), review("ahead", interval: 20, dueInDays: 10)])
-        _ = run.play(whileIn: .plan)
-        #expect(run.stream.stage == .rest)
-        let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
-        #expect(keptGoing)
-        #expect(run.stream.stage == .practiceNewest)
-    }
-
-    @Test func keepGoingNeverReviewsACardBeforeItIsDue() throws {
+    @Test func theStackEndsWithThePlanAndNothingIsAskedBeforeItIsDue() throws {
         var run = try run([review("ahead", interval: 10, dueInDays: 5)])
         #expect(run.stream.stage == .rest)
-        let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
-        #expect(keptGoing)
-        #expect(run.stream.stage == .practiceNewest)
-        let before = run.deck.cards[0]
-        run.grade(.good)
-        #expect(run.deck.cards[0] == before)
+        // Without new cards Go On has nothing to add: the card due in five days waits for its day.
+        let added = run.stream.addNewCards(StudyStream.newCardChunk, in: run.deck, at: now, calendar: calendar)
+        #expect(!added)
+        #expect(run.stream.stage == .rest)
+        #expect(run.stream.session.currentCardID == nil)
     }
 
     // MARK: Practice
-
-    @Test func afterThePlanComePracticeOfTodaysMistakesAndThenTheNewestWordsAgainAndAgain() throws {
-        var run = try run([review("due"), review("ahead", interval: 10, dueInDays: 5)])
-        let mistake = run.deck.cards[0].id
-        run.grade(.again)
-        _ = run.play(whileIn: .plan)
-        #expect(run.stream.stage == .rest)
-        #expect(run.deck.mistakes(onDayOf: now, calendar: calendar) == [mistake])
-
-        let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
-        #expect(keptGoing)
-        #expect(run.stream.stage == .practiceMistakes)
-        #expect(run.stream.session.currentCardID == mistake)
-
-        let cardsBeforePractice = run.deck.cards
-        _ = run.play(whileIn: .practiceMistakes)
-        #expect(run.stream.stage == .practiceNewest)
-        // All cards were created at the same second: the newest batch is the whole deck.
-        var passes = [run.stream.session.id]
-        for _ in 0..<2 {
-            let pass = run.stream.session.id
-            while run.stream.session.id == pass {
-                run.grade(.good)
-            }
-            #expect(run.stream.stage == .practiceNewest)
-            passes.append(run.stream.session.id)
-        }
-        #expect(Set(passes).count == 3)
-        // Practice changed no card.
-        #expect(run.deck.cards == cardsBeforePractice)
-    }
-
-    @Test func keepGoingWithNothingLeftStaysAtRest() throws {
-        var run = try run([])
-        #expect(!run.stream.canKeepGoing(in: run.deck, at: now, calendar: calendar))
-        let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
-        #expect(!keptGoing)
-        #expect(run.stream.stage == .rest)
-    }
 
     @Test func practiceOnlyStreamRestsWhenDoneAndKeepsItsRecap() throws {
         let deck = try Deck(learningOptions: options(), cards: [review("a"), review("b"), review("c")])
@@ -274,8 +221,6 @@ struct StudyStreamTests {
         #expect(stream.recap.cards == 3)
         #expect(stream.recap.reviews == graded)
         #expect(stream.recap.recalled == graded - 1)
-        let keptGoing = stream.keepGoing(in: deck, at: now, calendar: calendar)
-        #expect(!keptGoing)
         // Practice changed no card.
         #expect(deck.cards.allSatisfy { $0.log.isEmpty })
     }
@@ -384,14 +329,16 @@ struct StudyStreamTests {
     }
 
     @Test func aStreamRestoredFromAnEarlierSegmentLeavesTheLaterOneBehind() throws {
-        var run = try run([review("due"), review("ahead", interval: 10, dueInDays: 5)])
+        // The new card is beyond the day's allowance: only Go On asks it.
+        var run = try run([review("due"), fresh("extra")], newCardAllowance: 0)
         let beforeLastPlanReview = run.stream
         let deckBefore = run.deck
         run.grade(.good)
-        let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
-        #expect(keptGoing)
+        #expect(run.stream.stage == .rest)
+        let added = run.stream.addNewCards(1, in: run.deck, at: now, calendar: calendar)
+        #expect(added)
         run.grade(.good)
-        #expect(run.stream.stage != .plan)
+        #expect(run.stream.session.id != beforeLastPlanReview.session.id)
         run.deck = deckBefore
         run.stream = beforeLastPlanReview
         #expect(run.stream.stage == .plan)
@@ -422,7 +369,6 @@ struct StudyStreamTests {
         let next = try #require(run.currentID)
         #expect(run.stream.grade(.good, in: run.deck, at: now, calendar: calendar) == nil)
         #expect(run.currentID == next)
-        #expect(!run.stream.canKeepGoing(in: run.deck, at: now, calendar: calendar))
 
         run.stream.continueRound()
         settle(&run, ends: ends)

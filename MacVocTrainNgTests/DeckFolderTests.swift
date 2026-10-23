@@ -36,9 +36,9 @@ struct DeckFolderTests {
 
         #expect(VocabularyDocument.readableContentTypes == [.vocabularyDeck, .legacyVocabularyDeck])
         #expect(VocabularyDocument.writableContentTypes == [.vocabularyDeck, .legacyVocabularyDeck])
-        // The Info.plist declares the same types as document types, and the Anki package after them.
+        // The Info.plist declares the same types as document types, and the Anki package and collection after them.
         let documentTypes = Bundle.main.infoDictionary?["CFBundleDocumentTypes"] as? [[String: Any]] ?? []
-        #expect(documentTypes.flatMap { $0["LSItemContentTypes"] as? [String] ?? [] } == (UTType.deckTypes + [.ankiPackage]).map(\.identifier))
+        #expect(documentTypes.flatMap { $0["LSItemContentTypes"] as? [String] ?? [] } == (UTType.deckTypes + UTType.ankiPackages).map(\.identifier))
     }
 
     @Test func aMissingFolderHasNoDecks() {

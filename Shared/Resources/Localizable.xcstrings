@@ -3169,28 +3169,6 @@
         }
       }
     },
-    "+%lld new": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld neue"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld νέες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld новых"
-          }
-        }
-      }
-    },
     "+%lld today": {
       "localizations": {
         "de": {
@@ -7358,28 +7336,6 @@
         }
       }
     },
-    "Each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less; a ring closed on a plan smaller than the time, or a day without study, changes nothing. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "An jedem Tag, an dem du den Ring schließt, verlangt der nächste 7,5 % mehr Zeit; an einem Tag, an dem er offen bleibt, ein Viertel weniger; ein Ring, der bei einem Plan unter der Zeit geschlossen wird, und ein Tag ohne Lernen ändern nichts. Zwischen zwei Minuten und einer Stunde, und zweieinhalb Minuten vor jedem Lernen. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάθε ημέρα που κλείνεις τον κύκλο, η επόμενη ζητά 7,5 % περισσότερο χρόνο· μια ημέρα που μένει ανοιχτός, ένα τέταρτο λιγότερο· ένας κύκλος που κλείνει με πρόγραμμα μικρότερο από τον χρόνο ή μια ημέρα χωρίς μελέτη δεν αλλάζουν τίποτα. Από δύο λεπτά έως μία ώρα, και δυόμισι λεπτά πριν από κάθε μελέτη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Каждый день, когда ты закрываешь кольцо, следующий просит на 7,5 % больше времени; день, когда оно остаётся открытым, — на четверть меньше; кольцо, закрытое на плане меньше времени, и день без учёбы ничего не меняют. От двух минут до часа, а до первой учёбы — две с половиной минуты. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
-          }
-        }
-      }
-    },
     "Earned %lld times": {
       "localizations": {
         "de": {
@@ -9822,6 +9778,28 @@
         }
       }
     },
+    "More reviews in the days ahead": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mehr Wiederholungen in den nächsten Tagen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Περισσότερες επαναλήψεις τις επόμενες μέρες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Больше повторений в ближайшие дни"
+          }
+        }
+      }
+    },
     "Name": {
       "localizations": {
         "de": {
@@ -11820,6 +11798,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Произношение (S)"
+          }
+        }
+      }
+    },
+    "Push On": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachlegen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κι άλλο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поднажать"
           }
         }
       }
@@ -15168,6 +15168,28 @@
         }
       }
     },
+    "The time follows your days: rings you close make it grow, a ring left open makes it smaller, and a ring closed on a plan smaller than the time or a day without study leaves it as it was. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Zeit folgt deinen Tagen: Ringe, die du schließt, lassen sie wachsen, ein offener Ring macht sie kleiner, und ein Ring, der bei einem Plan unter der Zeit geschlossen wird, oder ein Tag ohne Lernen lässt sie, wie sie war. Zwischen zwei Minuten und einer Stunde, und zweieinhalb Minuten vor jedem Lernen. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο χρόνος ακολουθεί τις μέρες σου: οι κύκλοι που κλείνεις τον μεγαλώνουν, ένας κύκλος που μένει ανοιχτός τον μικραίνει, ενώ ένας κύκλος που κλείνει με πρόγραμμα μικρότερο από τον χρόνο ή μια ημέρα χωρίς μελέτη τον αφήνουν όπως ήταν. Από δύο λεπτά έως μία ώρα, και δυόμισι λεπτά πριν από κάθε μελέτη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Время подстраивается под твои дни: закрытые кольца его увеличивают, открытое кольцо уменьшает, а кольцо, закрытое на плане меньше времени, и день без учёбы оставляют его как было. От двух минут до часа, а до первой учёбы — две с половиной минуты. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
+          }
+        }
+      }
+    },
     "This Anki package is from a version Mnemit can't read.": {
       "localizations": {
         "de": {
@@ -17771,94 +17793,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "≈ %lld слова в памяти"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "≈ +%lld cards/day next week": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld Karte/Tag nächste Woche"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld Karten/Tag nächste Woche"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld κάρτα/ημέρα την επόμενη εβδομάδα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld κάρτες/ημέρα την επόμενη εβδομάδα"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld card/day next week"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld cards/day next week"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld карточки/день на следующей неделе"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld карточек/день на следующей неделе"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld карточка/день на следующей неделе"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "≈ +%lld карточки/день на следующей неделе"
                 }
               }
             }

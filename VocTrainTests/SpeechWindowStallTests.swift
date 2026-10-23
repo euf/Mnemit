@@ -106,13 +106,15 @@ struct SpeechWindowStallTests {
             var spokenBefore = 0
             var record: GradeRecord
             if model.isResting {
+                // The plan is done and no deck has new cards left to push on with: the run ends here.
+                if !model.isRoundRest && model.extraNew == nil { break }
                 askedBefore = speech.cardAppearedCount
                 spokenBefore = speech.speakCount
                 // The learner looks at the rest for a moment, then goes on, as the button does.
                 try await Task.sleep(for: .seconds(1.5))
                 record = GradeRecord(index: grades.count + 1, label: "next")
                 record.at = DispatchTime.now().uptimeNanoseconds
-                if model.isRoundRest { model.continueRound() } else { model.keepGoing() }
+                if model.isRoundRest { model.continueRound() } else { model.addNewCards() }
             } else {
                 let cardStart = DispatchTime.now().uptimeNanoseconds
                 try await Self.sleep(until: cardStart, plus: Self.revealAfter)

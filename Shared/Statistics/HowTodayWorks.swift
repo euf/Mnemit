@@ -104,7 +104,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "Each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less; a ring closed on a plan smaller than the time, or a day without study, changes nothing. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan."
+                "The time follows your days: rings you close make it grow, a ring left open makes it smaller, and a ring closed on a plan smaller than the time or a day without study leaves it as it was. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan."
         )
         return Section(title: String(localized: "Today's time"), rows: rows, footer: footer)
     }
@@ -113,7 +113,7 @@ struct HowTodayWorks: Equatable, Sendable {
     private static func text(of reason: DailyGoal.SizeReason) -> String {
         switch reason {
         case .start: String(localized: "Start")
-        case .ringClosed: String(localized: "Ring closed")
+        case .ringClosed, .closedInARow: String(localized: "Ring closed")
         case .ringOpen: String(localized: "Ring open")
         case .smallPlan: String(localized: "Plan under the time")
         }

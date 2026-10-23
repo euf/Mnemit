@@ -147,9 +147,12 @@ public enum DailyGoal {
     /// of nine in ten Anki users (`references/ring-design.md`).
     public static let timeRange: ClosedRange<Double> = 120...3600
 
-    /// What a closed ring multiplies the next time by. With `shrinks` the share of closed rings settles where
-    /// p ln(grows) = (1 - p) ln(1 / shrinks), 0.78, whatever the work (`references/ring-design.md`).
-    public static let grows = 1.075
+    /// What every `closedToGrow`-th closed ring in a row multiplies the next time by (Levitt's transformed up-down
+    /// staircase). With `shrinks` the share of closed rings settles where p² ln(grows) = (1 - p²) ln(1 / shrinks), 0.80,
+    /// whatever the work; the ring changes size on about half the study days (`references/ring-design.md`).
+    public static let grows = 1.15
+    /// Closed rings in a row, each on a goal that filled the time, that grow the time.
+    public static let closedToGrow = 2
     /// What an open ring multiplies the next time by: a quarter less.
     public static let shrinks = 0.775
 
@@ -157,8 +160,10 @@ public enum DailyGoal {
     public enum SizeReason: Hashable, Sendable {
         /// No study day before it to go by: `initialSeconds`.
         case start
-        /// The last study day closed its ring: its time times `grows`.
+        /// The last study day closed the `closedToGrow`-th ring in a row: its time times `grows`.
         case ringClosed
+        /// The last study day closed its ring, not yet the `closedToGrow`-th in a row: its time again.
+        case closedInARow
         /// The last study day left its ring open: its time times `shrinks`.
         case ringOpen
         /// The last study day closed its ring on a plan smaller than its time (`RingDay.filled` false): its time again.
@@ -197,16 +202,24 @@ public enum DailyGoal {
     }
 
     /// The time of the next day, in seconds, from the days before it (`days`, oldest first, every day from the first
-    /// study day): a closure tracker. The last study day asked `T` (its `time`, which carries the steps of the days
-    /// before it, so a cached run equals a recount); the next time is `T × grows` when its ring closed and
-    /// `T × shrinks` when it stayed open, within `timeRange`; `initialSeconds` before any study day. A ring closed on a
+    /// study day): a transformed up-down staircase. The last study day asked `T` (its `time`, which carries the steps of
+    /// the days before it, so a cached run equals a recount); the next time is `T × grows` when its ring was the
+    /// `closedToGrow`-th closed in a row since the last open one or the last growth, `T` after the closed rings before it,
+    /// and `T × shrinks` when it stayed open, within `timeRange`; `initialSeconds` before any study day. A ring closed on a
     /// plan smaller than its time (`RingDay.filled` false: a deck's new-card limit or an exhausted deck set the goal)
     /// keeps `T`: the learner was not asked for it. A day without work, missed or not, changes nothing.
     public static func nextTime(after days: [RingDay]) -> (time: Double, reason: SizeReason) {
         guard let last = days.last(where: \.studied) else { return (initialSeconds, .start) }
         if last.closed && !last.filled { return (last.time, .smallPlan) }
-        let next = last.time * (last.closed ? grows : shrinks)
-        return (min(max(next, timeRange.lowerBound), timeRange.upperBound), last.closed ? .ringClosed : .ringOpen)
+        guard last.closed else { return (max(last.time * shrinks, timeRange.lowerBound), .ringOpen) }
+        // The closed rings that filled their time since the last open ring; small plans neither count nor break the run.
+        var run = 0
+        for day in days.reversed() where day.studied && !(day.closed && !day.filled) {
+            guard day.closed else { break }
+            run += 1
+        }
+        guard run % closedToGrow == 0 else { return (last.time, .closedInARow) }
+        return (min(last.time * grows, timeRange.upperBound), .ringClosed)
     }
 
     /// How many new cards a day admits: what is left of its `seconds` once the `otherCards` of the

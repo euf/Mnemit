@@ -1,12 +1,10 @@
 import SwiftUI
 import VocabCore
 
-/// New cards beyond the daily limits, as "+10 new" offers them.
+/// New cards beyond the daily limits, as Push On adds them to a stack that is done for the day.
 struct ExtraNewCards {
     /// At most `StudyStream.newCardChunk`.
     var cards: Int
-    /// What they add to the cards of each day of the next week, rounded; see `NewCardLoad`.
-    var reviewsPerDay: Int
 }
 
 /// Where the plan stops for a moment: at the end of the first round, which keeps the streak, or at the end
@@ -30,8 +28,6 @@ struct StreamRest {
     /// When cards come back that today's plan leaves out; `nil` if no card has been studied.
     var nextDue: Date?
     var now: Date
-    /// Practice has something to go on with.
-    var canKeepGoing: Bool
     /// What the stream could add beyond the daily limits; `nil` if there are no new cards.
     var extraNew: ExtraNewCards?
     /// The rest is the end of a round, not the end of the plan: the plan goes on with Next Round.
@@ -42,8 +38,8 @@ struct StreamRest {
 /// the first round: the streak, the words the day has added, the cards left to the ring; Keep Going or Done
 /// for Now. "Ring closed" when today's cards are done: the cards and the answers they took, the share
 /// recalled, the words, the streak and the week's rings, then one way on, the most useful first: Catch Up
-/// when the plan has cards left, else the new cards beyond the daily limit with what they cost in cards a
-/// day. A finished practice ends with its figures.
+/// when the plan has cards left, else Push On, new cards beyond the daily limit, whose reviews make the
+/// next days harder. A finished practice ends with its figures.
 struct StreamRestView: View {
     var rest: StreamRest
     var progress: DailyProgress?
@@ -291,14 +287,15 @@ struct StreamRestView: View {
         }
     }
 
-    /// Done, and under it at most one way on: the new cards beyond the daily limits with what they cost.
+    /// The stack is done for the day: Done, and under it Push On when the decks have new cards left. It
+    /// raises the stakes: the new cards come back as reviews in the next days.
     private var planEndButtons: some View {
         VStack(spacing: Spacing.gap) {
             button("Done", prominent: true, action: onDone)
-            if let extra = rest.extraNew {
+            if rest.extraNew != nil {
                 VStack(spacing: Spacing.hairline) {
-                    button("+\(extra.cards) new", prominent: false, action: onAddNewCards)
-                    Text("≈ +\(extra.reviewsPerDay) cards/day next week")
+                    button("Push On", prominent: false, action: onAddNewCards)
+                    Text("More reviews in the days ahead")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

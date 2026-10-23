@@ -13,7 +13,7 @@ import VocabCore
 @MainActor @Observable
 final class SessionDriver {
     let document: VocabularyDocument
-    /// The running stream: today's plan, then practice. Undo and
+    /// The running stream: today's plan, then what Push On adds, or one practice. Undo and
     /// redo bring back the whole of it, so they reach a review of an earlier segment as well.
     private(set) var stream: StudyStream
     /// The card being asked, as the deck holds it now. Undoing an edit of the card
@@ -176,30 +176,19 @@ final class SessionDriver {
         moveOn()
     }
 
-    /// From rest, goes on beyond the plan: practice.
-    func keepGoing() {
-        guard stream.keepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
+    /// Push On: adds `count` new cards beyond the daily limits to the stack that is done for the day.
+    func addNewCards(_ count: Int = StudyStream.newCardChunk) {
+        guard stream.addNewCards(count, in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
         lastReceipt = nil
         moveOn()
     }
 
-    /// Adds `StudyStream.newCardChunk` new cards beyond the daily limits to the stream,
-    /// from rest or in the middle of it.
-    func addNewCards() {
-        guard stream.addNewCards(StudyStream.newCardChunk, in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
-        lastReceipt = nil
-        moveOn()
-    }
-
-    /// The new cards `addNewCards()` would add now and what they cost in cards a day next
-    /// week; `nil` if there are none, and for a practice.
+    /// The new cards `addNewCards()` would add now; `nil` if there are none, and for a practice.
     var extraNew: ExtraNewCards? {
         guard !stream.isPracticeOnly else { return nil }
         let count = StudyStream.extraNewCards(
             in: document.deck, at: document.clock.now, calendar: document.calendar, newCardAllowance: stream.newCardAllowance)
-        guard count > 0 else { return nil }
-        let load = NewCardLoad.reviewsPerDay(addingNewCards: count, options: document.deck.learningOptions, at: document.clock.now, calendar: document.calendar)
-        return ExtraNewCards(cards: count, reviewsPerDay: Int(load.rounded()))
+        return count > 0 ? ExtraNewCards(cards: count) : nil
     }
 
     /// What the stream shows at rest.
@@ -210,7 +199,6 @@ final class SessionDriver {
             recap: stream.recap,
             nextDue: counts.nextDue,
             now: document.clock.now,
-            canKeepGoing: stream.canKeepGoing(in: document.deck, at: document.clock.now, calendar: document.calendar),
             extraNew: extraNew,
             roundEnd: stream.roundRest.map { RoundEnd(round: $0, rounds: rounds?.rounds ?? $0 + 1) })
     }

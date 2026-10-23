@@ -5,7 +5,7 @@ import VocabCore
 /// Drives the study stream in the style of flash cards (#258): shows the question,
 /// reveals the answer on request and applies the grade the learner gives. There is no
 /// response to check, so the app suggests no grade; the reviews record `.revealed`. The
-/// stream has no end of its own: today's plan, a short rest, then practice, which changes no card.
+/// stack is today's plan, with its rests, and ends with it; Push On adds new cards past the end.
 ///
 /// Like `SessionViewModel` on the Mac, it leaves applying grades and keeping the
 /// stream's place in step with undo and redo and with every other change to the deck
@@ -29,7 +29,7 @@ final class StudyModel: Identifiable {
 
     /// What the stream starts with.
     enum Entry {
-        /// Today's plan, then practice.
+        /// Today's stack: the plan, which ends; past it only Push On.
         case study
         /// A practice of the cards that went wrong today, which changes no card.
         case practiceMistakes
@@ -265,19 +265,38 @@ final class StudyModel: Identifiable {
         driver.continueRound()
     }
 
-    /// Goes on beyond the plan, from rest: practice.
-    func keepGoing() {
-        driver.keepGoing()
-    }
-
-    /// Adds 10 new cards beyond the daily limits, from rest or in the middle of the stream.
+    /// Push On: adds `StudyStream.newCardChunk` new cards beyond the daily limits to the stack that is done
+    /// for the day, shared out one by one to the deck that has given the fewest new cards so far, so the
+    /// stack mixes the decks as the plan does (`mostUrgentLane()`). The lane asked now gets its cards last:
+    /// its move on then chooses among all the decks.
     func addNewCards() {
-        driver.addNewCards()
+        let counts = pushOnCounts
+        guard let last = counts.indices.last(where: { counts[$0] > 0 }) else { return }
+        current = last
+        for index in counts.indices where counts[index] > 0 && index != last {
+            lanes[index].driver.addNewCards(counts[index])
+        }
+        lanes[last].driver.addNewCards(counts[last])
     }
 
-    /// The new cards `addNewCards()` would add and what they cost; `nil` if there are none
-    /// and for a practice.
-    var extraNew: ExtraNewCards? { driver.extraNew }
+    /// The new cards `addNewCards()` would add; `nil` if no deck has any, and for a practice.
+    var extraNew: ExtraNewCards? {
+        let cards = pushOnCounts.reduce(0, +)
+        return cards > 0 ? ExtraNewCards(cards: cards) : nil
+    }
+
+    /// The new cards Push On takes from each deck: one at a time to the deck with the fewest new cards
+    /// asked and given, among those that have some left beyond their limits.
+    private var pushOnCounts: [Int] {
+        let left = lanes.map { $0.driver.extraNew?.cards ?? 0 }
+        var counts = lanes.map { _ in 0 }
+        for _ in 0..<StudyStream.newCardChunk {
+            guard let next = lanes.indices.filter({ counts[$0] < left[$0] }).min(by: { lanes[$0].newAsked + counts[$0] < lanes[$1].newAsked + counts[$1] })
+            else { break }
+            counts[next] += 1
+        }
+        return counts
+    }
 
     /// Whether the stream did something that undo takes back: a review or a suspension,
     /// in any segment. Undo beyond them would change cards the stream doesn't show.

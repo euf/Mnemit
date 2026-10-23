@@ -277,9 +277,10 @@ _Avoid_: round, session, lap, segment
 **Day's time** (RU «время дня»):
 The seconds of work the day asks, 120 to 3600, never rounded (`DailyProgress.time`). It comes from the
 review logs alone, forward from the first study day, so every device that reads the same logs gets the
-same: 150 s before any study; then the time of the last study day (a day with work) times 1.075 when its ring
-closed on a goal that filled the time, the same time when it closed on a smaller plan, and times 0.775 when it
-stayed open, held to 120 to 3600 (`DailyGoal.nextTime(after:)`). Nothing else changes it. The day's time
+same: 150 s before any study; then the time of the last study day (a day with work) times 1.15 when its ring was
+the second (fourth, …) in a row closed on a goal that filled the time, the same time after the first of such a run
+or a ring closed on a smaller plan, and times 0.775 when it stayed open, held to 120 to 3600
+(`DailyGoal.nextTime(after:)`). The learner is never told the rule. Nothing else changes it. The day's time
 sets the goal and the admission of new cards.
 _Avoid_: capacity, limit, quota, level
 
@@ -290,7 +291,7 @@ least 0 (`DailyGoal.newCardsAllowed`). The decks' own limits (`newCardsPerSessio
 `newProductionPerSession`) are ceilings. Across all decks the allowance is shared in proportion to
 the ceilings, by largest remainder (`DailyGoal.split`); each deck's share is its
 `newCardAllowance`, which the plan takes (`DailyProgress.newCardAllowances`). Cards first reviewed
-today count against it, and "+10 new" comes beyond it.
+today count against it, and Push On comes beyond it.
 _Avoid_: new-card limit, daily new cards
 
 **Daily goal** (the K of "M of K cards" / „M von K Karten“; RU «цель дня»):
@@ -298,7 +299,7 @@ The cards of the plan, as it stood when the study day began at 04:00, that fit t
 learning cards and reviews in the stream's order, then new cards, at the day's prices, up to the
 time in seconds; at least one card if the plan has any (`DayRounds.goal`). With admission the
 plan normally fits. After a break the reviews beyond the day's time stay in the plan and go to the
-laps. The goal stays for the day: cards added later, "+10 new" and an Again don't raise it. A day
+laps. The goal stays for the day: cards added later, Push On and an Again don't raise it. A day
 that began with an empty plan takes the plan as it stands (`DailyGoal.goal`).
 _Avoid_: reviews goal, target, quota
 
@@ -362,16 +363,18 @@ still in its steps is among the new cards left (`StudyCounts.newAtDayStart`). Th
 how many cards are left, and keeps one price: the time left over the cards left.
 _Avoid_: seconds per review, seconds per answer
 
-**Stream** (Study; RU «поток»):
-Study without sessions: the plan, with a rest after its streak step ("Streak kept"), then a rest
-at the ring ("Ring closed", where Catch Up goes on with the plan), then practice (`StudyStream`).
-A card is never reviewed before it is due.
+**Stack** (Study; RU «стопка дня»):
+Study without sessions: the day's plan over all decks, mixed by FSRS's urgency, with a rest after its
+streak step ("Streak kept"), then a rest at the ring ("Ring closed", where Catch Up goes on with the
+plan); it ends with the plan (`StudyStream`; the type keeps the old name "stream"). A card is never
+reviewed before it is due. The paths through a day: `references/learning-flow.md`, "The journey".
 _Avoid_: session (except for the upstream types that still carry the name)
 
-**Extra new cards** ("+10 new"; RU «новые сверх лимита»):
-New cards beyond the day's limits, taken from the rest screen. Their cost is shown in cards a
-day next week (`NewCardLoad`, which assumes every review Good, so a due day is one review of
-one card).
+**Push On** (DE „Nachlegen“; RU «Поднажать»):
+Ten new cards beyond the day's limits once the stack is done, shared over the decks that have new
+cards left and asked mixed (`StudyModel.addNewCards`). It raises the stakes: their reviews come in
+the next days ("More reviews in the days ahead"); the day's time stays as it is.
+_Avoid_: +10 new, extra new cards, Go on
 
 **Words in memory** ("≈ N words in memory"; RU «слов в памяти»):
 The number of words the learner would recall right now, from FSRS alone: the sum, over the

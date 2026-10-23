@@ -95,49 +95,50 @@ struct SessionDriverTests {
         #expect(laterListener.restores == 0)
     }
 
-    /// The plan, then practice; undo goes back through both card by card, and redo forward again.
-    /// A card that is not due is never reviewed: beyond the plan comes practice.
+    /// The plan, then the new cards Push On adds beyond the limit; undo goes back through both card by card,
+    /// and redo forward again.
     @Test func undoAndRedoReachAcrossTheSegmentsOfTheStream() throws {
         var learningOptions = LearningOptions()
         learningOptions.steps = 1
         learningOptions.fuzzing = false
-        let now = Date()
-        let lastReview = now.addingTimeInterval(-5 * 86400)
-        let state = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: now.addingTimeInterval(5 * 86400), reviews: 1)
-        let ahead = Card(question: "ahead", answer: "voraus", learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
-        let new = Card(question: "new", answer: "neu")
-        let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [new, ahead]), calendar: .testing)
+        learningOptions.newCardsPerSession = 1
+        let planned = Card(question: "planned", answer: "geplant")
+        let pushed = Card(question: "pushed", answer: "gedrängt")
+        let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [planned, pushed]), calendar: .testing)
         let undoManager = makeUndoManager(for: document)
         let driver = SessionDriver(document: document, stream: makeStream(for: document))
         #expect(driver.stream.stage == .plan)
-        #expect(driver.currentCard?.id == new.id)
+        #expect(driver.currentCard?.id == planned.id)
 
         step(undoManager) { driver.grade(.good) }
         #expect(driver.isResting)
-        driver.keepGoing()
-        #expect(driver.stream.stage == .practiceNewest)
-        let practiced = try #require(driver.currentCard)
+        #expect(driver.extraNew?.cards == 1)
+        driver.addNewCards()
+        #expect(driver.stream.stage == .plan)
+        #expect(driver.currentCard?.id == pushed.id)
         step(undoManager) { driver.grade(.good) }
-        #expect(document.card(withID: ahead.id)?.log.count == 1)
+        #expect(driver.isResting)
         #expect(driver.stream.stepCount == 2)
 
         undoManager.undo()
-        #expect(driver.stream.stage == .practiceNewest)
-        #expect(driver.currentCard?.id == practiced.id)
+        #expect(driver.stream.stage == .plan)
+        #expect(driver.currentCard?.id == pushed.id)
+        #expect(document.card(withID: pushed.id)?.isNew == true)
         #expect(driver.stream.stepCount == 1)
 
         undoManager.undo()
         #expect(driver.stream.stage == .plan)
-        #expect(driver.currentCard?.id == new.id)
-        #expect(document.card(withID: new.id)?.isNew == true)
+        #expect(driver.currentCard?.id == planned.id)
+        #expect(document.card(withID: planned.id)?.isNew == true)
         #expect(driver.stream.stepCount == 0)
 
         undoManager.redo()
         #expect(driver.isResting)
-        #expect(document.card(withID: new.id)?.log.count == 1)
+        #expect(document.card(withID: planned.id)?.log.count == 1)
 
         undoManager.redo()
-        #expect(driver.stream.stage == .practiceNewest)
+        #expect(driver.isResting)
+        #expect(document.card(withID: pushed.id)?.log.count == 1)
         #expect(driver.stream.stepCount == 2)
     }
 

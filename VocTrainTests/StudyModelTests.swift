@@ -100,40 +100,39 @@ struct StudyModelTests {
         #expect(!model.hasUndoableSteps)
     }
 
-    /// Once the plan is done, the stream goes on with the practice of the mistakes of today,
-    /// which changes no card, as on the Mac; a practice entry of its own ends at rest.
+    /// The stack ends when the plan does: it rests, and with no new cards left Push On has nothing to add,
+    /// so there is nothing more. A practice entry of its own practises the mistakes of today, changes no
+    /// card, and ends at rest.
     @Test func practicingMistakesLeavesScheduleAlone() throws {
         let (document, undoManager) = try makeDocument(questions: ["dom"])
         let model = StudyModel(document: document)
         let id = try #require(model.currentCard?.id)
-        #expect(!model.rest.canKeepGoing)
+        #expect(model.rest.extraNew == nil)
 
         model.reveal()
         grade(model, .again, undoManager: undoManager)
         model.reveal()
         grade(model, .easy, undoManager: undoManager)
         #expect(model.isResting)
+        #expect(model.streamStage == .rest)
         #expect(!model.isPracticing)
-        #expect(model.rest.canKeepGoing)
+        #expect(model.rest.extraNew == nil)
 
         let before = document.deck
-        model.keepGoing()
-        #expect(model.isPracticing)
-        #expect(!model.isResting)
-        #expect(model.streamStage == .practiceMistakes)
-        #expect(model.currentCard?.id == id)
-        model.reveal()
-        grade(model, .easy, undoManager: undoManager)
-        // Then the newest words, again and again.
-        #expect(model.streamStage == .practiceNewest)
+        model.addNewCards()
+        #expect(model.isResting)
+        #expect(model.streamStage == .rest)
         #expect(document.deck == before)
 
         let practice = StudyModel(document: document, entry: .practiceMistakes)
         #expect(practice.isPracticing)
+        #expect(practice.streamStage == .practiceMistakes)
+        #expect(practice.currentCard?.id == id)
         practice.reveal()
         grade(practice, .easy, undoManager: undoManager)
         #expect(practice.isResting)
         #expect(practice.rest.isPracticeOnly)
+        #expect(practice.extraNew == nil)
         #expect(document.deck == before)
     }
 
@@ -178,7 +177,7 @@ struct StudyModelTests {
         #expect(document.card(withID: last.id)?.log.count == 2)
     }
 
-    /// "+10 new" offers the cards beyond the daily limit, with what they cost, and asks them.
+    /// Push On offers the cards beyond the daily limit at the rest of the plan, and asks them.
     @Test func newCardsBeyondTheLimitComeOnRequest() throws {
         var learningOptions = LearningOptions()
         learningOptions.newCardsPerSession = 1
@@ -190,13 +189,14 @@ struct StudyModelTests {
         let model = StudyModel(document: document)
         #expect(model.session.totalCount == 1)
         #expect(model.extraNew?.cards == StudyStream.newCardChunk)
-        #expect((model.extraNew?.reviewsPerDay ?? 0) > 0)
 
         for _ in 0..<learningOptions.steps {
             model.reveal()
             grade(model, .good, undoManager: undoManager)
         }
         #expect(model.isResting)
+        #expect(model.streamStage == .rest)
+        #expect(model.rest.extraNew?.cards == StudyStream.newCardChunk)
         model.addNewCards()
         #expect(!model.isResting)
         #expect(model.session.totalCount == StudyStream.newCardChunk)
@@ -465,7 +465,7 @@ struct StudyModelTests {
         let model = StudyModel(document: document)
         #expect(model.isResting)
         #expect(model.currentCard == nil)
-        #expect(!model.rest.canKeepGoing)
+        #expect(model.rest.extraNew == nil)
         #expect(model.extraNew == nil)
     }
 
@@ -508,7 +508,6 @@ struct StudyModelTests {
         #expect(model.stage == .resting)
         #expect(model.rest.roundEnd == RoundEnd(round: 1, rounds: 3))
         #expect(model.currentCard == nil)
-        #expect(!model.rest.canKeepGoing)
         // Nothing is graded while it rests.
         model.reveal()
         grade(model, .good, undoManager: undoManager)

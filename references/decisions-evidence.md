@@ -27,12 +27,13 @@ memory; the ring shows effort and counts as done only what FSRS sent away.
 
 ## 2. The day's time
 
-Decision: a closure tracker: the day after a study day whose ring closed on a goal that filled its time asks 1.075
-times that time, after a ring closed on a smaller plan the same time, after an open ring 0.775 times; 2 minutes to
-an hour, 2.5 minutes before any study.
+Decision: a staircase on closed and open rings (Levitt's transformed up-down): every second ring in a row closed on a
+goal that filled its time makes the next day ask 1.15 times that time, the first holds it, a ring closed on a smaller
+plan holds it, an open ring makes it 0.775 times; 2 minutes to an hour, 2.5 minutes before any study. The rule, the
+alternatives and the measurements: `ring-design.md`.
 
-- Measured, `ring-design.md`: the factors put the share of closed rings at 0.78 on the logs of 2,000 Anki users
-  and on 15 synthetic learner types; 2.5 minutes against 4 raise a newcomer's chance of a perfect first week; an
+- Measured, `ring-design.md`: the share of closed rings settles near 0.8 on the logs of 2,000 Anki users
+  and on 15 synthetic learner types, and the ring changes on half the study days; 2.5 minutes against 4 raise a newcomer's chance of a perfect first week; an
   hour against 30 minutes holds the usual day of nine in ten Anki users and stops a backlog for heavy veterans.
 - Adaptive daily goals beat fixed ones in the trials that compared them; the trials met their goals on 33-58 % of
   days, and no source ties the share of met goals to persistence (`ring-design-research.md`). Measured, walking.

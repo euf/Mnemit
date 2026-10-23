@@ -48,8 +48,9 @@ are in [`references/`](references/).
   plan (cards in learning, then review cards with the lowest recall probability first, then new
   cards within the day's limits, taken from the decks in turn), each card from the deck whose next
   card is most urgent and graded into that deck. Study This Deck runs it over one deck. When
-  today's cards are done the stream rests ("Ring closed") and offers one way on: Catch Up when the
-  plan has cards left, else "+10 new" with the extra cards a day it adds next week. A card is never reviewed before it is due: an early review gains FSRS
+  today's cards are done the stack rests ("Ring closed") and offers one way on: Catch Up when the
+  plan has cards left; once the stack is done, Push On, ten new words from the decks, mixed, whose reviews make
+  the next days harder. A card is never reviewed before it is due: an early review gains FSRS
   little, and more work is a new card.
 - **One ring a day, two rests at most.** The model, and what was dropped from 4.0, are in
   [`learning-flow.md`](references/learning-flow.md). Inside, the day has a time in minutes of work at your own pace,
@@ -58,9 +59,9 @@ are in [`references/`](references/).
   "Ring closed". The streak is kept once the streak step is done, and Study rests there once
   ("Streak kept": Keep Going or Done for Now); the next rest is the closed ring, with the rings of
   the last seven days. The time of a day comes from
-  your review logs: two and a half minutes on the first day, then 7.5 % more after each day you close the ring and
-  a quarter less after each day it stays open, between two minutes and an hour; a day without study changes
-  nothing. New cards are admitted up to the time it leaves after the day's reviews, so a
+  your review logs: two and a half minutes on the first day, then more after rings you close (15 % after every
+  second in a row) and a quarter less after one left open, between two minutes and an hour; a day without study
+  changes nothing. New cards are admitted up to the time it leaves after the day's reviews, so a
   break does not turn into a wall of work.
 - **The ring counts cards, and every answer recalled moves it.** A ring in the manner of Apple
   Fitness fills to the daily goal: the
@@ -80,7 +81,7 @@ are in [`references/`](references/).
   in neither count. Older logs without times are priced from the pauses between reviews, by their
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
-  cards added later and "+10 new" fill laps, as does Catch Up. The ring keeps
+  cards added later and Push On fill laps, as does Catch Up. The ring keeps
   going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
   streak in days. A missed day is repaired when the next day closes its ring, the streak step
   is not enough then; two missed days in a row end the streak. Everything is computed
@@ -122,6 +123,28 @@ are in [`references/`](references/).
 
 ### Scheduling
 
+- **The day's time sets the new cards.** Under FSRS a learner chooses two things: the target recall
+  and how many new cards to take in. Reviews follow from them: FSRS brings a card back when its
+  predicted recall falls to the target, and the benchmarks judge a scheduler by how well that
+  prediction matches what happens (srs-benchmark: log loss and RMSE over bins, FSRS-6 at 0.065;
+  SuperMemo's universal metric does the same per class of recall). So a day's reviews are the
+  cost of what was learned before, and new cards are the only free input. Each one is a debt:
+  Anki's manual expects about 200 reviews a day from 20 new cards a day, and ten new cards bring
+  13 reviews in the next three days and 43 over two months (`Tools/ring-sim/cards.py --echo`).
+  Anki fixes the input, 20 new cards a day, and the time comes out of it; the manual then asks
+  the learner to cut new cards when reviews pile up, to stop them during a backlog, and offers a
+  simulator that asks how many minutes a day one can really give. The scheduling literature
+  poses the problem the other way round: as much material as possible within a cost constraint
+  (the SSP-MMC formulation in FSRS's "Three-Day Journey"). Mnemit takes that form. The
+  constraint is the day's time, learned from the rings, with no setting; the reviews due take it
+  first, most forgotten first; new cards fill what is left. Intake then follows capacity: as the
+  reviews of earlier cards grow, fewer new cards fit, and when the learner gives more time, more
+  fit. The queue cannot run away, since intake is what the reviews leave (Reddy et al. 2016:
+  a review queue fed faster than it is served grows without bound), and a break is paced by the
+  time instead of becoming a wall. The target recall stays at 0.9, the value Anki's guide calls
+  a good balance, and only the time adapts. Push On is the one way past the time, and
+  says what it costs. Sources and measurements: [`ring-design.md`](references/ring-design.md),
+  [`ring-design-research.md`](references/ring-design-research.md) §3.
 - **FSRS-6, fitted per deck, without a button.** Each deck starts with the default
   parameters, or with the FSRS settings of the Anki preset it was imported from. The
   optimizer (a Swift port of fsrs-rs 6.6.2, checked against it and against py-fsrs reference

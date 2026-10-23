@@ -10,23 +10,102 @@ Clozemaster). Rules behind the numbers: `daily-ring.md`; terms: `GLOSSARY.md`, s
 the line beside it counts rounds; the stream stops every two minutes; the streak, the ring and the
 rounds are three goals of one day. The model below keeps one unit on screen, the card, and one goal a
 day, the ring. The day's time stays inside, in seconds the app learns from the learner's work, and leaves every
-screen but How Today Works; the streak step, the first two minutes of the plan, is the one unit of its own. The stream stops twice a day at most: once the streak is kept, and once
-the ring is closed.
+screen but How Today Works; the streak step, the first two minutes of the plan, is the one unit of its own. The day's
+stack stops twice a day at most: once the streak is kept, and once the ring is closed. It has an end: when it is done,
+only Push On puts more cards in it.
 
 ## The day in six rules
 
 | # | Rule | Answers | Evidence |
 |---|---|---|---|
-| 1 | Your time follows your rings: each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less (× 0.775); a ring closed on a plan smaller than the time, or a day without study, changes nothing; 2.5 minutes before any study, 2 minutes to an hour | how much the learner really does | a closure tracker: fixed factors put the share of closed rings at 0.78 whatever the work (0.78 on the logs of 2,000 Anki users); averages of the work stall for a learner who stops at the ring; 2.5 minutes are reached on 77 % of a newcomer's first-week study days, the same share; an hour holds the usual day of nine in ten Anki users (`ring-design.md`) |
+| 1 | Your time follows your rings, out of sight: two rings closed in a row make the next day ask 15 % more time; a ring left open, a quarter less (× 0.775); a ring closed on a plan smaller than the time, or a day without study, changes nothing; 2.5 minutes before any study, 2 minutes to an hour | how much the learner really does | a staircase on closed and open rings (Levitt's transformed up-down): the share of closed rings settles near 0.8 whatever the work, and the ring changes on half the study days; averages and quantiles of the work stall for a learner who stops at the ring, since the work of a closed day is the ring itself; 2.5 minutes are reached on 77 % of a newcomer's first-week study days; an hour holds the usual day of nine in ten Anki users (`ring-design.md`) |
 | 2 | The goal is the cards FSRS has due, most forgotten first, as many as fit your time | what to do today | FSRS: reviews are the work owed; the Anki manual caps reviews so a return after a break is manageable |
 | 3 | If time is left, new cards fill it | how many new | new cards are FSRS's only free input; the Anki manual sizes them by the workload one can sustain, and the time already holds it: the reviews of earlier new cards leave less time for new ones |
-| 4 | The ring closes when the goal is done; work beyond it fills laps, and the closed ring raises the next day's time | how to grow | growth comes from closing the ring |
+| 4 | The ring closes when the goal is done; work beyond it fills laps, and closed rings raise the next days' time | how to grow | growth comes from closing the ring |
 | 5 | The first two minutes keep the streak; one missed day is forgiven when the next ring closes | the habit | a low bar keeps the habit (Duolingo A/B, +3.3 % day-14 retention); slack keeps a streak (Streak Freeze, Apple's paused rings) |
-| 6 | Once the ring is closed: Catch Up while due cards are left, else "+10 new" with its cost next week | what next | an informed choice instead of a hidden one |
+| 6 | Once the ring is closed: Catch Up while the plan has cards left; once the stack is done, Push On: ten new words, whose reviews make the next days harder | what next | FSRS decides which cards come; the learner decides only whether to raise the stakes, and the button says what it costs |
 
 Every number of the day's time comes from a measurement on synthetic learners and on the logs of 2,000 Anki users,
 with the alternatives that lost: `ring-design.md`. A learner who stops at the ring has closed it, so the day's time
 grows. The 2-minute streak step stays a choice (`decisions-evidence.md` §3).
+
+## The journey
+
+### One day
+
+```
+Today ─Study─► the stack: today's plan over all decks, mixed by FSRS's urgency
+  ≈ 2 min ─► Streak kept ─Keep Going─► … ─► the ring closes
+                 │ Done for Now             ├─ cards left (after a break) ─► Ring closed ─Catch Up─► … ─► stack done
+                 ▼                          └─ none left ─────────────────► stack done
+               Today              stack done ─► Done, or Push On ─► ten new words, mixed ─► stack done ─► Done, or Push On …
+```
+
+The two ordinary days:
+
+1. Study, the streak kept after two minutes, the ring closed, the stack done: Done or Push On.
+2. After a break: Study, the streak kept, the ring closed with cards left, Catch Up, the stack done: Done or Push On.
+
+A plan of two minutes or less closes the ring without the streak's rest. Leaving anywhere loses nothing: Today picks
+up the count, and Study goes on where the stack was.
+
+### Push On raises the stakes
+
+- **What it adds.** Ten new cards beyond the daily limits, from every deck that has new cards left, one at a time to
+  the deck that has given the fewest so far, and asked mixed as the plan is. No count to choose: FSRS keeps deciding
+  which cards come.
+- **What it costs.** Each new card comes back as reviews. Ten cards bring about 2 reviews the next day, 8 the day after,
+  3 on the third, 12 more over days 4 to 14, then a thin tail (FSRS-6 defaults with Mnemit's fuzz, `cards.py --echo`: short
+  intervals are not fuzzed, so the first return is a peak, and the later ones spread). Reviews come first in the plan, so the peak
+  fits the day's time and takes the place of the ring's new words: on the logs of 854 Anki users, a learner who pushes
+  on one day in three has no new word in the ring on 46 % of study days, one who stops at the ring on 13 %.
+- **What it doesn't change.** The day's time. A day of pushing on is a good day, and the next one is usually an
+  ordinary one: raising the time to what the learner did (at least 0.6 of the work) cut the closed share of real users
+  from 0.81 to 0.70 and perfect first weeks from 41 % to 28 % (`ring-design.md`).
+- **The button.** "Push On", and under it "More reviews in the days ahead": more words now, harder days next.
+
+### The day after
+
+The time follows the rings by rule 1, out of sight; the screens show cards. A missed day is forgiven when the next ring
+closes; two in a row end the streak.
+
+### A newcomer's first days with a new deck
+
+Day 1 asks 2.5 minutes. At 30 s a new card, the price until the learner's own pace is measured, that is five new words;
+the first four keep the streak. A new word is done after two right answers. A learner of about ten minutes a day who
+stops at the ring (FSRS-6 cards, 400 learners, means; `Tools/ring-sim/cards.py --first`):
+
+| study day | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| time (min) | 2.5 | 2.5 | 2.8 | 2.9 | 3.1 | 3.2 | 3.5 | 3.6 | 3.9 | 4.1 |
+| new words in the ring | 5 | 4 | 4 | 3 | 4 | 4 | 4 | 4 | 5 | 5 |
+| reviews | 0 | 1 | 5 | 5 | 5 | 6 | 6 | 6 | 7 | 7 |
+| rings closed | 1.00 | 1.00 | 1.00 | 0.99 | 0.99 | 1.00 | 0.99 | 0.99 | 0.98 | 0.96 |
+
+The first weeks are built to close: seven rings of seven for 0.87 of synthetic newcomers and 0.43 of real ones, whose
+first-week days are short (`ring-design.md`, "The first two weeks"). A learner of five minutes closes 0.84 to 0.94 of
+the first ten rings. The time climbs about 7 % a study day, so a learner of twenty minutes reaches them after a month;
+until then their extra words come through Push On.
+
+### A return after a break
+
+Days without study leave the time as it was. The plan holds every overdue card; the ring is the most forgotten that fit
+the time, with no new word while reviews fill it; the rest waits behind Catch Up once the ring is closed. A learner who
+stops at the ring meets Catch Up on 6.9 % of a newcomer's study days and 10.4 % of a real user's.
+
+### An Anki user
+
+The imported collection brings its history, and the replay of the history runs rule 1, so the time arrives near the
+learner's usual day. The ring holds the whole queue up to an hour; How Today Works shows the plan, the time and the FSRS
+parameters.
+
+### Several decks
+
+One stack over every active deck with a plan for today. The next card comes from the deck whose next card is the most
+urgent: a card in learning, then the review with the lowest recall probability, then a new card from the deck that
+has given the fewest. The day's new-card allowance is split between the decks by their ceilings; Push On shares its ten
+cards the same way, one at a time. A paused deck is out of the day. A deck with nothing in today's plan does not open
+with the stack, so Push On takes from the decks that did.
 
 ## The model
 
@@ -34,10 +113,11 @@ grows. The 2-minute streak step stays a choice (`decisions-evidence.md` §3).
 |---|---|---|
 | Card | the one thing on screen; swiped once, graded by the swipe | the deck |
 | Today's cards (the ring) | the cards FSRS asks today that fit the learner's day; every answer recalled moves the ring by its share of a card | the plan at 04:00, priced by pace, cut to the day's time |
-| The stack | the cards still waiting today, in the middle of the screen | the stream's segment |
+| The stack | the cards still waiting today, in the middle of the screen; it ends | today's plan over all decks, mixed by FSRS's urgency |
 | Streak | days in a row with the first ≈ 2 min of cards done | the review log |
 | Words in memory | how many words the learner would recall now | FSRS's recall probability, summed |
 | Catch Up | the plan's cards beyond today's ring, after a break | the rest of the plan |
+| Push On | ten more new words once the stack is done, from all the decks, mixed | new cards beyond the daily limits |
 
 Never on screen: review counts (a card is never a review), the day's time, plan against goal,
 seconds per card, intervals before a grade.
@@ -70,7 +150,7 @@ and Apple's paused rings are the same slack). Pausing a deck takes it out of the
 
 ```
 Today ──Study──► card ─► card ─► … ─► Streak kept ──Keep Going──► card ─► … ─► Ring closed
-  ▲                                      │ Done for Now                        │ Catch Up / +10 New
+  ▲                                      │ Done for Now                        │ Catch Up / Push On
   └──────────────────────────────────────┴─────────────────────────────────────┴─ Done
 ```
 
@@ -112,8 +192,8 @@ ring, "Streak kept", the streak in days, "+4 words in memory today", "12 cards l
 **Ring closed** (when today's cards are done, and when the plan has run out): the ring closes with its
 burst, then the day: "10 cards · 22 answers", the share recalled, "+15 words in memory today", the streak, the
 week's seven rings; a milestone when one was passed today. One way on, the most useful first:
-**Catch Up** when the plan has cards left beyond the ring; else **+10 new** with what it costs next week;
-and **Done**. The week is seven small rings, today last, with the weekday initials.
+**Catch Up** when the plan has cards left beyond the ring; else **Push On**, with "More reviews in the days ahead"
+under it; and **Done**. The week is seven small rings, today last, with the weekday initials.
 
 **How Today Works** keeps everything for the learner who knows FSRS: the plan and its parts, the
 the day's time and the streak step, pace, the streak's repair, FSRS parameters.
@@ -205,7 +285,7 @@ the ladder of memory, a bar of the cards started with "N not started" under it a
 steps; the records: most cards in a day, most rings in a day, rings closed, days studied, cards done. For the Anki user the same screen ends with the FSRS
 figures: true retention of the last 30 days against the target, cards by step.
 
-**Celebrations.** A medal is celebrated the moment it is earned: in the stream a toast slides down under the
+**Celebrations.** A medal is celebrated the moment it is earned: in the stack a toast slides down under the
 bar for 2.5 s (one after another), the ring in the bar bumps and bursts, and a success haptic plays; a rest
 shows today's medals under its title, at most three, and Today lists the medals of earlier days that this
 device never celebrated (earned on the Mac) once as "New medals". The device keeps what it has celebrated in
@@ -222,9 +302,11 @@ cards done, the best streak of the month, the achievements of the month, and See
 | "Round 2 of 4 · ≈ 2 min" on Today, in the bar, in the widget, on the Mac | cards left and time | two progress measures beside one ring; rounds are an internal unit of time |
 | The day's time, "Next round ≈ 2 min" | How Today Works only | the size of the day is learned, not chosen |
 | Review ahead after catch-up | gone from Keep Going | reviewing before due gains FSRS little, and fills the ring with low-value work; more work is a new card |
-| Keep Going running catch-up, then review ahead, then practice | Catch Up when the plan has cards left; +10 New otherwise | one named way on; practice stays on the deck screen |
-| The ring closing in the middle of a stream after a break | the stream stops at the ring | the ring is the day's goal; the cards beyond it stay in the plan and Catch Up goes on with them |
+| Keep Going running catch-up, then review ahead, then practice | Catch Up when the plan has cards left; Push On once the stack is done | one named way on; practice stays on the deck screen |
+| Practice after the plan, a stream that never ended | gone: the stack ends with the plan | a day with an end; practice changes no card and stays on the deck screen |
+| "+10 new" with "≈ +2 cards/day next week" | Push On, with "More reviews in the days ahead" | the learner decides whether to raise the stakes, FSRS which cards come; the count and the forecast asked for a choice the learner can't weigh |
+| The ring closing in the middle of a stream after a break | the stack stops at the ring | the ring is the day's goal; the cards beyond it stay in the plan and Catch Up goes on with them |
 
-Kept as they are: one stream over all decks, the 04:00 day, the ring in cards, laps (×2, ×3) for
+Kept as they are: one stack over all decks, the 04:00 day, the ring in cards, laps (×2, ×3) for
 work beyond the goal, the streak's repair by a closed ring, words in
 memory, pausing a deck, practice from the deck screen.

@@ -174,6 +174,43 @@ def median(k):
         return np.full(B, T0), step
     return mk
 
+def trimmed(k, mult, lo=.1, hi=.9):
+    """T = mult x the trimmed mean of the work of the last k study days: the lowest and highest tenth of the days left out
+    (none of 9 days or fewer), EF's idea 6."""
+    def mk(B):
+        h = np.full((B, k), np.nan)
+        def step(T, st, cl, inf, wk, g):
+            go = st & (wk > 0); h[go] = np.roll(h[go], 1, 1); h[go, 0] = wk[go]
+            n = (~np.isnan(h)).sum(1); cut = np.floor(lo * n).astype(int)
+            srt = np.sort(np.where(np.isnan(h), np.inf, h), 1); j = np.arange(k)[None]
+            keep = (j >= cut[:, None]) & (j < (n - cut)[:, None])
+            m = np.where(keep, srt, 0).sum(1) / np.maximum(keep.sum(1), 1)
+            return np.where(go, np.clip(mult * m, LO, HI), T)
+        return np.full(B, T0), step
+    return mk
+
+def jump(base, a):
+    """base, but a ring the learner went past (work over 1.1 x the goal, Go on) sets T to at least a x the work: time past
+    the ring is the one uncensored sight of the learner's time."""
+    def mk(B):
+        T0_, step0 = base(B)
+        def step(T, st, cl, inf, wk, g):
+            T1 = step0(T, st, cl, inf, wk, g)
+            return np.where(st & cl & (wk > 1.1 * g), np.clip(np.maximum(T1, a * wk), LO, HI), T1)
+        return T0_, step
+    return mk
+
+def quant(q, k, mult=1., hold=False):
+    """EF's idea 5: T = mult x the q-quantile of the work of the last k study days. hold: a ring closed on a plan smaller
+    than T stays out of the window, since its work says nothing of the learner's time."""
+    def mk(B):
+        h = np.full((B, k), np.nan)
+        def step(T, st, cl, inf, wk, g):
+            go = st & (wk > 0) & (inf | ~cl | (not hold)); h[go] = np.roll(h[go], 1, 1); h[go, 0] = wk[go]
+            return np.where(go, np.clip(mult * np.nanquantile(h, q, 1), LO, HI), T)
+        return np.full(B, T0), step
+    return mk
+
 
 # ---------- one run ----------
 def schedule(t, ivl, upd, due, intro, rng):
@@ -409,6 +446,43 @@ RULES = {  # the chosen rule first, then each alternative changed in one respect
     'queue: up to 200 due + N new, N by last 5 rings, start 10': (newwin(5, 1.15, .8, 10), 'queue200', False),
     'Kaplan-Meier q .15, 21 d': (km(.15, 21), 'cut', False),
     'median of 7 study days': (median(7), 'cut', False),
+    'Go on: tracker, past the ring T >= 0.6 x work': (jump(tracker(*C, hold=True), .6), 'cut', False),
+    'Go on: tracker, past the ring T >= 0.75 x work': (jump(tracker(*C, hold=True), .75), 'cut', False),
+    'Go on: Levitt x1.15, past the ring T >= 0.6 x work': (jump(staircase(2, 1.15, .775), .6), 'cut', False),
+    'Go on: tracker at .85, past the ring T >= 0.6 x work': (jump(tracker(*target(.85), hold=True), .6), 'cut', False),
+    'Go on: tracker at .90, past the ring T >= 0.6 x work': (jump(tracker(*target(.90), hold=True), .6), 'cut', False),
+    'EF6: mean of q10-q90 of 7 days x1.05': (trimmed(7, 1.05), 'cut', False),
+    'EF6: mean of q10-q90 of 7 days x1.15': (trimmed(7, 1.15), 'cut', False),
+    'EF5: median of 7 days x1.05': (quant(.5, 7, 1.05), 'cut', False),
+    'EF5: q60 of 7 days': (quant(.6, 7), 'cut', False),
+    'EF5: median of 7 days x1.05, hold': (quant(.5, 7, 1.05, True), 'cut', False),
+    'EF5 grid: q50 of 3 days x1.1, hold': (quant(0.5, 3, 1.1, True), 'cut', False),
+    'EF5 grid: q50 of 3 days x1.2, hold': (quant(0.5, 3, 1.2, True), 'cut', False),
+    'EF5 grid: q50 of 3 days x1.3, hold': (quant(0.5, 3, 1.3, True), 'cut', False),
+    'EF5 grid: q50 of 5 days x1.1, hold': (quant(0.5, 5, 1.1, True), 'cut', False),
+    'EF5 grid: q50 of 5 days x1.2, hold': (quant(0.5, 5, 1.2, True), 'cut', False),
+    'EF5 grid: q50 of 5 days x1.3, hold': (quant(0.5, 5, 1.3, True), 'cut', False),
+    'EF5 grid: q50 of 7 days x1.1, hold': (quant(0.5, 7, 1.1, True), 'cut', False),
+    'EF5 grid: q50 of 7 days x1.2, hold': (quant(0.5, 7, 1.2, True), 'cut', False),
+    'EF5 grid: q50 of 7 days x1.3, hold': (quant(0.5, 7, 1.3, True), 'cut', False),
+    'EF5 grid: q75 of 3 days x1.1, hold': (quant(0.75, 3, 1.1, True), 'cut', False),
+    'EF5 grid: q75 of 3 days x1.2, hold': (quant(0.75, 3, 1.2, True), 'cut', False),
+    'EF5 grid: q75 of 3 days x1.3, hold': (quant(0.75, 3, 1.3, True), 'cut', False),
+    'EF5 grid: q75 of 5 days x1.1, hold': (quant(0.75, 5, 1.1, True), 'cut', False),
+    'EF5 grid: q75 of 5 days x1.2, hold': (quant(0.75, 5, 1.2, True), 'cut', False),
+    'EF5 grid: q75 of 5 days x1.3, hold': (quant(0.75, 5, 1.3, True), 'cut', False),
+    'EF5 grid: q75 of 7 days x1.1, hold': (quant(0.75, 7, 1.1, True), 'cut', False),
+    'EF5 grid: q75 of 7 days x1.2, hold': (quant(0.75, 7, 1.2, True), 'cut', False),
+    'EF5 grid: q75 of 7 days x1.3, hold': (quant(0.75, 7, 1.3, True), 'cut', False),
+    'EF5 grid: q90 of 3 days x1.1, hold': (quant(0.9, 3, 1.1, True), 'cut', False),
+    'EF5 grid: q90 of 3 days x1.2, hold': (quant(0.9, 3, 1.2, True), 'cut', False),
+    'EF5 grid: q90 of 3 days x1.3, hold': (quant(0.9, 3, 1.3, True), 'cut', False),
+    'EF5 grid: q90 of 5 days x1.1, hold': (quant(0.9, 5, 1.1, True), 'cut', False),
+    'EF5 grid: q90 of 5 days x1.2, hold': (quant(0.9, 5, 1.2, True), 'cut', False),
+    'EF5 grid: q90 of 5 days x1.3, hold': (quant(0.9, 5, 1.3, True), 'cut', False),
+    'EF5 grid: q90 of 7 days x1.1, hold': (quant(0.9, 7, 1.1, True), 'cut', False),
+    'EF5 grid: q90 of 7 days x1.2, hold': (quant(0.9, 7, 1.2, True), 'cut', False),
+    'EF5 grid: q90 of 7 days x1.3, hold': (quant(0.9, 7, 1.3, True), 'cut', False),
     'fixed 10 min': (fixed(600), 'cut', False),
     'Anki: all due + 20 new': (fixed(600), 'anki', False),
 }
@@ -440,6 +514,34 @@ def noos(newpd=20, days=365, seeds=20):
         rem = retr(days - last, S).sum(1).mean()
         print(f"retention {target:.2f}: answers/day {ans[:, -30:].mean():.0f}, busiest {ans.max(1).mean():.0f}, remembered {rem:.0f} ({rem / n:.0%}), total {ans.sum(1).mean():.0f}")
 
+def first_days(days=10, B=400):
+    """A newcomer's first study days under the staircase: the time, new words in the ring, reviews, closed share, means over B
+    learners of 5, 10 and 20 minutes a day who stop at the ring (learning-flow.md, "A newcomer's first days")."""
+    for lv in (5, 10, 20):
+        rng = np.random.default_rng(5)
+        Wm = lv * np.exp(.5 * rng.standard_normal((B, days))) * (rng.random((B, days)) >= .15)
+        log, w, nn = run(staircase(2, 1.15, .775), 'cut', Wm, np.zeros(Wm.shape, bool), np.zeros(B, bool), np.random.default_rng(3), weekly=False)
+        st = log['study'] > 0
+        m = lambda k: [np.nanmean(np.where(st[:, t], log[k][:, t], np.nan)) for t in range(days)]
+        print(f"{lv} min: time " + ' '.join(f"{x / 60:.1f}" for x in m('T')) + " | new " + ' '.join(f"{x:.0f}" for x in m('gn'))
+              + " | reviews " + ' '.join(f"{x:.0f}" for x in m('rev')) + " | closed " + ' '.join(f"{x:.2f}" for x in m('closed')))
+
+def echo(n=20000, cards=10):
+    """The reviews that `cards` new cards bring on each day after the day they were added (Push On), FSRS-6 defaults, the
+    first answer Again for A_NEW of them, every later answer recalled with probability R, Mnemit's fuzz."""
+    global SCHED
+    SCHED, rng = 'fuzz', np.random.default_rng(1)
+    ag = rng.random(n) < A_NEW
+    S = np.where(ag, sshort(sshort(W[0], 3), 3), sshort(sshort(W[2], 3), 3)); D = np.where(ag, dnext(dnext(d0(1), 3), 3), dnext(dnext(d0(3), 3), 3))
+    last, every = np.zeros(n, int), np.ones(n, bool)
+    due = schedule(0, np.maximum(1, np.round(S)).astype(int), every, np.zeros(n, int), every, rng); cnt = np.zeros(61)
+    for t in range(1, 61):
+        d = due == t; cnt[t] = d.sum(); R = retr(t - last, S); ok = rng.random(n) < R
+        Sn = np.where(ok, srecall(D, S, R), sshort(sforget(D, S, R), 3)); D = np.where(d, np.where(ok, dnext(D, 3), dnext(dnext(D, 1), 3)), D)
+        S = np.where(d, Sn, S); last = np.where(d, t, last); due = schedule(t, np.maximum(1, np.round(S)).astype(int), d, due, every, rng)
+    r = cnt / n * cards
+    print(' '.join(f"{t}:{r[t]:.1f}" for t in range(1, 15)) + f" | days 1-3 {r[1:4].sum():.1f}, 4-14 {r[4:15].sum():.1f}, 15-60 {r[15:].sum():.1f}")
+
 def selftest():
     assert abs(retr(10, 10.) - .9) < 1e-12  # R falls to 0.9 after S days, so the interval at 0.9 is S
     assert abs(sshort(sshort(W[2], 3), 3) - W[2]) < 1e-12  # Good steps keep a Good first answer's stability
@@ -453,9 +555,12 @@ def main():
     global P_NEW, P_OTHER, SKIP
     ap = argparse.ArgumentParser(); ap.add_argument('--real'); ap.add_argument('--seeds', type=int, default=40)
     ap.add_argument('--days', type=int, default=120); ap.add_argument('--prices', type=float, nargs=2)
-    ap.add_argument('--rules'); ap.add_argument('--skip', type=float, default=0.); ap.add_argument('--resp', default='SE'); ap.add_argument('--sched', default='plain'); ap.add_argument('--selftest', action='store_true'); ap.add_argument('--noos', action='store_true'); a = ap.parse_args()
+    ap.add_argument('--rules'); ap.add_argument('--skip', type=float, default=0.); ap.add_argument('--resp', default='SE'); ap.add_argument('--sched', default='plain'); ap.add_argument('--selftest', action='store_true'); ap.add_argument('--noos', action='store_true')
+    ap.add_argument('--first', action='store_true'); ap.add_argument('--echo', action='store_true'); a = ap.parse_args()
     if a.selftest: return selftest()
     if a.noos: return noos()
+    if a.first: return first_days()
+    if a.echo: return echo()
     if a.prices: P_NEW, P_OTHER = a.prices
     SKIP = a.skip; global SCHED; SCHED = a.sched
     rng = np.random.default_rng(307)
@@ -466,8 +571,8 @@ def main():
     groups = [(s, names == s) for s in scen] + ([('real users', names == 'real')] if a.real else [])
     rules = {k: v for k, v in RULES.items() if not a.rules or any(s in k for s in a.rules.split(';'))}
     for resp in a.resp:
-        E = np.full(Wm.shape, resp == 'E')
-        print(f"\n## Response {resp}, skip after an open ring {SKIP} ({'stops at the ring' if resp == 'S' else 'goes on: catch up, then more new cards'})")
+        E = np.random.default_rng(309).random(Wm.shape) < .3 if resp == 'M' else np.full(Wm.shape, resp == 'E')
+        print(f"\n## Response {resp}, skip after an open ring {SKIP} ({'stops at the ring' if resp == 'S' else 'goes on past the ring on 30 % of days' if resp == 'M' else 'goes on: catch up, then more new cards'})")
         res = {}
         for name, (rule, comp, *ah) in rules.items():
             log, w, nn = run(rule, comp, Wm, E, vet, np.random.default_rng(308), size, *ah[:1], smooth=(ah[1] if len(ah) > 1 else None), vt0=vt0, heavy=heavy, refill=refill, ceil=ceil); res[name] = metrics(log, w)

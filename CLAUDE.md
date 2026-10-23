@@ -35,7 +35,7 @@ Read the file for the area you work on.
 - `references/deck-package.md`: the `.mnemit` package and legacy `.voctrain`, editing and merging on
   two devices, deck file operations, card media files.
 - `references/scheduling.md`: today's counts and daily limits, revealed reviews, leeches, the
-  automatic FSRS refit, the endless Study stream, practices, the newest batch.
+  automatic FSRS refit, the day's stack (Study) and Push On, practices, the newest batch.
 - `references/daily-ring.md`: plan, goal, rounds, day's time, new-card allowance, done cards, ring,
   pace, backlog, streak, caches, words in memory, the "How Today Works" screen.
 - `references/import-export.md`: `deck-from-tsv`, production cards, Anki import (core and screens),

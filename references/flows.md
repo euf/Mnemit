@@ -61,7 +61,8 @@ Root is a `NavigationStack` on Today.
 - *Ring closed* (when today's cards are done; "Done for today" when the plan ran out with the ring
   open): "10 cards · 22 answers", the share recalled, the words or their milestone, the streak, the
   rings of the last seven days, the next review; **Catch Up** when the plan has cards left, else
-  **+10 new** with its cost; **Done**.
+  **Push On** with "More reviews in the days ahead" while a deck has new cards; **Done**. The paths through a
+  day: `learning-flow.md`, "The journey".
 - *Rest of a practice* ("Practice complete"): its figures and **Done**.
 
 **How Today Works** (sheet; the info button at the leading edge of Today's toolbar. On the Mac the window of

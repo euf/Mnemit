@@ -1,8 +1,8 @@
 import Foundation
 
-/// What "Study" opens: a stream of cards that doesn't end by itself, in segments. Every
+/// What "Study" opens: today's stack, in segments, which ends when the plan is done. Every
 /// grade is saved at once, so the segments are no sessions the learner has to finish:
-/// leaving the stream anywhere loses nothing, and the next stream picks up from the deck.
+/// leaving the stack anywhere loses nothing, and the next stream picks up from the deck.
 ///
 /// 1. `Stage.plan`: today's plan, what `StudySession.counts(for:at:calendar:)` reports,
 ///    in the order and within the limits of `StudySession`, every card due included,
@@ -10,13 +10,9 @@ import Foundation
 ///    again: the cards the segment left out come next, and cards of an Again come back as
 ///    learning cards. The segments are the stream's business: the plan the learner sees is
 ///    all of it.
-/// 2. `Stage.rest`: the plan is empty, which is the daily goal. The stream waits here for
-///    the learner, who can `keepGoing(in:at:calendar:)` or `addNewCards(_:in:at:calendar:)`.
-/// 3. Beyond the plan, practice, which changes no card: `Stage.practiceMistakes` (today's mistakes,
-///    `Deck.mistakes(onDayOf:calendar:)`), then `Stage.practiceNewest`
-///    (`Deck.newestBatchIDs`) again and again.
-///
-/// New cards beyond the daily limits come only on request, as `addNewCards`.
+/// 2. `Stage.rest`: the plan is empty: the stack is done for the day. Only
+///    `addNewCards(_:in:at:calendar:)`, the learner's Go On, puts cards in it again: new cards
+///    beyond the daily limits, with the plan they join.
 ///
 /// Inside the plan the stream also rests twice a day at most (`DayRounds`): at the end of the
 /// first round, which keeps the streak, and at the end of the last, which closes the ring while
@@ -26,8 +22,9 @@ import Foundation
 /// everything else is, so undo and redo bring the rest back or take it away.
 ///
 /// A stream from `init(practicingMistakesIn:at:calendar:random:)` or
-/// `init(practicingNewestWordsIn:at:random:)` does one practice and then rests
-/// (`isPracticeOnly`).
+/// `init(practicingNewestWordsIn:at:random:)` does one practice, which changes no card
+/// (`Stage.practiceMistakes`, today's mistakes; `Stage.practiceNewest`, `Deck.newestBatchIDs`),
+/// and then rests (`isPracticeOnly`).
 ///
 /// The stream is one value, so undo restores all of it: stage, segment and random state.
 /// A segment is built from the deck as it is when the one before it ends, which the
@@ -161,11 +158,8 @@ public struct StudyStream: Sendable {
             return false
         case .plan:
             next = [.plan]
-        case .practiceMistakes:
-            next = isPracticeOnly ? [] : [.practiceNewest]
-        case .practiceNewest:
-            // A pass without a review would repeat forever.
-            next = isPracticeOnly || session.reviewCount == 0 ? [] : [.practiceNewest]
+        case .practiceMistakes, .practiceNewest:
+            next = []
         }
         if !install(firstOf: next, in: deck, at: now, calendar: calendar) {
             rest(at: now)
@@ -200,22 +194,6 @@ public struct StudyStream: Sendable {
         guard let rounds = roundRest else { return }
         roundsPassed = rounds
         roundRest = nil
-    }
-
-    /// From rest, goes on beyond the plan: the practice of today's mistakes, else of the
-    /// newest words.
-    ///
-    /// - Returns: Whether there was anything to go on with.
-    @discardableResult
-    public mutating func keepGoing(in deck: Deck, at now: Date, calendar: StudyCalendar) -> Bool {
-        guard stage == .rest, !isPracticeOnly else { return false }
-        return install(firstOf: [.practiceMistakes, .practiceNewest], in: deck, at: now, calendar: calendar)
-    }
-
-    /// Whether `keepGoing(in:at:calendar:)` has anything to go on with.
-    public func canKeepGoing(in deck: Deck, at now: Date, calendar: StudyCalendar) -> Bool {
-        var copy = self
-        return copy.keepGoing(in: deck, at: now, calendar: calendar)
     }
 
     /// How many new cards beyond the daily limits `addNewCards` would add now: at most

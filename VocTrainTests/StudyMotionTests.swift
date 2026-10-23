@@ -158,7 +158,7 @@ struct StudyMotionTests {
         var applied = false
         var dealt = false
         motion.leaveRest(
-            snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created, canKeepGoing: false), reduceMotion: false,
+            snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created), reduceMotion: false,
             cardsAfter: 0.2, arrival: .rises, apply: { applied = true }, didLeave: { true }, then: { dealt = true })
         #expect(applied && !dealt && motion.showsRest && !motion.hasArrived && motion.travel == 0)
         #expect(motion.restSnapshot != nil)
@@ -170,7 +170,7 @@ struct StudyMotionTests {
         motion.restBegan(afterExit: true, reduceMotion: true)
         #expect(motion.showsRest && !motion.travels && motion.hasArrived && !motion.showsSlot && motion.burstStartedAt == nil)
         motion.leaveRest(
-            snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created, canKeepGoing: false), reduceMotion: true,
+            snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created), reduceMotion: true,
             cardsAfter: 0.2, arrival: .rises, apply: {}, didLeave: { true }, then: {})
         #expect(!motion.showsRest && motion.arrival == .rises)
     }
@@ -180,7 +180,7 @@ struct StudyMotionTests {
         let motion = motion()
         motion.snapRest(true)
         motion.leaveRest(
-            snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created, canKeepGoing: false), reduceMotion: false,
+            snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created), reduceMotion: false,
             cardsAfter: 0.2, arrival: .rises, apply: {}, didLeave: { false }, then: {})
         #expect(motion.showsRest && motion.hasArrived && motion.restSnapshot == nil && !motion.isChoreographing)
     }

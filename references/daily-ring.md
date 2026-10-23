@@ -31,7 +31,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (`DayRounds.goal`): learning and review in stream order, then new, priced by pace, no more than the
   day's time in seconds, at least one card when the plan isn't empty. Review cards beyond the time
   (after a break) stay in the plan and go into the laps.
-- The goal doesn't change: Add Cards, "+10 new" and Again don't raise it.
+- The goal doesn't change: Add Cards, Push On and Again don't raise it.
 - The whole rule is in `DailyGoal` (VocabCore): `goal(done:owed:plan:)` takes the plan at the start of
   the day. The only exception: when the plan has nothing left to wait for (`owed == 0`) and fewer are
   done (cards were suspended or deleted during the day), the goal is the done cards, so the ring doesn't
@@ -62,23 +62,23 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   first study day, the same on every device, never rounded. The goal is the cards of the plan that fit
   it, and new cards fill what the plan's other cards leave.
 - **The rule**, one pure step per study day, `DailyGoal.nextTime(after:)`, over the days before it as plain
-  values (`DailyGoal.RingDay`): a closure tracker. The last study day (a day with work) asked T (its
-  `RingDay.time`); the next time is T × 1.075 (`DailyGoal.grows`) when its ring closed on a goal that filled T,
-  T when it closed on a plan smaller than T (`RingDay.filled` false: a deck's new-card limit or an exhausted deck
-  set the goal; reason `smallPlan`), and T × 0.775 (`DailyGoal.shrinks`) when it stayed open; clamped to
+  values (`DailyGoal.RingDay`): a staircase. The last study day (a day with work) asked T (its
+  `RingDay.time`); the next time is T × 1.15 (`DailyGoal.grows`, reason `ringClosed`) when its ring was the
+  `DailyGoal.closedToGrow`-th (2nd, 4th, …) in a row closed on a goal that filled T, T when it was the first of
+  such a run (reason `closedInARow`), T when it closed on a plan smaller than T (`RingDay.filled` false: a deck's
+  new-card limit or an exhausted deck set the goal; reason `smallPlan`; such a day neither counts in the run nor
+  breaks it), and T × 0.775 (`DailyGoal.shrinks`) when it stayed open, which ends the run; clamped to
   120…3600 s; 150 s before any study day. A day without work is no step, and the days after it ask what they
   would have asked without it. worked(d) is the cards done on `d` at the day's own prices, new × new price +
   other × other price at the pace of the seven study days before `d`, laps included; How Today Works shows it.
 - **Filled** (`DayRounds.filled`): the goal's cost plus one new card's price exceeds T, so the time, not the
   plan, set the goal. A closed ring on a smaller plan says nothing about more time and moves nothing.
-- **Why**: `ring-design.md`. The two factors put the share of closed rings where p ln 1.075 = (1 - p) ln(1/0.775),
-  0.78, whatever the work: 0.78 on the logs of 2,000 Anki users. Two and a half minutes are reached on 77 % of
-  the first week's study days of Anki newcomers, the same share; two minutes to an hour hold the usual day of nine
-  in ten Anki users.
-- Model learners (`RingRuleTests`): one who stops at the ring grows from 2.5 min by 7.5 % a closed day, 161.25 s
-  on day 2 and 287.6 s on day 10; one who works less than the ring asks falls to 2 minutes on day 2 (150 × 0.775 =
-  116.25 is under the floor) and holds there; a ring closed on a small plan keeps its time; a day without work
-  changes nothing.
+- **Why**: `ring-design.md`. The staircase puts the share of closed rings where p² ln 1.15 = (1 − p²) ln(1/0.775),
+  0.80, whatever the work, and changes the ring on half the study days. How Today Works names the direction only
+  ("Ring closed", "Ring open"), never the rule.
+- Model learners (`RingRuleTests`): one who stops at the ring asks 150, 150, 172.5, 172.5, 198.4 s …, 150 × 1.15^⌊(d − 1)/2⌋
+  on study day d; one who works less than the ring asks falls to 2 minutes on day 2 (150 × 0.775 = 116.25 is under
+  the floor) and holds there; a ring closed on a small plan keeps its time; a day without work changes nothing.
 - `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring, filled) with today live, and
   the reason is `start`, `ringClosed`, `smallPlan` or `ringOpen`; `DailyProgressCache.Before.days` keeps the
   days before today.
@@ -101,7 +101,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `SessionViewModel`, `SessionDriver`) and to `NewCardAllowances.today` per deck file (read by
   `OpenDeck`, `KnownDeckCounts`, `Reminders`, `WidgetSync`; the forecast for future days takes today's
   allowance).
-- Cards first reviewed today are subtracted from the allowance; "+10 new" goes beyond it.
+- Cards first reviewed today are subtracted from the allowance; Push On goes beyond it.
 
 ## Done card, ring, laps, cards left
 
@@ -117,7 +117,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (`Card.credit(onDayOf:calendar:steps:)`). Every answer recalled moves the ring; Forgot moves nothing
   and takes nothing back. The counts ("M of K cards", "N left") stay in whole cards.
 - **Ring**: done cards against the day's goal. Done cards beyond the goal go into laps (in the stream,
-  ×2 in the centre on the second lap, ×3 on the third): Catch Up and "+10 new" fill the
+  ×2 in the centre on the second lap, ×3 on the third): Catch Up and Push On fill the
   laps.
 - **Cards left**: the plan's cards not done yet: `StudySession.counts(...).total` now, the line "N
   cards left". Done + left = plan, which is the goal or more (review cards beyond the day's time are

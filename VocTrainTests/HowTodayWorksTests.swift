@@ -87,8 +87,10 @@ struct HowTodayWorksTests {
             table.1.map { Array($0.dropFirst()) } == [
                 [one(199.95 / 60), one(2.5), "Open", "Ring open"], [one(258.0 / 60), one(5), "Open", "Ring closed"], [one(4), one(6), "Closed", "Start"],
             ])
-        #expect(time.footer.hasPrefix("Each day you close the ring, the next asks 7.5 % more time"))
-        #expect(time.footer.contains("a ring closed on a plan smaller than the time, or a day without study, changes nothing"))
+        // The footer names the direction of the time, never the rule's factors.
+        #expect(time.footer.hasPrefix("The time follows your days"))
+        #expect(time.footer.contains("a ring closed on a plan smaller than the time or a day without study leaves it as it was"))
+        #expect(!time.footer.contains("%"))
         #expect(time.footer.contains("two and a half minutes before any study"))
 
         let pace = content.sections[2].rows

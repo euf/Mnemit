@@ -1,9 +1,8 @@
 import SwiftUI
 import VocabCore
 
-/// The screen of the study stream: asks one card after another, without an end of its own.
-/// Today's plan comes first; when it is done the stream rests for a moment
-/// (`StreamRestView`) and then goes on with review ahead and practice. Every grade is saved
+/// The screen of the day's stack: asks today's plan one card after another and ends with it
+/// (`StreamRestView`: Done, or Push On for new cards past the end). Every grade is saved
 /// at once, so "Done" leaves at any time and loses nothing. The ring in the header shows
 /// today's cards done against the goal (`DailyRingView`).
 ///
@@ -148,14 +147,6 @@ struct SessionView: View {
             Menu("More", systemImage: "ellipsis.circle") {
                 Button("Undo", systemImage: "arrow.uturn.backward", action: model.undoLast)
                     .disabled(!model.canUndoLast)
-                if let extra = model.extraNew {
-                    Button {
-                        model.addNewCards()
-                    } label: {
-                        Text("+\(extra.cards) new")
-                        Text("≈ +\(extra.reviewsPerDay) cards/day next week")
-                    }
-                }
             }
             .menuIndicator(.hidden)
             .labelStyle(.iconOnly)

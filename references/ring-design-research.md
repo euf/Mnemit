@@ -120,6 +120,28 @@ Summary table of the rules and the share of days with a met goal:
 
 ## 3. Spaced-repetition workload
 
+- Anki Manual, Deck Options (https://docs.ankiweb.net/deck-options.html, read 23.10.2026). New Cards/Day: new material is
+  repeated several times before the gaps grow, so 20 new cards a day bring roughly 200 reviews a day, and reviews come
+  down by introducing fewer new cards. New Cards Ignore Review Limit (off by default): the review limit also stops new
+  cards; with overdue reviews stop new cards until caught up, as more of them make the backlog worse. A Short Guide:
+  desired retention is the most important FSRS setting; 90 % is the default and a good balance, above 90 % the workload
+  rises very quickly, above 97 % it can be overwhelming. The simulator estimates workload in reviews or in minutes a day
+  from new cards a day and the review cap. Confidence: maintainers' documentation.
+- FSRS's "Three-Day Journey" (https://github.com/open-spaced-repetition/awesome-fsrs/wiki/Spaced-Repetition-Algorithm:-A-Three%E2%80%90Day-Journey-from-Novice-to-Expert):
+  the number of reviews and the time per review are the cost of memory; scheduling is optimised either for as much
+  material as possible to reach a target stability within a cost constraint, or for given material at minimal cost
+  (SSP-MMC); its simulator takes the days to a deadline and a daily learning time and stops a day's cards when the time
+  is used. Stability gains most from a review at low recall, so reviewing early wastes effort. Confidence: FSRS author's
+  tutorial.
+- srs-benchmark (https://github.com/open-spaced-repetition/srs-benchmark, README read 23.10.2026): algorithms are compared
+  by log loss and RMSE over bins (calibration of the predicted recall) and AUC (telling recall from lapse); FSRS-6 without
+  same-day reviews: log loss 0.346, RMSE(bins) 0.065, AUC 0.703, behind FSRS-7 and the neural models. Confidence: measured.
+- SuperMemo's universal metric (https://supermemo.guru/wiki/Universal_metric_for_cross-comparison_of_spaced_repetition_algorithms):
+  the root mean square over retrievability classes of predicted against actual recall, computed from recorded histories
+  so algorithms can be scored on each other's data; on 700,000 repetitions SM-20 0.04, SM-17 1.1, FSRS 16.43 optimised,
+  SM-2 35.3, with SM-17 as the frame of reference. Confidence: measured by an interested party.
+- None of the four measures knowledge gained per minute of study; the cost of the student is the open question in the
+  SuperMemo page and the constraint in the FSRS tutorial.
 - Anki defaults are 20 new cards and 200 reviews per day, read from the source (`new_per_day: 20`, `reviews_per_day: 200`).
   https://github.com/ankitects/anki/blob/main/rslib/src/deckconfig/mod.rs. Confidence: measured. The manual sections on New Cards/Day and Maximum
   Reviews/Day state the ratio (20 new a day means about 200 reviews a day), the purpose of the review cap (smoothing peaks and protecting a return after
