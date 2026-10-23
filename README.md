@@ -60,8 +60,7 @@ are in [`references/`](references/).
   ("Streak kept": Keep Going or Done for Now); the next rest is the closed ring, with the rings of
   the last seven days. The time of a day comes from
   your review logs: four minutes on the first day, then the work you did, the median of your last seven
-  study days, a tenth more after three closed rings in a row, 30 % less the day after a missed
-  day. New cards are admitted up to the time it leaves after the day's reviews, so a
+  study days. New cards are admitted up to the time it leaves after the day's reviews, so a
   break does not turn into a wall of work.
 - **The ring counts cards, and every answer recalled moves it.** A ring in the manner of Apple
   Fitness fills to the daily goal: the

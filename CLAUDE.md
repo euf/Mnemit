@@ -36,7 +36,7 @@ Read the file for the area you work on.
   two devices, deck file operations, card media files.
 - `references/scheduling.md`: today's counts and daily limits, revealed reviews, leeches, the
   automatic FSRS refit, the endless Study stream, practices, the newest batch.
-- `references/daily-ring.md`: plan, goal, rounds, capacity, new-card allowance, done cards, ring,
+- `references/daily-ring.md`: plan, goal, rounds, day's time, new-card allowance, done cards, ring,
   pace, backlog, streak, caches, words in memory, the "How Today Works" screen.
 - `references/import-export.md`: `deck-from-tsv`, production cards, Anki import (core and screens),
   the deck site browser, CSV/TSV, lesson words, the word key.

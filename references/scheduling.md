@@ -69,7 +69,6 @@ stream and its practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
   `restAtRoundEnd(roundsDone:rounds:)`, `continueRound()`): at the end of the first round ("Streak
   kept", Keep Going or Done for Now) and at the end of the last while the plan has cards beyond the
   goal ("Ring closed", Catch Up or Done). The segment stays in place.
-  `StudyStream.restsAtEveryRound = true` brings back a rest after every round but the last.
 - The rest is a state of the same stream: `isResting` is true on it, `StreamRest.roundEnd` carries the
   round, `roundsPassed` holds the rounds passed, all inside the value. So Undo across a round boundary
   brings the card back and lifts the rest, and Redo finds it again.

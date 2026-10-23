@@ -112,7 +112,7 @@ The screens around Study. The contract of every screen: `references/flows.md`; t
 - `LearningOptions.isPaused`; the key `paused` in `deck.json` is written only when true, same format
   version: an old build drops the key and the deck is active again. The key travels with the options and
   merges by `learningOptionsChanged`, later wins.
-- A paused deck is in none of: plan, goal, rounds, capacity, allowance (the other decks share it),
+- A paused deck is in none of: plan, goal, rounds, time, allowance (the other decks share it),
   streak, words in memory, widget, reminders, Study. `DailyProgress.evaluate` and `DayBreakdown` skip
   `DeckActivity.isPaused` (such a deck's place in `newCardAllowances` holds 0; `DailyRingModel` gives it
   no allowance, and its plan follows its own limits). `KnownDeckCounts` counts no cards for it and keeps

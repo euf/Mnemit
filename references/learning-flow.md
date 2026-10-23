@@ -45,7 +45,7 @@ reviews already due next week as well as today's, so the ring is a size the lear
 | Seconds | swipes one card | the card leaves past the edge; recalled, the ring steps by its share; done, the stack loses a sheet, the ring bumps and "in 8 days" shows beside it; back today, the card comes in again from the edge it left by and slides under the stack | done = FSRS sent the card to another day; partial credit by steps |
 | ≈ 2 min | the first cards of the day | the streak screen: "Streak kept", the streak in days | streak step of the day done (Duolingo: one lesson keeps the streak, apart from the goal) |
 | The day | today's cards | the ring closes: the ring screen with the day's figures and the week | done ≥ goal |
-| The week | closes rings on most days | seven rings in a row, Monday to Sunday, on the ring screen | ring per day from the log; the day's time follows the work of the last seven study days, a tenth more after three closed rings, 30 % less after a missed day |
+| The week | closes rings on most days | seven rings in a row, Monday to Sunday, on the ring screen | ring per day from the log; the day's time follows the work of the last seven study days |
 | Months | keeps the streak, learns | the streak in days in the ring's centre; words-in-memory milestones (50, 100, 250, 500, 1,000 …) | FSRS recall, the log |
 
 A missed day is forgiven when the next day closes its ring (the streak survives; Duolingo's Freeze
@@ -214,5 +214,3 @@ cards done, the best streak of the month, the achievements of the month, and See
 Kept as they are: one stream over all decks, the 04:00 day, the ring in cards, laps (×2, ×3) for
 work beyond the goal, the backlog spread over a week, the streak's repair by a closed ring, words in
 memory, pausing a deck, practice from the deck screen.
-
-The rests between rounds come back with `StudyStream.restsAtEveryRound = true`.

@@ -75,7 +75,7 @@ Study ▸ How Today Works, over the open decks, which it names Deck 1, Deck 2.)
   plan.
 - **Today's time**: the day's time in minutes (one decimal), the streak step and the goal in cards; the last
   14 days, newest first, with the minutes the ring asked, the minutes worked, the ring (Closed or Open) and
-  why the time (Start, Median, Probe +10 %, After a miss −30 %).
+  why the time (Start, Median).
 - **Pace**: seconds for a new card and for another card, each with its source (Durations (n), Gaps (n) or
   Default) and the reviews each done card took.
 - **Streak**: days, whether today is kept, the cards that would repair yesterday.

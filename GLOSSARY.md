@@ -277,12 +277,9 @@ _Avoid_: round, session, lap, segment
 **Day's time** (RU «время дня»):
 The seconds of work the day asks, 120 to 1800, never rounded (`DailyProgress.time`). It comes from the
 review logs alone, forward from the first study day, so every device that reads the same logs gets the
-same: 240 s on the first day; each later day follows the work done (`DailyGoal.ringRule` is `.follows`,
-`DailyGoal.nextTime(for:after:)`): the median of the work of the last seven study days, a tenth more (a
-probe) after three closed rings in a row, 30 % less the day after a missed day. `.rounds`, the earlier
-rule, stepped one round of 120 s from the day before
-(`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`). The day's time sets the goal and the
-admission of new cards.
+same: 240 s before any work; then the median of the seconds worked on the last seven study days (a day
+with work), held to 120 to 1800 (`DailyGoal.nextTime(after:)`). Nothing else changes it. The day's time
+sets the goal and the admission of new cards.
 _Avoid_: capacity, limit, quota, level
 
 **Admission** (new-card allowance; RU «допуск новых»):

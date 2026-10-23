@@ -58,31 +58,27 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 
 ## Day's time
 
-- **Day's time**: the seconds of work the day asks, 120…1800 (`DailyProgress.time`), from the log,
-  forward from the first study day, the same on every device, never rounded. The goal is the cards of
-  the plan that fit it, and new cards fill what the plan's other cards leave. `DailyGoal.ringRule`
-  picks the rule, one switch, `DailyGoal.size(on:after:rule:)`; `evaluate(rule:)` names one for a test.
-  `.follows` is the default; `.rounds`, the earlier rule, steps ±1 round of 120 s a day
-  (`DailyGoal.nextCapacity`: +1 after two closed rings, −1 after an open day) and is kept for that
-  function and its tests.
-- `.follows`, one pure step per study day `d`, `DailyGoal.nextTime(for:after:)`, over the days before it
-  as plain values (`DailyGoal.RingDay`):
-  - worked(d) is the cards done on `d` at the day's own prices, new × new price + other × other price at
-    the pace of the seven study days before `d`; laps count. A day is studied when something was done
-    and missed when its plan had cards and nothing was.
-  - base is the median of worked over the last seven studied days before `d`, softened days left out;
-    240 s without any.
-  - Probe: base × 1.10 when the rings of the last three studied days all closed and no probe failed in
-    the fourteen calendar days before `d`. A probe fails when its day's ring stays open.
-  - After a missed day: base × 0.7, no probe, and that day stays out of later bases.
-  - The time is held to 120…1800 s. It is no longer cut into rounds, so the probe applies at any size.
-- Model learners (`RingRuleTests`): one who works the ring up to 10 min and 10 min beyond it leaves the
-  ring open on at most 2 days of 28 under `.follows` and on 8 under `.rounds` (10 → 12 → 10 min), and a
-  4-minute ring grows under three closed days; one who works 10 min whatever the ring asks has 10 min
-  from the second day and an open ring on the failed probe, at 11 min, every fifteenth day; one who works
-  20 min has 20 min within ten days.
-- `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring) with today live;
-  `DailyProgressCache.Before.days` keeps the days before today, and the rule is part of the cache key.
+- **Day's time**: the seconds of work the day asks (`DailyProgress.time`), from the log, forward from the
+  first study day, the same on every device, never rounded. The goal is the cards of the plan that fit
+  it, and new cards fill what the plan's other cards leave.
+- **The rule**, one pure step per study day, `DailyGoal.nextTime(after:)`, over the days before it as plain
+  values (`DailyGoal.RingDay`): the median of the seconds worked on the last 7 study days, a study day
+  being a day with work, clamped to 120…1800 s; 240 s before any work. Nothing else changes it: a day
+  without work is out of the median and the days after it ask what they would have asked without it.
+  worked(d) is the cards done on `d` at the day's own prices, new × new price + other × other price at
+  the pace of the seven study days before `d`; laps count.
+- **Why**: the base is past work, as Apple's activity goal and Garmin's Auto Goal take it
+  (`goal-setting-research.md`). An achievable ring keeps people: at Duolingo the highest daily-goal tier
+  produced the fewest streaks (`learning-flow-research.md`). Growth comes from the learner's own extra
+  work, which the median takes in, and from the "+10 new" choice after the ring; the ring itself never
+  asks for more than the learner did. The +10 % probe and the 70 % after a miss are gone for want of
+  evidence (`decisions-evidence.md` §2). The 7 days, the 2–30 minutes and the 4 minutes are choices to
+  check on EF's log.
+- Model learners (`RingRuleTests`): one who works exactly the ring keeps it constant; one who works 20 min
+  a day has 20 min from the second day; a day without work changes nothing; ten seconds of work a day
+  leave 2 minutes and ten thousand 30.
+- `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring) with today live, and the
+  reason is `start` or `median`; `DailyProgressCache.Before.days` keeps the days before today.
 
 ## New-card allowance
 
@@ -96,7 +92,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   by their ceilings), at the other price, still fit the day's time. A learner with nothing scheduled ahead
   gets the first bound.
 - **Today only**: past days keep the first bound, so the goals, rings, streaks and medals of the history
-  don't change (`DailyProgress.evaluate(admitsAhead:)`, default `DailyGoal.admitsAhead`, a static switch).
+  don't change.
   `DailyProgress.newCardLimit` says which bound won and `nextWeekSeconds` is the week's average, which
   "How Today Works" shows in the row "New cards: limited by next week / by today's time".
 - **Why**: under FSRS the reviews are fixed by the schedule and new cards are the only free input, and

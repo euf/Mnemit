@@ -27,32 +27,30 @@ memory; the ring shows effort and counts as done only what FSRS sent away.
 
 ## 2. The day's time
 
-Decision: median of minutes worked over the last 7 study days; +10 % probe after three closed rings; no
-probe for 14 days after a failed one; 70 % of base the day after a miss; clamp 2-30 minutes.
+Decision: median of the seconds worked over the last 7 study days, clamped to 2-30 minutes, 4 minutes
+before any work; nothing else changes it.
 
-- `goal-setting-research.md` ("Implications for the ring rule") already finds the learned base sound,
-  the probe size, the 14 days and the 70 % unsourced, and asks for a replay on EF's log. Opinion.
+- `goal-setting-research.md` ("Implications for the ring rule") finds the learned base sound, the probe
+  size, the 14 days and the 70 % unsourced. Opinion.
 - The +10 % step is the running "10 % rule". Its one randomised trial (GRONORUN, 532 novice runners): a
   13-week programme raising volume by 10 % a week against a standard 8-week one gave the same injury rate,
   20.8 % against 20.3 % (P = .90), and the same compliance, 66.4 % against 64.5 % of the sessions done.
   Buist et al., Am J Sports Med 2008;36(1):33–39, doi 10.1177/0363546507307505, read from the PDF. Measured,
   other domain: a slower climb neither protected nor kept people at it, so the 10 % carries no evidence of
-  its own; the probe's size stays a parameter to replay on EF's log.
+  its own.
 - Duolingo: the highest daily-goal tier produced the fewest streaks
   (https://blog.duolingo.com/improving-the-streak/, via `learning-flow-research.md`). Measured (company).
 - Lally 2010: one missed day moved automaticity by under half a point, repeated misses untested
-  (`goal-setting-research.md` §2). Single study; it allows an easier day after a miss, not 70 % in
-  particular.
-- No source found for the 7-day window, the 14-day cooldown, 70 %, or the 2-30 minute clamp.
+  (`goal-setting-research.md` §2). Single study.
+- No source found for the 7-day window, the 2-30 minute clamp or the 4 minutes.
 
-**Measure.** Five numbers stand on `RingRuleTests` model learners, none on EF.
-Measurement: replay `DailyGoal.nextTime` over EF's `reviews.jsonl` from the first study day for each
-variant: probe +10 % / +5 % / none; cooldown 7 / 14 / 21 days; after-miss factor 0.7 / 0.85 / 1.0.
-Record per variant the share of study days with a closed ring (target 80-90 %), failed probes, the time
-reached after 28 days, and open rings the day after a miss. A replay flatters every variant, as EF's work
-was shaped by the goal he saw, so also judge the live rule on its first eight probes (a probe's outcome is derivable from
-the log). Change a number only when another variant beats it by 5 points of closure rate on at least 60
-study days (our threshold); until then the defaults stand.
+**Removed.** The probe (+10 % after three closed rings, with its 14-day rest) and the 70 % after a miss
+went for lack of evidence: the one trial of a 10 % climb (Buist 2008) found no gain in injuries or
+compliance, and one missed day is harmless (Lally 2010). A missed day now stays out of the median, as it
+has no work. The numbers that remain, 7 days, 2-30 minutes and 4 minutes, are choices, not findings:
+check them on EF's log by replaying `DailyGoal.nextTime` over `reviews.jsonl` with other windows and
+clamps, and look at the share of study days with a closed ring (target 80-90 %). Change a number only when another
+variant beats it by 5 points of closure rate on at least 60 study days (our threshold).
 
 ## 3. The streak step
 
@@ -218,7 +216,7 @@ step spacing is already measured.
 | Decision | Verdict | Action |
 |---|---|---|
 | 1 Partial credit | keep | none |
-| 2 The day's time | measure | replay rule variants on EF's log; judge the first 8 live probes |
+| 2 The day's time | measure | replay the window and the clamp on EF's log |
 | 3 Streak step | keep | optional check of streak-only days (5-40 % band) |
 | 4 Two rests | measure | Forgot rate and `ms` by minute in streams of 15+ min |
 | 5 Backlog spread | measure | simulate ascending against descending R at the first backlog over 100 cards |
