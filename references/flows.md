@@ -31,11 +31,11 @@ Root is a `NavigationStack` on Today.
 
 **Today**
 - Ring, then the day (`learning-flow.md`): the headline is "≈ 2 min to keep your streak" before the
-  first round, then "12 cards left · ≈ 4 min", and "Ring closed" once it is (without cards, "All
+  streak step, then "12 cards left · ≈ 4 min", and "Ring closed" once it is (without cards, "All
   done" or "Nothing due"); under it "M of K cards · N left", the done cards against the
   daily goal and the cards of today's plan not done yet (not the raw due count); "+N to catch
   up this week" when a backlog is left; the streak, "12-day streak", with "· kept today" once
-  the first round is done; under the ring, over the width of the row, "≈ 28 words in memory ·
+  the streak step is done; under the ring, over the width of the row, "≈ 28 words in memory ·
   +15 today" on one line (one wrapping text at large type sizes), and on the day a milestone is
   passed "50 words in memory!"; **Study** (all decks). The panel with the ring is a button that opens the
   Progress screen; the day after a missed day it says "Close the ring to save your streak".
@@ -55,7 +55,7 @@ Root is a `NavigationStack` on Today.
   names its stage before the ring; practice names itself and has no ring.
 - The card lies on a stack drawn as a book's page edges; how cards leave it and come back is in
   `learning-flow.md`, section "The stack".
-- *Streak kept* (once a day, after the first round): the ring, the streak, "+4 words in memory
+- *Streak kept* (once a day, after the streak step): the ring, the streak, "+4 words in memory
   today" when the day has added any, the cards left to the ring with their time. **Keep Going**
   (default) or **Done for Now**. Undo, from the button in the bar, the menu or a shake, takes back
   the review that ended the round and the rest with it; redo brings it back.
@@ -73,9 +73,9 @@ Study ▸ How Today Works, over the open decks, which it names Deck 1, Deck 2.)
   and each deck's ceiling with its limits (new / production), a paused deck as "Paused: <name>" with no figures;
   the daily goal in cards; the rounds and where each ends, in cards; cards done; cards left; catch-up beyond the
   plan.
-- **Capacity**: the rounds of today and their time; the last 14 days, newest first, with the minutes the
-  ring asked, the minutes worked, the ring (Closed or Open) and why the size (Start, Median, Probe +10 %,
-  After a miss −30 %). Under `DailyGoal.RingRule.rounds` the columns are rounds, ring and step (+1, 0, −1).
+- **Today's time**: the day's time in minutes (one decimal), the streak step and the goal in cards; the last
+  14 days, newest first, with the minutes the ring asked, the minutes worked, the ring (Closed or Open) and
+  why the time (Start, Median, Probe +10 %, After a miss −30 %).
 - **Pace**: seconds for a new card and for another card, each with its source (Durations (n), Gaps (n) or
   Default) and the reviews each done card took.
 - **Streak**: days, whether today is kept, the cards that would repair yesterday.

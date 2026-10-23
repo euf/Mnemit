@@ -7,7 +7,7 @@ import VocabCore
 /// else. Read-only, no knobs.
 ///
 /// Built into sections of rows that are already text, so a test can compare them and the view only lays
-/// them out. The sections come in the order of the screen: the plan, the capacity, the pace, the
+/// them out. The sections come in the order of the screen: the plan, the day's time, the pace, the
 /// streak, the words in memory, the swipes (where the screen has them: the iPhone), then the FSRS
 /// settings of each deck. A section's footer is its rule.
 struct HowTodayWorks: Equatable, Sendable {
@@ -40,7 +40,7 @@ struct HowTodayWorks: Equatable, Sendable {
         sections =
             [
                 Self.plan(progress, breakdown, decks),
-                Self.capacity(progress, breakdown),
+                Self.time(progress, breakdown),
                 Self.pace(progress, breakdown),
                 Self.streak(progress),
                 Self.wordsInMemory(memory),
@@ -73,61 +73,40 @@ struct HowTodayWorks: Equatable, Sendable {
                     note: String(localized: "Ceiling \(share.ceiling) (limits \(new) new / \(production) production)")))
         }
         rows += [
-            .value(label: String(localized: "Daily goal (cards)"), value: progress.ring.goal.formatted()),
-            .value(label: String(localized: "Rounds"), value: progress.rounds.formatted()),
-            .value(label: String(localized: "Round ends (cards)"), value: progress.roundEnds.isEmpty ? "–" : progress.roundEnds.map { $0.formatted() }.joined(separator: " · ")),
             .value(label: String(localized: "Cards done"), value: progress.ring.done.formatted()),
             .value(label: String(localized: "Cards left"), value: progress.cardsLeft.formatted()),
             .value(label: String(localized: "Catch-up beyond the plan"), value: breakdown.catchUp.formatted()),
         ]
         let footer = String(
             localized:
-                "The plan is what FSRS sets for the day: the reviews due and the cards in learning. Of the overdue cards it takes a share, at least a seventh and at least what a normal day asks. New cards fill what the day's capacity leaves after reviews, up to each deck's ceiling. The rest of the overdue cards is catch-up."
+                "The plan is what FSRS sets for the day: the reviews due and the cards in learning. Of the overdue cards it takes a share, at least a seventh and at least what a normal day asks. New cards fill what the day's time leaves after reviews, up to each deck's ceiling. The rest of the overdue cards is catch-up."
         )
         return Section(title: String(localized: "Today's Plan"), rows: rows, footer: footer)
     }
 
-    private static func capacity(_ progress: DailyProgress, _ breakdown: DayBreakdown) -> Section {
-        let minutes = Int((Double(progress.capacity) * DailyGoal.roundSeconds / 60).rounded())
-        func dayName(_ offset: Int, _ day: DayBreakdown.Day) -> String {
-            offset == 0 ? String(localized: "Today") : day.start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
-        }
-        func ring(_ day: DayBreakdown.Day) -> String { day.isClosed ? String(localized: "Closed") : String(localized: "Open") }
-        let header: [String]
-        let table: [[String]]
-        let footer: String
-        switch breakdown.rule {
-        case .follows:
-            header = [String(localized: "Day"), String(localized: "Asked (min)"), String(localized: "Worked (min)"), String(localized: "Ring"), String(localized: "Why")]
-            table = breakdown.days.reversed().enumerated().map { offset, day in
-                [
-                    dayName(offset, day),
-                    Int((Double(day.capacity) * DailyGoal.roundSeconds / 60).rounded()).formatted(),
-                    Int((day.worked / 60).rounded()).formatted(),
-                    ring(day),
-                    day.reason.map(Self.text(of:)) ?? "–",
-                ]
-            }
-            footer = String(
-                localized:
-                    "A round is two minutes of work. A day asks the median of the work of the last seven study days, in whole rounds: a tenth more after three closed rings in a row unless a try in the last week left its ring open, and 30 % less the day after a missed one."
-            )
-        case .rounds:
-            header = [String(localized: "Day"), String(localized: "Rounds"), String(localized: "Ring"), String(localized: "Step")]
-            table = breakdown.days.reversed().enumerated().map { offset, day in
-                [dayName(offset, day), day.capacity.formatted(), ring(day), day.step > 0 ? "+\(day.step)" : day.step < 0 ? "−\(-day.step)" : "0"]
-            }
-            footer = String(
-                localized:
-                    "A round is two minutes of work. A day takes one step from the day before: one round more if the ring was closed on each of the two days before, one fewer if the day before ended open, else the same."
-            )
+    private static func time(_ progress: DailyProgress, _ breakdown: DayBreakdown) -> Section {
+        func minutes(_ seconds: Double) -> String { (seconds / 60).formatted(.number.precision(.fractionLength(1))) }
+        let header = [String(localized: "Day"), String(localized: "Asked (min)"), String(localized: "Worked (min)"), String(localized: "Ring"), String(localized: "Why")]
+        let table = breakdown.days.reversed().enumerated().map { offset, day in
+            [
+                offset == 0 ? String(localized: "Today") : day.start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)),
+                minutes(day.time),
+                minutes(day.worked),
+                day.isClosed ? String(localized: "Closed") : String(localized: "Open"),
+                day.reason.map(Self.text(of:)) ?? "–",
+            ]
         }
         let rows: [Row] = [
-            .value(label: String(localized: "Capacity (rounds)"), value: progress.capacity.formatted()),
-            .value(label: String(localized: "Time of the day"), value: String(localized: "\(minutes) min")),
+            .value(label: String(localized: "Time of the day"), value: String(localized: "\(minutes(progress.time)) min")),
+            .value(label: String(localized: "Streak step (cards)"), value: progress.roundPlan.ends.first.map { $0.formatted() } ?? "–"),
+            .value(label: String(localized: "Daily goal (cards)"), value: progress.ring.goal.formatted()),
             .table(header: header, rows: table),
         ]
-        return Section(title: String(localized: "Capacity"), rows: rows, footer: footer)
+        let footer = String(
+            localized:
+                "A day asks the median of the work of the last seven study days, a tenth more after three closed rings in a row unless a try in the last two weeks left its ring open, and 30 % less the day after a missed one. The streak step is the cards that fit the first two minutes of the plan."
+        )
+        return Section(title: String(localized: "Today's time"), rows: rows, footer: footer)
     }
 
     /// Why a day had the size it had.
@@ -172,7 +151,7 @@ struct HowTodayWorks: Equatable, Sendable {
             rows.append(.value(label: String(localized: "Cards to repair yesterday"), value: repair.formatted()))
         }
         let footer = String(
-            localized: "The first round of a day keeps the streak. One missed day is repaired when the next day closes its ring; two missed days in a row end it.")
+            localized: "The streak step of a day, the cards that fit the first two minutes of its plan, keeps the streak. One missed day is repaired when the next day closes its ring; two missed days in a row end it.")
         return Section(title: String(localized: "Streak"), rows: rows, footer: footer)
     }
 

@@ -31,7 +31,7 @@ struct HomeSnapshotTests {
 
     /// The day cut into four rounds, which end at 8, 16, 24 and 30 cards, with `done` of them done, and the words in memory.
     static func roundsProgress(done: Int, streak: Int, memory: MemoryEstimate = MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2)) -> DailyProgress {
-        let rounds = DayRounds(otherCards: 30, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), capacity: 4)
+        let rounds = DayRounds(otherCards: 30, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), seconds: 480)
         return DailyProgress(
             ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: streak, repairCards: nil), pace: Pace(newCard: 30, otherCard: 15),
             roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0, memory: memory)

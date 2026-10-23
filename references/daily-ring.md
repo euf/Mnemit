@@ -29,7 +29,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 
 - **Goal**: the plan's cards at the start of the day (04:00) that fit in the day's time
   (`DayRounds.goal`): learning and review in stream order, then new, priced by pace, no more than the
-  day's capacity in rounds, at least one card when the plan isn't empty. Review cards beyond the time
+  day's time in seconds, at least one card when the plan isn't empty. Review cards beyond the time
   (after a break) stay in the plan and go into the laps.
 - The goal doesn't change: Add Cards, "+10 new" and Again don't raise it.
 - The whole rule is in `DailyGoal` (VocabCore): `goal(done:owed:plan:)` takes the plan at the start of
@@ -41,55 +41,52 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - `cardsPerSession` is the stream's segment size and doesn't cut the plan: `counts` doesn't know it,
   and nothing visible grows by segments.
 
-## Rounds
+## Streak step
 
-- **Round**: 120 s of work at the learner's pace (`DailyGoal.roundSeconds`); a card costs the pace of
-  its category. Round k ends at the first card where the cost reaches k × 120 s; the last ends at the
-  goal (`DayRounds.ends`).
-- `DailyProgress`: `rounds`, `roundsDone`, `roundEnds`, `cardsToNextRound`, `minutesToNextRound` (at
-  the pace the day started with), `minutes(ofRound:)` (a round's minutes by number, for the round-end
-  screen), `memory` (`MemoryEstimate` over the decks), `streakKeptToday` (first round done or the plan
-  empty).
-- Rounds never show by number (`learning-flow.md`). `RoundStatus` (`Shared/Session/DayLines.swift`)
-  gives the day's headline: before the first round "≈ 2 min to keep your streak", after the last "Ring
+- **Streak step**: the cards of the plan that fit the first 120 s of work at the learner's pace
+  (`DailyGoal.streakSeconds`); a card costs the pace of its category. It ends at the first card where
+  the cost reaches 120 s, and the goal ends the day (`DayRounds.ends`: at most two ends, one when they
+  coincide). The first end is the streak's rest, the last the ring's.
+- `DailyProgress`: `rounds` (the number of ends), `roundsDone`, `roundEnds`, `cardsToNextRound`,
+  `minutesToNextRound` (at the pace the day started with), `minutes(ofRound:)` (for the rest screen),
+  `memory` (`MemoryEstimate` over the decks), `streakKeptToday` (streak step done or the plan empty).
+- The step never shows by number (`learning-flow.md`). `RoundStatus` (`Shared/Session/DayLines.swift`)
+  gives the day's headline: before the step "≈ 2 min to keep your streak", after the goal "Ring
   closed", in between none, and the screens say the cards left. Today, the widget and the Mac ring
   tooltip take it from there.
-- In a day that started with an empty plan, rounds cut the cards as they are.
+- In a day that started with an empty plan, the ends cut the cards as they are.
 
-## Capacity
+## Day's time
 
-- **Capacity**: the number of rounds in the day, 1…15 (`DailyProgress.capacity`), from the log,
-  forward from the first study day, the same on every device. `DailyGoal.ringRule` picks the rule, one
-  switch, `DailyGoal.size(on:after:rule:)`; `evaluate(rule:)` names one for a test. `.follows` is the
-  default, `.rounds` the earlier rule: ±1 round a day from the previous one (`DailyGoal.nextCapacity`: +1
-  after two closed rings, −1 after an open day).
+- **Day's time**: the seconds of work the day asks, 120…1800 (`DailyProgress.time`), from the log,
+  forward from the first study day, the same on every device, never rounded. The goal is the cards of
+  the plan that fit it, and new cards fill what the plan's other cards leave. `DailyGoal.ringRule`
+  picks the rule, one switch, `DailyGoal.size(on:after:rule:)`; `evaluate(rule:)` names one for a test.
+  `.follows` is the default; `.rounds`, the earlier rule, steps ±1 round of 120 s a day
+  (`DailyGoal.nextCapacity`: +1 after two closed rings, −1 after an open day) and is kept for that
+  function and its tests.
 - `.follows`, one pure step per study day `d`, `DailyGoal.nextTime(for:after:)`, over the days before it
   as plain values (`DailyGoal.RingDay`):
   - worked(d) is the cards done on `d` at the day's own prices, new × new price + other × other price at
     the pace of the seven study days before `d`; laps count. A day is studied when something was done
     and missed when its plan had cards and nothing was.
   - base is the median of worked over the last seven studied days before `d`, softened days left out;
-    `initialCapacity` × 120 s without any.
+    240 s without any.
   - Probe: base × 1.10 when the rings of the last three studied days all closed and no probe failed in
-    the seven calendar days before `d`. A probe fails when its day's ring stays open.
+    the fourteen calendar days before `d`. A probe fails when its day's ring stays open.
   - After a missed day: base × 0.7, no probe, and that day stays out of later bases.
-  - capacity = the time in whole rounds (rounded), within 1…15: the plan is priced as before.
-- A day is sized in whole rounds, so below five rounds the 10 % probe rounds away (2.2 rounds is 2): a
-  learner who works exactly the ring stays at its size, and only work beyond the ring (laps count) lifts
-  the median.
+  - The time is held to 120…1800 s. It is no longer cut into rounds, so the probe applies at any size.
 - Model learners (`RingRuleTests`): one who works the ring up to 10 min and 10 min beyond it leaves the
-  ring open on 0 days of 28 under `.follows` and on 8 under `.rounds` (10 → 12 → 10 min); one who works 10
-  min whatever the ring asks has 10 min from the second day and an open ring every eighth day, the failed
-  probe (4 of 28); one who works 20 min has 20 min on the second day.
-- `DailyProgress.ringDays` holds every day's `RingDay` (size, reason, work, ring) with today live;
+  ring open on at most 2 days of 28 under `.follows` and on 8 under `.rounds` (10 → 12 → 10 min), and a
+  4-minute ring grows under three closed days; one who works 10 min whatever the ring asks has 10 min
+  from the second day and an open ring on the failed probe, at 11 min, every fifteenth day; one who works
+  20 min has 20 min within ten days.
+- `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring) with today live;
   `DailyProgressCache.Before.days` keeps the days before today, and the rule is part of the cache key.
-- A day's ring is closed when done ≥ that day's goal.
-- The pace that prices a day's cards is the seven study days before it (`DailyProgress.pace` still
-  counts today as well, for "≈ 7 min"), so the goal doesn't drift during the day.
 
 ## New-card allowance
 
-- **Allowance**: the day's time (capacity × 120 s) minus the plan's non-new cards at the start of the
+- **Allowance**: the day's time minus the plan's non-new cards at the start of the
   day at the other price, divided by the price of a new card, at least 0 (`DailyGoal.newCardsAllowed`).
 - The decks' limits (`newCardsPerSession`, `newProductionPerSession`) are ceilings. The allowance is
   split between decks in proportion to their ceilings by largest remainder (`DailyGoal.split`). A
@@ -183,13 +180,13 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 
 ## Streak
 
-- A day counts when its first round is done (done ≥ the end of that day's round 1), an empty plan too.
+- A day counts when its streak step is done (done ≥ the end of its streak step), an empty plan too.
 - A past day is judged by what was done on it (the log replay gives done cards per day) and by its plan
   at the start: a day made up later stays missed.
 - Days before `DailyGoal.planRuleStart` (23.10.2026) count with one review, so as not to break a streak
   started under the old rule of a fixed number of reviews a day (a `ponytail:` marker; remove it with
   the condition in `Streak.evaluate`).
-- A missed day is repaired when the next day closes the ring (done ≥ goal; the first round alone is not
+- A missed day is repaired when the next day closes the ring (done ≥ goal; the streak step alone is not
   enough, and then the streak restarts from that day; `Streak.repairCards` is how many cards are left
   to a closed ring). Two misses in a row break it.
 
@@ -208,7 +205,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - Suspend, options, adding and deleting a card, note and kind, reset, reviewing a card with an
   incomplete log and a new study day mean a full recount (the first review of a never-reviewed card
   doesn't change the key).
-- `DailyProgressCache` keeps the same for the per-day steps of `evaluate` (capacity and why, work, closed
+- `DailyProgressCache` keeps the same for the per-day steps of `evaluate` (time and why, work, closed
   rings, streak) over the set of `Past` of all decks and the rule.
 - The reference is the full recount: `DeckHistoryCacheTests` compares both paths on random reviews and
   edits of two decks.
@@ -243,8 +240,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - Sections in order:
   1. Day's plan: the parts of the plan at the start of the day, the backlog share taken, each deck's
      allowance and ceiling, goal, rounds, done, left, catch-up.
-  2. Capacity: today's rounds and time; 14 days with the minutes asked, the minutes worked, ring closed
-     or open and why the size (`.follows`), or rounds, ring and step (`.rounds`).
+  2. Today's time: the time in minutes, the streak step and the goal in cards; 14 days with the minutes
+     asked, the minutes worked, ring closed or open and why the time.
   3. Pace: new and other price, the price's source (durations, gaps or the default), reviews per done
      card.
   4. Streak.

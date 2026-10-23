@@ -35,8 +35,8 @@ struct DailyProgressPerformanceTests {
         print("PERF replay=\(replayTime) history(replay+days)=\(historyTime) days=\(today - first)")
         print(
             "PERF cards=\(deck.cards.count) reviews=\(reviews) build=\(buildTime) evaluate=\(evaluateTime) activity=\(activityTime) streak=\(String(describing: progress?.streak.days)) "
-                + "capacity=\(String(describing: progress?.capacity)) goal=\(String(describing: progress?.ring.goal)) allowances=\(String(describing: progress?.newCardAllowances)) pace=\(String(describing: progress?.pace))")
-        // A second evaluation finds the same: the capacity comes from the logs alone.
+                + "time=\(String(describing: progress?.time)) goal=\(String(describing: progress?.ring.goal)) allowances=\(String(describing: progress?.newCardAllowances)) pace=\(String(describing: progress?.pace))")
+        // A second evaluation finds the same: the time comes from the logs alone.
         let again = DailyProgress.evaluate([DeckActivity(deck: deck, calendar: calendar)], at: now, calendar: calendar)
         #expect(again == progress)
 

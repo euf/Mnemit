@@ -37,10 +37,10 @@ struct DayLinesTests {
     }
 
     @Test func theStatusReadsTheProgress() {
-        let rounds = DayRounds(otherCards: 20, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), capacity: 3)
+        let rounds = DayRounds(otherCards: 20, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), seconds: 360)
         let progress = DailyProgress(ring: DailyRing(done: 9, goal: 20), streak: Streak(days: 1, repairCards: nil), roundPlan: rounds)
-        // Round 1 ends at 8 cards: 9 are done, and the second ends at 16, seven cards and 105 s on.
-        #expect(RoundStatus(progress) == RoundStatus(rounds: 3, roundsDone: 1, minutesToNext: 2))
+        // The streak step ends at 8 cards: 9 are done, and the goal ends at 20, eleven cards and 165 s on: three minutes up.
+        #expect(RoundStatus(progress) == RoundStatus(rounds: 2, roundsDone: 1, minutesToNext: 3))
     }
 
     @Test func theWordsInMemoryAreShownRoundedDownWithTheDaysGain() {

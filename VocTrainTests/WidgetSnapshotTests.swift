@@ -141,21 +141,21 @@ struct WidgetSnapshotTests {
     }
 
     @Test func theSnapshotKeepsTheRoundsAndTheWordsOfTheProgress() throws {
-        let rounds = DayRounds(otherCards: 20, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), capacity: 3)
-        #expect(rounds.ends == [8, 16, 20])
+        let rounds = DayRounds(otherCards: 20, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), seconds: 360)
+        #expect(rounds.ends == [8, 20])
         let progress = DailyProgress(
             ring: DailyRing(done: 12, goal: 20), streak: Streak(days: 7, repairCards: nil), roundPlan: rounds, streakKeptToday: true,
             memory: MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2))
         let now = Fixtures.date(22, 10, 20)
         let snapshot = WidgetSnapshot(now: now, progress: progress, dates: [now], dueByDeck: [[8]], nextReminder: nil)
-        #expect(snapshot.rounds == 3 && snapshot.roundsDone == 1)
-        // From 12 done to the end of round 2 at 16: four cards at 15 s.
-        #expect(snapshot.minutesToNextRound == 1)
+        #expect(snapshot.rounds == 2 && snapshot.roundsDone == 1)
+        // From 12 done to the goal at 20: eight cards at 15 s, two minutes.
+        #expect(snapshot.minutesToNextRound == 2)
         #expect(snapshot.wordsInMemory == 28 && snapshot.wordsToday == 15)
         #expect(WidgetSnapshot.decoded(from: try snapshot.encoded()) == snapshot)
 
         let state = snapshot.state(at: now, calendar: Fixtures.studyCalendar)
-        #expect(state.roundStatus == RoundStatus(rounds: 3, roundsDone: 1, minutesToNext: 1))
+        #expect(state.roundStatus == RoundStatus(rounds: 2, roundsDone: 1, minutesToNext: 2))
         #expect(state.wordsInMemory == 28 && state.wordsToday == 15)
         // The next study day only has a forecast: no rounds, and the words are not the same after a night.
         let tomorrow = snapshot.state(at: Fixtures.date(23, 10), calendar: Fixtures.studyCalendar)

@@ -1,11 +1,11 @@
 import Foundation
 
 /// What the figures of a `DailyProgress` are made of, for the screen that shows how the day works: the
-/// parts of the plan, how the day's new cards are shared among the decks, the capacity and the ring of
+/// parts of the plan, how the day's new cards are shared among the decks, the time and the ring of
 /// the last days, and what the pace is worked out from. Read-only, and derived from the same decks and
 /// logs as the progress it is made for, so it shows what the progress holds and nothing else.
 // ponytail: the pace window below follows `DailyGoal.pace(days:newDone:otherDone:)` line by line, because
-// that keeps its steps to itself; `DayBreakdownTests` holds the two together. The days of the capacity are
+// that keeps its steps to itself; `DayBreakdownTests` holds the two together. The days of the time are
 // the ones `DailyProgress.evaluate` stepped through (`DailyProgress.ringDays`), not a second loop.
 public struct DayBreakdown: Hashable, Sendable {
     /// The plan as it stood when the study day began, over all decks.
@@ -36,10 +36,8 @@ public struct DayBreakdown: Hashable, Sendable {
     public struct Day: Hashable, Sendable {
         /// When the study day began.
         public var start: Date
-        /// How many rounds the day held: the ring asked that many times `DailyGoal.roundSeconds`.
-        public var capacity: Int
-        /// The step from the capacity of the day before: +1, 0 or -1; 0 on the first day.
-        public var step: Int
+        /// The seconds of work the day's ring asked.
+        public var time: Double
         /// Whether the day's ring was closed (done at least the goal); today's only for now.
         public var isClosed: Bool
         /// The seconds of work the day's cards took at the day's own prices; today's so far.
@@ -98,7 +96,7 @@ public struct DayBreakdown: Hashable, Sendable {
 
 extension DayBreakdown {
     /// Takes apart the `progress` of `decks` at `now`, which `DailyProgress.evaluate(_:at:calendar:)` gave for
-    /// the same decks: `lastDays` study days of capacity and rings are kept.
+    /// the same decks: `lastDays` study days of time and rings are kept.
     ///
     /// A paused deck (`DeckActivity.isPaused`) is left out, as `evaluate` leaves it: its entry in `decks` is
     /// all zeros.
@@ -120,11 +118,9 @@ extension DayBreakdown {
         // The size and the ring of every day, from the first study day on, as `evaluate` stepped through them.
         let sized = progress.ringDays
         rule = progress.ringRule
-        days = sized.indices.suffix(lastDays).map { index in
-            let day = sized[index]
-            return Day(
-                start: calendar.start(ofDay: day.day), capacity: day.capacity, step: index > 0 ? day.capacity - sized[index - 1].capacity : 0, isClosed: day.closed,
-                worked: day.worked, reason: day.reason)
+        days = sized.suffix(lastDays).map { day in
+            Day(
+                start: calendar.start(ofDay: day.day), time: day.time, isClosed: day.closed, worked: day.worked, reason: day.reason)
         }
 
         // The plan at the day's start, by kind, and each deck's part of the new cards.

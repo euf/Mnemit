@@ -247,7 +247,7 @@ Stability. Use only in the context of the import.
 
 Terms of the fork. Each entry gives the term in code, the words on screen (EN / DE) and the
 Russian word. The rule behind them: **a card is never a review, and a review is never a card.**
-A day is measured in cards; reviews only price the time. The day is cut into short rounds, and the app learns how many of them
+A day is measured in cards; reviews only price the time. The day has a time in seconds, and the app learns it from the work
 the learner really does.
 
 **Review** (on screen: not counted; RU «оценка»):
@@ -263,27 +263,27 @@ cards in learning, and new cards within the day's limits and the deck's allowanc
 (`StudySession.counts`, `newCardAllowance`).
 _Avoid_: session, queue, due count
 
-**Round** (RU «раунд»):
-A stretch of the day's work: 120 s at the learner's pace (`DailyGoal.roundSeconds`). A card costs
-the pace of its kind, new at the day's start or other. Round k ends at the first card where the
-cost reaches k × 120 s, and the last round ends at the goal; a card that costs more than a round
-ends the rounds it spans (`DayRounds.ends`). The first round keeps the streak
-(`DailyProgress.streakKeptToday`). `DailyProgress` holds `rounds`, `roundsDone`, `roundEnds`,
-`cardsToNextRound` and `minutesToNextRound`, at the pace the day began with. A day that began with
-an empty plan cuts the cards as they stand into rounds. No screen names a round but How Today Works:
-it is the unit the day's time is learned in (`references/learning-flow.md`).
-_Avoid_: session, lap, segment
+**Streak step** (RU «шаг стрика»):
+The cards of the plan that fit the first 120 s of work at the learner's pace (`DailyGoal.streakSeconds`).
+A card costs the pace of its kind, new at the day's start or other. The step ends at the first card
+where the cost reaches 120 s, and the goal ends the day: `DayRounds.ends` has at most two ends, one
+when they coincide. Doing the step keeps the streak (`DailyProgress.streakKeptToday`) and Study rests
+there once; the goal is the ring's rest. `DailyProgress` holds `rounds` (the number of ends),
+`roundsDone`, `roundEnds`, `cardsToNextRound` and `minutesToNextRound`, at the pace the day began with.
+A day that began with an empty plan cuts the cards as they stand. Only How Today Works names the step
+(`references/learning-flow.md`).
+_Avoid_: round, session, lap, segment
 
-**Capacity** (RU «ёмкость дня»):
-How many rounds the day holds, 1 to 15 (`DailyProgress.capacity`). It comes from the review logs
-alone, forward from the first study day, so every device that reads the same logs gets the same: 2
-on the first day; each later day follows the work done (`DailyGoal.ringRule` is `.follows`,
-`DailyGoal.nextTime(for:after:)`): the median of the work of the last seven study days, a tenth more
-(a probe) after three closed rings in a row, 30 % less the day after a missed day, in whole rounds.
-`.rounds`, the earlier rule, stepped one round from the day before
-(`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`). The capacity sets the day's
-time, capacity × 120 s.
-_Avoid_: limit, quota, level
+**Day's time** (RU «время дня»):
+The seconds of work the day asks, 120 to 1800, never rounded (`DailyProgress.time`). It comes from the
+review logs alone, forward from the first study day, so every device that reads the same logs gets the
+same: 240 s on the first day; each later day follows the work done (`DailyGoal.ringRule` is `.follows`,
+`DailyGoal.nextTime(for:after:)`): the median of the work of the last seven study days, a tenth more (a
+probe) after three closed rings in a row, 30 % less the day after a missed day. `.rounds`, the earlier
+rule, stepped one round of 120 s from the day before
+(`DailyGoal.nextCapacity(after:yesterdayClosed:dayBeforeClosed:)`). The day's time sets the goal and the
+admission of new cards.
+_Avoid_: capacity, limit, quota, level
 
 **Admission** (new-card allowance; RU «допуск новых»):
 The new cards a day takes in: the time of the day less the day's plan cards that are not new, at
@@ -298,7 +298,7 @@ _Avoid_: new-card limit, daily new cards
 **Daily goal** (the K of "M of K cards" / „M von K Karten“; RU «цель дня»):
 The cards of the plan, as it stood when the study day began at 04:00, that fit the day's time:
 learning cards and reviews in the stream's order, then new cards, at the day's prices, up to the
-capacity in rounds; at least one card if the plan has any (`DayRounds.goal`). With admission the
+time in seconds; at least one card if the plan has any (`DayRounds.goal`). With admission the
 plan normally fits. After a break the reviews beyond the day's time stay in the plan and go to the
 laps. The goal stays for the day: cards added later, "+10 new" and an Again don't raise it. A day
 that began with an empty plan takes the plan as it stands (`DailyGoal.goal`).
@@ -331,9 +331,9 @@ nothing. Done cards beyond the goal fill **laps** (×2, ×3): catch-up and extra
 closed at done ≥ goal, in whole cards.
 
 **Streak** (RU «стрик»):
-Study days in a row that kept it. A day keeps it with its first round done (done ≥ the end of
-round 1); an empty plan counts. One missed day is repaired when the next day closes its ring
-(done ≥ goal): the first round of that day is not enough, and then the streak starts anew with
+Study days in a row that kept it. A day keeps it with its streak step done (done ≥ the first end of
+`DayRounds.ends`); an empty plan counts. One missed day is repaired when the next day closes its ring
+(done ≥ goal): the streak step of that day is not enough, and then the streak starts anew with
 it. Two missed days in a row end the streak. Days before `DailyGoal.planRuleStart` (23.10.2026)
 count with one review.
 
@@ -370,7 +370,7 @@ how many cards are left, and keeps one price: the time left over the cards left.
 _Avoid_: seconds per review, seconds per answer
 
 **Stream** (Study; RU «поток»):
-Study without sessions: the plan, with a rest after its first round ("Streak kept"), then a rest
+Study without sessions: the plan, with a rest after its streak step ("Streak kept"), then a rest
 at the ring ("Ring closed"), then catch-up and practice (`StudyStream`). A card is never reviewed
 before it is due.
 _Avoid_: session (except for the upstream types that still carry the name)
@@ -414,7 +414,7 @@ _Avoid_: duplicate (a duplicate is an equal question in one deck), merge, «ду
 **Paused deck** (on screen: "Pause Deck", "Resume Deck", "Paused" / „Stapel pausieren“, „Stapel fortsetzen“,
 „Pausiert“; RU «колода на паузе»):
 A deck the learner paused (`LearningOptions.isPaused`, the key `paused` in `deck.json`, written only while
-true): it takes no part in the day. It is left out of the plan, the goal, the rounds, the capacity, the
+true): it takes no part in the day. It is left out of the plan, the goal, the streak step, the day's time, the
 admission of new cards (the allowance is split over the other decks), the streak, the words in memory, the
 widget, the reminders, Study on Today and the "Next: …" after a stream (`DailyProgress.evaluate`,
 `DeckActivity.isPaused`). It stays open: its screen, the card browser and "Study This Deck" work, and the
