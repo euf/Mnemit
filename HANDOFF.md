@@ -62,19 +62,30 @@ In order of importance to EF. Brief sub-agents by `references/agent-token-costs.
    word's first showing as an introduction, not a red Forgot; an empty Today whose first button is "Add
    Words" and makes a deck; FSRS figures (RMSE, log loss) for Anki users; Anki import fidelity (cloze,
    several media per side) and an export back with history.
-5. **Rewrite the git history in English.** Only the fork's commits (`git log --author=euf`, 112 with
+5. **Decisions to revisit by evidence** (`references/decisions-evidence.md`, 23.10: ten checked, none to
+   change, four to measure on EF's own log):
+   - The day's time (§2): replay the ring rule's variants (probe +10 % / +5 % / none, cooldown 7 / 14 / 21
+     days, after-miss factor 0.7 / 0.85 / 1.0) on the log; keep the closure rate at 80-90 % of study days;
+     needs 60 study days.
+   - Rests (§4): Forgot rate and `ms` by minute in streams of 15+ minutes against 1 - R; add a skippable
+     rest at the minute where either climbs.
+   - Backlog order (§5): ascending against descending retrievability in the open-spaced-repetition
+     sort-order simulator with EF's fitted parameters, at the first backlog over 100 cards.
+   - Production cards (§6): the Forgot share of the first two production reviews; over 25 % lifts the
+     7-day gate to 14, at or below 10 % under a gate of 14 or more lowers it; wait for 100 reviews.
+6. **Rewrite the git history in English.** Only the fork's commits (`git log --author=euf`, 112 with
    Russian messages); upstream's stay. `git-filter-repo` with a commit callback mapping hash → message;
    a fresh clone as a reserve; `git push --force-with-lease origin main`; then fix the hash in State. Do it
    when no agent branches exist (`git branch | grep worktree-agent` empty).
-6. **The Mac suite on `main` hasn't been run** (the tests open windows; `~/.claude/ui-blocked` was up).
+7. **The Mac suite on `main` hasn't been run** (the tests open windows; `~/.claude/ui-blocked` was up).
    Known failures when the test app isn't in front: `CardListViewTests.firstClickIntoTableSelectsRow` and
    `focusedTableHandsFocusToNewTableWhenSorted`.
-7. **Known behaviour, decide on complaint:** after "Done for today" in all decks, Keep Going runs on the
+8. **Known behaviour, decide on complaint:** after "Done for today" in all decks, Keep Going runs on the
    deck of the last card; pace starts from defaults until 20 timed reviews; xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
    arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another.
-8. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
+9. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
    duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
-9. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
+10. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
    (store the chosen date in the log first); hiding siblings across decks once pairs exceed 1 %
    (`references/cross-deck-overlap.md`); a listening mode.
