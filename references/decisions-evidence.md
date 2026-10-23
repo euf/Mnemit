@@ -32,9 +32,12 @@ probe for 14 days after a failed one; 70 % of base the day after a miss; clamp 2
 
 - `goal-setting-research.md` ("Implications for the ring rule") already finds the learned base sound,
   the probe size, the 14 days and the 70 % unsourced, and asks for a replay on EF's log. Opinion.
-- The +10 % step is the running "10 % rule". The one randomised trial of it, a 13-week graded programme
-  in novice runners, found no effect on injuries. Buist et al., Br J Sports Med 2008,
-  https://pubmed.ncbi.nlm.nih.gov/17940147/ (snippet). Measured, other domain.
+- The +10 % step is the running "10 % rule". Its one randomised trial (GRONORUN, 532 novice runners): a
+  13-week programme raising volume by 10 % a week against a standard 8-week one gave the same injury rate,
+  20.8 % against 20.3 % (P = .90), and the same compliance, 66.4 % against 64.5 % of the sessions done.
+  Buist et al., Am J Sports Med 2008;36(1):33–39, doi 10.1177/0363546507307505, read from the PDF. Measured,
+  other domain: a slower climb neither protected nor kept people at it, so the 10 % carries no evidence of
+  its own; the probe's size stays a parameter to replay on EF's log.
 - Duolingo: the highest daily-goal tier produced the fewest streaks
   (https://blog.duolingo.com/improving-the-streak/, via `learning-flow-research.md`). Measured (company).
 - Lally 2010: one missed day moved automaticity by under half a point, repeated misses untested
