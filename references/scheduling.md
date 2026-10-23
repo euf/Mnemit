@@ -86,7 +86,9 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
   left, Push On.
 - Push On is the only way past the end: `addNewCards(_:)`, `StudyStream.newCardChunk` (10) new cards beyond
   the limits. Over several decks `StudyModel` shares them out one at a time to the deck that has given the
-  fewest new cards (`pushOnCounts`), and the stack asks them mixed (`mostUrgentLane()`).
+  fewest new cards (`pushOnCounts`), and the stack asks them mixed (`mostUrgentLane()`). Push On puts every
+  round behind the stream (`roundsPassed = .max`): its cards lie beyond a closed ring, and no rest of a round
+  comes after them.
 - Undo runs through the whole stream: the `UndoCompanion` snapshot is the whole `StudyStream` value.
 - "Practice Mistakes" and "Practice Newest Words" are entries to separate streams
   (`practicingMistakesIn:`, `practicingNewestWordsIn:`) from the deck screen and the Mac's menu; they

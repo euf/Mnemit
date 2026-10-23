@@ -47,9 +47,19 @@ struct SessionView: View {
             header
             Divider()
             if model.isResting {
-                StreamRestView(
-                    rest: model.rest, progress: ring.progress,
-                    onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose)
+                // A rest with a medal and Push On's line is taller than a short window: it scrolls
+                // under the header instead of pushing the header out of the window, and is centred
+                // as before when it fits.
+                GeometryReader { proxy in
+                    ScrollView {
+                        StreamRestView(
+                            rest: model.rest, progress: ring.progress,
+                            onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose
+                        )
+                        .frame(minHeight: proxy.size.height)
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                }
             } else if let card = model.currentCard {
                 cardArea(card)
             }

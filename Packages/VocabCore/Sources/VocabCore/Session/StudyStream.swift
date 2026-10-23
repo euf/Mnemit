@@ -214,7 +214,10 @@ public struct StudyStream: Sendable {
             deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: random.next()), reviewMode: reviewMode, extraNew: count,
             newCardAllowance: newCardAllowance)
         guard !plan.session.isFinished else { return false }
-        continueRound()
+        // Push On goes past the end of the day's stack: every round is behind it, so no rest of a round
+        // comes again (the new cards lie beyond a ring that is already closed).
+        roundRest = nil
+        roundsPassed = .max
         install(.study(plan), as: .plan)
         return true
     }

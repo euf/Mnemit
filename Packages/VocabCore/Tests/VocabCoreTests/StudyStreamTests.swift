@@ -193,6 +193,21 @@ struct StudyStreamTests {
         #expect(stages == [.plan, .rest])
     }
 
+    @Test func pushOnAsksItsNewCardsWithoutAnotherRestOfTheRing() throws {
+        var run = try run([review("due"), fresh("extra")], newCardAllowance: 0)
+        let ends = [1]
+        run.grade(.good)
+        settle(&run, ends: ends)
+        #expect(run.stream.stage == .rest)
+        #expect(run.stream.roundRest == nil)
+        let added = run.stream.addNewCards(StudyStream.newCardChunk, in: run.deck, at: now, calendar: calendar)
+        #expect(added)
+        // The ring's round is done, and the new card lies beyond it: the stack asks it at once.
+        settle(&run, ends: ends)
+        #expect(!run.stream.isResting)
+        #expect(run.stream.session.currentCardID == run.deck.cards[1].id)
+    }
+
     @Test func theStackEndsWithThePlanAndNothingIsAskedBeforeItIsDue() throws {
         var run = try run([review("ahead", interval: 10, dueInDays: 5)])
         #expect(run.stream.stage == .rest)
@@ -465,7 +480,7 @@ struct StudyStreamTests {
         #expect(run.stream.roundsPassed == 1)
     }
 
-    @Test func newCardsAddedAtARestGoOnWithTheRound() throws {
+    @Test func newCardsAddedAtARestLeaveNoRestOfARoundBehind() throws {
         var run = try run([review("r1"), review("r2"), fresh("n1"), fresh("n2")])
         // A new card graded Good is still in its steps, so the cards are graded until two are done.
         while run.deck.doneCards(onDayOf: now, calendar: calendar) < 2 { run.grade(.good) }
@@ -474,7 +489,10 @@ struct StudyStreamTests {
         let added = run.stream.addNewCards(2, in: run.deck, at: now, calendar: calendar)
         #expect(added)
         #expect(!run.stream.isResting)
-        #expect(run.stream.roundsPassed == 1)
+        // Push On goes past the rounds: the end of the last one is no rest either.
+        while run.deck.doneCards(onDayOf: now, calendar: calendar) < 4, run.stream.session.currentCardID != nil { run.grade(.good) }
+        settle(&run, ends: [2, 4])
+        #expect(run.stream.roundRest == nil)
     }
 
     @Test func aPracticeOnlyStreamNeverRestsInsideItself() throws {

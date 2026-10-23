@@ -129,7 +129,8 @@ sizes: `design-spec.md` §4.
   - The end of the plan: "Ring closed", or "Done for today" when the plan ran out with the ring open;
     the same figures. **Done** (prominent) and, while a deck has new cards, **Push On** (bordered)
     with "More reviews in the days ahead" under it. Push On adds ten new cards beyond the limits and
-    goes on; it is the only way past the end of the plan.
+    asks them at once, with no rest after; it is the only way past the end of the plan. On the Mac a rest
+    taller than the window scrolls under the header (`SessionView`).
   - *Practice complete*: its figures (cards, share recalled) and **Done**.
 - Frames: `VocTrainTests/StudyScreenSnapshotTests`.
 

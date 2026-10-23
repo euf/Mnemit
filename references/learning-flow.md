@@ -52,8 +52,8 @@ up the count, and Study goes on where the stack was.
 ### Push On raises the stakes
 
 - **What it adds.** Ten new cards beyond the daily limits, from every deck that has new cards left, one at a time to
-  the deck that has given the fewest so far, and asked mixed as the plan is. No count to choose: FSRS keeps deciding
-  which cards come.
+  the deck that has given the fewest so far, and asked mixed as the plan is, at once and without another rest. No
+  count to choose: FSRS keeps deciding which cards come.
 - **What it costs.** Each new card comes back as reviews. Ten cards bring about 2 reviews the next day, 8 the day after,
   3 on the third, 12 more over days 4 to 14, then a thin tail (FSRS-6 defaults with Mnemit's fuzz, `cards.py --echo`: short
   intervals are not fuzzed, so the first return is a peak, and the later ones spread). Reviews come first in the plan, so the peak
