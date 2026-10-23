@@ -21,7 +21,7 @@ Research for Mnemit, 21–22.10.2026. Confidence: **[S]** from the cited source 
 
 **In Mnemit:** four grades; Forgot (red, ←) is set apart from the three "recalled" grades
 (greens: ↓ Hard, → Good, ↑ Easy). The swipe sectors leave dead zones between ← and ↑/↓
-(`GradeSwipe`, `references/design-spec.md` §4.7), so the costly slip needs a deliberate gesture.
+(`GradeSwipe`, `references/study-screen.md`, "Swipe"), so the costly slip needs a deliberate gesture.
 
 ## 2. FSRS vs SM-2
 

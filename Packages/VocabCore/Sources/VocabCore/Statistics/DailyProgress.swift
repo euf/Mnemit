@@ -17,8 +17,8 @@ import Foundation
 /// Reviews, the grades in the logs, count for the streak's first day and for the pace
 /// (`pace(days:newDone:otherDone:)`), never for the goal or the ring. A day keeps the streak when its streak
 /// step is done, an empty plan included: nothing was due, so memory is where FSRS wants it; a day closes
-/// its ring when its goal is done. Cards done count in every mode: the plan, catch-up, review ahead and
-/// anything else the study stream asks. Practice changes no card and writes no review, so it doesn't count.
+/// its ring when its goal is done. Cards done count in every mode: the plan, Catch Up, Push On and
+/// anything else the day's stack asks. Practice changes no card and writes no review, so it doesn't count.
 ///
 /// Everything that sets the size of a day is here: a cap on the goal or the length of the streak step is a change
 /// of this type.

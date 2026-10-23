@@ -255,7 +255,7 @@ struct TodayScreen: View {
 }
 
 /// The one prominent button of the screen. With nothing due it is not prominent: Keep Going
-/// opens the stream at its rest, which offers review ahead and new cards.
+/// opens the stack at its end, where Push On offers new cards.
 struct StudyButton: View {
     /// Whether to study: cards are due, or the decks are not read yet.
     var isDue: Bool

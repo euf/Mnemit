@@ -1,7 +1,7 @@
 # The learning flow: one day, one ring, one streak
 
 What the learner sees and does from opening the app to closing the ring, and which parts of 4.0 go.
-Evidence: `learning-flow-research.md` (Duolingo, Apple rings, Anki and FSRS, Brainscape, Quizlet,
+Evidence: `day-model-research.md`, Part 3 (Duolingo, Apple rings, Anki and FSRS, Brainscape, Quizlet,
 Clozemaster). Rules behind the numbers: `daily-ring.md`; terms: `GLOSSARY.md`, section "Mnemit".
 
 ## Verdict
@@ -27,7 +27,7 @@ only Push On puts more cards in it.
 
 Every number of the day's time comes from a measurement on synthetic learners and on the logs of 2,000 Anki users,
 with the alternatives that lost: `ring-design.md`. A learner who stops at the ring has closed it, so the day's time
-grows. The 2-minute streak step stays a choice (`decisions-evidence.md` §3).
+grows. The 2-minute streak step stays a choice (`ring-design.md`, "The streak step").
 
 ## The journey
 
@@ -169,9 +169,9 @@ Under them: "13-day streak · kept today" and "≈ 412 words in memory · +15 to
 a moment, "in 8 days"), the close button. Closing loses nothing; Today picks up the count.
 
 **The stack.** The card on top lies on the sheets under it, drawn as the edges of a book's pages:
-under its bottom edge hairline outlines with its corner radius, each 3 pt lower and 2 pt narrower
-on each side than the one above it, fainter with depth; `min(cards left − 1, 5)` of them, so a long
-day looks thick and the last six thin out one line at a time.
+under its bottom edge hairline outlines with its corner radius, each 6 pt lower and 6 pt narrower
+on each side than the one above it, fainter with depth; `min(cards left − 1, 4)` of them (`StackPose`), so
+a long day looks thick and the last five thin out one line at a time.
 - Graded, the card goes on with the finger and leaves past the edge of the screen. Nothing rides on
   it: a label on a card that is leaving is never read.
 - Done (another day): the deepest line fades, the stack moves up a step, the next card rises from
@@ -258,9 +258,9 @@ reads "12-day streak · at risk" with a grey flame. When that ring closes, the R
 title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
 
 **Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
-dates, the next tier as a grey medal (a dashed outline, the line's symbol and its hint in tertiary grey, an earned
-one on a gradient of the accent with a shadow) with how far there is to go ("12 of 14 days"), and nothing of the
-tiers after it: there is always one more to find. A line that repeats shows how often as a badge on the disc,
+dates, the next tier as a grey medal (a dashed outline and the line's symbol in tertiary grey, an earned one on a
+gradient of the accent with a shadow) without a count of how far there is to go (Deci, Koestner & Ryan 1999:
+`ring-design.md`, "Medals and the monthly recap"), and nothing of the tiers after it: there is always one more to find. A line that repeats shows how often as a badge on the disc,
 never in the title.
 
 **Emoji or SF Symbols.** An earned medal's face is an emoji, for colour and the moment of joy; it is

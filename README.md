@@ -144,7 +144,7 @@ are in [`references/`](references/).
   time instead of becoming a wall. The target recall stays at 0.9, the value Anki's guide calls
   a good balance, and only the time adapts. Push On is the one way past the time, and
   says what it costs. Sources and measurements: [`ring-design.md`](references/ring-design.md),
-  [`ring-design-research.md`](references/ring-design-research.md) §3.
+  [`day-model-research.md`](references/day-model-research.md), Part 1 §3.
 - **FSRS-6, fitted per deck, without a button.** Each deck starts with the default
   parameters, or with the FSRS settings of the Anki preset it was imported from. The
   optimizer (a Swift port of fsrs-rs 6.6.2, checked against it and against py-fsrs reference
@@ -256,7 +256,10 @@ xcodebuild test -project MacVocTrainNg.xcodeproj -scheme VocTrain -destination '
 
 ## Documentation
 
-- [`references/flows.md`](references/flows.md): the screens and flows on both platforms.
+- [`references/learning-flow.md`](references/learning-flow.md): the learner's day, its rules and paths;
+  [`references/ring-design.md`](references/ring-design.md): why, with every alternative measured;
+  [`references/daily-ring.md`](references/daily-ring.md): how the code computes it.
+- [`references/screens.md`](references/screens.md): every screen on both platforms.
 - [`references/design-spec.md`](references/design-spec.md): layout, colour, type, swipe
   sectors, rings.
 - [`references/fsrs-research.md`](references/fsrs-research.md),

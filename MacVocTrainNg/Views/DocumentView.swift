@@ -276,8 +276,8 @@ struct DocumentView: View {
     }
 }
 
-/// The prominent "Study" button of the toolbar. The stream it opens has no end, so the button
-/// works once the plan is done, too, and offers practice; the menu command
+/// The prominent "Study" button of the toolbar. Once the plan is done it opens the stack at its
+/// end, where Push On offers new cards; the menu command
 /// Study ▸ Study is its twin.
 private struct StartStudyButton: View {
     var dueCards: DueCardCounter

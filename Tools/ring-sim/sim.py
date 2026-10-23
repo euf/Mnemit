@@ -5,7 +5,7 @@
 # ///
 """Ring-time simulation: which rule should learn the day's time T from the work done?
 Usage: sim.py [--real <folder with anki-revlogs-10k parquet files>] [--seeds 200] [--detail] [--selftest]
-Model, scenarios and the numbers behind the choice: references/ring-simulation.md."""
+Model, scenarios and the numbers: Tools/ring-sim/minutes.md."""
 import argparse, glob, os
 from itertools import product
 import numpy as np

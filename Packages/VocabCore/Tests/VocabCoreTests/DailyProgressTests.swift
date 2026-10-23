@@ -950,7 +950,7 @@ struct DailyProgressTests {
         reviewPlan(of: &deck, at: now)
         #expect(evaluate([deck]).ring == DailyRing(done: 8, goal: 8))
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 0)
-        // "+10 new", here five: the limit of the day is used up, the stream asks for them on top.
+        // Push On, here five: the limit of the day is used up, the stack asks for them on top.
         var extra = StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: 1), reviewMode: .revealed, extraNew: 5)
         while let id = extra.session.currentCardID {
             deck.cards[deck.index(of: id)!] = extra.review(.good, of: deck.card(withID: id)!, with: deck.learningOptions, at: now, calendar: calendar)!

@@ -1,10 +1,11 @@
 # The ring: what a day asks, how it moves, when it closes
 
 The decision of 23.10.2026 (Mnemit 5.5, the step of T from 5.6) and the measurements behind each part of it. The rules as code: `DailyGoal`
-(`daily-ring.md`); the screens: `learning-flow.md`. Sources: `ring-design-research.md` (adaptive daily goals, persistence,
-workload), `goal-setting-research.md`, `learning-flow-research.md`, `decisions-evidence.md`. Measurements, all in
-`Tools/ring-sim/`: `real.py` (statistics of 2,000 Anki users, `real-stats.md`), `sim.py` (rules for the day's time on minutes
-alone, `ring-simulation.md`), `cards.py` (FSRS-6 cards under each rule: words in memory, backlog, the first two weeks).
+(`daily-ring.md`); the screens: `learning-flow.md`. Sources: `day-model-research.md` (adaptive daily goals, persistence,
+workload; goal setting and habits; comparable products); the evidence for the day's other decisions is the last section here.
+Measurements, all in `Tools/ring-sim/`: `real.py` (statistics of 2,000 Anki users, `real-stats.md`), `sim.py` (rules for the
+day's time on minutes alone, `minutes.md`), `cards.py` (FSRS-6 cards under each rule: words in memory, backlog, the first two
+weeks).
 
 The aim: a newcomer is drawn in over the first two weeks, and an Anki user finds the reviews at least as well kept as in Anki,
 with no settings.
@@ -20,15 +21,14 @@ with no settings.
    goal), which neither counts nor breaks the run, and after a day without study. The learner is never told the rule: the
    screens show cards, How Today Works says only which way the time went.
 4. **Start and range.** 2.5 minutes before any study; 2 minutes to an hour.
-5. **Closure.** The cards done reach the goal; each answer recalled moves the ring by its share of a card (`decisions-evidence.md`
-   §1).
+5. **Closure.** The cards done reach the goal; each answer recalled moves the ring by its share of a card (below, "Partial credit on the
+   ring").
 6. **The streak** stays apart: the first 2 minutes of cards keep it, the next closed ring repairs one missed day
-   (`decisions-evidence.md` §3).
+   (below, "The streak step").
 
-Changed from 5.4: the start (4 minutes), the ceiling (30 minutes), the hold on a smaller plan (5.4 grew T on every closed ring),
-and the bound that held today's new cards to what the next week could carry (removed). Changed in 5.6: the step, × 1.15 after
-two closed rings in a row where 5.5 gave × 1.075 after each. The stack of the day ends with the plan; Push On, ten new words
-beyond the limits, replaced "+10 new" and its forecast and leaves T as it is (`learning-flow.md`, "The journey").
+The stack of the day ends with the plan; Push On, ten new words beyond the limits, leaves T as it is (`learning-flow.md`,
+"The journey"). Earlier rules (5.4: a start of 4 minutes, a ceiling of 30, no hold, a bound by the next week; 5.5: × 1.075
+after each closed ring) are rows of "The alternatives".
 
 ## How load is managed elsewhere, and where the ring stands
 
@@ -40,7 +40,7 @@ budget from the learner's behaviour: everyone else asks for it.
 | A review limit with new cards under it | When the day's review limit is reached no new card is shown (Anki's default: "New cards ignore review limit" off); with a backlog, stop introducing new cards, as they "can make the backlog worse" | [Anki Manual, Deck Options](https://docs.ankiweb.net/deck-options.html) | The ring: T is the limit in seconds, due cards come first, new cards take what is left |
 | The retention target | The main lever on the load: above 90 % it climbs fast, above 97 % it can overwhelm; the manual's simulator ("Help Me Decide") draws a personal retention-workload graph and asks how many minutes a day one can really spend | same | Fixed per deck (0.9); the ring does not move it |
 | Spreading the load | Anki's built-in load balancer (since 24.11) picks the due day inside the fuzz range by the load of each day; Easy Days lightens chosen weekdays; FSRS Helper adds flatten, postpone and advance | `rslib/src/scheduler/states/load_balancer.rs`; [Anki Forums, 2025](https://forums.ankiweb.net/t/force-load-balancing-with-lots-of-unbalanced-reviews/54894) | Fuzz only, no balancing (measured below) |
-| New cards by a leading signal | New cards are released while the pool of young cards is under a cap | the add-on Limit New by Young (`ring-design-research.md` §3) | No |
+| New cards by a leading signal | New cards are released while the pool of young cards is under a cap | the add-on Limit New by Young (`day-model-research.md`, Part 1 §3) | No |
 | The reason for all of it | A queueing model of the Leitner system shows a sharp phase transition: once new items arrive faster than reviews can serve, learning collapses; a Mechanical Turk experiment confirmed it | Reddy, Labutov, Banerjee, Joachims, KDD 2016, [arXiv:1602.07032](https://arxiv.org/abs/1602.07032) | New cards stay under the time, as above |
 
 Anki's load balancer, as its source code has it: only intervals up to 90 days are balanced, within the usual fuzz range; a
@@ -78,9 +78,9 @@ the parameters.
 | Part | Measured | Source |
 |---|---|---|
 | The day in seconds, on screen in cards | A new card's day costs 1.9 times an other card's at the median user (18.2 s against 9.2 s; means 29.9 s and 16.8 s), so a count of cards would be a different day on a day of new words | `real-stats.md` §3 |
-| Due cards first, cut at T | Uncut, real users who stop at the ring keep 1.9 cards overdue a day instead of 4.6, and for eager ones the largest ring averages 124.4 minutes and the longest open run 9.8 days (cut: 21.4 and 3.6) | Anki manual: a review limit paces a backlog (`decisions-evidence.md` §5); returns after 4-30 missed days start at 0.87 of the usual minutes (`real-stats.md` §6) |
-| New cards in the time left | The bound that looked a week ahead set the allowance on no study day of the newcomers or the real users, and on 0.3-0.7 % of a veteran's days | the Anki manual sizes new cards by the review load one can sustain; 8-10 reviews a day per daily new card at steady state (`ring-design-research.md` §3) |
-| The staircase, × 1.15 after two closed rings in a row / × 0.775 | The share of closed rings settles where p² ln 1.15 = (1 − p²) ln(1/0.775), p = 0.80, whatever the work: 0.852 for synthetic newcomers and 0.825 for real users with cards; the ring changes on 49 % of study days against 90 % under a step after every ring, for 3-5 % fewer words; rules that read the size of the work stall for a learner who stops at the ring | Levitt 1971, transformed up-down; adaptive goals beat fixed ones in the trials that compared them (`ring-design-research.md` §1) |
+| Due cards first, cut at T | Uncut, real users who stop at the ring keep 1.9 cards overdue a day instead of 4.6, and for eager ones the largest ring averages 124.4 minutes and the longest open run 9.8 days (cut: 21.4 and 3.6) | Anki manual: a review limit paces a backlog (below, "The backlog spread"); returns after 4-30 missed days start at 0.87 of the usual minutes (`real-stats.md` §6) |
+| New cards in the time left | The bound that looked a week ahead set the allowance on no study day of the newcomers or the real users, and on 0.3-0.7 % of a veteran's days | the Anki manual sizes new cards by the review load one can sustain; 8-10 reviews a day per daily new card at steady state (`day-model-research.md`, Part 1 §3) |
+| The staircase, × 1.15 after two closed rings in a row / × 0.775 | The share of closed rings settles where p² ln 1.15 = (1 − p²) ln(1/0.775), p = 0.80, whatever the work: 0.852 for synthetic newcomers and 0.825 for real users with cards; the ring changes on 49 % of study days against 90 % under a step after every ring, for 3-5 % fewer words; rules that read the size of the work stall for a learner who stops at the ring | Levitt 1971, transformed up-down; adaptive goals beat fixed ones in the trials that compared them (`day-model-research.md`, Part 1 §1) |
 | Hold on a smaller plan | Under a deck limit of 10 new cards a day and a 10-day break, 0.928 of rings close with the hold and 0.882 without it, longest open runs 1.4 and 2.0 days | a closed ring on a plan smaller than T says nothing of T |
 | Start 2.5 minutes | 77 % of the first week's study days of real Anki newcomers reach 2.5 minutes (3 min: 74.6 %, 4 min: 70.1 %, 2 min: 80.0 %): the share the tracker settles at | `real-stats.md` §5, 7,408 study days |
 | 2 minutes to an hour | The hour holds the median day of 92 % of users; the heavy veteran above | `real-stats.md` §2 |
@@ -113,12 +113,12 @@ Measured for 5.5 (40 seeds); the step of 5.6 is in its own table below.
 
 - **The closure target.** A harder ring buys words from a learner who stops at it and costs closed rings; an easier one the
   reverse. No source ties the share of met goals to persistence; the trials of adaptive goals met them on 33-58 % of days and still
-  beat fixed goals, and a failed assigned goal lowered later motivation in two experiments (`ring-design-research.md`,
-  `goal-setting-research.md` §1). 0.78 keeps the open rings to about one day in five and their runs to two days; the streak, kept
-  by two minutes, carries the habit (`decisions-evidence.md` §3). The skip after an open ring does not change the order of the
+  beat fixed goals, and a failed assigned goal lowered later motivation in two experiments (`day-model-research.md`,
+  Part 1 and Part 2 §1). 0.78 keeps the open rings to about one day in five and their runs to two days; the streak, kept
+  by two minutes, carries the habit (below, "The streak step"). The skip after an open ring does not change the order of the
   rules.
 - **Kaplan-Meier** reads the size of the work with censoring: on cards it closes more and keeps fewer words than the tracker, and on
-  minutes alone it trails the tracker on real users (`ring-simulation.md`). It needs a window and a test that tells a ring-stop from a
+  minutes alone it trails the tracker on real users (`Tools/ring-sim/minutes.md`). It needs a window and a test that tells a ring-stop from a
   lap.
 - **The closed share of the last seven days** reacts a week late: the same closure and words, open runs of
   2.9 days against 2.1.
@@ -126,6 +126,10 @@ Measured for 5.5 (40 seeds); the step of 5.6 is in its own table below.
   who stops at the ring: the work equals the ask, so the ask never grows (censoring).
 - **A fixed ring or Anki's queue** asks the same of a five-minute learner and a twenty-minute one: rings stay open on 38 % of a
   newcomer's days (10 minutes) and on 61 % (Anki's queue), in runs of a week and more.
+- **A +10 % probe and 70 % of the time after a missed day.** The one trial of a 10 % climb (Buist 2008, GRONORUN, 532
+  runners) found the same injuries, 20.8 % against 20.3 %, and the same compliance, 66.4 % against 64.5 %; one missed day is
+  harmless (Lally 2010, `day-model-research.md`, Part 2 §2). A day without study leaves T as it is, and only an open ring
+  lowers it.
 
 ### The step of T (5.6) and the rules tried on 23.10
 
@@ -197,7 +201,7 @@ day before; "first week" is the share of perfect first weeks.
   forgetting) is a ring of about one card for a newcomer, whose forgetting is near zero, and lets a veteran's backlog grow (529
   cards overdue a day for a 25-minute veteran with history, against 7.4): the learner who stops at it keeps 18.5 words where
   the chosen ring keeps 531.1. As a floor it has a meaning FSRS gives: the cards that keep memory where it was. Kept as a
-  candidate for the streak step (`decisions-evidence.md` §3), outside this decision.
+  candidate for the streak step (below, "The streak step"), outside this decision.
 
 ### The first two weeks
 
@@ -240,7 +244,7 @@ faster climb (× 1.15 until the first open ring, TCP's slow start: 0.700 perfect
 - **Data.** `open-spaced-repetition/anki-revlogs-10k`, users 1-2,000 (`fetch.py`, gated on Hugging Face), 144 million reviews.
   Daily minutes are the sum of review durations capped at 60 s (Anki's maximum answer time). `real.py` gives the statistics
   (`real-stats.md`). The first answer of a new card is Again for 22.5 % of new cards at the median user (p25 5.7 %, p75 40.7 %).
-- **Minutes alone** (`sim.py`): 706 rules over 14 synthetic scenarios and 1,921 real users, `ring-simulation.md`.
+- **Minutes alone** (`sim.py`): 706 rules over 14 synthetic scenarios and 1,921 real users, `Tools/ring-sim/minutes.md`.
 - **Cards** (`cards.py`): FSRS-6 with the default parameters at retention 0.9, a learner with a willingness in minutes a day
   (lognormal around a level, sigma 0.4-0.9, 10-30 % of days skipped), 120 days, 40 seeds per synthetic type, prices of 30 s a new
   card and 10 s an other card (`DailyGoal`'s defaults), a deck of 5,000 words, a limit of 20 new cards a day. The day's plan, the
@@ -264,8 +268,199 @@ faster climb (× 1.15 until the first open ring, TCP's slow start: 0.700 perfect
 
 ## What would reopen it
 
-- Mnemit's own log, 60 study days or more: a closure share outside 0.7-0.85, or open runs longer than three days.
+- Mnemit's own log, 60 study days or more (the Progress calendar and How Today Works, section 2, show it): a closure share
+  outside 0.7-0.85, or open runs longer than three days.
 - A study that ties the share of met daily goals to persistence: set the closure target from it (`target(c)` in `cards.py` gives
   the factors of a closure c).
 - Anki users who import without history (CSV) and stop at the ring: a veteran of 25 minutes then keeps 197.3 cards overdue a
   day for the first months while T climbs from 2.5 minutes; a start from the imported cards' due load would remove it.
+
+## Other decisions of the day and their evidence
+
+Nine more choices of `learning-flow.md`, `daily-ring.md` and the README ("Design choices") checked against the literature, FSRS
+and Anki community practice, and product reports (23.10.2026); the tenth, the day's time, is the rest of this file. The sources
+for goal setting and for comparable products are in `day-model-research.md` (Parts 2 and 3); `fsrs-research.md` and
+`production-cards-research.md` hold the rest.
+
+Confidence: measured (experiment, simulation, logged data), reported by several, single report, opinion.
+"Snippet" is a source seen only as a search result; "not read" returned no text.
+
+### Partial credit on the ring
+
+Decision: a card on its way counts recalled answers today / (those + steps still needed), never taken
+back; done = FSRS sent the card to another day.
+
+- Customers of a real coffee-card programme buy faster the nearer they are to the free coffee, and a
+  12-stamp card handed out with two stamps already on it is finished faster than a plain 10-stamp card.
+  Kivetz, Urminsky & Zheng, J. Marketing Research 2006,
+  https://home.uchicago.edu/ourminsky/Goal-Gradient_Illusionary_Goal_Progress.pdf. Measured.
+- Anki manual on FSRS: repeating a card several times in one day adds little to long-term memory, so keep
+  few steps, all under a day. https://docs.ankiweb.net/deck-options.html. Opinion of the maintainers.
+- No product read credits unfinished cards (`day-model-research.md`, Part 3); the formula is Mnemit's own.
+  No source found for "never taken back".
+
+**Keep.** Progress toward a goal moves effort in the measured studies, and the credit is capped at one
+card per card, so the ring cannot outgrow the work. The manual's point about same-day repeats concerns
+memory; the ring shows effort and counts as done only what FSRS sent away.
+
+### The streak step
+
+Decision: the first 120 s of the day's cards keep the streak; one missed day is repaired by closing the
+next day's ring; two missed days end it.
+
+- Separating the streak (one lesson) from the daily goal: day-14 retention +3.3 %, daily actives +1 %,
+  learners on a streak +10.5 % in 20 days (+19 % new learners), fewer learners reached the goal.
+  https://blog.duolingo.com/improving-the-streak/ (via `day-model-research.md`, Part 3, Duolingo item 7).
+  Measured (company A/B).
+- A screen after the streak extends, bigger on milestone days: day-7 retention +1.7 % for new learners.
+  https://blog.duolingo.com/how-duolingo-streak-builds-habit/. Measured (company A/B).
+- Up to two equipped Streak Freezes: daily actives +0.38 %; the slack study behind them
+  (https://www.sciencedirect.com/science/article/abs/pii/S0749597818304187) is a single report. Lally
+  2010 (`day-model-research.md`, Part 2 §2): one miss is harmless.
+- No source found for 120 s, for repair by a closed ring (a Freeze is bought beforehand and covers one
+  day), or for streak anxiety.
+
+**Keep.** The part with measurements, a streak kept by a minimal action apart from the goal, is in.
+The 120 s is one constant (`DailyGoal.streakSeconds`) and the one-day repair one rule (`Streak.evaluate`).
+Check on the log: the share of study days that kept the streak and left the ring open. Under 5 % makes
+the step a formality, over 40 % makes it do the ring's job (our thresholds); adjust the one constant.
+
+### Two rests a day at most
+
+Decision: rests after the streak step and at the closed ring, otherwise one continuous stream.
+
+- Meta-analysis of micro-breaks, 22 samples, N = 2335: vigor d = .36, fatigue d = .35, overall
+  performance d = .16 (p = .116, not significant), performance gains only on low-demand tasks, larger
+  with longer breaks. Albulescu et al., PLOS ONE 2022, https://pmc.ncbi.nlm.nih.gov/articles/PMC9432722/.
+  Measured, workplace tasks.
+- Within-session decline of flashcard accuracy by session length: no source found.
+
+**Measure.** Breaks help how people feel and show no effect on demanding tasks; no study covers a
+flashcard stream. Measurement: for streams of at least 15 minutes (gaps under 5 minutes between
+reviews), bucket reviews by minute in the stream (0-5, 5-10, 10-15, 15+) and compare the Forgot rate
+with 1 - R at review time (from `Scheduler.replaying`) and the median `ms`. If Forgot exceeds the
+prediction by 5 points, or `ms` grows 20 %, past some minute, add a skippable rest at that minute (our
+thresholds). Otherwise the stream stays as it is.
+
+### The backlog spread
+
+Decision: overdue cards are part of the plan like any card due, most forgotten first; the day's time cuts the goal.
+
+- Anki manual: with a backlog stop new cards; for a large one sort by ascending retrievability, the
+  most forgotten first. https://docs.ankiweb.net/deck-options.html. Opinion of the maintainers.
+- Anki Forums: a filtered catch-up deck with a daily allowance, sorted by descending retrievability,
+  "the most efficient sort order". https://forums.ankiweb.net/t/adressing-backlog/43842. Single report.
+- FSRS developers' simulations (`review-sort-order-comparison`): descending retrievability keeps retention
+  level even when the backlog is never cleared and gives the highest average retention (94.9 % quoted).
+  https://forums.ankiweb.net/t/improving-sort-orders/50081 and
+  https://forums.ankiweb.net/t/which-is-the-most-recommended-display-order-for-fsrs/65483. Measured in
+  simulation; the notebook was not read.
+- The second thread cites an FSRS-6 efficiency chart that puts ascending retrievability first. Single
+  report; chart not read.
+- FSRS: the lower R at a successful review, the larger the stability gain.
+  https://expertium.github.io/Algorithm.html (takeaway four). Measured (fitted on review data).
+- A contributor holds that the order barely matters when the backlog lives much shorter than the
+  stability of its cards. Opinion. Nothing found on seven days.
+
+**Measure**, low priority. The sources split by objective: retention favours the least forgotten first,
+efficiency the most forgotten first. Seven days is short against the stability of most cards.
+Measurement, at the first backlog above 100 cards: run the notebook of
+`open-spaced-repetition/review-sort-order-comparison` with EF's fitted parameters and retention target,
+backlogs of 100 and 300 cards spread over 7 days, ascending against descending R; compare mean recall on
+day 7 and reviews needed to day 30. Switch only if one wins both by over 2 points (our threshold).
+
+The spread over seven days was removed: the time cap already paces the backlog. The order, most forgotten
+first, stays to measure.
+
+### Production cards after a 7-day interval
+
+Decision: meaning → Greek cards unlock when the recognition card's interval reaches 7 days; separate
+new-card limits.
+
+- `production-cards-research.md` holds the findings and the verdict: the delay itself is untested,
+  production is the harder direction and receptive study buys little of it, a first spaced review passed
+  is the point Nation's and Terai's argument is about. Confidence low, as that file says.
+- New in this run: nothing read. A search for a staged-against-simultaneous experiment returned a 2026
+  paper on spacing by word-knowledge type (https://journals.sagepub.com/doi/10.1177/13621688261449449),
+  unread. Separate limits per direction need no source; Anki limits per deck the same way.
+
+**Measure.** Protocol from `production-cards-research.md` §3: the share of Forgot on production cards'
+first two review-phase reviews against FSRS's expected 10 %. Over 25 % on a deck gated at 7: raise to 14.
+At or below 10 % on a deck gated at 14 or more: lower to 7 or 0. Wait for 100 first reviews of
+production cards; at 10 % the standard error of the share is 3 points.
+
+### One stream across all decks
+
+Decision: the next card comes from the deck whose next card is most urgent.
+
+- Meta-analysis of interleaving, 59 studies: g = 0.42 overall, 0.67 for paintings, 0.34 for mathematics,
+  texts ambiguous, blocking ahead for words (g = -0.39); stronger when categories look alike. Brunmair &
+  Richter, Psychological Bulletin 2019, accepted manuscript at
+  https://www.psychologie.uni-wuerzburg.de/fileadmin/06020400/2019/Brunmair_Richter_in_press__2019_META-ANALYSIS_OF_INTERLEAVED_LEARNING.pdf.
+  Measured. The tasks are induction of categories, not recall of pairs under a spaced schedule.
+- No study found of cross-deck order in a spaced-repetition app.
+
+**Keep.** Ordering by urgency serves the scheduler: a card whose R is falling does not wait for a deck
+switch. The words result concerns studying categorised words in blocks; it neither supports mixing nor
+argues against it. If a mixed stream confuses EF, the trial is a per-deck "stay in this deck" switch.
+
+### Medals and the monthly recap
+
+Decision: streak milestones, laps, big days, comeback, perfect week, first ring; a monthly recap screen.
+
+- Meta-analysis of gamification in learning: g = .49 cognitive (k = 19), .36 motivational (k = 16), .25
+  behavioural (k = 9); motivational and behavioural effects less stable in high-rigour studies. Sailer &
+  Homner, Educ. Psychol. Rev. 2020, https://link.springer.com/article/10.1007/s10648-019-09498-w. Measured.
+- Points, levels and leaderboards raised performance and left intrinsic motivation, autonomy and
+  competence unchanged; the authors read them as progress indicators. Mekler et al., Gamification '13,
+  https://researchprofiles.ku.dk/en/publications/do-points-levels-and-leaderboards-harm-intrinsic-motivation-an-em/.
+  Single report (online task).
+- Streak milestone screen: day-7 retention +1.7 % (Duolingo, "The streak step" above). Measured (company).
+- Overjustification: Deci, Koestner & Ryan 1999, Psychological Bulletin 125(6):627–668,
+  https://psycnet.apa.org/doi/10.1037/0033-2909.125.6.627, 128 studies. Expected rewards undermine free-choice
+  intrinsic motivation: engagement-contingent d = −0.40, completion-contingent −0.36, performance-contingent
+  −0.28. Unexpected tangible rewards: d = 0.01 (9 studies, ns); task-noncontingent: d = −0.14 (ns). Positive
+  feedback enhances it: d = 0.33 free choice, 0.31 self-reported interest. Symbolic awards count as tangible
+  (the "Good Player Award" of Lepper, Greene & Nisbett 1973). Tangible rewards harm children more than
+  college students. Measured (meta-analysis), read from the PDF.
+- No source found for the tier numbers, or for a recap screen.
+
+**Change (small).** A medal is a symbolic reward; it stays on the safe side of Deci, Koestner & Ryan when
+it comes unexpected and reads as feedback on what was done. So: the next medal shows as a grey silhouette
+with its name and no progress count ("12 of 14 days" turned it into an expected reward for completing a
+task); medal texts name the achievement ("Two rings in a day", "Saved your streak after a missed day"), never
+a price to pay. Done in 5.3.6. The tiers themselves remain a choice; revisit if EF turns celebrations off.
+
+### Grading: one "no", three "yes", swipes, no intervals on the buttons
+
+Decision: Forgot, Hard, Good, Easy; swipes with dead zones; the interval shows only after the grade.
+
+- `fsrs-research.md` §1: FSRS predicts slightly better for users of Again and Good; the costliest slip
+  is Hard on a forgotten card. Reported by several (FSRS authors, tutorial, forum).
+- Anki manual: pressing Hard when the card was forgotten makes all intervals unreasonably high.
+  https://docs.ankiweb.net/deck-options.html. Hard counts as a success (a multiplier w15 below 1), Easy
+  carries w16 between 1 and 6: https://expertium.github.io/Algorithm.html. Documented in the algorithm.
+- Intervals on the buttons: a language teacher reports students pick the button from the shown interval,
+  misjudge, and choose unstably; proposal to hide times or default to two buttons.
+  https://forums.ankiweb.net/t/hide-time-until-next-review-by-default/45772. Single report, no data.
+- Sector angles and dead zones: no source found; `study-screen.md`, "Swipe", holds the design measurements.
+
+**Keep.** The layout follows the consistent-grading finding and the manual's Hard warning. Cheap check
+after a refit: the fitted w15 and w16 against defaults, and the lapse rate on the review after a Hard,
+which should sit well under the Forgot rate (near it means Hard serves as a second "no").
+
+### The maturity ramp in one hue
+
+Decision: ordered classes in the accent's indigo, New in grey.
+
+- Colour maps should be perceptually ordered (lightness rising evenly, so order reads without a key) and
+  readable under colour-vision deficiency, 0.5 % of women and 8 % of men; rainbow maps fail both.
+  Crameri et al., Nature Communications 2020, https://www.nature.com/articles/s41467-020-19160-7.
+  Single report (review article with computed metrics).
+- In the repo: OKLCH hue 278, lightness 0.86 to 0.40, adjacent steps 10-13.5 ΔE2000 apart, New outside
+  the ramp (`Presentation.swift`); steps are also named in words ("Maturing"), so colour is not the only
+  carrier (`design-spec.md`, the "Maturity ramp" bullet).
+- ColorBrewer's guidance on sequential schemes for ordered data: not found in this run.
+
+**Keep.** One hue ordered by lightness is what the colour literature gives for ordered classes, and the
+step spacing is already measured.

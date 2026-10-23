@@ -36,18 +36,22 @@ Read the file for the area you work on.
   two devices, deck file operations, card media files.
 - `references/scheduling.md`: today's counts and daily limits, revealed reviews, leeches, the
   automatic FSRS refit, the day's stack (Study) and Push On, practices, the newest batch.
-- `references/daily-ring.md`: plan, goal, rounds, day's time, new-card allowance, done cards, ring,
-  pace, backlog, streak, caches, words in memory, the "How Today Works" screen.
+- `references/learning-flow.md`: the learner's day: its rules, the journey (one day's paths, Push On, a
+  newcomer's first days, a return, an Anki user, several decks), the model, horizons, medals.
+- `references/daily-ring.md`: how the code computes the day: plan, goal, rounds, day's time, new-card
+  allowance, done cards, ring, pace, backlog, streak, caches, words in memory, "How Today Works".
+- `references/ring-design.md`: why the day is what it is: the rule, every alternative measured, the
+  other decisions of the day with their evidence. Sources: `references/day-model-research.md`;
+  measurements: `Tools/ring-sim/` (`cards.py`, `minutes.md`, `real-stats.md`).
 - `references/import-export.md`: `deck-from-tsv`, production cards, Anki import (core and screens),
   the deck site browser, CSV/TSV, lesson words, the word key.
-- `references/screens.md`: Today, Study across decks, deck screen, card browser, pausing a deck,
-  accent colour, first launch, deck folder, reminders, Mac welcome window, widget.
+- `references/screens.md`: every screen of both apps, what it shows and does.
 - `references/study-screen.md`: the iPhone Study screen: layout, motion, speech window, swipe sectors.
-- Specs: `references/flows.md` (screens of both apps), `references/design-spec.md` (visual spec).
+- Visual spec: `references/design-spec.md`.
 - Research and verdicts: `references/fsrs-research.md`, `references/fsrs-vs-sm17.md`,
   `references/production-cards-research.md`, `references/cross-deck-overlap.md`,
   `references/anki-parity.md`, `references/deck-formats-and-sources.md`.
-- Briefing sub-agents: `references/agent-token-costs.md`, `references/agent-lessons-rings.md`.
+- Briefing sub-agents: `references/agent-briefs.md`.
 - Domain: `GLOSSARY.md` (terms, English with German UI words and Russian equivalents) and `docs/adr/`
   (decisions).
 

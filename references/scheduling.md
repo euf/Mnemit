@@ -97,6 +97,6 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
 - `Deck.newestBatchIDs`: the cards with the same `created` (to the second) as the newest card of the
   deck, without suspended ones. `deck-from-tsv` sets one `created` per run.
 - Practicing the batch doesn't touch the schedule. Mac: Study ▸ Practice Newest Words
-  (`SessionViewModel(entry: .practiceNewest)`); iPhone: a row in the deck details sheet
+  (`SessionViewModel(entry: .practiceNewest)`); iPhone: a row on the deck screen
   (`StudyModel(entry: .practiceNewest)`).
 - A card added by hand later starts a batch of its own.

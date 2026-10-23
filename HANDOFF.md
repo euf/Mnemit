@@ -2,14 +2,13 @@
 
 ## State
 
-- Version 5.6 on `main`; the iPhone runs 5.5.0 (838a7ce), signed until 30.10. The day's model (one ring, the
+- Version 5.6 on `main`; the iPhone runs 5.6.0 (c74d183), signed until 30.10; the Mac app 5.6.0 (c74d183). The day's model (one ring, the
   stack that ends with the plan, Push On, partial credit, the streak step, two rests, medals, the Progress screen)
   and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
   ring's size (seconds, a staircase on closed and open rings) is `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
-  and the logs of 2,000 Anki users: `references/ring-design.md`; why the rest:
-  `references/learning-flow-research.md`, `goal-setting-research.md`, `speech-stutter-research.md`. Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review).
-  Screens: `references/flows.md`, `references/screens.md`. Brief sub-agents by
-  `references/agent-lessons-rings.md` and `agent-token-costs.md`.
+  and the logs of 2,000 Anki users, and the other decisions of the day with their evidence: `references/ring-design.md`;
+  sources: `references/day-model-research.md`, `speech-stutter-research.md`. Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review).
+  Screens: `references/screens.md`. Brief sub-agents by `references/agent-briefs.md`.
 - Speech: words are rendered ahead and played from memory (`GreekSpeech`, `SpeechLog` writes
   `Library/Caches/speech.log`, read off the iPhone with `devicectl device copy from`); EF heard no stutter.
 - Strings in en, de, ru, el; `Tools/check-localizations.swift` requires all four.
@@ -48,8 +47,7 @@ deck folder is chosen in the file picker. Team limits: 3 apps per device (now Fi
 
 ## Open
 
-In order of importance to EF. Brief sub-agents by `references/agent-token-costs.md` and
-`references/agent-lessons-rings.md`.
+In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
 1. **Progress must not depend on the decks in the list.** The ring, the streak and the medals are worked
    out from the logs of the active decks: deleting or pausing a deck, or deleting a card, rewrites past
@@ -63,16 +61,15 @@ In order of importance to EF. Brief sub-agents by `references/agent-token-costs.
    word's first showing as an introduction, not a red Forgot; an empty Today whose first button is "Add
    Words" and makes a deck; FSRS figures (RMSE, log loss) for Anki users; Anki import fidelity (cloze,
    several media per side) and an export back with history.
-5. **Decisions to revisit by evidence** (`references/decisions-evidence.md`, 23.10: ten checked; medals
-   changed in 5.3.6 after Deci, Koestner & Ryan 1999, the next medal shows no progress count; four to
-   measure on EF's own log):
-   - The day's time (§2): settled by measurement (`references/ring-design.md`). At 60 study days count the
-     closed rings in the Progress calendar: a share outside 0.7-0.85 reopens it.
-   - Rests (§4): Forgot rate and `ms` by minute in streams of 15+ minutes against 1 - R; add a skippable
+5. **Decisions to revisit by evidence** (`references/ring-design.md`, "What would reopen it" and "Other
+   decisions of the day and their evidence"; four to measure on EF's own log):
+   - The day's time: at 60 study days count the closed rings in the Progress calendar: a share outside
+     0.7-0.85 reopens it.
+   - Two rests a day: Forgot rate and `ms` by minute in streams of 15+ minutes against 1 - R; add a skippable
      rest at the minute where either climbs.
-   - Backlog order (§5): ascending against descending retrievability in the open-spaced-repetition
+   - The backlog spread: ascending against descending retrievability in the open-spaced-repetition
      sort-order simulator with EF's fitted parameters, at the first backlog over 100 cards.
-   - Production cards (§6): the Forgot share of the first two production reviews; over 25 % lifts the
+   - Production cards: the Forgot share of the first two production reviews; over 25 % lifts the
      7-day gate to 14, at or below 10 % under a gate of 14 or more lowers it; wait for 100 reviews.
 6. **Rewrite the git history in English.** Only the fork's commits (`git log --author=euf`, 112 with
    Russian messages); upstream's stay. `git-filter-repo` with a commit callback mapping hash → message;
