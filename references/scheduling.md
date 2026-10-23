@@ -79,15 +79,11 @@ stream and its practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
 - While resting there is no card (`currentCard == nil`): speech doesn't say the hidden word, and grades
   and Suspend are refused (`StudyModel.isRoundRest`).
 - Order:
-  1. The day's plan (`StudySession.counts`, same selection and limits; while the plan is not empty it
-     is recounted after every segment).
+  1. The day's plan (`StudySession.counts`, same selection and limits, every card due, overdue ones
+     included; while the plan is not empty it is recounted after every segment).
   2. Pause "Done for today": plan size, share recalled, "Ring closed" if the ring is closed, "+N words
      in memory today", next date; buttons "Keep Going" and "+10 new".
-  3. `Stage.catchUp`: the rest of the backlog, overdue Review cards that didn't make the day's plan
-     (`StudyCounts.catchUp`). They are due, so grades are normal, and done cards go into the laps.
-  4. Review ahead: Review cards not yet due, by ascending current recall probability; grades are normal;
-     siblings and cards reviewed today are skipped.
-  5. Practice that doesn't touch the schedule: `Deck.mistakes(onDayOf:calendar:)`, then
+  3. Practice that doesn't touch the schedule: `Deck.mistakes(onDayOf:calendar:)`, then
      `Deck.newestBatchIDs`, round and round.
 - New cards beyond the limit come only through `addNewCards(10)`, with the line "≈ +N cards/day next
   week" (cards per day next week; `NewCardLoad`: an FSRS simulation, every grade Good, no lapses, a due

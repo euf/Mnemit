@@ -93,7 +93,7 @@ thresholds). Otherwise the stream stays as it is.
 
 ## 5. The backlog spread
 
-Decision: overdue cards ask a seventh of themselves a day (at least a normal day), most forgotten first.
+Decision: overdue cards are part of the plan like any card due, most forgotten first; the day's time cuts the goal.
 
 - Anki manual: with a backlog stop new cards; for a large one sort by ascending retrievability, the
   most forgotten first. https://docs.ankiweb.net/deck-options.html. Opinion of the maintainers.
@@ -117,6 +117,9 @@ Measurement, at the first backlog above 100 cards: run the notebook of
 `open-spaced-repetition/review-sort-order-comparison` with EF's fitted parameters and retention target,
 backlogs of 100 and 300 cards spread over 7 days, ascending against descending R; compare mean recall on
 day 7 and reviews needed to day 30. Switch only if one wins both by over 2 points (our threshold).
+
+The spread over seven days was removed: the time cap already paces the backlog. The order, most forgotten
+first, stays to measure.
 
 ## 6. Production cards after a 7-day interval
 

@@ -14,8 +14,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 ## Plan
 
 - **Plan**: the cards the day asks for under FSRS (`StudySession.counts`): cards due, overdue too, and
-  new cards within the day's limits and the deck's allowance `newCardAllowance`; the backlog enters as
-  a share (below). `nil` instead of an allowance means only the deck's limits: tests and tools count
+  new cards within the day's limits and the deck's allowance `newCardAllowance`; overdue cards are part
+  of it (Backlog below). `nil` instead of an allowance means only the deck's limits: tests and tools count
   that way.
 - The plan at the start of the day comes from `DeckActivity.history(from:at:calendar:)`: the log is
   replayed forward once (`replayLog`, card states at the end of every day), a copy of the deck takes
@@ -37,7 +37,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   done (cards were suspended or deleted during the day), the goal is the done cards, so the ring doesn't
   stay open next to "0 cards left". A day that started with an empty plan (the first deck, filled during
   the day) takes the plan as it is, `done + owed`, so the first day has a goal.
-- A cap on the goal or another spread of the backlog is a change to this type.
+- A cap on the goal is a change to this type.
 - `cardsPerSession` is the stream's segment size and doesn't cut the plan: `counts` doesn't know it,
   and nothing visible grows by segments.
 
@@ -117,14 +117,14 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   Easy is done at once; a new card after its last learning step; Forgot when the card leaves learning.
   It counts once a day, however many reviews it took. Reviews per day (`reviewsByDay`) are needed only
   for the start of the streak and for the days before `planRuleStart`.
-- A card is done in any mode, including catch-up.
+- A card is done in any mode, including Catch Up, the ring's rest.
 - **Partial credit**: the ring also shows the cards on their way (`DailyRing.underway`,
   `Deck.cardsUnderway`): each reviewed today and still due today counts the answers recalled today
   (Hard, Good, Easy) over those plus the learning steps it still needs, at its best moment of the day
   (`Card.credit(onDayOf:calendar:steps:)`). Every answer recalled moves the ring; Forgot moves nothing
   and takes nothing back. The counts ("M of K cards", "N left") stay in whole cards.
 - **Ring**: done cards against the day's goal. Done cards beyond the goal go into laps (in the stream,
-  ×2 in the centre on the second lap, ×3 on the third): catch-up and "+10 new" fill the
+  ×2 in the centre on the second lap, ×3 on the third): Catch Up and "+10 new" fill the
   laps.
 - **Cards left**: the plan's cards not done yet: `StudySession.counts(...).total` now, the line "N
   cards left". Done + left = plan, which is the goal or more (review cards beyond the day's time are
@@ -178,15 +178,10 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 
 ## Backlog
 
-- **Backlog**: Review cards that were due before the start of the study day. It asks the day for the
-  backlog share `DailyGoal.backlogShare(of:onTime:)` = min(backlog, max(ceil(backlog /
-  `backlogSpreadDays`), `onTime`)), where `onTime` is the Review cards due on this study day. A backlog
-  no bigger than a normal day goes in one day (one missed day doesn't leave a week of backlog); a big
-  one goes by sevenths; the most forgotten first.
-- The share doesn't shrink as work goes on: backlog and `onTime` at the start of the day = remainder +
-  reviewed today, their state at the start of the day from a log replay (`Scheduler.replaying`, only
-  while there are overdue cards).
-- The remainder is catch-up, `StudyCounts.catchUp`.
+- **Backlog**: Review cards that were due before the start of the study day. They are part of the plan
+  like any card due, most forgotten first.
+- The goal takes the plan's cards that fit the day's time (`DayRounds`); the rest stay in the plan, and the
+  ring's rest offers Catch Up, which goes on with it.
 
 ## Streak
 
@@ -248,8 +243,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   for people who know Anki and FSRS. Read-only, no controls or charts; each section's rule in its
   footer.
 - Sections in order:
-  1. Day's plan: the parts of the plan at the start of the day, the backlog share taken, each deck's
-     allowance and ceiling, goal, rounds, done, left, catch-up.
+  1. Day's plan: the parts of the plan at the start of the day (due today, overdue included; learning;
+     new admitted), each deck's allowance and ceiling, goal, rounds, done, left.
   2. Today's time: the time in minutes, the streak step and the goal in cards; 14 days with the minutes
      asked, the minutes worked, ring closed or open and why the time.
   3. Pace: new and other price, the price's source (durations, gaps or the default), reviews per done
@@ -262,8 +257,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   7. FSRS per deck: retention, 21 parameters, fit, steps, maximum interval.
 - Numbers come from `DailyProgress`, `MemoryEstimate`, the deck settings and `DayBreakdown` (VocabCore,
   `Statistics/DayBreakdown.swift`). Its days are `DailyProgress.ringDays`; only the pace window repeats
-  `DailyGoal.pace`, and `DayBreakdownTests` keeps them together. `StudyCounts.backlogTaken` is the backlog share the plan
-  took.
+  `DailyGoal.pace`, and `DayBreakdownTests` keeps them together.
 - iPhone: the info button on the left of the Today bar (`HowTodayWorksButton` and the sheet
   `HowTodayWorksSheet`, `VocTrain/Views/HowTodayWorksSheet.swift`); decks are read from files when the
   sheet opens. Mac: Study ▸ How Today Works (`HowTodayWorksWindow`), the decks of open documents, without

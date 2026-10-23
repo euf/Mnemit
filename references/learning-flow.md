@@ -13,6 +13,21 @@ day, the ring. The day's time stays inside, in seconds the app learns from the l
 screen but How Today Works; the streak step, the first two minutes of the plan, is the one unit of its own. The stream stops twice a day at most: once the streak is kept, and once
 the ring is closed.
 
+## The day in six rules
+
+| # | Rule | Answers | Evidence |
+|---|---|---|---|
+| 1 | Your time is the median of the minutes you worked on your last 7 study days (4 minutes before any) | how much the learner really does | past performance as the base (Apple, Garmin; `goal-setting-research.md`); an achievable goal keeps people better than a hard one (Duolingo, `learning-flow-research.md`) |
+| 2 | The goal is the cards FSRS has due, most forgotten first, as many as fit your time | what to do today | FSRS: reviews are the work owed; the Anki manual caps reviews so a return after a break is manageable |
+| 3 | If time is left, new cards fill it, as many as next week can carry | how many new | new cards are FSRS's only free input; the Anki manual sizes them by the workload one can sustain |
+| 4 | The ring closes when the goal is done; work beyond it fills laps and raises your time | how to grow | growth comes from the learner |
+| 5 | The first two minutes keep the streak; one missed day is forgiven when the next ring closes | the habit | a low bar keeps the habit (Duolingo A/B, +3.3 % day-14 retention); slack keeps a streak (Streak Freeze, Apple's paused rings) |
+| 6 | Once the ring is closed: Catch Up while due cards are left, else "+10 new" with its cost next week | what next | an informed choice instead of a hidden one |
+
+Five numbers remain as choices to check on the owner's log: the 7-day window of the median, 4 minutes on
+the first day, the range of 2 to 30 minutes, the 2-minute streak step and the 7-day horizon of the week
+ahead. `decisions-evidence.md` holds the evidence for each and the measurement that would settle it.
+
 ## The model
 
 | Learner's word | What it is | Where it comes from |
@@ -22,7 +37,7 @@ the ring is closed.
 | The stack | the cards still waiting today, in the middle of the screen | the stream's segment |
 | Streak | days in a row with the first ≈ 2 min of cards done | the review log |
 | Words in memory | how many words the learner would recall now | FSRS's recall probability, summed |
-| Catch-up | due cards beyond today's ring, after a break | the backlog beyond its share |
+| Catch Up | the plan's cards beyond today's ring, after a break | the rest of the plan |
 
 Never on screen: review counts (a card is never a review), the day's time, plan against goal,
 seconds per card, intervals before a grade.
@@ -68,8 +83,7 @@ Today ──Study──► card ─► card ─► … ─► Streak kept ──
 | ring closed | Ring closed | 24 cards today |
 | nothing due | Nothing due | Next review tomorrow |
 
-Under them: "13-day streak · kept today", "≈ 412 words in memory · +15 today", and after a break
-"+1,320 to catch up this week".
+Under them: "13-day streak · kept today" and "≈ 412 words in memory · +15 today".
 
 **Study.** The stack in the middle, the small ring in the bar with "≈ 4 min" (after a done card, for
 a moment, "in 8 days"), the close button. Closing loses nothing; Today picks up the count.
@@ -98,8 +112,8 @@ ring, "Streak kept", the streak in days, "+4 words in memory today", "12 cards l
 **Ring closed** (when today's cards are done, and when the plan has run out): the ring closes with its
 burst, then the day: "10 cards · 22 answers", the share recalled, "+15 words in memory today", the streak, the
 week's seven rings; a milestone when one was passed today. One way on, the most useful first:
-**Catch Up** when due cards are left beyond the ring; else **+10 new** with what it costs next week;
-else **Practice**; and **Done**. The week is seven small rings, today last, with the weekday initials.
+**Catch Up** when the plan has cards left beyond the ring; else **+10 new** with what it costs next week;
+and **Done**. The week is seven small rings, today last, with the weekday initials.
 
 **How Today Works** keeps everything for the learner who knows FSRS: the plan and its parts, the
 the day's time and the streak step, pace, the streak's repair, FSRS parameters.
@@ -208,9 +222,9 @@ cards done, the best streak of the month, the achievements of the month, and See
 | "Round 2 of 4 · ≈ 2 min" on Today, in the bar, in the widget, on the Mac | cards left and time | two progress measures beside one ring; rounds are an internal unit of time |
 | The day's time, "Next round ≈ 2 min" | How Today Works only | the size of the day is learned, not chosen |
 | Review ahead after catch-up | gone from Keep Going | reviewing before due gains FSRS little, and fills the ring with low-value work; more work is a new card |
-| Keep Going running catch-up, then review ahead, then practice | Catch Up when due cards are left; +10 New otherwise | one named way on; practice stays on the deck screen |
-| The ring closing in the middle of a stream after a break | the stream stops at the ring | the ring is the day's goal; the cards beyond it are catch-up and say so |
+| Keep Going running catch-up, then review ahead, then practice | Catch Up when the plan has cards left; +10 New otherwise | one named way on; practice stays on the deck screen |
+| The ring closing in the middle of a stream after a break | the stream stops at the ring | the ring is the day's goal; the cards beyond it stay in the plan and Catch Up goes on with them |
 
 Kept as they are: one stream over all decks, the 04:00 day, the ring in cards, laps (×2, ×3) for
-work beyond the goal, the backlog spread over a week, the streak's repair by a closed ring, words in
+work beyond the goal, the streak's repair by a closed ring, words in
 memory, pausing a deck, practice from the deck screen.

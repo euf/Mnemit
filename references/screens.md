@@ -12,7 +12,7 @@ The screens around Study. The contract of every screen: `references/flows.md`; t
 - Second line "M of K cards · N left": done cards against the day's goal, and the plan's cards not done
   yet, not raw due. M, N and K are one unit, M + N ≥ K, equal while the plan fits the day's time and
   nothing was added to it; Forgot doesn't break it.
-- "+N to catch up this week" when there is a backlog. Streak "N-day streak", with "· kept today" once
+- Streak "N-day streak", with "· kept today" once
   the first round is done.
 - Words in memory on one line "≈ 28 words in memory · +15 today" under the ring, as wide as the row
   (`MemoryLine`: the row's width, not the column next to the ring, where the gain doesn't fit on 375 pt;
@@ -126,7 +126,7 @@ The screens around Study. The contract of every screen: `references/flows.md`; t
   the same item. Mac: Study ▸ Pause Deck / Resume Deck; ring and tooltip count open documents that aren't
   paused.
 - "How Today Works" names it in the plan with the line "Paused: <name>".
-- After resuming, its overdue cards are backlog under `DailyGoal.backlogShare`, with no special rules.
+- After resuming, its overdue cards are due like any and come back into the plan, with no special rules.
 
 ## Accent
 

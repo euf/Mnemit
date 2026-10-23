@@ -258,7 +258,7 @@ never for the goal, the ring or the streak.
 _Avoid_: card, answer (the answer is a side of the card), повторение, ответ
 
 **Plan** (today's plan / heutiger Plan; RU «план дня»):
-The cards a study day asks, as FSRS sets them: review cards due on the day, the backlog share,
+The cards a study day asks, as FSRS sets them: every review card due, overdue ones included,
 cards in learning, and new cards within the day's limits and the deck's allowance
 (`StudySession.counts`, `newCardAllowance`).
 _Avoid_: session, queue, due count
@@ -314,19 +314,14 @@ _Avoid_: reviewed card, answered card, «повторённая карточка
 Cards of the plan not done yet (`StudySession.counts(...).total` now). Done + left = the plan,
 which is the goal or more: the reviews beyond the day's time are left, too.
 
-**Backlog** ("+N to catch up this week"; RU «хвост»):
-Review cards that were due before the study day began.
-
-**Backlog share** (RU «доля хвоста»):
-The part of the backlog the plan takes: at least a seventh of it and at least what a normal day
-asks, never more than the backlog (`DailyGoal.backlogShare`). The rest is **catch-up**, worked
-off after the plan.
+**Backlog** (RU «хвост»):
+Overdue cards, part of the plan, worked off as the day's time allows.
 
 **Ring** (RU «кольцо»):
 Done cards against the daily goal, with the **cards underway**: a card reviewed today and still due
 today counts as the part of a card its answers recalled made, recalled answers over those plus the
 steps it still needs (`Card.credit`), so every answer recalled moves the ring and Forgot moves
-nothing. Done cards beyond the goal fill **laps** (×2, ×3): catch-up and extra new cards. The ring is
+nothing. Done cards beyond the goal fill **laps** (×2, ×3): Catch Up and extra new cards. The ring is
 closed at done ≥ goal, in whole cards.
 
 **Streak** (RU «стрик»):
@@ -370,8 +365,8 @@ _Avoid_: seconds per review, seconds per answer
 
 **Stream** (Study; RU «поток»):
 Study without sessions: the plan, with a rest after its streak step ("Streak kept"), then a rest
-at the ring ("Ring closed"), then catch-up and practice (`StudyStream`). A card is never reviewed
-before it is due.
+at the ring ("Ring closed", where Catch Up goes on with the plan), then practice (`StudyStream`).
+A card is never reviewed before it is due.
 _Avoid_: session (except for the upstream types that still carry the name)
 
 **Extra new cards** ("+10 new"; RU «новые сверх лимита»):
@@ -418,7 +413,7 @@ admission of new cards (the allowance is split over the other decks), the streak
 widget, the reminders, Study on Today and the "Next: …" after a stream (`DailyProgress.evaluate`,
 `DeckActivity.isPaused`). It stays open: its screen, the card browser and "Study This Deck" work, and the
 reviews written there fill the ring only through the cards of the decks that take part. On resume its overdue
-reviews are a backlog like any, spread by `DailyGoal.backlogShare`. The pause travels with the options: a
+reviews are due like any and come back into the plan. The pause travels with the options: a
 merge takes it from the version that changed them last, and an older app version drops the key, so the deck is
 no longer paused there.
 _Avoid_: suspended deck (a card is suspended, `Card.isSuspended`), archived deck, «заморозка»

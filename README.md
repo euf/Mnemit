@@ -48,9 +48,8 @@ are in [`references/`](references/).
   plan (cards in learning, then review cards with the lowest recall probability first, then new
   cards within the day's limits, taken from the decks in turn), each card from the deck whose next
   card is most urgent and graded into that deck. Study This Deck runs it over one deck. When
-  today's cards are done the stream rests ("Ring closed") and offers one way on: catch-up on the
-  backlog, else "+10 new" with the extra cards a day it adds next week, else practice that does
-  not touch the schedule. A card is never reviewed before it is due: an early review gains FSRS
+  today's cards are done the stream rests ("Ring closed") and offers one way on: Catch Up when the
+  plan has cards left, else "+10 new" with the extra cards a day it adds next week. A card is never reviewed before it is due: an early review gains FSRS
   little, and more work is a new card.
 - **One ring a day, two rests at most.** The model, and what was dropped from 4.0, are in
   [`learning-flow.md`](references/learning-flow.md). Inside, the day has a time in minutes of work at your own pace,
@@ -80,7 +79,7 @@ are in [`references/`](references/).
   in neither count. Older logs without times are priced from the pauses between reviews, by their
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
-  cards added later and "+10 new" fill laps, as does catch-up. The ring keeps
+  cards added later and "+10 new" fill laps, as does Catch Up. The ring keeps
   going round after the goal; during study its centre shows ×2, ×3 for the laps, elsewhere the
   streak in days. A missed day is repaired when the next day closes its ring, the streak step
   is not enough then; two missed days in a row end the streak. Everything is computed
@@ -90,15 +89,12 @@ are in [`references/`](references/).
   studied, one card a word. It grows when you learn, falls over days without reviews, and
   cannot be inflated by counting more cards. The number is rounded down, and the day's gain is
   against the number at 4:00. A milestone (50, 100, 250, 500, 1,000 and on) is announced on the day it is passed.
-- **A backlog does not pile up on one day.** After an import or a break, the review cards
-  that were already due before today ask a seventh of themselves, rounded up, of a day, the
-  most forgotten first: 1,500 overdue cards add about 215 to the day's own cards, and the
-  count shown is the plan, never the whole backlog. A backlog is never asked for less than a
-  normal day asks, so one missed day is made up the next day: five overdue cards beside
-  thirty due today are thirty-five. Today says "+1,320 to catch up this week" under the
-  plan. "Keep Going" after "Done for today" works through the rest, the catch-up; those cards are
-  due, so their reviews are ordinary ones and the cards done fill the laps. The size of a study session
-  in the deck options is the size of one segment of the stream and does not cut the plan.
+- **The day's time paces a backlog.** After an import or a break, every card due is in today's
+  plan, overdue ones included, the most forgotten first. The goal is the cards of the plan that
+  fit the day's time: 1,500 overdue cards with a six-minute day give a goal of about 36 at 10
+  seconds a card, and the rest wait in the plan. When the ring closes, "Catch Up" goes on with
+  them; those cards are due, so their reviews are ordinary ones and the cards done fill the laps.
+  The size of a study session in the deck options is the size of one segment of the stream and does not cut the plan.
 - **Two directions per word, production one spaced review behind.** Each word has a
   recognition card (Greek → meaning) and a production card (meaning → Greek). Production is the
   harder direction (about half the recall of recognition after two weeks in the one experiment
@@ -116,7 +112,7 @@ are in [`references/`](references/).
   the words in memory, the widget, the reminders or Study. Today lists it
   under "Paused", with no counts. It stays open: you can browse it, add cards and study it with Study
   This Deck, and what you review there fills the ring only through the cards of the other decks.
-  When you resume it, its overdue reviews are a backlog like any other and come back a seventh a day.
+  When you resume it, its overdue reviews are due like any other and come back into the plan.
 - **Difficult cards** (leeches) after 8 lapses, as a filter in the browser.
 - **Greek spoken from memory.** A card's Greek word is rendered into a buffer as the card comes up
   and played from memory, so the voice never stutters on a busy phone; where the deck has a
