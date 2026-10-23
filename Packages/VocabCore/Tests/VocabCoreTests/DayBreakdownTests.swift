@@ -45,7 +45,7 @@ extension DailyProgressTests {
         #expect(days.first?.reason == .start && days.first?.time == DailyGoal.initialSeconds)
         // The seventh day was not studied: no work, an open ring; the day after it asks what it asked.
         #expect(days[6].worked == 0 && !days[6].isClosed)
-        #expect(days[7].reason == .recentWork && days[7].time == days[6].time)
+        #expect(days[7].reason == days[6].reason && days[7].reason != .start && days[7].time == days[6].time)
         // Told from the days the progress stepped through: the same times and work, the last as today's.
         #expect(days.map(\.time) == progress.ringDays.map(\.time))
         #expect(days.map(\.worked) == progress.ringDays.map(\.worked))

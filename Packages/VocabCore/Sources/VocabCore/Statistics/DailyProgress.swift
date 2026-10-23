@@ -4,7 +4,7 @@ import Foundation
 /// nothing is stored, so every device that reads the deck files shows the same.
 ///
 /// The unit is the card, and the time of a day is in seconds of work at the learner's own pace (`Pace`).
-/// The time of the day, which the logs teach, follows the work the learner did (`nextTime(after:)`);
+/// The time of the day, which the logs teach, follows whether the rings closed (`nextTime(after:)`);
 /// new cards are admitted only up to the time it leaves after the day's reviews
 /// (`newCardsAllowed(seconds:otherCards:pace:)`). The first `streakSeconds` of the plan are the streak step.
 /// The plan of a study day is what FSRS sets when the day begins, `StudySession.counts(for:at:calendar:)`
@@ -145,19 +145,19 @@ public enum DailyGoal {
     /// The time of a day, in seconds, whatever the learner did: two to thirty minutes.
     public static let timeRange: ClosedRange<Double> = 120...1800
 
-    /// How far the time moves toward the work when the work was longer: growth comes from the learner.
-    public static let risingWeight = 0.3
-    /// How far it moves when the work was shorter: one short day shouldn't shrink the ring.
-    public static let fallingWeight = 0.2
-    /// A day counts for at most this many times what it asked: one marathon day shouldn't triple the ring.
-    public static let dayCountsAtMost = 2.0
+    /// What a closed ring multiplies the next time by: closure about 0.8 across 14 simulated scenarios (`references/ring-simulation.md`).
+    public static let grows = 1.075
+    /// What an open ring multiplies the next time by: the same simulation, a quarter less.
+    public static let shrinks = 0.775
 
     /// Why a day has the size it has.
     public enum SizeReason: Hashable, Sendable {
         /// No study day before it to go by: `initialSeconds`.
         case start
-        /// The time of the last study day moved toward the work done on it.
-        case recentWork
+        /// The last study day closed its ring: its time times `grows`.
+        case ringClosed
+        /// The last study day left its ring open: its time times `shrinks`.
+        case ringOpen
     }
 
     /// One day of the ring as the size rule reads it, plain values: the size it had and what came of it.
@@ -174,7 +174,7 @@ public enum DailyGoal {
         /// Something was done: `done > 0`.
         public var studied: Bool
 
-        public init(day: Int, time: Double = DailyGoal.initialSeconds, reason: SizeReason = .recentWork, worked: Double, closed: Bool, studied: Bool) {
+        public init(day: Int, time: Double = DailyGoal.initialSeconds, reason: SizeReason = .start, worked: Double, closed: Bool, studied: Bool) {
             self.day = day
             self.time = time
             self.reason = reason
@@ -185,17 +185,14 @@ public enum DailyGoal {
     }
 
     /// The time of the next day, in seconds, from the days before it (`days`, oldest first, every day from the first
-    /// study day): an exponentially weighted average, asymmetric, of the work. The last study day asked `T` (its
-    /// `time`, which carries the average of the days before it, so a cached run equals a recount) and worked `W`; with
-    /// `W' = min(W, dayCountsAtMost × T)` the next time is `T + a × (W' − T)`, `a` being `risingWeight` when `W' > T`
-    /// and `fallingWeight` otherwise, within `timeRange`; `initialSeconds` before any study day. A day without work,
-    /// missed or not, changes nothing.
+    /// study day): a closure tracker. The last study day asked `T` (its `time`, which carries the steps of the days
+    /// before it, so a cached run equals a recount); the next time is `T × grows` when its ring closed and
+    /// `T × shrinks` when it stayed open, within `timeRange`; `initialSeconds` before any study day. A day without
+    /// work, missed or not, changes nothing.
     public static func nextTime(after days: [RingDay]) -> (time: Double, reason: SizeReason) {
         guard let last = days.last(where: \.studied) else { return (initialSeconds, .start) }
-        let counted = min(last.worked, dayCountsAtMost * last.time)
-        let weight = counted > last.time ? risingWeight : fallingWeight
-        let next = last.time + weight * (counted - last.time)
-        return (min(max(next, timeRange.lowerBound), timeRange.upperBound), .recentWork)
+        let next = last.time * (last.closed ? grows : shrinks)
+        return (min(max(next, timeRange.lowerBound), timeRange.upperBound), last.closed ? .ringClosed : .ringOpen)
     }
 
     /// How many new cards a day admits: what is left of its `seconds` once the `otherCards` of the

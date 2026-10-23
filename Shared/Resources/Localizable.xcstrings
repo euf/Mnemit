@@ -3505,28 +3505,6 @@
         }
       }
     },
-    "A day asks a running average of the recent work: it moves toward the work of the last study day, faster when that was longer than when it was shorter, and a day counts for at most twice what it asked. Between two and thirty minutes, and four minutes before any work. A day without work is left out. The streak step is the cards that fit the first two minutes of the plan.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ein Tag verlangt einen gleitenden Durchschnitt der jüngsten Arbeit: Er bewegt sich auf die Arbeit des letzten Lerntags zu, schneller, wenn diese länger war, als wenn sie kürzer war, und ein Tag zählt höchstens das Doppelte dessen, was er verlangt hat. Zwischen zwei und dreißig Minuten, und vier Minuten vor jeder Arbeit. Ein Tag ohne Arbeit bleibt außen vor. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Η ημέρα ζητά κινούμενο μέσο όρο της πρόσφατης δουλειάς: κινείται προς τη δουλειά της τελευταίας ημέρας μελέτης, πιο γρήγορα όταν αυτή ήταν μεγαλύτερη παρά όταν ήταν μικρότερη, και μια ημέρα μετράει το πολύ το διπλάσιο από όσο ζήτησε. Ανάμεσα σε δύο και τριάντα λεπτά, και τέσσερα λεπτά πριν από κάθε δουλειά. Μια ημέρα χωρίς δουλειά μένει έξω. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "День просит скользящее среднее недавней работы: он сдвигается к работе последнего дня учёбы, быстрее вверх, чем вниз, а день засчитывается не больше чем вдвое против того, что он просил. От двух до тридцати минут, а до первой работы — четыре минуты. День без работы в расчёт не идёт. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
-          }
-        }
-      }
-    },
     "A deck name can't be empty, start with a dot or contain “/” or “:”.": {
       "localizations": {
         "de": {
@@ -7376,6 +7354,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Длительности (%lld)"
+          }
+        }
+      }
+    },
+    "Each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less; a day without study changes nothing. Between two and thirty minutes, and four minutes before any study. The streak step is the cards that fit the first two minutes of the plan.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An jedem Tag, an dem du den Ring schließt, verlangt der nächste 7,5 % mehr Zeit; an einem Tag, an dem er offen bleibt, ein Viertel weniger; ein Tag ohne Lernen ändert nichts. Zwischen zwei und dreißig Minuten, und vier Minuten vor jedem Lernen. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κάθε ημέρα που κλείνεις τον κύκλο, η επόμενη ζητά 7,5 % περισσότερο χρόνο· μια ημέρα που μένει ανοιχτός, ένα τέταρτο λιγότερο· μια ημέρα χωρίς μελέτη δεν αλλάζει τίποτα. Ανάμεσα σε δύο και τριάντα λεπτά, και τέσσερα λεπτά πριν από κάθε μελέτη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каждый день, когда ты закрываешь кольцо, следующий просит на 7,5 % больше времени; день, когда оно остаётся открытым, — на четверть меньше; день без учёбы ничего не меняет. От двух до тридцати минут, а до первой учёбы — четыре минуты. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
           }
         }
       }
@@ -12044,28 +12044,6 @@
         }
       }
     },
-    "Recent work": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jüngste Arbeit"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πρόσφατη δουλειά"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Недавняя работа"
-          }
-        }
-      }
-    },
     "Recognition": {
       "localizations": {
         "de": {
@@ -13074,6 +13052,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Кольцо закрыто"
+          }
+        }
+      }
+    },
+    "Ring open": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ring offen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο κύκλος ανοιχτός"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кольцо открыто"
           }
         }
       }

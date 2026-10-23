@@ -112,7 +112,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "A day asks a running average of the recent work: it moves toward the work of the last study day, faster when that was longer than when it was shorter, and a day counts for at most twice what it asked. Between two and thirty minutes, and four minutes before any work. A day without work is left out. The streak step is the cards that fit the first two minutes of the plan."
+                "Each day you close the ring, the next asks 7.5 % more time; a day it stays open, a quarter less; a day without study changes nothing. Between two and thirty minutes, and four minutes before any study. The streak step is the cards that fit the first two minutes of the plan."
         )
         return Section(title: String(localized: "Today's time"), rows: rows, footer: footer)
     }
@@ -121,7 +121,8 @@ struct HowTodayWorks: Equatable, Sendable {
     private static func text(of reason: DailyGoal.SizeReason) -> String {
         switch reason {
         case .start: String(localized: "Start")
-        case .recentWork: String(localized: "Recent work")
+        case .ringClosed: String(localized: "Ring closed")
+        case .ringOpen: String(localized: "Ring open")
         }
     }
 

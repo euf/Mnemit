@@ -31,8 +31,8 @@ struct HowTodayWorksTests {
     static var breakdown: DayBreakdown {
         let days = [
             DayBreakdown.Day(start: day.addingTimeInterval(-2 * 86400), time: 240, isClosed: true, worked: 360, reason: .start),
-            DayBreakdown.Day(start: day.addingTimeInterval(-86400), time: 360, isClosed: false, worked: 300, reason: .recentWork),
-            DayBreakdown.Day(start: day, time: 330, isClosed: false, worked: 150, reason: .recentWork),
+            DayBreakdown.Day(start: day.addingTimeInterval(-86400), time: 258, isClosed: false, worked: 300, reason: .ringClosed),
+            DayBreakdown.Day(start: day, time: 199.95, isClosed: false, worked: 150, reason: .ringOpen),
         ]
         return DayBreakdown(
             plan: DayBreakdown.Plan(reviewsDue: 28, learning: 2, newAdmitted: 6),
@@ -86,9 +86,9 @@ struct HowTodayWorksTests {
         func one(_ value: Double) -> String { value.formatted(.number.precision(.fractionLength(1))) }
         #expect(
             table.1.map { Array($0.dropFirst()) } == [
-                [one(5.5), one(2.5), "Open", "Recent work"], [one(6), one(5), "Open", "Recent work"], [one(4), one(6), "Closed", "Start"],
+                [one(199.95 / 60), one(2.5), "Open", "Ring open"], [one(258.0 / 60), one(5), "Open", "Ring closed"], [one(4), one(6), "Closed", "Start"],
             ])
-        #expect(time.footer.hasPrefix("A day asks a running average of the recent work"))
+        #expect(time.footer.hasPrefix("Each day you close the ring, the next asks 7.5 % more time"))
 
         let pace = content.sections[2].rows
         #expect(pace[0] == .value(label: "New card", value: "31 s", note: "Durations (214)"))
