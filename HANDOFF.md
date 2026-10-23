@@ -2,8 +2,10 @@
 
 ## State
 
-- Version 5.6 on `main`; the iPhone runs 5.6.3 (64d0f16), signed until 30.10; the Mac app 5.6.3 (64d0f16). The day's model (one ring, the
-  stack that ends with the plan, Push On, partial credit, the streak step, two rests, medals, the Progress screen)
+- Version 6.0 on `main`; the iPhone runs 5.6.3 (a228add), signed until 30.10 (6.0 waits for `ios-renew`, see Open 1);
+  the Mac app 6.0 from `main`. The day's model (one ring that stays full at the goal, the streak as a flame, the
+  stack that ends with the plan, Study / Catch Up / Push On, partial credit, the streak step, two rests, medals, the
+  Progress screen on both apps, the Mac's Today window)
   and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
   ring's size (seconds, a staircase on closed and open rings) is `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
   and the logs of 2,000 Anki users, and the other decisions of the day with their evidence: `references/ring-design.md`;
@@ -49,19 +51,28 @@ deck folder is chosen in the file picker. Team limits: 3 apps per device (now Fi
 
 In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
-1. **Progress must not depend on the decks in the list.** The ring, the streak and the medals are worked
+1. **6.0 on the iPhone.** `ios-renew --force` failed on 24.10 at 02:12 with the Mac's screen locked: Xcode found
+   no account ("No Accounts", "missing Xcode-Username" in the keychain) and so no profiles; at 00:27, unlocked, it
+   installed. It runs again at the next unlock or by launchd at night; then fix the iPhone's hash in State.
+   Check on the device: the flame in Today's ring and in the widgets, Push On from Today, a reminder that names
+   the streak, the icon's number.
+2. **The Mac's Today and Progress windows on the live screen.** They were checked from offscreen frames only
+   (`TodayWindowSnapshotTests`, `SessionSnapshotMacTests`; the screen was locked): look at them with `vqa`,
+   Study from Today opening the deck and starting its stream, and the window staying open beside a deck.
+3. **Progress must not depend on the decks in the list.** The ring, the streak and the medals are worked
    out from the logs of the active decks: deleting or pausing a deck, or deleting a card, rewrites past
    days. Plan: a progress ledger in the deck folder, one line per study day (done, goal, kept, closed),
    frozen at the day's change, merged by day across devices, filled from the logs on first run; past days
    read from it, today from the logs.
-2. **Share Deck**: a clean `.mnemit` copy (cards and media, no states, no log, no fitted parameters) from
+4. **Share Deck**: a clean `.mnemit` copy (cards and media, no states, no log, no fitted parameters) from
    the deck's menu on both apps; sending the package today sends one's history.
-3. **How Today Works → "Under the Hood"**: a short "Today" section in plain words on top, the tables folded.
-4. **From the reviews of three personas (23.10: Anki veteran, newcomer, no-decks learner)**: a new
-   word's first showing as an introduction, not a red Forgot; an empty Today whose first button is "Add
-   Words" and makes a deck; FSRS figures (RMSE, log loss) for Anki users; Anki import fidelity (cloze,
+5. **How Today Works → "Under the Hood"**: it is the last row of Progress on both apps; still open: a short "Today"
+   section in plain words on top, the tables folded.
+6. **From the reviews of three personas (23.10: Anki veteran, newcomer, no-decks learner)**: a new
+   word's first showing as an introduction, not a red Forgot (New Deck now goes straight on to Add Cards);
+   FSRS figures (RMSE, log loss) for Anki users; Anki import fidelity (cloze,
    several media per side) and an export back with history.
-5. **Decisions to revisit by evidence** (`references/ring-design.md`, "What would reopen it" and "Other
+7. **Decisions to revisit by evidence** (`references/ring-design.md`, "What would reopen it" and "Other
    decisions of the day and their evidence"; four to measure on EF's own log):
    - The day's time: at 60 study days count the closed rings in the Progress calendar: a share outside
      0.7-0.85 reopens it.
@@ -71,20 +82,17 @@ In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
      sort-order simulator with EF's fitted parameters, at the first backlog over 100 cards.
    - Production cards: the Forgot share of the first two production reviews; over 25 % lifts the
      7-day gate to 14, at or below 10 % under a gate of 14 or more lowers it; wait for 100 reviews.
-6. **Rewrite the git history in English.** Only the fork's commits (`git log --author=euf`, 112 with
-   Russian messages); upstream's stay. `git-filter-repo` with a commit callback mapping hash → message;
-   a fresh clone as a reserve; `git push --force-with-lease origin main`; then fix the hash in State. Do it
-   when no agent branches exist (`git branch | grep worktree-agent` empty).
-7. **The Mac suite on `main` hasn't been run** (the tests open windows; `~/.claude/ui-blocked` was up).
-   Known failures when the test app isn't in front: `CardListViewTests.firstClickIntoTableSelectsRow` and
-   `focusedTableHandsFocusToNewTableWhenSorted`.
-8. **Known behaviour, decide on complaint:** pace starts from defaults until 20 timed reviews; a deck with
-   nothing in today's plan doesn't open with the stack, so Push On can't take its new cards; xcodebuild 27.1 sometimes hangs
+8. **The Mac suite** ran on 24.10 with the screen locked: 194 tests, one failure,
+   `CardListViewTests.firstClickIntoTableSelectsRow`, which fails whenever the test app isn't in front (so may
+   `focusedTableHandsFocusToNewTableWhenSorted`). Run it once on the unlocked screen.
+9. **Known behaviour, decide on complaint:** pace starts from defaults until 20 timed reviews; a deck with
+   nothing in today's plan doesn't open with Study, so the plan-end rest's Push On can't take its new cards (Push On
+   from Today opens every active deck); xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
    arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another.
-9. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
+10. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
    duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
-10. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
+11. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
    (store the chosen date in the log first); hiding siblings across decks once pairs exceed 1 %
    (`references/cross-deck-overlap.md`); a listening mode.
 
