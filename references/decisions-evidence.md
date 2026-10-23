@@ -27,9 +27,8 @@ memory; the ring shows effort and counts as done only what FSRS sent away.
 
 ## 2. The day's time
 
-Decision: an exponentially weighted average of the seconds worked, 0.3 of the way up and 0.2 down, a day
-counting for at most twice what it asked, clamped to 2-30 minutes, 4 minutes before any work; nothing else
-changes it.
+Decision: a closure tracker: the day after a study day whose ring closed asks 1.075 times its time, after one
+that stayed open 0.775 times, clamped to 2-30 minutes, 4 minutes before any study; nothing else changes it.
 
 - `goal-setting-research.md` ("Implications for the ring rule") finds the learned base sound, the probe
   size, the 14 days and the 70 % unsourced. Opinion.
@@ -43,17 +42,19 @@ changes it.
   (https://blog.duolingo.com/improving-the-streak/, via `learning-flow-research.md`). Measured (company).
 - Lally 2010: one missed day moved automaticity by under half a point, repeated misses untested
   (`goal-setting-research.md` §2). Single study.
-- No source found for the two weights, the cap of twice, the 2-30 minute clamp or the 4 minutes.
+- No source found for the two factors (they come from the simulation, `ring-simulation.md`), the 2-30 minute clamp or the 4 minutes.
 
 **Removed.** The probe (+10 % after three closed rings, with its 14-day rest) and the 70 % after a miss
 went for lack of evidence: the one trial of a 10 % climb (Buist 2008) found no gain in injuries or
-compliance, and one missed day is harmless (Lally 2010). A missed day stays out of the average, as it
-has no work. The numbers that remain, 0.3 and 0.2, the cap of twice, 2-30 minutes and 4 minutes, are choices, not findings:
-check them on EF's log by replaying `DailyGoal.nextTime` over `reviews.jsonl` with other weights, caps and
-clamps, and look at the share of study days with a closed ring (target 80-90 %). Change a number only when another
+compliance, and one missed day is harmless (Lally 2010). A missed day is no step, as it
+has no work. The numbers that remain, 1.075 and 0.775, 2-30 minutes and 4 minutes, are choices, not findings:
+check them on EF's log by replaying `DailyGoal.nextTime` over `reviews.jsonl` with other factors and
+clamps, and look at the share of study days with a closed ring (target about 80 %). Change a number only when another
 variant beats it by 5 points of closure rate on at least 60 study days (our threshold).
 
-The average is the one of training-load monitoring (Williams et al., Br J Sports Med 2017, "Better way to determine the acute:chronic workload ratio?") and of the Banister impulse-response model; measured in other domains. The asymmetry and the cap are ours: growth comes from the learner, one short day shouldn't shrink the ring, one marathon day shouldn't triple it.
+The tracker is Robbins–Monro quantile tracking: each day multiplies the time by a fixed factor, so the share of closed rings is set by the factors whatever the work; it reads closed or open, so a learner who stops at the ring is no problem, where an average of the work stalls (censoring). The factors give closure 0.801 over 14 simulated scenarios.
+
+Decided by simulation (`ring-simulation.md`, 200 seeds per scenario); real Anki data pending access to the Hugging Face dataset.
 
 ## 3. The streak step
 

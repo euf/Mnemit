@@ -277,9 +277,9 @@ _Avoid_: round, session, lap, segment
 **Day's time** (RU «время дня»):
 The seconds of work the day asks, 120 to 1800, never rounded (`DailyProgress.time`). It comes from the
 review logs alone, forward from the first study day, so every device that reads the same logs gets the
-same: 240 s before any work; then the time of the last study day (a day with work) moved toward the seconds
-worked on it, which count for at most twice what it asked, 30 % of the way up and 20 % down, held to 120 to
-1800 (`DailyGoal.nextTime(after:)`). Nothing else changes it. The day's time
+same: 240 s before any study; then the time of the last study day (a day with work) times 1.075 when its ring
+closed and times 0.775 when it stayed open, held to 120 to 1800 (`DailyGoal.nextTime(after:)`). Nothing else
+changes it. The day's time
 sets the goal and the admission of new cards.
 _Avoid_: capacity, limit, quota, level
 

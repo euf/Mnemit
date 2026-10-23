@@ -62,31 +62,28 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   first study day, the same on every device, never rounded. The goal is the cards of the plan that fit
   it, and new cards fill what the plan's other cards leave.
 - **The rule**, one pure step per study day, `DailyGoal.nextTime(after:)`, over the days before it as plain
-  values (`DailyGoal.RingDay`): an exponentially weighted average of the seconds worked, asymmetric. The last
-  study day (a day with work) asked T (its `RingDay.time`) and worked W; W' = min(W, 2 × T)
-  (`dayCountsAtMost`); the next time is T + a × (W' − T), a = 0.3 (`risingWeight`) when W' > T and 0.2
-  (`fallingWeight`) otherwise, clamped to 120…1800 s; 240 s before any work. Nothing else changes it: a day
-  without work is no step and the days after it ask what they would have asked without it.
-  worked(d) is the cards done on `d` at the day's own prices, new × new price + other × other price at
-  the pace of the seven study days before `d`; laps count.
-- **Why**: the base is past work, as Apple's activity goal and Garmin's Auto Goal take it
-  (`goal-setting-research.md`). An achievable ring keeps people: at Duolingo the highest daily-goal tier
-  produced the fewest streaks (`learning-flow-research.md`). Growth comes from the learner's own extra
-  work, which the average takes in, and from the "+10 new" choice after the ring; the ring itself never
-  asks for more than the learner did. The average is the exponentially weighted one of training-load
-  monitoring (Williams et al., Br J Sports Med 2017) and of the Banister impulse-response model: one number
-  carries the history. The asymmetry and the cap are our choices: the step up is the larger because growth
-  comes from the learner; the step down is smaller so that one short day doesn't shrink the ring; a day
-  counts for at most twice what it asked so that one marathon day doesn't triple it. The +10 % probe and the
-  70 % after a miss are gone for want of evidence (`decisions-evidence.md` §2). The weights 0.3 and 0.2, the
-  cap, the 2–30 minutes and the 4 minutes are choices to check on EF's log.
-- Model learners (`RingRuleTests`): one who works exactly the ring keeps it constant; one who works 10 min
-  a day from the first is asked 583 s on day 10 and never more than 600; one 3-minute day in a 10-minute run
-  lowers the next to 516 s, and 571 s are back on the fourth day after; one 25-minute day raises the next to
-  780 s (1.3 × T, the cap) and the excess falls by a fifth a day; a day without work changes nothing; ten
-  seconds of work a day leave 2 minutes from day 5 and ten thousand reach 30 on day 9.
+  values (`DailyGoal.RingDay`): a closure tracker. The last study day (a day with work) asked T (its
+  `RingDay.time`); the next time is T × 1.075 (`DailyGoal.grows`) when its ring closed (done ≥ goal) and
+  T × 0.775 (`DailyGoal.shrinks`) when it stayed open, clamped to 120…1800 s; 240 s before any study day.
+  Nothing else changes it: a day without work is no step and the days after it ask what they would have asked
+  without it. The rule reads only `closed`. worked(d) is the cards done on `d` at the day's own prices, new ×
+  new price + other × other price at the pace of the seven study days before `d`, laps included; How Today
+  Works shows it.
+- **Why**: the ring is judged by whether it closes, so the rule steers that. Each day multiplies T by a
+  fixed factor and the share of closed rings settles near 0.8 whatever the work (Robbins–Monro quantile
+  tracking; `ring-simulation.md`: closure 0.801 over 14 simulated scenarios). An average of the work stalls
+  for a learner who stops at the ring: the work equals the ask, so the average never passes the start. The
+  tracker reads closed or open, and a ring-stopper's day is closed. An achievable ring keeps people: at
+  Duolingo the highest daily-goal tier produced the fewest streaks (`learning-flow-research.md`). Growth
+  comes from closed rings and from the "+10 new" choice after the ring. The +10 % probe and the 70 % after
+  a miss are gone for want of evidence (`decisions-evidence.md` §2). The two factors, the 2–30 minutes and
+  the 4 minutes are choices from the simulation, to check on EF's log (`Tools/ring-sim/sim.py --real`).
+- Model learners (`RingRuleTests`): one who stops at the ring grows from 4 min by 7.5 % a closed day, 258 s
+  on day 2 and 460 s on day 10; one who works less than the ring asks falls × 0.775 a day, 240, 186, 144 s,
+  and holds 2 minutes from day 4; a day without work changes nothing; a ring closed every day reaches 30
+  minutes on day 29.
 - `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring) with today live, and the
-  reason is `start` or `recentWork`; `DailyProgressCache.Before.days` keeps the days before today.
+  reason is `start`, `ringClosed` or `ringOpen`; `DailyProgressCache.Before.days` keeps the days before today.
 
 ## New-card allowance
 
