@@ -5,18 +5,14 @@ import Foundation
 /// leaving the stream anywhere loses nothing, and the next stream picks up from the deck.
 ///
 /// 1. `Stage.plan`: today's plan, what `StudySession.counts(for:at:calendar:)` reports,
-///    in the order and within the limits of `StudySession`, a share of the backlog
-///    included (`DailyGoal.backlogShare(of:onTime:)`), taken in segments of at most
-///    `cardsPerSession` cards. When a segment of the plan is done, the plan is looked at
+///    in the order and within the limits of `StudySession`, every card due included,
+///    overdue ones too, taken in segments of at most `cardsPerSession` cards. When a segment of the plan is done, the plan is looked at
 ///    again: the cards the segment left out come next, and cards of an Again come back as
 ///    learning cards. The segments are the stream's business: the plan the learner sees is
 ///    all of it.
 /// 2. `Stage.rest`: the plan is empty, which is the daily goal. The stream waits here for
 ///    the learner, who can `keepGoing(in:at:calendar:)` or `addNewCards(_:in:at:calendar:)`.
-/// 3. Beyond the plan, `Stage.catchUp`: the rest of the backlog. Its cards are due, so
-///    reviewing them is not reviewing ahead. Cards that are not due are never reviewed: an
-///    early review gains FSRS little, and more work is a new card (`addNewCards`).
-/// 4. Then practice, which changes no card: `Stage.practiceMistakes` (today's mistakes,
+/// 3. Beyond the plan, practice, which changes no card: `Stage.practiceMistakes` (today's mistakes,
 ///    `Deck.mistakes(onDayOf:calendar:)`), then `Stage.practiceNewest`
 ///    (`Deck.newestBatchIDs`) again and again.
 ///
@@ -39,8 +35,6 @@ import Foundation
 public struct StudyStream: Sendable {
     public enum Stage: Sendable, Hashable {
         case plan
-        /// The overdue reviews the plan left for the days after, see `StudyCounts.catchUp`.
-        case catchUp
         case practiceMistakes
         case practiceNewest
         /// The plan is done, or the practice of a practice-only stream; no card is asked.
@@ -152,8 +146,7 @@ public struct StudyStream: Sendable {
     }
 
     /// Moves on to the next segment if the one running has no card left to ask: the plan
-    /// goes on while it isn't empty and rests once it is, the catch-up goes on into
-    /// practice, practice repeats. Rest and a segment with a card change nothing.
+    /// goes on while it isn't empty and rests once it is, practice repeats. Rest and a segment with a card change nothing.
     ///
     /// Call it with the deck as it is after the last review. A segment that has no card
     /// to ask is never installed, so a call can't loop.
@@ -168,8 +161,6 @@ public struct StudyStream: Sendable {
             return false
         case .plan:
             next = [.plan]
-        case .catchUp:
-            next = isPracticeOnly ? [] : [.catchUp, .practiceMistakes, .practiceNewest]
         case .practiceMistakes:
             next = isPracticeOnly ? [] : [.practiceNewest]
         case .practiceNewest:
@@ -211,14 +202,14 @@ public struct StudyStream: Sendable {
         roundRest = nil
     }
 
-    /// From rest, goes on beyond the plan: the rest of the backlog, else the
-    /// practice of today's mistakes, else of the newest words.
+    /// From rest, goes on beyond the plan: the practice of today's mistakes, else of the
+    /// newest words.
     ///
     /// - Returns: Whether there was anything to go on with.
     @discardableResult
     public mutating func keepGoing(in deck: Deck, at now: Date, calendar: StudyCalendar) -> Bool {
         guard stage == .rest, !isPracticeOnly else { return false }
-        return install(firstOf: [.catchUp, .practiceMistakes, .practiceNewest], in: deck, at: now, calendar: calendar)
+        return install(firstOf: [.practiceMistakes, .practiceNewest], in: deck, at: now, calendar: calendar)
     }
 
     /// Whether `keepGoing(in:at:calendar:)` has anything to go on with.
@@ -271,8 +262,6 @@ public struct StudyStream: Sendable {
         case .plan:
             segment = .study(
                 StudySession(deck: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode, newCardAllowance: newCardAllowance))
-        case .catchUp:
-            segment = .study(StudySession(catchingUpIn: deck, at: now, calendar: calendar, random: segmentRandom, reviewMode: reviewMode))
         case .practiceMistakes:
             segment = .practice(Practice(practicing: deck.mistakes(onDayOf: now, calendar: calendar), at: now, random: segmentRandom))
         case .practiceNewest:

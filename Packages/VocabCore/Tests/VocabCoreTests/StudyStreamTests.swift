@@ -169,41 +169,32 @@ struct StudyStreamTests {
         return learned(onDay: today - 1 - interval)
     }
 
-    @Test func aBacklogTakesOnlyItsShareOfThePlanAndTheRestWaitsForKeepGoing() throws {
-        // Fourteen cards fell due yesterday: today asks two of them, a seventh.
+    @Test func aBacklogIsPartOfThePlanAndBeyondItTheStreamGoesToPractice() throws {
+        // Fourteen cards fell due yesterday: all of them are today's plan.
         var run = try run((0..<14).map { overdue("b\($0)") })
         var counts = StudySession.counts(for: run.deck, at: now, calendar: calendar)
-        #expect(counts.total == 2)
-        #expect(counts.catchUp == 12)
+        #expect(counts.total == 14)
         #expect(run.stream.stage == .plan)
-        #expect(run.stream.session.totalCount == 2)
+        #expect(run.stream.session.totalCount == 14)
 
-        // The share doesn't shrink as it is worked off: one done, one left.
+        // The plan shrinks as it is worked off.
         run.grade(.good)
         counts = StudySession.counts(for: run.deck, at: now, calendar: calendar)
-        #expect(counts.total == 1)
-        #expect(counts.catchUp == 12)
+        #expect(counts.total == 13)
+        var stages = [run.stream.stage]
         _ = run.play(whileIn: .plan)
-        // The goal is met: the stream rests, with the rest of the backlog still due.
+        stages.append(run.stream.stage)
         #expect(run.stream.stage == .rest)
-        #expect(run.stream.recap.cards == 2)
-        counts = StudySession.counts(for: run.deck, at: now, calendar: calendar)
-        #expect(counts.total == 0)
-        #expect(counts.catchUp == 12)
-        #expect(run.stream.canKeepGoing(in: run.deck, at: now, calendar: calendar))
+        #expect(run.stream.recap.cards == 14)
+        #expect(run.deck.cards.allSatisfy { $0.log.count == 3 })
+        #expect(StudySession.counts(for: run.deck, at: now, calendar: calendar).total == 0)
 
-        // Keep going continues into the backlog, not into review ahead: these cards are due.
+        // Beyond the plan there is no catch-up stage: nothing is due, so the stream goes to practice.
         let keptGoing = run.stream.keepGoing(in: run.deck, at: now, calendar: calendar)
         #expect(keptGoing)
-        #expect(run.stream.stage == .catchUp)
-        #expect(run.stream.session.totalCount == 12)
-        let caughtUp = run.play(whileIn: .catchUp)
-        #expect(caughtUp == 12)
-        #expect(run.stream.stage != .catchUp)
-        #expect(run.deck.cards.allSatisfy { $0.log.count == 3 })
-        counts = StudySession.counts(for: run.deck, at: now, calendar: calendar)
-        #expect(counts.total == 0)
-        #expect(counts.catchUp == 0)
+        stages.append(run.stream.stage)
+        #expect(stages == [.plan, .rest, .practiceNewest])
+        #expect(stages.allSatisfy { String(describing: $0) != "catchUp" })
     }
 
     @Test func withoutABacklogKeepGoingGoesStraightToPractice() throws {

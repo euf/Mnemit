@@ -40,9 +40,8 @@ struct NoteSelectionTests {
     func selected(_ cards: [Card], options: LearningOptions? = nil, seed: UInt64 = 1) throws -> Set<String> {
         let deck = try Deck(learningOptions: options ?? self.options(), cards: cards)
         var random = SeededRandom(seed: seed)
-        // These cards are overdue by days to set their urgency apart; the share of the backlog
-        // is not what is tested here (`StudyStreamTests`, `DailyProgressTests`).
-        let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, includingBacklog: true, using: &random)
+        // These cards are overdue by days to set their urgency apart.
+        let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, using: &random)
         #expect(ids.count == Set(ids).count)
         return Set(ids.map { id in deck.card(withID: id)!.question })
     }

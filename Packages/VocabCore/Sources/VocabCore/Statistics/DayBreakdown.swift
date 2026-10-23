@@ -10,12 +10,8 @@ import Foundation
 public struct DayBreakdown: Hashable, Sendable {
     /// The plan as it stood when the study day began, over all decks.
     public struct Plan: Hashable, Sendable {
-        /// Review cards due on the day itself.
+        /// Review cards due on the day, overdue ones included.
         public var reviewsDue = 0
-        /// Overdue review cards the plan takes: the share of the backlog (`DailyGoal.backlogShare(of:onTime:)`).
-        public var backlogTaken = 0
-        /// The overdue review cards in all: the ones taken and those left for catch-up.
-        public var backlog = 0
         /// Cards in learning or relearning.
         public var learning = 0
         /// New cards the day admits, the allowance within each deck's ceiling.
@@ -84,8 +80,6 @@ public struct DayBreakdown: Hashable, Sendable {
     public var plan: Plan
     /// One entry for each deck, in the order of the decks given.
     public var decks: [DeckNewCards]
-    /// The overdue review cards the plan leaves for after it, now (`StudyCounts.catchUp`), over all decks.
-    public var catchUp: Int
     /// The last study days, today last, as many as the history has.
     public var days: [Day]
     public var newCards: PaceBasis
@@ -123,7 +117,6 @@ extension DayBreakdown {
         // The plan at the day's start, by kind, and each deck's part of the new cards.
         var plan = Plan()
         var shares: [DeckNewCards] = []
-        var catchUp = 0
         var taking = 0
         for (index, deck) in given.enumerated() {
             guard !deck.isPaused else {
@@ -133,19 +126,15 @@ extension DayBreakdown {
             let history = histories[taking]
             taking += 1
             let atStart = deck.plan(onDayOf: now, calendar: calendar)
-            plan.reviewsDue += atStart.review - atStart.backlogTaken
-            plan.backlogTaken += atStart.backlogTaken
-            plan.backlog += atStart.backlogTaken + atStart.catchUp
+            plan.reviewsDue += atStart.review
             plan.learning += atStart.learning
             let allowance = progress.newCardAllowances.indices.contains(index) ? progress.newCardAllowances[index] : 0
             let admitted = min(allowance, history.starts[today]?.new ?? 0)
             plan.newAdmitted += admitted
             shares.append(DeckNewCards(allowance: allowance, ceiling: history.newCeilingToday, admitted: admitted))
-            catchUp += deck.owed(now: now, calendar: calendar, newCardAllowance: allowance).catchUp
         }
         self.plan = plan
         self.decks = shares
-        self.catchUp = catchUp
 
         // What today's pace is worked out from: the same window as `progress.pace`.
         let window = (today - DailyGoal.paceDays)...today

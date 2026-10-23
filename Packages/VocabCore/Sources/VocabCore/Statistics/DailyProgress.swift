@@ -9,10 +9,9 @@ import Foundation
 /// (`newCardsAllowed(seconds:otherCards:pace:)`). The first `streakSeconds` of the plan are the streak step.
 /// The plan of a study day is what FSRS sets when the day begins, `StudySession.counts(for:at:calendar:)`
 /// with those allowances: the cards due that day, overdue ones included, and the new cards within the day's
-/// limits and allowance. Only the backlog, the review cards that were already due before the day, asks a
-/// share of itself (`backlogShare(of:onTime:)`), so an import or a long break doesn't pile a thousand cards
-/// on one day. The goal of the day is the cards of that plan that fit its time (`DayRounds`): reviews beyond
-/// it stay in the plan and what is done beyond the goal fills laps. The goal stays for the day: cards added
+/// limits and allowance. The goal of the day is the cards of that plan that fit its time (`DayRounds`), most
+/// forgotten first, so an import or a long break doesn't pile a thousand cards on one day: reviews beyond it
+/// stay in the plan and what is done beyond the goal fills laps. The goal stays for the day: cards added
 /// later are no part of it. A card is done once its last review of the day left it due on a later day,
 /// which is that FSRS let it go (`DeckActivity.done`): it counts once, however many reviews it took.
 /// Reviews, the grades in the logs, count for the streak's first day and for the pace
@@ -21,23 +20,9 @@ import Foundation
 /// its ring when its goal is done. Cards done count in every mode: the plan, catch-up, review ahead and
 /// anything else the study stream asks. Practice changes no card and writes no review, so it doesn't count.
 ///
-/// Everything that sets the size of a day is here: a cap on the goal, the length of the streak step, or another
-/// spread of the backlog, is a change of this type.
+/// Everything that sets the size of a day is here: a cap on the goal or the length of the streak step is a change
+/// of this type.
 public enum DailyGoal {
-    /// The days over which a backlog is spread: each day asks one part of it.
-    public static let backlogSpreadDays = 7
-
-    /// What a day asks of a backlog of `backlog` overdue review cards, when `onTime` review cards
-    /// are due on the day itself: its part of the spread, rounded up so that a backlog is
-    /// always worked off, but at least what a normal day asks, `onTime`, so that a small
-    /// backlog, one missed day's, is cleared in a day and leaves no week-long tail. Never more
-    /// than the backlog.
-    public static func backlogShare(of backlog: Int, onTime: Int) -> Int {
-        let backlog = max(0, backlog)
-        let spread = (backlog + backlogSpreadDays - 1) / backlogSpreadDays
-        return min(backlog, max(spread, onTime))
-    }
-
     /// The goal of a study day on which `done` cards are done, `owed` cards of its plan still
     /// wait (`StudyCounts.total`), and the cards of its plan that fit its time were `plan` when the
     /// day began (`DayRounds.goal`).
@@ -582,7 +567,7 @@ public struct DeckActivity: Sendable {
     }
 
     /// What the plan still waits for now, on the study day of `now`: `StudySession.counts(for:at:calendar:)`,
-    /// so burying, limits, the lock and the share of the backlog count as the stream takes them, and
+    /// so burying, limits and the lock count as the stream takes them, and
     /// `newCardAllowance` is the deck's share of the day's new cards (`DailyProgress.newCardAllowances`).
     public func owed(now: Date, calendar: StudyCalendar, newCardAllowance: Int? = nil) -> StudyCounts {
         StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: newCardAllowance)
@@ -913,7 +898,7 @@ public struct DeckActivity: Sendable {
         var stood = deck
         for index in stood.cards.indices {
             if stood.cards[index].hasCompleteLog { stood.cards[index].learningState = nil }
-            // Without the log, the day's start has no first review and no share of the backlog to take back.
+            // Without the log, the day's start has no first review to take back.
             stood.cards[index].log = []
         }
         var locks = ProductionLocks(of: stood, calendar: calendar)

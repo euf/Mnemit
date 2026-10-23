@@ -70,15 +70,13 @@ extension DailyProgressTests {
         #expect(evaluate([active, resumed]).ring.done == 10)
     }
 
-    /// On resume the overdue cards of the days of the pause are a backlog like any: the plan takes its share.
-    @Test func aResumedDeckBringsItsOverdueCardsBackAsABacklog() throws {
+    /// On resume the overdue cards of the days of the pause are due like any: the plan holds them all.
+    @Test func aResumedDeckBringsItsOverdueCardsBackIntoThePlan() throws {
         let overdue = (0..<30).map { waiting("o\($0)", onDay: today - 10) }
         let paused = try deck(overdue, isPaused: true)
         #expect(evaluate([paused]).cardsLeft == 0)
         let resumed = try deck(overdue)
-        let share = DailyGoal.backlogShare(of: 30, onTime: 0)
-        #expect(share < 30)
-        #expect(evaluate([resumed]).cardsLeft == share)
+        #expect(evaluate([resumed]).cardsLeft == 30)
     }
 
     @Test func theBreakdownLeavesAPausedDeckOutAndKeepsThePlaceOfEachDeck() throws {
@@ -87,9 +85,8 @@ extension DailyProgressTests {
         let (progress, together) = breakdown([paused, active])
         let (_, alone) = breakdown([active])
         #expect(together.plan == alone.plan)
-        #expect(together.catchUp == alone.catchUp)
         #expect(together.days == alone.days)
         #expect(together.decks == [DayBreakdown.DeckNewCards(allowance: 0, ceiling: 0, admitted: 0)] + alone.decks)
-        #expect(progress.ring.goal == alone.plan.reviewsDue + alone.plan.backlogTaken + alone.plan.learning + alone.plan.newAdmitted)
+        #expect(progress.ring.goal == alone.plan.reviewsDue + alone.plan.learning + alone.plan.newAdmitted)
     }
 }

@@ -11,24 +11,21 @@ extension DailyProgressTests {
         return (progress, DayBreakdown(activities, progress: progress, at: date ?? now, calendar: calendar))
     }
 
-    @Test func thePlanIsToldInItsPartsAndTheBacklogByItsShare() throws {
+    @Test func thePlanIsToldInItsPartsAndTheOverdueCardsAreDueToday() throws {
         let start = calendar.start(ofDay: today)
         let learning = LearningState(phase: .learning, stability: 1, difficulty: 5, lastReview: start.addingTimeInterval(-7200), due: start.addingTimeInterval(-3600), reviews: 1)
         let cards =
-            (0..<10).map { waiting("r\($0)") } + (0..<30).map { waiting("o\($0)", onDay: today - 3) } + [Card(question: "l", answer: "l", learningState: learning)]
+            (0..<10).map { waiting("r\($0)") } + (0..<5).map { waiting("o\($0)", onDay: today - 3) } + [Card(question: "l", answer: "l", learningState: learning)]
             + (0..<40).map { fresh("n\($0)") }
         let (progress, breakdown) = breakdown([try Deck(learningOptions: options(), cards: cards)])
-        // 30 are overdue, 10 are due on the day: it takes as many as a normal day asks, ten, and leaves 20.
-        #expect(breakdown.plan.reviewsDue == 10)
-        #expect(breakdown.plan.backlogTaken == 10)
-        #expect(breakdown.plan.backlog == 30)
+        // 5 are overdue, 10 are due on the day: all 15 are due today.
+        #expect(breakdown.plan.reviewsDue == 15)
         #expect(breakdown.plan.learning == 1)
-        #expect(breakdown.catchUp == 20)
-        // Two rounds are 240 s; 21 cards at 10 s leave 30 s, which is one new card of 30 s.
-        #expect(breakdown.plan.newAdmitted == 1)
-        #expect(breakdown.decks == [DayBreakdown.DeckNewCards(allowance: 1, ceiling: 40, admitted: 1)])
-        #expect(progress.newCardAllowances == [1])
-        #expect(progress.ring.goal == breakdown.plan.reviewsDue + breakdown.plan.backlogTaken + breakdown.plan.learning + breakdown.plan.newAdmitted)
+        // Two rounds are 240 s; 16 cards at 10 s leave 80 s, which are two new cards of 30 s.
+        #expect(breakdown.plan.newAdmitted == 2)
+        #expect(breakdown.decks == [DayBreakdown.DeckNewCards(allowance: 2, ceiling: 40, admitted: 2)])
+        #expect(progress.newCardAllowances == [2])
+        #expect(progress.ring.goal == breakdown.plan.reviewsDue + breakdown.plan.learning + breakdown.plan.newAdmitted)
     }
 
     @Test func aDecksCeilingIsWhatItsLimitsTakeAndItAdmitsNoMoreThanThat() throws {

@@ -92,6 +92,14 @@ struct DailyRoundsTests {
         #expect(DayRounds(otherCards: 100, newCards: 10, pace: pace, seconds: 240).goal == 24)
     }
 
+    @Test func aBacklogOfFifteenHundredWithASixMinuteDayHasTheGoalThatFitsAndNoSpread() {
+        // 360 s hold 36 reviews of 10 s: the goal is those, however many are overdue; the other 1464 stay in the plan.
+        let rounds = DayRounds(otherCards: 1500, newCards: 0, pace: pace, seconds: 360)
+        #expect(rounds.goal == 36)
+        #expect(rounds.ends == [12, 36])
+        #expect(DayRounds(otherCards: 1500, newCards: 20, pace: pace, seconds: 360).goal == 36)
+    }
+
     @Test func theSecondsAreNotRoundedIntoSteps() {
         #expect(DayRounds(otherCards: 100, newCards: 0, pace: pace, seconds: 250).goal == 25)
         #expect(DayRounds(otherCards: 0, newCards: 10, pace: pace, seconds: 269).goal == 8)

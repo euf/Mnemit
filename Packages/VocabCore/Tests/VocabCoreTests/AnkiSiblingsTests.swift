@@ -197,7 +197,7 @@ struct AnkiSiblingsTests {
     func selected(_ result: AnkiImport, at now: Date) throws -> [String] {
         let deck = try deck(result, created: now.addingTimeInterval(-90 * 86400))
         var random = SeededRandom(seed: 1)
-        let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, includingBacklog: true, using: &random)
+        let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, using: &random)
         return ids.map { deck.card(withID: $0)!.question }
     }
 
