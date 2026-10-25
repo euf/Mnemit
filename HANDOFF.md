@@ -51,11 +51,13 @@ deck folder is chosen in the file picker. Team limits: 3 apps per device (now Fi
 
 In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
-1. **6.0 on the iPhone.** `ios-renew --force` failed on 24.10 at 02:12 with the Mac's screen locked: Xcode found
-   no account ("No Accounts", "missing Xcode-Username" in the keychain) and so no profiles; at 00:27, unlocked, it
-   installed. It runs again at the next unlock or by launchd at night; then fix the iPhone's hash in State.
-   Check on the device: the flame in Today's ring and in the widgets, Push On from Today, a reminder that names
-   the streak, the icon's number.
+1. **6.0 on the iPhone needs EF to sign Xcode in.** Xcode has lost its Apple ID: `defaults read com.apple.dt.Xcode
+   DVTDeveloperAccountManagerAppleIDLists` is empty, and `ios-renew` fails with "No Accounts" for both apps (24.10
+   02:12, the nightly run at 04:30, 25.10 03:53 on an unlocked screen); at 24.10 00:27 it still installed. EF adds
+   the Apple ID of the Personal Team in Xcode ▸ Settings ▸ Accounts (password and code), then
+   `~/dotfiles/ios-renew --force`, then fix the iPhone's hash in State. The iPhone's 5.6.3 and FicTypeApp stay
+   signed until 30.10 23:27. Check on the device: the flame in Today's ring and in the widgets, Push On from Today,
+   a reminder that names the streak, the icon's number.
 2. **The Mac's Today and Progress windows on the live screen.** They were checked from offscreen frames only
    (`TodayWindowSnapshotTests`, `SessionSnapshotMacTests`; the screen was locked): look at them with `vqa`,
    Study from Today opening the deck and starting its stream, and the window staying open beside a deck.
