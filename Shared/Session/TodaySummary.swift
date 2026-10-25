@@ -43,6 +43,7 @@ struct SummaryRow: View {
                         detail
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .monospacedDigit()

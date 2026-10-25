@@ -124,7 +124,7 @@ struct TodayWindowContent: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(action == .study ? nil : .secondary)
+                .tint(action == .study ? Color.appAccent : .secondary)
                 .controlSize(.extraLarge)
                 .keyboardShortcut(.defaultAction)
                 .disabled(active.isEmpty)

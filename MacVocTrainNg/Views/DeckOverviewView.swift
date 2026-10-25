@@ -44,7 +44,7 @@ struct DeckOverviewView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(counts.total > 0 ? nil : .secondary)
+                    .tint(counts.total > 0 ? Color.appAccent : .secondary)
                     .controlSize(.extraLarge)
                     .keyboardShortcut(.defaultAction)
                     .disabled(!canEdit || !hasCards)

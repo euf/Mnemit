@@ -156,7 +156,6 @@ struct DocumentView: View {
         .onAppear {
             OpenDecks.shared.add(document)
             refreshRing()
-            hideExtension()
         }
         .onDisappear { OpenDecks.shared.remove(document) }
         .onReceive(document.deckDidChange) { refreshRing() }
@@ -330,15 +329,6 @@ struct DocumentView: View {
         case .practiceMistakes: practiceMistakes()
         case .practiceNewest: practiceNewestWords()
         }
-    }
-
-    /// Names the window after the deck, "Greek B1", as Today and the iPhone do, not after the package: the file's
-    /// extension is hidden, which the window's title follows.
-    private func hideExtension() {
-        guard var url = fileURL, (try? url.resourceValues(forKeys: [.hasHiddenExtensionKey]))?.hasHiddenExtension != true else { return }
-        var values = URLResourceValues()
-        values.hasHiddenExtension = true
-        try? url.setResourceValues(values)
     }
 
     /// Starts the stream that Today asked of this deck, once the document can be edited.
