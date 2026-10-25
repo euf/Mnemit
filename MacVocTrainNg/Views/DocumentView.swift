@@ -256,11 +256,11 @@ struct DocumentView: View {
         fileURL?.deletingPathExtension().lastPathComponent ?? String(localized: "this deck")
     }
 
-    /// Opens the study stream, which rests at once if today's plan is empty; Push On adds ten new cards at once.
-    private func startSession(_ entry: SessionViewModel.Entry = .study) {
+    /// Opens the study stream, which rests at once if today's plan is empty; Push On adds ten new cards at once. With
+    /// `others`, the decks Today opened beside this one, the stream mixes them all, as the iPhone's does.
+    private func startSession(_ entry: SessionViewModel.Entry = .study, with others: [VocabularyDocument] = []) {
         guard canEdit, session == nil, !document.deck.cards.isEmpty else { return }
-        let model = SessionViewModel(
-            document: document, studyBy: Preferences.studyBy(), entry: entry, rounds: RoundGuide(progress: ring.progress, document: document))
+        let model = SessionViewModel(documents: [document] + others, studyBy: Preferences.studyBy(), entry: entry, ring: ring)
         session = model
         if model.studyBy == .flashcards {
             shortcutsHelp.showForFirstSession()
@@ -332,10 +332,14 @@ struct DocumentView: View {
     }
 
     /// Starts the stream that Today asked of this deck, once the document can be edited.
+    /// The decks Today opened with this one join the stream once they can be edited; a deck that isn't ready within a
+    /// few seconds (not downloaded yet, say) stays out of it.
     private func takeStudyRequest() {
-        guard canEdit, session == nil, let fileURL, let entry = WelcomeRequest.takeStudy(of: fileURL) else { return }
-        // On the next turn, once the view attached the undo manager.
-        Task { startSession(entry) }
+        guard canEdit, session == nil, let fileURL, let request = WelcomeRequest.takeStudy(of: fileURL) else { return }
+        Task {
+            let others = await WelcomeRequest.openDocuments(request.others)
+            startSession(request.entry, with: others.filter { $0 !== document })
+        }
     }
 
     /// Evaluates the ring for every deck of the Mnemit folder, the open ones as their documents have them, as the

@@ -27,15 +27,16 @@ struct WelcomeView: View {
         }
     }
 
-    /// Opens the deck the day goes on with and starts its stream there: the deck with cards left that was used
-    /// last, or the first; for Push On the deck used last.
+    /// Opens the decks of the day and starts one stream over all of them, as the iPhone's Study does: in the window
+    /// of the deck used last, mixing the others in, each card from the deck whose next card is most urgent. Study
+    /// and Catch Up take the decks with cards left; Push On every active deck, as each may give new cards.
     private func study(_ action: DayAction) {
         let active = folder.decks.filter { !counts.paused.contains($0) }
         let used = recent.map(\.standardizedFileURL)
         let byUse = active.sorted { (used.firstIndex(of: $0.standardizedFileURL) ?? .max) < (used.firstIndex(of: $1.standardizedFileURL) ?? .max) }
-        let deck = action == .pushOn ? byUse.first : byUse.first { (counts.counts[$0]?.total ?? 0) > 0 }
-        guard let deck else { return }
-        WelcomeRequest.requestStudy(of: deck, entry: action == .pushOn ? .pushOn : .study)
+        let decks = action == .pushOn ? byUse : byUse.filter { (counts.counts[$0]?.total ?? 0) > 0 }
+        guard let first = decks.first else { return }
+        WelcomeRequest.requestStudy(of: first, entry: action == .pushOn ? .pushOn : .study, with: Array(decks.dropFirst()))
     }
 
     /// Reads the folder, the day's ring over its decks and their counts, the open decks as their documents have them.

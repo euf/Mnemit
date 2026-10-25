@@ -6,9 +6,10 @@ import VocabCore
 
 /// Drives the study stream on the Mac: checks responses and moves on after a correct one
 /// if asked to. With flash cards (`studyBy`) there is no response to check: the learner
-/// reveals the answer and grades it. Applying grades and keeping the stream's place in
-/// step with undo and redo and with every other change to the deck is left to a
-/// `SessionDriver`, which the iPhone app shares.
+/// reveals the answer and grades it. The stream itself is the iPhone's `StudyModel`: one
+/// deck, or every deck of the day at once, each card from the deck whose next card is most
+/// urgent, with the rounds, Push On and Undo across the decks; applying grades and keeping the
+/// stream's place in step with undo and redo is left to its `SessionDriver`s.
 @MainActor @Observable
 final class SessionViewModel {
     enum Stage: Equatable {
@@ -22,18 +23,8 @@ final class SessionViewModel {
         case resting
     }
 
-    /// What the stream starts with.
-    enum Entry {
-        /// Today's stack: the plan, which ends; past it only Push On.
-        case study
-        /// Today's stack once it is done: Push On, ten new cards at once, without the rest at the end of the plan
-        /// first.
-        case pushOn
-        /// A practice of the cards that went wrong today, which changes no card.
-        case practiceMistakes
-        /// A practice of the newest words, which changes no card.
-        case practiceNewest
-    }
+    /// What the stream starts with, as on the iPhone.
+    typealias Entry = StudyModel.Entry
 
     /// The card reviewed or suspended last, shown below the current one.
     struct PreviousReview: Equatable {
@@ -43,111 +34,118 @@ final class SessionViewModel {
         var grade: Grade?
     }
 
-    let document: VocabularyDocument
     /// Move on right after a correct response instead of asking for a grade.
     let autoAdvance: Bool
     /// How the stream asks its cards.
     let studyBy: Preferences.StudyBy
-    private let driver: SessionDriver
-    /// Tells the driver when the application stops being active: the time away is not on a card.
+    private let stream: StudyModel
+    /// Tells the stream when the application stops being active: the time away is not on a card.
     @ObservationIgnored private var activityObservation: AnyCancellable?
-    private(set) var stage: Stage
     private(set) var previous: PreviousReview?
-    /// Counts the questions asked. The view gives each question a response field of
-    /// its own, so ⌘Z can't reach the typing for an earlier one (#9).
-    private(set) var questionNumber = 0
     var input = ""
+    /// The response checked, with the question it was checked on.
+    private var checked: (question: Int, result: CheckResult, response: String)?
 
-    /// Uses the document's clock, so reviews and the snapshot they update fall on the same study day.
-    /// Types by default, so a test doesn't depend on the learner's preference; the app passes it.
-    ///
-    /// With `rounds`, the plan rests at the end of each round of the day but the last, see `SessionDriver`;
-    /// a practice has none.
-    init(
+    /// A stream over `document` alone.
+    convenience init(
         document: VocabularyDocument, autoAdvance: Bool = Preferences.autoAdvance, studyBy: Preferences.StudyBy = .typing, entry: Entry = .study,
-        rounds: RoundGuide? = nil
+        rounds: RoundGuide? = nil, ring: DailyRingModel? = nil
     ) {
-        let now = document.clock.now
-        let stream: StudyStream
-        switch entry {
-        case .study, .pushOn:
-            stream = StudyStream(
-                deck: document.deck, at: now, calendar: document.calendar, reviewMode: studyBy == .flashcards ? .revealed : .typed,
-                newCardAllowance: document.newCardAllowance)
-        case .practiceMistakes:
-            stream = StudyStream(practicingMistakesIn: document.deck, at: now, calendar: document.calendar)
-        case .practiceNewest:
-            stream = StudyStream(practicingNewestWordsIn: document.deck, at: now)
-        }
-        self.document = document
+        self.init(documents: [document], autoAdvance: autoAdvance, studyBy: studyBy, entry: entry, rounds: rounds, ring: ring)
+    }
+
+    /// A stream over `documents`, the decks of the day; a practice takes the first only. The rounds are `rounds`
+    /// (tests), or follow `ring`.
+    init(
+        documents: [VocabularyDocument], autoAdvance: Bool = Preferences.autoAdvance, studyBy: Preferences.StudyBy = .typing,
+        entry: Entry = .study, rounds: RoundGuide? = nil, ring: DailyRingModel? = nil
+    ) {
         self.autoAdvance = autoAdvance
         self.studyBy = studyBy
-        driver = SessionDriver(document: document, stream: stream, rounds: entry == .practiceMistakes || entry == .practiceNewest ? nil : rounds)
-        if entry == .pushOn {
-            driver.addNewCards()
+        stream = StudyModel(documents: documents, entry: entry, rounds: rounds, ring: ring, reviewMode: studyBy == .flashcards ? .revealed : .typed)
+        stream.onMoveOn = { [weak self] in
+            guard let self else { return }
+            input = ""
+            checked = nil
+            // Undo or redo, from the menu or here: the bar of the last answer no longer says what happened.
+            if stream.returnedByUndo { previous = nil }
         }
-        stage = driver.isResting ? .resting : .asking
-        driver.delegate = self
+        // A checked response is checked again against the card as it is now, e.g. after undoing an edit of its answer.
+        stream.onCardChange = { [weak self] in
+            guard let self, let checked, checked.question == stream.questionNumber, let card = currentCard else { return }
+            self.checked = (checked.question, checker.check(checked.response, against: card.answer), checked.response)
+        }
         let center = NotificationCenter.default
         activityObservation = center.publisher(for: NSApplication.didBecomeActiveNotification).map { _ in true }
             .merge(with: center.publisher(for: NSApplication.didResignActiveNotification).map { _ in false })
-            .sink { [weak self] in self?.driver.setActive($0) }
+            .sink { [weak self] in self?.stream.setActive($0) }
+    }
+
+    /// The deck of the card asked now: the one a grade goes to, and Edit Card edits.
+    var document: VocabularyDocument { stream.document }
+
+    /// Counts the questions asked. The view gives each question a response field of
+    /// its own, so ⌘Z can't reach the typing for an earlier one (#9).
+    var questionNumber: Int { stream.questionNumber }
+
+    var stage: Stage {
+        if stream.isResting { return .resting }
+        if let checked, checked.question == stream.questionNumber { return .feedback(checked.result, response: checked.response) }
+        return studyBy == .flashcards && stream.stage == .revealed ? .revealed : .asking
     }
 
     /// The segment running; its mode decides how a review is recorded.
-    var mode: SessionMode { driver.mode }
+    var mode: SessionMode { stream.mode }
 
     /// The part of the segment that study and practice share.
-    var session: Session { driver.session }
+    var session: Session { stream.session }
 
-    /// Where the stream is: today's plan, review ahead, practice, or at rest.
-    var streamStage: StudyStream.Stage { driver.stream.stage }
+    /// Where the stream is: today's plan, practice, or at rest.
+    var streamStage: StudyStream.Stage { stream.streamStage }
 
     /// The card being asked, as the deck holds it now. Undoing an edit of the card
     /// during the session shows up here.
-    var currentCard: Card? { driver.currentCard }
+    var currentCard: Card? { stream.currentCard }
 
-    var isPracticing: Bool { streamStage.isPractice }
+    var isPracticing: Bool { stream.isPracticing }
 
     var isResting: Bool { stage == .resting }
 
     /// What the stream shows at rest.
-    var rest: StreamRest { driver.rest }
+    var rest: StreamRest { stream.rest }
 
     /// Goes on with the next round, from the rest at the end of one.
     func continueRound() {
-        driver.continueRound()
+        stream.continueRound()
     }
 
-    /// Push On: adds 10 new cards beyond the daily limits to the stack that is done for the day.
+    /// Push On: adds 10 new cards beyond the daily limits to the stack that is done for the day, from the decks in turn.
     func addNewCards() {
-        driver.addNewCards()
+        stream.addNewCards()
     }
 
     /// The cards of the current round waiting behind the one asked, as the iPhone's stack shows them; 0 without
     /// rounds, in practice and once the goal is met.
-    var cardsBehind: Int { max(0, (driver.cardsLeftInRound ?? 0) - 1) }
+    var cardsBehind: Int { stream.cardsBehind }
 
     /// The new cards `addNewCards()` would add; `nil` if there are none and for a practice.
-    var extraNew: ExtraNewCards? { driver.extraNew }
+    var extraNew: ExtraNewCards? { stream.extraNew }
 
     /// What the last grade did, shown in the chip that offers Undo.
-    var receipt: GradeReceipt? { driver.lastReceipt }
+    var receipt: GradeReceipt? { stream.lastReceipt }
 
     func dismissReceipt() {
-        driver.dismissReceipt()
+        stream.dismissReceipt()
     }
 
-    /// Whether Z, Esc and the chip can take back the review or suspension shown below the
-    /// card.
-    var canUndoLast: Bool {
-        previous != nil && document.undoManager?.canUndo == true
-    }
+    /// Whether Z, Esc and the chip can take back the last review or suspension, whichever deck it was in.
+    var canUndoLast: Bool { stream.canUndo }
 
-    /// Takes back the last review or suspension, like ⌘Z.
+    /// Takes back the last review or suspension of the stream, in its own deck.
     func undoLast() {
         guard canUndoLast else { return }
-        document.undoManager?.undo()
+        stream.undoLast()
+        previous = nil
     }
 
     var suggestedGrade: Grade? {
@@ -162,7 +160,7 @@ final class SessionViewModel {
         return ResponseDiff.segments(response: response, expected: card.answer, caseSensitive: checker.caseSensitive)
     }
 
-    /// Checks responses with the deck's learning options.
+    /// Checks responses with the learning options of the card's deck.
     private var checker: ResponseChecker {
         ResponseChecker(caseSensitive: document.deck.learningOptions.caseSensitive)
     }
@@ -174,46 +172,33 @@ final class SessionViewModel {
         if result == .correct, autoAdvance {
             grade(.good)
         } else {
-            stage = .feedback(result, response: input)
+            checked = (stream.questionNumber, result, input)
         }
     }
 
     /// Flash cards: shows the answer.
     func reveal() {
         guard studyBy == .flashcards, stage == .asking else { return }
-        stage = .revealed
+        stream.reveal()
     }
 
     /// With flash cards only once the answer is shown.
     func grade(_ grade: Grade) {
-        guard stage != .resting, studyBy == .typing || stage == .revealed, let card = currentCard, driver.grade(grade) else { return }
+        guard stage != .resting, studyBy == .typing || stage == .revealed, let card = currentCard else { return }
+        // A typed response is its own reveal.
+        if studyBy == .typing { stream.reveal() }
+        guard stream.grade(grade) != nil else { return }
         previous = PreviousReview(question: card.question, answer: card.answer, grade: grade)
     }
 
     /// Suspends the card being asked, so no session asks it until the learner resumes
     /// it in the card list, and moves on (#290). ⌘Z takes it back like a review.
     func suspendCurrentCard() {
-        guard stage != .resting, let card = currentCard, driver.suspendCurrentCard() else { return }
-        previous = PreviousReview(question: card.question, answer: card.answer, grade: nil)
-    }
-}
-
-extension SessionViewModel: SessionDriverDelegate {
-    func sessionDriverDidMoveOn(_ driver: SessionDriver) {
-        input = ""
-        questionNumber += 1
-        stage = driver.isResting ? .resting : .asking
-    }
-
-    /// Checks the response shown again against the card as it is now, e.g. after
-    /// undoing an edit of its answer.
-    func sessionDriverCardDidChange(_ driver: SessionDriver) {
-        if case let .feedback(_, response) = stage, let card = currentCard {
-            stage = .feedback(checker.check(response, against: card.answer), response: response)
+        guard stage != .resting, let card = currentCard else { return }
+        let asked = stream.questionNumber
+        stream.suspendCurrentCard()
+        if stream.questionNumber != asked {
+            previous = PreviousReview(question: card.question, answer: card.answer, grade: nil)
         }
-    }
-
-    func sessionDriverDidRestore(_ driver: SessionDriver) {
-        previous = nil
     }
 }

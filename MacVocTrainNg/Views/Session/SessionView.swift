@@ -108,6 +108,10 @@ struct SessionView: View {
                     // Esc undoes instead of leaving the stream, whose button has no shortcut then.
                     Button("Undo", action: model.undoLast)
                         .keyboardShortcut(.escape, modifiers: [])
+                    // ⌘Z too, ahead of Edit ▸ Undo: in a stream over several decks the last step may be another deck's,
+                    // which the undo of this window's deck would miss.
+                    Button("Undo", action: model.undoLast)
+                        .keyboardShortcut("z", modifiers: .command)
                 }
                 .disabled(!model.canUndoLast)
             }

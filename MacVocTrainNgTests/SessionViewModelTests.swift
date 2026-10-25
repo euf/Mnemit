@@ -13,6 +13,28 @@ struct SessionViewModelTests {
         return try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: (0..<cards).map { Card(question: "q\($0)", answer: "a\($0)") }), calendar: .testing)
     }
 
+    /// Today's Study over several decks mixes them, as the iPhone's stream does: a new card from the deck that has
+    /// given the fewest, the grade to the card's own deck, and Undo back in that deck.
+    @Test func aStreamOverTwoDecksMixesThem() throws {
+        let first = try makeDocument(cards: 2)
+        let second = try makeDocument(cards: 2)
+        let firstUndo = makeUndoManager(for: first)
+        let secondUndo = makeUndoManager(for: second)
+        let model = SessionViewModel(documents: [first, second], studyBy: .flashcards)
+        let asked = model.document
+        let askedUndo = try #require(asked.undoManager)
+        let card = try #require(model.currentCard)
+        model.reveal()
+        step(askedUndo) { model.grade(.good) }
+        #expect(asked.card(withID: card.id)?.log.count == 1)
+        #expect(model.document !== asked, "the next new card comes from the other deck")
+        #expect(model.canUndoLast)
+        model.undoLast()
+        #expect(model.document === asked)
+        #expect(asked.card(withID: card.id)?.isNew == true)
+        withExtendedLifetime((firstUndo, secondUndo)) {}
+    }
+
     @Test func theStreamTakesTheNewCardsOfTheDocumentsAllowance() throws {
         let document = try makeDocument(cards: 6)
         document.newCardAllowance = 2
@@ -318,10 +340,11 @@ struct SessionViewModelTests {
         #expect(model.currentCard?.id != first.id)
         #expect(model.stage == .asking)
 
+        // The card comes back with its answer shown, as on the iPhone: it was graded so.
         undoManager.undo()
         #expect(document.card(withID: first.id)?.isNew == true)
         #expect(model.currentCard == first)
-        #expect(model.stage == .asking)
+        #expect(model.stage == .revealed)
     }
 
     @Test func typingIgnoresReveal() throws {

@@ -95,18 +95,40 @@ enum WelcomeRequest {
     /// Posted when Today asks a deck to study; the deck's window takes it with `takeStudy(of:)`.
     static let studyRequested = Notification.Name("MnemitStudyRequested")
 
-    private static var studies: [String: SessionViewModel.Entry] = [:]
+    /// What Today asks of a deck window: the stream to start, and the other decks to mix into it.
+    struct StudyRequest {
+        var entry: SessionViewModel.Entry
+        var others: [URL]
+    }
 
-    /// Asks the window of the deck at `url` to start `entry`, opening the deck if it isn't open.
-    static func requestStudy(of url: URL, entry: SessionViewModel.Entry) {
-        studies[key(url)] = entry
+    private static var studies: [String: StudyRequest] = [:]
+
+    /// Asks the window of the deck at `url` to start `entry`, opening the deck if it isn't open, over it and the
+    /// decks at `others`, which open too, in windows of their own behind it.
+    static func requestStudy(of url: URL, entry: SessionViewModel.Entry, with others: [URL] = []) {
+        for other in others { DeckFolder.open(other) }
+        studies[key(url)] = StudyRequest(entry: entry, others: others)
         NotificationCenter.default.post(name: studyRequested, object: nil)
         DeckFolder.open(url)
     }
 
     /// What Today asked of the deck at `url`, once.
-    static func takeStudy(of url: URL) -> SessionViewModel.Entry? {
+    static func takeStudy(of url: URL) -> StudyRequest? {
         studies.removeValue(forKey: key(url))
+    }
+
+    /// The open documents of the decks at `urls`, as soon as each can be edited, waiting a few seconds at most.
+    static func openDocuments(_ urls: [URL]) async -> [VocabularyDocument] {
+        let wanted = Set(urls.map(key))
+        func ready() -> [VocabularyDocument] {
+            OpenDecks.shared.documents.filter { document in
+                document.isReadyToEdit && document.packageURL.map { wanted.contains(key($0)) } == true
+            }
+        }
+        for _ in 0..<30 where ready().count < wanted.count {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return ready()
     }
 
     /// The same file however its URL is spelled.
