@@ -2,8 +2,7 @@
 
 ## State
 
-- Version 6.0 on `main`; the iPhone runs 5.6.3 (a228add), signed until 30.10 (6.0 waits for `ios-renew`, see Open 1);
-  the Mac app 6.0 from `main`. The day's model (one ring that stays full at the goal, the streak as a flame, the
+- Version 6.0 on `main`; the iPhone runs 6.0 (ea8a95d), signed until 01.11; the Mac app 6.0 from `main`. The day's model (one ring that stays full at the goal, the streak as a flame, the
   stack that ends with the plan, Study / Catch Up / Push On, partial credit, the streak step, two rests, medals, the
   Progress screen on both apps, the Mac's Today window)
   and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
@@ -51,13 +50,9 @@ deck folder is chosen in the file picker. Team limits: 3 apps per device (now Fi
 
 In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
-1. **6.0 on the iPhone needs EF to sign Xcode in.** Xcode has lost its Apple ID: `defaults read com.apple.dt.Xcode
-   DVTDeveloperAccountManagerAppleIDLists` is empty, and `ios-renew` fails with "No Accounts" for both apps (24.10
-   02:12, the nightly run at 04:30, 25.10 03:53 on an unlocked screen); at 24.10 00:27 it still installed. EF adds
-   the Apple ID of the Personal Team in Xcode ▸ Settings ▸ Accounts (password and code), then
-   `~/dotfiles/ios-renew --force`, then fix the iPhone's hash in State. The iPhone's 5.6.3 and FicTypeApp stay
-   signed until 30.10 23:27. Check on the device: the flame in Today's ring and in the widgets, Push On from Today,
-   a reminder that names the streak, the icon's number.
+1. **6.0 on the iPhone, to check on the device:** the flame in Today's ring and in the widgets, Push On from Today, a
+   reminder that names the streak, the icon's number. Xcode's Apple ID was lost once (24.10): `ios-renew` then
+   fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
 2. **The Mac's Today and Progress windows on the live screen.** They were checked from offscreen frames only
    (`TodayWindowSnapshotTests`, `SessionSnapshotMacTests`; the screen was locked): look at them with `vqa`,
    Study from Today opening the deck and starting its stream, and the window staying open beside a deck.
