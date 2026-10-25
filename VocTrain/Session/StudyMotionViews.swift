@@ -272,18 +272,9 @@ struct CardStack: View {
         .animation(.spring(duration: 0.4, bounce: 0.2).delay(0.05 * Double(level)), value: spread)
     }
 
-    /// A blank sheet: the card's shape, its surface a `shade` darker (lighter in dark mode), a hairline round it
-    /// and a soft shadow under it, `tint` over it.
+    /// A blank sheet of the stack, `StackSheet`.
     static func page(width: CGFloat, height: CGFloat, faintness: Double, shade: Double, tint: Color = .clear) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
-        return
-            shape
-            .fill(Color.cardSurface)
-            .overlay { shape.fill(Color.primary.opacity(shade)) }
-            .overlay { shape.fill(tint) }
-            .overlay { shape.strokeBorder(Color(.opaqueSeparator).opacity(faintness), lineWidth: 1) }
-            .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
-            .frame(width: width, height: height)
+        StackSheet(width: width, height: height, faintness: faintness, shade: shade, tint: tint)
     }
 }
 

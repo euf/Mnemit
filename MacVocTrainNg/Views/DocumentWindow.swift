@@ -14,6 +14,7 @@ struct DocumentWindow: View {
     var body: some View {
         DocumentView(document: file.document, fileURL: file.fileURL, isEditable: file.isEditable, merger: merger)
             .id(ObjectIdentifier(file.document))
+            .brandTint()
             .alert("The study session has ended", isPresented: $merger.endedSession) {
             } message: {
                 Text("The deck was changed on another device and opened anew. The reviews of the session are kept.")

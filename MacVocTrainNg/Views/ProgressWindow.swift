@@ -15,7 +15,7 @@ enum ProgressWindow {
             window.makeKeyAndOrderFront(nil)
             return
         }
-        let window = NSWindow(contentViewController: NSHostingController(rootView: Content()))
+        let window = NSWindow(contentViewController: NSHostingController(rootView: Content().brandTint()))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.title = String(localized: "Progress")
         window.setContentSize(NSSize(width: 460, height: 720))

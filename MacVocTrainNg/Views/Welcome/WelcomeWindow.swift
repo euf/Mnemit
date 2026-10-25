@@ -23,7 +23,7 @@ enum WelcomeWindow {
             window.makeKeyAndOrderFront(nil)
             return
         }
-        let window = NSWindow(contentViewController: NSHostingController(rootView: WelcomeView()))
+        let window = NSWindow(contentViewController: NSHostingController(rootView: WelcomeView().brandTint()))
         window.styleMask = [.titled, .closable, .fullSizeContentView]
         window.title = String(localized: "Today")
         window.titlebarAppearsTransparent = true

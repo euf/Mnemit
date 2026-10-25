@@ -393,7 +393,7 @@ func contrast(_ a: Double, _ b: Double) -> Double {
 
 ### 5.6 Mac accent
 
-On macOS `AccentColor` applies only when the system accent is Multicolor, and selection and sidebar icons follow the user's choice [G §12][H:sidebars]. No `.tint(...)` override on the Mac. Ring and prominent buttons use `Color.accentColor` and `.borderedProminent`, so a Graphite machine shows them gray by the owner's choice.
+On macOS `AccentColor` applies only when the system accent is Multicolor, and selection and sidebar icons follow the user's choice [G §12][H:sidebars]. The owner's Graphite accent turned the ring, Study and Show Answer grey (25.10.2026), and the Mac looked unlike the iPhone. So `Color.appAccent` is the named `AccentColor` on the Mac too, and every Mac window takes it as its tint (`brandTint()`): the ring, the prominent buttons and the links are the iPhone's indigo; the selection of a table row still follows the system. Rollback: drop `.brandTint()` from the window roots and make `appAccent` `Color.accentColor` on the Mac.
 
 ### 5.7 Rings: drawing, middle, sources
 

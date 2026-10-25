@@ -36,6 +36,13 @@ extension DailyProgress {
         streakKeptToday && !isStreakAtRisk
     }
 
+    /// The study day before today, when the learner studied on it: Today names it until today's first card.
+    var yesterday: DayRecord? {
+        guard records.count >= 2, let today = records.last?.day else { return nil }
+        let record = records[records.count - 2]
+        return record.day == today - 1 && record.done > 0 ? record : nil
+    }
+
     /// The day after a missed day, until the ring closes: the streak survives only if it does.
     var isStreakAtRisk: Bool {
         streak.repairCards != nil && !ring.isGoalMet

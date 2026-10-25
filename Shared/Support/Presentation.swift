@@ -511,15 +511,12 @@ enum Format {
 }
 
 extension Color {
-    /// The app's accent. On the iPhone it is named: in a widget `Color.accentColor` is the
-    /// system tint (blue), since WidgetKit uses the extension's `AccentColor` only for the
-    /// configuration screen. On the Mac `accentColor`, so the system accent setting applies.
+    /// The app's accent, indigo on both apps: named, as in a widget `Color.accentColor` is the system tint (blue),
+    /// since WidgetKit uses the extension's `AccentColor` only for the configuration screen, and on the Mac
+    /// `accentColor` is the system accent (graphite, say), which turned the ring and Study grey. The Mac's windows
+    /// take it as their tint (`brandTint()`).
     static var appAccent: Color {
-        #if os(iOS)
         Color("AccentColor")
-        #else
-        Color.accentColor
-        #endif
     }
 
     /// The accent for a graphic that may sit on a raised surface: a glyph or a mark in a sheet. In dark a sheet
@@ -533,7 +530,7 @@ extension Color {
         #if os(iOS)
         Color(uiColor: UIColor { raisedAccent(in: $0) })
         #else
-        Color.accentColor
+        Color("AccentColor")
         #endif
     }
 
@@ -572,9 +569,19 @@ extension Color {
     /// a white card on a grey screen in light, a raised grey on black in dark.
     static var cardSurface: Color {
         #if os(macOS)
-        Color(nsColor: .controlBackgroundColor)
+        Color(light: 0xFFFFFF, dark: 0x2C2C2E)
         #else
         Color(uiColor: .secondarySystemGroupedBackground)
+        #endif
+    }
+
+    /// What a card lies on in the study stream: the grouped background, a grey in light and near black in dark, so
+    /// the white or raised card stands out as it does on the iPhone.
+    static var studyBackdrop: Color {
+        #if os(macOS)
+        Color(light: 0xF2F2F7, dark: 0x1C1C1E)
+        #else
+        Color(uiColor: .systemGroupedBackground)
         #endif
     }
 
@@ -604,5 +611,13 @@ extension Color {
                 )
             })
         #endif
+    }
+}
+
+extension View {
+    /// The app's indigo as the tint of a Mac window's controls, whatever the system accent: the ring, Study and the
+    /// links look as they do on the iPhone.
+    func brandTint() -> some View {
+        tint(Color.appAccent)
     }
 }

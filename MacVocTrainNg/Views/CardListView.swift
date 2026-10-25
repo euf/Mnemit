@@ -288,7 +288,9 @@ private struct StatusBar: View {
             } else {
                 Text("\(total) cards")
             }
-            Text("Today: \(today.new) new · \(today.learning) learning · \(today.review) review")
+            if today.total > 0 {
+                Text("Today: \(today.parts)")
+            }
             Spacer()
         }
         .font(.callout)

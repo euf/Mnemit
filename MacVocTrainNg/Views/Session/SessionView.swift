@@ -28,6 +28,8 @@ import VocabCore
 struct SessionView: View {
     @Bindable var model: SessionViewModel
     var ring: DailyRingModel
+    /// The deck of the folder to go on with at the end of this deck's plan, see `NextDeck`.
+    var nextDeck: NextDeck? = nil
     var onClose: () -> Void
 
     /// The question whose response field has the focus.
@@ -45,7 +47,6 @@ struct SessionView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
             if model.isResting {
                 // A rest with a medal and Push On's line is taller than a short window: it scrolls
                 // under the header instead of pushing the header out of the window, and is centred
@@ -54,7 +55,7 @@ struct SessionView: View {
                     ScrollView {
                         StreamRestView(
                             rest: model.rest, progress: ring.progress,
-                            onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose
+                            onAddNewCards: model.addNewCards, onNextRound: model.continueRound, onDone: onClose, nextDeck: nextDeck
                         )
                         .frame(minHeight: proxy.size.height)
                     }
@@ -63,11 +64,13 @@ struct SessionView: View {
             } else if let card = model.currentCard {
                 cardArea(card)
             }
-            if let previous = model.previous, !model.isResting {
+            // Typing shows what the last answer should have been; flash cards have the undo chip.
+            if let previous = model.previous, !model.isResting, model.studyBy == .typing {
                 Divider()
                 PreviousReviewBar(previous: previous)
             }
         }
+        .background(Color.studyBackdrop)
         .background { keys }
         .sheet(item: $editing, onDismiss: focusResponse) { request in
             CardEditSheet(document: model.document, card: request.card, hidesAnswer: request.hidesAnswer)
@@ -152,40 +155,49 @@ struct SessionView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// The same controls in every state, question, answer and rest, so the bar never changes
-    /// and nothing below it moves; what doesn't apply is disabled.
+    /// The bar of the iPhone's stream: Done leading; in the middle today's ring with its figures, or the name of a
+    /// practice; Undo and the menu (Edit Card…, Suspend Card) trailing. The same controls in every state, question,
+    /// answer and rest, so the bar never changes and nothing below it moves; what doesn't apply is disabled.
     private var header: some View {
-        HStack(spacing: 16) {
-            stageLabel
-            Spacer()
-            // A pull-down button: a click edits, the arrow offers Suspend Card.
-            Menu("Edit Card…") {
-                Button("Suspend Card") { model.suspendCurrentCard() }
-                    .help("Don't ask this card again until you resume it in the card list")
-            } primaryAction: {
-                editCurrentCard()
-            }
-            .fixedSize()
-            // On the menu, ⌘E would also show next to its first item, Suspend Card.
-            .background {
-                Button("Edit Card…", action: editCurrentCard)
-                    .keyboardShortcut("e", modifiers: .command)
-                    .hidden()
-            }
-            .disabled(model.currentCard == nil || model.isResting)
-            .help("Fix this card without leaving the stream")
-            Menu("More", systemImage: "ellipsis.circle") {
-                Button("Undo", systemImage: "arrow.uturn.backward", action: model.undoLast)
-                    .disabled(!model.canUndoLast)
-            }
-            .menuIndicator(.hidden)
-            .labelStyle(.iconOnly)
-            .fixedSize()
-            .help("More")
-            ringAndFigures
+        HStack(spacing: 12) {
             Button("Done", action: onClose)
                 // With flash cards Esc takes back a review, see `keys`.
                 .keyboardShortcut(model.studyBy == .flashcards ? nil : .cancelAction)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Group {
+                switch model.streamStage {
+                case .practiceMistakes, .practiceNewest:
+                    stageLabel
+                case .plan, .rest:
+                    ringAndFigures
+                }
+            }
+            .layoutPriority(1)
+            HStack(spacing: 8) {
+                Button("Undo", systemImage: "arrow.uturn.backward", action: model.undoLast)
+                    .labelStyle(.iconOnly)
+                    .disabled(!model.canUndoLast)
+                    .help("Undo the last answer")
+                Menu("More", systemImage: "ellipsis.circle") {
+                    Button("Edit Card…", systemImage: "pencil", action: editCurrentCard)
+                        .disabled(model.currentCard == nil || model.isResting)
+                    Button("Suspend Card", systemImage: "pause.circle") { model.suspendCurrentCard() }
+                        .disabled(model.currentCard == nil || model.isResting)
+                        .help("Don't ask this card again until you resume it in the card list")
+                }
+                .menuIndicator(.hidden)
+                .labelStyle(.iconOnly)
+                .fixedSize()
+                .help("More")
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        // ⌘E edits the card from anywhere in the stream; the menu item shows no key of its own.
+        .background {
+            Button("Edit Card…", action: editCurrentCard)
+                .keyboardShortcut("e", modifiers: .command)
+                .disabled(model.currentCard == nil || model.isResting)
+                .hidden()
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
@@ -216,14 +228,12 @@ struct SessionView: View {
                 FlashcardView(
                     card: card, isRevealed: model.stage == .revealed, media: model.document.deck.media,
                     memory: CardMemory(card: card, in: model.document.deck, at: model.document.clock.now, calendar: model.document.calendar),
-                    onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
+                    edges: min(model.cardsBehind, StackPose.maxEdges), onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
             } else {
                 typedQuestion(card)
             }
 
             Spacer()
-
-            CardStateLine(card: card)
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -375,6 +385,8 @@ private struct FlashcardView: View {
     /// The deck's media, for the images and sounds of the card.
     var media: DeckMedia
     var memory: CardMemory?
+    /// The edges of the stack under the card, as on the iPhone: the cards of the round behind it, at most four.
+    var edges: Int
     var onReveal: () -> Void
     var onGrade: @MainActor (Grade) -> Void
 
@@ -386,9 +398,12 @@ private struct FlashcardView: View {
             FlightCard(flight: flight) {
                 CardFace(card: card, isRevealed: isRevealed, media: media, memory: memory)
             }
-            .frame(maxWidth: 560, minHeight: 160, idealHeight: 240, maxHeight: 260)
+            .background { StackEdges(edges: edges) }
+            .frame(maxWidth: 560, minHeight: 200, idealHeight: 300, maxHeight: 340)
             .contentShape(Rectangle())
             .onTapGesture(perform: onReveal)
+            // The room of the edges under the card, the same however many there are.
+            .padding(.bottom, StackPose.reserve)
 
             actions
                 .frame(maxWidth: 440)
@@ -409,14 +424,17 @@ private struct FlashcardView: View {
         }
     }
 
-    /// A standard large button; it is the default button, so the window shows it in the accent
-    /// colour while it is active, and the keys are named under it.
+    /// The prominent button of the iPhone's stream, in the app's indigo, as wide as the grade buttons under it; it
+    /// is the default button, and the keys are named under it.
     private var showAnswer: some View {
         VStack(spacing: 6) {
-            Button("Show Answer", action: onReveal)
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+            Button(action: onReveal) {
+                Text("Show Answer")
+                    .frame(maxWidth: .infinity)
+            }
+            .keyboardShortcut(.defaultAction)
+            .buttonStyle(.borderedProminent)
+            .controlSize(.extraLarge)
             Text("Space or ↩")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -439,30 +457,6 @@ private struct FlashcardView: View {
         guard isRevealed, !flight.isFlying else { return }
         GreekSpeech.shared.stop()
         flight.fly(grade, reduceMotion: reduceMotion) { onGrade(grade) }
-    }
-}
-
-/// Small line telling where the current card stands.
-private struct CardStateLine: View {
-    var card: Card
-
-    var body: some View {
-        Group {
-            if let learningState = card.learningState {
-                switch learningState.phase {
-                case .review:
-                    Text("Review phase · remembered for \(Format.days(learningState.stability))")
-                case .learning:
-                    Text("Learning")
-                case .relearning:
-                    Text("Relearning")
-                }
-            } else {
-                Text("New card")
-            }
-        }
-        .font(.callout)
-        .foregroundStyle(.secondary)
     }
 }
 

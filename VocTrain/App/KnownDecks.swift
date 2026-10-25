@@ -183,7 +183,9 @@ final class KnownDecks {
 
     /// The decks in `folder`: packages with the extension of a deck. A deck that iCloud
     /// Drive has not downloaded yet is only a hidden placeholder, ".Greek B1.mnemit.icloud",
-    /// whose download starts here; the deck itself opens as soon as it has arrived.
+    /// whose download starts here; the deck itself opens as soon as it has arrived. A deck that is
+    /// here is asked for too: iCloud Drive then brings the version another device saved, which it
+    /// otherwise brings only when it gets to it.
     nonisolated static func decks(in folder: URL) -> [KnownDeck] {
         let contents = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
         return contents.compactMap { url in
@@ -195,7 +197,9 @@ final class KnownDecks {
                 try? FileManager.default.startDownloadingUbiquitousItem(at: deck)
                 return KnownDeck(url: deck)
             }
-            return DeckFile.isDeckName(name) ? KnownDeck(url: url) : nil
+            guard DeckFile.isDeckName(name) else { return nil }
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            return KnownDeck(url: url)
         }
     }
 

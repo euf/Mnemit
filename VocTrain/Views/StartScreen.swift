@@ -213,6 +213,13 @@ struct StartScreen: View {
                 await refreshAll()
             }
             if scenePhase == .active { syncWidget() }
+            // While Today stays on screen, a minute at a time: reviews saved on the Mac arrive, and the day turns at 04:00.
+            while scenePhase == .active, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                if !Task.isCancelled, run == nil, path.isEmpty, addingCards == nil, !showsSettings, !showsNewDeck {
+                    await refreshAll()
+                }
+            }
         }
         // Once the lists are read and nothing covers Today, the decks that are due get their
         // parameters fitted again. Whatever the learner opens cancels the pass, and it starts

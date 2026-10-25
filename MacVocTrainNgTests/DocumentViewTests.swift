@@ -25,9 +25,12 @@ extension WindowTests {
             window.delegate = delegate
         }
 
+        /// The window on the card list, where the form is: a deck opens on its overview.
         private func show(isEditable: Bool) {
-            window.contentView = NSHostingView(rootView: DocumentView(document: document, fileURL: nil, isEditable: isEditable, merger: VersionMerger { _ in }))
+            window.contentView = NSHostingView(
+                rootView: DocumentView(document: document, fileURL: nil, isEditable: isEditable, merger: VersionMerger { _ in }, initialScreen: .cards))
             window.orderFront(nil)
+            window.contentView?.layoutSubtreeIfNeeded()
         }
 
         /// The fields of the form for adding cards, left to right: the topmost text fields.

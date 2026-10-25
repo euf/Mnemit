@@ -14,7 +14,7 @@ enum HowTodayWorksWindow {
         let sources = decks.documents.map { HowTodayWorks.Source(name: $0.packageURL?.deletingPathExtension().lastPathComponent, deck: $0.deck) }
         let calendar = decks.documents.first?.calendar ?? StudyCalendar()
         let now = decks.documents.first?.clock.now ?? Date()
-        let content = NSHostingController(rootView: Loader(sources: sources, files: decks.files, now: now, calendar: calendar))
+        let content = NSHostingController(rootView: Loader(sources: sources, files: decks.files, now: now, calendar: calendar).brandTint())
         if let window {
             window.contentViewController = content
             window.makeKeyAndOrderFront(nil)

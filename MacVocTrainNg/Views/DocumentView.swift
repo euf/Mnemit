@@ -9,6 +9,7 @@ import VocabCore
 /// its own, see `DocumentWindow`.
 struct DocumentView: View {
     enum Screen: String {
+        case overview
         case cards
         case statistics
     }
@@ -22,9 +23,13 @@ struct DocumentView: View {
     var isEditable: Bool
     /// Merges the versions of the deck from other devices; outlives the view.
     var merger: VersionMerger
+    /// A screen the window keeps to, for a test; otherwise the one it had, or the overview.
+    var initialScreen: Screen?
     /// Survives quitting when the window is restored; the stream doesn't.
-    @SceneStorage("screen") private var screen: Screen = .cards
+    @SceneStorage("screen") private var screen: Screen = .overview
     @State private var session: SessionViewModel?
+    /// Another deck of the folder with cards in today's plan, for the end of this deck's plan.
+    @State private var nextDeck: NextDeck?
     @State private var showingOptions = false
     @State private var importPreview: CardImport.Preview?
     /// Whether an import file is being read: an Anki package takes a while.
@@ -45,9 +50,16 @@ struct DocumentView: View {
     var body: some View {
         Group {
             if let session {
-                SessionView(model: session, ring: ring) { self.session = nil }
+                SessionView(model: session, ring: ring, nextDeck: nextDeck) { self.session = nil }
+                    .onChange(of: session.isResting, initial: true) { _, isResting in
+                        if isResting { findNextDeck() } else { nextDeck = nil }
+                    }
             } else {
-                switch screen {
+                switch initialScreen ?? screen {
+                case .overview:
+                    DeckOverviewView(
+                        document: document, canEdit: canEdit, start: startOrPractise, show: { screen = $0 },
+                        showOptions: { showingOptions = true })
                 case .cards: CardListView(document: document, isEditable: canEdit)
                 case .statistics: StatisticsView(document: document)
                 }
@@ -58,6 +70,7 @@ struct DocumentView: View {
             if session == nil {
                 ToolbarItem(placement: .principal) {
                     Picker("View", selection: $screen) {
+                        Label("Overview", systemImage: "house").tag(Screen.overview)
                         Label("Cards", systemImage: "rectangle.stack").tag(Screen.cards)
                         Label("Statistics", systemImage: "chart.bar.xaxis").tag(Screen.statistics)
                     }
@@ -143,6 +156,7 @@ struct DocumentView: View {
         .onAppear {
             OpenDecks.shared.add(document)
             refreshRing()
+            hideExtension()
         }
         .onDisappear { OpenDecks.shared.remove(document) }
         .onReceive(document.deckDidChange) { refreshRing() }
@@ -272,6 +286,59 @@ struct DocumentView: View {
         if !model.isResting {
             session = model
         }
+    }
+
+    /// At the end of this deck's plan, the next deck of the folder with cards in today's plan: the Mac's stream runs
+    /// on one deck, and the day goes on in the next one's window, as the iPhone's stream goes on with the next deck.
+    private func findNextDeck() {
+        nextDeck = nil
+        guard let session, session.rest.roundEnd == nil, !session.rest.isPracticeOnly else { return }
+        let decks = AllDecks.current()
+        let mine = fileURL?.standardizedFileURL
+        let other = decks.documents.first {
+            $0 !== document && !$0.deck.learningOptions.isPaused && $0.dueCards.counts.total > 0 && $0.packageURL != nil
+        }
+        if let other, let url = other.packageURL {
+            nextDeck = studying(url, cards: other.dueCards.counts.total)
+            return
+        }
+        let files = decks.files.filter { $0.standardizedFileURL != mine }
+        Task {
+            for url in files {
+                let allowance = NewCardAllowances.today[url]
+                let counts = await Task.detached(priority: .utility) { KnownDeckCounts.counts(at: url, allowance: allowance) }.value
+                if let counts, counts.total > 0, self.session?.isResting == true {
+                    nextDeck = studying(url, cards: counts.total)
+                    return
+                }
+            }
+        }
+    }
+
+    /// Ends this stream and starts the one of the deck at `url` in its window.
+    private func studying(_ url: URL, cards: Int) -> NextDeck {
+        NextDeck(name: url.deletingPathExtension().lastPathComponent, cards: cards) {
+            session = nil
+            WelcomeRequest.requestStudy(of: url, entry: .study)
+        }
+    }
+
+    /// The overview's buttons: the stream, Push On, or a practice.
+    private func startOrPractise(_ entry: SessionViewModel.Entry) {
+        switch entry {
+        case .study, .pushOn: startSession(entry)
+        case .practiceMistakes: practiceMistakes()
+        case .practiceNewest: practiceNewestWords()
+        }
+    }
+
+    /// Names the window after the deck, "Greek B1", as Today and the iPhone do, not after the package: the file's
+    /// extension is hidden, which the window's title follows.
+    private func hideExtension() {
+        guard var url = fileURL, (try? url.resourceValues(forKeys: [.hasHiddenExtensionKey]))?.hasHiddenExtension != true else { return }
+        var values = URLResourceValues()
+        values.hasHiddenExtension = true
+        try? url.setResourceValues(values)
     }
 
     /// Starts the stream that Today asked of this deck, once the document can be edited.

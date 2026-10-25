@@ -34,7 +34,10 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   - Headline: the day's next goal. "≈ 2 min to keep your streak" before the streak step (the first
     round), then "12 cards left · ≈ 4 min", and "Ring closed" once it is. Without cards "All done" or
     "Nothing due". Rounds never show by number.
-  - Second line: "M of K cards" while the ring is open, the done cards against the day's goal; once the
+  - Second line, before the first card of the day: yesterday's ring, "Yesterday's ring closed · 14 cards" or
+    "Yesterday: 9 of 12 cards" (`DailyProgress.yesterday`). The day turns at 04:00, and work done just before
+    it, on either device, belongs to the day before; the line shows it until today's first card.
+  - Second line after that: "M of K cards" while the ring is open, the done cards against the day's goal; once the
     ring is closed "M cards today · N left", N the cards of today's plan not done yet, not the raw due
     count, and "M cards today" once the plan is done; with nothing done and nothing due "Next review …".
     M, N and K are one unit, M + N ≥ K, equal while the plan fits the day's time and nothing was added
@@ -235,7 +238,7 @@ the window of Study ▸ How Today Works, over the open decks, which it names Dec
   The edit sheet (Question, Answer, Hint, Word key) changes the word key through
   `VocabularyDocument.setNote` (`DeckChange.settingNote`, kind stays) and hides it while the session
   still asks the card: the key of a "translation → Greek" card is the answer. Keyboard: Delete, ⌘E,
-  ⌘L, ⌘1/⌘2, Space/arrows in the stream.
+  ⌘L, ⌘1/⌘2/⌘3 (Overview, Cards, Statistics), Space/arrows in the stream.
 - On macOS 27 a click on a `Table` row selects the row but takes no focus (`NSTableView.mouseDown` is
   not called; measured with a live click on 22.10.2026), and the form field stays first responder:
   Delete, ⌘E and the arrows go to it. `TableClickFocus` (the table's background) moves focus into the
@@ -317,7 +320,9 @@ parameters with "Compute from Review Log".
   iPhone ▸ Mnemit) → reminder.
 - A single deck opens through "Open Deck…" in Today's … menu.
 - Deck folder. iPhone: `KnownDecks.chooseFolder` (a folder bookmark; its decks are listed;
-  `refreshFolder` on pull-to-refresh and on coming to the foreground; an empty folder is accepted only
+  `refreshFolder` on pull-to-refresh, on coming to the foreground and every minute while Today is on screen,
+  each time asking iCloud Drive for the latest version of every deck (`startDownloadingUbiquitousItem`), so
+  reviews saved on the Mac arrive without leaving the app; an empty folder is accepted only
   if named `Mnemit`). Mac: `DeckFolder` (a scoped bookmark, entitlement `bookmarks.app-scope`).
 - Reminders: `Reminders`, local notifications 7 days ahead on the days whose decks have cards
   (`StudySession.counts(for:at:)`), in the words of Today (`ReminderPlan.content`): "Keep your 12-day
@@ -370,14 +375,38 @@ parameters with "Compute from Review Log".
 - Frames: `VocTrainTests/WidgetShotsTests` (`TEST_RUNNER_STUDY_SHOTS_DIR`).
 - `PRODUCT_BUNDLE_IDENTIFIER=…` on the `xcodebuild` command line overrides the widget's bundle id too.
 
+## iPhone and Mac
+
+What the two apps share, and where they differ on purpose. The day is the same on both: one ring, the streak and
+the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone over `KnownDecks`, the Mac over
+`AllDecks`).
+
+| | iPhone | Mac |
+|---|---|---|
+| Today | the root screen | the Today window |
+| The day's button | Study / Catch Up / Push On | the same |
+| Study over several decks | one stream mixes the decks | a deck's stream at a time; at its end, "Study <next deck>" |
+| The stream | swipes, the stack, the ring travelling to the rests | keys and buttons, the stack, the rests |
+| Progress, medals, How Today Works | pushed from Today | windows |
+| A deck | the deck screen | the deck window's Overview |
+| Cards | the browser, Card Detail, Edit Card | the table, the inspector, the edit sheet; multi-select, keyboard |
+| Adding | Add Cards: One Card, From a List | the form above the table, Add Lesson Words |
+| Import, export, AnkiWeb | yes | yes |
+| Typing the answer | no | Study by typing (Preferences) |
+| Reminders, the icon's number | yes | no: the iPhone's are enough |
+| Widget | yes | no |
+| Search over all decks | Today's search | a deck's table |
+| The month's sheet, medal toasts | yes | the rests show today's medals |
+
 ## Mac windows
 
 - **Today window** is the Mac's Today (`WelcomeWindow`, content `WelcomeView` → `TodayWindowContent`;
   window title "Today", Window ▸ Today ⌘0; shown at launch while no document is open, and by a click on
   the Dock icon then; to turn it off: `defaults write <bundle id> showsWelcomeWindow -bool NO`). It
-  stays open beside the deck windows. Left: `SummaryRow` (the same view as the iPhone's Today header,
+  stays open beside the deck windows; like every Mac window it takes the app's indigo as its tint
+  (`brandTint()`), whatever the system accent. Left: `SummaryRow` (the same view as the iPhone's Today header,
   ring 80 pt, a button with a chevron that opens Progress), the `DayAction` button (extra large, the default action) and the links Choose Mnemit
-  Folder…, Import Cards…, Open Deck…, Shared Decks on AnkiWeb…. Right: the decks of the Mnemit folder
+  Folder…, New Deck, Import Cards…, Open Deck…, Shared Decks on AnkiWeb…. Right: the decks of the Mnemit folder
   with what today's plan takes from each (`StudyCounts.parts`, else "Next review …", "Paused" for a
   paused deck) and the cards left or a checkmark; Recent Decks below. Before the folder is chosen: the
   icon, the name, the tagline, the version, Open Mnemit Folder… and the links. The button opens the deck
@@ -392,9 +421,21 @@ parameters with "Compute from Review Log".
   chip of a deck window and Window ▸ Progress; it reads the decks again when it becomes key.
 - The Mac's day counts `AllDecks`: the open documents and the rest of the Mnemit folder. The ring chip,
   the session header, Today, Progress and How Today Works all count them.
-- **Deck window**: Cards | Statistics. The toolbar carries the ring chip (a click opens Progress) and the button: **Study**
-  (prominent) while the deck has cards due, else **Push On** (`design-spec.md` §6.2); the session header
-  shows the day's ring, `DailyRingView(progress:, showsStreak: false)`. Cards, filters, inspector and
-  edit sheet: Card browser. Study ▸ Pause Deck / Resume Deck: Pausing a deck.
+- **Deck window**: Overview | Cards | Statistics (Study ▸ ⌘1, ⌘2, ⌘3), titled with the deck's name: the
+  window hides the package's extension (`hideExtension()`). A deck opens on **Overview**
+  (`DeckOverviewView`), the iPhone's deck screen: Today's counts (`CountsRow`) with the plan's footer, Study
+  This Deck (Push On with its footnote once nothing is due), Practice Newest Words and Practice Today's
+  Mistakes, and rows to Cards, Statistics and Learning Options…. The toolbar carries the ring chip (a click
+  opens Progress) and the button: **Study** (prominent) while the deck has cards due, else **Push On**
+  (`design-spec.md` §6.2). Cards, filters, inspector and edit sheet: Card browser. Study ▸ Pause Deck /
+  Resume Deck: Pausing a deck.
+- **The Mac's stream** (`SessionView`) looks as the iPhone's does: the card on the grouped backdrop
+  (`Color.studyBackdrop`, the card `Color.cardSurface`) over the stack's edges (`StackEdges`, the cards of the
+  round behind it, at most four, `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done, the
+  day's ring and its figures in the middle ("≈ 4 min", then "36 cards today"), Undo and a menu with Edit Card…
+  (⌘E) and Suspend Card; Show Answer prominent in indigo, Space or Return. Typing keeps the bar of the last
+  answer under the card. At the end of a deck's plan, while another deck of the folder has cards in today's
+  plan, the rest's first button is "Study Greek B1 · 14 cards" (`NextDeck`): it ends this stream and starts
+  that deck's in its window, so the day goes on over the decks as the iPhone's mixed stream does.
 - How Today Works: its own window (Study ▸ How Today Works, or the link at the end of Progress), over
   `AllDecks`, each deck named by its file.

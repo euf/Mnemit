@@ -18,6 +18,7 @@ struct MacVocTrainApp: App {
 
         Settings {
             PreferencesView()
+                .brandTint()
         }
     }
 }

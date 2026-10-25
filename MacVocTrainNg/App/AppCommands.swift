@@ -77,11 +77,14 @@ struct AppCommands: Commands {
 
             Divider()
 
-            Button("Cards") { actions?.show(.cards) }
+            Button("Overview") { actions?.show(.overview) }
                 .keyboardShortcut("1", modifiers: .command)
                 .disabled(actions == nil || actions?.isInSession == true)
-            Button("Statistics") { actions?.show(.statistics) }
+            Button("Cards") { actions?.show(.cards) }
                 .keyboardShortcut("2", modifiers: .command)
+                .disabled(actions == nil || actions?.isInSession == true)
+            Button("Statistics") { actions?.show(.statistics) }
+                .keyboardShortcut("3", modifiers: .command)
                 .disabled(actions == nil || actions?.isInSession == true)
 
             Divider()

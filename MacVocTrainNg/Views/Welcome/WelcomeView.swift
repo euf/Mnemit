@@ -178,6 +178,7 @@ struct TodayWindowContent: View {
             if folder != nil {
                 Button("Choose Mnemit Folder…", action: chooseFolder)
             }
+            Button("New Deck") { NSDocumentController.shared.newDocument(nil) }
             Button("Import Cards…", action: importCards)
             Button("Open Deck…") { NSDocumentController.shared.openDocument(nil) }
             Button("Shared Decks on AnkiWeb…") { DeckWebWindow.show() }

@@ -124,6 +124,10 @@ final class SessionViewModel {
         driver.addNewCards()
     }
 
+    /// The cards of the current round waiting behind the one asked, as the iPhone's stack shows them; 0 without
+    /// rounds, in practice and once the goal is met.
+    var cardsBehind: Int { max(0, (driver.cardsLeftInRound ?? 0) - 1) }
+
     /// The new cards `addNewCards()` would add; `nil` if there are none and for a practice.
     var extraNew: ExtraNewCards? { driver.extraNew }
 

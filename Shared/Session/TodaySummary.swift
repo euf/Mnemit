@@ -121,11 +121,18 @@ struct SummaryRow: View {
         }
     }
 
-    /// "12 of 24 cards · 12 left": the done cards against the goal, and what is left of the plan; once the ring is
-    /// closed, "49 cards today · 3 left", as the goal is behind and the ring shows the laps.
+    /// "12 of 24 cards": the done cards against the goal; once the ring is closed, "49 cards today · 3 left", what is
+    /// left of the plan. Before the first card of the day, yesterday's ring: the day turns at 04:00, and work done just
+    /// before it belongs to the day before, which Today shows until today's first card.
     @ViewBuilder
     private var detail: some View {
-        if let ring = progress?.ring, due > 0, !ring.isGoalMet {
+        if let ring = progress?.ring, ring.done == 0, let yesterday = progress?.yesterday {
+            if yesterday.closed {
+                Text("Yesterday's ring closed · \(yesterday.done) cards")
+            } else {
+                Text("Yesterday: \(yesterday.done) of \(yesterday.goal) cards")
+            }
+        } else if let ring = progress?.ring, due > 0, !ring.isGoalMet {
             Text("\(ring.done) of \(ring.goal) cards")
         } else if let ring = progress?.ring, due > 0 {
             Text(verbatim: [String(localized: "\(ring.done) cards today"), String(localized: "\(due) left")].joined(separator: " · "))

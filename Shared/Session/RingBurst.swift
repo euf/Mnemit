@@ -113,7 +113,7 @@ struct MilestoneSparkles: View {
     var body: some View {
         RingBurst(startedAt: startedAt, diameter: 20) {
             Image(systemName: "sparkles")
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
         }
         .task(id: milestone) {
             guard let milestone, MilestoneCelebration.claim(milestone) else { return }

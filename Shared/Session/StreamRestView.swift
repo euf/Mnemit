@@ -34,6 +34,14 @@ struct StreamRest {
     var roundEnd: RoundEnd?
 }
 
+/// Another deck with cards left in today's plan, which the Mac's stream, one deck to a window, goes on with at the
+/// end of this deck's plan: "Study Greek B1 · 14 cards". The iPhone's stream mixes the decks and has none.
+struct NextDeck {
+    var name: String
+    var cards: Int
+    var study: () -> Void
+}
+
 /// The short stop in the stream, twice a day at most (`references/learning-flow.md`). "Streak kept" after
 /// the first round: the streak, the words the day has added, the cards left to the ring; Keep Going or Done
 /// for Now. "Ring closed" when today's cards are done: the cards and the answers they took, the share
@@ -46,6 +54,8 @@ struct StreamRestView: View {
     var onAddNewCards: () -> Void
     var onNextRound: () -> Void = {}
     var onDone: () -> Void
+    /// The deck to go on with at the end of the plan, on the Mac.
+    var nextDeck: NextDeck?
     /// The iPhone's ring is the one that comes down from the bar (`RingTraveler`): this view only
     /// leaves its place and says where that is. The Mac draws the ring itself.
     var ringPlace: ((CGRect) -> Void)?
@@ -307,7 +317,10 @@ struct StreamRestView: View {
     /// raises the stakes: the new cards come back as reviews in the next days.
     private var planEndButtons: some View {
         VStack(spacing: Spacing.gap) {
-            button("Done", prominent: true, action: onDone)
+            if let nextDeck {
+                button("Study \(nextDeck.name) · \(nextDeck.cards) cards", prominent: true, action: nextDeck.study)
+            }
+            button("Done", prominent: nextDeck == nil, action: onDone)
             if rest.extraNew != nil {
                 VStack(spacing: Spacing.hairline) {
                     button("Push On", prominent: false, action: onAddNewCards)

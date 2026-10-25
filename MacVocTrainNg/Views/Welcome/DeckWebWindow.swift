@@ -19,7 +19,7 @@ enum DeckWebWindow {
             close()
             WelcomeRequest.importIntoNewDeck(from: file)
         }
-        let window = NSWindow(contentViewController: NSHostingController(rootView: DeckWebBrowserView(browser: browser, done: nil)))
+        let window = NSWindow(contentViewController: NSHostingController(rootView: DeckWebBrowserView(browser: browser, done: nil).brandTint()))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.title = String(localized: "Shared Decks")
         window.setContentSize(NSSize(width: 1000, height: 760))

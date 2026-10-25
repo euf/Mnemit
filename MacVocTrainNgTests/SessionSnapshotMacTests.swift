@@ -19,7 +19,7 @@ struct SessionSnapshotMacTests {
 
     private func write(_ model: SessionViewModel, name: String) async throws {
         for dark in [false, true] {
-            let hosting = NSHostingView(rootView: SessionView(model: model, ring: DailyRingModel(), onClose: {}).frame(width: 800, height: 600))
+            let hosting = NSHostingView(rootView: SessionView(model: model, ring: DailyRingModel(), onClose: {}).frame(width: 800, height: 600).brandTint())
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -36,10 +36,11 @@ struct SessionSnapshotMacTests {
     }
 
     @Test func flashcards() async throws {
-        let document = try VocabularyDocument(
-            deck: Deck(cards: [Card(question: "το σπίτι", answer: "дом · the house"), Card(question: "ο δρόμος", answer: "дорога · the road")]))
+        let words = [("το σπίτι", "дом · the house"), ("ο δρόμος", "дорога · the road"), ("η αστυνομία", "полиция · the police"), ("αφού", "после того как · after")]
+        let document = try VocabularyDocument(deck: Deck(cards: words.map { Card(question: $0.0, answer: $0.1) }))
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: false, studyBy: .flashcards)
+        // A day of rounds, so the stack under the card shows its edges.
+        let model = SessionViewModel(document: document, autoAdvance: false, studyBy: .flashcards, rounds: RoundGuide(ends: [6, 12]))
         try await write(model, name: "1-asking")
         model.reveal()
         try await write(model, name: "2-revealed")
@@ -55,6 +56,30 @@ struct SessionSnapshotMacTests {
         let undoManager = makeUndoManager(for: document)
         let model = SessionViewModel(document: document, autoAdvance: false, studyBy: .flashcards)
         try await write(model, name: "3-plan-end")
+        withExtendedLifetime(undoManager) {}
+    }
+
+    /// The deck window's first screen.
+    @Test func overview() async throws {
+        let words = [("το σπίτι", "дом · the house"), ("ο δρόμος", "дорога · the road"), ("η αστυνομία", "полиция · the police")]
+        let document = try VocabularyDocument(deck: Deck(cards: words.map { Card(question: $0.0, answer: $0.1) }))
+        let undoManager = makeUndoManager(for: document)
+        for dark in [false, true] {
+            let view = DeckOverviewView(document: document, canEdit: true, start: { _ in }, show: { _ in }, showOptions: {})
+                .frame(width: 900, height: 560).brandTint()
+            let hosting = NSHostingView(rootView: view)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 560), styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            window.contentView = hosting
+            hosting.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(300))
+            let rep = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+            hosting.cacheDisplay(in: hosting.bounds, to: rep)
+            let data = try #require(rep.representation(using: .png, properties: [:]))
+            try data.write(to: directory.appendingPathComponent("deck-overview-mac-\(dark ? "dark" : "light").png"))
+            window.close()
+        }
         withExtendedLifetime(undoManager) {}
     }
 }
