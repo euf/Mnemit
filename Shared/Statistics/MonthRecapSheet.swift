@@ -69,7 +69,7 @@ struct MonthRecapSheet: View {
                     }
                 }
             }
-            .listStyle(.insetGrouped)
+            .groupedList()
             .navigationTitle(Text(verbatim: name))
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -87,5 +87,8 @@ struct MonthRecapSheet: View {
                 .padding(.bottom, Spacing.tight)
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 420, minHeight: 540)
+        #endif
     }
 }

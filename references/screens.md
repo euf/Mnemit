@@ -385,18 +385,19 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
 |---|---|---|
 | Today | the root screen | the Today window |
 | The day's button | Study / Catch Up / Push On | the same |
-| Study over several decks | one stream mixes the decks | a deck's stream at a time; at its end, "Study <next deck>" |
+| Study over several decks | one stream mixes the decks (`StudyModel`) | the same `StudyModel`: Today opens the decks of the day and mixes them in the window of the deck used last |
 | The stream | swipes, the stack, the ring travelling to the rests | keys and buttons, the stack, the rests |
 | Progress, medals, How Today Works | pushed from Today | windows |
 | A deck | the deck screen | the deck window's Overview |
 | Cards | the browser, Card Detail, Edit Card | the table, the inspector, the edit sheet; multi-select, keyboard |
 | Adding | Add Cards: One Card, From a List | the form above the table, Add Lesson Words |
 | Import, export, AnkiWeb | yes | yes |
+| A deck from Today | swipe and menu: Pause Deck | menu: Study This Deck, Pause Deck, Show in Finder |
+| Search over all decks | Today's search | the Today window's search; a hit shows the card in its deck's table |
+| Medals | toasts in the stream, new medals of other days on Today, the month's sheet | the same |
 | Typing the answer | no | Study by typing (Preferences) |
-| Reminders, the icon's number | yes | no: the iPhone's are enough |
-| Widget | yes | no |
-| Search over all decks | Today's search | a deck's table |
-| The month's sheet, medal toasts | yes | the rests show today's medals |
+| Reminders, the icon's number | yes | no: one device reminds, the Mac would remind twice |
+| Widget | yes | no: a Mac widget needs an App Group, which the self-signed Mac app has no team for |
 
 ## Mac windows
 
@@ -404,7 +405,11 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
   window title "Today", Window ▸ Today ⌘0; shown at launch while no document is open, and by a click on
   the Dock icon then; to turn it off: `defaults write <bundle id> showsWelcomeWindow -bool NO`). It
   stays open beside the deck windows; like every Mac window it takes the app's indigo as its tint
-  (`brandTint()`), whatever the system accent. Left: `SummaryRow` (the same view as the iPhone's Today header,
+  (`brandTint()`), whatever the system accent. Above the decks, Search All Cards (`AllCardsSearch`, as on the iPhone): a hit opens its deck
+  on Cards with the card selected and the inspector shown (`WelcomeRequest.requestCard(_:of:)`). A deck row's menu:
+  Study This Deck, Pause Deck or Resume Deck (`WelcomeRequest.requestPause(of:isPaused:)`, through the deck's
+  document), Show in Finder. The medals of earlier days this Mac never celebrated come once as toasts, and the
+  month's sheet (`MonthRecapSheet`) shows on the first open of a month, its See All Progress opening Progress. Left: `SummaryRow` (the same view as the iPhone's Today header,
   ring 80 pt, a button with a chevron that opens Progress), the `DayAction` button (extra large, the default action) and the links Choose Mnemit
   Folder…, New Deck, Import Cards…, Open Deck…, Shared Decks on AnkiWeb…. Right: the decks of the Mnemit folder
   with what today's plan takes from each (`StudyCounts.parts`, else "Next review …", "Paused" for a
@@ -436,6 +441,11 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
   (⌘E) and Suspend Card; Show Answer prominent in indigo, Space or Return. Typing keeps the bar of the last
   answer under the card. At the end of a deck's plan, while another deck of the folder has cards in today's
   plan, the rest's first button is "Study Greek B1 · 14 cards" (`NextDeck`): it ends this stream and starts
-  that deck's in its window, so the day goes on over the decks as the iPhone's mixed stream does.
+  that deck's in its window; a stream from Today mixes the decks of the day from the start.
+- The Mac's stream is the iPhone's `StudyModel` (`Shared/Session`) under `SessionViewModel`, which adds the typed
+  response: Today's Study, Catch Up and Push On open the decks of the day (`WelcomeRequest.requestStudy(of:entry:with:)`)
+  and start one stream in the window of the deck used last, the others joining once they can be edited
+  (`WelcomeRequest.openDocuments(_:)`); each card from the deck whose next card is most urgent, Undo (Z, Esc, ⌘Z) the
+  last step in its own deck. Medals earned by a grade come as toasts under the bar (`MedalToasts`).
 - How Today Works: its own window (Study ▸ How Today Works, or the link at the end of Progress), over
   `AllDecks`, each deck named by its file.

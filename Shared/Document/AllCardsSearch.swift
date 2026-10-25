@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import VocabCore
 
-/// The search of Today: every card of every known deck, by question, answer, hint and word
+/// The search of Today, on the iPhone and in the Mac's Today window: every card of every known deck, by question, answer, hint and word
 /// key, ignoring case and accents.
 ///
 /// Reads the decks from their files, not as documents: no deck is open while Today shows. The

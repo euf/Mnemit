@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import VocabCore
 
 /// Today, the window at launch while no document is open, instead of the bare Open panel: the day over the decks
 /// of the Mnemit folder and the decks themselves, or, before the folder is chosen, the ways in (`WelcomeView`). It
@@ -115,6 +116,42 @@ enum WelcomeRequest {
     /// What Today asked of the deck at `url`, once.
     static func takeStudy(of url: URL) -> StudyRequest? {
         studies.removeValue(forKey: key(url))
+    }
+
+    /// Posted when Today asks a deck to be paused or resumed; the deck's window takes it with `takePause(of:)`.
+    static let pauseRequested = Notification.Name("MnemitPauseRequested")
+
+    private static var pauses: [String: Bool] = [:]
+
+    /// Asks the window of the deck at `url` to pause or resume it, opening the deck if it isn't open: a deck is changed
+    /// only through its document.
+    static func requestPause(of url: URL, isPaused: Bool) {
+        pauses[key(url)] = isPaused
+        NotificationCenter.default.post(name: pauseRequested, object: nil)
+        DeckFolder.open(url)
+    }
+
+    /// Whether Today asked the deck at `url` to be paused, once.
+    static func takePause(of url: URL) -> Bool? {
+        pauses.removeValue(forKey: key(url))
+    }
+
+    /// Posted when Today asks a deck to show a card; the deck's window takes it with `takeCard(of:)`.
+    static let cardRequested = Notification.Name("MnemitCardRequested")
+
+    private static var cards: [String: Card.ID] = [:]
+
+    /// Asks the window of the deck at `url` to show the card `id` in its table, opening the deck if it isn't open:
+    /// a hit of Today's search.
+    static func requestCard(_ id: Card.ID, of url: URL) {
+        cards[key(url)] = id
+        NotificationCenter.default.post(name: cardRequested, object: nil)
+        DeckFolder.open(url)
+    }
+
+    /// The card Today asked the deck at `url` to show, once.
+    static func takeCard(of url: URL) -> Card.ID? {
+        cards.removeValue(forKey: key(url))
     }
 
     /// The open documents of the decks at `urls`, as soon as each can be edited, waiting a few seconds at most.

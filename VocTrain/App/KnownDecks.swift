@@ -2,18 +2,6 @@ import Foundation
 import Observation
 import VocabCore
 
-/// A deck the app has opened, as the start screen lists it (#288).
-struct KnownDeck: Identifiable, Hashable {
-    let url: URL
-
-    var id: URL { url }
-
-    /// The name of the deck, without the extension.
-    var name: String {
-        url.deletingPathExtension().lastPathComponent
-    }
-}
-
 /// The decks the app has opened, which the start screen lists (#288); the one studied
 /// last comes first in the queue of Study.
 ///

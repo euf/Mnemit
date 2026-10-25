@@ -6,6 +6,8 @@ struct CardListView: View {
     /// `false` while the deck can only be viewed, see `DocumentView.isEditable`, or
     /// can't be changed yet, see `VocabularyDocument.isReadyToEdit`.
     var isEditable: Bool
+    /// A card to select and show, from Today's search.
+    var shownCard: Card.ID?
     @State private var selection = Set<Card.ID>()
     @State private var sortOrder = [KeyPathComparator(\CardRow.position)]
     @State private var columnCustomization = TableColumnCustomization<CardRow>()
@@ -34,6 +36,12 @@ struct CardListView: View {
         }
         .sheet(item: $editedCard) { card in
             CardEditSheet(document: document, card: card)
+        }
+        .onChange(of: shownCard, initial: true) { _, id in
+            if let id {
+                show(id)
+                showingInspector = true
+            }
         }
         .toolbar {
             ToolbarItem {

@@ -10,12 +10,37 @@ struct WelcomeView: View {
     @State private var recent = NSDocumentController.shared.recentDocumentURLs
     @State private var ring = DailyRingModel()
     @State private var counts = KnownDeckCounts()
+    @State private var query = ""
+    @State private var search = AllCardsSearch()
+    /// The medals of earlier days this Mac never celebrated, earned on the iPhone, say, once as toasts.
+    @State private var toasts = MedalToasts()
+    /// The month's screen, shown on the first open of a new month after a month with study, as on the iPhone.
+    @State private var monthRecap: MonthRecap?
+    @AppStorage("shownMonthRecap") private var shownMonthRecap = ""
 
     var body: some View {
         TodayWindowContent(
             folder: folder.url, decks: folder.decks, recent: recent, progress: ring.progress, counts: counts.counts, paused: counts.paused,
-            isRead: counts.isRead, now: Date(), chooseFolder: { folder.choose() }, study: study
+            isRead: counts.isRead, now: Date(), chooseFolder: { folder.choose() }, study: study, query: $query,
+            hits: search.hits(for: query), isSearching: !search.isLoaded, showCard: { WelcomeRequest.requestCard($0.card, of: $0.deck.url) }
         )
+        // The decks are read for the search once there is something to search for, and again after they may have changed.
+        .task(id: query.isEmpty) {
+            if !query.isEmpty { await search.load(folder.decks.map(KnownDeck.init(url:))) }
+        }
+        .medalToast(toasts)
+        .onChange(of: ring.progress) {
+            toasts.offer(ring.progress, earlierDays: true)
+            showMonthRecapIfDue()
+        }
+        .sheet(item: $monthRecap) { recap in
+            MonthRecapSheet(recap: recap) {
+                monthRecap = nil
+                ProgressWindow.show()
+            } done: {
+                monthRecap = nil
+            }
+        }
         .onAppear(perform: refresh)
         // The decks may have changed while the window was behind others.
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in refresh() }
@@ -39,9 +64,20 @@ struct WelcomeView: View {
         WelcomeRequest.requestStudy(of: first, entry: action == .pushOn ? .pushOn : .study, with: Array(decks.dropFirst()))
     }
 
+    /// The month's screen once, on the first open of a month after a month with study; never in a test run.
+    private func showMonthRecapIfDue() {
+        guard monthRecap == nil, !GreekSpeech.isUnderTest, let progress = ring.progress,
+            let recap = MonthRecapPlan.pending(records: progress.records, calendar: StudyCalendar(), shown: shownMonthRecap)
+        else { return }
+        shownMonthRecap = MonthRecapPlan.key(year: recap.year, month: recap.month)
+        monthRecap = recap
+    }
+
     /// Reads the folder, the day's ring over its decks and their counts, the open decks as their documents have them.
     private func refresh() {
         folder.refresh()
+        search.invalidate()
+        if !query.isEmpty { Task { await search.load(folder.decks.map(KnownDeck.init(url:))) } }
         recent = NSDocumentController.shared.recentDocumentURLs
         let urls = folder.decks
         Task {
@@ -66,6 +102,12 @@ struct TodayWindowContent: View {
     var now: Date
     var chooseFolder: () -> Void
     var study: (DayAction) -> Void
+    /// What the search field holds; the cards it finds over every deck of the folder, which a click shows in the
+    /// deck's window.
+    var query: Binding<String> = .constant("")
+    var hits: [AllCardsSearch.Hit] = []
+    var isSearching = false
+    var showCard: (AllCardsSearch.Hit) -> Void = { _ in }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -78,9 +120,21 @@ struct TodayWindowContent: View {
             }
             .frame(width: 340)
             Divider()
-            deckList
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.quaternary.opacity(0.5))
+            VStack(spacing: 0) {
+                if folder != nil {
+                    TextField("Search All Cards", text: query, prompt: Text("Search All Cards"))
+                        .textFieldStyle(.roundedBorder)
+                        .padding([.horizontal, .top], Spacing.margin)
+                        .padding(.bottom, Spacing.tight)
+                }
+                if query.wrappedValue.trimmingCharacters(in: .whitespaces).isEmpty {
+                    deckList
+                } else {
+                    results
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(.quaternary.opacity(0.5))
         }
         .frame(width: 760, height: 460)
     }
@@ -197,6 +251,7 @@ struct TodayWindowContent: View {
                         DeckRow(name: deck.deletingPathExtension().lastPathComponent, subtitle: subtitle(of: deck), count: counts[deck]?.total) {
                             DeckFolder.open(deck)
                         }
+                        .contextMenu { deckMenu(deck) }
                     }
                 } header: {
                     Text("Decks in “\(folder.lastPathComponent)”")
@@ -222,6 +277,60 @@ struct TodayWindowContent: View {
                 } description: {
                     Text("Open your Mnemit folder to see the decks in it, or import cards from a table.")
                 }
+            }
+        }
+    }
+
+    /// What the iPhone's swipe and menu on a deck row do: study the deck alone, pause or resume it, and here also
+    /// show it in Finder.
+    @ViewBuilder
+    private func deckMenu(_ deck: URL) -> some View {
+        let isPaused = paused.contains(deck)
+        Button("Study This Deck", systemImage: "play.rectangle") {
+            WelcomeRequest.requestStudy(of: deck, entry: (counts[deck]?.total ?? 0) > 0 ? .study : .pushOn)
+        }
+        .disabled(isPaused)
+        Button(isPaused ? "Resume Deck" : "Pause Deck", systemImage: isPaused ? "play.circle" : "pause.circle") {
+            WelcomeRequest.requestPause(of: deck, isPaused: !isPaused)
+        }
+        Divider()
+        Button("Show in Finder", systemImage: "folder") {
+            NSWorkspace.shared.activateFileViewerSelecting([deck])
+        }
+    }
+
+    /// The cards the search found, each with its deck; a click shows the card in its deck's window.
+    private var results: some View {
+        List(hits) { hit in
+            Button {
+                showCard(hit)
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.gap) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(hit.question)
+                            .lineLimit(2)
+                        Text(hit.answer.split(separator: "\n", maxSplits: 1).first.map(String.init) ?? hit.answer)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                    Spacer(minLength: Spacing.tight)
+                    Text(hit.deck.name)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, 2)
+        }
+        .scrollContentBackground(.hidden)
+        .overlay {
+            if isSearching {
+                ProgressView()
+            } else if hits.isEmpty {
+                ContentUnavailableView.search(text: query.wrappedValue)
             }
         }
     }

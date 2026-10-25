@@ -34,6 +34,8 @@ struct SessionView: View {
 
     /// The question whose response field has the focus.
     @FocusState private var focusedQuestion: Int?
+    /// The medals a grade earns, as toasts under the bar, as on the iPhone.
+    @State private var toasts = MedalToasts()
     @State private var editing: EditRequest?
 
     /// The card that `CardEditSheet` edits, as it was when the sheet opened, and whether
@@ -71,6 +73,14 @@ struct SessionView: View {
             }
         }
         .background(Color.studyBackdrop)
+        .medalToast(toasts)
+        // A medal earned by a grade is celebrated once the ring has been evaluated; a rest shows its own.
+        .onChange(of: ring.progress) {
+            if !model.isResting { toasts.offer(ring.progress) }
+        }
+        .onChange(of: model.isResting) { _, isResting in
+            if isResting { toasts.clear() }
+        }
         .background { keys }
         .sheet(item: $editing, onDismiss: focusResponse) { request in
             CardEditSheet(document: model.document, card: request.card, hidesAnswer: request.hidesAnswer)
@@ -86,7 +96,10 @@ struct SessionView: View {
             }
         }
         .onAppear { GreekSpeech.shared.open() }
-        .onDisappear { GreekSpeech.shared.close() }
+        .onDisappear {
+            GreekSpeech.shared.close()
+            toasts.clear()
+        }
     }
 
     /// Edits the card being asked; its answer stays hidden until the response is checked

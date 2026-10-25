@@ -30,6 +30,8 @@ struct DocumentView: View {
     @State private var session: SessionViewModel?
     /// Another deck of the folder with cards in today's plan, for the end of this deck's plan.
     @State private var nextDeck: NextDeck?
+    /// The card a hit of Today's search asked the table to show.
+    @State private var shownCard: Card.ID?
     @State private var showingOptions = false
     @State private var importPreview: CardImport.Preview?
     /// Whether an import file is being read: an Anki package takes a while.
@@ -60,7 +62,7 @@ struct DocumentView: View {
                     DeckOverviewView(
                         document: document, canEdit: canEdit, start: startOrPractise, show: { screen = $0 },
                         showOptions: { showingOptions = true })
-                case .cards: CardListView(document: document, isEditable: canEdit)
+                case .cards: CardListView(document: document, isEditable: canEdit, shownCard: shownCard)
                 case .statistics: StatisticsView(document: document)
                 }
             }
@@ -145,6 +147,10 @@ struct DocumentView: View {
         }
         // Today's Study, Catch Up or Push On, for this deck while its window was open already.
         .onReceive(NotificationCenter.default.publisher(for: WelcomeRequest.studyRequested)) { _ in takeStudyRequest() }
+        .onAppear(perform: takeCardRequest)
+        .onReceive(NotificationCenter.default.publisher(for: WelcomeRequest.cardRequested)) { _ in takeCardRequest() }
+        .onChange(of: canEdit, initial: true) { takePauseRequest() }
+        .onReceive(NotificationCenter.default.publisher(for: WelcomeRequest.pauseRequested)) { _ in takePauseRequest() }
         .attachingUndoManager(to: document)
         // The deck opened: its parameters are fitted again if it is due, in the background and
         // never into a study stream (`ParameterRefit`).
@@ -332,6 +338,20 @@ struct DocumentView: View {
     }
 
     /// Starts the stream that Today asked of this deck, once the document can be edited.
+    /// Today's Pause Deck or Resume Deck for this deck, once it can be changed.
+    private func takePauseRequest() {
+        guard canEdit, let fileURL, let isPaused = WelcomeRequest.takePause(of: fileURL) else { return }
+        document.setPaused(isPaused)
+        refreshRing()
+    }
+
+    /// A hit of Today's search: the table shows the card, outside a stream.
+    private func takeCardRequest() {
+        guard session == nil, let fileURL, let id = WelcomeRequest.takeCard(of: fileURL) else { return }
+        screen = .cards
+        shownCard = id
+    }
+
     /// The decks Today opened with this one join the stream once they can be edited; a deck that isn't ready within a
     /// few seconds (not downloaded yet, say) stays out of it.
     private func takeStudyRequest() {
