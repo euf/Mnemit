@@ -2,7 +2,8 @@
 
 ## State
 
-- Version 6.0 on `main`; the iPhone runs 6.0 (ea8a95d), signed until 01.11; the Mac app 6.0 from `main`. The day's model (one ring that stays full at the goal, the streak as a flame, the
+- Version 6.1 on `main`; the iPhone runs 6.0 (ea8a95d), signed until 01.11, 6.1 built and waiting for the
+  iPhone to be in reach of `ios-renew`; the Mac app 6.1.1 (300cfef). The day's model (one ring that stays full at the goal, the streak as a flame, the
   stack that ends with the plan, Study / Catch Up / Push On, partial credit, the streak step, two rests, medals, the
   Progress screen on both apps, the Mac's Today window)
   and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
@@ -50,12 +51,14 @@ deck folder is chosen in the file picker. Team limits: 3 apps per device (now Fi
 
 In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
-1. **6.0 on the iPhone, to check on the device:** the flame in Today's ring and in the widgets, Push On from Today, a
-   reminder that names the streak, the icon's number. Xcode's Apple ID was lost once (24.10): `ios-renew` then
+1. **6.1 on the iPhone, to check on the device:** the flame in Today's ring and in the widgets, Push On from Today, a
+   reminder that names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and
+   reviews from the Mac arriving while Today stays open (it reads the decks every minute). Xcode's Apple ID was lost once (24.10): `ios-renew` then
    fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
-2. **The Mac's Today and Progress windows on the live screen.** They were checked from offscreen frames only
-   (`TodayWindowSnapshotTests`, `SessionSnapshotMacTests`; the screen was locked): look at them with `vqa`,
-   Study from Today opening the deck and starting its stream, and the window staying open beside a deck.
+2. **The Mac, seen live on 25.10:** Today, a deck's Overview and the stream with its stack are checked on the
+   screen; still to see live: the rest's "Study Greek B1 · N cards" at the end of a deck's plan, and Progress. A
+   deck window shows "Greek B1.mnemit" because Finder shows every extension on this Mac (a document window takes
+   the file's name).
 3. **Progress must not depend on the decks in the list.** The ring, the streak and the medals are worked
    out from the logs of the active decks: deleting or pausing a deck, or deleting a card, rewrites past
    days. Plan: a progress ledger in the deck folder, one line per study day (done, goal, kept, closed),
