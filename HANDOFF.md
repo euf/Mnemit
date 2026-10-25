@@ -50,6 +50,9 @@ deck folder is chosen in the file picker. Team limits: 3 apps per device (now Fi
 
 In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
+The next release is planned in `references/quality-plan.md` (audit of 26.10, phases in its §9); it takes in item 5
+and the first point of item 6 below.
+
 1. **6.1 on the iPhone, to check on the device:** the flame in Today's ring and in the widgets, Push On from Today, a
    reminder that names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and
    reviews from the Mac arriving while Today stays open (it reads the decks every minute). Xcode's Apple ID was lost once (24.10): `ios-renew` then

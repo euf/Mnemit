@@ -48,6 +48,8 @@ Read the file for the area you work on.
 - `references/screens.md`: every screen of both apps, what it shows and does.
 - `references/study-screen.md`: the iPhone Study screen: layout, motion, speech window, swipe sectors.
 - Visual spec: `references/design-spec.md`.
+- `references/quality-plan.md`: the audit of 6.1.5 and the plan of 7.0: the model, every screen of both apps,
+  the Mac's one window, the order of work.
 - Research and verdicts: `references/fsrs-research.md`, `references/fsrs-vs-sm17.md`,
   `references/production-cards-research.md`, `references/cross-deck-overlap.md`,
   `references/anki-parity.md`, `references/deck-formats-and-sources.md`.
