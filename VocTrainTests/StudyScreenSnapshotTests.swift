@@ -573,13 +573,15 @@ struct StudyScreenSnapshotTests {
         window.isHidden = true
     }
 
-    /// The toast of a medal fully in, under the bar and over the card, as a still.
+    /// The toast of a medal fully in, as one line in the gap between the card and the answer's buttons, as a still: with the
+    /// question asked, and with the answer shown, where the grade block is under the gap.
     @Test(arguments: [false, true])
-    func medalToast(dark: Bool) async throws {
+    func medalToast(revealed: Bool) async throws {
         let (model, ring) = try await prepare(reviews: 2)
+        if revealed { model.reveal() }
         let toasts = MedalToasts(store: CelebratedMedals(defaults: nil), frozen: Achievement(kind: .comeback, day: 0))
-        let window = try await host(StudyView(model: model, ring: ring, flight: CardFlight(), toasts: toasts, onClose: {}), dark: dark)
-        try write(window, name: "40-medal-toast", dark: dark)
+        let window = try await host(StudyView(model: model, ring: ring, flight: CardFlight(), toasts: toasts, onClose: {}), dark: false)
+        try write(window, name: revealed ? "40-medal-toast-revealed" : "40-medal-toast", dark: false)
         window.isHidden = true
     }
 }

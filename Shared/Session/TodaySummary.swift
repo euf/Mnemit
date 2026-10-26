@@ -15,7 +15,8 @@ struct HeroRing: View {
     }
 }
 
-/// Today's hero: the ring, a picture; under it the sentence, the next moment of the day and its minutes (`NextStep`), the
+/// Today's hero: the ring, a picture; under it the streak line (`StreakLine`: the status of the day, which the ring leads);
+/// then the sentence, the next moment of the day and its minutes (`NextStep`: the action, which leads to the button), the
 /// words learned ("412 words learned · +12 today") and the week's rings. On the iPhone's Today at 168 pt, with the whole
 /// hero a button to Progress; the Mac's Today at its own size.
 struct TodayHero: View {
@@ -29,11 +30,16 @@ struct TodayHero: View {
     var showsChevron = false
 
     var body: some View {
-        // 24 pt between the parts: the ring, the sentence with the words, the week.
+        // 24 pt between the parts: the status (the ring and its streak line), the action (the sentence with the words), the week.
         VStack(spacing: 24) {
-            HeroRing(progress: isLoaded ? progress : nil, diameter: ringSize)
             VStack(spacing: 12) {
-                sentence
+                HeroRing(progress: isLoaded ? progress : nil, diameter: ringSize)
+                StreakLine(step: step)
+                    .multilineTextAlignment(.center)
+                    .redacted(reason: isLoaded ? [] : .placeholder)
+            }
+            VStack(spacing: 12) {
+                NextStepText(step: step)
                     .font(.subheadline.weight(.semibold))
                     .multilineTextAlignment(.center)
                     .redacted(reason: isLoaded ? [] : .placeholder)
@@ -50,13 +56,10 @@ struct TodayHero: View {
         .accessibilityElement(children: .combine)
     }
 
-    @ViewBuilder
-    private var sentence: some View {
-        if let progress, isLoaded {
-            StreakSentence(step: NextStep(progress))
-        } else {
-            StreakSentence(step: NextStep(days: 12, state: .open, isClosed: false, minutesToKeep: 2))
-        }
+    /// The day's words and streak, or a placeholder's while the decks are read.
+    private var step: NextStep {
+        if let progress, isLoaded { return NextStep(progress) }
+        return NextStep(days: 12, state: .open, isClosed: false, minutesToKeep: 2)
     }
 
     /// "412 words learned · +12 today": the gain of the day is left out on a day that has none.

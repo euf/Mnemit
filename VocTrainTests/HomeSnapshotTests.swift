@@ -44,13 +44,13 @@ struct HomeSnapshotTests {
 
     func today(
         decks: [KnownDeck] = [greekA1, greekB1], counts: [URL: StudyCounts], paused: Set<URL> = [], progress: DailyProgress?, query: String = "",
-        hits: [AllCardsSearch.Hit] = []
+        hits: [AllCardsSearch.Hit] = [], toasts: MedalToasts = MedalToasts()
     ) -> some View {
         NavigationStack {
             TodayScreen(
                 decks: decks, counts: counts, paused: paused, progress: progress, now: Self.now, query: .constant(query), hits: hits,
                 isSearching: false, canForget: { _ in true }, study: { _ in }, showDeck: { _ in }, showCard: { _ in },
-                forget: { _ in }, addCards: {}, newDeck: {}, chooseFolder: {}, openDeck: {}, showSettings: {}, refresh: {})
+                forget: { _ in }, addCards: {}, newDeck: {}, chooseFolder: {}, openDeck: {}, showSettings: {}, refresh: {}, toasts: toasts)
         }
     }
 
@@ -177,6 +177,26 @@ struct HomeSnapshotTests {
 
     @Test func todayWithCardsDueAtLargeTypeSizes() async throws {
         try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)), types: [.xxxLarge, .accessibility3, .accessibility5])
+    }
+
+    /// The four states of the day at the largest text size (the same four at the standard one are the tests above): the ring, the
+    /// streak line, the sentence, the words learned and the week keep their order and wrap, and the list scrolls.
+    @Test func todayInFourStatesAtTheLargestTextSize() async throws {
+        let states: [(name: String, counts: [URL: StudyCounts], progress: DailyProgress)] = [
+            ("open", leftCounts(done: 3), Self.roundsProgress(done: 3, streak: 12)),
+            ("kept", leftCounts(done: 10), Self.roundsProgress(done: 10, streak: 12)),
+            ("closed", leftCounts(done: 28), Self.roundsProgress(done: 31, streak: 13, cardsLeft: 48)),
+            ("risk", leftCounts(done: 3), Self.roundsProgress(done: 3, streak: 12, repairCards: 15)),
+        ]
+        for state in states {
+            try await shoot("today-ax5-\(state.name)", today(counts: state.counts, progress: state.progress), height: 1400, types: [.accessibility5])
+        }
+    }
+
+    /// A medal's toast on Today stands over the large title, under the bar's buttons: over neither the ring nor a deck row.
+    @Test func todayWithAMedalToast() async throws {
+        let toasts = MedalToasts(store: CelebratedMedals(defaults: nil), frozen: Achievement(kind: .comeback, day: 0))
+        try await shoot("today-toast", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12), toasts: toasts))
     }
 
     /// A deck paused: it moves to a "Paused" section at the bottom, in the secondary colour, with no counts, and the

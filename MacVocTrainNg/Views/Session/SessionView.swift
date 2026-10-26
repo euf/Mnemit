@@ -27,9 +27,18 @@ struct SessionView: View {
     var nextDeck: NextDeck? = nil
     var onClose: () -> Void
 
-    /// The medals a grade earns, as toasts under the bar, as on the iPhone.
-    @State private var toasts = MedalToasts()
+    /// The medals a grade earns, as one line in the middle of the header's row.
+    @State private var toasts: MedalToasts
     @State private var sheet: StreamSheet?
+
+    /// - Parameter toasts: The medals' toasts; a test passes one with a toast frozen in.
+    init(model: SessionViewModel, ring: DailyRingModel, nextDeck: NextDeck? = nil, toasts: MedalToasts? = nil, onClose: @escaping () -> Void) {
+        self.model = model
+        self.ring = ring
+        self.nextDeck = nextDeck
+        self.onClose = onClose
+        _toasts = State(initialValue: toasts ?? MedalToasts())
+    }
 
     /// The card that `CardEditSheet` edits, as it was when the sheet opened, and whether
     /// the sheet hides its answer.
@@ -66,6 +75,7 @@ struct SessionView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+                .medalToast(toasts, at: .header)
             if model.isResting {
                 // A rest with a medal and Push On's line is taller than a short window: it scrolls
                 // under the header instead of pushing the header out of the window, and is centred
@@ -87,7 +97,6 @@ struct SessionView: View {
             }
         }
         .background(Color.studyBackdrop)
-        .medalToast(toasts)
         // A medal earned by a grade is celebrated once the ring has been evaluated; a rest shows its own.
         .onChange(of: ring.progress) {
             if !model.isResting { toasts.offer(ring.progress) }
@@ -173,18 +182,17 @@ struct SessionView: View {
         }
     }
 
-    /// Today's ring, empty inside, the streak's flame by its state and what the iPhone's bar says: the minutes to the next
-    /// moment of the day, "≈ 4 min". The ring comes first, so it does not move when the
+    /// Today's ring, empty inside, the streak's flame by its state with its days ("🔥 12") and what the iPhone's bar says: the
+    /// minutes to the next moment of the day, "≈ 4 min". The ring comes first, so it does not move when the
     /// text changes its width.
     private var ringAndFigures: some View {
         HStack(spacing: 8) {
             ProgressRing(fraction: DailyRingFigure.fraction(ring.progress, shown: nil), diameter: 28)
             if let progress = ring.progress {
-                StreakFlame(state: progress.streakState)
-                    .font(.body.weight(.semibold))
-                    .accessibilityLabel(Text(verbatim: NextStep(progress).spoken))
+                let step = NextStep(progress)
+                StreakCount(step: step)
                 Group {
-                    if let minutes = NextStep(progress).minutes {
+                    if let minutes = step.minutes {
                         Text(verbatim: Format.timeLeft(minutes: minutes))
                     }
                 }

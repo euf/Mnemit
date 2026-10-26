@@ -4,8 +4,8 @@ import VocabCore
 import WidgetKit
 
 /// The picture of the widget in each family, from the figures of one timeline entry: the day's ring as a picture, nothing
-/// in its middle, and one sentence that carries the streak and the price of the next step (`WidgetState.sentence`), led
-/// by the flame. The medium widget adds the week's rings; the lock screen's circle, a gauge, has the minutes of the next
+/// in its middle, the streak's line (the flame and "12-day streak") and one sentence that carries the next step and its price
+/// (`NextStep`). The medium widget adds the week's rings; the lock screen's circle, a gauge, has the minutes of the next
 /// step. `nil` before the app wrote a snapshot.
 ///
 /// In `Shared` and not in the extension, so the tests of the app can draw it with fixed
@@ -41,7 +41,7 @@ extension WidgetState {
     /// Today's ring in laps of the goal, as every ring draws it.
     fileprivate var ringFraction: Double { DailyRingFigure.fraction(progress, shown: nil) }
 
-    /// The flame and the one sentence of the widget.
+    /// The streak and the one sentence of the widget.
     var nextStep: NextStep { NextStep(progress, minutesToKeep: roundStatus?.minutesToKeep, minutesToClose: minutesLeft, minutesOfReviews: minutesLeft) }
 }
 
@@ -56,61 +56,71 @@ private struct WidgetRing: View {
     }
 }
 
-/// The one sentence (`NextStep`), led by the flame: the second line starts under the first, not under the flame. The flame is
-/// filled once today keeps the streak and carries an exclamation mark the day after a missed one. The size, the weight, the
-/// alignment and the number of lines are the caller's.
-private struct WidgetSentence: View {
+/// The streak's line (`StreakLine`): the flame, filled once today keeps the streak and with an exclamation mark the day after a
+/// missed one, marked accentable so a tinted widget keeps the state by the flame's shape, and "12-day streak". Nothing without
+/// a streak. The size and the weight are the caller's.
+private struct WidgetStreakLine: View {
     var step: NextStep
-    var alignment: HorizontalAlignment = .center
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            if let flame = step.flame {
-                StreakFlame(state: flame)
-                    .widgetAccentable(flame != .open)
+        if step.days > 0 {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                StreakFlame(state: step.state)
+                    .widgetAccentable(step.state != .open)
+                Text(verbatim: NextStep.unbroken(step.streakText))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            NextStepText(step: step, alignment: alignment)
         }
     }
 }
 
-/// The ring, large, and the sentence under it: two lines, three for the longest, the day after a missed one.
+/// The ring, large; under it the streak line and the sentence: two lines, the sentence at its smallest.
 private struct SmallWidget: View {
     var state: WidgetState
 
     var body: some View {
-        VStack(spacing: 6) {
-            WidgetRing(state: state, diameter: 72)
-            WidgetSentence(step: state.nextStep)
-                .font(.caption)
+        let step = state.nextStep
+        VStack(spacing: 4) {
+            WidgetRing(state: state, diameter: 64)
+                .padding(.bottom, 2)
+            WidgetStreakLine(step: step)
+                .font(.caption.weight(.semibold))
+            NextStepText(step: step)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .lineLimit(3)
+                .lineLimit(2)
                 .minimumScaleFactor(0.85)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: state.nextStep.spoken))
+        .accessibilityLabel(Text(verbatim: step.spoken))
     }
 }
 
-/// The ring on the left; on the right the sentence as the headline and under it the week's rings, without initials.
-/// The widget opens the stream; it has no button.
+/// The ring on the left; on the right the streak line as the headline, the sentence under it and the week's rings at the
+/// bottom, without initials. The widget opens the stream; it has no button.
 private struct MediumWidget: View {
     var state: WidgetState
 
     private static let ring: CGFloat = 104
 
     var body: some View {
+        let step = state.nextStep
         HStack(spacing: 16) {
             WidgetRing(state: state, diameter: Self.ring)
-            // As tall as the ring: the sentence at its top, the week at its bottom.
-            VStack(alignment: .leading, spacing: 8) {
-                WidgetSentence(step: state.nextStep, alignment: .leading)
+            // As tall as the ring: the streak and the sentence at its top, the week at its bottom.
+            VStack(alignment: .leading, spacing: 4) {
+                WidgetStreakLine(step: step)
                     .font(.headline)
+                NextStepText(step: step, alignment: .leading)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
-                    // Three lines: the day after a missed one is the longest sentence.
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.75)
+                    // Two lines: the day after a missed one is the longest sentence.
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 if let week = state.week {
                     WeekRings(week: week, rings: state.weekRings, today: state.ringFraction, now: state.date, showsLetters: false, diameter: 18, spacing: 6)
@@ -121,7 +131,7 @@ private struct MediumWidget: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: state.nextStep.spoken))
+        .accessibilityLabel(Text(verbatim: step.spoken))
     }
 }
 
@@ -155,23 +165,28 @@ private struct CircularWidget: View {
     }
 }
 
-/// A small ring on the left and the sentence beside it.
+/// A small ring on the left; beside it the streak line and the sentence.
 private struct RectangularWidget: View {
     var state: WidgetState
 
     var body: some View {
+        let step = state.nextStep
         HStack(spacing: 8) {
-            WidgetRing(state: state, diameter: 56)
-            WidgetSentence(step: state.nextStep, alignment: .leading)
-                .font(.caption)
-                .multilineTextAlignment(.leading)
-                .lineLimit(3)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            WidgetRing(state: state, diameter: 44)
+            VStack(alignment: .leading, spacing: 0) {
+                WidgetStreakLine(step: step)
+                    .font(.caption.weight(.semibold))
+                NextStepText(step: step, alignment: .leading)
+                    .font(.caption2)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: state.nextStep.spoken))
+        .accessibilityLabel(Text(verbatim: step.spoken))
     }
 }
 
@@ -183,12 +198,12 @@ private struct InlineWidget: View {
     var body: some View {
         let step = state.nextStep
         Group {
-            if step.days > 0, let flame = step.flame {
+            if step.days > 0 {
                 Label {
                     Text(verbatim: step.short)
                 } icon: {
-                    StreakFlame(state: flame)
-                        .widgetAccentable(flame != .open)
+                    StreakFlame(state: step.state)
+                        .widgetAccentable(step.state != .open)
                 }
             } else {
                 Text(verbatim: step.short)

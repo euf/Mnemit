@@ -164,17 +164,11 @@ struct StreamRestView: View {
     @ViewBuilder
     private var chip: some View {
         if let progress, !rest.isPracticeOnly, rest.roundEnd?.closesRing ?? true, progress.streak.days > 0 {
-            HStack(spacing: 6) {
-                StreakFlame(state: progress.streakState)
-                    .imageScale(.large)
-                Text(verbatim: NextStep.unbroken(String(localized: "\(progress.streak.days)-day streak")))
-            }
-            .font(.subheadline.weight(.semibold))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color.streak.opacity(0.14), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(verbatim: NextStep(progress).spoken))
+            StreakLine(step: NextStep(progress), font: .subheadline.weight(.semibold))
+                .imageScale(.large)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.streak.opacity(0.14), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 
@@ -308,11 +302,11 @@ struct StreamRestView: View {
         return lines
     }
 
-    /// The price line of the sentence (`NextStep`): "≈ 4 min to close the ring" at the streak's moment, "≈ 12 min of
-    /// reviews left" at the ring's. `nil` without a price.
+    /// The sentence of the next moment (`NextStep`) under the title, which has the streak and the moment: "≈ 4 min to close
+    /// the ring" at the streak's moment, "≈ 12 min of reviews left" at the ring's. `nil` without a price.
     private var priceLine: Line? {
-        guard let progress, let tail = NextStep(progress).lines.tail else { return nil }
-        return Line("price") { Text(verbatim: NextStep.unbroken(tail)) }
+        guard let progress, let price = NextStep(progress).priceLine else { return nil }
+        return Line("price") { Text(verbatim: NextStep.unbroken(price, endTogether: true)) }
     }
 
     // MARK: The buttons

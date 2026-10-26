@@ -190,7 +190,7 @@ struct WidgetSnapshotTests {
         #expect(state.isStreakAtRisk && state.week == week && state.weekRings == rings)
         // The widget draws it as Today does: an outlined flame in the streak's colour, with an exclamation mark.
         #expect(state.progress.streakState == .atRisk)
-        #expect(state.nextStep.sentence.hasSuffix("to close the ring and save your 7-day streak"))
+        #expect(state.nextStep.sentence.hasSuffix("to close the ring and save your streak"))
         // A ring that is closed is not at risk any more.
         let closed = WidgetSnapshot(
             now: now, progress: DailyProgress(ring: DailyRing(done: 20, goal: 20), streak: Streak(days: 7, repairCards: 17)), dates: [now], dueByDeck: [[0]],
@@ -292,7 +292,7 @@ struct WidgetSnapshotTests {
         // The streak step open: the first round's 2 min, and the 17 cards that close the ring at 10 s each, 3 min.
         let open = Self.priced(done: 3, streak: 7, due: 17, roundsDone: 0)
         #expect(open.nextStep == NextStep(days: 7, state: .open, isClosed: false, minutesToKeep: 2, minutesToClose: 3, reviewsLeft: true, minutesOfReviews: 3))
-        #expect(open.nextStep.sentence == "\(Format.timeLeft(minutes: 2)) to keep your 7-day streak")
+        #expect(open.nextStep.sentence == "\(Format.timeLeft(minutes: 2)) to keep your streak")
         // The step done: the first round is behind, the 8 cards left that close the ring take 2 min.
         let kept = Self.priced(done: 12, streak: 7, due: 8, roundsDone: 1)
         #expect(kept.nextStep == NextStep(days: 7, state: .kept, isClosed: false, minutesToKeep: nil, minutesToClose: 2, reviewsLeft: true, minutesOfReviews: 2))
@@ -300,9 +300,9 @@ struct WidgetSnapshotTests {
         #expect(Self.priced(done: 20, streak: 7, due: 0, roundsDone: 4).nextStep == NextStep(days: 7, state: .kept, isClosed: true))
         // The day after a missed one.
         #expect(Self.priced(done: 3, streak: 7, due: 17, roundsDone: 0, atRisk: true).nextStep.state == .atRisk)
-        // A snapshot of an older app has no price: the streak alone.
+        // A snapshot of an older app has no price: the moment alone.
         let old = WidgetState(date: Fixtures.date(22, 10), done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: nil)
-        #expect(old.nextStep.sentence == "7-day streak" && old.nextStep.short == "7")
+        #expect(old.nextStep.minutes == nil && old.nextStep.short == "7" && !old.nextStep.sentence.contains("min"))
     }
 
     @Test func unreadableDataIsNoSnapshot() {

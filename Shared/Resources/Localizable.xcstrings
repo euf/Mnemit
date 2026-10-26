@@ -180,6 +180,28 @@
         }
       }
     },
+    "%@ to close the ring and save your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, um den Ring zu schließen und deine Serie zu retten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ για να κλείσεις τον κύκλο και να σώσεις το σερί σου"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, чтобы закрыть кольцо и спасти стрик"
+          }
+        }
+      }
+    },
     "%@ to keep your %lld-day streak": {
       "localizations": {
         "de": {
@@ -264,6 +286,50 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%@ to keep your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, um deine Serie zu halten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ για να κρατήσεις το σερί σου"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, чтобы сохранить стрик"
+          }
+        }
+      }
+    },
+    "%@ to start your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, um deine Serie zu starten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ για να ξεκινήσεις το σερί σου"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, чтобы начать стрик"
           }
         }
       }
@@ -2866,6 +2932,94 @@
         }
       }
     },
+    "%lld-day streak, at risk": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie: %lld Tag, in Gefahr"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie: %lld Tage, in Gefahr"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Σερί: %lld ημέρα, σε κίνδυνο"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Σερί: %lld ημέρες, σε κίνδυνο"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld-day streak, at risk"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld-day streak, at risk"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Стрик: %lld дня, под угрозой"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Стрик: %lld дней, под угрозой"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Стрик: %lld день, под угрозой"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Стрик: %lld дня, под угрозой"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld-day streak, kept today": {
       "localizations": {
         "de": {
@@ -5251,6 +5405,28 @@
         }
       }
     },
+    "Close the ring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließe den Ring"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κλείσε τον κύκλο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрой кольцо"
+          }
+        }
+      }
+    },
     "Close the ring to save your %lld-day streak": {
       "localizations": {
         "de": {
@@ -5335,6 +5511,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Close the ring to save your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließe den Ring, um deine Serie zu retten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κλείσε τον κύκλο για να σώσεις το σερί σου"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрой кольцо, чтобы спасти стрик"
           }
         }
       }
@@ -8173,6 +8371,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Keep your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halte deine Serie"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κράτα το σερί σου"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохрани стрик"
           }
         }
       }
