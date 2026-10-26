@@ -195,7 +195,7 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
   feel it when the card flies. A gap has no haptic.
 - The onboarding hint plays a finger step along the grade's reference direction
   (`GradeSwipe.reference(of:)`) through `CardFlight.drag`, so the card shows the way a real swipe would
-  move it (Easy at compass 15°). The order of the practice: `screens.md`, "First launch".
+  move it (Easy: the finger at compass 15°, the card at 37.5°, between the finger and the target at 60°). The order of the practice: `screens.md`, "First launch".
 - `SwipeTally` (`Shared/Session`, `@MainActor`, in process memory) counts per study day the swipes that
   reached the commit distance or a flick, and of them those that sprang back from a gap
   (`GradeSwipe.endedInGap`). The Study screen releases a swipe through

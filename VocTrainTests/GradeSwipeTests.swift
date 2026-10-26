@@ -403,10 +403,10 @@ struct CardFlightSwipeTests {
         GradeSwipe.angle(of: size)
     }
 
-    @Test func aSwipeUpMovesTheCardUpAndSlightlyRightInTheColourOfEasy() {
+    @Test func aSwipeUpMovesTheCardUpAndToTheRightInTheColourOfEasy() {
         let flight = CardFlight()
         flight.drag(swipe(90, length: 120), isRevealed: true)
-        #expect(abs(direction(flight.offset) - 82.5) < 0.001)
+        #expect(abs(direction(flight.offset) - 60) < 0.001)
         #expect(abs(hypot(flight.offset.width, flight.offset.height) - 120) < 0.001)
         #expect(flight.zone == .easy)
         #expect(flight.tint == .easy)
@@ -416,9 +416,9 @@ struct CardFlightSwipeTests {
         #expect(flight.rotation.degrees > 0)
     }
 
-    @Test func eachGradeBendsTheCardTowardItsReference() {
+    @Test func eachGradeBendsTheCardTowardItsTarget() {
         let cases: [(finger: Double, grade: Grade, card: Double)] = [
-            (90, .easy, 82.5), (270, .hard, 277.5), (0, .good, 0), (180, .again, 180), (160, .again, 170),
+            (90, .easy, 60), (270, .hard, 300), (0, .good, 0), (180, .again, 180), (160, .again, 170),
         ]
         for (finger, grade, card) in cases {
             let flight = CardFlight()
