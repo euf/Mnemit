@@ -659,13 +659,14 @@ extension Color {
     static var dailyRing: Color { .appAccent }
 
     /// The two ends of the ring's gradient (`ProgressRing`), made from the accent in device RGB so they follow it in all
-    /// four appearances. Light mode: the head is the accent with a quarter of black, the tail the accent with a quarter of
+    /// four appearances. Light mode: the head is the accent with an eighth of black, the tail the accent with a quarter of
     /// white (the most white that keeps 3:1 on the light grouped grey). Dark mode: the head is the accent, the tail the
-    /// accent with half white. The ends differ by about 2.5:1 in every appearance, where a lightened tail alone gave 1.65:1
-    /// and the start and the tail of a ring looked alike (owner, 26.10.2026). `AccentContrastTests` holds the tail to 3:1
-    /// on the surfaces and the two ends to 2:1 against each other.
+    /// accent with half white. The ends differ by 2:1 in light mode and about 2.5:1 in dark mode, where a lightened tail
+    /// alone gave 1.65:1 and the start and the tail of a ring looked alike; a quarter of black made the light head too dark
+    /// for the accent (owner, 26.10.2026). `AccentContrastTests` holds the tail to 3:1 on the surfaces and the two ends to
+    /// 1.9:1 against each other.
     static func dailyRingHead(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? .appAccent : Color.appAccent.mix(with: .black, by: 0.25, in: .device)
+        scheme == .dark ? .appAccent : Color.appAccent.mix(with: .black, by: 0.125, in: .device)
     }
 
     static func dailyRingTail(_ scheme: ColorScheme) -> Color {

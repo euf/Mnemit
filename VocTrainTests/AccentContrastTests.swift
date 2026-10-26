@@ -230,7 +230,7 @@ struct AccentContrastTests {
 
     /// The ring's gradient runs from `Color.dailyRingHead` to `Color.dailyRingTail` (`Presentation.swift`): the head is
     /// the accent (darkened in light mode), the tail the accent lightened. The tail holds 3:1 on every surface, so no part
-    /// of the stroke fades into it, and the two ends differ by 2:1 at least, so the start and the tail of a ring tell
+    /// of the stroke fades into it, and the two ends differ by 1.9:1 at least, so the start and the tail of a ring tell
     /// apart. Both ends are read from the pixels of a view in the appearance.
     @MainActor @Test func ringGradientHoldsItsContrastInEveryAppearance() async throws {
         var lines: [String] = []
@@ -252,7 +252,7 @@ struct AccentContrastTests {
             let spread = Self.contrast(tailLuminance, headLuminance)
             lines.append("\(appearance.name): tail against head \(String(format: "%.2f", spread))")
             #expect(tailLuminance > accentLuminance, "the tail is the lighter end, \(appearance.name)")
-            #expect(spread >= 2, "the start and the tail tell apart, \(appearance.name)")
+            #expect(spread >= 1.9, "the start and the tail tell apart, \(appearance.name)")
             for surface in Self.surfaces {
                 let ratio = Self.contrast(tailLuminance, Self.luminance(surface.color, in: traits))
                 lines.append("    tail on \(surface.name) \(String(format: "%.2f", ratio))")
