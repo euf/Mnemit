@@ -40,7 +40,7 @@ struct SessionSnapshotMacTests {
         let document = try VocabularyDocument(deck: Deck(cards: words.map { Card(question: $0.0, answer: $0.1) }))
         let undoManager = makeUndoManager(for: document)
         // A day of rounds, so the stack under the card shows its edges.
-        let model = SessionViewModel(document: document, autoAdvance: false, studyBy: .flashcards, rounds: RoundGuide(ends: [6, 12]))
+        let model = SessionViewModel(document: document, rounds: RoundGuide(ends: [6, 12]))
         try await write(model, name: "1-asking")
         model.reveal()
         try await write(model, name: "2-revealed")
@@ -54,7 +54,7 @@ struct SessionSnapshotMacTests {
         let document = try VocabularyDocument(
             deck: Deck(learningOptions: options, cards: [Card(question: "το σπίτι", answer: "дом · the house"), Card(question: "ο δρόμος", answer: "дорога · the road")]))
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: false, studyBy: .flashcards)
+        let model = SessionViewModel(document: document)
         try await write(model, name: "3-plan-end")
         withExtendedLifetime(undoManager) {}
     }

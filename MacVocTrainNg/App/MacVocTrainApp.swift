@@ -5,7 +5,7 @@ struct MacVocTrainApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     init() {
-        Preferences.setUpDefaults(.standard, domain: Bundle.main.bundleIdentifier ?? "")
+        Preferences.setUpDefaults()
     }
 
     var body: some Scene {
@@ -25,39 +25,13 @@ struct MacVocTrainApp: App {
 
 /// App-wide preferences, stored in the user defaults.
 enum Preferences {
-    /// Move on to the next card right after a correct response instead of asking for a grade.
-    static let autoAdvanceKey = "autoAdvanceOnCorrectAnswer"
-
-    static var autoAdvance: Bool {
-        UserDefaults.standard.object(forKey: autoAdvanceKey) as? Bool ?? true
-    }
-
-    /// How a session asks its cards.
-    enum StudyBy: String {
-        /// The learner reveals the answer and grades without a response, as on the iPhone.
-        case flashcards
-        /// The learner types the response, which the app checks.
-        case typing
-    }
-
-    static let studyByKey = "studyBy"
-
-    /// What the learner chose; flash cards until then or if the stored value is unknown.
-    static func studyBy(_ defaults: UserDefaults = .standard) -> StudyBy {
-        defaults.string(forKey: studyByKey).flatMap(StudyBy.init(rawValue:)) ?? .flashcards
-    }
-
-    /// Reopen the decks that were open at quit. The key is AppKit's own, which also
-    /// handles ⌥⌘Q; in the app's domain it overrides the system setting "Close windows
-    /// when quitting an application".
+    /// AppKit's own key for reopening the decks that were open at quit, which also handles ⌥⌘Q; in the
+    /// app's domain it overrides the system setting "Close windows when quitting an application".
     static let reopenDecksKey = "NSQuitAlwaysKeepsWindows"
 
-    /// Writes the defaults that a registered default can't provide into `domain`, the
-    /// persistent domain of `defaults`: the global domain would win over a registered
-    /// `reopenDecksKey`.
-    static func setUpDefaults(_ defaults: UserDefaults, domain: String) {
-        if defaults.persistentDomain(forName: domain)?[reopenDecksKey] == nil {
-            defaults.set(true, forKey: reopenDecksKey)
-        }
+    /// Launch opens no decks of the last run: the key is off in the app's persistent domain, which the
+    /// global domain's setting can't override, and also for a learner whose version once let them turn it on.
+    static func setUpDefaults(_ defaults: UserDefaults = .standard) {
+        defaults.set(false, forKey: reopenDecksKey)
     }
 }

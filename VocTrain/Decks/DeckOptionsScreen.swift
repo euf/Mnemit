@@ -112,12 +112,6 @@ struct DeckAdvancedOptionsScreen: View {
                 Text("New cards and cards after a lapse come back within the session until they have been graded Good this many times. Hard keeps a card on its step, Again resets it, Easy moves it to the review phase at once.")
             }
 
-            Section {
-                OptionSlider(title: "Weight of revealed recalls", value: document.option(\.revealedRecallWeight), range: LearningOptions.revealedRecallWeightRange, step: nil)
-            } footer: {
-                Text("How much a recalled review after revealing the answer, on flash cards and on the iPhone, adds to a card's memory compared with a typed one. 100 % treats both alike, as Anki does; 33 % damps revealed reviews to a third.")
-            }
-
             ParametersSection(options: document.option(\.self), cards: document.deck.cards, calendar: document.calendar, appliesAtOnce: true)
         }
         .monospacedDigit()
@@ -193,12 +187,12 @@ struct LimitRows: View {
 
 /// A fraction as a percentage on a slider, with its range at the ends. The value is saved
 /// once the slider rests for a moment, not on every step of a drag: each save is an undo
-/// step and a write of the deck. `step` nil is continuous.
+/// step and a write of the deck.
 struct OptionSlider: View {
     var title: LocalizedStringKey
     @Binding var value: Double
     var range: ClosedRange<Double>
-    var step: Double?
+    var step: Double
     /// What the slider shows while it moves, until it is saved.
     @State private var live: Double?
 
@@ -207,24 +201,12 @@ struct OptionSlider: View {
         VStack(alignment: .leading, spacing: Spacing.tight) {
             ValueLabel(title) { Text(Format.percent(live ?? value)) }
                 .accessibilityHidden(true)
-            Group {
-                if let step {
-                    Slider(value: shown, in: range, step: step) {
-                        Text(title)
-                    } minimumValueLabel: {
-                        Text(Format.percent(range.lowerBound))
-                    } maximumValueLabel: {
-                        Text(Format.percent(range.upperBound))
-                    }
-                } else {
-                    Slider(value: shown, in: range) {
-                        Text(title)
-                    } minimumValueLabel: {
-                        Text(Format.percent(range.lowerBound))
-                    } maximumValueLabel: {
-                        Text(Format.percent(range.upperBound))
-                    }
-                }
+            Slider(value: shown, in: range, step: step) {
+                Text(title)
+            } minimumValueLabel: {
+                Text(Format.percent(range.lowerBound))
+            } maximumValueLabel: {
+                Text(Format.percent(range.upperBound))
             }
             .font(.footnote)
             .accessibilityValue(Format.percent(live ?? value))

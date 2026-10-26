@@ -2,12 +2,11 @@ import SwiftUI
 import VocabCore
 
 /// The retention tables of the statistics screens, in both apps: how often the learner
-/// recalled cards in the review phase, by period and by young/mature interval, then the
-/// same by review mode and card kind for one period, read against the deck's target recall.
+/// recalled cards in the review phase, by period and by young/mature interval, read against
+/// the deck's target recall.
 /// The host puts the title above.
 struct RetentionTables: View {
     var retention: TrueRetention
-    @State private var breakdownPeriod = TrueRetention.Period.last30Days
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -21,45 +20,10 @@ struct RetentionTables: View {
             RetentionGrid(
                 rows: TrueRetention.Period.allCases.map { RetentionRow(id: "\($0)", title: $0.title, split: retention.all[$0]) })
 
-            let groups = groupRows
-            if !groups.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("By review mode and card kind")
-                        .font(.headline)
-                    Picker("Period", selection: $breakdownPeriod) {
-                        ForEach(TrueRetention.Period.allCases, id: \.self) { period in
-                            Text(period.title).tag(period)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                    RetentionGrid(rows: groups)
-                }
-            }
-
             Text("Young cards had an interval under 21 days when they were asked, mature cards 21 days or more. Learning steps, first reviews and further reviews on the same study day are not counted.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    /// Review modes, then card kinds, that have reviews in the deck, for `breakdownPeriod`.
-    private var groupRows: [RetentionRow] {
-        let modes: [(mode: ReviewMode, title: String)] = [
-            (.typed, String(localized: "Typed reviews")),
-            (.revealed, String(localized: "Revealed reviews")),
-        ]
-        let kinds: [(kind: CardKind, title: String)] = [
-            (.recognition, String(localized: "Recognition cards")),
-            (.production, String(localized: "Production cards")),
-        ]
-        let byMode = modes.compactMap { entry in
-            retention.byMode[entry.mode].map { RetentionRow(id: entry.title, title: entry.title, split: $0[breakdownPeriod]) }
-        }
-        let byKind = kinds.compactMap { entry in
-            retention.byKind[entry.kind].map { RetentionRow(id: entry.title, title: entry.title, split: $0[breakdownPeriod]) }
-        }
-        return byMode + byKind
     }
 }
 

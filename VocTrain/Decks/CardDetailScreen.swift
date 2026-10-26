@@ -239,7 +239,7 @@ private struct CardTexts: View {
 }
 
 /// A review: the grade as a disc of its colour with the arrow of its swipe, its name, the
-/// date, and how the card was asked.
+/// date, and "Typed" on a review made by typing, in an older version or an upstream deck.
 private struct HistoryRow: View {
     var entry: ReviewLogEntry
 
@@ -258,9 +258,11 @@ private struct HistoryRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: Spacing.tight)
-            Text(entry.mode.title)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            if entry.mode == .typed {
+                Text("Typed")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
         .accessibilityElement(children: .combine)
     }

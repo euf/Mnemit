@@ -1,5 +1,7 @@
 # Revealed reviews bring a third of the stability gain
 
+Status: superseded by ADR 0005.
+
 On the Mac the learner types the answer; on the iPhone they reveal it and grade themself. Both
 reviews land in the same review log. FSRS knows only the grade, not the review mode, and counts every
 Good the same. Revealing imprints less than typing, though, and after revealing one tends to grade

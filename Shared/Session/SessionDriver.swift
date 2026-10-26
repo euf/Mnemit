@@ -8,8 +8,8 @@ import VocabCore
 /// stream's place in step with undo and redo of its reviews and with every other
 /// change to the deck, e.g. a merge that deleted the card being asked.
 ///
-/// What a model adds, like checking typed responses or revealing the answer, it does
-/// around the driver. The driver tells it through its delegate when it moved on.
+/// What a model adds, like revealing the answer, it does around the driver. The driver
+/// tells it through its delegate when it moved on.
 @MainActor @Observable
 final class SessionDriver {
     let document: VocabularyDocument
@@ -65,7 +65,7 @@ final class SessionDriver {
     var gradeIntervals: [Grade: ReviewInterval]? {
         guard case let .study(study) = mode, let card = currentCard else { return nil }
         let scheduler = Scheduler(learningOptions: document.deck.learningOptions, calendar: document.calendar)
-        return scheduler.previewIntervals(of: card, at: document.clock.now, mode: study.reviewMode)
+        return scheduler.previewIntervals(of: card, at: document.clock.now)
     }
 
     /// Grades the card being asked and moves on. One undo action takes back the review

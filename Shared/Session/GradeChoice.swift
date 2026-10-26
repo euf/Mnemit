@@ -7,7 +7,8 @@ import VocabCore
 /// forgetting is the worst mistake for FSRS. The buttons carry the grade's name and nothing
 /// else: when the card comes back shows only once the grade is given, see `UndoChip`.
 ///
-/// On the Mac the keys 1 to 4 choose a grade, and Return accepts `defaultGrade`.
+/// On the Mac the keys 1 to 4 choose a grade, Return accepts `defaultGrade`, and each button carries
+/// the arrow key that gives its grade, the direction of the iPhone's swipe (`Grade.arrowKey`).
 struct GradeChoice: View {
     /// Which part to show: the iPhone in landscape puts them in one row, around the progress.
     enum Part {
@@ -15,13 +16,12 @@ struct GradeChoice: View {
     }
 
     var part = Part.both
-    /// The grade Return accepts on the Mac, marked on its button: the suggestion after a
-    /// typed response, Good with flash cards.
+    /// The grade Return accepts on the Mac, marked on its button.
     var defaultGrade: Grade?
     /// Lets Space accept `defaultGrade` too, as Space showed the answer.
     var acceptsSpace = false
     /// Lets the arrow keys grade on the Mac, the way a swipe does on the iPhone: ← Forgot,
-    /// → Good, ↑ Easy, ↓ Hard.
+    /// ↓ Hard, → Good, ↑ Easy.
     var acceptsArrows = false
     /// The iPhone in landscape, where the row of buttons has little height.
     var isCompact = false
@@ -82,7 +82,7 @@ struct GradeChoice: View {
         return Button {
             onGrade(.again)
         } label: {
-            Label(title, systemImage: "xmark")
+            labelled(.again) { Label(title, systemImage: "xmark") }
                 .font(.body.weight(.semibold))
                 .lineLimit(1)
                 .foregroundStyle(Grade.again.onColor)
@@ -128,7 +128,7 @@ struct GradeChoice: View {
         Button {
             onGrade(grade)
         } label: {
-            Text(grade.title)
+            labelled(grade) { Text(grade.title) }
                 .font(.body.weight(.semibold))
                 .lineLimit(1)
                 .foregroundStyle(grade.onColor)
@@ -143,6 +143,19 @@ struct GradeChoice: View {
         #if os(macOS)
         .keyboardShortcut(grade.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(grade.rawValue)"))
+        #endif
+    }
+
+    /// The button's label; on the Mac, with the grade's arrow key as a keycap after it.
+    @ViewBuilder
+    private func labelled(_ grade: Grade, @ViewBuilder _ label: () -> some View) -> some View {
+        #if os(macOS)
+        HStack(spacing: 8) {
+            label()
+            KeyCap(Text(verbatim: grade.arrow))
+        }
+        #else
+        label()
         #endif
     }
 
@@ -177,10 +190,7 @@ struct GradeChoice: View {
                 }
             }
             if acceptsArrows {
-                key(.leftArrow, grade: .again)
-                key(.rightArrow, grade: .good)
-                key(.upArrow, grade: .easy)
-                key(.downArrow, grade: .hard)
+                ForEach(Grade.allCases, id: \.self) { key($0.arrowKey, grade: $0) }
             }
         }
         .opacity(0)

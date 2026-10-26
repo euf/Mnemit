@@ -6,21 +6,14 @@ import VocabCore
 /// at once, so "Done" leaves at any time and loses nothing. The ring in the header shows
 /// today's cards done against the goal (`DailyRingView`).
 ///
-/// Keyboard flow: type the response and press Return. A correct response moves on
-/// directly (unless disabled in the preferences). Otherwise the answer is shown
-/// and Return accepts the suggested grade; 1–4 choose a grade explicitly, e.g. 3
-/// when the response was right after all. ⌘Z takes back the last review.
+/// Keyboard flow: Space or Return shows the answer, then ← Forgot, ↓ Hard, → Good, ↑ Easy, or 1–4 for
+/// Forgot, Hard, Good and Easy, and Space or Return mean Good; each grade button shows its arrow. The card
+/// flies out in the direction of its grade, while the button of the grade flashes. A line under the progress
+/// names the grade and when the card comes back, and offers Undo for a few seconds; Z, Esc and ⌘Z take the
+/// review back. S speaks the Greek side, and the preference "Pronounce Automatically" does it by itself, see
+/// `GreekSpeech.cardAppeared(_:)`.
 ///
-/// With flash cards (the preference "Study by"), there is no response: Space or Return
-/// shows the answer, then ← Forgot, → Good, ↑ Easy, ↓ Hard, or 1–4 for Forgot, Hard, Good
-/// and Easy, and Space or Return mean Good. The card flies out in the direction of its
-/// grade, while the button of the grade flashes. A line under the progress names the grade and when the card comes back, and offers
-/// Undo for a few seconds; Z, Esc and ⌘Z take the review back. S speaks the Greek side, and
-/// the preference "Speak Greek automatically" does it by itself, see `GreekSpeech.cardAppeared(_:)`.
-///
-/// ⌘E edits the card being asked (#289); before the response is checked or the answer
-/// shown, without showing its answer. The response typed so far stays, and a response
-/// already checked is checked again against the edited card.
+/// ⌘E edits the card being asked (#289); before the answer is shown, without showing it.
 ///
 /// "Suspend Card", under the arrow of "Edit Card…" (#293), leaves out the card from now
 /// on, until the learner resumes it (#290). The menu "More" adds 10 new cards beyond the
@@ -32,8 +25,6 @@ struct SessionView: View {
     var nextDeck: NextDeck? = nil
     var onClose: () -> Void
 
-    /// The question whose response field has the focus.
-    @FocusState private var focusedQuestion: Int?
     /// The medals a grade earns, as toasts under the bar, as on the iPhone.
     @State private var toasts = MedalToasts()
     @State private var editing: EditRequest?
@@ -66,11 +57,6 @@ struct SessionView: View {
             } else if let card = model.currentCard {
                 cardArea(card)
             }
-            // Typing shows what the last answer should have been; flash cards have the undo chip.
-            if let previous = model.previous, !model.isResting, model.studyBy == .typing {
-                Divider()
-                PreviousReviewBar(previous: previous)
-            }
         }
         .background(Color.studyBackdrop)
         .medalToast(toasts)
@@ -82,10 +68,10 @@ struct SessionView: View {
             if isResting { toasts.clear() }
         }
         .background { keys }
-        .sheet(item: $editing, onDismiss: focusResponse) { request in
+        .sheet(item: $editing) { request in
             CardEditSheet(document: model.document, card: request.card, hidesAnswer: request.hidesAnswer)
         }
-        // With "Speak Greek automatically": a Greek question when its card comes up, after
+        // With "Pronounce Automatically": a Greek question when its card comes up, after
         // the card has flown out and with the next one; else a Greek answer once it shows.
         .onChange(of: model.questionNumber, initial: true) {
             GreekSpeech.shared.cardAppeared(model.currentCard, media: model.document.deck.media)
@@ -102,32 +88,28 @@ struct SessionView: View {
         }
     }
 
-    /// Edits the card being asked; its answer stays hidden until the response is checked
-    /// or, with flash cards, shown.
+    /// Edits the card being asked; its answer stays hidden until it is shown.
     private func editCurrentCard() {
         guard let card = model.currentCard else { return }
         editing = EditRequest(card: card, hidesAnswer: model.stage == .asking)
     }
 
-    /// Keys without a button to show: with flash cards, Z and Esc take back the review,
-    /// which ⌘Z does too; with S for the speaker button of the card. The keys that grade
-    /// belong to `GradeChoice`.
+    /// Keys without a button to show: Z and Esc take back the review, which ⌘Z does too; S speaks
+    /// the card's Greek side. The keys that grade belong to `GradeChoice`.
     private var keys: some View {
         Group {
-            if model.studyBy == .flashcards {
-                Group {
-                    Button("Undo", action: model.undoLast)
-                        .keyboardShortcut("z", modifiers: [])
-                    // Esc undoes instead of leaving the stream, whose button has no shortcut then.
-                    Button("Undo", action: model.undoLast)
-                        .keyboardShortcut(.escape, modifiers: [])
-                    // ⌘Z too, ahead of Edit ▸ Undo: in a stream over several decks the last step may be another deck's,
-                    // which the undo of this window's deck would miss.
-                    Button("Undo", action: model.undoLast)
-                        .keyboardShortcut("z", modifiers: .command)
-                }
-                .disabled(!model.canUndoLast)
+            Group {
+                Button("Undo", action: model.undoLast)
+                    .keyboardShortcut("z", modifiers: [])
+                // Esc undoes instead of leaving the stream, whose button has no shortcut.
+                Button("Undo", action: model.undoLast)
+                    .keyboardShortcut(.escape, modifiers: [])
+                // ⌘Z too, ahead of Edit ▸ Undo: in a stream over several decks the last step may be another deck's,
+                // which the undo of this window's deck would miss.
+                Button("Undo", action: model.undoLast)
+                    .keyboardShortcut("z", modifiers: .command)
             }
+            .disabled(!model.canUndoLast)
             if let spokenText {
                 Button("Pronounce") { GreekSpeech.shared.speak(spokenText) }
                     .keyboardShortcut("s", modifiers: [])
@@ -136,10 +118,9 @@ struct SessionView: View {
         .hidden()
     }
 
-    /// What S speaks: the question if it is Greek, else the answer once it shows. Not while
-    /// a response is typed, as the key would be a letter of it.
+    /// What S speaks: the question if it is Greek, else the answer once it shows.
     private var spokenText: String? {
-        guard let card = model.currentCard, model.studyBy == .flashcards || isAnswerShown else { return nil }
+        guard let card = model.currentCard else { return nil }
         if GreekSpeech.shared.canSpeak(card.question) { return card.question }
         // The head of the answer: a Greek example under a Russian gloss is not a Greek answer.
         return isAnswerShown && GreekSpeech.shared.canSpeak(String(card.answer.prefix { !$0.isNewline })) ? card.answer : nil
@@ -147,7 +128,7 @@ struct SessionView: View {
 
     private var isAnswerShown: Bool {
         switch model.stage {
-        case .revealed, .feedback: true
+        case .revealed: true
         case .asking, .resting: false
         }
     }
@@ -177,9 +158,8 @@ struct SessionView: View {
     /// answer and rest, so the bar never changes and nothing below it moves; what doesn't apply is disabled.
     private var header: some View {
         HStack(spacing: 12) {
+            // Esc takes back a review, see `keys`; Done has no key.
             Button("Done", action: onClose)
-                // With flash cards Esc takes back a review, see `keys`.
-                .keyboardShortcut(model.studyBy == .flashcards ? nil : .cancelAction)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Group {
                 switch model.streamStage {
@@ -241,14 +221,10 @@ struct SessionView: View {
 
             Spacer()
 
-            if model.studyBy == .flashcards {
-                FlashcardView(
-                    card: card, isRevealed: model.stage == .revealed, media: model.document.deck.media,
-                    memory: CardMemory(card: card, in: model.document.deck, at: model.document.clock.now, calendar: model.document.calendar),
-                    edges: min(model.cardsBehind, StackPose.maxEdges), onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
-            } else {
-                typedQuestion(card)
-            }
+            FlashcardView(
+                card: card, isRevealed: model.stage == .revealed, media: model.document.deck.media,
+                memory: CardMemory(card: card, in: model.document.deck, at: model.document.clock.now, calendar: model.document.calendar),
+                edges: min(model.cardsBehind, StackPose.maxEdges), onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
 
             Spacer()
         }
@@ -256,142 +232,9 @@ struct SessionView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// The question, the field for the response and, once it is checked, the feedback.
-    private func typedQuestion(_ card: Card) -> some View {
-        VStack(spacing: 20) {
-            HStack(spacing: 8) {
-                Text(card.question)
-                    .font(.system(size: 32, weight: .semibold))
-                    .multilineTextAlignment(.center)
-                    .textSelection(.enabled)
-                SpeakButton(text: card.question)
-            }
-
-            if !card.hint.isEmpty {
-                Text(card.hint)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            TextField("Response", text: $model.input, prompt: Text("Response"))
-                .textFieldStyle(.roundedBorder)
-                .font(.title2)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 480)
-                .focused($focusedQuestion, equals: model.questionNumber)
-                .disabled(model.stage != .asking)
-                .onSubmit { model.submit() }
-                // Before `id`, so it runs for every new field, not only the first.
-                .onAppear { focus(model.questionNumber) }
-                // A new field per question: with automatic continuing the field never
-                // ends editing, and ⌘Z would first take back the previous typing (#9).
-                .id(model.questionNumber)
-
-            Group {
-                if case let .feedback(result, response) = model.stage {
-                    FeedbackView(
-                        result: result, response: response, expected: card.answer, highlightedAnswer: model.highlightedAnswer
-                    ) { grade in
-                        model.grade(grade)
-                    }
-                } else {
-                    Text("Press Return to check your response.")
-                        .foregroundStyle(.tertiary)
-                }
-            }
-            // As high as the feedback with its grade buttons, so the question stays put.
-            .frame(minHeight: 230, alignment: .top)
-        }
-    }
-
-    /// Gives the response field the focus back after the edit sheet; the response typed
-    /// so far stays.
-    private func focusResponse() {
-        focus(model.questionNumber)
-    }
-
-    /// Focuses the response field of `question` once the current event is handled.
-    /// With automatic continuing the new field appears while the previous one is
-    /// still ending its editing; focus set right away got lost there (#75).
-    private func focus(_ question: Int) {
-        Task { @MainActor in
-            focusedQuestion = question
-        }
-    }
 }
 
-/// Check result, the answer, and the grade buttons.
-private struct FeedbackView: View {
-    var result: CheckResult
-    var response: String
-    var expected: String
-    /// The answer with the differences marked, for almost correct responses.
-    var highlightedAnswer: [ResponseDiff.Segment]?
-    var onGrade: @MainActor (Grade) -> Void
-
-    var body: some View {
-        VStack(spacing: 14) {
-            // The dot is the colour of the grade Return accepts.
-            HStack(spacing: 8) {
-                GradeDot(grade: result.suggestedGrade)
-                Label(title, systemImage: symbol)
-            }
-            .font(.title3.weight(.semibold))
-
-            if result != .correct {
-                VStack(spacing: 4) {
-                    Text("Answer:")
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 8) {
-                        answerText
-                            .font(.title2)
-                            .textSelection(.enabled)
-                        SpeakButton(text: expected)
-                    }
-                }
-            }
-
-            // Return accepts the suggestion.
-            GradeChoice(defaultGrade: result.suggestedGrade, onGrade: onGrade)
-                .frame(maxWidth: 440)
-        }
-    }
-
-    private var title: String {
-        switch result {
-        case .correct: String(localized: "Correct")
-        case .incomplete: String(localized: "Incomplete")
-        case .almostCorrect: String(localized: "Almost – check the spelling")
-        case .wrong:
-            response.trimmingCharacters(in: .whitespaces).isEmpty
-                ? String(localized: "No response")
-                : String(localized: "Wrong")
-        }
-    }
-
-    private var symbol: String {
-        switch result {
-        case .correct: "checkmark.circle.fill"
-        case .incomplete: "checkmark.circle"
-        case .almostCorrect: "exclamationmark.circle"
-        case .wrong: "xmark.circle.fill"
-        }
-    }
-
-    /// The answer; for almost correct responses with the differences highlighted.
-    private var answerText: Text {
-        guard let highlightedAnswer else { return Text(expected) }
-        return highlightedAnswer.reduce(Text(verbatim: "")) { text, segment in
-            if segment.isMismatch {
-                return text + Text(segment.text).bold().underline().foregroundColor(Grade.again.color)
-            }
-            return text + Text(segment.text)
-        }
-    }
-}
-
-/// Flash cards: the card with the question, then the answer under it, and below it the button
+/// The card with the question, then the answer under it, and below it the button
 /// that shows the answer or the grade buttons. The card flies out in the direction of its
 /// grade. The card and the area below it keep their size from the question to the answer: the
 /// grade buttons are in the layout all the time, invisible and disabled until the answer shows,
@@ -442,20 +285,18 @@ private struct FlashcardView: View {
     }
 
     /// The prominent button of the iPhone's stream, in the app's indigo, as wide as the grade buttons under it; it
-    /// is the default button, and the keys are named under it.
+    /// is the default button, and the keys are on it.
     private var showAnswer: some View {
-        VStack(spacing: 6) {
-            Button(action: onReveal) {
+        Button(action: onReveal) {
+            HStack(spacing: 8) {
                 Text("Show Answer")
-                    .frame(maxWidth: .infinity)
+                KeyCap(Text("Space or ↩"))
             }
-            .keyboardShortcut(.defaultAction)
-            .buttonStyle(.borderedProminent)
-            .controlSize(.extraLarge)
-            Text("Space or ↩")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
         }
+        .keyboardShortcut(.defaultAction)
+        .buttonStyle(.borderedProminent)
+        .controlSize(.extraLarge)
         // A button takes one shortcut; Space shows the answer too.
         .background {
             Button(action: onReveal) {
@@ -474,31 +315,5 @@ private struct FlashcardView: View {
         guard isRevealed, !flight.isFlying else { return }
         GreekSpeech.shared.stop()
         flight.fly(grade, reduceMotion: reduceMotion) { onGrade(grade) }
-    }
-}
-
-private struct PreviousReviewBar: View {
-    var previous: SessionViewModel.PreviousReview
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Text("Previous:")
-                .foregroundStyle(.secondary)
-            Text("\(previous.question) → \(previous.answer)")
-                .lineLimit(1)
-            if let grade = previous.grade {
-                GradeDot(grade: grade)
-                Text(grade.title)
-            } else {
-                Text("Suspended")
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Text("⌘Z to undo")
-                .foregroundStyle(.tertiary)
-        }
-        .font(.callout)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
     }
 }

@@ -49,7 +49,7 @@ struct CardEditSheet: View {
                 Section {
                     TextField("Question", text: $question)
                     if !hidesAnswer {
-                        TextField("Answer", text: $answer, prompt: Text("Answer (alternatives separated by /)"))
+                        TextField("Answer", text: $answer)
                     }
                     TextField("Hint", text: $hint, prompt: Text("Hint (optional)"))
                     if !hidesAnswer {

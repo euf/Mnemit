@@ -53,7 +53,6 @@ struct DeckOptionsTests {
         step(undoManager) { document.option(\.maximumInterval).wrappedValue = 365 }
         step(undoManager) { document.option(\.steps).wrappedValue = 3 }
         step(undoManager) { document.option(\.fuzzing).wrappedValue = false }
-        step(undoManager) { document.option(\.revealedRecallWeight).wrappedValue = 0.5 }
 
         var expected = LearningOptions()
         expected.newCardsPerSession = 15
@@ -65,7 +64,6 @@ struct DeckOptionsTests {
         expected.maximumInterval = 365
         expected.steps = 3
         expected.fuzzing = false
-        expected.revealedRecallWeight = 0.5
         #expect(document.deck.learningOptions == expected)
 
         // Saved and read again, as the deck is on the phone.
@@ -75,8 +73,8 @@ struct DeckOptionsTests {
         #expect(saved.learningOptions.newProductionPerSession == nil)
         #expect(saved.learningOptions.newCardsPerSession == 15)
 
-        // One step each: ten undos bring back the defaults.
-        for _ in 0..<10 { undoManager.undo() }
+        // One step each: nine undos bring back the defaults.
+        for _ in 0..<9 { undoManager.undo() }
         #expect(!undoManager.canUndo)
         #expect(document.deck.learningOptions == LearningOptions())
     }
@@ -85,10 +83,10 @@ struct DeckOptionsTests {
         let (document, undoManager) = try makeDocument()
         var parameters = LearningOptions()
         parameters.steps = 4
-        parameters.optimizeFromRevealed = false
+        parameters.fuzzing = false
         step(undoManager) { document.option(\.self).wrappedValue = parameters }
         #expect(document.deck.learningOptions.steps == 4)
-        #expect(!document.deck.learningOptions.optimizeFromRevealed)
+        #expect(!document.deck.learningOptions.fuzzing)
         undoManager.undo()
         #expect(document.deck.learningOptions == LearningOptions())
     }
@@ -100,8 +98,6 @@ struct DeckOptionsTests {
         #expect(recall.wrappedValue == LearningOptions.targetRecallRange.upperBound)
         step(undoManager) { document.option(\.leechThreshold).wrappedValue = 500 }
         #expect(document.deck.learningOptions.leechThreshold == LearningOptions.leechThresholdRange.upperBound)
-        step(undoManager) { document.option(\.revealedRecallWeight).wrappedValue = 0 }
-        #expect(document.deck.learningOptions.revealedRecallWeight == LearningOptions.revealedRecallWeightRange.lowerBound)
     }
 
     @Test func nothingChangesWhileTheDocumentCannotBeChanged() throws {

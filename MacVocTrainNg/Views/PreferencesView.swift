@@ -2,44 +2,40 @@ import SwiftUI
 
 /// App-wide preferences (⌘,).
 struct PreferencesView: View {
-    @AppStorage(Preferences.studyByKey) private var studyBy = Preferences.StudyBy.flashcards
-    @AppStorage(Preferences.autoAdvanceKey) private var autoAdvance = true
-    @AppStorage(Preferences.reopenDecksKey) private var reopenDecks = true
     @AppStorage(GreekSpeech.autoSpeakKey) private var autoSpeak = true
+    private var folder = DeckFolder.shared
 
     var body: some View {
         Form {
             Section {
-                Picker("Study by", selection: $studyBy) {
-                    Text("Flashcards").tag(Preferences.StudyBy.flashcards)
-                    Text("Typing").tag(Preferences.StudyBy.typing)
+                Toggle("Pronounce Automatically", isOn: $autoSpeak)
+            }
+            Section {
+                LabeledContent {
+                    Button("Change…") { folder.choose() }
+                } label: {
+                    Text(folder.url?.path ?? String(localized: "Not chosen"))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                        .help(folder.url?.path ?? "")
                 }
+            } header: {
+                Text("Mnemit Folder")
             } footer: {
-                Text("Flashcards: reveal the answer, then grade yourself. Typing: the app checks your response.")
-                    .foregroundStyle(.secondary)
-            }
-            Section {
-                Toggle("Continue automatically when the response is correct", isOn: $autoAdvance)
-                    .disabled(studyBy == .flashcards)
-            } footer: {
-                Text("When off, you grade every review yourself, e.g. as Easy.")
-                    .foregroundStyle(.secondary)
-            }
-            Section {
-                Toggle("Speak Greek automatically", isOn: $autoSpeak)
-            } footer: {
-                Text("Reads a Greek question aloud when its card comes up, and a Greek answer when it shows. Needs a Greek voice on this Mac.")
-                    .foregroundStyle(.secondary)
-            }
-            Section {
-                Toggle("Reopen the decks that were open when you quit", isOn: $reopenDecks)
-            } footer: {
-                Text("Press ⌥⌘Q to do the opposite once.")
-                    .foregroundStyle(.secondary)
+                Text("Version \(Self.version) (\(Self.build))")
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 16)
+                    .textSelection(.enabled)
             }
         }
         .formStyle(.grouped)
         .frame(width: 440)
         .fixedSize()
     }
+
+    /// Version 1.2.3 (4c4b8ed): the marketing version from VERSION and the commit the build
+    /// was made from, which the install scripts stamp into the bundle.
+    private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    private static let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
 }

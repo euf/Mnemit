@@ -33,7 +33,7 @@ extension String {
 final class GreekSpeech {
     static let shared = GreekSpeech()
 
-    /// The preference "Speak Greek automatically": a card speaks its Greek side by itself.
+    /// The preference "Pronounce Automatically": a card speaks its Greek side by itself.
     nonisolated static let autoSpeakKey = "speakGreekAutomatically"
 
     /// On until the learner turns it off.

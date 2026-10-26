@@ -32,7 +32,7 @@ import VocabCore
 /// nor swipes the card, nor opens the card's info (`SpeakerPlaces`).
 ///
 /// A long press on the card opens what the app knows about it (`CardInfoSheet`). With
-/// "Speak Greek automatically" on, a Greek question is spoken when its card has settled, and
+/// "Pronounce Automatically" on, a Greek question is spoken when its card has settled, and
 /// a Greek answer when it is shown; see `GreekSpeech.cardAppeared(_:)`.
 struct StudyView: View {
     var model: StudyModel
@@ -128,7 +128,7 @@ struct StudyView: View {
                         }
                         if GreekSpeech.shared.voice != nil {
                             Divider()
-                            Toggle("Speak Greek Automatically", systemImage: "speaker.wave.2", isOn: $autoSpeak)
+                            Toggle("Pronounce Automatically", systemImage: "speaker.wave.2", isOn: $autoSpeak)
                         }
                     }
                 }
