@@ -31,7 +31,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (`DayRounds.goal`): learning and review in stream order, then new, priced by pace, no more than the
   day's time in seconds, at least one card when the plan isn't empty. Review cards beyond the time
   (after a break) stay in the plan and are done beyond the goal.
-- The goal doesn't change: Add Cards, Push On and Again don't raise it.
+- The goal doesn't change: Add Cards, Learn 10 New Words and Again don't raise it.
 - The whole rule is in `DailyGoal` (VocabCore): `goal(done:owed:plan:)` takes the plan at the start of
   the day. The only exception: when the plan has nothing left to wait for (`owed == 0`) and fewer are
   done (cards were suspended or deleted during the day), the goal is the done cards, so the ring doesn't
@@ -51,9 +51,12 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `minutesToNextRound` (at the pace the day started with), `minutes(ofRound:)` (for the rest screen),
   `memory` (`MemoryEstimate` over the decks), `streakKeptToday` (streak step done or the plan empty).
 - The step never shows by number (`learning-flow.md`). `RoundStatus` (`Shared/Session/DayLines.swift`)
-  gives the day's headline: before the step "≈ 2 min to keep your streak", after the goal "Ring
-  closed", in between none, and the screens say the cards left. Today, the widget and the Mac ring
-  chip's help take it from there.
+  gives the day's title: before the step "≈ 2 min to keep your streak", after the goal "Ring
+  closed", in between none, and the screens say the cards left. `TodayHeadline.text`
+  (`Shared/Session/TodaySummary.swift`, pure and tested) puts the headline together for both apps: the
+  title where there is one, else "20 cards left · ≈ 5 min", "All done", "Nothing due · next tomorrow", and
+  on the day after a missed one "Close the ring to save your 12-day streak". The widget and the Mac ring
+  chip's help take the title from `RoundStatus`.
 - In a day that started with an empty plan, the ends cut the cards as they are.
 
 ## Day's time
@@ -70,11 +73,11 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   breaks it), and T × 0.775 (`DailyGoal.shrinks`) when it stayed open, which ends the run; clamped to
   120…3600 s; 150 s before any study day. A day without work is no step, and the days after it ask what they
   would have asked without it. worked(d) is the cards done on `d` at the day's own prices, new × new price +
-  other × other price at the pace of the seven study days before `d`, cards beyond the goal included; How Today Works shows it.
+  other × other price at the pace of the seven study days before `d`, cards beyond the goal included; How It Works shows it.
 - **Filled** (`DayRounds.filled`): the goal's cost plus one new card's price exceeds T, so the time, not the
   plan, set the goal. A closed ring on a smaller plan says nothing about more time and moves nothing.
 - **Why**: `ring-design.md`. The staircase puts the share of closed rings where p² ln 1.15 = (1 − p²) ln(1/0.775),
-  0.80, whatever the work, and changes the ring on half the study days. How Today Works names the direction only
+  0.80, whatever the work, and changes the ring on half the study days. How It Works names the direction only
   ("Ring closed", "Ring open"), never the rule.
 - Model learners (`RingRuleTests`): one who stops at the ring asks 150, 150, 172.5, 172.5, 198.4 s …, 150 × 1.15^⌊(d − 1)/2⌋
   on study day d; one who works less than the ring asks falls to 2 minutes on day 2 (150 × 0.775 = 116.25 is under
@@ -101,7 +104,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `SessionViewModel`, `SessionDriver`) and to `NewCardAllowances.today` per deck file (read by
   `OpenDeck`, `KnownDeckCounts`, `Reminders`, `WidgetSync`; the forecast for future days takes today's
   allowance).
-- Cards first reviewed today are subtracted from the allowance; Push On goes beyond it.
+- Cards first reviewed today are subtracted from the allowance; Learn 10 New Words goes beyond it. A card
+  shown as an introduction has no review yet, so it still counts as a new card of the allowance until its
+  first grade is logged (`Session.isIntroduction`, `scheduling.md`, "Introductions").
 
 ## Done card, ring, cards left
 
@@ -111,20 +116,29 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   It counts once a day, however many reviews it took. Reviews per day (`reviewsByDay`) are needed only
   for the start of the streak and for the days before `planRuleStart`.
 - A card is done in any mode, including Catch Up, the ring's rest.
+- An introduction is no review: it writes no log entry, so it makes no done card, moves the ring by no
+  share and counts for no step of the streak. The card is held out for three other cards, comes back as a
+  question, and its first grade is the review the ring counts; the stream's total and completed count do
+  not change through the introduction (`scheduling.md`, "Introductions").
 - **Partial credit**: the ring also shows the cards on their way (`DailyRing.underway`,
   `Deck.cardsUnderway`): each reviewed today and still due today counts the answers recalled today
   (Hard, Good, Easy) over those plus the learning steps it still needs, at its best moment of the day
   (`Card.credit(onDayOf:calendar:steps:)`). Every answer recalled moves the ring; Forgot moves nothing
   and takes nothing back. The counts ("M of K cards", "N left") stay in whole cards.
 - **Ring**: done cards against the day's goal. The ring is full at the goal and stays full
-  (`DailyRing.fraction` is capped at 1). Done cards beyond the goal (Catch Up, Push On) count as cards
+  (`DailyRing.fraction` is capped at 1). Done cards beyond the goal (Catch Up, Learn 10 New Words) count as cards
   done: "31 cards today".
-- **Middle of the ring**: `RingCenter`, built by `RingCenter(_ progress:)`, is `.none` or
-  `.streak(days:isLit:)`. The streak shows as the SF Symbol `flame.fill` over the days (bold rounded
-  number, no caption); from a diameter of 44 pt the flame shows, below it the number alone. The flame is
-  lit in `Color.streak` when `DailyProgress.isStreakLit` (= `streakKeptToday && !isStreakAtRisk`), grey
-  otherwise. `DailyRingView(progress:, showsStreak:)` has no popover and is no button; the study bar's
-  `StreamRing` is empty in the middle. Sizes, colours and VoiceOver: `design-spec.md` §5.7.
+- **Middle of the ring**: `RingCenter` is `.none`, `.streak(days:state:)` (the flame over the days) or
+  `.flame(days:state:)` (the flame alone, for a ring too small for the days). The `StreakState` of the day
+  (`DailyProgress.streakState`) has three values: `open` (today's streak step not done), `kept` (done) and
+  `atRisk` (the day after a missed one, ring open: `DailyProgress.isStreakAtRisk`). `StreakFlame(state:)` draws
+  them, an outline in grey, `flame.fill` in `Color.streak`, an outline in `Color.streak`, on Today, in the
+  rests, in the study bar (the flame alone, `StreamRing`), in the widget, on Progress and in the Mac's chip.
+  The hero of Today (`StreakHeroRing`, `TodayHero` in `Shared/Session/TodaySummary.swift`) writes the days
+  large under the flame with "day streak" in caption; at 0 days the outlined flame and "Start your
+  streak". VoiceOver reads the state: "12-day streak, kept today" / "not kept yet" / "at risk".
+  `DailyRingView(progress:, showsStreak:)` has no popover and is no button. Sizes, colours and VoiceOver:
+  `design-spec.md` §5.7.
 - **Cards left**: the plan's cards not done yet: `StudySession.counts(...).total` now, the line "N
   cards left". Done + left = plan, which is the goal or more (review cards beyond the day's time are
   left too).
@@ -143,7 +157,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   the app was active (`ReviewLogEntry.duration`, key `ms` in `reviews.jsonl`, in milliseconds).
   `SessionDriver` measures it with `ActiveStopwatch` on `SuspendingClock`: the iPhone reports a
   `scenePhase` other than `.active`, the Mac `NSApplication.didResignActive`. Background, lock and
-  another app don't count; there is no cap.
+  another app don't count; there is no cap. A new word's first review also carries the time the card was
+  on screen as an introduction (`Session.introductionTime`), so the price of a new card includes reading it.
 - A category with fewer than 20 reviews with a duration (old logs, imports without time) takes instead
   the gap between neighbouring reviews of the study day (across all decks together), of any length. The
   gap goes to the card of the later review, into the category the card had that day: a new card's steps
@@ -234,18 +249,20 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - Taken at the start of the study day (04:00), from the card states before today's reviews. Nothing is
   stored. Words show rounded down, the day's gain to a whole number; milestones 50…5000
   (`MemoryEstimate.milestones`).
-- The apps read `DailyProgress.memory`: Today "≈ 28 words in memory · +15 today"; the day's milestone
+- The apps read `DailyProgress.memory`: Today "412 words in memory · +15 today" (`MemoryLine`); the day's milestone
   "50 words in memory!" with a glyph in the accent (text is never accent-coloured,
   `references/design-spec.md`); the round-end screen and "Done for today" "+N words in memory today";
   the medium widget and the Mac ring chip's help the number of words (`MemoryEstimate.line`,
   `DayLines.swift`).
 
-## How Today Works
+## How It Works
 
 - `HowTodayWorks` and `HowTodayWorksView` in `Shared/Statistics`: the numbers and rules under the ring
   for people who know Anki and FSRS. Read-only, no controls or charts; each section's rule in its
   footer.
 - Sections in order:
+  0. Today: three plain sentences, no figures (`HowTodayWorks.Row.text`, empty footer): what the ring is,
+     what Catch Up does, what Learn 10 New Words does.
   1. Day's plan: the parts of the plan at the start of the day (due today, overdue included; learning;
      new admitted), each deck's allowance and ceiling, goal, rounds, done, left.
   2. Today's time: the time in minutes, the streak step and the goal in cards; 14 days with the minutes
@@ -261,9 +278,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - Numbers come from `DailyProgress`, `MemoryEstimate`, the deck settings and `DayBreakdown` (VocabCore,
   `Statistics/DayBreakdown.swift`). Its days are `DailyProgress.ringDays`; only the pace window repeats
   `DailyGoal.pace`, and `DayBreakdownTests` keeps them together.
-- iPhone: the last row of the Progress screen, in a section with the footer "The plan, the day's time and
-  the FSRS parameters behind the ring." (`HowTodayWorksButton` and the sheet `HowTodayWorksSheet`,
-  `VocTrain/Views/HowTodayWorksSheet.swift`); decks are read from files when the sheet opens. Mac: Study ▸ How Today Works (`HowTodayWorksWindow`), the decks of open documents, without
+- iPhone: the last row of the Progress screen, "How It Works", in a section with the footer "The plan, the
+  day's time and the FSRS parameters behind the ring." (`HowTodayWorksButton` and the sheet `HowTodayWorksSheet`,
+  `VocTrain/Views/HowTodayWorksSheet.swift`); decks are read from files when the sheet opens. Mac: Study ▸ How It Works (`HowTodayWorksWindow`), the decks of open documents, without
   names ("Deck 1", "Deck 2").
 - Row data: `VocTrainTests/HowTodayWorksTests`; the sheet's frame comes from there too (directory
   `TEST_RUNNER_HOME_SHOTS_DIR`).

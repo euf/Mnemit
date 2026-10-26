@@ -56,10 +56,9 @@ _Avoid_: answer, "your answer"
 **Review mode** (DE Abfrageart; RU «способ оценки»):
 How a Review went: Typed (DE Getippt), the learner types a Response and the app suggests a Grade;
 or Revealed (DE Aufgedeckt), the learner reveals the Answer and gives the Grade without a Response.
-The Mac asks Typed or, in "Flashcards" mode, Revealed; the iPhone asks Revealed. A Revealed Review
-the Card recalls keeps the share `revealedRecallWeight` of the stability FSRS adds (1 by default in
-the fork, adjustable down to a third); see `docs/adr/0004-revealed-reviews-damped.md` and
-`docs/adr/0005-revealed-reviews-count-fully-in-fork.md`.
+Both apps study Revealed: question, Show Answer, grade; neither has a field for a typed Response. Every
+Review the app logs is Revealed, and a Typed Review of an upstream deck still reads from its log (the card's
+history marks it "Typed"). A Revealed Review counts in full, like any Review in FSRS.
 _Avoid_: flashcard mode (for the review mode)
 
 **Check result** (DE Prüfergebnis; RU «результат проверки»):
@@ -270,8 +269,8 @@ where the cost reaches 120 s, and the goal ends the day: `DayRounds.ends` has at
 when they coincide. Doing the step keeps the streak (`DailyProgress.streakKeptToday`) and Study rests
 there once; the goal is the ring's rest. `DailyProgress` holds `rounds` (the number of ends),
 `roundsDone`, `roundEnds`, `cardsToNextRound` and `minutesToNextRound`, at the pace the day began with.
-A day that began with an empty plan cuts the cards as they stand. Only How Today Works names the step
-(`references/learning-flow.md`).
+A day that began with an empty plan cuts the cards as they stand. Before the step the headline of Today says
+"≈ 2 min to keep your streak"; How It Works names the step (`references/learning-flow.md`).
 _Avoid_: round, session, lap, segment
 
 **Day's time** (RU «время дня»):
@@ -291,7 +290,7 @@ least 0 (`DailyGoal.newCardsAllowed`). The decks' own limits (`newCardsPerSessio
 `newProductionPerSession`) are ceilings. Across all decks the allowance is shared in proportion to
 the ceilings, by largest remainder (`DailyGoal.split`); each deck's share is its
 `newCardAllowance`, which the plan takes (`DailyProgress.newCardAllowances`). Cards first reviewed
-today count against it, and Push On comes beyond it.
+today count against it, and Learn 10 New Words comes beyond it.
 _Avoid_: new-card limit, daily new cards
 
 **Daily goal** (the K of "M of K cards" / „M von K Karten“; RU «цель дня»):
@@ -299,7 +298,7 @@ The cards of the plan, as it stood when the study day began at 04:00, that fit t
 learning cards and reviews in the stream's order, then new cards, at the day's prices, up to the
 time in seconds; at least one card if the plan has any (`DayRounds.goal`). With admission the
 plan normally fits. After a break the reviews beyond the day's time stay in the plan and are done
-beyond the goal. The goal stays for the day: cards added later, Push On and an Again don't raise it. A day
+beyond the goal. The goal stays for the day: cards added later, Learn 10 New Words and an Again don't raise it. A day
 that began with an empty plan takes the plan as it stands (`DailyGoal.goal`).
 _Avoid_: reviews goal, target, quota
 
@@ -322,7 +321,7 @@ Done cards against the daily goal, with the **cards underway**: a card reviewed 
 today counts as the part of a card its answers recalled made, recalled answers over those plus the
 steps it still needs (`Card.credit`), so every answer recalled moves the ring and Forgot moves
 nothing. The ring is full at done ≥ goal, in whole cards, and stays full: done cards beyond the goal
-(Catch Up, extra new cards) count as cards done ("31 cards today"). `DailyRing.fraction` is capped
+(Catch Up, Learn 10 New Words) count as cards done ("31 cards today"). `DailyRing.fraction` is capped
 at 1.
 
 **Streak** (RU «стрик»):
@@ -330,8 +329,17 @@ Study days in a row that kept it. A day keeps it with its streak step done (done
 `DayRounds.ends`); an empty plan counts. One missed day is repaired when the next day closes its ring
 (done ≥ goal): the streak step of that day is not enough, and then the streak starts anew with
 it. Two missed days in a row end the streak. Days before `DailyGoal.planRuleStart` (23.10.2026)
-count with one review. The streak is the flame in the middle of every ring: lit once the day has kept it
-and is not at risk (`DailyProgress.isStreakLit`), grey otherwise.
+count with one review. The streak is the flame in the middle of every ring (**Flame**).
+
+**Flame** (the streak's sign on every screen; RU «пламя»):
+The streak's symbol, drawn by `StreakFlame(state:)` from the `StreakState` of the day
+(`DailyProgress.streakState`), with three states in shape and colour: **open**, a grey outline, while today's
+streak step is not done; **kept**, `flame.fill` in `Color.streak`, once it is done; **at risk**, an outline in
+`Color.streak`, on the day after a missed one until the ring closes (`DailyProgress.isStreakAtRisk`). It stands
+in the middle of the rings on Today, in the study bar, on the rests, in the widget and on the Mac, and beside
+the days on the Progress screen. VoiceOver says the state: "12-day streak, kept today", "not kept yet",
+"at risk".
+_Avoid_: lit and unlit flame, streak icon
 
 **Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):
 Seconds per done card, in two prices (`Pace`): one for cards that were new when their study day
@@ -372,11 +380,45 @@ plan); it ends with the plan (`StudyStream`; the type keeps the old name "stream
 reviewed before it is due. The paths through a day: `references/learning-flow.md`, "The journey".
 _Avoid_: session (except for the upstream types that still carry the name)
 
-**Push On** (DE „Nachlegen“; RU «Поднажать»):
-Ten new cards beyond the day's limits once the stack is done, shared over the decks that have new
-cards left and asked mixed (`StudyModel.addNewCards`). It raises the stakes: their reviews come in
-the next days ("More reviews in the days ahead"); the day's time stays as it is.
-_Avoid_: +10 new, extra new cards, Go on
+**Learn 10 New Words** (the button of the stack's end; DE „10 neue Wörter lernen“; RU «Выучить 10 новых слов»):
+Ten new cards beyond the day's limits once the stack is done, shared over the decks that have new cards
+left and asked mixed (`StudyModel.addNewCards`). It raises the stakes: their reviews come in the next days;
+the day's time stays as it is. Today, the deck screen and the rests carry it as the third button of the day
+after Study and Catch Up (`DayAction`). The code keeps the old name: `DayAction.pushOn`,
+`StudyModel.Entry.pushOn`.
+_Avoid_: Push On, +10 new, extra new cards, Go on
+
+**Word → Meaning / Meaning → Word** (the direction of a card; DE „Wort → Bedeutung“ / „Bedeutung → Wort“;
+RU «Слово → значение» / «Значение → слово»):
+Which side a card asks. Word → Meaning is the recognition card (`CardKind.recognition`): the Greek word, the
+learner gives the meaning. Meaning → Word is the production card (`CardKind.production`): the meaning, the
+learner gives the Greek word. The card detail shows it as the row Direction, the Mac's table as the Kind
+column (`CardKind.title`). The Options section "Meaning → Word cards" holds its daily limit and its unlock
+rule.
+_Avoid_: Greek → translation, translation → Greek, direction (alone, on screen)
+
+**How It Works** (DE „So funktioniert es“; RU «Как это работает»):
+The screen that tells the learner what the ring, Catch Up and Learn 10 New Words are, in three plain
+sentences, and then the numbers under the day: the plan, the day's time, the pace, the streak, the words in
+memory, the swipes (iPhone) and the FSRS figures of each deck. The last row of the Progress screen; on the Mac
+a window (Study menu). The types keep the old name: `HowTodayWorks`, `HowTodayWorksView`.
+_Avoid_: How Today Works, statistics (those are of a deck)
+
+**New words / Words I know** (the choice **Words in this deck**; DE „Neue Wörter“ / „Wörter, die ich kenne“,
+„Wörter in diesem Stapel“; RU «Новые слова» / «Слова, которые я знаю», «Слова в этой колоде»):
+The mark of a deck, `LearningOptions.introducesNewCards` (the key `introducesNewCards` in `deck.json`,
+written only while on). In a deck of New words the first showing of each new card is an introduction; a deck
+of Words I know asks its new cards at once. It is asked when a deck is made or when an Anki package makes one,
+and it sits at the top of Options.
+_Avoid_: learning mode, beginner deck
+
+**Introduction** (on screen: the chip "New word", the button "Next"; DE „Neues Wort“, „Weiter“; RU «знакомство»):
+The first showing of a new card in a deck of New words (`Session.isIntroduction`): the answer is open,
+nothing is graded, the learner moves on with Next, a tap or a swipe in any direction. It is an exposure and no
+review: no log entry, no learning state, no step of the ring or of Undo. The card waits for three other
+cards and then comes as an ordinary question; its first grade sets the FSRS initial state, and the
+introduction's time on screen is added to that review's `ms`. `docs/adr/0006-new-words-are-introduced-not-graded.md`.
+_Avoid_: lesson, preview, first review, «первый показ»
 
 **Words in memory** ("≈ N words in memory"; RU «слов в памяти»):
 The number of words the learner would recall right now, from FSRS alone: the sum, over the
