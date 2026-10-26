@@ -12,16 +12,44 @@ The deck file, how both apps edit and merge it, and the media files of cards.
 - `.voctrain` files (imported type `de.fluch-it-consulting.voctrain.deck`,
   `UTType.legacyVocabularyDeck`) work the same way: they open, show in folder lists next to `.mnemit`,
   are edited and saved in place under their own name. The app never renames them.
-- `UTType.deckTypes` holds both types, the new one first. It is the Mac document's
-  `readableContentTypes` and `writableContentTypes` (new decks get the first type) and the iPhone
-  picker's filter. Inside `deck.json` both extensions have the same `format` key and the same content.
+- `UTType.deckTypes` holds both types, the new one first. It is the iPhone picker's filter and the
+  Mac's way to find a file's type from its extension (`DeckFileDocument`); File ▸ Open Deck… offers
+  `DeckFile.fileExtensions`. Inside `deck.json` both extensions have the same `format` key and the same
+  content.
 - Key rules for `deck.json` and `reviews.jsonl` and when to bump `DeckFile.currentVersion`: CLAUDE.md,
   Conventions.
 
 ## Editing on iPhone and Mac
 
 - Both apps edit through the same methods, `VocabularyDocument+Editing` in `Shared`, with shared undo and
-  action names. On the iPhone `OpenDeck` saves the document through UIDocument and `SaveScheduler`.
+  action names.
+- Both apps hold a deck the same way. `OpenDeck` (`Shared/Document/OpenDeck.swift`) owns the
+  `VocabularyDocument` the views show and a file document that reads and saves the package: a UIDocument
+  on the iPhone, the headless NSDocument `DeckFileDocument` (`MacVocTrainNg/Document/`) on the Mac. The Mac
+  document has no window and no `ReferenceFileDocument` conformance; it registers itself in
+  `NSDocumentController`, so a deck stays open while no window shows it. It reads with
+  `DeckFile.read(at:)` off the main actor, coordinated, saves in place (`autosavesInPlace`; the
+  `VersionMerger` also saves a few seconds after each change) and writes through
+  `write(to:ofType:for:originalContentsURL:)`. When another process changes the file it reads again, and
+  `OpenDeck` merges what it read into the document it holds (`VersionMerger`), so the views keep their
+  document and a study session goes on.
+- Undo: the file document's own undo manager is the one every change registers with. `OpenDeck` attaches it
+  to the document (`attachUndoManager`) on both apps, and NSDocument or UIDocument counts the changes from it
+  and autosaves them. On the Mac the shell's `UndoRouter` answers Edit ▸ Undo with the manager of the deck
+  the window shows. An error of a deck (autosave, read) is a sheet of the window
+  (`DeckFileDocument.sheetWindow`, `windowForSheet`), never app-modal.
+- The Mac keeps decks open in the registry `OpenDecks` (`MacVocTrainNg/Support/OpenDecks.swift`): one
+  `OpenDeck` per file however its URL is spelled, `open(_:)`, `deck(for:)`, `close(_:)` (before a rename or a
+  delete) and `closeAll()`. Closing saves first: `settleChanges()` waits for an open undo group to close, since
+  NSDocument counts a change one run-loop turn after the group ends. A deck opens when it is selected or
+  studied and stays open until the app quits, so its undo steps survive a switch to another deck.
+  `StudyRun` (the decks of a stream; given `open`, it owns none of the upcoming decks) and `TodayDecks` (the
+  decks of the day and the paused ones) sit in `Shared/Document/` beside `OpenDeck`; the shell model drives
+  them (`screens.md`, The Mac's window).
+- Finder: `application(_:open:)` hands the files to `Shell.receive`: a deck is opened and selected (a deck
+  outside the Mnemit folder is listed under Other Decks until the app quits), an Anki package or a table
+  fills a new deck. Quit: `applicationShouldTerminate` answers `.terminateLater`, `closeAll()` saves and
+  closes every deck, then the app replies.
 - Merging versions edited on both devices: cards are joined; text, note and kind come from the version
   with the later `Card.contentChanged` (undo stamps it again); options from the later
   `Deck.learningOptionsChanged`. A deletion is remembered in `Deck.deletedCards` and wins only if it is
@@ -60,9 +88,9 @@ The deck file, how both apps edit and merge it, and the media files of cards.
   file already in the `original` package is cloned from there (`MediaFileWrapper`: `FileManager.copyItem`;
   on APFS a clone shares blocks and writes no bytes). `FileWrapper.write(to:options:originalContentsURL:)`
   links nothing (measured on macOS 27: 400 MB write in 0.3 s, a clone in 2 ms).
-- `original` comes on the iPhone from UIDocument's `originalContentsURL`, on the Mac from
-  `VocabularyDocument.packageURL`, set by `VersionMerger.attach`: SwiftUI's `ReadConfiguration` and
-  `WriteConfiguration` carry no URL.
+- `original` comes from the file document's `originalContentsURL`, UIDocument's on the iPhone and
+  NSDocument's in `write(to:ofType:for:originalContentsURL:)` on the Mac; without one,
+  `VocabularyDocument.packageURL`, set by `VersionMerger.attach`.
 - Readers that need only the cards skip media: `DeckFileReader` reads through
   `DeckFile.read(at:withMedia: false)` and never saves. Versions in conflict are read by
   `DeckFile.read(at:)`; their files stay on disk until the first save.
