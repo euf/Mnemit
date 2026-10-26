@@ -64,15 +64,16 @@ struct AchievementsTests {
         #expect(days(of: .perfectWeek, in: Achievements.earned(over: records)) == [111])
     }
 
-    @Test func aDoubleAndATripleRingAreEarnedOnceOnTheFirstDayTheRingReachesThem() {
+    @Test func aDoubleAndATripleRingAreEarnedOnEveryDayTheRingReachesThem() {
         let records = [
             day(100, done: 20, goal: 20), day(101, done: 39, goal: 20), day(102, done: 40, goal: 20), day(103, done: 60, goal: 20),
             day(104, done: 200, goal: 20), day(105, done: 60, goal: 20),
         ]
         let earned = Achievements.earned(over: records)
-        // 39 of 20 is not yet two laps, 40 is; 60 is three.
-        #expect(days(of: .doubleRing, in: earned) == [102])
-        #expect(days(of: .tripleRing, in: earned) == [103])
+        // 39 of 20 is not yet two laps, 40 is; 60 is three. Each day that reaches them earns them again, as Fitness's
+        // goal awards do.
+        #expect(days(of: .doubleRing, in: earned) == [102, 103, 104, 105])
+        #expect(days(of: .tripleRing, in: earned) == [103, 104, 105])
     }
 
     @Test func aDayThatReachesThreeLapsEarnsBothMedalsInOrder() {

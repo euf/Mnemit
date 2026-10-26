@@ -112,8 +112,8 @@ public enum Achievements {
             previous = record.day
             run = worked ? run + 1 : 0
             if run > 0, run % 7 == 0 { earn(.perfectWeek) }
-            if record.ringShare >= 2 { earnOnce(.doubleRing) }
-            if record.ringShare >= DayRecord.maxLaps { earnOnce(.tripleRing) }
+            if record.ringShare >= 2 { earn(.doubleRing) }
+            if record.ringShare >= DayRecord.maxLaps { earn(.tripleRing) }
             for count in WordsLearned.milestones(upTo: record.wordsLearned) { earnOnce(.wordsLearned(count: count)) }
             if record.savedStreak { earn(.comeback) }
         }
