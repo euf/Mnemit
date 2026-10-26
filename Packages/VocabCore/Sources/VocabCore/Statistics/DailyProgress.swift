@@ -654,6 +654,11 @@ public struct DeckActivity: Sendable {
         MemoryEstimate(deck: deck, at: now, calendar: calendar)
     }
 
+    /// The words of this deck that have left learning, each with the day it first did, `WordsLearned.leftLearning`.
+    func leftLearning(calendar: StudyCalendar) -> [(key: WordKey?, day: Int?)] {
+        WordsLearned.leftLearning(in: deck, calendar: calendar)
+    }
+
     /// The words this deck has learned at `now`, `WordsLearned`.
     public func learned(at now: Date, calendar: StudyCalendar) -> WordsLearned {
         WordsLearned(deck: deck, at: now, calendar: calendar)
@@ -1378,11 +1383,12 @@ public struct DailyProgress: Hashable, Sendable {
             day: today, time: time, reason: size.reason,
             worked: startPace.seconds(newCards: newDoneByDay[today] ?? 0, otherCards: otherDoneByDay[today] ?? 0), closed: ring.isGoalMet, studied: ring.done > 0,
             filled: startRounds.filled)
+        let wordsByDay = WordsLearned.cumulative(decks.flatMap { $0.leftLearning(calendar: calendar) }, from: first, through: today)
         let records = (first...today).map { day in
             DayRecord(
                 day: day, done: day == today ? ring.done : before.done[day] ?? 0, goal: day == today ? ring.goal : before.goals[day] ?? 0,
                 kept: kept[day] ?? false, closed: closed[day] ?? false, streak: day == today ? streak.days : steps[day]?.days ?? 0,
-                savedStreak: steps[day]?.saved ?? false)
+                savedStreak: steps[day]?.saved ?? false, wordsLearned: wordsByDay[day] ?? 0)
         }
         // In the order of the decks given: the shares of the decks that take part, 0 for a paused one.
         var shares = allowances.makeIterator()

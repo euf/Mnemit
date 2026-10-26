@@ -152,4 +152,53 @@ struct WordsLearnedTests {
         #expect(progress.learned.shownGain == 1)
         #expect(progress.memory.words > 2)
     }
+
+    // MARK: Milestones
+
+    @Test func theMilestonesAreTenFiftyHundredTwoFiftyFiveHundredThousandThenEveryThousand() {
+        #expect(WordsLearned.milestones(upTo: 9) == [])
+        #expect(WordsLearned.milestones(upTo: 10) == [10])
+        #expect(WordsLearned.milestones(upTo: 99) == [10, 50])
+        #expect(WordsLearned.milestones(upTo: 1999) == [10, 50, 100, 250, 500, 1000])
+        #expect(WordsLearned.milestones(upTo: 3500) == [10, 50, 100, 250, 500, 1000, 2000, 3000])
+        #expect(WordsLearned.nextMilestone(after: 0) == 10)
+        #expect(WordsLearned.nextMilestone(after: 10) == 50)
+        #expect(WordsLearned.nextMilestone(after: 1000) == 2000)
+        #expect(WordsLearned.nextMilestone(after: 2999) == 3000)
+        #expect(WordsLearned.nextMilestone(after: 3000) == 4000)
+    }
+
+    @Test func theWordsThatLeftLearningAreCountedFromTheDayTheirFirstCardDid() throws {
+        // A lapse takes a word out of "words learned" but not out of the count the medals are earned from.
+        var cards = (1...5).map { learned(recognition("a\($0)"), on: today - 2) }
+        cards += (1...4).map { learned(recognition("b\($0)"), on: today - 1) }
+        cards += (1...3).map { learned(recognition("c\($0)"), on: today) }
+        cards.append(reviewed(learned(recognition("lapsed"), on: today - 2), .again, on: today))
+        cards.append(reviewed(recognition("stillLearning"), on: today))
+        var imported = recognition("imported")
+        imported.learningState = LearningState(phase: .review, stability: 10, difficulty: 5, lastReview: noon(today - 9), due: noon(today + 3), reviews: 4)
+        cards.append(imported)
+        let deck = try Deck(cards: cards)
+        let progress = DailyProgress.evaluate([DeckActivity(deck: deck, calendar: calendar)], at: noon(today), calendar: calendar)
+        // First study day: today - 2. The imported word has no day and counts from it.
+        #expect(progress.records.map(\.wordsLearned) == [5 + 1 + 1, 7 + 4, 11 + 3])
+        #expect(progress.learned.words == 14 - 1)
+        #expect(progress.achievements.contains(Achievement(kind: .wordsLearned(count: 10), day: today - 1)))
+        #expect(!progress.achievements.contains(Achievement(kind: .wordsLearned(count: 50), day: today)))
+    }
+
+    @Test func aWordHeldTwiceCountsOnceFromItsFirstDay() throws {
+        let key = try #require(WordKey("σπίτι"))
+        let other = try #require(WordKey("δέντρο"))
+        let counts = WordsLearned.cumulative([(key, 3), (key, 5), (other, 4), (nil, 5), (nil, nil)], from: 1, through: 6)
+        #expect(counts[1] == 1)
+        #expect(counts[3] == 2)
+        #expect(counts[4] == 3)
+        #expect(counts[5] == 4)
+        #expect(counts[6] == 4)
+        // A day before the first study day, or after today, is held to them.
+        #expect(WordsLearned.cumulative([(nil, 0), (nil, 99)], from: 1, through: 6)[1] == 1)
+        #expect(WordsLearned.cumulative([(nil, 0), (nil, 99)], from: 1, through: 6)[6] == 2)
+        #expect(WordsLearned.cumulative([], from: 4, through: 4) == [4: 0])
+    }
 }

@@ -15,6 +15,9 @@ public struct DayRecord: Hashable, Sendable {
     public var streak: Int
     /// This day closed its ring after a single missed day, and so kept the streak alive.
     public var savedStreak: Bool
+    /// The words that had left learning by the end of that day (`WordsLearned.cumulative`): the count the medals of
+    /// words learned are earned from; a lapse takes none back.
+    public var wordsLearned: Int
 
     /// How the day's ring is drawn, in laps of its goal: a closed day on which cards were done is full at least, and
     /// goes on over itself as far as it was worked past the goal (at most `maxLaps`, 3); any other day has the share of
@@ -31,7 +34,7 @@ public struct DayRecord: Hashable, Sendable {
     /// The most laps of its goal a ring is drawn with.
     public static let maxLaps = 3.0
 
-    public init(day: Int, done: Int, goal: Int, kept: Bool, closed: Bool, streak: Int, savedStreak: Bool = false) {
+    public init(day: Int, done: Int, goal: Int, kept: Bool, closed: Bool, streak: Int, savedStreak: Bool = false, wordsLearned: Int = 0) {
         self.day = day
         self.done = done
         self.goal = goal
@@ -39,6 +42,7 @@ public struct DayRecord: Hashable, Sendable {
         self.closed = closed
         self.streak = streak
         self.savedStreak = savedStreak
+        self.wordsLearned = wordsLearned
     }
 }
 
@@ -53,6 +57,8 @@ public enum AchievementKind: Hashable, Sendable {
     case doubleRing
     /// A day whose ring went three times round its goal, the most a ring is drawn (`DayRecord.maxLaps`); earned once.
     case tripleRing
+    /// One per milestone of `WordsLearned.milestones(upTo:)`, earned on the first day `DayRecord.wordsLearned` reaches it.
+    case wordsLearned(count: Int)
     /// A day with `DayRecord.savedStreak`; earned every time.
     case comeback
 }
@@ -89,7 +95,7 @@ public enum Achievements {
     /// Everything earned over `records` (oldest first, one per study day from the first study day to today,
     /// days without study included), oldest first. A tier of a line is earned once, on the first day it is
     /// reached (a day that reaches several tiers earns all of them); perfectWeek and comeback are earned each
-    /// time. Within a day: streak, first ring, perfect week, double ring, triple ring, comeback.
+    /// time. Within a day: streak, first ring, perfect week, double ring, triple ring, words learned, comeback.
     public static func earned(over records: [DayRecord]) -> [Achievement] {
         var earned: [Achievement] = []
         var tiers = Set<AchievementKind>()
@@ -108,6 +114,7 @@ public enum Achievements {
             if run > 0, run % 7 == 0 { earn(.perfectWeek) }
             if record.ringShare >= 2 { earnOnce(.doubleRing) }
             if record.ringShare >= DayRecord.maxLaps { earnOnce(.tripleRing) }
+            for count in WordsLearned.milestones(upTo: record.wordsLearned) { earnOnce(.wordsLearned(count: count)) }
             if record.savedStreak { earn(.comeback) }
         }
         return earned

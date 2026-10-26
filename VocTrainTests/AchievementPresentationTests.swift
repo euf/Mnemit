@@ -10,7 +10,7 @@ import Testing
 struct AchievementPresentationTests {
     static let allKinds: [AchievementKind] =
         Achievements.streakMilestones.map { .streak(days: $0) } + [.firstRing, .perfectWeek]
-        + [.doubleRing, .tripleRing, .comeback]
+        + [.doubleRing, .tripleRing, .comeback] + [10, 50, 100, 250, 500, 1000, 2000].map { .wordsLearned(count: $0) }
 
     /// A day of study: its ring closed with `done` of `goal`, or not.
     static func day(_ day: Int, done: Int, goal: Int = 10, streak: Int = 0, saved: Bool = false) -> DayRecord {
@@ -139,6 +139,16 @@ struct AchievementPresentationTests {
         // A day with an empty plan closes its ring but is no work.
         let empty = Self.closedDays(from: 100, count: 3) + [DayRecord(day: 103, done: 0, goal: 0, kept: true, closed: true, streak: 4)]
         #expect(NextTier.of(.perfectWeek, earned: [], records: empty, streak: 4)?.value == 3)
+    }
+
+    @Test func theWordsOfferTheNextMilestoneWithTheCountOfNow() throws {
+        let records = [DayRecord(day: 1, done: 5, goal: 5, kept: true, closed: true, streak: 1, wordsLearned: 38)]
+        let next = try #require(NextTier.of(.words, earned: [Achievement(kind: .wordsLearned(count: 10), day: 1)], records: records, streak: 1))
+        #expect(next == NextTier(kind: .wordsLearned(count: 50), value: 38, goal: 50))
+        #expect(next.hint == "38 of 50 words")
+        #expect(NextTier.of(.words, earned: [], records: [], streak: 0)?.goal == 10)
+        #expect(AchievementKind.wordsLearned(count: 10).title == "10 words learned")
+        #expect(AchievementKind.wordsLearned(count: 1000).key == "wordsLearned-1000")
     }
 
     @Test func theLapsOfferTheNextRingWithoutACount() throws {

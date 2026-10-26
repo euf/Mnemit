@@ -77,6 +77,64 @@ public struct WordsLearned: Hashable, Sendable {
         return WordsLearned(words: now + learnedWords.count, wordsAtDayStart: atStart + wordsAtStart.count)
     }
 
+    /// The counts of words learned that earn a medal: 10, 50, 100, 250, 500 and 1000, then every 1000.
+    public static func milestones(upTo count: Int) -> [Int] {
+        [10, 50, 100, 250, 500, 1000].filter { $0 <= count } + (count >= 2000 ? Array(stride(from: 2000, through: count, by: 1000)) : [])
+    }
+
+    /// The first milestone above `count`.
+    public static func nextMilestone(after count: Int) -> Int {
+        [10, 50, 100, 250, 500, 1000].first { $0 > count } ?? (count / 1000 + 1) * 1000
+    }
+
+    /// The studied word cards of `deck` that have left learning at some time, in review or relearning now, suspended
+    /// and production cards apart, each with the study day it first did: from its log by the rule of the steps
+    /// (`Steps`); `nil` when the log doesn't reach back to the first review, which a card imported without its history
+    /// lacks, so the day is unknown.
+    static func leftLearning(in deck: Deck, calendar: StudyCalendar) -> [(key: WordKey?, day: Int?)] {
+        var left: [(key: WordKey?, day: Int?)] = []
+        for card in deck.cards where !card.isSuspended && card.kind != .production {
+            guard let phase = card.learningState?.phase, phase != .learning else { continue }
+            var day: Int?
+            if card.hasCompleteLog {
+                var steps = Steps(required: deck.learningOptions.steps)
+                for entry in card.log {
+                    steps.apply(entry.grade)
+                    if steps.areEnough {
+                        day = calendar.dayNumber(for: entry.date)
+                        break
+                    }
+                }
+            }
+            left.append((WordKey(card: card), day))
+        }
+        return left
+    }
+
+    /// The words that had left learning by the end of each study day from `first` through `today`, a word held by
+    /// several cards counted once, from the day its first card left (a lapse takes none back, so a medal for a
+    /// count is never lost to one). A word of unknown day counts from `first`.
+    static func cumulative(_ left: [(key: WordKey?, day: Int?)], from first: Int, through today: Int) -> [Int: Int] {
+        func clamped(_ day: Int?) -> Int { min(max(day ?? first, first), today) }
+        var perDay: [Int: Int] = [:]
+        var keyed: [(key: WordKey, day: Int)] = []
+        for entry in left {
+            if let key = entry.key { keyed.append((key, clamped(entry.day))) } else { perDay[clamped(entry.day), default: 0] += 1 }
+        }
+        var earliest: [Int: Int] = [:]
+        for (group, entry) in zip(WordKey.groups(of: keyed.map(\.key)), keyed) {
+            earliest[group] = min(earliest[group] ?? entry.day, entry.day)
+        }
+        for day in earliest.values { perDay[day, default: 0] += 1 }
+        var total = 0
+        var byDay: [Int: Int] = [:]
+        for day in first...max(first, today) {
+            total += perDay[day] ?? 0
+            byDay[day] = total
+        }
+        return byDay
+    }
+
     /// What the day added: now minus the day's start; negative after a lapse that is not made up.
     public var gainToday: Int { words - wordsAtDayStart }
 

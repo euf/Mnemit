@@ -85,6 +85,7 @@ extension AchievementKind {
             }
         case .firstRing: String(localized: "First ring")
         case .perfectWeek: String(localized: "Perfect week")
+        case let .wordsLearned(count): String(localized: "\(count) words learned")
         case .doubleRing: String(localized: "Double ring")
         case .tripleRing: String(localized: "Triple ring")
         case .comeback: String(localized: "Comeback")
@@ -94,7 +95,7 @@ extension AchievementKind {
     /// What it took, for the line under a medal; `nil` where the title says it.
     var detail: String? {
         switch self {
-        case .streak: nil
+        case .streak, .wordsLearned: nil
         case .doubleRing: String(localized: "Two laps of the ring in a day")
         case .tripleRing: String(localized: "Three laps of the ring in a day")
         case .firstRing: String(localized: "Closed the ring for the first time")
@@ -121,6 +122,16 @@ extension AchievementKind {
             }
         case .firstRing: "\u{1F3AF}"
         case .perfectWeek: "\u{1F308}"
+        case let .wordsLearned(count):
+            switch count {
+            case ..<50: "\u{1F331}"
+            case ..<100: "\u{1F340}"
+            case ..<250: "\u{1F4AF}"
+            case ..<500: "\u{1F4D6}"
+            case ..<1000: "\u{1F4DA}"
+            case ..<2000: "\u{1F9E0}"
+            default: "\u{1F989}"
+            }
         case .doubleRing: "\u{1F4AB}"
         case .tripleRing: "\u{1F300}"
         case .comeback: "\u{1F426}\u{200D}\u{1F525}"
@@ -133,6 +144,7 @@ extension AchievementKind {
         case let .streak(days): "streak-\(days)"
         case .firstRing: "firstRing"
         case .perfectWeek: "perfectWeek"
+        case let .wordsLearned(count): "wordsLearned-\(count)"
         case .doubleRing: "doubleRing"
         case .tripleRing: "tripleRing"
         case .comeback: "comeback"
@@ -145,6 +157,7 @@ extension AchievementKind {
         switch self {
         case let .streak(days): 6000 + days
         case .comeback: 5000
+        case let .wordsLearned(count): 4000 + min(count, 999)
         case .doubleRing: 3000
         case .tripleRing: 3001
         case .perfectWeek: 2000
@@ -160,6 +173,7 @@ extension AchievementKind {
         case .streak: .streak
         case .firstRing: .firstRing
         case .perfectWeek: .perfectWeek
+        case .wordsLearned: .words
         case .doubleRing, .tripleRing: .laps
         case .comeback: .comeback
         }
@@ -168,18 +182,19 @@ extension AchievementKind {
 
 /// The lines of achievements.
 enum AchievementLine: CaseIterable, Hashable {
-    case streak, firstRing, perfectWeek, laps, comeback
+    case streak, firstRing, perfectWeek, words, laps, comeback
 
     /// The lines of one medal each, which the Progress screen gathers in one row.
     static let single: [AchievementLine] = [.firstRing, .perfectWeek, .comeback]
     /// The lines of tiers, a row each.
-    static let tiered: [AchievementLine] = [.streak, .laps]
+    static let tiered: [AchievementLine] = [.streak, .words, .laps]
 
     var symbol: String {
         switch self {
         case .streak: "flame"
         case .firstRing: "circle.circle"
         case .perfectWeek: "calendar"
+        case .words: "book"
         case .laps: "repeat"
         case .comeback: "arrow.uturn.up"
         }
@@ -232,17 +247,18 @@ extension Array where Element == Achievement {
 /// The tier a line offers next and how far the learner is from it: the grey medal of the Progress screen.
 struct NextTier: Hashable {
     var kind: AchievementKind
-    /// Where the learner stands: the streak's days or the rings of the run.
+    /// Where the learner stands: the streak's days, the rings of the run or the words learned.
     var value = 0
     /// What the tier asks; `nil` for a tier with no count to work toward.
     var goal: Int?
 
-    /// "12 of 14 days", "3 of 7 rings"; `nil` without a goal.
+    /// "12 of 14 days", "3 of 7 rings", "38 of 50 words"; `nil` without a goal.
     var hint: String? {
         guard let goal else { return nil }
         switch kind {
         case .streak: return String(localized: "\(value) of \(goal) days")
         case .perfectWeek: return String(localized: "\(value) of \(goal) rings")
+        case .wordsLearned: return String(localized: "\(value) of \(goal) words")
         case .firstRing, .doubleRing, .tripleRing, .comeback: return nil
         }
     }
@@ -260,6 +276,10 @@ struct NextTier: Hashable {
             return kinds.contains(.firstRing) ? nil : NextTier(kind: .firstRing)
         case .perfectWeek:
             return NextTier(kind: .perfectWeek, value: ringRun(records) % 7, goal: 7)
+        case .words:
+            let reached = kinds.compactMap { kind -> Int? in if case let .wordsLearned(count) = kind { count } else { nil } }.max() ?? 0
+            let goal = WordsLearned.nextMilestone(after: reached)
+            return NextTier(kind: .wordsLearned(count: goal), value: records.last?.wordsLearned ?? 0, goal: goal)
         case .laps:
             return [AchievementKind.doubleRing, .tripleRing].first { !kinds.contains($0) }.map { NextTier(kind: $0) }
         case .comeback:

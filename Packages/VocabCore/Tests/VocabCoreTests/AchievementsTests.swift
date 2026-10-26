@@ -96,6 +96,19 @@ struct AchievementsTests {
         #expect(kinds == [.firstRing])
     }
 
+    @Test func aWordsLearnedMedalIsEarnedOnceOnTheFirstDayTheCountReachesIt() {
+        func counted(_ number: Int, words: Int) -> DayRecord {
+            DayRecord(day: number, done: 5, goal: 20, kept: true, closed: false, streak: 1, wordsLearned: words)
+        }
+        let earned = Achievements.earned(over: [counted(100, words: 9), counted(101, words: 10), counted(102, words: 60), counted(103, words: 1000), counted(104, words: 2100)])
+        func words(_ count: Int) -> [Int] { days(of: .wordsLearned(count: count), in: earned) }
+        #expect(words(10) == [101])
+        #expect(words(50) == [102])
+        #expect(words(100) == [103] && words(250) == [103] && words(500) == [103] && words(1000) == [103])
+        #expect(words(2000) == [104])
+        #expect(words(3000) == [])
+    }
+
     @Test func aComebackIsEarnedEveryTimeTheStreakIsSaved() {
         let records = [day(100), day(101, done: 0, closed: false), day(102, saved: true), day(103), day(104, done: 0, closed: false), day(105, saved: true)]
         #expect(days(of: .comeback, in: Achievements.earned(over: records)) == [102, 105])
@@ -171,11 +184,11 @@ extension DailyProgressTests {
         var deck = try Deck(learningOptions: options(), cards: (0..<5).map { due("c\($0)", onDay: today) })
         var progress = evaluate([deck])
         #expect(progress.records.map(\.day) == Array((today - interval)...today))
-        #expect(progress.records.last == DayRecord(day: today, done: 0, goal: 5, kept: false, closed: false, streak: interval, savedStreak: false))
+        #expect(progress.records.last == DayRecord(day: today, done: 0, goal: 5, kept: false, closed: false, streak: interval, savedStreak: false, wordsLearned: progress.records.last?.wordsLearned ?? -1))
         #expect(progress.records.last?.streak == progress.streak.days)
         reviewPlan(of: &deck, at: now)
         progress = evaluate([deck])
-        #expect(progress.records.last == DayRecord(day: today, done: 5, goal: 5, kept: true, closed: true, streak: interval + 1, savedStreak: false))
+        #expect(progress.records.last == DayRecord(day: today, done: 5, goal: 5, kept: true, closed: true, streak: interval + 1, savedStreak: false, wordsLearned: progress.records.last?.wordsLearned ?? -1))
         #expect(progress.records.last?.streak == progress.streak.days)
         #expect(progress.records.last?.done == progress.ring.done)
         // The streak of every day is the streak of that day: one more than the day before, all days kept.
