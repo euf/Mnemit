@@ -1,12 +1,37 @@
 import SwiftUI
 import VocabCore
 
-/// What stands in the middle of a ring: the streak, a flame over its days, or nothing. The flame is the streak's
-/// sign everywhere it shows (Today, the rests, the widget, the Mac), lit in `Color.streak` once today keeps it.
+/// The streak's state on screen, which shape and colour both say: `flame` outlined in secondary grey until today's
+/// streak step is done, `flame.fill` in `Color.streak` after, and, the day after a missed one, an outline in
+/// `Color.streak` until the ring closes.
+enum StreakState: Equatable {
+    /// Today's streak step is not done.
+    case open
+    /// Today's streak step is done.
+    case kept
+    /// The day after a missed day, until the ring closes: the streak survives only if it does.
+    case atRisk
+}
+
+/// The streak's flame, drawn by the state: the one sign of the streak on every screen. The size is the caller's font.
+struct StreakFlame: View {
+    var state: StreakState
+
+    var body: some View {
+        Image(systemName: state == .kept ? "flame.fill" : "flame")
+            .symbolRenderingMode(.monochrome)
+            .foregroundStyle(state == .open ? Color.secondary : Color.streak)
+    }
+}
+
+/// What stands in the middle of a ring: the streak, a flame over its days, the flame alone, or nothing. The flame is
+/// the streak's sign everywhere it shows (Today, the rests, the widget, the Mac), by `StreakState`.
 enum RingCenter: Equatable {
     case none
-    /// The streak in days, 1 or more; `isLit` once today keeps it and no missed day waits for the ring.
-    case streak(days: Int, isLit: Bool)
+    /// The streak in days, 1 or more.
+    case streak(days: Int, state: StreakState)
+    /// The flame alone, for the ring in the study bar, which has no room for the days.
+    case flame(days: Int, state: StreakState)
 
     /// The streak of `progress`; nothing at 0 days, and nothing before the first evaluation.
     init(_ progress: DailyProgress?) {
@@ -14,7 +39,12 @@ enum RingCenter: Equatable {
             self = .none
             return
         }
-        self = .streak(days: progress.streak.days, isLit: progress.isStreakLit)
+        self = .streak(days: progress.streak.days, state: progress.streakState)
+    }
+
+    /// The flame alone for `progress`: outlined before the first evaluation and before the first streak.
+    static func flame(_ progress: DailyProgress?) -> RingCenter {
+        .flame(days: progress?.streak.days ?? 0, state: progress?.streakState ?? .open)
     }
 
     /// The days: "12".
@@ -23,24 +53,25 @@ enum RingCenter: Equatable {
         return days.formatted(.number.grouping(.never))
     }
 
-    /// What VoiceOver reads for the ring, before the progress: "Day streak: 5 days".
+    /// What VoiceOver reads for the ring, before the progress: "12-day streak, kept today".
     var spokenLabel: String? {
-        guard case .streak(let days, _) = self else { return nil }
-        return String(localized: "Day streak: \(days) days")
+        switch self {
+        case .none: nil
+        case .streak(let days, let state), .flame(let days, let state):
+            switch state {
+            case .kept: String(localized: "\(days)-day streak, kept today")
+            case .open: String(localized: "\(days)-day streak, not kept yet")
+            case .atRisk: String(localized: "\(days)-day streak, at risk")
+            }
+        }
     }
 }
 
 extension DailyProgress {
-    /// Whether the streak's flame is lit: today keeps the streak, and no missed day waits for the ring to close.
-    var isStreakLit: Bool {
-        streakKeptToday && !isStreakAtRisk
-    }
-
-    /// The study day before today, when the learner studied on it: Today names it until today's first card.
-    var yesterday: DayRecord? {
-        guard records.count >= 2, let today = records.last?.day else { return nil }
-        let record = records[records.count - 2]
-        return record.day == today - 1 && record.done > 0 ? record : nil
+    /// The state of the streak's flame: at risk after a missed day until the ring closes, else by today's streak step.
+    var streakState: StreakState {
+        if isStreakAtRisk { return .atRisk }
+        return streakKeptToday ? .kept : .open
     }
 
     /// The day after a missed day, until the ring closes: the streak survives only if it does.
@@ -73,6 +104,8 @@ struct ProgressRing: View {
     var speaksCenter = false
     /// How the ring fills to a new fraction: quick in the study bar, slow enough to watch on Today.
     var filling: Animation = .smooth
+    /// The stroke's thickness; `nil` takes `lineWidth(diameter:)`.
+    var lineWidth: CGFloat?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The thickness of the stroke: as much as the Fitness rings take, at least 3 pt.
@@ -81,7 +114,7 @@ struct ProgressRing: View {
     }
 
     var body: some View {
-        let lineWidth = Self.lineWidth(diameter: diameter)
+        let lineWidth = lineWidth ?? Self.lineWidth(diameter: diameter)
         let ring = ZStack {
             ActivityRing(progress: min(1, max(0, fraction)), color: .dailyRing, tipColor: .dailyRingTail, lineWidth: lineWidth)
                 .animation(reduceMotion ? nil : filling, value: fraction)
@@ -99,7 +132,7 @@ struct ProgressRing: View {
 }
 
 /// The streak in the middle of a ring: a flame over the days where the ring is big enough for both, the days alone
-/// in a small one.
+/// in a small one, or the flame alone.
 private struct RingCenterLabel: View {
     var center: RingCenter
     var diameter: CGFloat
@@ -109,22 +142,28 @@ private struct RingCenterLabel: View {
     private static let flameDiameter: CGFloat = 44
 
     var body: some View {
-        if case .streak(_, let isLit) = center, let text = center.text {
-            let showsFlame = diameter >= Self.flameDiameter
-            VStack(spacing: -diameter * 0.03) {
-                if showsFlame {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: diameter * 0.23, weight: .semibold))
-                        .foregroundStyle(isLit ? Color.streak : Color.secondary)
-                        .symbolRenderingMode(.monochrome)
+        switch center {
+        case .none:
+            EmptyView()
+        case .flame(_, let state):
+            StreakFlame(state: state)
+                .font(.system(size: diameter * 0.42, weight: .semibold))
+        case .streak(_, let state):
+            if let text = center.text {
+                let showsFlame = diameter >= Self.flameDiameter
+                VStack(spacing: -diameter * 0.03) {
+                    if showsFlame {
+                        StreakFlame(state: state)
+                            .font(.system(size: diameter * 0.23, weight: .semibold))
+                    }
+                    Text(verbatim: text)
+                        .font(.system(size: diameter * (showsFlame ? 0.3 : 0.38), weight: .bold, design: .rounded))
+                        .monospacedDigit()
                 }
-                Text(verbatim: text)
-                    .font(.system(size: diameter * (showsFlame ? 0.3 : 0.38), weight: .bold, design: .rounded))
-                    .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .frame(width: diameter - 2 * lineWidth, height: diameter - 2 * lineWidth)
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-            .frame(width: diameter - 2 * lineWidth, height: diameter - 2 * lineWidth)
         }
     }
 }

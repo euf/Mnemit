@@ -10,38 +10,55 @@ private func progress(done: Int, goal: Int = 20, streak: Int = 0) -> DailyProgre
     DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil))
 }
 
-/// What stands in the middle of the ring: the streak, its flame lit once today keeps it, and never laps.
+/// What stands in the middle of the ring: the streak, its flame by the state of the day, and never a lap.
 struct RingCenterTests {
     @Test func streak() {
         #expect(RingCenter(nil) == .none)
         #expect(RingCenter(progress(done: 5, streak: 0)) == .none, "a streak of 0 shows nothing")
-        #expect(RingCenter(progress(done: 5, streak: 1)) == .streak(days: 1, isLit: false))
-        #expect(RingCenter(progress(done: 70, streak: 12)) == .streak(days: 12, isLit: false), "work beyond the goal shows no lap")
+        #expect(RingCenter(progress(done: 5, streak: 1)) == .streak(days: 1, state: .open))
+        #expect(RingCenter(progress(done: 70, streak: 12)) == .streak(days: 12, state: .open), "work beyond the goal shows no lap")
         var kept = progress(done: 5, streak: 12)
         kept.streakKeptToday = true
-        #expect(RingCenter(kept) == .streak(days: 12, isLit: true))
+        #expect(RingCenter(kept) == .streak(days: 12, state: .kept))
     }
 
-    @Test func aStreakAtRiskHasItsFlameOut() {
+    @Test func theFlameHasThreeStates() {
+        var day = progress(done: 5, streak: 12)
+        #expect(day.streakState == .open, "outlined, grey, until the streak step is done")
+        day.streakKeptToday = true
+        #expect(day.streakState == .kept, "filled, in the streak's colour")
         var atRisk = DailyProgress(ring: DailyRing(done: 5, goal: 20), streak: Streak(days: 12, repairCards: 15))
+        #expect(atRisk.streakState == .atRisk, "the day after a missed one, the outline takes the streak's colour")
         atRisk.streakKeptToday = true
-        #expect(atRisk.isStreakAtRisk)
-        #expect(RingCenter(atRisk) == .streak(days: 12, isLit: false))
+        #expect(atRisk.isStreakAtRisk && atRisk.streakState == .atRisk, "the streak step alone does not save it")
         atRisk.ring = DailyRing(done: 20, goal: 20)
         #expect(!atRisk.isStreakAtRisk, "the closed ring saves it")
-        #expect(RingCenter(atRisk) == .streak(days: 12, isLit: true))
+        #expect(atRisk.streakState == .kept)
+        atRisk.streakKeptToday = false
+        #expect(atRisk.streakState == .open)
+    }
+
+    @Test func theBarsRingShowsTheFlameAlone() {
+        #expect(RingCenter.flame(nil) == .flame(days: 0, state: .open))
+        var day = progress(done: 5, streak: 12)
+        #expect(RingCenter.flame(day) == .flame(days: 12, state: .open))
+        day.streakKeptToday = true
+        #expect(RingCenter.flame(day) == .flame(days: 12, state: .kept))
+        #expect(RingCenter.flame(days: 12, state: .kept).text == nil, "no days in a ring that small")
     }
 
     @Test func texts() {
         #expect(RingCenter.none.text == nil)
-        #expect(RingCenter.streak(days: 5, isLit: true).text == "5")
-        #expect(RingCenter.streak(days: 1234, isLit: false).text == "1234", "no grouping separator in a ring")
+        #expect(RingCenter.streak(days: 5, state: .kept).text == "5")
+        #expect(RingCenter.streak(days: 1234, state: .open).text == "1234", "no grouping separator in a ring")
     }
 
-    @Test func spokenLabels() {
+    @Test func spokenLabelsSayTheState() {
         #expect(RingCenter.none.spokenLabel == nil)
-        #expect(RingCenter.streak(days: 5, isLit: true).spokenLabel == "Day streak: 5 days")
-        #expect(RingCenter.streak(days: 1, isLit: true).spokenLabel == "Day streak: 1 day")
+        #expect(RingCenter.streak(days: 12, state: .kept).spokenLabel == "12-day streak, kept today")
+        #expect(RingCenter.streak(days: 12, state: .open).spokenLabel == "12-day streak, not kept yet")
+        #expect(RingCenter.streak(days: 12, state: .atRisk).spokenLabel == "12-day streak, at risk")
+        #expect(RingCenter.flame(days: 1, state: .kept).spokenLabel == "1-day streak, kept today")
     }
 }
 

@@ -88,8 +88,8 @@ struct WelcomeView: View {
 }
 
 /// What the Today window shows, from what it is given, so a test can draw it: the day over every deck of the
-/// folder on the left, as the iPhone's Today has it (`SummaryRow`: the ring with the streak, what the day asks next,
-/// the words in memory), and the one button of the day (`DayAction`: Study, Catch Up or Push On); the decks with
+/// folder on the left, as the iPhone's Today has it (`TodayHero`: the ring with the streak, what the day asks next,
+/// the words in memory), and the one button of the day (`DayAction`: Study, Catch Up or Learn 10 New Words); the decks with
 /// what today's plan takes from each on the right. Before the learner chose the folder, the app's name and the ways in.
 struct TodayWindowContent: View {
     var folder: URL?
@@ -153,42 +153,29 @@ struct TodayWindowContent: View {
 
     private var today: some View {
         VStack(alignment: .leading, spacing: Spacing.section) {
-            // The day is a button with a chevron, as on the iPhone: it opens Progress.
+            // The hero is a button, as on the iPhone: it opens Progress. Until the Today page replaces this window
+            // (`references/quality-plan.md` §5.1) it is a small ring without the week.
             Button(action: ProgressWindow.show) {
-                HStack(spacing: Spacing.gap) {
-                    SummaryRow(
-                        due: due, newDue: active.reduce(0) { $0 + (counts[$1]?.newAtDayStart ?? 0) }, progress: isDayReady ? progress : nil,
-                        nextDue: counts.values.compactMap(\.nextDue).min(), now: now, isLoaded: isDayReady, ringSize: 80
-                    )
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Image(systemName: "chevron.forward")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                        .accessibilityHidden(true)
-                }
+                TodayHero(
+                    due: due, progress: isDayReady ? progress : nil, nextDue: counts.values.compactMap(\.nextDue).min(), now: now,
+                    isLoaded: isDayReady, ringSize: 96, showsWeek: false
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .help("Progress")
             .disabled(progress == nil)
-            VStack(spacing: Spacing.hairline) {
-                Button {
-                    study(action)
-                } label: {
-                    Text(action.title)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(action == .study ? Color.appAccent : .secondary)
-                .controlSize(.extraLarge)
-                .keyboardShortcut(.defaultAction)
-                .disabled(active.isEmpty)
-                if action == .pushOn {
-                    Text("More reviews in the days ahead")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+            Button {
+                study(action)
+            } label: {
+                Text(action.title)
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .tint(action == .study ? Color.appAccent : .secondary)
+            .controlSize(.extraLarge)
+            .keyboardShortcut(.defaultAction)
+            .disabled(active.isEmpty)
             Spacer(minLength: 0)
             ways
         }

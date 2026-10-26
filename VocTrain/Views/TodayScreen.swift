@@ -8,10 +8,10 @@ enum StudyScope: Hashable {
     case deck(URL)
 }
 
-/// Today: the root of the app. The day in rounds over all decks, the cards done and left of today's
-/// plan, the daily ring, the streak and the words in memory, the decks with what today's plan takes from
-/// each, and Study. A tap on Study shows the
-/// first card at once; a tap on a deck opens its screen. The search finds a card in any deck.
+/// Today: the root of the app. The hero (`TodayHero`: the daily ring with the streak in it, what the day asks next,
+/// the words in memory, the week), the decks with the cards left of today's plan in each, and Study. A tap on Study
+/// shows the first card at once; a tap on a deck opens its screen; the hero opens Progress. The search finds a card
+/// in any deck.
 ///
 /// A paused deck (`LearningOptions.isPaused`) is no part of the day: it sits in a section of its own at the
 /// bottom, without counts, and Study leaves it out.
@@ -37,7 +37,7 @@ struct TodayScreen: View {
     /// would take it up again.
     var canForget: (KnownDeck) -> Bool
     var study: (StudyScope) -> Void
-    /// Push On from Today, once the day's stack is done: ten new cards from all the decks, at once.
+    /// Learn 10 New Words from Today, once the day's stack is done: ten new cards from all the decks, at once.
     var pushOn: () -> Void = {}
     var showDeck: (KnownDeck) -> Void
     var showCard: (AllCardsSearch.Hit) -> Void
@@ -76,34 +76,10 @@ struct TodayScreen: View {
         decks.reduce(0) { $0 + (counts[$1.url]?.total ?? 0) }
     }
 
-    /// Of `due`, the cards that were new when the day began, which the time left prices as new.
-    private var newDue: Int {
-        decks.reduce(0) { $0 + (counts[$1.url]?.newAtDayStart ?? 0) }
-    }
-
     var body: some View {
         Group {
             if decks.isEmpty {
-                ContentUnavailableView {
-                    Label("No Decks", systemImage: "rectangle.stack")
-                } description: {
-                    Text("Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.")
-                } actions: {
-                    VStack(spacing: Spacing.gap) {
-                        Button(action: newDeck) {
-                            Text("New Deck").frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.glassProminent)
-                        Button(action: chooseFolder) {
-                            Text("Use iCloud Drive Folder").frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.glass)
-                        AnkiWebLink(action: showAnkiWeb)
-                            .padding(.top, Spacing.hairline)
-                    }
-                    .controlSize(.large)
-                    .frame(maxWidth: 320)
-                }
+                empty
             } else {
                 // One view carries the search field, so it keeps its focus as the first letter
                 // turns the list into the results.
@@ -115,6 +91,13 @@ struct TodayScreen: View {
                     }
                 }
                 .searchable(text: $query, prompt: Text("Search All Cards"))
+                .searchToolbarBehavior(.minimize)
+                .toolbar {
+                    // Study with Search All Cards minimised beside it: one bottom bar, not two.
+                    ToolbarItem(placement: .bottomBar) { studyButton }
+                    ToolbarSpacer(.fixed, placement: .bottomBar)
+                    DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                }
             }
         }
         .navigationTitle("Today")
@@ -138,6 +121,36 @@ struct TodayScreen: View {
         }
     }
 
+    /// No deck yet: the hero ring, empty, over the ways to get one.
+    private var empty: some View {
+        ScrollView {
+            VStack(spacing: Spacing.section) {
+                StreakHeroRing(fraction: 0, days: 0, state: .open)
+                Text("Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                VStack(spacing: Spacing.gap) {
+                    Button(action: newDeck) {
+                        Text("New Deck").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glassProminent)
+                    Button(action: chooseFolder) {
+                        Text("Use iCloud Drive Folder").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glass)
+                    AnkiWebLink(action: showAnkiWeb)
+                        .padding(.top, Spacing.hairline)
+                }
+                .controlSize(.large)
+                .frame(maxWidth: 320)
+            }
+            .padding(Spacing.margin)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+
     /// Queues the medals of earlier days this device never celebrated, once the day is shown.
     private func celebrateMissedMedals() {
         if isDayReady { toasts.offer(progress, earlierDays: true) }
@@ -146,29 +159,25 @@ struct TodayScreen: View {
     private var list: some View {
         List {
             Section {
-                // A button with the chevron of the deck rows, which draw it by hand too.
+                // The whole hero is a button to Progress; its week row ends in the chevron the deck rows draw too.
                 Button(action: showProgress) {
-                    HStack(spacing: 12) {
-                        SummaryRow(
-                            due: due, newDue: newDue, progress: isDayReady ? progress : nil,
-                            nextDue: counts.values.compactMap(\.nextDue).min(), now: now, isLoaded: isDayReady
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        Image(systemName: "chevron.forward")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                            .accessibilityHidden(true)
-                    }
+                    TodayHero(
+                        due: due, progress: isDayReady ? progress : nil, nextDue: counts.values.compactMap(\.nextDue).min(), now: now,
+                        isLoaded: isDayReady, showsChevron: true
+                    )
+                    .padding(.vertical, 8)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(progress == nil)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
             let sections = TodayDecks(decks, paused: paused)
             if !sections.active.isEmpty {
                 Section("Decks") {
                     ForEach(sections.active) { deck in
-                        DeckRow(name: deck.name, counts: counts[deck.url], now: now) { showDeck(deck) }
+                        DeckRow(name: deck.name, counts: counts[deck.url]) { showDeck(deck) }
                             .swipeActions(allowsFullSwipe: !canForget(deck)) {
                                 pauseButton(deck, pausing: true)
                                 removeButton(deck)
@@ -180,7 +189,7 @@ struct TodayScreen: View {
             if !sections.paused.isEmpty {
                 Section("Paused") {
                     ForEach(sections.paused) { deck in
-                        DeckRow(name: deck.name, counts: nil, now: now, isPaused: true) { showDeck(deck) }
+                        DeckRow(name: deck.name, counts: nil, isPaused: true) { showDeck(deck) }
                             .swipeActions(allowsFullSwipe: !canForget(deck)) {
                                 pauseButton(deck, pausing: false)
                                 removeButton(deck)
@@ -195,12 +204,23 @@ struct TodayScreen: View {
         .onChange(of: progress, initial: true) { celebrateMissedMedals() }
         .onChange(of: isDayReady) { celebrateMissedMedals() }
         .medalToast(toasts)
-        .safeAreaBar(edge: .bottom) {
-            StudyButton(stage: isDayReady ? DayAction(due: due, progress: progress) : .study, due: due) { stage in
-                stage == .pushOn ? pushOn() : study(.all)
-            }
-            .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
+    }
+
+    /// The day's one action, in the bottom bar beside the search: named by what it does next, prominent while the
+    /// ring is open.
+    private var studyButton: some View {
+        let stage = isDayReady ? DayAction(due: due, progress: progress) : .study
+        return Button {
+            stage == .pushOn ? pushOn() : study(.all)
+        } label: {
+            Text(stage.title)
+                // The bar sizes its items to their content: the button takes the width the search button leaves.
+                .containerRelativeFrame(.horizontal) { width, _ in max(120, width - 140) }
         }
+        .buttonStyle(.borderedProminent)
+        .tint(stage == .study ? nil : Color.secondary)
+        .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
+        .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
     }
 
     /// "Pause Deck", or "Resume Deck" for a deck that is paused.
@@ -266,7 +286,7 @@ struct TodayScreen: View {
 
 /// The one button of the screen, named after what it does next, with the words of the rests: **Study** while the
 /// ring is open, the one prominent button; **Catch Up** once the ring is closed and the plan has cards left;
-/// **Push On** once the day's stack is done, ten new cards at once, with what they cost under it.
+/// **Learn 10 New Words** once the day's stack is done, ten new cards at once.
 struct StudyButton: View {
     var stage: DayAction
     var due: Int
@@ -283,58 +303,36 @@ struct StudyButton: View {
             Text(title)
                 .frame(maxWidth: .infinity)
         }
-        VStack(spacing: Spacing.hairline) {
-            Group {
-                if stage == .study {
-                    label.buttonStyle(.glassProminent)
-                } else {
-                    label.buttonStyle(.glass)
-                }
-            }
-            .controlSize(.large)
-            if stage == .pushOn {
-                Text("More reviews in the days ahead")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+        Group {
+            if stage == .study {
+                label.buttonStyle(.glassProminent)
+            } else {
+                label.buttonStyle(.glass)
             }
         }
+        .controlSize(.large)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
     }
 }
 
-/// A deck: its name, what today's plan takes from it, the total, and the overdue cards the plan
-/// leaves for the days after; a tap opens its screen.
+/// A deck: its name and the cards of today's plan left in it, a ✓ when none; a tap opens its screen.
 /// The chevron is drawn by hand, as the row is a button, not a `NavigationLink`: the deck has
 /// to be opened before the push, see `PushedDecks`.
 ///
-/// A paused deck has no counts: its name and "Paused" in the secondary colour.
+/// A paused deck has no counts: its name in the secondary colour, in the section "Paused".
 struct DeckRow: View {
     var name: String
     var counts: StudyCounts?
-    var now: Date
     var isPaused = false
     var open: () -> Void
 
     var body: some View {
         Button(action: open) {
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(name)
-                        .foregroundStyle(isPaused ? .secondary : .primary)
-                    if let subtitle {
-                        subtitle
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    } else if counts == nil {
-                        // Until the deck is read: the line it will have, so the row doesn't grow and the list jump.
-                        Text("\(0) new · \(0) learning · \(0) review")
-                            .font(.subheadline)
-                            .redacted(reason: .placeholder)
-                    }
-                }
+                Text(name)
+                    .foregroundStyle(isPaused ? .secondary : .primary)
                 Spacer(minLength: 0)
                 if let counts {
                     if counts.total > 0 {
@@ -344,6 +342,11 @@ struct DeckRow: View {
                         Image(systemName: "checkmark")
                             .foregroundStyle(.secondary)
                     }
+                } else if !isPaused {
+                    // Until the deck is read: the number it will have.
+                    Text(0, format: .number)
+                        .monospacedDigit()
+                        .redacted(reason: .placeholder)
                 }
                 Image(systemName: "chevron.forward")
                     .font(.footnote.weight(.semibold))
@@ -353,14 +356,5 @@ struct DeckRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    private var subtitle: Text? {
-        if isPaused { return Text("Paused") }
-        guard let counts else { return nil }
-        if counts.total > 0 {
-            return Text(verbatim: counts.parts)
-        }
-        return counts.nextDue.map { Text("Next review \(Format.due($0, now: now))") }
     }
 }

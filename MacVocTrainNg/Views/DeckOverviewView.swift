@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// The first screen of a deck window, the iPhone's deck screen: what today's plan takes from the deck, Study This
-/// Deck (Push On once nothing is due), the practices, and the ways to the cards, the statistics and the options. A
+/// Deck (Learn 10 New Words once nothing is due), the practices, and the ways to the cards, the statistics and the options. A
 /// deck opens on it, so a window shows a deck to study before a table to edit.
 struct DeckOverviewView: View {
     @ObservedObject var document: VocabularyDocument
@@ -36,24 +36,17 @@ struct DeckOverviewView: View {
             }
 
             Section {
-                VStack(spacing: Spacing.hairline) {
-                    Button {
-                        start(counts.total > 0 ? .study : .pushOn)
-                    } label: {
-                        Text(counts.total > 0 ? "Study This Deck" : "Push On")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(counts.total > 0 ? Color.appAccent : .secondary)
-                    .controlSize(.extraLarge)
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!canEdit || !hasCards)
-                    if counts.total == 0 {
-                        Text("More reviews in the days ahead")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
+                Button {
+                    start(counts.total > 0 ? .study : .pushOn)
+                } label: {
+                    Text(counts.total > 0 ? "Study This Deck" : "Learn 10 New Words")
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(counts.total > 0 ? Color.appAccent : .secondary)
+                .controlSize(.extraLarge)
+                .keyboardShortcut(.defaultAction)
+                .disabled(!canEdit || !hasCards)
                 .padding(.vertical, Spacing.hairline)
             }
 

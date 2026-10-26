@@ -370,7 +370,7 @@ struct DocumentView: View {
 }
 
 /// The button of the toolbar, as the iPhone's deck screen has it: the prominent **Study** while the deck has cards
-/// in today's plan, **Push On** once it has none, ten new cards at once. The menu command Study ▸ Study is its twin.
+/// in today's plan, **Learn 10 New Words** once it has none, ten new cards at once. The menu command Study ▸ Study is its twin.
 private struct StartStudyButton: View {
     var dueCards: DueCardCounter
     var hasCards: Bool
@@ -383,9 +383,9 @@ private struct StartStudyButton: View {
                 .disabled(!hasCards)
                 .help("Study today's plan")
         } else {
-            Button("Push On") { action(.pushOn) }
+            Button("Learn 10 New Words") { action(.pushOn) }
                 .disabled(!hasCards)
-                .help("Ten new cards now, more reviews in the days ahead")
+                .help("Ten new cards now")
         }
     }
 }
@@ -410,8 +410,7 @@ private struct RingChip: View {
             ProgressRing(fraction: progress?.ring.fraction ?? 0, diameter: 22)
             if let progress, progress.streak.days > 0 {
                 HStack(spacing: 2) {
-                    Image(systemName: "flame.fill")
-                        .foregroundStyle(progress.isStreakLit ? Color.streak : Color.secondary)
+                    StreakFlame(state: progress.streakState)
                     Text(progress.streak.days, format: .number)
                         .monospacedDigit()
                         .fontWeight(.semibold)
@@ -422,7 +421,7 @@ private struct RingChip: View {
     }
 
     /// The day's headline, "≈ 2 min to keep your streak" or "Ring closed", then "14 of 20 cards", "· 12-day streak" when there is one,
-    /// and "≈ 28 words in memory · +15 today".
+    /// and "28 words in memory · +15 today".
     private var help: String {
         guard let progress else { return "" }
         var parts: [String] = []

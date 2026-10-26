@@ -172,6 +172,10 @@ struct StudyView: View {
         }
         // The ring in the bar plays what a card landing in it does.
         .onChange(of: toasts.shown) { motion.celebrate() }
+        // The streak step is done: the flame in the ring fills, and the ring bumps with it.
+        .onChange(of: ring.progress?.streakKeptToday) { old, new in
+            if old == false, new == true { motion.celebrate() }
+        }
         .onDisappear {
             GreekSpeech.shared.close()
             toasts.clear()
@@ -515,10 +519,10 @@ private struct StudyHeader: View {
     }
 }
 
-/// Today's done cards against the daily goal as a ring in the bar (`ProgressRing`), empty in its middle: the bar
-/// is calm, and the streak shows on the rests. It grows with the text size up to a ceiling, as the bar has only so
-/// much height. `shown` is what the ring shows as done when it is ahead of the figures, a grade having stepped it.
-/// `burstAt` starts the small burst around it.
+/// Today's done cards against the daily goal as a ring in the bar (`ProgressRing`), the streak's flame alone in its
+/// middle: outlined until the streak step, filled the moment the step is done. It grows with the text size up to a
+/// ceiling, as the bar has only so much height. `shown` is what the ring shows as done when it is ahead of the
+/// figures, a grade having stepped it. `burstAt` starts the small burst around it.
 struct StreamRing: View {
     var progress: DailyProgress?
     var shown: Double?
@@ -528,7 +532,8 @@ struct StreamRing: View {
     var body: some View {
         RingBurst(startedAt: burstAt, diameter: min(diameter, 44)) {
             ProgressRing(
-                fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44))
+                fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44), center: .flame(progress),
+                speaksCenter: true)
         }
     }
 }

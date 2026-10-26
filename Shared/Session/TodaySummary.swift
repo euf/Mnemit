@@ -1,151 +1,175 @@
 import SwiftUI
 import VocabCore
 
-/// The daily ring with the streak in its centre, what the day asks next in a headline and one detail line, and
-/// the words in memory. The streak's record, the ladder of memory and the rest are on the Progress screen.
-/// On Today of the iPhone, in its first row, and on the Mac's Today window, at its top: one picture of the day on
-/// both.
-struct SummaryRow: View {
+/// The one line under Today's ring, by the state of the day: "≈ 2 min to keep your streak" before the streak step,
+/// "20 cards left · ≈ 5 min" while the ring is open, "Ring closed · 3 left", "All done", "Nothing due · next tomorrow",
+/// and the day after a missed one "Close the ring to save your 12-day streak". The same on both apps.
+enum TodayHeadline {
+    /// - Parameters:
+    ///   - due: The cards of today's plan not done yet, "N cards left": not the cards that are due in all.
+    ///   - nextDue: When something comes back that today's plans leave out.
+    static func text(due: Int, progress: DailyProgress, nextDue: Date?, now: Date) -> String {
+        let ring = progress.ring
+        if progress.isStreakAtRisk {
+            return String(localized: "Close the ring to save your \(progress.streak.days)-day streak")
+        }
+        if due > 0 {
+            if ring.isGoalMet {
+                return [String(localized: "Ring closed"), String(localized: "\(due) left")].joined(separator: " · ")
+            }
+            if let title = RoundStatus(progress).line { return title }
+            // The cards to close the ring: the plan may hold more after a break, and those come after the ring.
+            let cards = ring.goal > 0 ? min(due, ring.goal - ring.done) : due
+            let time = DailyGoal.minutesLeft(cards: cards, secondsPerCard: progress.secondsPerCardLeft).map(Format.timeLeft(minutes:))
+            return ([String(localized: "\(cards) cards left")] + [time].compactMap { $0 }).joined(separator: " · ")
+        }
+        if ring.done > 0 { return String(localized: "All done") }
+        if let nextDue { return String(localized: "Nothing due · next \(Format.due(nextDue, now: now))") }
+        return String(localized: "Nothing due")
+    }
+
+    /// The lines the day will have, for the placeholders before the decks are read.
+    static let placeholder = [String(localized: "\(20) cards left"), Format.timeLeft(minutes: 5)].joined(separator: " · ")
+}
+
+/// A ring with the streak's number in it, for the hero of Today: the flame, the days large and "day streak" under
+/// them; at 0 days the outlined flame and "Start your streak". The ring is the day's goal, its thickness a tenth of
+/// its size. The middle scales its text down before it would leave the ring.
+struct StreakHeroRing: View {
+    var fraction: Double
+    /// The streak in days; 0 starts a streak. `nil` while the day is not read: placeholders.
+    var days: Int?
+    var state: StreakState
+    var diameter: CGFloat = 168
+
+    /// 18 pt at 168 pt.
+    private var lineWidth: CGFloat { diameter * 18 / 168 }
+
+    var body: some View {
+        ProgressRing(fraction: fraction, diameter: diameter, filling: .smooth(duration: 1.4), lineWidth: lineWidth)
+            .overlay { center }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: spoken))
+    }
+
+    private var spoken: String {
+        guard let days, days > 0 else { return String(localized: "Start your streak") }
+        return RingCenter.streak(days: days, state: state).spokenLabel ?? ""
+    }
+
+    /// "day streak": the plural form of "12 day streak" without its number, which stands large above it. A language
+    /// that does not put the number first shows the whole phrase.
+    static func caption(days: Int) -> String {
+        let phrase = String(localized: "\(days) day streak")
+        let number = days.formatted()
+        guard phrase.hasPrefix(number) else { return phrase }
+        return String(phrase.dropFirst(number.count)).trimmingCharacters(in: .whitespaces)
+    }
+
+    private var center: some View {
+        VStack(spacing: 2) {
+            StreakFlame(state: state)
+                .font(.system(size: 28 * diameter / 168, weight: .semibold))
+            if days == 0 {
+                Text("Start your streak")
+                    .font(.subheadline.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.6)
+            } else {
+                let shown = days ?? 12
+                Text(shown, format: .number.grouping(.never))
+                    .font(.largeTitle.bold())
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.3)
+                Text(verbatim: Self.caption(days: shown))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+            }
+        }
+        // The ring does not grow with the text: the middle stops growing at xxxLarge and scales down from there.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .frame(width: (diameter - 2 * lineWidth) * 0.72, height: (diameter - 2 * lineWidth) * 0.72)
+        .redacted(reason: days == nil ? .placeholder : [])
+    }
+}
+
+/// Today's hero: the ring with the streak in it, one headline for the state of the day, one gain line, and the
+/// week's rings. On the iPhone's Today at 168 pt, with the whole hero a button to Progress; the Mac's Today at
+/// its own size.
+struct TodayHero: View {
     /// The cards of the plan not done yet, "N cards left": not the cards that are due in all.
     var due: Int
-    /// Of `due`, the cards that were new when the day began.
-    var newDue = 0
     var progress: DailyProgress?
     /// When something comes back that today's plans leave out.
     var nextDue: Date?
     var now: Date
     /// `false` until the decks are read: the figures are placeholders then.
     var isLoaded: Bool
-    @Environment(\.dynamicTypeSize) var typeSize
-    @ScaledMetric(relativeTo: .title2) var diameter = 72
-    /// The ring's size before Dynamic Type: the Mac's Today window gives it more room.
-    var ringSize: CGFloat = 72
+    var ringSize: CGFloat = 168
+    var showsWeek = true
+    /// A chevron at the end of the week's row: this hero opens Progress.
+    var showsChevron = false
 
     var body: some View {
-        let layout =
-            typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-            : AnyLayout(HStackLayout(spacing: 16))
-        // The words in memory take the width of the row under the ring: beside it, on a 375 pt screen, "+15 today"
-        // would not fit on the line of the words.
-        VStack(alignment: .leading, spacing: 8) {
-            layout {
-                ProgressRing(
-                    fraction: progress?.ring.fraction ?? 0, diameter: min(diameter * ringSize / 72, ringSize * 4 / 3), center: RingCenter(progress),
-                    filling: .smooth(duration: 1.4))
-                VStack(alignment: .leading, spacing: 2) {
-                    if !isLoaded {
-                        placeholderLines
-                    } else {
-                        headline
-                            .font(.title2.weight(.semibold))
-                            .fixedSize(horizontal: false, vertical: true)
-                        detail
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .monospacedDigit()
-            }
-            if let memory = progress?.memory {
-                MemoryLine(memory: memory)
+        // 24 pt between the parts: the ring, the two lines, the week.
+        VStack(spacing: 24) {
+            StreakHeroRing(
+                fraction: progress?.ring.fraction ?? 0, days: isLoaded ? (progress?.streak.days ?? 0) : nil,
+                state: progress?.streakState ?? .open, diameter: ringSize)
+            VStack(spacing: 4) {
+                headline
+                    .font(.title3.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+                gain
                     .font(.subheadline)
                     .monospacedDigit()
-            } else if !isLoaded {
-                Text("≈ \(0) words in memory")
-                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
+            .multilineTextAlignment(.center)
+            .redacted(reason: isLoaded ? [] : .placeholder)
+            if showsWeek { week }
         }
-        .padding(.vertical, 8)
-        .redacted(reason: isLoaded ? [] : .placeholder)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
-    /// Until the decks are read, the lines the day will have, as placeholders: the headline and the cards take
-    /// their room, so nothing below moves when the figures come.
-    @ViewBuilder
-    private var placeholderLines: some View {
-        Text("Ring closed")
-            .font(.title2.weight(.semibold))
-        Text(verbatim: [String(localized: "\(12) of \(24) cards"), String(localized: "\(12) left")].joined(separator: " · "))
-            .font(.subheadline)
-    }
-
-    /// The cards left to close the ring, which "N cards left" counts while it is open: the plan may hold more after a
-    /// break, and those come after the ring.
-    private var toRing: Int {
-        guard let ring = progress?.ring, ring.goal > 0, ring.done < ring.goal else { return 0 }
-        return min(due, ring.goal - ring.done)
-    }
-
-    /// "≈ 7 min": the cards left to the ring at the learner's pace, once the decks are read.
-    private var timeLeft: String? {
-        guard let progress, let minutes = DailyGoal.minutesLeft(cards: toRing > 0 ? toRing : due, secondsPerCard: progress.secondsPerCardLeft)
-        else { return nil }
-        return Format.timeLeft(minutes: minutes)
-    }
-
-    private var isAtRisk: Bool { progress?.isStreakAtRisk ?? false }
-
-    /// What the day asks next: "≈ 2 min to keep your streak" before the first round, then the cards left with
-    /// their time, "Ring closed" once the ring is, "Close the ring to save your streak" while a missed day waits for it; nothing at all once no card is left.
     @ViewBuilder
     private var headline: some View {
-        if isAtRisk {
-            Text("Close the ring to save your streak")
-        } else if due > 0, let title = progress.flatMap({ RoundStatus($0).title }) {
-            Text(title)
-        } else if due > 0 {
-            let cardsLeft = Text("\(toRing > 0 ? toRing : due) cards left")
-            if let timeLeft {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        cardsLeft
-                        Text(verbatim: "· " + timeLeft)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    VStack(alignment: .leading, spacing: 0) {
-                        cardsLeft
-                        Text(verbatim: timeLeft)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            } else {
-                cardsLeft
-            }
-        } else if let ring = progress?.ring, ring.done > 0 {
-            Text("All done")
+        if isLoaded, let progress {
+            Text(verbatim: TodayHeadline.text(due: due, progress: progress, nextDue: nextDue, now: now))
         } else {
-            Text("Nothing due")
+            Text(verbatim: TodayHeadline.placeholder)
         }
     }
 
-    /// "12 of 24 cards": the done cards against the goal; once the ring is closed, "49 cards today · 3 left", what is
-    /// left of the plan. Before the first card of the day, yesterday's ring: the day turns at 04:00, and work done just
-    /// before it belongs to the day before, which Today shows until today's first card.
     @ViewBuilder
-    private var detail: some View {
-        if let ring = progress?.ring, ring.done == 0, let yesterday = progress?.yesterday {
-            if yesterday.closed {
-                Text("Yesterday's ring closed · \(yesterday.done) cards")
-            } else {
-                Text("Yesterday: \(yesterday.done) of \(yesterday.goal) cards")
-            }
-        } else if let ring = progress?.ring, due > 0, !ring.isGoalMet {
-            Text("\(ring.done) of \(ring.goal) cards")
-        } else if let ring = progress?.ring, due > 0 {
-            Text(verbatim: [String(localized: "\(ring.done) cards today"), String(localized: "\(due) left")].joined(separator: " · "))
-        } else if let ring = progress?.ring, ring.done > 0 {
-            Text("\(ring.done) cards today")
-        } else if due == 0, let nextDue {
-            Text("Next review \(Format.due(nextDue, now: now))")
+    private var gain: some View {
+        if let memory = progress?.memory, isLoaded {
+            MemoryLine(memory: memory)
+        } else if !isLoaded {
+            Text("\(412) words in memory")
         }
+    }
+
+    private var week: some View {
+        let loaded = isLoaded ? progress : nil
+        return WeekRings(week: loaded?.week.count == 7 ? loaded!.week : Array(repeating: nil, count: 7), today: loaded?.ring.fraction ?? 0, now: now)
+            .frame(maxWidth: .infinity)
+            .overlay(alignment: .trailing) {
+                if showsChevron {
+                    Image(systemName: "chevron.forward")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
+                }
+            }
     }
 }
 
-/// "≈ 28 words in memory · +15 today" on one line, or on the day a milestone was passed "50 words in memory!"
+/// "412 words in memory · +15 today" on one line, or on the day a milestone was passed "50 words in memory!"
 /// with a glyph in the accent: the accent is never small text. Where the line is too long, at a large type size,
 /// it is one text that wraps, not the gain stacked under the words.
 struct MemoryLine: View {
@@ -167,8 +191,8 @@ struct MemoryLine: View {
 }
 
 /// What Today's one button does next, named with the words of the rests: **Study** while the ring is open; **Catch
-/// Up** once the ring is closed and the plan has cards left; **Push On** once the day's stack is done, ten new
-/// cards at once. The iPhone's Today and the Mac's Today window say the same.
+/// Up** once the ring is closed and the plan has cards left; **Learn 10 New Words** (case `pushOn`) once the day's
+/// stack is done, ten new cards at once. The iPhone's Today and the Mac's Today window say the same.
 enum DayAction: Equatable {
     case study, catchUp, pushOn
 
@@ -187,7 +211,7 @@ enum DayAction: Equatable {
         switch self {
         case .study: "Study"
         case .catchUp: "Catch Up"
-        case .pushOn: "Push On"
+        case .pushOn: "Learn 10 New Words"
         }
     }
 }

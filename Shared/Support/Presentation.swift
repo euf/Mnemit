@@ -558,10 +558,10 @@ extension Color {
     /// tail to 3:1 on the surfaces and to 1.3:1 against the accent.
     static var dailyRingTail: Color { Color.appAccent.mix(with: .white, by: 0.25, in: .device) }
 
-    /// The streak's flame once today keeps it: orange, the one hue of the app that means the habit (red is Forgot,
-    /// the greens are recalled, indigo is the ring and the accent). `#E05A00` holds 3.7:1 on white and 3.3:1 on the
-    /// light grouped grey, `#FF9F0A` (system orange) 8:1 on the dark raised grey, above the 3:1 a glyph needs. A
-    /// streak not kept yet, or at risk, has a grey flame.
+    /// The streak's flame, filled once today keeps it and outlined in this colour when the streak is at risk: orange,
+    /// the one hue of the app that means the habit (red is Forgot, the greens are recalled, indigo is the ring and
+    /// the accent). `#E05A00` holds 3.7:1 on white and 3.3:1 on the light grouped grey, `#FF9F0A` (system orange)
+    /// 8:1 on the dark raised grey, above the 3:1 a glyph needs. A streak not kept yet has a grey outline.
     static let streak = Color(light: 0xE05A00, dark: 0xFF9F0A)
 
     /// The face of a flash card: a little off the background, so the card stands out

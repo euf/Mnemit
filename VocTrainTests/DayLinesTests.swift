@@ -45,19 +45,18 @@ struct DayLinesTests {
 
     @Test func theWordsInMemoryAreShownRoundedDownWithTheDaysGain() {
         let memory = MemoryEstimate(words: 28.9, wordsAtDayStart: 13.3)
-        #expect(line(memory.wordsLine) == "≈ 28 words in memory")
+        #expect(line(memory.wordsLine) == "28 words in memory")
         #expect(line(memory.gainLine) == "+16 today")
-        #expect(memory.line == "≈ 28 words in memory · +16 today")
-        #expect(line(memory.gainSentence) == "+16 words in memory today")
+        #expect(memory.line == "28 words in memory · +16 today")
         #expect(memory.milestoneLine == nil)
         // One word is a word.
-        #expect(line(MemoryEstimate(words: 1.5, wordsAtDayStart: 0).wordsLine) == "≈ 1 word in memory")
+        #expect(line(MemoryEstimate(words: 1.5, wordsAtDayStart: 0).wordsLine) == "1 word in memory")
     }
 
     @Test func aDayThatAddedNothingSaysNothingOfIt() {
         let memory = MemoryEstimate(words: 40, wordsAtDayStart: 40)
-        #expect(memory.line == "≈ 40 words in memory")
-        #expect(memory.gainLine == nil && memory.gainSentence == nil)
+        #expect(memory.line == "40 words in memory")
+        #expect(memory.gainLine == nil)
         // And before any word there is no line at all.
         #expect(MemoryEstimate(words: 0.4, wordsAtDayStart: 0).line == nil)
         #expect(MemoryEstimate(words: 0.4, wordsAtDayStart: 0).wordsLine == nil)

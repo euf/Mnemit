@@ -224,6 +224,67 @@ struct StudyScreenSnapshotTests {
         done.isHidden = true
     }
 
+    /// The rests with their buttons showing: the reveal of the lines is frozen at its end, as the buttons come last.
+    @Test(arguments: [false, true])
+    func restsWithTheirButtons(dark: Bool) async throws {
+        func shoot(_ model: StudyModel, _ ring: DailyRingModel, _ name: String) async throws {
+            let motion = StudyMotion(ring: ring)
+            motion.freezeRest(travel: 1, lines: 99)
+            let window = try await host(model, ring: ring, flight: CardFlight(), motion: motion, dark: dark)
+            try await Task.sleep(for: .milliseconds(300))
+            try write(window, name: name, dark: dark)
+            window.isHidden = true
+        }
+        // The first of two rounds is done: the streak is kept.
+        let (model, ring, document, undoManager) = try await prepareRound(done: 3)
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        await ring.refresh(documents: [document], delay: .zero).value
+        try await shoot(model, ring, "50-rest-streak-kept")
+
+        // The plan is done: the ring is closed, and no new card is left to learn.
+        model.continueRound()
+        grade(model, .easy, undoManager: undoManager)
+        await ring.refresh(documents: [document], delay: .zero).value
+        #expect(model.isResting && !model.isRoundRest)
+        try await shoot(model, ring, "51-rest-ring-closed")
+
+        // The plan is done and the deck has new cards beyond its limit: ten of them on request.
+        var options = LearningOptions()
+        options.newCardsPerSession = 1
+        let cards = (0..<15).map { Card(text: CardText(question: "q\($0)", answer: "x")!, created: created) }
+        let more = try VocabularyDocument(deck: Deck(learningOptions: options, cards: cards), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+        let moreUndo = UndoManager()
+        moreUndo.groupsByEvent = false
+        more.attachUndoManager(moreUndo)
+        let study = StudyModel(document: more)
+        for _ in 0..<options.steps {
+            grade(study, .good, undoManager: moreUndo)
+        }
+        let moreRing = DailyRingModel()
+        await moreRing.refresh(documents: [more], delay: .zero).value
+        let resting = StudyModel(document: more)
+        #expect(resting.isResting && resting.rest.extraNew != nil)
+        try await shoot(resting, moreRing, "52-rest-learn-new")
+    }
+
+    /// The bar's ring before and after the streak step: its flame is outlined, then filled.
+    @Test(arguments: [false, true])
+    func headerAroundTheStreakStep(dark: Bool) async throws {
+        let (model, ring, document, undoManager) = try await prepareRound(done: 3)
+        let before = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
+        try write(before, name: "53-header-before-step", dark: dark)
+        before.isHidden = true
+
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isRoundRest)
+        model.continueRound()
+        await ring.refresh(documents: [document], delay: .zero).value
+        let after = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
+        try write(after, name: "54-header-after-step", dark: dark)
+        after.isHidden = true
+    }
+
     /// A word that wraps to two lines, as the question and as the head of the answer, with an
     /// example sentence.
     @Test(arguments: [false, true])

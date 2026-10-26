@@ -61,8 +61,7 @@ struct ProgressScreen<Trailing: View>: View {
     private var streak: some View {
         VStack(alignment: .leading, spacing: Spacing.gap) {
             HStack(spacing: Spacing.tight) {
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(progress.isStreakLit ? Color.streak : Color.secondary)
+                StreakFlame(state: progress.streakState)
                     .accessibilityHidden(true)
                 Text("\(progress.streak.days)-day streak")
                     .monospacedDigit()

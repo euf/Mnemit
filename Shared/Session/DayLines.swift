@@ -48,12 +48,12 @@ struct RoundStatus: Equatable, Sendable {
 }
 
 extension MemoryEstimate {
-    /// "≈ 28 words in memory" for `words` shown, what the widget keeps of the estimate; `nil` while there are none.
+    /// "28 words in memory" for `words` shown, what the widget keeps of the estimate; `nil` while there are none.
     static func wordsLine(_ words: Int) -> LocalizedStringResource? {
-        words > 0 ? LocalizedStringResource("≈ \(words) words in memory") : nil
+        words > 0 ? LocalizedStringResource("\(words) words in memory") : nil
     }
 
-    /// "≈ 28 words in memory", the words the learner would recall now; `nil` while there are none to show.
+    /// "28 words in memory", the words the learner would recall now; `nil` while there are none to show.
     var wordsLine: LocalizedStringResource? { Self.wordsLine(shownWords) }
 
     /// "+15 today", what the day added; `nil` when it added nothing.
@@ -61,7 +61,7 @@ extension MemoryEstimate {
         shownGain > 0 ? LocalizedStringResource("+\(shownGain) today") : nil
     }
 
-    /// "≈ 28 words in memory · +15 today", or the first part alone.
+    /// "28 words in memory · +15 today", or the first part alone.
     var line: String? {
         guard let wordsLine else { return nil }
         return [String(localized: wordsLine), gainLine.map { String(localized: $0) }].compactMap { $0 }.joined(separator: " · ")
@@ -70,10 +70,5 @@ extension MemoryEstimate {
     /// "50 words in memory!" on the day the number passed a milestone.
     var milestoneLine: LocalizedStringResource? {
         milestoneReachedToday.map { LocalizedStringResource("\($0) words in memory!") }
-    }
-
-    /// "+15 words in memory today", for the screens at rest; `nil` when the day added nothing.
-    var gainSentence: LocalizedStringResource? {
-        shownGain > 0 ? LocalizedStringResource("+\(shownGain) words in memory today") : nil
     }
 }

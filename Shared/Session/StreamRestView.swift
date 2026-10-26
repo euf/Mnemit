@@ -1,7 +1,7 @@
 import SwiftUI
 import VocabCore
 
-/// New cards beyond the daily limits, as Push On adds them to a stack that is done for the day.
+/// New cards beyond the daily limits, as Learn 10 New Words adds them to a stack that is done for the day.
 struct ExtraNewCards {
     /// At most `StudyStream.newCardChunk`.
     var cards: Int
@@ -42,12 +42,11 @@ struct NextDeck {
     var study: () -> Void
 }
 
-/// The short stop in the stream, twice a day at most (`references/learning-flow.md`). "Streak kept" after
-/// the first round: the streak, the words the day has added, the cards left to the ring; Keep Going or Done
-/// for Now. "Ring closed" when today's cards are done: the cards and the answers they took, the share
-/// recalled, the words, the streak and the week's rings, then one way on, the most useful first: Catch Up
-/// when the plan has cards left, else Push On, new cards beyond the daily limit, whose reviews make the
-/// next days harder. A finished practice ends with its figures.
+/// The short stop in the stream, twice a day at most (`references/learning-flow.md`). After the first round the
+/// title is the streak, "12-day streak", with the filled flame large, and the cards left to the ring; Keep Going or
+/// Done for Now. "Ring closed" when today's cards are done: the medal, one gain line and the week's rings, then one
+/// way on, the most useful first: Catch Up when the plan has cards left, else Learn 10 New Words, new cards beyond
+/// the daily limit, whose reviews make the next days harder. A finished practice ends with its figures.
 struct StreamRestView: View {
     var rest: StreamRest
     var progress: DailyProgress?
@@ -148,11 +147,7 @@ struct StreamRestView: View {
             if rest.isPracticeOnly {
                 Text("Practice complete")
             } else if let end = rest.roundEnd, !end.closesRing {
-                if let milestone = milestoneToday {
-                    Text(verbatim: milestone.title)
-                } else {
-                    Text("Streak kept")
-                }
+                streakTitle
             } else if progress?.ring.isGoalMet == true {
                 if progress?.records.last?.savedStreak == true {
                     Text("Streak saved")
@@ -165,6 +160,21 @@ struct StreamRestView: View {
         }
         .font(.title.weight(.semibold))
         .multilineTextAlignment(.center)
+    }
+
+    /// The streak, "12-day streak", with the filled flame large; on the day a streak milestone passed, its name.
+    private var streakTitle: some View {
+        HStack(spacing: Spacing.tight) {
+            StreakFlame(state: .kept)
+                .font(.largeTitle)
+            if let milestone = milestoneToday {
+                Text(verbatim: milestone.title)
+            } else if let days = progress?.streak.days, days > 0 {
+                Text("\(days)-day streak")
+            } else {
+                Text("Streak kept")
+            }
+        }
     }
 
     /// What was earned today, oldest first: the achievements of the last day of `DailyProgress.records`.
@@ -226,7 +236,7 @@ struct StreamRestView: View {
 
     private var lines: [Line] {
         if rest.isPracticeOnly { return practiceLines }
-        if let end = rest.roundEnd, !end.closesRing { return [streakLine, medalLine, leftLine].compactMap { $0 } }
+        if let end = rest.roundEnd, !end.closesRing { return [medalLine, leftLine].compactMap { $0 } }
         return dayLines
     }
 
@@ -247,8 +257,8 @@ struct StreamRestView: View {
         if let medalLine { lines.append(medalLine) }
         if let milestone = progress?.memory.milestoneLine {
             lines.append(Line("milestone") { Text(milestone).foregroundStyle(Color.appAccent) })
-        } else if let gain = progress?.memory.gainSentence {
-            lines.append(Line("gain") { Text(gain) })
+        } else if let gain = progress?.memory.line {
+            lines.append(Line("gain") { Text(verbatim: gain) })
         } else {
             let cards = progress?.ring.done ?? rest.recap.cards
             if cards > 0 { lines.append(Line("cards") { Text("\(cards) cards today") }) }
@@ -257,22 +267,6 @@ struct StreamRestView: View {
             lines.append(Line("week") { WeekRings(week: progress.week, today: progress.ring.fraction, now: rest.now).padding(.vertical, Spacing.tight) })
         }
         return lines
-    }
-
-    /// "12-day streak" under the title of the Streak kept rest, with the flame lit: the moment the streak grows.
-    private var streakLine: Line? {
-        guard let days = progress?.streak.days, days > 0 else { return nil }
-        return Line("streak") {
-            Label {
-                Text("\(days)-day streak")
-            } icon: {
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(Color.streak)
-            }
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(.primary)
-            .padding(.bottom, Spacing.hairline)
-        }
     }
 
     /// "12 cards left · ≈ 4 min": what is left to the ring.
@@ -313,8 +307,7 @@ struct StreamRestView: View {
         }
     }
 
-    /// The stack is done for the day: Done, and under it Push On when the decks have new cards left. It
-    /// raises the stakes: the new cards come back as reviews in the next days.
+    /// The stack is done for the day: Done, and under it Learn 10 New Words when the decks have new cards left.
     private var planEndButtons: some View {
         VStack(spacing: Spacing.gap) {
             if let nextDeck {
@@ -322,12 +315,7 @@ struct StreamRestView: View {
             }
             button("Done", prominent: nextDeck == nil, action: onDone)
             if rest.extraNew != nil {
-                VStack(spacing: Spacing.hairline) {
-                    button("Push On", prominent: false, action: onAddNewCards)
-                    Text("More reviews in the days ahead")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                button("Learn 10 New Words", prominent: false, action: onAddNewCards)
             }
         }
     }
@@ -366,7 +354,7 @@ struct WeekRings: View {
         HStack(spacing: 10) {
             ForEach(week.indices, id: \.self) { index in
                 VStack(spacing: 4) {
-                    ProgressRing(fraction: fraction(index), diameter: 20)
+                    ProgressRing(fraction: fraction(index), diameter: 22)
                         .opacity(week[index] == nil ? 0.35 : 1)
                     Text(verbatim: letter(index))
                         .font(.caption2.weight(index == week.count - 1 ? .bold : .regular))

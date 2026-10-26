@@ -30,11 +30,14 @@ struct HomeSnapshotTests {
     }
 
     /// The day cut into four rounds, which end at 8, 16, 24 and 30 cards, with `done` of them done, and the words in memory.
-    static func roundsProgress(done: Int, streak: Int, memory: MemoryEstimate = MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2)) -> DailyProgress {
+    static func roundsProgress(
+        done: Int, streak: Int, repairCards: Int? = nil, memory: MemoryEstimate = MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2)
+    ) -> DailyProgress {
         let rounds = DayRounds(otherCards: 30, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), seconds: 480)
         return DailyProgress(
-            ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: streak, repairCards: nil), pace: Pace(newCard: 30, otherCard: 15),
-            roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0, memory: memory)
+            ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: streak, repairCards: repairCards), pace: Pace(newCard: 30, otherCard: 15),
+            roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0, memory: memory,
+            week: streak > 0 ? [true, true, false, true, true, true, false] : [nil, nil, nil, nil, nil, nil, false])
     }
 
     func today(
@@ -171,7 +174,7 @@ struct HomeSnapshotTests {
     }
 
     @Test func todayWithCardsDueAtLargeTypeSizes() async throws {
-        try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)), types: [.xxxLarge, .accessibility3])
+        try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)), types: [.xxxLarge, .accessibility3, .accessibility5])
     }
 
     /// A deck paused: it moves to a "Paused" section at the bottom, in the secondary colour, with no counts, and the
@@ -193,6 +196,11 @@ struct HomeSnapshotTests {
     /// The last round done with cards still left: the ring is closed and the rest waits in Catch Up.
     @Test func todayWithTheRingClosed() async throws {
         try await shoot("today-closed", today(counts: leftCounts(done: 28), progress: Self.roundsProgress(done: 31, streak: 13)))
+    }
+
+    /// The day after a missed one: the streak survives only if the ring closes, and its flame says so.
+    @Test func todayWithTheStreakAtRisk() async throws {
+        try await shoot("today-at-risk", today(counts: leftCounts(done: 3), progress: Self.roundsProgress(done: 3, streak: 12, repairCards: 15)))
     }
 
     /// A milestone of the words in memory passed today.

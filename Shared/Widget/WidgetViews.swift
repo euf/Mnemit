@@ -60,7 +60,7 @@ extension WidgetState {
         due > 0 ? roundStatus?.title : nil
     }
 
-    /// "≈ 28 words in memory".
+    /// "28 words in memory".
     fileprivate var wordsLine: LocalizedStringResource? {
         wordsInMemory.flatMap { MemoryEstimate.wordsLine($0) }
     }
@@ -107,7 +107,7 @@ private struct HeadlineLine: View {
     }
 }
 
-/// The flame and the days of the streak, for the lock screen's rectangle, which has no ring; the flame is lit once
+/// The flame and the days of the streak, for the lock screen's rectangle, which has no ring; the flame is filled once
 /// today keeps the streak.
 private struct StreakLine: View {
     var state: WidgetState
@@ -115,8 +115,7 @@ private struct StreakLine: View {
     var body: some View {
         if state.streakDays > 0 {
             HStack(spacing: 4) {
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(state.isStreakKept ? Color.streak : Color.secondary)
+                StreakFlame(state: state.isStreakKept ? .kept : .open)
                     .widgetAccentable(state.isStreakKept)
                 Text("\(state.streakDays)-day streak")
             }

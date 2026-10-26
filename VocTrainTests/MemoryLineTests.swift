@@ -5,7 +5,7 @@ import UIKit
 @testable import VocTrain
 @testable import VocabCore
 
-/// The words in memory and the gain of the day on Today: "≈ 28 words in memory · +15 today" is one line where
+/// The words in memory and the gain of the day on Today: "28 words in memory · +15 today" is one line where
 /// the row has its width, 310 pt on a 375 pt screen, and one wrapping text where it has not.
 @MainActor
 struct MemoryLineTests {
