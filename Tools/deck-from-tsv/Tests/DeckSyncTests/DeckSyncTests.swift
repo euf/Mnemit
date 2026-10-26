@@ -267,6 +267,29 @@ struct SyncRunTests {
         #expect(throws: SyncError.self) { try SyncRun.run(options([tsv.path, deckURL.path, "--suspend-missing"]), now: now) }
     }
 
+    /// An app with the deck open hears of a write of the tool, a coordinated one, and of none of a dry run.
+    @Test func theWriteIsCoordinatedSoOpenAppsHearOfIt() throws {
+        let directory = try scratch()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let deckURL = directory.appendingPathComponent("Greek.mnemit")
+        _ = try writeDeck(at: deckURL, questions: [("a", "α")])
+        let tsv = directory.appendingPathComponent("cards.tsv")
+        try "note\tkind\tquestion\tanswer\thint\nα\tproduction\ta\tα\t\nβ\tproduction\tb\tβ\t\n".write(to: tsv, atomically: true, encoding: .utf8)
+        let app = OpenApp(deckURL)
+        NSFileCoordinator.addFilePresenter(app)
+        defer { NSFileCoordinator.removeFilePresenter(app) }
+
+        _ = try SyncRun.run(options([tsv.path, deckURL.path, "--dry-run"]), now: now)
+        Thread.sleep(forTimeInterval: 0.5)
+        #expect(app.heard == 0)
+
+        _ = try SyncRun.run(options([tsv.path, deckURL.path]), now: now)
+        let deadline = Date().addingTimeInterval(10)
+        while app.heard == 0, Date() < deadline { Thread.sleep(forTimeInterval: 0.05) }
+        #expect(app.heard > 0)
+        #expect(try DeckFile.decode(FileWrapper(url: deckURL, options: .immediate)).cards.count == 2)
+    }
+
     @Test func newDeckIsCreatedWithoutBackup() throws {
         let directory = try scratch()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -316,4 +339,25 @@ struct SyncRunTests {
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-order", "random"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--bogus"]) }
     }
+}
+
+/// Stands for an app that has the deck open: counts what it hears of a writer.
+final class OpenApp: NSObject, NSFilePresenter, @unchecked Sendable {
+    let presentedItemURL: URL?
+    let presentedItemOperationQueue = OperationQueue()
+    private let count = NSLock()
+    private var hearings = 0
+
+    init(_ url: URL) { presentedItemURL = url }
+
+    var heard: Int { count.withLock { hearings } }
+
+    private func hear() { count.withLock { hearings += 1 } }
+
+    func relinquishPresentedItem(toWriter writer: @escaping @Sendable ((@Sendable () -> Void)?) -> Void) {
+        hear()
+        writer(nil)
+    }
+
+    func presentedItemDidChange() { hear() }
 }
