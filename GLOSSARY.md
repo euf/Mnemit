@@ -1,7 +1,7 @@
 # Mnemit glossary
 
-A vocabulary trainer: the learner answers a question (typing on the Mac, or revealing the answer
-in flashcard mode and on the iPhone), grades themself, and FSRS plans when they see the card again.
+A vocabulary trainer: the learner sees a question, reveals the answer, grades themself, and FSRS plans
+when they see the card again.
 
 Each entry gives the term in code, which is also the English word on screen unless the entry says
 otherwise, then the German word on screen (DE) and the Russian word for talking with EF (RU). The
@@ -21,14 +21,8 @@ The side of a Card that is shown and asked.
 _Avoid_: front, Vorderseite
 
 **Answer** (DE Antwort; RU «ответ»):
-The expected answer of a Card; it may hold several Alternatives.
-_Avoid_: back, solution, Rückseite, Lösung; "answer" for the Response or the Review
-
-**Alternatives** (DE Alternativen; RU «варианты ответа»):
-Several equivalent parts of an Answer, separated by `/`. Their order doesn't matter; naming only one
-part answers Incomplete. An Answer or Response made only of `/` and whitespace, such as `/`, is one
-single Alternative as a whole.
-_Avoid_: variants, synonyms
+The side of a Card the learner recalls and then reveals.
+_Avoid_: back, solution, Rückseite, Lösung; "answer" for the Review
 
 **Hint** (DE Hinweis; RU «подсказка»):
 An optional addition shown together with the Question.
@@ -49,42 +43,15 @@ _Avoid_: ignored, disabled, deferred, buried
 Asking a Card once and grading it.
 _Avoid_: answer, repetition, rep, Wiederholung, «повторение»
 
-**Response** (DE Eingabe; RU «ввод»):
-What the learner types in reply to a Question.
-_Avoid_: answer, "your answer"
-
 **Review mode** (DE Abfrageart; RU «способ оценки»):
-How a Review went: Typed (DE Getippt), the learner types a Response and the app suggests a Grade;
-or Revealed (DE Aufgedeckt), the learner reveals the Answer and gives the Grade without a Response.
-Both apps study Revealed: question, Show Answer, grade; neither has a field for a typed Response. Every
-Review the app logs is Revealed, and a Typed Review of an upstream deck still reads from its log (the card's
-history marks it "Typed"). A Revealed Review counts in full, like any Review in FSRS.
+How a Review is logged: Revealed (DE Aufgedeckt), the learner reveals the Answer and gives the Grade, which is
+every Review the apps log; or Typed (DE Getippt), a value that logs of upstream decks still carry (the card's
+history marks it "Typed"). Both apps ask by revealing: question, Show Answer, grade. A Revealed Review counts
+in full, like any Review in FSRS.
 _Avoid_: flashcard mode (for the review mode)
 
-**Check result** (DE Prüfergebnis; RU «результат проверки»):
-How the Response matches the Answer: Correct, Incomplete, Almost correct or Wrong. It only
-suggests a Grade.
-_Avoid_: rating, verdict
-
-**Correct** (DE Richtig):
-The Response contains all Alternatives of the Answer.
-_Avoid_: "correct" for a Grade, see Recalled
-
-**Incomplete** (DE Unvollständig):
-The Response contains only part of the Alternatives and nothing wrong.
-
-**Almost correct** (DE Fast richtig):
-The Response misses the Answer only by a few typos or by letter case. How many typos depends on the
-length of the Alternative: none under 4 characters, one from 4, two from 8.
-_Avoid_: typo (as a result)
-
-**Wrong** (DE Falsch):
-The Response is neither Correct, Incomplete nor Almost correct, or it is empty.
-_Avoid_: "wrong" for a Grade, see Again
-
 **Grade** (DE Bewertung; RU «вариант оценки»):
-How well the learner knew a Card: Again, Hard, Good or Easy. The app suggests a Grade; the learner
-decides.
+How well the learner knew a Card: Again, Hard, Good or Easy. The learner decides it.
 _Avoid_: rating, mark, score
 
 **Again** (on the button: Forgot; DE Nochmal; RU «забыл»):
@@ -236,11 +203,11 @@ _Avoid_: drill, training, mistake round
 ### MacVocTrain 1
 
 **MacVocTrain 1**:
-The predecessor app; its documents can be imported as a Deck.
+The predecessor app. Mnemit reads none of its documents.
 
 **Level** (RU «уровень»):
-A card's stage in MacVocTrain 1, which fixed its next interval. The import turns it into a
-Stability. Use only in the context of the import.
+A card's stage in MacVocTrain 1, which fixed its next interval. Stability takes its place in Mnemit
+(`docs/adr/0001-fsrs-instead-of-levels.md`).
 
 ## Mnemit: the day, the ring, the streak
 
@@ -400,8 +367,8 @@ _Avoid_: Greek → translation, translation → Greek, direction (alone, on scre
 **How It Works** (DE „So funktioniert es“; RU «Как это работает»):
 The screen that tells the learner what the ring, Catch Up and Learn 10 New Words are, in three plain
 sentences, and then the numbers under the day: the plan, the day's time, the pace, the streak, the words in
-memory, the swipes (iPhone) and the FSRS figures of each deck. The last row of the Progress screen; on the Mac
-a window (Study menu). The types keep the old name: `HowTodayWorks`, `HowTodayWorksView`.
+memory, the swipes (iPhone), the options and the FSRS figures of each deck. The last row of the Progress screen; on the
+Mac a sheet of the Progress page. The types keep the old name: `HowTodayWorks`, `HowTodayWorksView`.
 _Avoid_: How Today Works, statistics (those are of a deck)
 
 **New words / Words I know** (the choice **Words in this deck**; DE „Neue Wörter“ / „Wörter, die ich kenne“,
@@ -463,6 +430,17 @@ reviews are due like any and come back into the plan. The pause travels with the
 merge takes it from the version that changed them last, and an older app version drops the key, so the deck is
 no longer paused there.
 _Avoid_: suspended deck (a card is suspended, `Card.isSuspended`), archived deck, «заморозка»
+
+**Sidebar** (the Mac's; RU «боковая панель»):
+The left column of the Mac's one window: Today with the cards left of the day as its badge, Progress, then the
+decks in the sections Decks, Paused and Other Decks, each with its cards left as the badge. The pages are
+chosen there; the stream takes the whole window and hides it until Done (`Shell`, `SidebarContent`).
+_Avoid_: deck list, navigator, «список колод»
+
+**Other Decks** (on screen: "Other Decks" / „Weitere Stapel“; RU «другие колоды»):
+The sidebar section for decks opened from outside the Mnemit folder, from Finder or Open Deck…, until the app
+quits. A deck of the folder is never listed there.
+_Avoid_: recent decks, external decks
 
 **Media** (on screen: not shown yet; RU «медиа»):
 The images and sounds of a card: at most one image and one sound on each side (`Card.questionImage`,
