@@ -88,11 +88,18 @@ struct TodayPageContent: View {
 struct TodayPage: View {
     var shell: Shell
     var newDeck: () -> Void
-    /// The medals of earlier days this Mac never celebrated, earned on the iPhone, say, once as toasts.
-    @State private var toasts = MedalToasts()
+    /// The medals of earlier days this Mac never celebrated, earned on the iPhone, say, once as toasts, under the button.
+    @State private var toasts: MedalToasts
     /// The month's screen, shown on the first open of a new month after a month with study, as on the iPhone.
     @State private var monthRecap: MonthRecap?
     @AppStorage("shownMonthRecap") private var shownMonthRecap = ""
+
+    /// - Parameter toasts: The medals' toasts; a test passes one with a toast frozen in.
+    init(shell: Shell, newDeck: @escaping () -> Void, toasts: MedalToasts? = nil) {
+        self.shell = shell
+        self.newDeck = newDeck
+        _toasts = State(initialValue: toasts ?? MedalToasts())
+    }
 
     var body: some View {
         let ring = shell.ring
@@ -110,7 +117,7 @@ struct TodayPage: View {
                     .help("Study today's plan")
             }
         }
-        .medalToast(toasts)
+        .medalToast(toasts, at: .inset)
         .onChange(of: ring.progress, initial: true) {
             toasts.offer(ring.progress, earlierDays: true)
             showMonthRecapIfDue()

@@ -58,6 +58,25 @@ extension DeckFileTests {
             await f.finish()
         }
 
+        /// A medal's toast on Today stands under the Study button and never over the ring: in a window that is tall, and in
+        /// the least one, where the page gives up the room under the button and scrolls.
+        @Test func todayWithAMedalToast() async throws {
+            let f = try ShellFixture(decks: [("Greek A1–A2", 14), ("Greek B1", 6)])
+            try await f.waitUntilRead(decks: 2)
+            try await f.waitFor("the ring is worked out") { f.shell.isDayReady }
+            let toasts = MedalToasts(store: CelebratedMedals(defaults: nil), frozen: Achievement(kind: .comeback, day: 0))
+            for (name, height) in [("tall", CGFloat(760)), ("short", 520)] {
+                let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: height), styleMask: [.titled], backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
+                window.appearance = NSAppearance(named: .aqua)
+                window.contentView = NSHostingView(rootView: TodayPage(shell: f.shell, newDeck: {}, toasts: toasts).brandTint().frame(width: 760, height: height))
+                defer { window.close() }
+                try await Task.sleep(for: .seconds(1))
+                try write(try #require(window.contentView), to: "shell-today-toast-\(name)-light.png")
+            }
+            await f.finish()
+        }
+
         /// Help ▸ Keyboard Shortcuts outside a stream: the twelve keys of the menus over the window at its least size,
         /// where they have to fit.
         @Test func theKeyboardShortcutsOfTheMenusInTheSmallestWindow() async throws {

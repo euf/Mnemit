@@ -60,29 +60,49 @@ final class MedalToasts {
     }
 }
 
+/// Where a medal's toast stands: never over the ring, the card or a button (`references/product-model.md`, "Surfaces").
+enum MedalToastPlace {
+    /// Over the top edge of the view, under the bar: a view that holds nothing of those there.
+    case top
+    /// Over the bottom edge of the view, which leaves room there: the Mac's stream, under the grade buttons.
+    case bottom
+    /// Below the content, which gives up that room while the toast stands: Today, under the button (the Mac) or above the
+    /// bar that holds it (the iPhone).
+    case inset
+
+    fileprivate var edge: VerticalEdge { self == .top ? .top : .bottom }
+}
+
 extension View {
-    /// The toasts of `toasts` over the top of the view, under the bar.
-    func medalToast(_ toasts: MedalToasts) -> some View {
-        overlay(alignment: .top) { MedalToastLayer(toasts: toasts) }
+    /// The toasts of `toasts` where the view's layout leaves room for them (`MedalToastPlace`).
+    @ViewBuilder
+    func medalToast(_ toasts: MedalToasts, at place: MedalToastPlace = .top) -> some View {
+        switch place {
+        case .top, .bottom:
+            overlay(alignment: place == .top ? .top : .bottom) { MedalToastLayer(toasts: toasts, edge: place.edge) }
+        case .inset:
+            safeAreaInset(edge: .bottom, spacing: 0) { MedalToastLayer(toasts: toasts, edge: .bottom) }
+        }
     }
 }
 
-/// The toast on screen: it slides down and fades in, and goes up and out; with Reduce Motion it only fades. A
+/// The toast on screen: it slides in from its edge and fades in, and goes back out; with Reduce Motion it only fades. A
 /// success haptic plays as it comes, and VoiceOver hears the medal's title.
 private struct MedalToastLayer: View {
     var toasts: MedalToasts
+    var edge: VerticalEdge
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
             if let medal = toasts.current {
                 MedalToast(kind: medal.kind)
+                    .padding(edge == .top ? .top : .bottom, Spacing.tight)
                     .id(medal)
-                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                    .transition(reduceMotion ? .opacity : .move(edge: edge == .top ? .top : .bottom).combined(with: .opacity))
             }
         }
         .animation(reduceMotion ? .easeInOut(duration: 0.25) : .smooth(duration: 0.4), value: toasts.current)
-        .padding(.top, Spacing.tight)
         .allowsHitTesting(false)
         .sensoryFeedback(.success, trigger: toasts.shown)
         .onChange(of: toasts.shown) {

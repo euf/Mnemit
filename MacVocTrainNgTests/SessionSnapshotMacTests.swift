@@ -27,11 +27,11 @@ struct SessionSnapshotMacTests {
             pace: pace, roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0)
     }
 
-    private func write(_ model: SessionViewModel, name: String, done: Int? = nil) async throws {
+    private func write(_ model: SessionViewModel, name: String, done: Int? = nil, toasts: MedalToasts? = nil, height: CGFloat = 600) async throws {
         for dark in [false, true] {
             let ring = DailyRingModel(progress: done.map(progress(done:)))
-            let hosting = NSHostingView(rootView: SessionView(model: model, ring: ring, onClose: {}).frame(width: 800, height: 600).brandTint())
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
+            let hosting = NSHostingView(rootView: SessionView(model: model, ring: ring, toasts: toasts, onClose: {}).frame(width: 800, height: height).brandTint())
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: height), styleMask: [.titled], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
             window.contentView = hosting
@@ -55,6 +55,20 @@ struct SessionSnapshotMacTests {
         try await write(model, name: "1-asking", done: 3)
         model.reveal()
         try await write(model, name: "2-revealed", done: 30)
+        withExtendedLifetime(undoManager) {}
+    }
+
+    /// A medal's toast in the stream stands at the foot of the window, under the grade buttons: over neither the header's
+    /// ring, nor the card, nor a button, in a window of 600 pt (the test's) and in a taller one.
+    @Test func medalToastAtTheFoot() async throws {
+        let words = [("το σπίτι", "дом · the house"), ("ο δρόμος", "дорога · the road"), ("η αστυνομία", "полиция · the police"), ("αφού", "после того как · after")]
+        let document = try VocabularyDocument(deck: Deck(cards: words.map { Card(question: $0.0, answer: $0.1) }))
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, rounds: RoundGuide(ends: [6, 12]))
+        model.reveal()
+        let toasts = MedalToasts(store: CelebratedMedals(defaults: nil), frozen: Achievement(kind: .comeback, day: 0))
+        try await write(model, name: "6-toast", done: 12, toasts: toasts)
+        try await write(model, name: "6-toast-tall", done: 12, toasts: toasts, height: 760)
         withExtendedLifetime(undoManager) {}
     }
 

@@ -468,8 +468,8 @@ private struct StudyHeader: View {
         .animation(.easeOut(duration: 0.2), value: motion.showsRest && motion.travel >= 1)
     }
 
-    /// A small ring, empty inside, then the flame by the state of the streak and the minutes to the next moment of the day
-    /// ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done). For a moment after a done card
+    /// A small ring, empty inside, then the flame by the state of the streak with its days ("🔥 12") and the minutes to the next
+    /// moment of the day ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done). For a moment after a done card
     /// the interval it was given, "in 8 days", takes the place of the text. The ring is first, so it does not move when the
     /// text changes its width.
     @ViewBuilder
@@ -485,9 +485,7 @@ private struct StudyHeader: View {
                 }
             if let progress = ring.progress {
                 let step = NextStep(progress)
-                StreakFlame(state: progress.streakState)
-                    .font(.body.weight(.semibold))
-                    .accessibilityLabel(Text(verbatim: step.spoken))
+                StreakCount(step: step)
                 ZStack(alignment: .leading) {
                     if let minutes = step.minutes {
                         Text(verbatim: Format.timeLeft(minutes: minutes))

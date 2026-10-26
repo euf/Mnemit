@@ -57,7 +57,7 @@ struct TodayScreen: View {
     var showAnkiWeb: () -> Void = {}
 
     /// The medals earned on earlier days and not celebrated yet, say on the Mac, come once as a toast over the list.
-    @State private var toasts = MedalToasts()
+    @State var toasts = MedalToasts()
 
     /// Whether the decks were read: until then the figures are placeholders.
     private var isRead: Bool {
@@ -201,7 +201,7 @@ struct TodayScreen: View {
         .refreshable { await refresh() }
         .onChange(of: progress, initial: true) { celebrateMissedMedals() }
         .onChange(of: isDayReady) { celebrateMissedMedals() }
-        .medalToast(toasts)
+        .medalToast(toasts, at: .inset)
     }
 
     /// The day's one action, in the bottom bar beside the search: named by what it does next, prominent while the
