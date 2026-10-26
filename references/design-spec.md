@@ -1,6 +1,6 @@
 # Mnemit design spec: home, deck screen, study stream, accent, Mac
 
-Visual spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on macOS 27). Read from code: `StartScreen`, `DeckView`, `StudyCountsView`, `StudyView`, `GradeChoice`, `Presentation`, `CardFlight`, Mac `DocumentView`, `SessionView`, `WelcomeView`, `AppCommands`, `DailyProgress.swift` (`DailyGoal`, `DailyRing`, `Streak`, `DailyProgress.evaluate(_:at:calendar:)` over all decks) and `StudyStream.swift`. What the screens show and do: `screens.md`. No GUI was run for this spec.
+Visual spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on macOS 27). Read from code: `StartScreen`, `DeckView`, `StudyCountsView`, `StudyView`, `GradeChoice`, `Presentation`, `CardFlight`, Mac `ShellView`, `SessionView`, `AppCommands`, `DailyProgress.swift` (`DailyGoal`, `DailyRing`, `Streak`, `DailyProgress.evaluate(_:at:calendar:)` over all decks) and `StudyStream.swift`. What the screens show and do: `screens.md`. No GUI was run for this spec.
 
 ## 0. How to read this
 
@@ -20,7 +20,7 @@ Visual spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac
 | 5 | One accent, **system indigo** `#5856D6` in light and dark; Increase Contrast `#3634A3` (light) and `#6563E6` (dark). | Red means Forgot and the greens mean recalled, so the accent is neither; green reads as Excel and terracotta as Claude (owner, 21.10.2026). The icon tile is indigo too. Numbers in §5. | Change the values in the three `AccentColor.colorset` files (iPhone, Mac, widget). |
 | 6 | Raise the deployment targets to **iOS 26 / macOS 26**. | Only the owner's devices run the app: iOS 27, macOS 27, built with Xcode 26.3. `safeAreaBar`, `.glassProminent`, `Button(role: .close)`, `ToolbarSpacer` need 26. | Keep 17 / 14, wrap five call sites in `#available` with `.safeAreaInset` and `.borderedProminent`. |
 | 7 | Large title **Today**. The app name appears nowhere on the screen. | The HIG advises against naming a window after the app and asks for titles under 15 characters; large titles are the iOS pattern [H:toolbars]. | `.navigationBarTitleDisplayMode(.inline)`. |
-| 8 | Mac: the deck window's toolbar gets the ring chip and a Study button, prominent while the deck has cards due, else Push On (§6.2); the Today window (`WelcomeWindow`, `TodayWindowContent`) is the Mac's Today. Settings stay in the app menu. | A document window shows one deck, so the decks of Today live in the Today window. | Remove the chip. |
+| 8 | Mac: one window of a sidebar and pages (§6). Today, Progress and the decks sit in the sidebar; a deck's page has the strip with Study This Deck (Learn 10 New Words once nothing is left) and a toolbar of Cards \| Statistics, Add Cards and Learning Options. Settings stay in the app menu. | The Mac's day covers every deck, so one window shows the day and the decks together. | The tag `pre-single-window` holds the document-window app. |
 
 ### Diagnosis of the current screens
 
@@ -104,7 +104,7 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + hero about 33
 | Deck unreadable (iCloud) | row without counts | row stays tappable; the stream cover shows the existing failure view |
 | Accessibility sizes (`isAccessibilitySize`) | the headline wraps and the list scrolls; at AX5 the hero keeps its order | unchanged |
 
-The ring and every line beside it count cards; reviews do not enter. The goal, the done cards, the cards left, the headline (`RoundStatus`), the minutes and the pace are defined in `daily-ring.md`; what the lines say is in `screens.md`, Today. In the small widget the headline sits under the ring (56 pt) and takes two lines where it does not fit.
+The ring and every line beside it count cards; reviews do not enter. The goal, the done cards, the cards left, the headline (`RoundStatus`), the minutes and the pace are defined in `daily-ring.md`; what the lines say is in `screens.md`, Today. In the small widget the headline sits under the ring (64 pt, 56 pt with a time line, 48 pt at risk) and takes two lines where it does not fit; at risk it is the line Today shows, up to three lines in the subheadline font.
 
 ### 2.5 Budget
 
@@ -401,12 +401,11 @@ Every tail ratio meets the test's thresholds; the lowest on a surface is 3.08 (l
 
 | Place | Ring | Middle |
 |---|---|---|
-| Today (`TodayHero`) | 168 pt (the Mac's Today window 96 pt) | flame over the days |
+| Today (`TodayHero`) | 168 pt (the Mac's Today page 200 pt) | flame over the days |
 | Progress (`ProgressScreen`) | 220 pt | flame over the days |
 | Rest screen (`StreamRestView`) | 96 pt | flame over the days |
-| Widget, small and medium | 56 or 64 pt, 76 pt | flame over the days |
+| Widget, small and medium | 64, 56 or 48 pt, 60 pt | flame over the days |
 | Study bar (`StreamRing`) | 30 pt, `@ScaledMetric(relativeTo: .subheadline)`, at most 44 | the flame alone |
-| Mac toolbar chip (`RingChip`) | 22 pt | empty; the flame and the days stand beside the ring |
 | Mac session header (`DailyRingView`) | 28 pt | empty |
 
 VoiceOver: a ring with the streak in its middle reads the state, "12-day streak, kept today", "not kept yet" or "at risk"; the Today hero is one element. `DailyRingView` reads "Daily Goal" while its middle is empty, and "14 / 36" as its value. `DailyRingView` has no popover and is no button. `ProgressRing` is otherwise hidden from accessibility, as the text beside it says the figures; the study bar's ring sits in the combined element with the figures.
@@ -417,18 +416,17 @@ Pictures: `VocTrainTests/RingTests.swift` (`TEST_RUNNER_STUDY_SHOTS_DIR`) writes
 
 ### 6.1 Hierarchy
 
-Level 0 Today (all decks; on the Mac the Today window, `TodayWindowContent`, which stays open beside the deck windows) → level 1 the deck (the iPhone's deck screen; on the Mac the deck document window with Cards, Statistics, Learning Options).
+Level 0 is Today and Progress in the sidebar, which cover every deck; level 1 is a deck's page (the iPhone's deck screen), chosen in the same sidebar under Decks, Paused or Other Decks. The Mac has one window, so no level has a second one; the stream takes that window whole, sidebar away, until Done.
 
-### 6.2 Deck window toolbar and session header
+### 6.2 Window, toolbar and stream header
 
-Toolbar order, left to right: segmented `Cards | Statistics` (principal) · ring chip · **Study** (`.borderedProminent`; **Push On** once the deck has no cards due) · fixed space · Add Lesson Words · Learning Options.
-
-- Ring chip (`RingChip`): `ProgressRing(diameter: 22)`, empty in the middle, with the flame (`flame.fill`, lit in `Color.streak`) and the days beside it; `.help` holds the figures ("≈ 2 min to keep your streak · 14 of 20 cards · 12-day streak · ≈ 28 words in memory"), `.sharedBackgroundVisibility(.hidden)` (an indicator takes no button background). It counts every deck of the Mnemit folder, the open ones as their documents have them.
-- Study: `Button("Study")` (`StartStudyButton`: Study while the deck has cards in today's plan, else Push On, ten new cards at once) without count and without the `graduationcap` label. `ToolbarSpacer(.fixed)` between it and the symbol buttons: a text button next to symbol buttons reads as one control [H:toolbars]. The menu command Study ▸ Study (⌘L) is the toolbar item's menu twin [H:toolbars].
-- Session header (`SessionView.header`): `DailyRingView(progress:, showsStreak: false)`, empty in the middle as the iPhone's study bar is, with the iPhone bar's figures beside it ("≈ 4 min" while the goal is open, "36 cards today" once it is met), the mistakes counter and Edit Card…; Done ends the session.
+- Window: a `NavigationSplitView` with `.listStyle(.sidebar)`, the sidebar 200 to 320 pt wide (240 ideal), the window at least 760 x 520 pt, titled by the page. Sidebar symbols: Today `circle.circle`, Progress `chart.bar.xaxis`, a deck `rectangle.stack`, a paused deck `pause.circle`. The badge is the cards left of today's plan, neutral like the counts everywhere. The (+) menu (`plus`, borderless) sits under the list.
+- Toolbar by page: Today has the day's button at the right (`.borderedProminent`, accent for Study, grey for Catch Up and Learn 10 New Words) and the search field. A deck's page has the segmented `Cards | Statistics` (principal), Add Cards (`text.badge.plus`) and Learning Options (`slider.horizontal.3`), and on Cards the Details button (`sidebar.trailing`, the inspector); the table carries its own search field. The window has no ring chip and no Study button in the toolbar of a deck.
+- Strip (`DeckPageContent.strip`): under the toolbar of a deck, the headline (`.title3.weight(.semibold)`: "14 cards today", a check and "Done · next review tomorrow", "Paused") at the left and one `.borderedProminent` large button at the right: **Study This Deck** in the accent while the plan has cards left in the deck, else **Learn 10 New Words** in grey, ten new cards at once. ⌘L is the day's action from any page and ⌥⌘L the deck's; neither is the twin of a toolbar item [H:toolbars].
+- Session header (`SessionView.header`): `DailyRingView(progress:, showsStreak: false)`, empty in the middle as the iPhone's study bar is, with the iPhone bar's figures beside it ("≈ 4 min" while the goal is open, "36 cards today" once it is met), Undo and the More menu; Done ends the stream and brings the sidebar back.
 - Spacing: `GradeChoice` gap 12 on Mac too; height stays 38 (HIG default Mac control 28, minimum 20 [H:accessibility]).
 - Settings: the `Settings` scene and ⌘, stay; no settings button in the toolbar [H:settings]. A daily-goal setting, if one is added, becomes a pane there.
-- Status bar (`CardListView.StatusBar`) keeps its Today counts line, neutral.
+- Status bar (`CardListView.StatusBar`): the number of cards, "N cards", or "M of N cards" while filtered; the counts of the day are in the filter strip above.
 
 ## 7. Checks, sources
 
@@ -440,14 +438,14 @@ Toolbar order, left to right: segmented `Cards | Statistics` (principal) · ring
 | Deck screen | counts with zeros, paused, practice rows present and absent, AX3 |
 | Stream | question, revealed, grade area height equal in both stages, 4-line question, 135-character answer, AX1 and AX3, landscape |
 | Contrast | gate test table, all four appearances |
-| Mac | deck window toolbar at the minimum window width 720 (items must not overflow by default [H:toolbars]), Graphite and Multicolor accent |
+| Mac | the window at its minimum 760 x 520 (a deck page's toolbar with the inspector open, the shortcuts sheet; items must not overflow by default [H:toolbars]), Today, a deck and Progress in light and dark, Graphite and Multicolor accent |
 
 ### 7.2 UNVERIFIED
 
 - All rendering: glass prominent button label colour and height, `safeAreaBar` with a `List`, principal toolbar ring, press feedback of a `.plain` button in a list row, concentric card corners. iOS 27 behaviour: the installed SDK is 26.2 (Xcode 26.3).
 - Fitness and Reminders layouts (ring left, metrics right, counts trailing in My Lists) are from memory; only the facts in [A:fitness] were read.
 - `.buttonStyle(.borderedProminent)` giving the prominent glass look in toolbars (the HIG names the `.prominent` style, the API mapping is from memory).
-- Deck window toolbar overflow at width 720 with the new items.
+- A deck page's toolbar overflow at the window's minimum width 760 with the inspector open.
 - That `minimumScaleFactor` does not re-track text.
 
 ### 7.3 Sources (opened 2026-10-21)
@@ -472,4 +470,4 @@ Toolbar order, left to right: segmented `Cards | Statistics` (principal) · ring
 - [U:loaf] https://useyourloaf.com/blog/iphone-13-screen-sizes/ (third party, not Apple)
 - [U:nilcoalescing] https://nilcoalescing.com/blog/MultipleButtonsInListRows/
 - [G] `~/Code/GUI-APPS.md` §6 (8 / 16 ms budget), §11 (right-aligned numbers, tabular digits), §12 (contrast gate, system accent on macOS)
-- Code: `/Users/eugene/Code/Mnemit/VocTrain/Views/StartScreen.swift`, `DeckView.swift`, `StudyCountsView.swift`, `VocTrain/Session/StudyView.swift`, `Shared/Session/GradeChoice.swift`, `Shared/Session/CardFlight.swift`, `Shared/Support/Presentation.swift`, `MacVocTrainNg/Views/DocumentView.swift`, `Session/SessionView.swift`, `Welcome/WelcomeView.swift`, `App/AppCommands.swift`; card data `~/Documents/greek-lessons/vocab/cards-a1a2.tsv`, `cards-b1.tsv`.
+- Code: `/Users/eugene/Code/Mnemit/VocTrain/Views/StartScreen.swift`, `DeckView.swift`, `StudyCountsView.swift`, `VocTrain/Session/StudyView.swift`, `Shared/Session/GradeChoice.swift`, `Shared/Session/CardFlight.swift`, `Shared/Support/Presentation.swift`, `MacVocTrainNg/Shell/ShellView.swift`, `Shell/DeckPage.swift`, `Views/Session/SessionView.swift`, `App/AppCommands.swift`; card data `~/Documents/greek-lessons/vocab/cards-a1a2.tsv`, `cards-b1.tsv`.
