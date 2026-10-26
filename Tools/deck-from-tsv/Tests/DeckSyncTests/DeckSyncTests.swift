@@ -267,7 +267,7 @@ struct SyncRunTests {
         #expect(throws: SyncError.self) { try SyncRun.run(options([tsv.path, deckURL.path, "--suspend-missing"]), now: now) }
     }
 
-    /// An app with the deck open hears of a write of the tool, a coordinated one, and of none of a dry run.
+    /// An app with the deck open is asked to give the file up for the tool's write, as for any coordinated writer, and for no dry run.
     @Test func theWriteIsCoordinatedSoOpenAppsHearOfIt() throws {
         let directory = try scratch()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -341,23 +341,20 @@ struct SyncRunTests {
     }
 }
 
-/// Stands for an app that has the deck open: counts what it hears of a writer.
+/// Stands for an app that has the deck open: counts the writers it was asked to give the file up for. Only a
+/// coordinated write asks; the changes of the file system it hears of anyway are not counted.
 final class OpenApp: NSObject, NSFilePresenter, @unchecked Sendable {
     let presentedItemURL: URL?
     let presentedItemOperationQueue = OperationQueue()
     private let count = NSLock()
-    private var hearings = 0
+    private var writers = 0
 
     init(_ url: URL) { presentedItemURL = url }
 
-    var heard: Int { count.withLock { hearings } }
-
-    private func hear() { count.withLock { hearings += 1 } }
+    var heard: Int { count.withLock { writers } }
 
     func relinquishPresentedItem(toWriter writer: @escaping @Sendable ((@Sendable () -> Void)?) -> Void) {
-        hear()
+        count.withLock { writers += 1 }
         writer(nil)
     }
-
-    func presentedItemDidChange() { hear() }
 }
