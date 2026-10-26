@@ -163,8 +163,8 @@ struct TodayScreen: View {
                 // The whole hero is a button to Progress; its week row ends in the chevron the deck rows draw too.
                 Button(action: showProgress) {
                     TodayHero(progress: isDayReady ? progress : nil, now: now, isLoaded: isDayReady, showsChevron: true)
-                    .padding(.vertical, 8)
-                    .contentShape(Rectangle())
+                        .padding(.vertical, 8)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(progress == nil)
