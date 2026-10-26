@@ -96,44 +96,52 @@ private struct DayStep: View {
     @State private var fill = 0.0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Spacer()
-            HStack(spacing: 20) {
-                ZStack {
-                    ForEach((1...3).reversed(), id: \.self) { level in
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.cardSurface)
-                            .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.035 * Double(level))) }
-                            .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(.opaqueSeparator)) }
-                            .frame(width: 56 - 6 * CGFloat(level), height: 72)
-                            .offset(y: 5 * CGFloat(level))
+        VStack(spacing: 0) {
+            // Scrolls at the largest text sizes, so Continue stays in reach; short, it sits in the middle.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 20) {
+                        ZStack {
+                            ForEach((1...3).reversed(), id: \.self) { level in
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color.cardSurface)
+                                    .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.035 * Double(level))) }
+                                    .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(.opaqueSeparator)) }
+                                    .frame(width: 56 - 6 * CGFloat(level), height: 72)
+                                    .offset(y: 5 * CGFloat(level))
+                            }
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color.cardSurface)
+                                .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(.opaqueSeparator)) }
+                                .frame(width: 56, height: 72)
+                        }
+                        ProgressRing(fraction: fill, diameter: 72, filling: .smooth(duration: 1.6))
                     }
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.cardSurface)
-                        .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(.opaqueSeparator)) }
-                        .frame(width: 56, height: 72)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+                    .padding(.bottom, 32)
+                    Text("One stack a day")
+                        .font(.title.bold())
+                        .padding(.bottom, 16)
+                    VStack(alignment: .leading, spacing: 14) {
+                        row("rectangle.stack", Text("Mnemit lays out a few minutes' worth of cards every day."))
+                        row("circle.circle", Text("Recall a card and the ring moves."))
+                        row("flame.fill", Text("Two minutes keep your streak. Close the ring and the day is done."))
+                        row("chart.bar.fill", Text("Words climb from New to Mastered as they stick."))
+                    }
                 }
-                ProgressRing(fraction: fill, diameter: 72, filling: .smooth(duration: 1.6))
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity)
-            .accessibilityHidden(true)
-            .padding(.bottom, 32)
-            Text("One stack a day")
-                .font(.title.bold())
-                .padding(.bottom, 16)
-            VStack(alignment: .leading, spacing: 14) {
-                row("rectangle.stack", Text("Mnemit lays out a few minutes' worth of cards every day."))
-                row("circle.circle", Text("Recall a card and the ring moves."))
-                row("flame.fill", Text("Two minutes keep your streak. Close the ring and the day is done."))
-                row("chart.bar.fill", Text("Words climb from New to Mastered as they stick."))
-            }
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.hidden)
+            .defaultScrollAnchor(.center, for: .alignment)
             Button(action: next) {
                 Text("Continue")
                     .frame(maxWidth: .infinity, minHeight: 36)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .padding(.top, 16)
         }
         .padding(20)
         .task {

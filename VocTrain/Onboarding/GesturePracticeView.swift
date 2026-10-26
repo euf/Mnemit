@@ -195,6 +195,8 @@ struct GesturePracticeView: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
+            // The line takes the height it needs at the largest text sizes; the card gives way.
+            .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .top)
         .accessibilityElement(children: .combine)
