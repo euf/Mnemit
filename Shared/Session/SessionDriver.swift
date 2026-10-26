@@ -63,7 +63,7 @@ final class SessionDriver {
     /// When the card being asked would be asked next after each grade, if given now; `nil`
     /// in practice, which schedules nothing, and without a card.
     var gradeIntervals: [Grade: ReviewInterval]? {
-        guard case let .study(study) = mode, let card = currentCard else { return nil }
+        guard case .study = mode, let card = currentCard else { return nil }
         let scheduler = Scheduler(learningOptions: document.deck.learningOptions, calendar: document.calendar)
         return scheduler.previewIntervals(of: card, at: document.clock.now)
     }
