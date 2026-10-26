@@ -175,7 +175,7 @@ Every surface is the entities above and nothing else.
   5 due · 4 new · 3 learning", zero parts left out. The Mac's deck strip and sidebar badges use the same rule.
 - **Reminders** say "≈ 2 min" always: the time to keep the streak, not the length of the day.
 - **The first showing** of a new card has two wide buttons side by side, Don't know and Know, as tall as the
-  two rows of the four buttons they replace; their keys are 2 and 4 on the Mac.
+  two rows of the four buttons they replace; on the Mac their keys are ← or 1 (Don't know) and → or 3 (Know); ↓ ↑ 2 4 still give Hard and Easy.
 - **Progress totals** run Days studied, Rings closed, Words learned; the ring's size line reads "Your ring: 8 min a
   day · started at 2.5", or without the start while the ring has not moved; words in memory sit in the Memory section.
 - **The sentence** has no form without a streak beyond "Start your streak · ≈ 2 min" and the closed "All done for
