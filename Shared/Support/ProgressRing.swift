@@ -3,7 +3,7 @@ import VocabCore
 
 /// The streak's state on screen, which shape and colour both say: `flame` outlined in secondary grey until today's
 /// streak step is done, `flame.fill` in `Color.streak` after, and, the day after a missed one, an outline in
-/// `Color.streak` until the ring closes.
+/// `Color.streak` followed by an `exclamationmark` until the ring closes.
 enum StreakState: Equatable {
     /// Today's streak step is not done.
     case open
@@ -13,56 +13,83 @@ enum StreakState: Equatable {
     case atRisk
 }
 
-/// The streak's flame, drawn by the state: the one sign of the streak on every screen. The size is the caller's font.
+/// The streak's flame, drawn by the state: the one sign of the streak on every screen, always outside a ring. At risk
+/// the outline is followed by an `exclamationmark`, so the state shows without its colour (vibrant and tinted
+/// widgets keep one colour). The size is the caller's font.
 struct StreakFlame: View {
     var state: StreakState
 
     var body: some View {
-        Image(systemName: state == .kept ? "flame.fill" : "flame")
-            .symbolRenderingMode(.monochrome)
-            .foregroundStyle(state == .open ? Color.secondary : Color.streak)
+        HStack(spacing: 0) {
+            Image(systemName: state == .kept ? "flame.fill" : "flame")
+                .foregroundStyle(state == .open ? Color.secondary : Color.streak)
+            if state == .atRisk {
+                Image(systemName: "exclamationmark")
+                    .foregroundStyle(Color.streak)
+            }
+        }
+        .symbolRenderingMode(.monochrome)
     }
 }
 
-/// What stands in the middle of a ring: the streak, a flame over its days, the flame alone, or nothing. The flame is
-/// the streak's sign everywhere it shows (Today, the rests, the widget, the Mac), by `StreakState`.
+/// What stands in the middle of a ring: the ring's own quantity, the cards left to close it, or a check once it is
+/// closed. The size of the ring decides how much of it shows (`shown(at:)`): the figure from 56 pt on, its caption
+/// from 88 pt, nothing in the rings of the bars and of the week. The streak is never in a ring (`StreakChip`).
 enum RingCenter: Equatable {
     case none
-    /// The streak in days, 1 or more.
-    case streak(days: Int, state: StreakState)
-    /// The flame alone, for the ring in the study bar, which has no room for the days.
-    case flame(days: Int, state: StreakState)
+    /// The cards that close the ring, 1 or more.
+    case cardsLeft(Int)
+    /// The ring is closed.
+    case done
 
-    /// The streak of `progress`; nothing at 0 days, and nothing before the first evaluation.
+    /// The figure from this diameter on.
+    static let figureDiameter: CGFloat = 56
+    /// "cards left" under the figure from this diameter on.
+    static let captionDiameter: CGFloat = 88
+
+    /// The middle of `progress`' ring: the cards left, a check once none are; nothing before the first evaluation.
     init(_ progress: DailyProgress?) {
-        guard let progress, progress.streak.days > 0 else {
+        guard let progress else {
             self = .none
             return
         }
-        self = .streak(days: progress.streak.days, state: progress.streakState)
+        let left = progress.cardsToClose
+        self = left > 0 ? .cardsLeft(left) : .done
     }
 
-    /// The flame alone for `progress`: outlined before the first evaluation and before the first streak.
-    static func flame(_ progress: DailyProgress?) -> RingCenter {
-        .flame(days: progress?.streak.days ?? 0, state: progress?.streakState ?? .open)
+    /// What a ring of `diameter` shows of this middle: all of it, or nothing where there is no room.
+    func shown(at diameter: CGFloat) -> RingCenter {
+        diameter >= Self.figureDiameter ? self : .none
     }
 
-    /// The days: "12".
+    /// Whether a ring of `diameter` puts the caption under the figure.
+    func showsCaption(at diameter: CGFloat) -> Bool {
+        if case .cardsLeft = self { return diameter >= Self.captionDiameter }
+        return false
+    }
+
+    /// The figure: "12".
     var text: String? {
-        guard case .streak(let days, _) = self else { return nil }
-        return days.formatted(.number.grouping(.never))
+        guard case .cardsLeft(let count) = self else { return nil }
+        return count.formatted(.number.grouping(.never))
     }
 
-    /// What VoiceOver reads for the ring, before the progress: "12-day streak, kept today".
+    /// "cards left", the caption under the figure, in the plural form of the count: the phrase "8 cards left" without its
+    /// number, which stands large above it. A language that does not put the number first shows the whole phrase.
+    var caption: String? {
+        guard case .cardsLeft(let count) = self else { return nil }
+        let phrase = String(localized: "\(count) cards left (caption)")
+        let number = count.formatted()
+        guard phrase.hasPrefix(number) else { return phrase }
+        return String(phrase.dropFirst(number.count)).trimmingCharacters(in: .whitespaces)
+    }
+
+    /// What VoiceOver reads for the ring: "12 cards left", "Ring closed".
     var spokenLabel: String? {
         switch self {
         case .none: nil
-        case .streak(let days, let state), .flame(let days, let state):
-            switch state {
-            case .kept: String(localized: "\(days)-day streak, kept today")
-            case .open: String(localized: "\(days)-day streak, not kept yet")
-            case .atRisk: String(localized: "\(days)-day streak, at risk")
-            }
+        case .cardsLeft(let count): String(localized: "\(count) cards left")
+        case .done: String(localized: "Ring closed")
         }
     }
 }
@@ -78,6 +105,12 @@ extension DailyProgress {
     var isStreakAtRisk: Bool {
         streak.repairCards != nil && !ring.isGoalMet
     }
+
+    /// The cards that close the ring, what its middle counts and "N cards left" meant on Today: 0 once it is closed.
+    /// The plan may hold more, after a break, and those come after the ring.
+    var cardsToClose: Int {
+        ring.isGoalMet ? 0 : max(0, min(cardsLeft, ring.goal - ring.done))
+    }
 }
 
 enum DailyRingFigure {
@@ -90,16 +123,16 @@ enum DailyRingFigure {
 }
 
 /// Today's cards done against the goal as an `ActivityRing` from a lighter tint of the accent to the
-/// accent, with the figure of `RingCenter` in the middle.
+/// accent, with the cards left or a check in the middle where the ring is big enough (`RingCenter`).
 ///
-/// Decoration only, the text beside it says the figures; the caller combines them for
-/// VoiceOver. `fraction` animates, except under Reduce Motion.
+/// One ring for every surface. Without `speaksCenter` it is decoration, the text beside it says the figures; the caller
+/// combines them for VoiceOver. `fraction` animates, except under Reduce Motion.
 struct ProgressRing: View {
     /// 0.4 is two fifths of the goal; 1 and more is a closed ring.
     var fraction: Double
     var diameter: CGFloat
     var center: RingCenter = .none
-    /// Whether VoiceOver reads what is in the middle ("Day streak: 5 days") as part of the element this ring
+    /// Whether VoiceOver reads what is in the middle ("12 cards left") as part of the element this ring
     /// sits in, for a caller that combines the ring with its figures. Otherwise the ring is hidden.
     var speaksCenter = false
     /// How the ring fills to a new fraction: quick in the study bar, slow enough to watch on Today.
@@ -121,7 +154,7 @@ struct ProgressRing: View {
             RingCenterLabel(center: center, diameter: diameter, lineWidth: lineWidth)
         }
         .frame(width: diameter, height: diameter)
-        if speaksCenter, let spoken = center.spokenLabel {
+        if speaksCenter, let spoken = center.shown(at: diameter).spokenLabel {
             ring
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(verbatim: spoken))
@@ -131,39 +164,39 @@ struct ProgressRing: View {
     }
 }
 
-/// The streak in the middle of a ring: a flame over the days where the ring is big enough for both, the days alone
-/// in a small one, or the flame alone.
+/// The middle of a ring: the cards left as a large figure with "cards left" under it where the ring is big enough for
+/// both, the figure alone in a smaller one, or a check once the ring is closed. The text scales with the ring, not
+/// with the text size: the ring does not grow with it either.
 private struct RingCenterLabel: View {
     var center: RingCenter
     var diameter: CGFloat
     var lineWidth: CGFloat
 
-    /// From this diameter on, the flame stands over the days.
-    private static let flameDiameter: CGFloat = 44
-
     var body: some View {
-        switch center {
+        switch center.shown(at: diameter) {
         case .none:
             EmptyView()
-        case .flame(_, let state):
-            StreakFlame(state: state)
-                .font(.system(size: diameter * 0.42, weight: .semibold))
-        case .streak(_, let state):
-            if let text = center.text {
-                let showsFlame = diameter >= Self.flameDiameter
-                VStack(spacing: -diameter * 0.03) {
-                    if showsFlame {
-                        StreakFlame(state: state)
-                            .font(.system(size: diameter * 0.23, weight: .semibold))
-                    }
-                    Text(verbatim: text)
-                        .font(.system(size: diameter * (showsFlame ? 0.3 : 0.38), weight: .bold, design: .rounded))
-                        .monospacedDigit()
+        case .done:
+            Image(systemName: "checkmark")
+                .font(.system(size: diameter * 0.36, weight: .bold))
+                .foregroundStyle(Color.dailyRing)
+        case .cardsLeft:
+            let showsCaption = center.showsCaption(at: diameter)
+            VStack(spacing: -diameter * 0.02) {
+                Text(verbatim: center.text ?? "")
+                    .font(.system(size: diameter * (showsCaption ? 0.32 : 0.4), weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                if showsCaption, let caption = center.caption {
+                    Text(verbatim: caption)
+                        .font(.system(size: max(10, diameter * 0.085)))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .frame(width: diameter - 2 * lineWidth, height: diameter - 2 * lineWidth)
             }
+            .frame(width: diameter - 2 * lineWidth, height: diameter - 2 * lineWidth)
         }
     }
 }

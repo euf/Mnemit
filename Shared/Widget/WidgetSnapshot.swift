@@ -200,11 +200,12 @@ struct WidgetState: Equatable, Sendable {
     /// break, and those come after the ring.
     var toRing: Int { goal > 0 && done < goal ? min(due, goal - done) : 0 }
 
-    /// The ring and the streak as `DailyRingView` takes them; at risk, the streak owes the cards that close the ring.
+    /// The ring and the streak as `DailyRingView` takes them, with the cards left that its middle counts; at risk, the
+    /// streak owes the cards that close the ring.
     var progress: DailyProgress {
         DailyProgress(
             ring: DailyRing(done: done, goal: goal), streak: Streak(days: streakDays, repairCards: isStreakAtRisk ? max(1, toRing) : nil),
-            streakKeptToday: isStreakKept)
+            cardsLeft: due, streakKeptToday: isStreakKept)
     }
 
     /// The line Today shows under its ring for these figures (`TodayHeadline`); the snapshot has no "next due".

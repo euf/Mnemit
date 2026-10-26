@@ -63,7 +63,7 @@ struct RingSnapshotMacTests {
     func sessionHeader(dark: Bool) throws {
         let view = HStack(spacing: 24) {
             ForEach(Self.fractions, id: \.self) { fraction in
-                DailyRingView(progress: progress(fraction), showsStreak: false)
+                DailyRingView(progress: progress(fraction), showsCenter: false)
             }
         }
         try write(view, name: "2-session", dark: dark)

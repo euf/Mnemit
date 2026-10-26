@@ -32,16 +32,15 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
 
 - The hero (`TodayHero`, `Shared/Session/TodaySummary.swift`), the whole of it a button that opens the
   Progress screen:
-  - The ring (`StreakHeroRing`, 168 pt) with the flame in the middle and the streak's days under it, "day
-    streak" in caption; at 0 days the outlined flame and "Start your streak". The flame has three states
-    (`StreakState`): a grey outline until the streak step is done, filled in `Color.streak` once it is, an
-    orange outline at risk (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open).
-    VoiceOver says the state: "12-day streak, kept today", "not kept yet", "at risk".
-  - One headline for the state of the day (`TodayHeadline.text`): "≈ 2 min to keep your streak" before the
-    streak step, then "20 cards left · ≈ 5 min", "Ring closed · 3 left", "All done", "Nothing due · next
-    tomorrow", and the day after a missed one "Close the ring to save your 12-day streak". Rounds never
-    show by number.
-  - One gain line (`MemoryLine`): "412 words in memory · +15 today"; on the day a milestone is passed
+  - The ring (`HeroRing`, 168 pt) with the cards left in the middle, large, and "cards left" under them; a
+    `checkmark` once the ring is closed. No flame and no days in the ring.
+  - The streak chip (`StreakChip`) under the ring, the flame and one sentence by state: kept "12-day streak",
+    open "≈ 2 min to keep your 12-day streak", at risk "Close the ring to save your 12-day streak", no streak
+    "Start your streak · ≈ 2 min". The flame has three states (`StreakState`): a grey outline until the streak
+    step is done, filled in `Color.streak` once it is, an orange outline with an `exclamationmark` at risk
+    (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open). VoiceOver says the state.
+  - One gain line (`MemoryLine`, led by `TodayLead`): "≈ 5 min · 412 words in memory · +15 today"; with the ring closed
+    "3 left" leads, on a day without cards "Nothing due · next tomorrow"; on the day a milestone is passed
     "50 words in memory!". At large text sizes the single text wraps.
   - The week's seven rings (`WeekRings`, 22 pt), with a chevron at the end of the row.
   - The day turns at 04:00, and work done just before it, on either device, belongs to the day before.
@@ -68,7 +67,7 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   the deck opened by slot.
 - Undo of edits: `UndoWatch` (a bar button while there is something to undo) and shake (`StartScreen`,
   when no sheet is open).
-- **Empty state** (no decks): the empty hero ring ("Start your streak"), a line of explanation, **New Deck**
+- **Empty state** (no decks): the empty hero ring (`HeroRing(progress: nil)`), a line of explanation, **New Deck**
   (`.glassProminent`, large) and **Use iCloud Drive Folder** (`.glass`, large), at most 320 pt wide, with
   Shared Decks on AnkiWeb as a link under them; Open Deck… is in the **…** menu. No mention of the Mac.
 - The month's screen (`MonthRecapSheet`) shows once on the first open of a month after a month with
@@ -80,9 +79,10 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
 - The hero of Today is a button with a chevron; it pushes `ProgressScreen` (`DeckRoute.progress`, no deck).
   `learning-flow.md` has the contract; everything comes from `DailyProgress.records` and `.achievements`.
 - Sections in an inset-grouped list, top to bottom:
-  - The hero: `StreakHeroRing` at 220 pt (the flame and the days in it) with `MemoryLine` under it, one
-    element for VoiceOver; the totals Longest streak, Rings closed, Days studied, Cards done, two by two.
-    The hero has no headline and no week: Today has them.
+  - The streak as a statistic (`StreakStatistic`): the flame, the days large, "day streak", and "Best: 21" only when
+    the best run is longer than the current one; the `MemoryLine` under it, one element for VoiceOver; the totals
+    Rings closed, Days studied, Cards done, three in a row (one column at the accessibility sizes). No ring: the
+    day's ring is on Today.
   - The calendar, "Last 13 weeks" once there are 13 and "Calendar" before (`WeeksGrid`): rows of seven
     cells, a row per week, the oldest first, Monday to Sunday under the weekday initials; a day is a ring,
     closed full, kept at its share of the goal, a missed day an empty track, before the first study day
@@ -121,9 +121,9 @@ sizes: `design-spec.md` §4.
   remembers each step's deck). Rounds count what was done in all lanes
   (`SessionDriver.setDoneElsewhere`); the stopwatch runs only in the lane whose card is on screen.
   Tests: `MultiDeckStudyTests`.
-- Header: the close button, the small ring (`StreamRing`) with the streak's flame alone in its middle (an
-  outline until the streak step is done, filled from then on; the ring bumps and bursts when it fills) and
-  "≈ 4 min" beside it while the goal is open (after a done card, for 1.5 s, its interval: "tomorrow", "in 8
+- Header, left, right after the close button: the small ring (`StreamRing`, empty inside), the streak's flame by
+  its state (an outline until the streak step is done, filled from then on) and
+  "≈ 4 min" beside them while the goal is open (after a done card, for 1.5 s, its interval: "tomorrow", "in 8
   days"), "36 cards today" once the goal is met, an Undo button, the menu "More". A practice names itself
   and has no ring. Closing loses nothing: every grade is saved, and Today picks up the count.
 - The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, a
@@ -142,9 +142,10 @@ sizes: `design-spec.md` §4.
 - The stream stops at four rests, one `StreamRestView`; the model is in `learning-flow.md`. Both rests of a
   round show the most notable medal earned today at 56 pt, with its name under it and "+2 more" when there
   were others.
-  - *Streak kept* (once a day, after the streak step, inside the plan): the ring, the title "12-day streak"
-    with the filled flame large beside it (a milestone's name replaces the title on a milestone day), the
-    medal, the cards left to the ring with their time. **Keep Going** (default, prominent) or **Done for
+  - *Streak kept* (once a day, after the streak step, inside the plan): the ring with the cards left in it, the
+    title "12-day streak" with the filled flame large beside it, which bursts as the title comes in (a
+    milestone's name replaces the title on a milestone day), the medal, the time to the ring. Its title is the
+    streak, so no chip. **Keep Going** (default, prominent) or **Done for
     Now**. The rest has no card on screen, so nothing is spoken and nothing is graded.
   - *Ring closed* (the end of the last round while the plan has cards beyond it): the title "Ring closed"
     ("Streak saved" when the ring saved the streak), the medal, one line (the words' milestone, else the

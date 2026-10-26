@@ -101,9 +101,11 @@ struct StudyView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     closeButton
                 }
-                ToolbarItem(placement: .principal) {
+                // Left, right after the close button: the ring stays where it is whatever the text beside it says.
+                ToolbarItem(placement: .topBarLeading) {
                     StudyHeader(model: model, ring: ring, motion: motion)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .primaryAction) {
                     // Next to the menu, which holds it too: the same condition for both.
                     Button("Undo", systemImage: "arrow.uturn.backward", action: undo)
@@ -167,10 +169,6 @@ struct StudyView: View {
         }
         // The ring in the bar plays what a card landing in it does.
         .onChange(of: toasts.shown) { motion.celebrate() }
-        // The streak step is done: the flame in the ring fills, and the ring bumps with it.
-        .onChange(of: ring.progress?.streakKeptToday) { old, new in
-            if old == false, new == true { motion.celebrate() }
-        }
         .onDisappear {
             GreekSpeech.shared.close()
             toasts.clear()
@@ -441,7 +439,7 @@ struct StudyView: View {
     private static let swipeStartDistance: CGFloat = 6
 }
 
-/// The middle of the bar: today's ring with its figures, and the stage before it when the
+/// The left of the bar, after the close button: today's ring, the streak's flame and the figures, and the stage before it when the
 /// learner is not at today's plan: practice changes neither the plan nor the schedule, so it
 /// shows no ring.
 ///
@@ -469,8 +467,9 @@ private struct StudyHeader: View {
         .animation(.easeOut(duration: 0.2), value: motion.showsRest && motion.travel >= 1)
     }
 
-    /// A small ring, and beside it the time left, "≈ 4 min", while the goal is open, or "36 cards today" once it is
-    /// met. For a moment after a done card the interval it was given, "in 8 days", takes their place.
+    /// A small ring, empty inside, then the flame by the state of the streak, and the time left, "≈ 4 min", while the goal
+    /// is open, or "36 cards today" once it is met. For a moment after a done card the interval it was given, "in 8 days",
+    /// takes the place of the text. The ring is first, so it does not move when the text changes its width.
     @ViewBuilder
     private var ringAndFigures: some View {
         let daily = ring.progress?.ring
@@ -483,6 +482,11 @@ private struct StudyHeader: View {
                 } action: {
                     motion.ringHome = $0
                 }
+            if let progress = ring.progress {
+                StreakFlame(state: progress.streakState)
+                    .font(.body.weight(.semibold))
+                    .accessibilityLabel(Text(verbatim: StreakChip.spoken(days: progress.streak.days, state: progress.streakState, minutesToKeep: nil)))
+            }
             if let daily {
                 ZStack(alignment: .leading) {
                     if daily.isGoalMet {
@@ -514,10 +518,10 @@ private struct StudyHeader: View {
     }
 }
 
-/// Today's done cards against the daily goal as a ring in the bar (`ProgressRing`), the streak's flame alone in its
-/// middle: outlined until the streak step, filled the moment the step is done. It grows with the text size up to a
-/// ceiling, as the bar has only so much height. `shown` is what the ring shows as done when it is ahead of the
-/// figures, a grade having stepped it. `burstAt` starts the small burst around it.
+/// Today's done cards against the daily goal as a ring in the bar (`ProgressRing`), empty inside: the bar's ring is too
+/// small for a figure. It grows with the text size up to a ceiling, as the bar has only so much height. `shown` is what
+/// the ring shows as done when it is ahead of the figures, a grade having stepped it. `burstAt` starts the small burst
+/// around it.
 struct StreamRing: View {
     var progress: DailyProgress?
     var shown: Double?
@@ -526,9 +530,7 @@ struct StreamRing: View {
 
     var body: some View {
         RingBurst(startedAt: burstAt, diameter: min(diameter, 44)) {
-            ProgressRing(
-                fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44), center: .flame(progress),
-                speaksCenter: true)
+            ProgressRing(fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: min(diameter, 44))
         }
     }
 }

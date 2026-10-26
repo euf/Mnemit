@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// Progress, pushed from the header of Today on the iPhone, a page of the window on the Mac, a summary of four blocks (`references/learning-flow.md`,
-/// "Milestones, achievements and the Progress screen"): the streak hero, as on Today but larger, with the four totals,
+/// "Milestones, achievements and the Progress screen"): the streak as a statistic with the three totals,
 /// the calendar of the last 13 weeks with the runs of kept days joined, the latest medals and the way to all of them,
 /// and the ladder of memory. Everything is worked out from the review logs as the ring is, `DailyProgress.records`.
 ///
@@ -13,6 +13,8 @@ struct ProgressScreen<Trailing: View>: View {
     var calendar = StudyCalendar()
     /// The last section: How It Works, which each app opens its own way.
     @ViewBuilder var trailing: Trailing
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var records: [DayRecord] { progress.records }
 
@@ -57,12 +59,12 @@ struct ProgressScreen<Trailing: View>: View {
         records.filter { $0.closed && $0.done > 0 }.count
     }
 
-    /// The streak hero of Today, the ring with the flame and the days in it, larger and with the words in memory under
-    /// it; and the main totals, two by two.
+    /// The streak as a statistic, the flame with its days large and, where it differs, the best run; under it the words
+    /// in memory and the main totals, three in a row. There is no ring here: the day's ring is on Today.
     private var streak: some View {
         VStack(alignment: .leading, spacing: Spacing.section) {
             VStack(spacing: Spacing.gap) {
-                StreakHeroRing(fraction: progress.ring.fraction, days: progress.streak.days, state: progress.streakState, diameter: 220)
+                StreakStatistic(days: progress.streak.days, state: progress.streakState, best: longest)
                 MemoryLine(memory: progress.memory)
                     .font(.subheadline)
                     .monospacedDigit()
@@ -70,8 +72,10 @@ struct ProgressScreen<Trailing: View>: View {
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 2), alignment: .leading, spacing: Spacing.tight) {
-                total("Longest streak") { Text("\(longest) days") }
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: dynamicTypeSize.isAccessibilitySize ? 1 : 3), alignment: .leading,
+                spacing: Spacing.tight
+            ) {
                 total("Rings closed") { Text(ringsClosed, format: .number) }
                 total("Days studied") { Text(records.filter { $0.done > 0 }.count, format: .number) }
                 total("Cards done") { Text(records.reduce(0) { $0 + $1.done }, format: .number) }
@@ -288,5 +292,53 @@ extension View {
         #else
         listStyle(.inset)
         #endif
+    }
+}
+
+/// The streak at the top of Progress: its flame, the days large, "day streak" under them, and "Best: 21" when the best
+/// run is not the current one. At 0 days the outlined flame and "Start your streak".
+private struct StreakStatistic: View {
+    var days: Int
+    var state: StreakState
+    /// The longest run, the current one included.
+    var best: Int
+
+    var body: some View {
+        VStack(spacing: 2) {
+            StreakFlame(state: state)
+                .font(.system(size: 34, weight: .semibold))
+            if days == 0 {
+                Text("Start your streak")
+                    .font(.title3.weight(.semibold))
+            } else {
+                Text(days, format: .number.grouping(.never))
+                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                Text(verbatim: Self.caption(days: days))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                if best > days {
+                    Text("Best: \(best)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: days == 0 ? String(localized: "Start your streak") : String(localized: "\(days) day streak")))
+        .accessibilityValue(best > days ? Text("Best: \(best)") : Text(verbatim: ""))
+    }
+
+    /// "day streak": the plural form of "12 day streak" without its number, which stands large above it. A language
+    /// that does not put the number first shows the whole phrase.
+    static func caption(days: Int) -> String {
+        let phrase = String(localized: "\(days) day streak")
+        let number = days.formatted()
+        guard phrase.hasPrefix(number) else { return phrase }
+        return String(phrase.dropFirst(number.count)).trimmingCharacters(in: .whitespaces)
     }
 }

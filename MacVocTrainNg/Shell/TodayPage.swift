@@ -61,7 +61,7 @@ struct TodayPageContent: View {
     /// No deck yet: the hero ring, empty, over the ways to get one.
     @ViewBuilder
     private var empty: some View {
-        StreakHeroRing(fraction: 0, days: 0, state: .open, diameter: 200)
+        HeroRing(progress: nil, diameter: 200)
         Text("Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.")
             .font(.subheadline)
             .foregroundStyle(.secondary)

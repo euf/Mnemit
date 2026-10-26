@@ -125,7 +125,7 @@ struct TodayScreen: View {
     private var empty: some View {
         ScrollView {
             VStack(spacing: Spacing.section) {
-                StreakHeroRing(fraction: 0, days: 0, state: .open)
+                HeroRing(progress: nil)
                 Text("Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

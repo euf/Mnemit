@@ -33,12 +33,16 @@ struct RoundStatus: Equatable, Sendable {
     /// The first round keeps the streak, so it is kept once one is done, or when the plan was empty.
     var isStreakKept: Bool { rounds == 0 || roundsDone > 0 }
 
+    /// What keeping the streak costs today: the minutes to the end of the first round while it is not done; `nil`
+    /// once it is, and for a day without rounds. The streak chip says it.
+    var minutesToKeep: Int? { rounds > 0 && roundsDone == 0 ? minutesToNext : nil }
+
     /// The first thing the day says: "≈ 2 min to keep your streak" before the first round, "Ring closed" once
     /// the rounds are done; `nil` in between and for a day without rounds.
     var title: LocalizedStringResource? {
         if isClosed { return LocalizedStringResource("Ring closed") }
-        if rounds > 0, roundsDone == 0, let minutesToNext {
-            return LocalizedStringResource("\(Format.timeLeft(minutes: minutesToNext)) to keep your streak")
+        if let minutesToKeep {
+            return LocalizedStringResource("\(Format.timeLeft(minutes: minutesToKeep)) to keep your streak")
         }
         return nil
     }

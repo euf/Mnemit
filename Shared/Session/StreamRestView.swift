@@ -42,9 +42,9 @@ struct NextDeck {
     var study: () -> Void
 }
 
-/// The short stop in the stream, twice a day at most (`references/learning-flow.md`). After the first round the
-/// title is the streak, "12-day streak", with the filled flame large, and the cards left to the ring; Keep Going or
-/// Done for Now. "Ring closed" when today's cards are done: the medal, one gain line and the week's rings, then one
+/// The short stop in the stream, twice a day at most (`references/learning-flow.md`). The ring on top holds the cards
+/// left or a check, and under it the streak chip. After the first round the title is the streak, "12-day streak", with
+/// the filled flame large (the chip's moment, so no chip), and the time to the ring; Keep Going or Done for Now. "Ring closed" when today's cards are done: the medal, one gain line and the week's rings, then one
 /// way on, the most useful first: Catch Up when the plan has cards left, else Learn 10 New Words, new cards beyond
 /// the daily limit, whose reviews make the next days harder. A finished practice ends with its figures.
 struct StreamRestView: View {
@@ -69,6 +69,9 @@ struct StreamRestView: View {
     var medals: CelebratedMedals = .shared
 
     @State private var step = 0
+    /// The burst of the flame in the title of the streak rest, when the title comes in.
+    @State private var flameBurstAt: Date?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// The title is the first step, each line one more, and the buttons the last.
     private var steps: Int { lines.count + 2 }
@@ -80,6 +83,10 @@ struct StreamRestView: View {
             Spacer()
 
             ring
+
+            chip
+                .padding(.top, Spacing.gap)
+                .reveal(visibleStep >= 1)
 
             title
                 .padding(.top, Spacing.margin)
@@ -109,6 +116,10 @@ struct StreamRestView: View {
         // The medals of today are shown here, so they are celebrated.
         .onChange(of: earnedToday, initial: true) {
             if let today = progress?.records.last?.day, let all = progress?.achievements { medals.markToday(in: all, today: today) }
+        }
+        // The streak step is done: the flame in the title bursts as it comes in.
+        .onChange(of: visibleStep >= 1, initial: true) { _, isShown in
+            if isShown, isStreakRest, frozenStep == nil, !reduceMotion { flameBurstAt = .now }
         }
         .task(id: Stagger(arrived: arrived, staggers: staggers)) {
             guard staggers, frozenStep == nil else { return }
@@ -142,6 +153,15 @@ struct StreamRestView: View {
         }
     }
 
+    /// The streak under the ring, "12-day streak": not in a practice, which leaves it as it was, and not at the end of
+    /// the first round, whose title is the streak.
+    @ViewBuilder
+    private var chip: some View {
+        if let progress, !rest.isPracticeOnly, rest.roundEnd?.closesRing ?? true {
+            StreakChip(days: progress.streak.days, state: progress.streakState, minutesToKeep: nil)
+        }
+    }
+
     private var title: some View {
         Group {
             if rest.isPracticeOnly {
@@ -162,11 +182,18 @@ struct StreamRestView: View {
         .multilineTextAlignment(.center)
     }
 
+    /// The end of the first round: its title is the streak.
+    private var isStreakRest: Bool {
+        !rest.isPracticeOnly && rest.roundEnd.map { !$0.closesRing } == true
+    }
+
     /// The streak, "12-day streak", with the filled flame large; on the day a streak milestone passed, its name.
     private var streakTitle: some View {
         HStack(spacing: Spacing.tight) {
-            StreakFlame(state: .kept)
-                .font(.largeTitle)
+            RingBurst(startedAt: flameBurstAt, diameter: 36) {
+                StreakFlame(state: .kept)
+                    .font(.largeTitle)
+            }
             if let milestone = milestoneToday {
                 Text(verbatim: milestone.title)
             } else if let days = progress?.streak.days, days > 0 {
@@ -269,12 +296,12 @@ struct StreamRestView: View {
         return lines
     }
 
-    /// "12 cards left · ≈ 4 min": what is left to the ring.
+    /// "≈ 4 min": the time to the end of the ring, whose cards left the ring above says.
     private var leftLine: Line? {
-        guard let progress, progress.cardsLeft > 0 else { return nil }
-        let left = String(localized: "\(progress.cardsLeft) cards left")
-        let text = progress.minutesLeft.map { "\(left) · \(Format.timeLeft(minutes: $0))" } ?? left
-        return Line("left") { Text(verbatim: text) }
+        guard let progress,
+            let minutes = DailyGoal.minutesLeft(cards: progress.cardsToClose, secondsPerCard: progress.secondsPerCardLeft)
+        else { return nil }
+        return Line("left") { Text(verbatim: Format.timeLeft(minutes: minutes)) }
     }
 
     // MARK: The buttons
