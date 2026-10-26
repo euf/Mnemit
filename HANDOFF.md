@@ -8,7 +8,7 @@
   to three moments (Streak kept, Ring closed, All done) and the stack goes on after the ring (Catch Up, Learn 10 New Words);
   Study These Now studies the cards just added; a new card's first showing has two buttons, Don't know and Know; the medals
   are streak milestones, First ring, Perfect week, Comeback, Double ring, Triple ring and Words learned; the day's time follows
-  sustained overshoot (rule D); the Mac is one window. The iPhone and the Mac in `~/Applications` run 8.0.20 (d355285), the
+  sustained overshoot (rule D); the Mac is one window. The iPhone and the Mac in `~/Applications` run 8.0.22 (583ceec), the
   iPhone signed until 02.11; the Mac's Today was seen live on EF's decks on 26.10 (ring, sentence, words learned, sidebar minutes), the iPhone not yet. The code's
   rules are `references/daily-ring.md`; the learner's paths through a day, a newcomer's first week included,
   are `references/learning-flow.md`; why the ring is what it is, every alternative measured on synthetic learners and the logs
