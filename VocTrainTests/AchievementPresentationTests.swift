@@ -254,8 +254,10 @@ struct AchievementPresentationTests {
                     day: day, done: done, goal: goal, kept: !missed && done > 0, closed: done >= goal, streak: streak, savedStreak: saved))
         }
         return DailyProgress(
-            ring: DailyRing(done: 14, goal: 24), streak: Streak(days: streak, repairCards: nil), streakKeptToday: true, ladder: [180, 36, 64, 85, 42, 9],
-            records: records, achievements: Achievements.earned(over: records))
+            ring: DailyRing(done: 14, goal: 24), streak: Streak(days: streak, repairCards: nil), time: 480, streakKeptToday: true,
+            learned: WordsLearned(words: 412, wordsAtDayStart: 400), ladder: [180, 36, 64, 85, 42, 9], records: records,
+            achievements: Achievements.earned(over: records),
+            ringDays: [DailyGoal.RingDay(day: today - 109, time: 150, worked: 0, closed: true, studied: true)])
     }
 
     /// The Progress screen in light and dark, a window tall enough for all of it.

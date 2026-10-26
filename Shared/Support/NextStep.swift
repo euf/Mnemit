@@ -127,7 +127,7 @@ struct NextStep: Equatable, Sendable {
 }
 
 /// The words of the sentence (`NextStep`): on one line when they fit, else broken between the streak line and the price line,
-/// the second under the first. The font, the alignment of the text and the number of lines are the caller's; `alignment` places
+/// the second under the first, each wrapping by itself if it must. The font, the alignment of the text and the number of lines are the caller's; `alignment` places
 /// the two lines against each other.
 struct NextStepText: View {
     var step: NextStep
@@ -137,13 +137,11 @@ struct NextStepText: View {
         ViewThatFits(in: .horizontal) {
             Text(verbatim: NextStep.unbroken(step.sentence))
                 .lineLimit(1)
-            if let tail = step.lines.tail {
-                VStack(alignment: alignment, spacing: 0) {
-                    Text(verbatim: NextStep.unbroken(step.lines.lead))
-                    Text(verbatim: NextStep.unbroken(tail))
-                }
+            // Each line wraps by itself in a narrow place (the small widget), so no line ends on the dot between them.
+            VStack(alignment: alignment, spacing: 0) {
+                Text(verbatim: NextStep.unbroken(step.lines.lead))
+                if let tail = step.lines.tail { Text(verbatim: NextStep.unbroken(tail)) }
             }
-            Text(verbatim: NextStep.unbroken(step.sentence))
         }
         .accessibilityLabel(Text(verbatim: step.spoken))
     }

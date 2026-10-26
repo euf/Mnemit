@@ -108,7 +108,8 @@ private struct MediumWidget: View {
                 WidgetSentence(step: state.nextStep, alignment: .leading)
                     .font(.headline)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    // Three lines: the day after a missed one is the longest sentence.
+                    .lineLimit(3)
                     .minimumScaleFactor(0.75)
                 Spacer(minLength: 0)
                 if let week = state.week {

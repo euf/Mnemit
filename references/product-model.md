@@ -162,3 +162,21 @@ Every surface is the entities above and nothing else.
 | Progress totals | rings, days, cards done | days studied, rings closed, words learned, the ring's size |
 | App icon badge | cards to the ring | "1" while the ring is open |
 | Empty Today | three equal paths | New Deck first, Shared Decks second, the iCloud folder a link |
+
+## 12. Details settled in the build
+
+- **Study These Now** is a stream over the one deck the cards went to: the added cards first, then that deck's plan. It
+  offers itself in Add Cards beside Add once cards are added (prominent while nothing is left to add; it adds what is
+  typed first, as Done does), and in the import of a table of up to 50 cards into a new, empty deck. It asks only the
+  cards a stream would ask now: new, unlocked and not buried, so the second direction of a pair waits for its first.
+- **A rest "All done for today"** stands where the ring's moment lies behind the stream: the stream began past the ring,
+  or went on from its rest.
+- **Deck rows and headers** price the deck's whole plan left, backlog included: "≈ 5 min", and on the deck "≈ 5 min ·
+  5 due · 4 new · 3 learning", zero parts left out. The Mac's deck page shows the counts without the time.
+- **Reminders** say "≈ 2 min" always: the time to keep the streak, not the length of the day.
+- **The first showing** of a new card has two wide buttons side by side, Don't know and Know, as tall as the
+  two rows of the four buttons they replace; their keys are 2 and 4 on the Mac.
+- **Progress totals** run Days studied, Rings closed, Words learned; the ring's size line reads "Your ring: 8 min a
+  day · started at 2.5", or without the start while the ring has not moved; words in memory sit in the Memory section.
+- **The sentence** has no form without a streak beyond "Start your streak · ≈ 2 min" and the closed "All done for
+  today".

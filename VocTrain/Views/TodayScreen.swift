@@ -212,6 +212,8 @@ struct TodayScreen: View {
             stage == .pushOn ? pushOn() : study(.all)
         } label: {
             Text(stage.title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 // The bar sizes its items to their content: the button takes the width the search button leaves.
                 .containerRelativeFrame(.horizontal) { width, _ in max(120, width - 140) }
         }

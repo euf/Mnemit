@@ -301,6 +301,26 @@ struct StudyScreenSnapshotTests {
         }
     }
 
+    /// Catch Up after the ring: the header is the day's (flame and ring, no numbers) and the stack under the card is the
+    /// cards left in the plan, two behind the one asked.
+    @Test(arguments: [false, true])
+    func catchUpWithTheStack(dark: Bool) async throws {
+        try beSilent()
+        let (document, undoManager) = try makeDocument()
+        let model = StudyModel(document: document, rounds: RoundGuide(ends: [1, 2]))
+        for _ in 0..<2 {
+            grade(model, .easy, undoManager: undoManager)
+            model.continueRound()
+        }
+        #expect(model.cardsBehind > 0, "cardsBehind \(model.cardsBehind), resting \(model.isResting)")
+        let progress = HomeSnapshotTests.roundsProgress(done: 31, streak: 13)
+        let window = try await host(model, ring: DailyRingModel(progress: progress), flight: CardFlight(), dark: dark)
+        try await Task.sleep(for: .milliseconds(700))
+        try write(window, name: "56-catch-up-stack", dark: dark)
+        withExtendedLifetime(undoManager) {}
+        window.isHidden = true
+    }
+
     /// The bar's ring is left, right after the close button, so it is where it was whatever the text beside it says: the
     /// time left, "≈ 3 min", while the goal is open and "30 cards today" once it is met.
     @Test func theBarsRingStaysWhereItIsWhateverTheTextSays() async throws {

@@ -31,13 +31,14 @@ struct HomeSnapshotTests {
 
     /// The day cut into four rounds, which end at 8, 16, 24 and 30 cards, with `done` of them done, and the words in memory.
     static func roundsProgress(
-        done: Int, streak: Int, repairCards: Int? = nil, memory: MemoryEstimate = MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2)
+        done: Int, streak: Int, repairCards: Int? = nil, memory: MemoryEstimate = MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2),
+        learned: WordsLearned = WordsLearned(words: 412, wordsAtDayStart: 400), cardsLeft: Int? = nil
     ) -> DailyProgress {
         let rounds = DayRounds(otherCards: 30, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), seconds: 480)
         return DailyProgress(
             ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: streak, repairCards: repairCards),
-            cardsLeft: max(0, rounds.goal - done), pace: Pace(newCard: 30, otherCard: 15),
-            roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0, memory: memory,
+            cardsLeft: cardsLeft ?? max(0, rounds.goal - done), pace: Pace(newCard: 30, otherCard: 15),
+            roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0, memory: memory, learned: learned,
             week: streak > 0 ? [true, true, false, true, true, true, false] : [nil, nil, nil, nil, nil, nil, false])
     }
 
@@ -196,7 +197,7 @@ struct HomeSnapshotTests {
 
     /// The last round done with cards still left: the ring is closed and the rest waits in Catch Up.
     @Test func todayWithTheRingClosed() async throws {
-        try await shoot("today-closed", today(counts: leftCounts(done: 28), progress: Self.roundsProgress(done: 31, streak: 13)))
+        try await shoot("today-closed", today(counts: leftCounts(done: 28), progress: Self.roundsProgress(done: 31, streak: 13, cardsLeft: 48)))
     }
 
     /// The day after a missed one: the streak survives only if the ring closes, and its flame says so.
@@ -204,16 +205,10 @@ struct HomeSnapshotTests {
         try await shoot("today-at-risk", today(counts: leftCounts(done: 3), progress: Self.roundsProgress(done: 3, streak: 12, repairCards: 15)))
     }
 
-    /// A milestone of the words in memory passed today.
-    @Test func todayWithAMilestonePassed() async throws {
-        let memory = MemoryEstimate(words: 51.3, wordsAtDayStart: 44)
-        try await shoot("today-milestone", today(counts: leftCounts(done: 9), progress: Self.roundsProgress(done: 9, streak: 4, memory: memory)))
-    }
-
     /// The very first day: no streak, no words yet.
     @Test func todayOnTheFirstDay() async throws {
         let memory = MemoryEstimate(words: 0, wordsAtDayStart: 0)
-        try await shoot("today-first-day", today(counts: leftCounts(done: 0), progress: Self.roundsProgress(done: 0, streak: 0, memory: memory)))
+        try await shoot("today-first-day", today(counts: leftCounts(done: 0), progress: Self.roundsProgress(done: 0, streak: 0, memory: memory, learned: WordsLearned(words: 0, wordsAtDayStart: 0))))
     }
 
     /// Before the rounds are known the old lines stand: the cards left and the time they take.
@@ -249,7 +244,7 @@ struct HomeSnapshotTests {
     func deckScreen(document: VocabularyDocument?, counts: StudyCounts? = nil, canEdit: Bool = true) -> some View {
         NavigationStack {
             DeckContent(
-                name: "Greek B1", knownCounts: counts, document: document, failure: nil, merger: document.map { _ in VersionMerger { _ in } },
+                name: "Greek B1", knownCounts: counts, pace: Pace(), document: document, failure: nil, merger: document.map { _ in VersionMerger { _ in } },
                 canEdit: canEdit, start: { _ in }, rename: { _ in }, delete: {})
         }
     }
@@ -260,7 +255,7 @@ struct HomeSnapshotTests {
 
     @Test func deckScreenAtAccessibilitySize() async throws {
         let document = try sampleDocument()
-        try await shoot("deck", deckScreen(document: document), types: [.accessibility3, .accessibility5])
+        try await shoot("deck", deckScreen(document: document), types: [nil, .accessibility3, .accessibility5])
     }
 }
 

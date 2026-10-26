@@ -281,7 +281,7 @@ private struct HeadlineRow: View {
                 }
                 Text(verbatim: headline.text)
             }
-            .font(.title3.weight(.semibold))
+            .font(.subheadline.weight(.semibold))
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
         }
