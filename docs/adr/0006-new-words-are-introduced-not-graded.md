@@ -1,5 +1,7 @@
 # A new word's first showing is an introduction, not a review
 
+Status: superseded by ADR 0007.
+
 In a vocabulary deck the first showing of a word is the learner's first contact with it. Until Mnemit
 7 that showing was a question: the card asked for a meaning the learner had never seen, the answer
 opened on a tap, and the four grade buttons were there. EF's review logs of 21–25 October 2026 hold

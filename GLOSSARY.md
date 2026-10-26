@@ -371,21 +371,12 @@ memory, the swipes (iPhone), the options and the FSRS figures of each deck. The 
 Mac a sheet of the Progress page. The types keep the old name: `HowTodayWorks`, `HowTodayWorksView`.
 _Avoid_: How Today Works, statistics (those are of a deck)
 
-**New words / Words I know** (the choice **Words in this deck**; DE „Neue Wörter“ / „Wörter, die ich kenne“,
-„Wörter in diesem Stapel“; RU «Новые слова» / «Слова, которые я знаю», «Слова в этой колоде»):
-The mark of a deck, `LearningOptions.introducesNewCards` (the key `introducesNewCards` in `deck.json`,
-written only while on). In a deck of New words the first showing of each new card is an introduction; a deck
-of Words I know asks its new cards at once. It is asked when a deck is made or when an Anki package makes one,
-and it sits at the top of Options.
-_Avoid_: learning mode, beginner deck
-
-**Introduction** (on screen: the chip "New word", the button "Next"; DE „Neues Wort“, „Weiter“; RU «знакомство»):
-The first showing of a new card in a deck of New words (`Session.isIntroduction`): the answer is open,
-nothing is graded, the learner moves on with Next, a tap or a swipe in any direction. It is an exposure and no
-review: no log entry, no learning state, no step of the ring or of Undo. The card waits for three other
-cards and then comes as an ordinary question; its first grade sets the FSRS initial state, and the
-introduction's time on screen is added to that review's `ms`. `docs/adr/0006-new-words-are-introduced-not-graded.md`.
-_Avoid_: lesson, preview, first review, «первый показ»
+**Don't know** (the name of Again's button on a card's first showing; DE „Weiß ich nicht“; RU «Не знаю»; EL «Δεν ξέρω»):
+The name of the grade Again while the card has no learning state (`Card.isNew`), in the grade button, the receipt
+chip, VoiceOver and the history of Card Detail. On every later showing the same grade reads **Forgot**. The grade,
+the position, the ← key, the left swipe and the red are the same, and FSRS records Again as it does for any card
+(`Grade.buttonTitle(isNew:)`, `docs/adr/0007-first-showing-is-asked-as-dont-know.md`).
+_Avoid_: introduction, new word (as a card state), unknown
 
 **Words in memory** ("≈ N words in memory"; RU «слов в памяти»):
 The number of words the learner would recall right now, from FSRS alone: the sum, over the

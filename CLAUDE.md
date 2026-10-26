@@ -34,7 +34,7 @@ Read the file for the area you work on.
 
 - `references/deck-package.md`: the `.mnemit` package and legacy `.voctrain`, editing and merging on
   two devices, deck file operations, card media files.
-- `references/scheduling.md`: today's counts and daily limits, introductions of new words, reviews, leeches,
+- `references/scheduling.md`: today's counts and daily limits, a new card's first showing, reviews, leeches,
   the automatic FSRS refit, the day's stack (Study) and Learn 10 New Words, practices, the newest batch.
 - `references/learning-flow.md`: the learner's day: its rules, the journey (one day's paths, Learn 10 New Words, a
   newcomer's first days, a return, an Anki user, several decks), the model, horizons, medals.

@@ -129,12 +129,10 @@ sizes: `design-spec.md` §4.
 - The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, a
   divider, Pronounce Automatically (where the device has a Greek voice). The iPhone adds Undo above them,
   which is also its own button. The items are disabled at a rest, never hidden.
-- **A new word** (an introduction: the first showing of a card never seen in a deck marked New words, see
-  Options): the answer is open, the corner chip says "New word", there are no grade buttons, and **Next**
-  stands in Show Answer's place. A tap, Next or a swipe in any direction moves on and grades nothing: the
-  ring does not step, no interval shows, Undo stays with the last graded card. The card comes back as an
-  ordinary question three cards later. Gesture and motion: `study-screen.md`, "A new word"; the rules:
-  `scheduling.md`, "Introductions".
+- **A new card's first showing** is asked like any card. Its first grade button, ← and the left swipe, is red
+  as always and reads **Don't know** (the grade underneath is Again); on every later showing it reads
+  **Forgot**. The receipt chip and its VoiceOver announcement use the same name (`Grade.buttonTitle(isNew:)`).
+  The rules: `scheduling.md`, "A new card's first showing".
 - The card lies on a stack drawn as a book's page edges, 10 pt apart, each 9 pt narrower on a side and
   darker than the one above; how cards leave it and come back: `learning-flow.md`, "The stack", and
   `study-screen.md`, Motion.
@@ -200,9 +198,9 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   milestone.
 - **Swipes** (iPhone only): "Swipes that sprang back from a gap: N of M today" (`SwipeTally`,
   `study-screen.md`), with the sectors in compass degrees in the footer.
-- **Options**: seven sentences and no footer, one for each option with a rule behind it. New words / Words I
-  know (an introduction shows the answer and records nothing, and the card is asked a few cards later; Words I
-  know asks at once). Target recall (higher means better recall and more reviews; 90 % is the balance). The
+- **Options**: seven sentences and no footer, one for each option with a rule behind it. A new
+  card is asked the first time it comes up (Don't know is the honest answer for a word never seen, and the
+  card comes back in the session). Target recall (higher means better recall and more reviews; 90 % is the balance). The
   Meaning → Word unlock rule and one direction of a word per day. The leech rule (a card is suspended after N
   lapses and every further multiple, marked Difficult and resumed from the card list; Off never suspends).
   Learning steps (Good moves a step, Hard keeps it, Forgot resets it, Easy graduates at once). The FSRS
@@ -290,16 +288,13 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   the cards, a row per word with a tick (duplicates, and words another deck holds, unchecked; a tap
   switches), Add N Cards. An addition is one undo step ("Add Cards"). The sheet is the Mac's too
   (`WordList.swift`, `LimitStepper.swift` in `Shared/Support` hold what the two share).
-- **New Deck**: a name field and **Words in this deck** (New words to begin with, see Options); creates
-  `<name>.mnemit` in the deck folder (iCloud Drive or this iPhone) with the mark
-  (`DeckFiles.create(named:introducesNewCards:in:)`) and pushes its screen, where Add Cards opens by
+- **New Deck**: a name field; creates `<name>.mnemit` in the deck folder (iCloud Drive or this iPhone)
+  (`DeckFiles.create(named:in:)`) and pushes its screen, where Add Cards opens by
   itself: the deck screen of an empty deck opens it once.
 - **Import**: a file picker (CSV, TSV, `.apkg` or `.colpkg`) → the same preview as the Mac, a list
   with a checkmark per card (duplicates unchecked) → Add N Cards, one undo step. Entry points: Import
   Cards… on the deck screen, Import… in Today's + menu (into the deck used last). The preview of an
-  Anki package into a new deck asks "Words in this deck" first, preset to Words I know when any card has review
-  history, else New words (`CardImport.Preview.makesDeck`); an import into an existing deck asks nothing and
-  keeps its mark. The preview of an Anki package heads with the Anki deck names, the number of cards, how many have review history and
+  Anki package heads with the Anki deck names, the number of cards, how many have review history and
   what was left out (cloze, media, empty); the history comes along, replayed into FSRS; text fields
   have their HTML stripped. Mnemit registers `.apkg` and `.colpkg`, so **Open in Mnemit** (Files,
   Safari, Mail) opens a sheet that asks where the cards go: a New Deck named after the Anki deck, or
@@ -327,8 +322,7 @@ shows its charts beside the tiles under Statistics (⌘4).
 ## Options
 
 The iPhone's form (`DeckOptionsScreen`) saves every change at once, one undo step each. Top to bottom:
-**Words in this deck** (an inline picker, New words / Words I know: `LearningOptions.introducesNewCards`;
-New words introduce each new card before it is asked); **New Cards** (New cards per day, New card order);
+**New Cards** (New cards per day, New card order);
 **Scheduling** (Target recall, 70–97 %); **Meaning → Word cards** (New per day, Unlock after N days); Difficult
 after N lapses; **Advanced** (Longest interval, Spread out intervals, Steps per card, FSRS parameters with
 "Compute from Review Log"). New cards per day, Meaning → Word per day and, on the Mac, Cards per session are
@@ -479,7 +473,7 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
 | Search over all decks | Today's search | the window's search field; a hit shows the card in its deck's table |
 | Medals | toasts in the stream, new medals of other days on Today, the month's sheet | the same |
 | Studying | question, Show Answer, grade; swipes | question, Show Answer, grade; keys and buttons; no typed answer on either |
-| A new word | introduction: the answer open, Next, swipe any way | introduction: Next, Space, Return, an arrow or a click |
+| A new card's first showing | asked like any card; its first Again reads Don't know | the same |
 | Reminders, the icon's number | yes | no: one device reminds, the Mac would remind twice |
 | Widget | yes | no: a Mac widget needs an App Group, which the self-signed Mac app has no team for |
 
@@ -558,9 +552,7 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
     `Grade.arrowKey`), 1–4 also grade, Return and Space mean Good, Esc, Z and ⌘Z undo, S pronounces, ⌘E edits
     the card. Every grade button shows its arrow as a keycap (`KeyCap`); the ring on Good marks Return. Done
     has no shortcut.
-  - A card shown as a new word: the answer open, the chip "New word", Next in Show Answer's place; Space,
-    Return, the four arrows (the card flies the arrow's way) and a click on the card move on, keys 1–4 do
-    nothing.
+  - A card on its first showing: its ← button reads "Don't know" in place of "Forgot"; keys and arrows are the same.
   - Edit Card opens `CardEditSheet`; Card Info a sheet with the card list's inspector
     (`MacVocTrainNg/Views/Session/CardInfoSheet.swift`), whose Edit swaps it for the edit sheet.
   - At the end of a deck's plan, while another deck of the day has cards left, the rest's first button is

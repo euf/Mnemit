@@ -53,8 +53,7 @@ up the count, and Study goes on where the stack was.
 
 - **What it adds.** Ten new cards beyond the daily limits, from every deck that has new cards left, one at a time to
   the deck that has given the fewest so far, and asked mixed as the plan is, at once and without another rest. No
-  count to choose: FSRS keeps deciding which cards come. In a deck marked New words each of them is introduced
-  first, like any new word.
+  count to choose: FSRS keeps deciding which cards come. Each of them is asked like any new card.
 - **What it costs.** Each new card comes back as reviews. Ten cards bring about 2 reviews the next day, 8 the day after,
   3 on the third, 12 more over days 4 to 14, then a thin tail (FSRS-6 defaults with Mnemit's fuzz, `cards.py --echo`: short
   intervals are not fuzzed, so the first return is a peak, and the later ones spread). Reviews come first in the plan, so the peak
@@ -74,11 +73,9 @@ closes; two in a row end the streak.
 
 ### A newcomer's first days with a new deck
 
-A deck made in the app starts as New words (New Deck asks "Words in this deck" once). Each new word is shown first
-with its answer open and a "New word" chip, with a Next button and a swipe in any direction to move on; it comes back
-as a question three cards later, and that first grade is the first review (`scheduling.md`, "Introductions"). An
-introduction is no review: it moves no ring and writes no log entry, and its seconds join the first review's time, so
-the price of a new card includes reading it.
+Each new word is asked the first time it comes up, like any card; its first Forgot reads "Don't know", and the card
+comes back in the session (`scheduling.md`, "A new card's first showing"). The first grade is the first review: it
+moves the ring when the card is done and writes a log entry.
 
 Day 1 asks 2.5 minutes. At 30 s a new card, the price until the learner's own pace is measured, that is five new words;
 the first four keep the streak. A new word is done after two right answers. A learner of about ten minutes a day who
@@ -106,9 +103,7 @@ stops at the ring meets Catch Up on 6.9 % of a newcomer's study days and 10.4 % 
 
 The imported collection brings its history, and the replay of the history runs rule 1, so the time arrives near the
 learner's usual day. The ring holds the whole queue up to an hour; How It Works shows the plan, the time and the FSRS
-parameters. An Anki package that makes a new deck asks "Words in this deck", preset to Words I know when the package
-has review history: the deck's new cards are asked at once, with no introduction. The mark sits at the top of the
-deck's Options, and a deck without it reads as Words I know.
+parameters. A deck's new cards are asked at once, whether the deck is made in the app or by an Anki package.
 
 ### Several decks
 
@@ -129,7 +124,7 @@ with the stack, so Learn 10 New Words takes from the decks that did.
 | Words in memory | how many words the learner would recall now | FSRS's recall probability, summed |
 | Catch Up | the plan's cards beyond today's ring, after a break | the rest of the plan |
 | Learn 10 New Words | ten more new words once the stack is done, from all the decks, mixed | new cards beyond the daily limits |
-| Introduction | a new word's first showing in a deck of New words: answer open, nothing graded, asked as a question three cards later | the deck's mark, New words |
+| Don't know | the name of Again's button on a card's first showing | the card has no learning state |
 
 Never on screen: review counts (a card is never a review), the day's time, plan against goal,
 seconds per card, intervals before a grade.

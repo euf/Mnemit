@@ -3,7 +3,7 @@
 ## State
 
 - Version 7.1.x on `main`: the Mac is one window (a sidebar of Today, Progress and the decks; the stream
-  takes the window), new words are introduced, not graded, every review counts in full, neither app asks for
+  takes the window), a new card is asked like any card and its first Forgot reads Don't know, every review counts in full, neither app asks for
   a typed answer, and the widgets and reminders follow the day (the flame's three states, the week, the inline
   accessory, a 21:00 streak reminder). The iPhone and the Mac run 7.1.11 (32be5c5), the iPhone signed until
   02.11. The day's model (one ring that stays full at the goal, the streak as a flame, the
@@ -24,8 +24,8 @@
 - Decks in `iCloud Drive/Mnemit/`, both built by `Tools/deck-from-tsv` from the dictionary
   `~/Documents/greek-lessons/vocab/` (`merge.py` → `greek-vocab.tsv`, `cards.py` → `cards-*.tsv`):
   - `Greek A1–A2.mnemit`, review of the familiar: 1629 words, 3258 cards (recognition and translation
-    into Greek), 30 + 30 new per day, production not locked, deck order; Words I know.
-  - `Greek B1.mnemit`, learning, New words since 26.10 (a new card is introduced first): 2314 cards,
+    into Greek), 30 + 30 new per day, production not locked, deck order.
+  - `Greek B1.mnemit`, learning: 2314 cards,
     20 new recognition + 7 production per day,
     production unlocks after 21 days, new cards newest first. 78 old cards of the first deck are
     frozen (their words went to A1–A2), 131 adopted with their progress.
@@ -57,8 +57,8 @@ In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
 The plan of 7.0–7.1 is `references/quality-plan.md`.
 
-1. **7.0 on the iPhone, to verify live:** the search minimised beside Study, the introduction gesture (a new
-   word's first showing, Next or a swipe any way), the 21:00 streak reminder, the stack of cards in the stream;
+1. **7.0 on the iPhone, to verify live:** the search minimised beside Study, the Don't know label (a new
+   card's first showing), the 21:00 streak reminder, the stack of cards in the stream;
    and from 6.1 the flame in Today's ring and in the widgets, Learn 10 New Words from Today, a reminder that
    names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and reviews from
    the Mac arriving while Today stays open (it reads the decks every minute). Xcode's Apple ID was lost once

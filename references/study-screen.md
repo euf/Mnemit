@@ -23,27 +23,13 @@ area and the card's type: `references/design-spec.md` §4.
   (`StudyModel.canUndo`, the same condition as the menu item) and shake; the chip's room went to the
   card. `UndoChip` remains only on the Mac.
 
-## A new word
+## A new card's first showing
 
-In a deck marked New words the first showing of a card never seen is an introduction, not a question
-(`Session.isIntroduction`, `scheduling.md`, "Introductions").
-
-- The card arrives with its answer open and the chip in its corner says "New word" in place of "New". No
-  grade buttons: Next takes the place of Show Answer, as wide and as high as Forgot, in the same corner
-  radius and the accent fill (`StudyView.gradeArea`).
-- Moving on takes a tap on the card shorter than 0.5 s (a longer touch is the long press that opens Card
-  Info), Next, or a swipe in any direction: a drag past `GradeSwipe.commitDistance` (100 pt) or a flick
-  (`flickMinimum`, `flickReach`), `GradeSwipe.movesOn`. There are no sectors and no gaps.
-- The card follows the finger one to one: no zone, no gap, no tint, no commit haptic, no highlighted
-  button (`CardFlight.drag(isIntroduction:)`). A release short of the distance springs back.
-- The card leaves along the swipe, to the right for a tap, for Next and for VoiceOver
-  (`GradeSwipe.exit(toward:)`). No grade was given: the ring does not step, no interval shows, and the
-  bar's figures stay (`StudyMotion.departIntroduction`, `Departure.grade == nil`). Its destination is
-  `away`, as for a card of a practice: nothing flies into the ring or under the stack.
-- Undo stays with the last graded card; an introduction is no step.
-- Speech: a new word speaks its Greek question once it has settled and, since its answer is open, the
-  answer too when the question is not Greek (`cardAppeared`, `answerRevealed`, `speakCurrentCard`).
-- The card comes back as an ordinary question three cards later and is graded as any card.
+A new card (`Card.isNew`) is asked like any card, in every deck: question, Show Answer, grades, the same swipes and
+the same motion. Only the name of its first grade button, ← and the left swipe, differs: **Don't know** in place of
+Forgot (`GradeChoice.isNew`, `Grade.buttonTitle(isNew:)`), in the same position and red. The receipt chip and its
+VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later showings read Forgot
+(`scheduling.md`, "A new card's first showing").
 
 ## Motion
 

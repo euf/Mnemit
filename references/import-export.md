@@ -135,12 +135,10 @@ MacVocTrain 1 documents.
 - Mac: `AppDelegate.application(_:open:)` hands an `.apkg` from Finder to `Shell.receive`, as the AnkiWeb
   window's downloads and File ▸ Import Cards… with no deck selected reach `Shell.importIntoNewDeck(from:)`.
   It reads the package once (`CardImport.loadAnki`, passed on to the preview), makes a deck in the Mnemit folder
-  named after the Anki deck (`CardImport.deckName`; a taken name gets " 2", " 3"), starts it with New words,
-  selects it and shows the preview of its cards. That preview heads with "Words in this deck", New words / Words
-  I know, preset to Words I know when any card has review history, else New words (`Preview.makesDeck`), and
-  takes the preset's settings. A table does the same, named after the file. File ▸ Import Cards… (⇧⌘I) with a
-  deck selected imports into that deck, keeps its settings and asks nothing. New Deck… (⌘N) asks the same
-  New words / Words I know question beside the name. Decks from Finder go to `Shell.open`.
+  named after the Anki deck (`CardImport.deckName`; a taken name gets " 2", " 3"),
+  selects it and shows the preview of its cards, which takes the preset's settings. A table does the same, named after the file. File ▸ Import Cards… (⇧⌘I) with a
+  deck selected imports into that deck, keeps its settings and asks nothing. New Deck… (⌘N) asks the name.
+  Decks from Finder go to `Shell.open`.
 
 ## Deck site browser
 

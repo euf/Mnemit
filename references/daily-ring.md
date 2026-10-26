@@ -105,8 +105,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `OpenDeck`, `KnownDeckCounts`, `Reminders`, `WidgetSync`; the forecast for future days takes today's
   allowance).
 - Cards first reviewed today are subtracted from the allowance; Learn 10 New Words goes beyond it. A card
-  shown as an introduction has no review yet, so it still counts as a new card of the allowance until its
-  first grade is logged (`Session.isIntroduction`, `scheduling.md`, "Introductions").
+  counts against the allowance when its first grade is logged.
 
 ## Done card, ring, cards left
 
@@ -116,10 +115,6 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   It counts once a day, however many reviews it took. Reviews per day (`reviewsByDay`) are needed only
   for the start of the streak and for the days before `planRuleStart`.
 - A card is done in any mode, including Catch Up, the ring's rest.
-- An introduction is no review: it writes no log entry, so it makes no done card, moves the ring by no
-  share and counts for no step of the streak. The card is held out for three other cards, comes back as a
-  question, and its first grade is the review the ring counts; the stream's total and completed count do
-  not change through the introduction (`scheduling.md`, "Introductions").
 - **Partial credit**: the ring also shows the cards on their way (`DailyRing.underway`,
   `Deck.cardsUnderway`): each reviewed today and still due today counts the answers recalled today
   (Hard, Good, Easy) over those plus the learning steps it still needs, at its best moment of the day
@@ -157,9 +152,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   the app was active (`ReviewLogEntry.duration`, key `ms` in `reviews.jsonl`, in milliseconds).
   `SessionDriver` measures it with `ActiveStopwatch` on `SuspendingClock`: the iPhone reports a
   `scenePhase` other than `.active`, the Mac `NSApplication.didResignActive`. Background, lock and
-  another app don't count; there is no cap. A new word's first review also carries the time the card was
-  on screen as an introduction (`Session.introductionTime`), so the price of a new card includes reading it.
-- A category with fewer than 20 reviews with a duration (old logs, imports without time) takes instead
+  another app don't count; there is no cap.- A category with fewer than 20 reviews with a duration (old logs, imports without time) takes instead
   the gap between neighbouring reviews of the study day (across all decks together), of any length. The
   gap goes to the card of the later review, into the category the card had that day: a new card's steps
   to new, Again on a review card and its relearning to other.

@@ -1,6 +1,6 @@
 # Scheduling and the day's stack
 
-Today's counts and limits, introductions of new words, reviews, leeches, the automatic FSRS refit, the
+Today's counts and limits, a new card's first showing, reviews, leeches, the automatic FSRS refit, the
 day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
 `references/daily-ring.md`.
 
@@ -39,32 +39,19 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 - A deck file that still carries `revealedRecallWeight`, `optimizeFromRevealed` or `caseSensitive`
   decodes; the next save leaves the keys out, and an older app reads their defaults.
 
-## Introductions
+## A new card's first showing
 
-- A new word's first showing is an introduction, not a review (ADR 0006). The mark is
-  `LearningOptions.introducesNewCards` (`deck.json` key `introducesNewCards`, left out while off, no
-  `DeckFile.currentVersion` bump; an older app drops it on save). Options and New Deck call it **Words in
-  this deck**: New words (on) and Words I know (off, also what a deck without the key reads as).
-- In a deck with the mark on, `StudySession` takes the cards that are new when a segment starts
-  (`Urgency.new`, no learning state) as the cards to introduce (`Session.isIntroduction` is true while
-  one is current). A learning or review card is never introduced; practices (`Practice`, the practice
-  stages of `StudyStream`) never introduce.
-- An introduction is shown with the answer open and gives no grade: `SessionMode.grade` and
-  `StudySession.review` return nil for it. Moving on is `StudyStream.introduce(duration:)`. It writes no log
-  entry, sets no learning state and takes no step (`stepCount`), so Undo after an introduction goes back to
-  the previous graded card.
-- The card is then held out of the rotation (`SessionQueue.hold`, `introductionGap` = 3) and asked as a
-  normal question after three other cards, or next when none is left. Its first grade sets the FSRS
-  initial state, and the introduction's time on screen (`Session.introductionTime`) is added to that
-  review's `ms`, so the pace prices the time of reading the word.
-- The session's total and `completedCount` stay as they are through an introduction: the card is still to
-  do. A stream that ends between the introduction and the question leaves the card new, and the next stream
-  introduces it again. A card counts against the day's new-card allowance when its first grade is logged.
-- Across decks, `StudyModel.introduce()` counts the introduction as a new card asked for taking turns
-  between the decks (`mostUrgentLane()`); `grade(_:)` refuses an introduction and counts the new card once.
-  The first card of a stream, and a card that comes after a rest, Undo or Redo, arrives with the stage
-  `.revealed` when it is an introduction.
-- Tests: `IntroductionTests` (VocabCore).
+- A new card (`Card.isNew`, no learning state) is asked on its first showing like any card: question, Show
+  Answer, four grades. Nothing is shown first and nothing is held back (ADR 0007).
+- Its first grade sets the FSRS initial state S0 and D0 and is no lapse (`Scheduler` counts a lapse only in the
+  review phase). A first Again puts the card into its learning step; it comes back in the session and is no
+  longer new. `references/first-exposure-research.md` has the numbers.
+- The grade underneath is Again; its name is **Don't know** while the card is new and **Forgot** afterwards
+  (`Grade.buttonTitle(isNew:)`): the grade button (`GradeChoice.isNew`), the receipt chip and its VoiceOver
+  announcement (`GradeReceipt.isNew`, set by `SessionDriver.grade`), the iPhone Card Detail history and the Mac
+  inspector's history, where the Again of a card's first log entry reads Don't know. Position, key, swipe and
+  colour are the same.
+- A `deck.json` that still has the retired key `introducesNewCards` reads, and the next save leaves it out.
 
 ## Leech
 
@@ -128,7 +115,6 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
   rest of a round comes after them. Today's button of that name (`StudyModel.Entry.pushOn` on the iPhone,
   `SessionViewModel.Entry.pushOn` on the Mac, from the Today window and the deck window's toolbar; the
   code keeps the old name) opens the stream with the ten cards at once, without the plan-end rest first.
-  In a deck marked New words these cards are introduced like any new card.
 - Undo runs through the whole stream: the `UndoCompanion` snapshot is the whole `StudyStream` value.
 - "Practice Mistakes" and "Practice Newest Words" are entries to separate streams
   (`practicingMistakesIn:`, `practicingNewestWordsIn:`) from the deck screen and the Mac's menu; they

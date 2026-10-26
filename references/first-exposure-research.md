@@ -2,8 +2,8 @@
 
 How spaced-repetition systems treat the first exposure of a new card, what FSRS does with the first grade, and what the
 learning-science evidence says about asking before showing. Researched 26.10.2026 for the question "why not read a first
-Forgot as Don't know and a first Good as Know?". Mnemit's current design is ADR 0006 (an introduction that records nothing);
-the verdict at the end weighs it against the alternatives.
+Forgot as Don't know and a first Good as Know?". Mnemit's design is ADR 0007 (a cold first question, the first Again named Don't know); ADR 0006, an
+introduction that records nothing, is superseded. The verdict at the end weighs the alternatives.
 
 ## 1. Two schools
 
@@ -16,8 +16,7 @@ the verdict at the end weighs it against the alternatives.
 | WaniKani | A lesson presents the item, a lesson quiz follows | Finishing the lesson makes it Apprentice 1 | The first review comes 4 h later; the quiz result is not an SRS input (inferred) | [SRS stages](https://knowledge.wanikani.com/wanikani/srs-stages/) |
 | Duolingo | The lesson repeats the words until a short-term model calls them learned | Words enter the long-term model only after the lesson | Half-life regression starts after the lesson | [Settles & Meeder 2016, §2](https://research.duolingo.com/papers/settles.acl16.pdf) |
 
-Mnemit's introduction sits between them: it presents first, as SuperMemo, WaniKani and Duolingo do, and asks the first
-graded question minutes later in the same stream, as Anki's learning step does.
+Mnemit follows Anki: the first showing is a graded question, and a learning step follows a first Again.
 
 Anki's forum regulars advise grading a never-seen foreign word Again on its first showing, and not changing that habit
 for FSRS ([thread](https://forums.ankiweb.net/t/question-about-handling-new-cards/45436)). A user who never pressed Again or
@@ -80,12 +79,12 @@ changes two things: how the first contact feels, and whether the first grade mea
 - **Asked cold, the first Forgot shown as "Don't know"** (neutral colour, same Again underneath): FSRS gets exactly the data
   its defaults were fitted on, every deck works the same, per card, without a deck setting or an extra showing. The red
   "Forgot" on first contact, the reason for ADR 0006, goes with the label.
-- **Introduction, no record** (ADR 0006, current): no failure on first contact; the first grade becomes a short-term recall
+- **Introduction, no record** (ADR 0006): no failure on first contact; the first grade becomes a short-term recall
   that the default S0 overrates until the deck's refit; one extra showing per word; a deck setting.
 - **Introduction recorded as Again**: keeps the answer-first showing and gives FSRS the Anki-native data (§2's first path),
   at the cost of a grade the learner didn't press, justified only by the deck's mark New words.
 
-Recommended: the first option, for every deck. Not built yet; the decision is EF's (26.10).
+Built in 7.1 (26.10): the first option, for every deck; ADR 0007.
 
 Not confirmed: whether WaniKani's lesson quiz is formally outside the SRS, SuperMemo 18's startup rules beyond the guru
 pages, Anki's shipped FSRS-6 S0 values (the table uses py-fsrs's), RemNote, Mochi, Quizlet and Lingvist; Kornell et al.
