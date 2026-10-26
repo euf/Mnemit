@@ -96,13 +96,13 @@ private struct CardDetail: View {
                 }
                 if document.deck.isLeech(card) {
                     Label {
-                        Text("Difficult: you keep forgetting this card.")
+                        Text("Leech: you keep forgetting this card.")
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
                     }
                     .foregroundStyle(.secondary)
-                    .help("The card has been forgotten as often as the leech threshold in the learning options asks. A session suspends it; resume it to keep learning it.")
+                    .help("The card has been forgotten as often as the leech threshold in the learning options asks.")
                 }
                 if card.learningState != nil || card.note != nil {
                     DisclosureGroup("Details", isExpanded: $showsDetails) {
@@ -150,7 +150,7 @@ private struct CardDetail: View {
         if let learningState = card.learningState {
             LabeledContent("State", value: learningState.phase.title)
             LabeledContent("Stability", value: Format.days(learningState.stability))
-            LabeledContent("Difficulty", value: learningState.difficulty.formatted(.number.precision(.fractionLength(1))) + " / 10")
+            LabeledContent("Difficulty", value: Format.difficulty(learningState.difficulty))
             TimelineView(.everyMinute) { _ in
                 if let probability = document.deck.recallProbability(of: card, at: document.clock.now, calendar: document.calendar) {
                     LabeledContent("Recall Now", value: Format.percent(probability))

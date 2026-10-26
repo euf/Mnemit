@@ -44,9 +44,9 @@ public struct StudySession: Sendable {
 
     /// Reviews `card`, the current card, and moves on to the next one.
     ///
-    /// The card leaves the session once it is in the review phase. A lapse that brings its
-    /// lapses to `LearningOptions.leechThreshold`, or to a further multiple of it, makes it
-    /// a leech: the returned card is suspended, and it leaves the session at once.
+    /// The card leaves the session once it is in the review phase. A lapse that makes it a leech, see
+    /// `isLeechMoment(lapses:threshold:)`, is a moment of the stream (`Session.leechIDs`); with the deck's
+    /// leech action Suspend the returned card is suspended, too, and leaves the session at once.
     ///
     /// - Parameter calendar: Counts the elapsed study days and the due date. It may
     ///   differ from the one the session started with, e.g. after the machine's time
@@ -60,16 +60,24 @@ public struct StudySession: Sendable {
         let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
         var scheduled = scheduler.review(card, grade: grade, at: now, mode: reviewMode, duration: duration, using: &fuzzing)
         let becameLeech = Self.isNewLeech(scheduled, after: card, threshold: learningOptions.leechThreshold)
-        if becameLeech { scheduled.suspend(at: now) }
-        session.record(grade, isDone: scheduled.learningState?.phase == .review, isLeech: becameLeech, at: now)
+        let suspends = becameLeech && learningOptions.leechAction == .suspend
+        if suspends { scheduled.suspend(at: now) }
+        session.record(grade, isDone: scheduled.learningState?.phase == .review, isLeech: becameLeech, isSuspended: suspends, at: now)
         return scheduled
     }
 
-    /// Whether the review that made `scheduled` out of `card` lapsed it onto the threshold
-    /// or a multiple of it. A resumed leech is suspended again only at the next multiple.
+    /// Whether the review that made `scheduled` out of `card` lapsed it onto a leech moment.
     private static func isNewLeech(_ scheduled: Card, after card: Card, threshold: Int) -> Bool {
-        guard threshold > 0, !card.isSuspended, let lapses = scheduled.learningState?.lapses else { return false }
-        return lapses > (card.learningState?.lapses ?? 0) && lapses.isMultiple(of: threshold)
+        guard !card.isSuspended, let lapses = scheduled.learningState?.lapses else { return false }
+        return lapses > (card.learningState?.lapses ?? 0) && isLeechMoment(lapses: lapses, threshold: threshold)
+    }
+
+    /// Whether a lapse that brings a card to `lapses` is a leech moment: the lapse that reaches the
+    /// threshold, and every half threshold after it, rounded up, as Anki does: 8, 12, 16 … for 8,
+    /// 5, 8, 11 … for 5. A threshold of 0 never is.
+    static func isLeechMoment(lapses: Int, threshold: Int) -> Bool {
+        guard threshold > 0, lapses >= threshold else { return false }
+        return (lapses - threshold).isMultiple(of: (threshold + 1) / 2)
     }
 
     mutating func perform(_ command: SessionCommand) {

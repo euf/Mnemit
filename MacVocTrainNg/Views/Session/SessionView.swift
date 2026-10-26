@@ -15,6 +15,9 @@ import VocabCore
 ///
 /// ⌘E edits the card being asked (#289); before the answer is shown, without showing it.
 ///
+/// A Forgot that makes a card a leech stops the stream for a moment (`LeechMomentView`): Return continues, E edits the
+/// card, S sets it aside or keeps it; Z, Esc and ⌘Z still take the grade back.
+///
 /// The menu "More" is the iPhone's (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, which leaves out
 /// the card from now on, until the learner resumes it (#290), and Pronounce Automatically.
 struct SessionView: View {
@@ -33,6 +36,17 @@ struct SessionView: View {
     struct EditRequest {
         var card: Card
         var hidesAnswer: Bool
+        /// The deck of the card when it isn't the card asked: the card of a leech moment.
+        var document: VocabularyDocument?
+        /// Runs once the card is saved: the leech moment goes on with it.
+        var onSave: () -> Void = {}
+
+        init(card: Card, hidesAnswer: Bool, document: VocabularyDocument? = nil, onSave: @escaping () -> Void = {}) {
+            self.card = card
+            self.hidesAnswer = hidesAnswer
+            self.document = document
+            self.onSave = onSave
+        }
     }
 
     /// What the stream's one sheet shows: the card edited, or what the app knows about it; Edit in the
@@ -66,6 +80,8 @@ struct SessionView: View {
                     }
                     .scrollBounceBehavior(.basedOnSize)
                 }
+            } else if let moment = model.leechMoment {
+                leechArea(moment.card, document: moment.document)
             } else if let card = model.currentCard {
                 cardArea(card)
             }
@@ -83,7 +99,7 @@ struct SessionView: View {
         .sheet(item: $sheet) { sheet in
             switch sheet {
             case let .edit(request):
-                CardEditSheet(document: model.document, card: request.card, hidesAnswer: request.hidesAnswer)
+                CardEditSheet(document: request.document ?? model.document, card: request.card, hidesAnswer: request.hidesAnswer, onSave: request.onSave)
             case let .info(card):
                 CardInfoSheet(document: model.document, card: card) { id in
                     if let card = model.document.card(withID: id) { self.sheet = .edit(EditRequest(card: card, hidesAnswer: false)) }
@@ -109,12 +125,12 @@ struct SessionView: View {
 
     /// Edits the card being asked; its answer stays hidden until it is shown.
     private func editCurrentCard() {
-        guard let card = model.currentCard else { return }
+        guard model.leechMoment == nil, let card = model.currentCard else { return }
         sheet = .edit(EditRequest(card: card, hidesAnswer: model.stage == .asking))
     }
 
     private func showCardInfo() {
-        guard let card = model.currentCard else { return }
+        guard model.leechMoment == nil, let card = model.currentCard else { return }
         sheet = .info(card)
     }
 
@@ -134,7 +150,7 @@ struct SessionView: View {
                     .keyboardShortcut("z", modifiers: .command)
             }
             .disabled(!model.canUndoLast)
-            if let spokenText {
+            if model.leechMoment == nil, let spokenText {
                 Button("Pronounce") { GreekSpeech.shared.speak(spokenText) }
                     .keyboardShortcut("s", modifiers: [])
             }
@@ -204,7 +220,7 @@ struct SessionView: View {
                     .help("Undo the last answer")
                 Menu("More", systemImage: "ellipsis.circle") {
                     StreamMenuItems(
-                        hasCard: model.currentCard != nil && !model.isResting, onEdit: editCurrentCard, onInfo: showCardInfo,
+                        hasCard: model.currentCard != nil && !model.isResting && model.leechMoment == nil, onEdit: editCurrentCard, onInfo: showCardInfo,
                         onSuspend: { model.suspendCurrentCard() })
                 }
                 .menuIndicator(.hidden)
@@ -217,7 +233,7 @@ struct SessionView: View {
         .background {
             Button("Edit Card", action: editCurrentCard)
                 .keyboardShortcut("e", modifiers: .command)
-                .disabled(model.currentCard == nil || model.isResting)
+                .disabled(model.currentCard == nil || model.isResting || model.leechMoment != nil)
                 .hidden()
         }
         .padding(.horizontal, 20)
@@ -235,6 +251,18 @@ struct SessionView: View {
                 .help("Practice doesn't change when cards come back")
         case .plan, .rest:
             EmptyView()
+        }
+    }
+
+    /// The leech moment: the chip that offers Undo keeps its place above it, as over a card.
+    private func leechArea(_ card: Card, document: VocabularyDocument) -> some View {
+        VStack(spacing: 0) {
+            UndoChip(receipt: model.receipt, onUndo: model.undoLast, onExpire: model.dismissReceipt)
+                .padding(.top, 24)
+            LeechMomentView(
+                card: card, media: document.deck.media,
+                onEdit: { sheet = .edit(EditRequest(card: card, hidesAnswer: false, document: document, onSave: model.continueLeech)) },
+                onToggleAside: model.toggleLeechAside, onContinue: model.continueLeech)
         }
     }
 

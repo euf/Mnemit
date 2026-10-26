@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// The cards of a deck, to find, read and tidy: a search over question, answer, hint and word
-/// key, the filters All, Due, New, Learning, Suspended and Difficult with their counts, four
+/// key, the filters All, Due, New, Learning, Suspended and Leeches with their counts, five
 /// sorts, and a row per card that opens the card. Swipe a row to delete or suspend it, press
 /// it for more, or choose Select to act on several cards at once.
 ///

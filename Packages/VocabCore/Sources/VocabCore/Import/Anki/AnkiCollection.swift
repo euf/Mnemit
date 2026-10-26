@@ -300,9 +300,12 @@ struct AnkiCollection {
                 (configuration[key] as? [Any] ?? []).compactMap { ($0 as? NSNumber)?.floatValue }
             }
             guard let id = Int(key) else { continue }
+            // `lapse.leechFails` and `lapse.leechAction` (0 suspend, 1 tag only).
+            let lapse = configuration["lapse"] as? [String: Any]
+            let leech = (lapse?["leechFails"] as? NSNumber).map { AnkiPreset.Leech(ankiThreshold: $0.intValue, ankiAction: (lapse?["leechAction"] as? NSNumber)?.intValue ?? 0) }
             result[id] = AnkiPreset(
                 name: configuration["name"] as? String ?? "", fsrs4: floats("fsrsWeights"), fsrs5: floats("fsrsParams5"), fsrs6: floats("fsrsParams6"),
-                desiredRetention: (configuration["desiredRetention"] as? NSNumber)?.floatValue ?? 0)
+                desiredRetention: (configuration["desiredRetention"] as? NSNumber)?.floatValue ?? 0, leech: leech)
         }
         return result
     }
@@ -341,13 +344,21 @@ struct AnkiCollection {
 
     /// `deck_config`: `config` is a `DeckConfig.Config`, where `fsrs_params_4`, `fsrs_params_5`
     /// and `fsrs_params_6` are the `repeated float` fields 3, 5 and 6 and `desired_retention`
-    /// the `float` 37 (`deck_config.proto`).
+    /// the `float` 37, `leech_action` the enum 21 (0 suspend, 1 tag only; proto3 leaves out 0) and
+    /// `leech_threshold` the `uint32` 22 (`deck_config.proto`).
     private func currentPresets() throws -> [Int: AnkiPreset] {
         guard try database.hasTable("deck_config") else { return [:] }
         return Dictionary(
             uniqueKeysWithValues: try database.rows("SELECT id, name, config FROM deck_config") {
                 let fields = ProtobufFields($0.data(2))
-                return ($0.int(0), AnkiPreset(name: $0.text(1), fsrs4: fields.floats(3), fsrs5: fields.floats(5), fsrs6: fields.floats(6), desiredRetention: fields.float(37) ?? 0))
+                // Anki writes the threshold of every preset, so a config without one has no leech settings.
+                let leech = fields.varint(22).map { AnkiPreset.Leech(ankiThreshold: Int(truncatingIfNeeded: $0), ankiAction: Int(truncatingIfNeeded: fields.varint(21) ?? 0)) }
+                return (
+                    $0.int(0),
+                    AnkiPreset(
+                        name: $0.text(1), fsrs4: fields.floats(3), fsrs5: fields.floats(5), fsrs6: fields.floats(6), desiredRetention: fields.float(37) ?? 0,
+                        leech: leech)
+                )
             })
     }
 }

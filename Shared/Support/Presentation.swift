@@ -498,7 +498,7 @@ extension CardKind {
 
 extension CardFilter {
     /// The filter's name, the same in every browser: All, Due, New, Learning, Suspended,
-    /// Difficult.
+    /// Leeches.
     var title: String {
         switch self {
         case .all: String(localized: "All")
@@ -506,7 +506,7 @@ extension CardFilter {
         case .new: String(localized: "New")
         case .learning: String(localized: "Learning")
         case .suspended: String(localized: "Suspended")
-        case .difficult: String(localized: "Difficult")
+        case .leeches: String(localized: "Leeches")
         }
     }
 
@@ -519,7 +519,7 @@ extension CardFilter {
         case .new: String(localized: "Every card has been studied.")
         case .learning: String(localized: "No card is being learned or relearned.")
         case .suspended: String(localized: "No card is suspended.")
-        case .difficult: String(localized: "Cards you keep forgetting show up here.")
+        case .leeches: String(localized: "Words you keep forgetting appear here.")
         }
     }
 }
@@ -592,6 +592,11 @@ enum Format {
     /// What the cards left take, "≈ 7 min", or "< 1 min" for no whole minute (`DailyGoal.minutesLeft`).
     static func timeLeft(minutes: Int) -> String {
         minutes == 0 ? String(localized: "< 1 min") : String(localized: "≈ \(minutes) min")
+    }
+
+    /// An FSRS difficulty as "5.2 / 10".
+    static func difficulty(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(1))) + " / 10"
     }
 
     static func percent(_ value: Double) -> String {

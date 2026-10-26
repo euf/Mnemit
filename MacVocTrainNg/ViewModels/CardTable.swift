@@ -19,8 +19,16 @@ struct CardRow: Identifiable {
     var isSuspended: Bool
     /// New cards first, then by due date, suspended cards last.
     var dueSortKey: Double
+    /// Whether the card has been studied: a new card's memory columns are empty.
+    var hasMemory: Bool
+    /// The memory columns' values, and their sort keys: a new card has no value, so it sorts
+    /// before every card that has one, as in Due.
+    var lapses: Int
+    var stability: Double
+    var difficulty: Double
+    var recall: Double
 
-    init(card: Card, position: Int) {
+    init(card: Card, position: Int, recall: Double?) {
         id = card.id
         self.position = position
         question = card.question
@@ -34,6 +42,34 @@ struct CardRow: Identifiable {
         due = card.learningState?.due
         isSuspended = card.isSuspended
         dueSortKey = card.isSuspended ? .infinity : card.learningState?.due.timeIntervalSinceReferenceDate ?? -.infinity
+        hasMemory = card.learningState != nil
+        lapses = card.learningState?.lapses ?? -1
+        stability = card.learningState?.stability ?? -.infinity
+        difficulty = card.learningState?.difficulty ?? -.infinity
+        self.recall = recall ?? -.infinity
+    }
+}
+
+/// What the Recall column reads besides the card: the FSRS parameters and the calendar, and
+/// the study day, since a card's recall changes by whole days. Two bases are equal while the
+/// recall of every card is.
+struct RecallBasis: Equatable {
+    var scheduler: Scheduler
+    var now: Date
+
+    init(options: LearningOptions, calendar: StudyCalendar, now: Date) {
+        scheduler = Scheduler(learningOptions: options, calendar: calendar)
+        self.now = now
+    }
+
+    func recall(of card: Card) -> Double? {
+        card.learningState.map { scheduler.recallProbability(of: $0, at: now) }
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.scheduler.learningOptions.parameters == rhs.scheduler.learningOptions.parameters
+            && lhs.scheduler.calendar == rhs.scheduler.calendar
+            && lhs.scheduler.calendar.dayNumber(for: lhs.now) == rhs.scheduler.calendar.dayNumber(for: rhs.now)
     }
 }
 
@@ -53,15 +89,25 @@ final class CardTable {
     private var index = CardSearchIndex(cards: [])
     private var sorted: (order: [KeyPathComparator<CardRow>], positions: [Int])?
     private var shown: (query: String, rows: [CardRow])?
+    private var basis: RecallBasis?
 
-    func rows(of cards: [Card], sortedBy order: [KeyPathComparator<CardRow>], matching query: String) -> [CardRow] {
+    func rows(
+        of cards: [Card], sortedBy order: [KeyPathComparator<CardRow>], matching query: String, recall: RecallBasis
+    ) -> [CardRow] {
+        // A new day or new parameters change the recall of every card: build all rows again.
+        if recall != basis {
+            basis = recall
+            self.cards = []
+            sorted = nil
+            shown = nil
+        }
         // Cheap while nothing changed: arrays sharing storage compare equal at once.
         if cards != self.cards {
             let oldCards = self.cards
             self.cards = cards
             if let edited = Self.editedPositions(from: oldCards, to: cards) {
                 for position in edited {
-                    allRows[position] = CardRow(card: cards[position], position: position)
+                    allRows[position] = CardRow(card: cards[position], position: position, recall: recall.recall(of: cards[position]))
                     index.replace(at: position, with: cards[position])
                 }
                 sorted = sorted.flatMap { sorted in
@@ -69,7 +115,7 @@ final class CardTable {
                     return (order, reinserted(edited, into: sorted.positions, by: order))
                 }
             } else {
-                allRows = cards.enumerated().map { CardRow(card: $1, position: $0) }
+                allRows = cards.enumerated().map { CardRow(card: $1, position: $0, recall: recall.recall(of: $1)) }
                 index = CardSearchIndex(cards: cards)
                 sorted = sorted.flatMap { sorted in
                     guard sorted.order == order else { return nil }

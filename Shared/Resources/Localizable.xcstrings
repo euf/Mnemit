@@ -3268,68 +3268,24 @@
         }
       }
     },
-    "A card you forget as many times as Difficult after sets, and again after every further multiple, is suspended and marked Difficult. Resume it from the card list. Off never suspends.": {
+    "A card you forget this many times becomes a leech, and again after every half of that.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eine Karte, die du so oft vergisst, wie bei „Schwierig nach“ eingestellt ist, und danach bei jedem weiteren Vielfachen, wird ausgesetzt und als Schwierig markiert. Setze sie in der Kartenliste fort. Bei „Aus“ wird nie ausgesetzt."
+            "value": "Eine Karte, die du so oft vergisst, wird zur Lernbremse, und danach erneut nach jeder weiteren Hälfte davon."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Μια κάρτα που ξεχνάς τόσες φορές όσες ορίζει το «Δύσκολη μετά από», και ξανά μετά από κάθε επόμενο πολλαπλάσιο, τίθεται σε αναστολή και σημειώνεται ως δύσκολη. Συνέχισέ την από τη λίστα καρτών. Με «Ανενεργό» δεν τίθεται ποτέ σε αναστολή."
+            "value": "Μια κάρτα που ξεχνάς τόσες φορές γίνεται βδέλλα, και ξανά μετά από κάθε μισό αυτού του αριθμού."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карточка, которую ты забываешь столько раз, сколько задано в «Сложная после», и затем после каждого следующего кратного, приостанавливается и помечается как сложная. Возобнови её в списке карточек. При «Выкл.» ничего не приостанавливается."
-          }
-        }
-      }
-    },
-    "A card you forget this many times is suspended and marked Difficult.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Karte, die du so oft vergisst, wird ausgesetzt und als Schwierig markiert."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μια κάρτα που ξεχνάς τόσες φορές τίθεται σε αναστολή και σημειώνεται ως δύσκολη."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточка, которую ты забываешь столько раз, приостанавливается и помечается как сложная."
-          }
-        }
-      }
-    },
-    "A card you forget this many times, and again after every further multiple of it, is suspended as a leech. Resume it in the card list. Off never suspends.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Karte, die du so oft vergisst, und danach bei jedem weiteren Vielfachen davon, wird als Lernbremse ausgesetzt. Nimm sie in der Kartenliste wieder auf. Aus setzt nie aus."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μια κάρτα που ξεχνάς τόσες φορές, και ξανά σε κάθε επόμενο πολλαπλάσιό τους, αναστέλλεται ως «βδέλλα». Άρε την αναστολή της στη λίστα καρτών. Με «Ανενεργό» δεν αναστέλλεται ποτέ καμία."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Если карточка забыта столько раз, а затем снова при каждом следующем кратном этому числу, она приостанавливается как «пиявка». Возобновить её можно в списке карточек. При значении «Выкл.» ничего не приостанавливается."
+            "value": "Карточка, которую ты забываешь столько раз, становится приставучей, и снова после каждой половины этого числа."
           }
         }
       }
@@ -3374,6 +3330,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Колода с названием «%@» уже существует."
+          }
+        }
+      }
+    },
+    "A leech is a card you have forgotten as often as the deck's threshold says, and again after every half of it. Its answer stays on screen so you can edit the card or set it aside.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Lernbremse ist eine Karte, die du so oft vergessen hast, wie die Schwelle des Stapels sagt, und danach erneut nach jeder weiteren Hälfte davon. Ihre Antwort bleibt auf dem Bildschirm, damit du die Karte bearbeiten oder beiseitelegen kannst."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βδέλλα είναι μια κάρτα που έχεις ξεχάσει τόσες φορές όσες ορίζει το όριο της τράπουλας, και ξανά μετά από κάθε μισό αυτού. Η απάντησή της μένει στην οθόνη, ώστε να μπορείς να την επεξεργαστείς ή να την παραμερίσεις."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приставучая карточка — та, что забыта столько раз, сколько задаёт порог колоды, и снова после каждой его половины. Её ответ остаётся на экране: карточку можно изменить или отложить."
           }
         }
       }
@@ -5031,28 +5009,6 @@
         }
       }
     },
-    "Cards you keep forgetting show up here.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten, die du immer wieder vergisst, erscheinen hier."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι κάρτες που ξεχνάς συνεχώς εμφανίζονται εδώ."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки, которые ты постоянно забываешь, появятся здесь."
-          }
-        }
-      }
-    },
     "Catch Up": {
       "localizations": {
         "de": {
@@ -6237,72 +6193,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Подробности"
-          }
-        }
-      }
-    },
-    "Difficult": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schwierig"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Δύσκολη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сложная"
-          }
-        }
-      }
-    },
-    "Difficult after": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schwierig nach"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Δύσκολη μετά από"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сложная после"
-          }
-        }
-      }
-    },
-    "Difficult: you keep forgetting this card.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schwierig: Du vergisst diese Karte immer wieder."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Δύσκολη: ξεχνάς συνεχώς αυτή την κάρτα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сложная: ты постоянно забываешь эту карточку."
           }
         }
       }
@@ -8133,6 +8023,28 @@
         }
       }
     },
+    "Keep": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behalten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Διατήρηση"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оставить"
+          }
+        }
+      }
+    },
     "Keep Going": {
       "localizations": {
         "de": {
@@ -8151,6 +8063,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Учиться дальше"
+          }
+        }
+      }
+    },
+    "Keep It": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behalten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Διατήρηση"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оставить"
           }
         }
       }
@@ -8239,6 +8173,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Keeps slipping": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entgleitet immer wieder"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Συνεχώς ξεφεύγει"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё время ускользает"
           }
         }
       }
@@ -8573,6 +8529,50 @@
         }
       }
     },
+    "Leech": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremse"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βδέλλα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приставучая"
+          }
+        }
+      }
+    },
+    "Leech after": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremse nach"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βδέλλα μετά από"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приставучая после"
+          }
+        }
+      }
+    },
     "Leech threshold": {
       "localizations": {
         "de": {
@@ -8590,7 +8590,51 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Порог для пиявок"
+            "value": "Порог для приставучих"
+          }
+        }
+      }
+    },
+    "Leech: you keep forgetting this card.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremse: Du vergisst diese Karte immer wieder."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βδέλλα: ξεχνάς συνεχώς αυτή την κάρτα."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приставучая: ты постоянно забываешь эту карточку."
+          }
+        }
+      }
+    },
+    "Leeches": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremsen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βδέλλες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приставучие"
           }
         }
       }
@@ -10707,6 +10751,28 @@
         }
       }
     },
+    "Recall": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrufquote"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ανάκληση"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запоминаемость"
+          }
+        }
+      }
+    },
     "Recall Now": {
       "localizations": {
         "de": {
@@ -11869,6 +11935,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сессии"
+          }
+        }
+      }
+    },
+    "Set Aside": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beiseitelegen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Στην άκρη"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отложить"
           }
         }
       }
@@ -13193,24 +13281,24 @@
         }
       }
     },
-    "The card has been forgotten as often as the leech threshold in the learning options asks. A session suspends it; resume it to keep learning it.": {
+    "The card has been forgotten as often as the leech threshold in the learning options asks.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Karte wurde so oft vergessen, wie die Schwelle für Lernbremsen in den Lernoptionen verlangt. Eine Sitzung setzt sie aus; nimm sie wieder auf, um sie weiter zu lernen."
+            "value": "Die Karte wurde so oft vergessen, wie die Schwelle für Lernbremsen in den Lernoptionen verlangt."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Η κάρτα έχει ξεχαστεί τόσες φορές όσες ορίζει το όριο για βδέλλες στις επιλογές εκμάθησης. Μια συνεδρία την αναστέλλει· άρε την αναστολή για να συνεχίσεις να τη μαθαίνεις."
+            "value": "Η κάρτα έχει ξεχαστεί τόσες φορές όσες ορίζει το όριο για βδέλλες στις επιλογές εκμάθησης."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карточка забыта столько раз, сколько задано порогом для пиявок в опциях колоды. Сессия приостанавливает её; возобнови её, чтобы продолжить учить."
+            "value": "Карточка забыта столько раз, сколько задано порогом для приставучих в опциях колоды."
           }
         }
       }
@@ -14623,6 +14711,28 @@
         }
       }
     },
+    "When a card becomes a leech": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn eine Karte zur Lernbremse wird"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όταν μια κάρτα γίνεται βδέλλα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда карточка становится приставучей"
+          }
+        }
+      }
+    },
     "When nothing is due, the day is all done. Learn 10 New Words adds ten new words if you want more.": {
       "localizations": {
         "de": {
@@ -14817,6 +14927,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Выучено слов"
+          }
+        }
+      }
+    },
+    "Words you keep forgetting appear here.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wörter, die du immer wieder vergisst, erscheinen hier."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι λέξεις που ξεχνάς συνεχώς εμφανίζονται εδώ."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слова, которые ты постоянно забываешь, появятся здесь."
           }
         }
       }
@@ -15473,28 +15605,6 @@
         }
       }
     },
-    "leech, suspended": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernbremse, ausgesetzt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "βδέλλα, σε αναστολή"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "пиявка, приостановлена"
-          }
-        }
-      }
-    },
     "less than a day": {
       "localizations": {
         "de": {
@@ -15557,28 +15667,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "или"
-          }
-        }
-      }
-    },
-    "suspended · leech": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ausgesetzt · Lernbremse"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "σε αναστολή · βδέλλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "приостановлена · пиявка"
           }
         }
       }

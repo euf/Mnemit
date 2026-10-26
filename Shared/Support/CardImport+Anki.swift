@@ -134,7 +134,7 @@ extension CardImport {
     /// deck has already, or an earlier card of the package, are marked duplicates. Replays
     /// every review, so it takes a while for a large package: not for the main thread.
     ///
-    /// `isNewDeck`: the deck has no cards yet, and takes the FSRS settings of the Anki preset most
+    /// `isNewDeck`: the deck has no cards yet, and takes the FSRS settings and the leech settings of the Anki preset most
     /// cards use, if it has any; the cards are replayed with them, and `learningOptions` of the
     /// result are what the deck is to have. A deck that exists keeps its options.
     nonisolated static func ankiCandidates(
@@ -142,7 +142,7 @@ extension CardImport {
         elsewhere: WordIndex = WordIndex()
     ) -> (candidates: [CardImporter.Candidate], summary: AnkiSummary, learningOptions: LearningOptions?) {
         let preset = package.learningOptions(applyingTo: learningOptions)
-        let taken = isNewDeck ? preset : nil
+        let taken = isNewDeck ? package.deckOptions(applyingTo: learningOptions) : nil
         let cards = package.cards(learningOptions: taken ?? learningOptions, calendar: calendar, created: created)
         var summary = AnkiSummary(
             deckNames: package.deckNames, withHistory: cards.filter { !$0.log.isEmpty }.count,
@@ -150,8 +150,8 @@ extension CardImport {
             // The reader counts the notes with an empty side, `cards(from:…)` those that the text rules leave out.
             skippedEmpty: package.skippedEmpty + package.notes.count - cards.count, skippedMediaOnly: package.skippedMediaOnly,
             media: package.mediaSummary)
-        if let taken {
-            summary.settings = .applied(target: Int((taken.targetRecall * 100).rounded()))
+        if isNewDeck, let preset {
+            summary.settings = .applied(target: Int((preset.targetRecall * 100).rounded()))
         } else if preset != nil {
             summary.settings = .keptForExistingDeck
         }

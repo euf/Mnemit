@@ -53,18 +53,18 @@ struct CardBrowserListTests {
         #expect(questions(.new) == ["new"])
         #expect(questions(.learning) == ["learning now", "relearning later"])
         #expect(questions(.suspended) == ["suspended new", "suspended leech"])
-        // Difficult is what the leech rule says, suspended or not.
-        #expect(questions(.difficult) == ["suspended leech", "leech"])
+        // Leeches is what the leech rule says, suspended or not.
+        #expect(questions(.leeches) == ["suspended leech", "leech"])
     }
 
-    @Test func aSuspendedCardIsInNoFilterButAllSuspendedAndDifficult() {
+    @Test func aSuspendedCardIsInNoFilterButAllSuspendedAndLeeches() {
         let suspended = card("s", learning: state(.learning, due: -60, lapses: 9), suspended: true)
         let holding = CardFilter.allCases.filter { $0.matches(suspended, at: now, leechThreshold: threshold) }
-        #expect(holding == [.all, .suspended, .difficult])
+        #expect(holding == [.all, .suspended, .leeches])
     }
 
-    @Test func aThresholdOfZeroHasNoDifficultCards() {
-        #expect(cards.filter { CardFilter.difficult.matches($0, at: now, leechThreshold: 0) }.isEmpty)
+    @Test func aThresholdOfZeroHasNoLeeches() {
+        #expect(cards.filter { CardFilter.leeches.matches($0, at: now, leechThreshold: 0) }.isEmpty)
     }
 
     @Test func theCountsAreThoseOfTheFilters() throws {
@@ -113,6 +113,17 @@ struct CardBrowserListTests {
         #expect(shown(list, sort: .difficulty) == ["hard", "middle", "easy", "new"])
     }
 
+    @Test func lapsesPutTheMostForgottenFirstAndNewCardsLast() {
+        let list = [
+            card("two", learning: state(.review, due: 0, lapses: 2)),
+            card("new"),
+            card("nine", learning: state(.review, due: 0, lapses: 9)),
+            card("none", learning: state(.review, due: 0)),
+            card("two too", learning: state(.review, due: 0, lapses: 2)),
+        ]
+        #expect(shown(list, sort: .lapses) == ["nine", "two", "two too", "none", "new"])
+    }
+
     // MARK: Search
 
     @Test func aSearchNarrowsWhatTheFilterHoldsIgnoringCaseAccentsAndTheWordKey() {
@@ -137,10 +148,10 @@ struct CardBrowserListTests {
 
     // MARK: State
 
-    @Test func aRowSaysSuspendedBeforeDifficultBeforeNewBeforeTheDate() {
+    @Test func aRowSaysSuspendedBeforeLeechBeforeNewBeforeTheDate() {
         let due = now.addingTimeInterval(3 * 86_400)
         #expect(BrowserState(card("a", learning: state(.review, due: 0, lapses: 9), suspended: true), leechThreshold: threshold) == .suspended)
-        #expect(BrowserState(card("b", learning: state(.review, due: 0, lapses: 9)), leechThreshold: threshold) == .difficult)
+        #expect(BrowserState(card("b", learning: state(.review, due: 0, lapses: 9)), leechThreshold: threshold) == .leech)
         #expect(BrowserState(card("c"), leechThreshold: threshold) == .new)
         #expect(BrowserState(card("d", learning: state(.review, due: 3 * 86_400)), leechThreshold: threshold) == .due(due))
         #expect(BrowserState.new.symbol == nil)

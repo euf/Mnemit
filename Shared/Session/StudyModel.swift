@@ -245,7 +245,7 @@ final class StudyModel: Identifiable {
     }
 
     func reveal() {
-        guard stage == .asking else { return }
+        guard stage == .asking, leechMoment == nil else { return }
         stage = .revealed
     }
 
@@ -257,9 +257,9 @@ final class StudyModel: Identifiable {
         let lane = current
         let graded = lanes[lane].driver
         // Counted before the grade: the grade's move on chooses the next deck by it.
-        let wasNew = stage == .revealed && currentCard?.isNew == true
+        let wasNew = stage == .revealed && leechMoment == nil && currentCard?.isNew == true
         if wasNew { lanes[lane].newAsked += 1 }
-        guard stage == .revealed, graded.grade(grade), let receipt = graded.lastReceipt else {
+        guard stage == .revealed, leechMoment == nil, graded.grade(grade), let receipt = graded.lastReceipt else {
             if wasNew { lanes[lane].newAsked -= 1 }
             return nil
         }
@@ -269,10 +269,36 @@ final class StudyModel: Identifiable {
         return receipt
     }
 
+    /// The stop after a Forgot that made a card a leech, in the deck of the card: the view shows it instead of the
+    /// next card (`LeechMomentView`) until `continueLeech()`, `toggleLeechAside()` or an edit of the card ends it.
+    /// `card` is as the deck holds it now, so `isSuspended` is whether the review suspended it (the deck's action Suspend).
+    var leechMoment: (card: Card, document: VocabularyDocument)? {
+        let lane = lanes[current]
+        guard let moment = lane.driver.leechMoment, let card = lane.document.card(withID: moment.cardID) else { return nil }
+        return (card, lane.document)
+    }
+
+    /// Goes on from the leech moment to the next card.
+    func continueLeech() {
+        guard leechMoment != nil else { return }
+        driver.continueLeech()
+    }
+
+    /// Sets the card of the leech moment aside, or keeps it when the review suspended it, and goes on. Undo takes
+    /// it back, to the moment, like a review.
+    func toggleLeechAside() {
+        let lane = current
+        if driver.toggleLeechAside() {
+            destinations.append(.away)
+            receipts.append(nil)
+            stepLanes.append(lane)
+        }
+    }
+
     /// Suspends the card being asked, so no session asks it until the learner resumes
     /// it on the Mac, and moves on (#290). Undo takes it back like a review.
     func suspendCurrentCard() {
-        guard stage != .resting else { return }
+        guard stage != .resting, leechMoment == nil else { return }
         let lane = current
         if driver.suspendCurrentCard() {
             destinations.append(.away)
@@ -411,6 +437,12 @@ extension StudyModel: SessionDriverDelegate {
         while destinations.count < steps { destinations.append(.away) }
         receipts.removeLast(max(0, receipts.count - steps))
         while receipts.count < steps { receipts.append(nil) }
-        undoIsComing = lanes[index].document.undoManager?.isUndoing == true
+        undoIsComing = lanes[index].document.undoManager?.isUndoing == true && restored.leechMoment == nil
+        if restored.leechMoment != nil {
+            // The moment is the screen, with the card as it was graded: no move on follows.
+            current = index
+            activateCurrentLane()
+            stage = .revealed
+        }
     }
 }

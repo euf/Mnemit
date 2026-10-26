@@ -56,6 +56,11 @@ struct SessionQueue: Sendable {
         backlog.removeAll { $0 == id }
     }
 
+    /// Puts back a card that left, to be asked again: it joins the rotation.
+    mutating func add(_ id: Card.ID) {
+        rotation.append(id)
+    }
+
     /// Drops every card that has not been asked yet.
     mutating func finishUp() {
         backlog.removeAll()

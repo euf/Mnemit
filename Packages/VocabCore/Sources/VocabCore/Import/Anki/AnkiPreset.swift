@@ -9,19 +9,39 @@ public struct AnkiPreset: Sendable, Equatable {
     public var parameters: [Float]
     /// The desired retention; `nil` if the preset has none (proto3 leaves out 0).
     public var desiredRetention: Float?
+    /// What the preset does about leeches; `nil` if it stores nothing about them.
+    public var leech: Leech?
 
-    public init(name: String, parameters: [Float] = [], desiredRetention: Float? = nil) {
+    /// Anki's leech threshold and action, as Mnemit's `LearningOptions` take them: its "suspend" is
+    /// `LeechAction.suspend`, its "tag only" is `LeechAction.keep`.
+    public struct Leech: Sendable, Equatable {
+        public var threshold: Int
+        public var action: LeechAction
+
+        public init(threshold: Int, action: LeechAction) {
+            self.threshold = threshold
+            self.action = action
+        }
+
+        /// From Anki's `leech_action` (0 suspend, 1 tag only) and `leech_threshold`.
+        init(ankiThreshold: Int, ankiAction: Int) {
+            self.init(threshold: ankiThreshold, action: ankiAction == 1 ? .keep : .suspend)
+        }
+    }
+
+    public init(name: String, parameters: [Float] = [], desiredRetention: Float? = nil, leech: Leech? = nil) {
         self.name = name
         self.parameters = parameters
         self.desiredRetention = desiredRetention
+        self.leech = leech
     }
 
     /// The preset of a configuration with its three parameter lists. Anki keeps one list
     /// per FSRS version and takes the newest that isn't empty (`DeckConfig::fsrs_params`
     /// in rslib's `deckconfig/mod.rs`).
-    init(name: String, fsrs4: [Float], fsrs5: [Float], fsrs6: [Float], desiredRetention: Float) {
+    init(name: String, fsrs4: [Float], fsrs5: [Float], fsrs6: [Float], desiredRetention: Float, leech: Leech? = nil) {
         let parameters = [fsrs6, fsrs5, fsrs4].first { !$0.isEmpty } ?? []
-        self.init(name: name, parameters: parameters, desiredRetention: desiredRetention.isFinite && desiredRetention > 0 ? desiredRetention : nil)
+        self.init(name: name, parameters: parameters, desiredRetention: desiredRetention.isFinite && desiredRetention > 0 ? desiredRetention : nil, leech: leech)
     }
 
     /// Anki's own default retention. A preset that has this one and no parameters says
@@ -79,6 +99,19 @@ public struct AnkiPreset: Sendable, Equatable {
     }
 }
 
+extension AnkiPreset {
+    /// `options` with the preset's leech threshold and action, the threshold kept in the range Mnemit
+    /// offers; `nil` if the preset stores none.
+    public func learningOptions(applyingLeechTo options: LearningOptions) -> LearningOptions? {
+        guard let leech else { return nil }
+        var result = options
+        result.leechThreshold = leech.threshold
+        result.leechAction = leech.action
+        result.sanitize()
+        return result
+    }
+}
+
 extension AnkiImport {
     /// The preset most of the cards of `notes` use; the first of `presets` if two share the
     /// most. `nil` if no card has one.
@@ -92,5 +125,12 @@ extension AnkiImport {
     /// for a deck that is new; `nil` if that preset has no FSRS settings or no card has one.
     public func learningOptions(applyingTo options: LearningOptions) -> LearningOptions? {
         dominantPreset?.learningOptions(applyingTo: options)
+    }
+
+    /// `learningOptions(applyingTo:)` and the leech settings of the same preset, for a deck that is
+    /// new; `nil` if the preset has neither, or no card has one.
+    public func deckOptions(applyingTo options: LearningOptions) -> LearningOptions? {
+        let fsrs = learningOptions(applyingTo: options)
+        return dominantPreset?.learningOptions(applyingLeechTo: fsrs ?? options) ?? fsrs
     }
 }

@@ -8,6 +8,12 @@ public enum SessionCommand: Sendable {
     case skip
     /// Drops the current card because the learner suspended it, and counts it (#290).
     case suspend
+    /// Drops the card with this ID, which the learner set aside right after its review, the moment of a leech:
+    /// it is not the current card any more. The session counts it as suspended and not as done.
+    case setAside(Card.ID)
+    /// Brings back the card with this ID, which the review suspended as a leech and the learner kept: it is
+    /// asked again in the session, as a leech under Keep is.
+    case keep(Card.ID)
 }
 
 /// The session that runs, as a study session or practice. The mode decides how a

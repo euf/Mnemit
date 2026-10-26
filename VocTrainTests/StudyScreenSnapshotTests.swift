@@ -400,6 +400,35 @@ struct StudyScreenSnapshotTests {
         return (model, ring, document, undoManager)
     }
 
+    /// The stop after a Forgot that made a card a leech: the card's question and answer under "Keeps slipping", and Continue,
+    /// Edit and Set Aside; with the deck's action Suspend the card is set aside already and the button reads Keep It.
+    @Test(arguments: [false, true])
+    func leechMoment(dark: Bool) async throws {
+        try beSilent()
+        for action in [LeechAction.keep, .suspend] {
+            if action == .suspend && dark { continue }
+            let state = LearningState(
+                phase: .review, stability: 10, difficulty: 5, lastReview: created.addingTimeInterval(-10 * 86400), due: created.addingTimeInterval(-86400), reviews: 12,
+                lapses: 7)
+            let texts = Self.wrappingQuestion
+            let card = Card(question: texts.question, answer: texts.answer, hint: texts.hint, created: created, learningState: state)
+            var options = LearningOptions()
+            options.leechAction = action
+            let document = try VocabularyDocument(deck: Deck(learningOptions: options, cards: [card]), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+            let undoManager = UndoManager()
+            undoManager.groupsByEvent = false
+            document.attachUndoManager(undoManager)
+            let model = StudyModel(document: document)
+            grade(model, .again, undoManager: undoManager)
+            #expect(model.leechMoment?.card.isSuspended == (action == .suspend))
+            let ring = DailyRingModel()
+            await ring.refresh(documents: [document], delay: .zero).value
+            let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
+            try write(window, name: action == .keep ? "27-leech-moment" : "28-leech-moment-keep-it", dark: dark)
+            window.isHidden = true
+        }
+    }
+
     /// The bar with Undo next to the menu: dimmed before there is a grade to take back, lit after one.
     @Test(arguments: [false, true])
     func undoButton(dark: Bool) async throws {
@@ -428,7 +457,7 @@ struct StudyScreenSnapshotTests {
             ("22-leaving-done", GradeReceipt(grade: .good, interval: .days(8), gain: 1), 0.5, nil, false, CGSize(width: 130, height: -20)),
             ("23-leaving-back-today", GradeReceipt(grade: .hard, interval: .learning, gain: 0.5), 0.5, nil, false, CGSize(width: 60, height: 120)),
             ("24-sheet-under-stack", GradeReceipt(grade: .again, interval: .learning), 1, 0.5, false, CGSize(width: -110, height: 15)),
-            ("25-leaving-leech", GradeReceipt(grade: .again, interval: .days(3), isLeech: true), 0.35, nil, false, CGSize(width: -110, height: 15)),
+            ("25-leaving-leech", GradeReceipt(grade: .again, interval: .days(3), isSuspended: true), 0.35, nil, false, CGSize(width: -110, height: 15)),
             ("26-leaving-reduced", GradeReceipt(grade: .good, interval: .days(1), gain: 1), 0.5, nil, true, .zero),
         ]
         for item in cases {

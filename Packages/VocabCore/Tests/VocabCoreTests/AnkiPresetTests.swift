@@ -200,6 +200,35 @@ struct AnkiPresetTests {
         #expect(options.parameters.weights[1...] == FSRSParameters.default.weights[1...])
     }
 
+    // MARK: Leeches
+
+    @Test(arguments: [false, true])
+    func readsTheLeechSettingsOfAPreset(current: Bool) throws {
+        let presets = [
+            Fixtures.RawPreset(id: 5, name: "Tag", desiredRetention: nil, leech: (5, 1)),
+            Fixtures.RawPreset(id: 6, name: "Suspend", desiredRetention: nil, leech: (12, 0)),
+            Fixtures.RawPreset(id: 7, name: "None", desiredRetention: nil),
+        ]
+        let result = try Self.read(current: current, presets: presets)
+        #expect(result.presets.map(\.leech) == [AnkiPreset.Leech(threshold: 5, action: .keep), .init(threshold: 12, action: .suspend), nil])
+    }
+
+    @Test func aNewDeckTakesTheLeechSettingsWithOrWithoutFSRSSettings() throws {
+        let stock = AnkiPreset(name: "Default", desiredRetention: 0.9, leech: .init(threshold: 5, action: .suspend))
+        let taken = try #require(AnkiImport(notes: [.init(front: "a", back: "b", preset: 0)], presets: [stock]).deckOptions(applyingTo: LearningOptions()))
+        #expect(taken.leechThreshold == 5 && taken.leechAction == .suspend)
+        #expect(taken.targetRecall == LearningOptions().targetRecall)
+        // The preset's FSRS settings come along.
+        let fsrs = AnkiPreset(name: "a", parameters: Self.customSix, desiredRetention: 0.85, leech: .init(threshold: 3, action: .keep))
+        let both = try #require(AnkiImport(notes: [.init(front: "a", back: "b", preset: 0)], presets: [fsrs]).deckOptions(applyingTo: LearningOptions()))
+        #expect(both.targetRecall == 0.85 && both.leechThreshold == 3 && both.leechAction == .keep)
+        // A preset with neither gives nothing; a threshold out of range is kept in it.
+        let none = AnkiImport(notes: [.init(front: "a", back: "b", preset: 0)], presets: [AnkiPreset(name: "Default", desiredRetention: 0.9)])
+        #expect(none.deckOptions(applyingTo: LearningOptions()) == nil)
+        let wild = AnkiPreset(name: "a", leech: .init(threshold: 500, action: .keep))
+        #expect(wild.learningOptions(applyingLeechTo: LearningOptions())?.leechThreshold == 99)
+    }
+
     // MARK: Packages made by Anki
 
     private static func package(_ name: String) throws -> AnkiImport {
@@ -216,7 +245,8 @@ struct AnkiPresetTests {
     @Test(arguments: ["greek-latest", "greek-latest-cli", "greek-legacy2", "greek-legacy1"])
     func readsThePresetOfAPackageMadeByAnki(name: String) throws {
         let result = try Self.package(name)
-        #expect(result.presets == [AnkiPreset(name: "Greek FSRS", parameters: Self.greek, desiredRetention: 0.85)])
+        // Anki's stock leech settings: threshold 8, tag only. Those of a package Anki made prove the field numbers.
+        #expect(result.presets == [AnkiPreset(name: "Greek FSRS", parameters: Self.greek, desiredRetention: 0.85, leech: .init(threshold: 8, action: .keep))])
         #expect(result.notes.allSatisfy { $0.preset == 0 })
         let options = try #require(result.learningOptions(applyingTo: LearningOptions()))
         #expect(options.targetRecall == 0.85)

@@ -22,6 +22,9 @@ final class SessionDriver {
     /// What the last grade did, until the learner has seen it, undone it or moved on; see
     /// `UndoChip`. Practice and study alike leave one.
     private(set) var lastReceipt: GradeReceipt?
+    /// The card whose Forgot just made it a leech, until the learner has gone on, set it aside or kept it (`LeechMoment`). The
+    /// stream does not move to its next card while it shows: Continue, Set Aside, Keep It, and an edit of the card end it.
+    private(set) var leechMoment: LeechMoment?
     /// How many cards the round of the day the stream is in still holds, the card being asked and the
     /// ones that come back today included; `nil` without a guide to the rounds, and once the goal is met.
     private(set) var cardsLeftInRound: Int?
@@ -77,7 +80,7 @@ final class SessionDriver {
     ///   while the document can't be changed (#305).
     @discardableResult
     func grade(_ grade: Grade) -> Bool {
-        guard document.isReadyToEdit else { return false }
+        guard document.isReadyToEdit, leechMoment == nil else { return false }
         let before = stream
         let graded = session.currentCardID
         let creditBefore = graded.map(credit(of:)) ?? 0
@@ -86,7 +89,10 @@ final class SessionDriver {
         let interval = gradeIntervals?[grade]
         let duration = stopwatch.elapsed
         guard let outcome = StallTrace.measure("stream.grade", { stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar, duration: duration) }) else { return false }
-        let restore = sessionRestore(from: before, to: stream)
+        let isLeech = stream.session.leechIDs.count > before.session.leechIDs.count
+        // Before the deck changes: the change must not move the stream on under the moment.
+        if isLeech, let graded { leechMoment = LeechMoment(cardID: graded) }
+        let restore = sessionRestore(from: before, momentBefore: nil, to: stream, momentAfter: leechMoment)
         switch outcome {
         case let .rescheduled(change):
             StallTrace.measure("applyReview") { document.applyReview(change, alongside: restore) }
@@ -94,9 +100,9 @@ final class SessionDriver {
             registerPracticeUndo(restore)
         }
         lastReceipt = GradeReceipt(
-            grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count, isNew: wasNew,
+            grade: grade, interval: interval, isSuspended: stream.session.suspendedCount > before.session.suspendedCount, isNew: wasNew,
             gain: max(0, (graded.map(credit(of:)) ?? 0) - creditBefore), climb: climb(of: graded, from: stepBefore))
-        moveOn()
+        if leechMoment == nil { moveOn() }
         return true
     }
 
@@ -157,13 +163,42 @@ final class SessionDriver {
     ///   nor while the document can't be changed (#305).
     @discardableResult
     func suspendCurrentCard() -> Bool {
-        guard document.isReadyToEdit, !isResting, let id = session.currentCardID, let card = document.card(withID: id), !card.isSuspended else { return false }
+        guard document.isReadyToEdit, leechMoment == nil, !isResting, let id = session.currentCardID, let card = document.card(withID: id), !card.isSuspended else { return false }
         let before = stream
         stream.perform(.suspend)
-        guard document.setSuspended(true, of: [id], alongside: sessionRestore(from: before, to: stream)) else {
+        guard document.setSuspended(true, of: [id], alongside: sessionRestore(from: before, momentBefore: nil, to: stream, momentAfter: nil)) else {
             stream = before
             return false
         }
+        lastReceipt = nil
+        moveOn()
+        return true
+    }
+
+    /// The leech moment is over: goes on to the next card.
+    func continueLeech() {
+        guard leechMoment != nil else { return }
+        leechMoment = nil
+        moveOn()
+    }
+
+    /// The moment's Set Aside, or Keep It when the review suspended the card (the deck's action Suspend): suspends the card
+    /// or resumes it, one undoable step, and goes on. Undo brings back the moment, with the card as it was in it.
+    ///
+    /// - Returns: Whether the card was set aside or kept; it isn't while the document can't be changed (#305).
+    @discardableResult
+    func toggleLeechAside() -> Bool {
+        guard document.isReadyToEdit, let moment = leechMoment, let card = document.card(withID: moment.cardID) else { return false }
+        let before = stream
+        let suspends = !card.isSuspended
+        stream.perform(suspends ? .setAside(moment.cardID) : .keep(moment.cardID))
+        let companion = sessionRestore(from: before, momentBefore: moment, to: stream, momentAfter: nil)
+        // The stream first: the deck's change reaches `deckDidChange()`, which must find the stream as it will be.
+        guard document.setSuspended(suspends, of: [moment.cardID], alongside: companion) else {
+            stream = before
+            return false
+        }
+        leechMoment = nil
         lastReceipt = nil
         moveOn()
         return true
@@ -266,7 +301,8 @@ final class SessionDriver {
     /// Runs after every change to the deck, the session's own reviews included. Moves
     /// on if the card being asked is gone or suspended.
     private func deckDidChange() {
-        if let id = session.currentCardID, !canAsk(id) {
+        // A leech moment holds the stream where it is, whatever happens to the card in it (an edit, a suspension).
+        if leechMoment == nil, let id = session.currentCardID, !canAsk(id) {
             moveOn()
         } else {
             refreshCurrentCard()
@@ -276,10 +312,10 @@ final class SessionDriver {
 
     /// Brings back the stream's place before a review on undo and after it on redo.
     /// Holds the driver weakly: the document's undo stack outlives a closed stream.
-    private func sessionRestore(from before: StudyStream, to after: StudyStream) -> UndoCompanion {
+    private func sessionRestore(from before: StudyStream, momentBefore: LeechMoment?, to after: StudyStream, momentAfter: LeechMoment?) -> UndoCompanion {
         UndoCompanion(
-            undo: { [weak self] in self?.restore(before) },
-            redo: { [weak self] in self?.restore(after) }
+            undo: { [weak self] in self?.restore(before, moment: momentBefore) },
+            redo: { [weak self] in self?.restore(after, moment: momentAfter) }
         )
     }
 
@@ -301,13 +337,26 @@ final class SessionDriver {
     /// Called by undo and redo of a review. The snapshot is the stream as it was, whatever
     /// segment it was in: undoing the last review of the plan after review ahead began
     /// asks that card again, and redo moves on again.
-    private func restore(_ snapshot: StudyStream) {
+    private func restore(_ snapshot: StudyStream, moment: LeechMoment?) {
         guard snapshot.id == stream.id else { return }  // a different stream by now
         stream = snapshot
+        leechMoment = moment
         lastReceipt = nil
         delegate?.sessionDriverDidRestore(self)
-        moveOn()
+        if moment == nil {
+            moveOn()
+        } else {
+            // The moment is the screen: the stream stays where the grade left it.
+            refreshCurrentCard()
+            delegate?.sessionDriverCardDidChange(self)
+        }
     }
+}
+
+/// The stop right after a Forgot that made a card a leech, before the next card: the card's faces and what to do with
+/// it (`LeechMomentView`).
+struct LeechMoment: Equatable {
+    let cardID: Card.ID
 }
 
 /// What a model around a `SessionDriver` hears of. Each call comes after the driver's

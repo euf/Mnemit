@@ -188,6 +188,8 @@ enum AnkiFixtures {
         var fsrs5: [Float] = []
         var fsrs6: [Float] = []
         var desiredRetention: Float? = 0.9
+        /// Anki's leech threshold and action (0 suspend, 1 tag only); `nil` leaves them out.
+        var leech: (threshold: Int, action: Int)?
         /// Schema 18 only: whether the lists are written packed.
         var isPacked = true
     }
@@ -234,6 +236,7 @@ enum AnkiFixtures {
             for preset in presets {
                 var object: [String: Any] = ["name": preset.name, "fsrsWeights": preset.fsrs4, "fsrsParams5": preset.fsrs5, "fsrsParams6": preset.fsrs6]
                 object["desiredRetention"] = preset.desiredRetention
+                if let leech = preset.leech { object["lapse"] = ["leechFails": leech.threshold, "leechAction": leech.action] }
                 objects[String(preset.id)] = object
             }
             table += ", dconf text"
@@ -284,6 +287,8 @@ enum AnkiFixtures {
                 var config = floatsField(1, [1, 10]) + floatsField(3, preset.fsrs4, packed: preset.isPacked) + varintField(9, 20)
                 config += floatsField(5, preset.fsrs5, packed: preset.isPacked) + floatsField(6, preset.fsrs6, packed: preset.isPacked)
                 config += preset.desiredRetention.map { floatField(37, $0) } ?? Data()
+                // proto3 leaves out the action 0, suspend.
+                if let leech = preset.leech { config += varintField(22, UInt64(leech.threshold)) + (leech.action == 0 ? Data() : varintField(21, UInt64(leech.action))) }
                 config += bytesField(255, Data("{}".utf8))
                 statements.append("INSERT INTO deck_config VALUES (\(preset.id), \(quoted(preset.name)), 0, 0, \(hex(config)))")
             }

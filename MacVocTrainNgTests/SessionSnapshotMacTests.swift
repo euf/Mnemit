@@ -97,4 +97,23 @@ struct SessionSnapshotMacTests {
         try await write(model, name: "3-plan-end")
         withExtendedLifetime(undoManager) {}
     }
+
+    /// The stop after a Forgot that made a card a leech, under the deck's action Keep and under Suspend (Keep It).
+    @Test(arguments: [LeechAction.keep, .suspend])
+    func leechMoment(action: LeechAction) async throws {
+        var options = LearningOptions()
+        options.leechAction = action
+        let state = LearningState(
+            phase: .review, stability: 10, difficulty: 5, lastReview: Date(timeIntervalSinceNow: -10 * 86400), due: Date(timeIntervalSinceNow: -3600),
+            reviews: 12, lapses: 7)
+        let leech = Card(question: "απαντάω (απάντησα)", answer: "отвечать · to answer\nΑπάντησα στο γράμμα του Γιάννη.", learningState: state)
+        let document = try VocabularyDocument(deck: Deck(learningOptions: options, cards: [leech]))
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document)
+        model.reveal()
+        step(undoManager) { model.grade(.again) }
+        #expect(model.leechMoment?.card.id == leech.id)
+        try await write(model, name: "6-leech-moment-\(action == .keep ? "set-aside" : "keep-it")", done: 3)
+        withExtendedLifetime(undoManager) {}
+    }
 }

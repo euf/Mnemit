@@ -18,10 +18,11 @@ struct StudyModelTests {
     }
 
     /// Grades in an undo group of its own, like one tap in the app.
-    func grade(_ model: StudyModel, _ grade: Grade, undoManager: UndoManager) {
+    @discardableResult
+    func grade(_ model: StudyModel, _ grade: Grade, undoManager: UndoManager) -> GradeReceipt? {
         undoManager.beginUndoGrouping()
-        model.grade(grade)
-        undoManager.endUndoGrouping()
+        defer { undoManager.endUndoGrouping() }
+        return model.grade(grade)
     }
 
     @Test func theStreamTakesTheNewCardsOfTheDocumentsAllowance() throws {
@@ -242,13 +243,14 @@ struct StudyModelTests {
 
     /// A document with one due review card: Good sends it to another day, Forgot makes it a lapse.
     /// `lapses` is how many it has had, so a threshold can be one lapse away.
-    func reviewDocument(lapses: Int = 0, leechThreshold: Int = 8) throws -> (VocabularyDocument, UndoManager) {
+    func reviewDocument(lapses: Int = 0, leechThreshold: Int = 8, leechAction: LeechAction = .keep) throws -> (VocabularyDocument, UndoManager) {
         let lastReview = created.addingTimeInterval(-10 * 86400)
         let state = LearningState(
             phase: .review, stability: 10, difficulty: 5, lastReview: lastReview, due: created.addingTimeInterval(-86400), reviews: 1 + lapses, lapses: lapses)
         let card = Card(question: "due", answer: "x", created: created, learningState: state, log: [ReviewLogEntry(date: lastReview, grade: .good, mode: .revealed)])
         var options = LearningOptions()
         options.leechThreshold = leechThreshold
+        options.leechAction = leechAction
         let document = try VocabularyDocument(deck: Deck(learningOptions: options, cards: [card]), clock: StudyClock { [created] in created.addingTimeInterval(60) })
         let undoManager = UndoManager()
         undoManager.groupsByEvent = false
@@ -257,8 +259,8 @@ struct StudyModelTests {
     }
 
     /// The receipt says where the card goes, and the view lets it leave that way: into the ring when FSRS
-    /// lets it go to another day, under the stack when it comes back today, off the screen for a leech and
-    /// in a practice.
+    /// lets it go to another day, under the stack when it comes back today, off the screen for a card the grade
+    /// suspended and in a practice.
     @Test func theReceiptDecidesWhereTheCardGoes() throws {
         // A due review card: Good lets it go to another day.
         let (reviewDoc, reviewUndo) = try reviewDocument()
@@ -298,29 +300,150 @@ struct StudyModelTests {
         #expect(practiced.destination == .away)
     }
 
-    @Test func aLeechFliesOffEvenThoughItsGradeIsAnInterval() throws {
-        // One lapse short of the threshold: Forgot makes it a leech, and suspends it.
+    /// The Forgot that makes a card a leech stops the stream before its next card: the moment shows the card, which the
+    /// deck's action Keep leaves in rotation, and Continue goes on.
+    @Test func aLeechStopsTheStreamForItsMoment() throws {
         let (document, undoManager) = try reviewDocument(lapses: 7, leechThreshold: 8)
         let model = StudyModel(document: document)
+        let id = try #require(model.currentCard?.id)
         model.reveal()
+        let number = model.questionNumber
         undoManager.beginUndoGrouping()
         let receipt = try #require(model.grade(.again))
         undoManager.endUndoGrouping()
-        #expect(receipt.isLeech)
+        #expect(!receipt.isSuspended)
+        let moment = try #require(model.leechMoment)
+        #expect(moment.card.id == id)
+        #expect(!moment.card.isSuspended)
+        #expect(model.stage == .revealed)
+        #expect(model.questionNumber == number)
+        // The grade buttons are not on screen: nothing grades or reveals under the moment.
+        #expect(model.grade(.good) == nil)
+        #expect(model.session.reviewCount == 1)
+
+        model.continueLeech()
+        #expect(model.leechMoment == nil)
+        #expect(model.questionNumber == number + 1)
+        #expect(model.stage == .asking)
+        // Under Keep the card stays in the stream, back today in its relearning step.
+        #expect(model.currentCard?.id == id)
+    }
+
+    /// Set Aside suspends the card of the moment as one undoable step; Undo brings back the moment, Redo goes on again.
+    @Test func setAsideSuspendsTheLeechAndUndoBringsBackTheMoment() throws {
+        let (document, undoManager) = try reviewDocument(lapses: 7, leechThreshold: 8)
+        let model = StudyModel(document: document)
+        let id = try #require(model.currentCard?.id)
+        model.reveal()
+        grade(model, .again, undoManager: undoManager)
+        #expect(model.leechMoment != nil)
+
+        undoManager.beginUndoGrouping()
+        model.toggleLeechAside()
+        undoManager.endUndoGrouping()
+        #expect(document.card(withID: id)?.isSuspended == true)
+        #expect(model.leechMoment == nil)
+        #expect(model.isResting)
+
+        undoManager.undo()
+        #expect(document.card(withID: id)?.isSuspended == false)
+        #expect(model.leechMoment?.card.id == id)
+        #expect(!model.isResting)
+        #expect(model.session.suspendedCount == 0)
+
+        undoManager.redo()
+        #expect(document.card(withID: id)?.isSuspended == true)
+        #expect(model.leechMoment == nil)
+        #expect(model.isResting)
+    }
+
+    /// Under the action Suspend the grade has suspended the card already: the moment's button is Keep It, which resumes it
+    /// and asks it again; Undo suspends it again and shows the moment, and the Undo after it takes back the grade.
+    @Test func keepItResumesALeechTheReviewSuspended() throws {
+        let (document, undoManager) = try reviewDocument(lapses: 7, leechThreshold: 8, leechAction: .suspend)
+        let model = StudyModel(document: document)
+        let original = try #require(model.currentCard)
+        model.reveal()
+        let receipt = try #require(grade(model, .again, undoManager: undoManager))
+        #expect(receipt.isSuspended)
         #expect(receipt.destination == .away)
-        #expect(receipt.flightLabel == "suspended · leech")
+        #expect(model.leechMoment?.card.isSuspended == true)
+        #expect(model.session.suspendedCount == 1)
+        #expect(!model.isResting)
+
+        undoManager.beginUndoGrouping()
+        model.toggleLeechAside()
+        undoManager.endUndoGrouping()
+        #expect(document.card(withID: original.id)?.isSuspended == false)
+        #expect(model.leechMoment == nil)
+        #expect(model.currentCard?.id == original.id)
+        #expect(model.session.suspendedCount == 0)
+
+        undoManager.undo()
+        #expect(document.card(withID: original.id)?.isSuspended == true)
+        #expect(model.leechMoment?.card.isSuspended == true)
+        #expect(model.session.suspendedCount == 1)
+
+        undoManager.undo()
+        #expect(model.leechMoment == nil)
+        #expect(document.card(withID: original.id) == original)
+        #expect(model.stage == .revealed)
+        #expect(model.returnedByUndo)
+        #expect(model.session.leechIDs.isEmpty)
+    }
+
+    /// Undo of the grade takes back the moment and, under Suspend, the suspension with it.
+    @Test(arguments: [LeechAction.keep, .suspend])
+    func undoOfTheGradeTakesTheMomentBack(action: LeechAction) throws {
+        let (document, undoManager) = try reviewDocument(lapses: 7, leechThreshold: 8, leechAction: action)
+        let model = StudyModel(document: document)
+        let original = try #require(model.currentCard)
+        model.reveal()
+        grade(model, .again, undoManager: undoManager)
+        #expect(model.leechMoment != nil)
+        #expect(model.canUndo)
+
+        undoManager.undo()
+        #expect(model.leechMoment == nil)
+        #expect(document.card(withID: original.id) == original)
+        #expect(model.stage == .revealed)
+        #expect(model.returnedByUndo)
+
+        undoManager.redo()
+        #expect(model.leechMoment != nil)
+        #expect(model.stage == .revealed)
+    }
+
+    /// An edit of the card, which changes the deck, leaves the stream under its moment: saved, the sheet's `onSave` is what goes on.
+    @Test(arguments: [LeechAction.keep, .suspend])
+    func anEditUnderTheMomentDoesNotMoveTheStreamOn(action: LeechAction) throws {
+        let (document, undoManager) = try reviewDocument(lapses: 7, leechThreshold: 8, leechAction: action)
+        let model = StudyModel(document: document)
+        let id = try #require(model.currentCard?.id)
+        model.reveal()
+        grade(model, .again, undoManager: undoManager)
+        let number = model.questionNumber
+
+        let edited = try #require(CardText(question: "due now", answer: "y"))
+        undoManager.beginUndoGrouping()
+        document.editCard(id, text: edited, note: nil)
+        undoManager.endUndoGrouping()
+        #expect(model.leechMoment?.card.question == "due now")
+        #expect(model.questionNumber == number)
+        model.continueLeech()
+        #expect(model.leechMoment == nil)
     }
 
     @Test func theLabelOnTheCardNamesWhereItGoes() {
-        func label(_ interval: ReviewInterval?, isLeech: Bool = false) -> String? {
-            GradeReceipt(grade: .good, interval: interval, isLeech: isLeech).flightLabel
+        func label(_ interval: ReviewInterval?, isSuspended: Bool = false) -> String? {
+            GradeReceipt(grade: .good, interval: interval, isSuspended: isSuspended).flightLabel
         }
         #expect(label(.days(1)) == "tomorrow")
         #expect(label(.days(8)) == "in 8 days")
         #expect(label(.days(91)) == "in 3 months")
         #expect(label(.days(800)) == "in 2 years")
         #expect(label(.learning) == "again today")
-        #expect(label(.learning, isLeech: true) == "suspended · leech")
+        #expect(label(.learning, isSuspended: true) == nil)
         #expect(label(nil) == nil)
         #expect(GradeReceipt(grade: .good, interval: .days(8)).announcement == "Good, in 8 days")
         #expect(GradeReceipt(grade: .again, interval: .learning).announcement == "Forgot, again today")

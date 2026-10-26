@@ -111,6 +111,19 @@ final class SessionViewModel {
         stream.grade(grade)
     }
 
+    /// The stop after a Forgot that made a card a leech, shown instead of the next card; see `StudyModel.leechMoment`.
+    var leechMoment: (card: Card, document: VocabularyDocument)? { stream.leechMoment }
+
+    /// Goes on from the leech moment to the next card.
+    func continueLeech() {
+        stream.continueLeech()
+    }
+
+    /// Sets the card of the leech moment aside, or keeps it when the review suspended it, and goes on.
+    func toggleLeechAside() {
+        stream.toggleLeechAside()
+    }
+
     /// Suspends the card being asked, so no session asks it until the learner resumes
     /// it in the card list, and moves on (#290). ⌘Z takes it back like a review.
     func suspendCurrentCard() {

@@ -39,7 +39,8 @@ import Foundation
 /// `optimizeFromRevealed` and `caseSensitive` are gone: a deck that has the keys still
 /// reads, and the next save leaves them out; an older app version reads their defaults.
 /// `leechThreshold` came the same way: an older app
-/// version drops it, and its sessions suspend no leeches. So did `contentChanged` of a
+/// version drops it, and its sessions suspend no leeches. `leechAction` too: an older app version drops it,
+/// and the deck reads as keep again. So did `contentChanged` of a
 /// card, `learningOptionsChanged` and `deletedCards` of the deck, which merges between
 /// devices that both edit cards need: an older app version drops them on save, and a
 /// merge then settles the texts and options by `contentModified` as before, and may
@@ -295,6 +296,8 @@ extension DeckFile {
         var fuzzing: Bool
         var parameters: [Double]
         var leechThreshold: Int
+        /// `LeechAction.rawValue`, left out while keep, the default; missing or unknown reads as keep.
+        var leechAction: String?
         /// Left out while on, the default.
         var updatesParametersAutomatically: Bool?
         /// Left out until the app first fits the parameters by itself.
@@ -314,6 +317,7 @@ extension DeckFile {
             fuzzing = options.fuzzing
             parameters = options.parameters.weights
             leechThreshold = options.leechThreshold
+            leechAction = options.leechAction == .keep ? nil : options.leechAction.rawValue
             updatesParametersAutomatically = options.updatesParametersAutomatically ? nil : false
             lastAutoFit = options.lastAutoFit.map(AutoFitRecord.init)
             paused = options.isPaused ? true : nil
@@ -338,6 +342,7 @@ extension DeckFile {
             options.fuzzing = fuzzing
             options.parameters = parameters
             options.leechThreshold = leechThreshold
+            options.leechAction = leechAction.flatMap(LeechAction.init(rawValue:)) ?? options.leechAction
             options.updatesParametersAutomatically = updatesParametersAutomatically ?? options.updatesParametersAutomatically
             options.lastAutoFit = lastAutoFit?.autoFit
             options.isPaused = paused ?? false
@@ -347,7 +352,7 @@ extension DeckFile {
         private enum CodingKeys: String, CodingKey {
             case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
             case newProductionPerSession, productionUnlockDays, newCardOrder
-            case fuzzing, parameters, leechThreshold
+            case fuzzing, parameters, leechThreshold, leechAction
             case updatesParametersAutomatically, lastAutoFit, paused
         }
 
@@ -375,6 +380,7 @@ extension DeckFile {
             fuzzing = try container.decodeIfPresent(Bool.self, forKey: .fuzzing) ?? defaults.fuzzing
             parameters = try container.decodeIfPresent([Double].self, forKey: .parameters) ?? defaults.parameters
             leechThreshold = try container.decodeIfPresent(Int.self, forKey: .leechThreshold) ?? defaults.leechThreshold
+            leechAction = try container.decodeIfPresent(String.self, forKey: .leechAction)
             updatesParametersAutomatically = try container.decodeIfPresent(Bool.self, forKey: .updatesParametersAutomatically)
             // A damaged record costs the deck one more fit, not its readability.
             lastAutoFit = try? container.decodeIfPresent(AutoFitRecord.self, forKey: .lastAutoFit)
@@ -395,6 +401,7 @@ extension DeckFile {
             try container.encode(fuzzing, forKey: .fuzzing)
             try container.encode(parameters, forKey: .parameters)
             try container.encode(leechThreshold, forKey: .leechThreshold)
+            try container.encodeIfPresent(leechAction, forKey: .leechAction)
             try container.encodeIfPresent(updatesParametersAutomatically, forKey: .updatesParametersAutomatically)
             try container.encodeIfPresent(lastAutoFit, forKey: .lastAutoFit)
             try container.encodeIfPresent(paused, forKey: .paused)

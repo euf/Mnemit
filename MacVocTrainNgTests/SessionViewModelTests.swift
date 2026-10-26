@@ -368,33 +368,83 @@ struct SessionViewModelTests {
         #expect(SessionViewModel(document: document, entry: .practiceMistakes).isResting)
     }
 
-    /// The lapse that reaches the leech threshold suspends the card; one undo takes the
-    /// grade and the suspension back.
-    @Test func aLeechIsSuspendedByItsGradeAndUndoBringsItBack() throws {
+    /// A document with one review card one lapse short of the leech threshold, under the deck's leech action.
+    private func leechDocument(action: LeechAction) throws -> (VocabularyDocument, Card, UndoManager) {
         var learningOptions = LearningOptions()
         learningOptions.fuzzing = false
         learningOptions.leechThreshold = 8
+        learningOptions.leechAction = action
         let state = LearningState(
             phase: .review, stability: 10, difficulty: 5,
             lastReview: Date(timeIntervalSinceNow: -10 * 86400), due: Date(timeIntervalSinceNow: -3600), reviews: 12, lapses: 7)
         let leech = Card(question: "q", answer: "a", learningState: state)
         let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [leech]), calendar: .testing)
-        let undoManager = makeUndoManager(for: document)
+        return (document, leech, makeUndoManager(for: document))
+    }
+
+    /// The lapse that reaches the leech threshold stops the stream with the moment, whatever the deck's action does to
+    /// the card; Continue goes on, and one undo takes the grade, and the suspension under Suspend, back.
+    @Test(arguments: [LeechAction.keep, .suspend])
+    func aLeechShowsItsMomentAndUndoBringsTheCardBack(action: LeechAction) throws {
+        let (document, leech, undoManager) = try leechDocument(action: action)
         let model = SessionViewModel(document: document)
 
         model.reveal()
         step(undoManager) { model.grade(.again) }
         let stored = try #require(document.card(withID: leech.id))
-        #expect(stored.isSuspended)
+        #expect(stored.isSuspended == (action == .suspend))
         #expect(stored.learningState?.lapses == 8)
         #expect(document.deck.isLeech(stored))
-        #expect(model.isResting)
-        #expect(model.receipt?.isLeech == true)
+        #expect(model.leechMoment?.card.id == leech.id)
+        #expect(!model.isResting)
+        #expect(model.receipt?.isSuspended == (action == .suspend))
+        // The next card does not show under the moment: no grading, no reveal.
+        model.grade(.good)
+        #expect(model.session.reviewCount == 1)
 
         undoManager.undo()
         #expect(document.card(withID: leech.id) == leech)
+        #expect(model.leechMoment == nil)
         #expect(!model.isResting)
         #expect(model.session.leechIDs.isEmpty)
+
+        undoManager.redo()
+        #expect(model.leechMoment?.card.id == leech.id)
+        model.continueLeech()
+        #expect(model.leechMoment == nil)
+    }
+
+    /// Set Aside suspends the leech of the moment, Keep It resumes it when the review suspended it; each is one step of
+    /// Undo, which brings the moment back.
+    @Test func setAsideAndKeepItAreUndoableSteps() throws {
+        let (document, leech, undoManager) = try leechDocument(action: .keep)
+        let model = SessionViewModel(document: document)
+        model.reveal()
+        step(undoManager) { model.grade(.again) }
+
+        step(undoManager) { model.toggleLeechAside() }
+        #expect(document.card(withID: leech.id)?.isSuspended == true)
+        #expect(model.leechMoment == nil)
+        #expect(model.isResting)
+
+        undoManager.undo()
+        #expect(document.card(withID: leech.id)?.isSuspended == false)
+        #expect(model.leechMoment?.card.id == leech.id)
+
+        let (suspending, suspended, suspendingUndo) = try leechDocument(action: .suspend)
+        let suspendingModel = SessionViewModel(document: suspending)
+        suspendingModel.reveal()
+        step(suspendingUndo) { suspendingModel.grade(.again) }
+        #expect(suspendingModel.leechMoment?.card.isSuspended == true)
+
+        step(suspendingUndo) { suspendingModel.toggleLeechAside() }
+        #expect(suspending.card(withID: suspended.id)?.isSuspended == false)
+        #expect(suspendingModel.leechMoment == nil)
+        #expect(suspendingModel.currentCard?.id == suspended.id)
+
+        suspendingUndo.undo()
+        #expect(suspending.card(withID: suspended.id)?.isSuspended == true)
+        #expect(suspendingModel.leechMoment != nil)
     }
 
     /// A practice asks like the plan: the answer is revealed before it is graded. It changes no card.
