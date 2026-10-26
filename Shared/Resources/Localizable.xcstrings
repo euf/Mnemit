@@ -4113,7 +4113,7 @@
         }
       }
     },
-    "Added %lld cards. The production cards unlock after the recognition cards are learned.": {
+    "Added %lld cards. Meaning → Word cards open once a word is learned.": {
       "localizations": {
         "de": {
           "variations": {
@@ -4121,13 +4121,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld Karte hinzugefügt. Die Produktionskarte wird freigeschaltet, sobald die Erkennungskarte gelernt ist."
+                  "value": "%lld Karte hinzugefügt. Karten „Bedeutung → Wort“ öffnen sich, sobald ein Wort gelernt ist."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld Karten hinzugefügt. Die Produktionskarten werden freigeschaltet, sobald die Erkennungskarten gelernt sind."
+                  "value": "%lld Karten hinzugefügt. Karten „Bedeutung → Wort“ öffnen sich, sobald ein Wort gelernt ist."
                 }
               }
             }
@@ -4139,13 +4139,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Προστέθηκε %lld κάρτα. Η κάρτα παραγωγής ξεκλειδώνει όταν μαθευτεί η κάρτα αναγνώρισης."
+                  "value": "Προστέθηκε %lld κάρτα. Οι κάρτες «Σημασία → λέξη» ανοίγουν όταν μαθευτεί μια λέξη."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Προστέθηκαν %lld κάρτες. Οι κάρτες παραγωγής ξεκλειδώνουν όταν μαθευτούν οι κάρτες αναγνώρισης."
+                  "value": "Προστέθηκαν %lld κάρτες. Οι κάρτες «Σημασία → λέξη» ανοίγουν όταν μαθευτεί μια λέξη."
                 }
               }
             }
@@ -4157,13 +4157,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Added %lld card. The production card unlocks after the recognition card is learned."
+                  "value": "Added %lld card. Meaning → Word cards open once a word is learned."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Added %lld cards. The production cards unlock after the recognition cards are learned."
+                  "value": "Added %lld cards. Meaning → Word cards open once a word is learned."
                 }
               }
             }
@@ -4175,25 +4175,25 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Добавлено %lld карточки. Карточки на воспроизведение откроются, когда будут выучены карточки на узнавание."
+                  "value": "Добавлено %lld карточки. Карточки «Значение → слово» откроются, когда слово будет выучено."
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Добавлено %lld карточек. Карточки на воспроизведение откроются, когда будут выучены карточки на узнавание."
+                  "value": "Добавлено %lld карточек. Карточки «Значение → слово» откроются, когда слово будет выучено."
                 }
               },
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Добавлена %lld карточка. Карточка на воспроизведение откроется, когда будет выучена карточка на узнавание."
+                  "value": "Добавлена %lld карточка. Карточки «Значение → слово» откроются, когда слово будет выучено."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Добавлено %lld карточки. Карточки на воспроизведение откроются, когда будут выучены карточки на узнавание."
+                  "value": "Добавлено %lld карточки. Карточки «Значение → слово» откроются, когда слово будет выучено."
                 }
               }
             }

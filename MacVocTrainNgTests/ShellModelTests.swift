@@ -170,7 +170,7 @@ extension DeckFileTests {
             try await f.waitFor("the stream opens") { shell.session != nil }
 
             shell.endStudy()
-            #expect(shell.columnVisibility == .automatic)
+            #expect(shell.columnVisibility == .all)
             // The run doesn't own the decks: they stay open, as the sidebar has them.
             #expect(shell.decks.deck(for: f.url("Beta")) != nil)
             await f.finish()

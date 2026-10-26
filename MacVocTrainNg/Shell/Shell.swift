@@ -67,7 +67,9 @@ final class Shell {
             if query != oldValue { shownCard = nil }
         }
     }
-    private(set) var columnVisibility = NavigationSplitViewVisibility.automatic
+    /// `.all` or `.detailOnly`, never `.automatic`: after `.detailOnly` the split view keeps the sidebar hidden on
+    /// `.automatic`, so Done would not bring it back.
+    private(set) var columnVisibility = NavigationSplitViewVisibility.all
     /// Why a change of a deck from the sidebar failed, for an alert.
     var notice: String?
 
@@ -83,7 +85,7 @@ final class Shell {
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var subscriptions: [String: AnyCancellable] = [:]
-    @ObservationIgnored private var visibilityBeforeStudy = NavigationSplitViewVisibility.automatic
+    @ObservationIgnored private var visibilityBeforeStudy = NavigationSplitViewVisibility.all
 
     static let lastStudiedKey = "LastStudiedDeck"
 

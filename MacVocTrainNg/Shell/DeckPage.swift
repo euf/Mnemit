@@ -107,7 +107,7 @@ struct DeckPageContent: View {
         }
         .sheet(isPresented: $addingCards) {
             AddCardsView(document: document) { count in
-                toast = Toast(String(localized: "Added \(count) cards. The production cards unlock after the recognition cards are learned."))
+                toast = Toast(String(localized: "Added \(count) cards. Meaning → Word cards open once a word is learned."))
             }
         }
         .overlay {
