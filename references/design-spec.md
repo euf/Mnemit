@@ -1,6 +1,6 @@
 # Mnemit design spec: home, deck screen, study stream, accent, Mac
 
-Visual spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on macOS 27). Read from code: `StartScreen`, `DeckView`, `StudyCountsView`, `StudyView`, `GradeChoice`, `Presentation`, `CardFlight`, Mac `ShellView`, `SessionView`, `AppCommands`, `DailyProgress.swift` (`DailyGoal`, `DailyRing`, `Streak`, `DailyProgress.evaluate(_:at:calendar:)` over all decks) and `StudyStream.swift`. What the screens show and do: `screens.md`. No GUI was run for this spec.
+Visual spec of 2026-10-21 for one user (iPhone 13 mini on iOS 27, dark mode; Mac on macOS 27). Read from code: `StartScreen`, `DeckView`, `StudyCountsView`, `StudyView`, `GradeChoice`, `Presentation`, `CardFlight`, Mac `ShellView`, `SessionView`, `AppCommands`, `DailyProgress.swift` (`DailyGoal`, `DailyRing`, `Streak`, `DailyProgress.evaluate(_:at:calendar:)` over all decks) and `StudyStream.swift`. What the screens show and do: `screens.md`; the entities and the day they draw: `product-model.md`. No GUI was run for this spec.
 
 ## 0. How to read this
 
@@ -49,17 +49,17 @@ Rejected: auto-start of the stream at launch. The learner would not see what is 
 │                              ( + )( … )│ nav bar 44: plus and ellipsis menus (trailing)
 │ Today                                 │ large title 34 bold, system
 │             ╭─────────╮               │
-│             │   12    │               │ hero ring 168, line 18, round caps; the cards left, bold rounded
-│             │cards left│              │ caption, secondary
+│             │         │               │ hero ring 168, line 18, round caps; a picture, no number in it
+│             │         │               │
 │             ╰─────────╯               │
-│ 🔥 ≈ 2 min to keep your 12-day streak │ streak chip: flame and sentence, subheadline semibold, rounded plate
-│  ≈ 5 min · 412 words in memory …      │ gain line, subheadline secondary: ≈ 5 min · 412 words in memory · +15 today
+│ 🔥 ≈ 2 min to keep your 12-day streak │ the sentence: flame and words, subheadline semibold
+│     412 words learned · +12 today     │ words learned, subheadline secondary
 │       M  T  W  T  F  S  S         ›   │ the week's rings, 22 pt; chevron at the row's end
 │  DECKS                                │ system section header
 │ ┌───────────────────────────────────┐ │
-│ │ Greek B1                    27  › │ │ body | body, monospaced | chevron.forward, footnote semibold, tertiary
+│ │ Greek B1                  ≈ 4 min › │ │ body | body, monospaced, secondary | chevron.forward, footnote semibold, tertiary
 │ │ ───────────────────────────────── │ │
-│ │ Greek A1–A2                 60  › │ │
+│ │ Greek A1–A2                     ✓ › │ │
 │ └───────────────────────────────────┘ │
 │ ╭──────────────────────────╮ ╭─────╮  │ bottom bar: Study (.borderedProminent) and the minimised search
 │ │          Study           │ │  ⌕  │  │
@@ -77,34 +77,33 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + hero about 33
 | Title | `.navigationTitle("Today")` | Large, automatic. German `Heute` already in the catalog. |
 | Toolbar | `ToolbarItemGroup(.primaryAction)` | Trailing: `Menu("Add", systemImage: "plus")` and `Menu("More", systemImage: "ellipsis")` (their items: `screens.md`, Today). No info button: How It Works is the last row of the Progress screen. The HIG prefers symbols without borders in toolbars [H:toolbars]: `ellipsis` without the circle. |
 | Hero | `TodayHero` in a `Button` (`.buttonStyle(.plain)`) | One element for VoiceOver (`.accessibilityElement(children: .combine)`); 24 pt between the parts: ring, the two text lines, the week; `.padding(.vertical, 8)`; a tap pushes Progress. |
-| Ring | `HeroRing` over `ProgressRing` | 168 pt, line 18 (a tenth of the size), the drawing and sources in §5.7. In the middle the cards left (`RingCenter.cardsLeft`): the figure at 0.32 of the diameter, bold rounded, and "cards left" under it in secondary (the plural phrase "%lld cards left (caption)" minus its number); a `checkmark` in the accent once the ring is closed. The middle scales with the ring, not with the text size. The owner asked for Fitness quality on 22.10.2026; [H:activity-rings] advises against imitating the Activity rings, the ring here follows the owner. |
-| Streak chip | `StreakChip` | Under the ring: the flame (`StreakFlame`, three states) and one sentence, `.subheadline.semibold`, on a rounded plate (`Color.streak` at 14 % when kept or at risk, secondary at 12 % when open). The sentence by state: kept "12-day streak", open "≈ 2 min to keep your 12-day streak", at risk "Close the ring to save your 12-day streak", 0 days "Start your streak · ≈ 2 min". One element for VoiceOver. |
-| Gain line | `MemoryLine`, led by `TodayLead` | `.subheadline` secondary, `.monospacedDigit()`, centred, wraps at large sizes: "≈ 5 min · 412 words in memory · +15 today", the lead being the time that closes the ring while it is open, "3 left" once it is closed, "Nothing due · next tomorrow" on a day without cards; a milestone passed today replaces it with "50 words in memory!", semibold, with a `sparkles` glyph in the accent. The same text, without the lead, on the rests. The states are in §2.4. |
+| Ring | `HeroRing` over `ProgressRing` | 168 pt, line 18 (a tenth of the size), the drawing and sources in §5.7. A picture: the arc of the cards done against today's goal and its laps, nothing in the middle at any size or text size. The owner asked for Fitness quality on 22.10.2026; [H:activity-rings] advises against imitating the Activity rings, the ring here follows the owner. |
+| Sentence | `StreakSentence` over `NextStep` | Under the ring: the flame (`StreakFlame`, three states) and the sentence, `.subheadline.semibold`: the next moment of the day and its minutes. By state: "≈ 2 min to keep your 12-day streak", "12-day streak · ≈ 5 min to close the ring", "Ring closed · ≈ 12 min of reviews left", "All done for today", at risk "≈ 6 min to close the ring and save your 12-day streak", with no streak "Start your streak · ≈ 2 min". One line when it fits, else the streak line over the price line; "7-day" and "≈ 2 min" are non-breaking. One element for VoiceOver. |
+| Words learned | `WordsLearned.line` | `.subheadline` secondary, `.monospacedDigit()`, centred, wraps at large sizes: "412 words learned · +12 today"; the gain is left out on a day that has none and the line while there are no words. |
 | Week | `WeekRings` | Seven rings of 22 pt, weekday initials, today last; the chevron `chevron.forward` (footnote semibold, tertiary) at the trailing end of the row. |
 | Section header | `Section("Decks")` | System. |
-| Deck row | `Button` with an `HStack` | `.buttonStyle(.plain)`, `contentShape(Rectangle())`, pushes the deck screen. Name `.body`; the cards of today's plan left in the deck, `.body`, `.monospacedDigit()`, trailing, or a `checkmark` in secondary when none; then `chevron.forward`. No subtitle. Until the deck is read the number is a redacted placeholder. A paused deck sits in the section "Paused": name in secondary, no counts. |
+| Deck row | `Button` with an `HStack` | `.buttonStyle(.plain)`, `contentShape(Rectangle())`, pushes the deck screen. Name `.body`; what the deck's plan leaves of today at the day's pace, "≈ 4 min" (`DeckRow`, `DeckMinutes`: backlog included, "< 1 min" under a minute), `.body`, `.monospacedDigit()`, secondary, trailing, or a `checkmark` in secondary when nothing is left; then `chevron.forward`. No subtitle. Until the deck is read the time is a redacted placeholder. A paused deck sits in the section "Paused": name in secondary, no time. |
 | Swipe | `.swipeActions`, `.contextMenu` | Pause Deck (Resume Deck in the Paused section); Remove from List for decks outside the folder. |
 | Bottom bar | `.searchable` + `.searchToolbarBehavior(.minimize)`, `ToolbarItem(.bottomBar)`, `DefaultToolbarItem(kind: .search)` | One bar holds the day's button and the minimised Search All Cards. The button is `.borderedProminent`, labelled by `DayAction`: `Study` in the accent while the ring is open, `Catch Up` once the ring is closed and the plan has cards left, `Learn 10 New Words` once the plan is done, the last two tinted `.secondary`. No footnote under it. Its width is the bar's less 140 pt, at least 120 (`containerRelativeFrame`). |
-| Accessibility | | Study button `accessibilityValue("\(due) cards left")`. The hero is one element: the ring reads "12 cards left" or "Ring closed", the chip "12-day streak, kept today" / "not kept yet" / its sentence at risk. |
+| Accessibility | | Study button `accessibilityValue("\(due) cards left")`. The hero is one element: the sentence with the streak's state ("12-day streak, kept today" / "not kept yet"), the words learned and the week. |
 
 ### 2.4 States
 
 | State | Hero | Button |
 |---|---|---|
-| Before the streak step | ring `16`, chip `≈ 2 min to keep your 12-day streak`, gain line leads `≈ 5 min` | `Study` |
-| After the streak step, ring open | ring `16`, chip `12-day streak`, lead `≈ 4 min` | `Study` |
-| Ring closed, cards left | ring a `checkmark`, chip `12-day streak`, lead `6 left` | `Catch Up` |
-| Plan done, cards done today | ring a `checkmark`, no lead | `Learn 10 New Words`; opens the stream with ten new cards at once |
-| Nothing due, nothing done today | ring a `checkmark`, lead `Nothing due · next tomorrow` | `Learn 10 New Words` |
-| The day after a missed day, ring open | chip `Close the ring to save your 12-day streak`, the flame an orange outline with an exclamation mark | `Study` |
-| No streak | chip `Start your streak · ≈ 2 min`, the flame an outline | `Study` |
-| Rounds not known yet | ring `87`, chip `12-day streak` without its time | `Study` |
+| Before the streak step | sentence `≈ 2 min to keep your 12-day streak` | `Study` |
+| After the streak step, ring open | sentence `12-day streak · ≈ 5 min to close the ring` | `Study` |
+| Ring closed, cards left | sentence `Ring closed · ≈ 12 min of reviews left` | `Catch Up` |
+| Plan done, or nothing due | sentence `All done for today` | `Learn 10 New Words`; opens the stream with ten new cards at once |
+| The day after a missed day, ring open | sentence `≈ 6 min to close the ring and save your 12-day streak`, the flame an orange outline with an exclamation mark | `Study` |
+| No streak | sentence `Start your streak · ≈ 2 min`, the flame an outline | `Study` |
+| Rounds not known yet | sentence without its time (`12-day streak`) | `Study` |
 | Decks not read yet | placeholders, redacted, until every deck and the ring are in (`isDayReady`) | `Study` |
-| No decks | the empty hero ring, one line of explanation, `New Deck` (`.glassProminent`, large) and `Use iCloud Drive Folder` (`.glass`, large), at most 320 pt wide, the AnkiWeb link under them; Open Deck… is in the `…` menu | – |
-| Deck unreadable (iCloud) | row without counts | row stays tappable; the stream cover shows the existing failure view |
-| Accessibility sizes (`isAccessibilitySize`) | the ring keeps its size, the chip's sentence and the gain line wrap and the list scrolls; at AX5 the hero keeps its order | unchanged |
+| No decks | the empty hero ring, one line of explanation, `New Deck` (`.glassProminent`, large), `Shared Decks on AnkiWeb` (`.glass`, large), at most 320 pt wide, `Use iCloud Drive Folder` as a small text button under them; Open Deck… is in the `…` menu | – |
+| Deck unreadable (iCloud) | row without its time | row stays tappable; the stream cover shows the existing failure view |
+| Accessibility sizes (`isAccessibilitySize`) | the ring keeps its size, the sentence and the words learned wrap and the list scrolls; at AX5 the hero keeps its order | unchanged |
 
-The ring and every line beside it count cards; reviews do not enter. The goal, the done cards, the cards left, the minutes to the streak step (`RoundStatus`), the minutes and the pace are defined in `daily-ring.md`; what the lines say is in `screens.md`, Today. In the small widget the headline sits under the ring (64 pt, 56 pt with a time line, 48 pt at risk) and takes two lines where it does not fit; at risk it is the line Today shows, up to three lines in the subheadline font.
+The ring counts cards and the sentence counts minutes, which translate cards at the learner's own pace; reviews do not enter. The goal, the done cards, the minutes to the streak step, to the ring and of the reviews after it (`DailyProgress.minutesToStreak`, `.minutesToRing`, `.minutesOfDueAfterRing`) and the pace are defined in `daily-ring.md`; what the lines say is in `screens.md`, Today. In the small widget the sentence sits under the ring (72 pt) and takes three lines for the at-risk one.
 
 ### 2.5 Budget
 
@@ -119,7 +118,7 @@ Pushed onto Today's stack from a deck row; what it shows and does: `screens.md`,
 ```
 ┌───────────────────────────────────────┐
 │ ‹ Today       Greek B1         (+)(…) │ inline title; back; plus and ellipsis menus
-│  14 cards today                       │ title3 semibold on the screen's background
+│  ≈ 4 min · 14 due · 6 new · 2 learning │ subheadline semibold on the screen's background
 │ ┌───────────────────────────────────┐ │
 │ │ ▤ Cards                     2 236 │ │ LabeledContent, monospaced digits
 │ │ ▥ Statistics                    › │ │ NavigationLink to StatisticsScreen
@@ -136,7 +135,7 @@ Pushed onto Today's stack from a deck row; what it shows and does: `screens.md`,
 | Element | SwiftUI | Values |
 |---|---|---|
 | Container | `List` in the stack | `.listStyle(.insetGrouped)`, `.navigationBarTitleDisplayMode(.inline)`. |
-| Headline | `DeckHeadline` in a clear row | One line, `.title3.weight(.semibold)`: "14 cards today" (the plan's cards, `StudyCounts.total`), a check and "Done · next review tomorrow" ("Done" without a next date), "Paused" (wins over the counts). No headline before the counts are read, or for a deck with no cards. |
+| Headline | `DeckHeadline` in a clear row | One line, `.subheadline.weight(.semibold)`, like Today's sentence, so it fits one line at 375 pt: "≈ 4 min · 14 due · 6 new · 2 learning" (the minutes of what today's plan leaves in the deck, backlog included, then Anki's Due, New and Learning, a part of 0 left out), a check and "Done · next review tomorrow" ("Done" without a next date), "Paused" (wins over the counts). No headline before the counts are read, or for a deck with no cards. |
 | Toolbar | `ToolbarItem(.primaryAction)` twice | `Menu("Add", systemImage: "plus")`: Add Cards, Import Cards… (wait for `isReadyToEdit`). `Menu("More", systemImage: "ellipsis")`: Practice Newest Words and Practice Today's Mistakes (`DeckPractice`; grey with nothing to practise), a divider, Rename…, Pause Deck or Resume Deck, Export…, Delete Deck. |
 | Rows | `NavigationLink` with `RowLabel(title:symbol:)` | Cards with its count (`rectangle.stack`), Statistics (`chart.bar`), Options (`slider.horizontal.3`). |
 | Study | `.safeAreaBar(edge: .bottom)` | `StudyButton` titled `Study This Deck` while the deck has cards in today's plan, else `Learn 10 New Words`: ten new cards of this deck at once. |
@@ -175,13 +174,13 @@ What the header shows: `screens.md`, Study.
 
 - Leading: `Button(role: .close)` (xmark). It replaces the `chevron.backward` End Session button; the stream has no session to end, every grade is saved. The HIG asks for the standard Close symbol and no text label [H:toolbars].
 - Leading, right after the close button (`.topBarLeading`, no shared background): `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + the figures, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)`. The ring is empty inside. Beside it the streak's flame by its state (`StreakFlame`, `.body.semibold`): an outline until today's streak step is done, filled in the streak's orange from then on. Past the goal it goes on over itself, up to three laps. A practice shows the word `Practice` as the principal text, without the ring.
-- Trailing: an icon button `arrow.uturn.backward` (Undo) left of `Menu("More", systemImage: "ellipsis")`; there is no chip under the bar: its room goes to the card.
+- Trailing: an icon button `arrow.uturn.backward` (Undo) left of `Menu("More", systemImage: "ellipsis")`; nothing hangs under the bar: its room goes to the card.
 - The ring is where the cards go (`study-screen.md`, Motion): its frame is reported to `StudyMotion.ringHome` (global coordinates, nothing fixed), it steps and glows when a card is done, and the figures stand beside it.
 - The streak is the flame beside the ring and no figure of its own. The goal-met moment is the ring that closes as the last card leaves and bursts at the rest of the plan.
 
 ### 4.2a Rests
 
-The stream's rests (titles, figures and buttons: `screens.md`, Study) are one `StreamRestView`: the same ring (96 pt, the cards left or a check in it) and the streak chip under it, over the title (on the Streak kept rest, whose title is the streak, no chip: the streak's days with the filled flame beside them), the figures in secondary under it, the buttons 24 pt below, as wide as the card (iPhone 400 pt at most, Mac 320). The first button of a rest is `.borderedProminent` and the default action (Keep Going; Done); the others are `.bordered`; Learn 10 New Words carries no footnote. The rings of the last seven days (`WeekRings`) are 20 pt each, weekday initials under them, today last and bold.
+The stream's rests (titles, figures and buttons: `screens.md`, Study) are one `StreamRestView`: the same ring (96 pt, a picture) and the streak under it (the flame and the days), over the title (on the Streak kept rest, whose title is the streak, nothing under the ring: the days with the filled flame beside them), the lines in secondary under it (the price line of the sentence, the words learned, the week), the buttons 24 pt below, as wide as the card (iPhone 400 pt at most, Mac 320). The first button of a rest is `.borderedProminent` and the default action (Keep Going; Done); the others are `.bordered`; Learn 10 New Words carries no footnote. The rings of the last seven days (`WeekRings`) are 20 pt each, weekday initials under them, today last and bold.
 
 The motion into and out of a rest (`RingTraveler`, `SlotOutline`, the staggered lines, Reduce Motion): `study-screen.md`, Motion.
 
@@ -192,7 +191,7 @@ The motion into and out of a rest (`RingTraveler`, `SlotOutline`, the staggered 
 | Container | One fixed-height container for both stages, so the card keeps its height and the divider with the question stays where it is when the answer opens. The grade rows stay in the layout at all times (`opacity`, `allowsHitTesting`, `accessibilityHidden` as `face` does for the answer) and Show Answer lies over them (an overlay, so it has their size). |
 | Show Answer | `Button`, `.buttonStyle(.borderedProminent)`, `.controlSize(.large)`, full width, accent fill, the whole rectangle of the grade block (Forgot's top to the bottom of the row), corner radius 14 like the grade buttons. |
 | Forgot | Full width, height `@ScaledMetric(relativeTo: .body) var height = 50`, `Label("Forgot", systemImage: "xmark")`, `.font(.body.weight(.semibold))`, fill `Grade.again.color`, white label. |
-| Don't know | On a card's first showing (`Card.isNew`) the Forgot button reads "Don't know" (`GradeChoice.isNew`, `Grade.buttonTitle(isNew:)`): the same grade (Again), place, size, fill, key and swipe; only the label changes. |
+| Don't know / Know | On a card's first showing (`Card.isNew`) two wide buttons side by side replace the four (`GradeChoice.isNew`): **Don't know** (Again, `Grade.again.color`) and **Know** (Good, `Grade.good.color`, label from `Grade.buttonTitle(isNew:)`), gap 12, together as tall as the two rows they replace; the swipes keep all four grades, the Mac's keys are 2 and 4; in landscape the two parts are Don't know and Know. |
 | Hard / Good / Easy | `WeightedRow(weights: [1, 1.25, 1], spacing: 12)`, same height as Forgot, fills `Grade.hard/good/easy.color`, labels `Grade.onColor`: white on Forgot, a dark green on Hard and Good, near black on Easy (`GradeSwatch`; §5.2). No caption stands over the row. `minimumScaleFactor(0.7)` goes away; at `isAccessibilitySize` the four buttons stack, full width, gap 12. |
 | Spacing | 12 between bezeled controls [H:accessibility]. Hard taken for Forgot is the costly slip for FSRS (comment in `GradeChoice`); the 12 between the rows keeps them apart, Forgot alone above the three "yes" grades. The scale of the study screens is `Spacing`: 4, 8, 12, 16, 24. |
 | Corner radius | 14. |
@@ -310,7 +309,7 @@ A single colour cannot give 4.5:1 for a white label (luminance at most 0.183) an
 
 **Raised surfaces.** A graphic drawn in a sheet, a selection mark or a row symbol, is `Color.appAccentOnRaised`: the accent itself on a screen and in light; in dark at the elevated level (`UITraitCollection.userInterfaceLevel`), the accent lightened in its hue (241°, saturation held): `#706FDC` with 3.32 on `#2C2C2E`, and with Increase Contrast `#7B79EA` with 3.31 on `#363638`. The colour is a `UIColor` provider that reads the level of the view it is drawn in, so one value serves a screen and a sheet. In sheets today: the selection marks of Add Cards and of the import preview, and the row symbols of the Anki destination sheet. The ring, the flame, the maturity ramp and the study stream are on screens; the stream and the onboarding are full-screen covers, which are not raised, so they take the accent. Card Detail and How It Works draw no accent graphic. The fill of a prominent button stays the accent: its white label asks 4.5, which the lighter ones do not give (4.20 and 3.64), and a button is named by its label, so its fill needs no 3:1 of its own.
 
-Roles of the accent: prominent button fill (Study, Show Answer, Study This Deck), ring, flame when the goal is met, `info.circle`, selection, the glow of the ring when a card is done and the specks of the burst (`study-screen.md`, Motion). Nothing else: no text, no resting backgrounds, no card face.
+Roles of the accent: prominent button fill (Study, Show Answer, Study This Deck), ring, flame once the streak is kept, `info.circle`, selection, the glow of the ring when a card is done and the specks of the burst (`study-screen.md`, Motion). Nothing else: no text, no resting backgrounds, no card face.
 
 In code the accent is `Color.appAccent`, and `Color.appAccentOnRaised` for a graphic that may sit in a sheet (`Shared/Support/Presentation.swift`): on the iPhone and in the widget the named asset `Color("AccentColor")` (in a widget `Color.accentColor` is the system tint), on the Mac `Color.accentColor`, so the system accent setting applies (§5.6). `Color.dailyRing` is `appAccent`; `Color.dailyRingTail` is the tail of the ring's gradient (§5.7).
 
@@ -384,7 +383,7 @@ On macOS `AccentColor` applies only when the system accent is Multicolor, and se
 
 The owner asked on 22.10.2026 for rings in the manner of the Fitness rings, taken from open-source rings and without a dependency. The drawing is `Shared/Support/ActivityRing.swift`: [MKRingProgressView](https://github.com/maxkonovalov/MKRingProgressView) by Max Konovalov (MIT) transcribed line for line — `RingProgressLayer.drawContent(in:)` as `RingDrawing.draw`, `GradientGenerator` as it is — inside a SwiftUI `Canvas` (`withCGContext`), so the same drawing runs on iOS, macOS and in the widget. The order is MK's: a backdrop circle in the start colour at 15 %; for progress past one lap a solid arc in the start colour, then the context rotated so the gradient arc ends at the head; the end circle in the start colour with a shadow (`w/3` blur, offset `w/10` along the way the ring runs, opacity 1) clipped to the ring; the gradient arc on top, a conic gradient image clipped to the stroked arc. `ProgressRing` hands the drawing at most 3 (`ProgressRing.maxLaps`; `DailyRing.fraction` itself stays capped at 1 and says whether the goal is met), so a ring is full at the goal and goes on over itself past it. Options: MK's defaults, except `hidesRingForZeroProgress` on (an empty ring shows only the backdrop) and the gradient image at the display's scale. `UIBezierPath(arcCenter:…, clockwise: true)` became `CGMutablePath.addArc(…, clockwise: false)`; colours resolved from SwiftUI are converted to device RGB before the generator reads their components. The gradient image depends on size and colours only, so the last one is cached while a ring animates.
 
-**Laps.** Every ring draws done over goal, and past 1 the second lap goes over the first with the head's shadow, as the Fitness rings do; the drawn value stops at 3 (`ProgressRing.maxLaps`). Today, the rests, the stream's rings and the week rings take it from `DailyRingFigure.fraction` and `DailyProgress.weekRings`, the Progress calendar from `DayRecord.ringShare`. The middle still counts the cards left until the goal, then it is the `checkmark`. The widget's week keeps closed or not.
+**Laps.** Every ring draws done over goal, and past 1 the second lap goes over the first with the head's shadow, as the Fitness rings do; the drawn value stops at 3 (`ProgressRing.maxLaps`). Today, the rests, the stream's rings and the week rings take it from `DailyRingFigure.fraction` and `DailyProgress.weekRings`, the Progress calendar from `DayRecord.ringShare`. The widget's week draws the share of each day's goal from `WidgetSnapshot.weekRings`.
 
 **Colour.** Head: the accent. Tail: the accent mixed with 25 % white in device RGB. `AccentContrastTests.ringGradientHoldsItsContrastInEveryAppearance` reads both ends from the pixels of a view in each appearance and holds the tail to 3:1 on the four surfaces and to 1.3:1 against the accent, in light, dark and both increased-contrast variants. The test reads pixels because `Color.accentColor` is the asset's accent only inside a view: `UIColor(Color.accentColor)` gives the system blue. Line width 15 % of the diameter, at least 3 pt.
 
@@ -399,19 +398,19 @@ The tail and its WCAG ratios, computed from the 8-bit values (surfaces as in §5
 
 Every tail ratio meets the test's thresholds; the lowest on a surface is 3.08 (light, on `#F2F2F7`). A third of white instead of a quarter gives 2.62 there (`#908EE4`).
 
-**Middle.** The ring holds its own quantity: `RingCenter` is `.cardsLeft(n)`, the cards that close the ring (`DailyProgress.cardsToClose`: the plan's cards left, at most the goal less the done), `.done`, a `checkmark` once the ring is closed, or `.none` before the first evaluation. The size of the ring decides how much shows (`RingCenter.shown(at:)`): the figure from 56 pt (0.4 of the diameter, bold rounded, `monospacedDigit`, scaled down to 0.5), the caption "cards left" from 88 pt (figure 0.32, caption 0.085 of the diameter, at least 10 pt), the `checkmark` (0.36 of the diameter, in `Color.dailyRing`) from 56 pt, and nothing below 56 pt: the rings of the bars and of the week are empty inside. No flame and no days in a ring at any size. The state of the streak is `StreakState` (`DailyProgress.streakState`): `open`, today's streak step not done; `kept`, done; `atRisk`, the day after a missed one until the ring closes. `StreakFlame(state:)` draws the flame everywhere, outside the ring: a grey `flame` outline when open, `flame.fill` in `Color.streak` when kept, a `flame` outline in `Color.streak` followed by an `exclamationmark` when at risk, so the state survives a monochrome rendering. Orange is the one hue that means the habit: red is Forgot, the greens are recalled, indigo is the ring and the accent. `Color.streak` is `#E05A00` in light (3.7:1 on white, 3.3:1 on the light grouped grey) and `#FF9F0A` in dark (8:1 on the dark raised grey), above the 3:1 a glyph needs. The streak is the `StreakChip` (Ring table above) on Today and the rests, and the statistic at the top of Progress: the flame at 34 pt, the days at 56 pt bold rounded, "day streak" in `.subheadline`, and "Best: 21" in `.footnote` only when the best run is longer than the current one. The study bar and the Mac session header put the ring, the flame (`.body.semibold`) and the figures in a row, left, right after the close button, so the ring does not move when the text beside it changes its width; the burst of the streak step is on the large flame of the Streak kept rest's title.
+**Middle.** A ring holds nothing, at any size: it is a picture of the cards done against the goal and its laps. The state of the streak is `StreakState` (`DailyProgress.streakState`): `open`, today's streak step not done; `kept`, done; `atRisk`, the day after a missed one until the ring closes. `StreakFlame(state:)` draws the flame everywhere, outside the ring: a grey `flame` outline when open, `flame.fill` in `Color.streak` when kept, a `flame` outline in `Color.streak` followed by an `exclamationmark` when at risk, so the state survives a monochrome rendering. Orange is the one hue that means the habit: red is Forgot, the greens are recalled, indigo is the ring and the accent. `Color.streak` is `#E05A00` in light (3.7:1 on white, 3.3:1 on the light grouped grey) and `#FF9F0A` in dark (8:1 on the dark raised grey), above the 3:1 a glyph needs. The streak is the flame that leads the sentence (`NextStep`) on Today, the rests and the widgets, and the statistic at the top of Progress: the flame at 34 pt, the days at 56 pt bold rounded, "day streak" in `.subheadline`, and "Best: 21" in `.footnote` only when the best run is longer than the current one. The study bar and the Mac session header put the ring, the flame (`.body.semibold`) and the minutes in a row, left, right after the close button, so the ring does not move when the text beside it changes its width; the burst of the streak step is on the large flame of the Streak kept rest's title.
 
 | Place | Ring | Middle |
 |---|---|---|
-| Today (`TodayHero`) | 168 pt (the Mac's Today page 200 pt) | cards left with its caption, or `checkmark` |
+| Today (`TodayHero`) | 168 pt (the Mac's Today page 200 pt) | none; the sentence under it |
 | Progress (`ProgressScreen`) | none: the streak statistic | none |
-| Rest screen (`StreamRestView`) | 96 pt | cards left with its caption, or `checkmark`; the chip under the ring |
-| Widget, small and medium | 64, 56 or 48 pt, 60 pt | the cards left, or `checkmark` |
+| Rest screen (`StreamRestView`) | 96 pt | none; the streak under the ring |
+| Widget, small, medium and rectangular | 72, 104 and 56 pt | none; the circular widget is the system gauge with the minutes or a `checkmark` |
 | Study bar (`StreamRing`) | 30 pt, `@ScaledMetric(relativeTo: .subheadline)`, at most 44 | empty |
 | Mac session header | 28 pt | empty |
 | Week rings (`WeekRings`) | 22 pt | empty |
 
-VoiceOver: the Today hero is one element: the ring reads "12 cards left" or "Ring closed", the chip its sentence with the state ("12-day streak, kept today", "not kept yet"), then the gain line and the week. `DailyRingView` reads "Daily Goal", or the middle where one shows, and "14 / 36" as its value. `DailyRingView` has no popover and is no button. `ProgressRing` is otherwise hidden from accessibility, as the text beside it says the figures; the study bar's flame reads the streak's state, and the bar's ring, flame and figures are one combined element.
+VoiceOver: the Today hero is one element: the sentence with the streak's state ("12-day streak, kept today", "not kept yet"), then the words learned and the week. `DailyRingView` reads "Daily Goal" and its share as its value, has no popover and is no button. `ProgressRing` is otherwise hidden from accessibility, as the text beside it says the figures; the study bar's flame reads the streak's state, and the bar's ring, flame and minutes are one combined element.
 
 Pictures: `VocTrainTests/RingTests.swift` (`TEST_RUNNER_STUDY_SHOTS_DIR`) writes `ring-1-today`, `ring-2-study-bar`, `ring-3-chip`, `ring-4-rest` in light and dark at 0, 40, 100, 160 and 230 % of the goal, and `ring-5-edges` at 5, 95, 100, 105, 150, 200 and 300 %; `MacVocTrainNgTests/RingSnapshotMacTests.swift` writes the Mac chip and the session ring.
 
