@@ -108,6 +108,7 @@ struct AddCardsView: View {
                     focus = mode == .oneCard ? .question : .list
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding([.horizontal, .top], 20)
             .padding(.bottom, 4)
 
