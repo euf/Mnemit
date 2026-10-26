@@ -46,7 +46,8 @@ import Foundation
 /// of the file while they hold their defaults: an older app version drops them, fits
 /// nothing by itself and forgets when the newer one last did. `paused` of the options, left
 /// out while the deck is not paused, came the same way: an older app version drops it, and
-/// the deck is no longer paused.
+/// the deck is no longer paused. So did `introducesNewCards`, left out while off: an older app
+/// version drops it, and the deck asks its new cards at once.
 ///
 /// When `currentVersion` goes up: a missing key takes its default, so a newer app
 /// version reads an older deck of the same version. The other way round, an older
@@ -290,6 +291,8 @@ extension DeckFile {
         var lastAutoFit: AutoFitRecord?
         /// Left out while the deck is not paused.
         var paused: Bool?
+        /// Left out while off, the default.
+        var introducesNewCards: Bool?
 
         init(_ options: LearningOptions) {
             targetRecall = options.targetRecall
@@ -306,6 +309,7 @@ extension DeckFile {
             updatesParametersAutomatically = options.updatesParametersAutomatically ? nil : false
             lastAutoFit = options.lastAutoFit.map(AutoFitRecord.init)
             paused = options.isPaused ? true : nil
+            introducesNewCards = options.introducesNewCards ? true : nil
         }
 
         func learningOptions() throws -> LearningOptions {
@@ -330,6 +334,7 @@ extension DeckFile {
             options.updatesParametersAutomatically = updatesParametersAutomatically ?? options.updatesParametersAutomatically
             options.lastAutoFit = lastAutoFit?.autoFit
             options.isPaused = paused ?? false
+            options.introducesNewCards = introducesNewCards ?? false
             return options
         }
 
@@ -337,7 +342,7 @@ extension DeckFile {
             case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
             case newProductionPerSession, productionUnlockDays, newCardOrder
             case fuzzing, parameters, leechThreshold
-            case updatesParametersAutomatically, lastAutoFit, paused
+            case updatesParametersAutomatically, lastAutoFit, paused, introducesNewCards
         }
 
         init(from decoder: Decoder) throws {
@@ -368,6 +373,7 @@ extension DeckFile {
             // A damaged record costs the deck one more fit, not its readability.
             lastAutoFit = try? container.decodeIfPresent(AutoFitRecord.self, forKey: .lastAutoFit)
             paused = try? container.decodeIfPresent(Bool.self, forKey: .paused)
+            introducesNewCards = try? container.decodeIfPresent(Bool.self, forKey: .introducesNewCards)
         }
 
         func encode(to encoder: Encoder) throws {
@@ -387,6 +393,7 @@ extension DeckFile {
             try container.encodeIfPresent(updatesParametersAutomatically, forKey: .updatesParametersAutomatically)
             try container.encodeIfPresent(lastAutoFit, forKey: .lastAutoFit)
             try container.encodeIfPresent(paused, forKey: .paused)
+            try container.encodeIfPresent(introducesNewCards, forKey: .introducesNewCards)
         }
     }
 
