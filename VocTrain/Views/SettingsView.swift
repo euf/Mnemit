@@ -83,8 +83,6 @@ struct SettingsView: View {
                     }
                 }
             }
-        } else {
-            Text("The reminder tells you how many cards are due in each deck. The number on the app icon is the total due today.")
         }
     }
 }

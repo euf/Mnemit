@@ -15050,28 +15050,6 @@
         }
       }
     },
-    "The reminder tells you how many cards are due in each deck. The number on the app icon is the total due today.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Erinnerung nennt, wie viele Karten in jedem Stapel fällig sind. Die Zahl am App-Symbol ist die Summe für heute."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Η υπενθύμιση λέει πόσες κάρτες είναι προς επανάληψη σε κάθε τράπουλα. Ο αριθμός στο εικονίδιο της εφαρμογής είναι το σύνολο για σήμερα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Напоминание сообщает, сколько карточек к повторению в каждой колоде. Число на значке приложения — общее количество на сегодня."
-          }
-        }
-      }
-    },
     "The review log of the card “%@” lists more reviews than the card has had.": {
       "localizations": {
         "de": {
