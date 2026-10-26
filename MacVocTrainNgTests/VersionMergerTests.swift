@@ -118,11 +118,11 @@ struct VersionMergerTests {
         #expect(!conflict.isResolved)
     }
 
-    /// E.g. when the app no longer finds the document behind `DocumentGroup` (#265).
+    /// E.g. when the file can't be written (#265).
     @Test func conflictsStayUntilTheMergeIsSaved() async {
         let conflict = FakeConflict(deck: reviewing(kot, in: base, at: day(2)), store: store)
         store.conflicts = [conflict]
-        store.saveError = FileVersionStore.DocumentNotFound()
+        store.saveError = SaveFailed()
         let (document, _) = open(base)
         // Only the merge saves: the save scheduled after its change would come any time.
         let merger = makeMerger(saveDelay: .seconds(3600))
@@ -272,7 +272,7 @@ struct VersionMergerTests {
         merger.merge(readAgain: base)
         await merger.merging?.value
         #expect(store.events.isEmpty)
-        store.saveError = FileVersionStore.DocumentNotFound()
+        store.saveError = SaveFailed()
 
         merger.attach(document, fileURL: url, isEditable: true)
         await merger.merging?.value
@@ -432,3 +432,6 @@ final class FakeConflict {
         store.events.append("resolve")
     }
 }
+
+/// What a save that fails throws.
+private struct SaveFailed: Error {}

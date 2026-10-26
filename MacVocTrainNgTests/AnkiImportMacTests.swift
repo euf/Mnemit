@@ -6,8 +6,7 @@ import VocabCore
 @testable import MacVocTrain
 
 /// The Mac side of the Anki import: the preview of a package, built here from notes, as the
-/// sandbox of the test host can't read the fixtures of VocabCore (the iPhone's tests read them),
-/// and the requests that make a new deck's window start the import.
+/// sandbox of the test host can't read the fixtures of VocabCore (the iPhone's tests read them).
 @MainActor
 struct AnkiImportMacTests {
     let calendar = StudyCalendar.testing
@@ -85,32 +84,6 @@ struct AnkiImportMacTests {
         // Without a preset in the package there is nothing to take and nothing to say.
         let plain = CardImport.ankiCandidates(of: AnkiImport(notes: [.init(front: "a", back: "1")]), existing: [], learningOptions: LearningOptions(), calendar: calendar, created: created, isNewDeck: true)
         #expect(plain.learningOptions == nil && plain.summary.settings == .absent && plain.summary.lines.count == 1)
-    }
-
-    @Test func requestsFromTheWelcomeWindowAreTakenInOrderAndOnce() {
-        while WelcomeRequest.takeImportCards() != nil {}
-        let package = URL(fileURLWithPath: "/Downloads/Greek.apkg")
-        WelcomeRequest.requestImportCards()
-        WelcomeRequest.requestImportCards(from: package)
-        #expect(WelcomeRequest.takeImportCards()?.file == nil)
-        #expect(WelcomeRequest.takeImportCards()?.file == package)
-        #expect(WelcomeRequest.takeImportCards() == nil)
-    }
-
-    /// What a download of the deck browser does, a package or a table: the request, and then a
-    /// new document, which is where the window takes the request.
-    @Test func aDownloadOfTheDeckBrowserImportsIntoANewDeck() {
-        while WelcomeRequest.takeImportCards() != nil {}
-        let package = URL(fileURLWithPath: "/tmp/DeckDownloads/1/Greek Core.apkg")
-        let table = URL(fileURLWithPath: "/tmp/DeckDownloads/2/greek.csv")
-        var newDocuments = 0
-        WelcomeRequest.importIntoNewDeck(from: package) { newDocuments += 1 }
-        #expect(newDocuments == 1)
-        #expect(WelcomeRequest.takeImportCards()?.file == package)
-        WelcomeRequest.importIntoNewDeck(from: table) { newDocuments += 1 }
-        #expect(newDocuments == 2)
-        #expect(WelcomeRequest.takeImportCards()?.file == table)
-        #expect(WelcomeRequest.takeImportCards() == nil)
     }
 
     /// The browser of the Mac is the iPhone's: the same sources, and the files it saves are the

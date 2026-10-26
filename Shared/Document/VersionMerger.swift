@@ -9,20 +9,19 @@ import VocabCore
 /// NSDocument on the Mac and UIDocument on the iPhone read the file again on their own
 /// when another process writes it. Either way the merger takes in what was read, see
 /// `ReadAgain` (#303), and lives as long as the window or the open deck:
-/// - On the Mac, the window then gets a new document, see `DocumentWindow`. The merger
-///   sees each of the window's documents in turn and merges the deck of the document
+/// - Given a different document than before, the merger merges the deck of the document
 ///   before into the new one: NSDocument sets unsaved changes aside as an
 ///   `NSFileVersion` before it reads again, where the learner wouldn't find them. It
 ///   doesn't if the file holds nothing the deck before lacks, as after reverting to a
 ///   saved or older version: merging would take back the revert.
-/// - On the iPhone, the open deck keeps its document, and the merger merges the deck
+/// - On both apps the open deck keeps its document, and the merger merges the deck
 ///   read into it, see `merge(readAgain:)` (#296). A study session goes on.
 /// - It merges the versions iCloud Drive keeps in conflict with the file, saves, and
 ///   only then marks the conflicts resolved. An unresolved conflict keeps the iPhone
 ///   from opening the deck. It does so after opening, after reading again and when the
 ///   file changes, as iCloud Drive may keep the version of this device and set the
 ///   other device's aside.
-/// - It says so when reading the file again ended a study session, on the Mac.
+/// - It says so when a new document ended a study session.
 ///
 /// It leaves two jobs to types of their own (#298): `saves` saves a few seconds after
 /// every change, `watch` hears of changes to the file and lets go of it while the
@@ -32,13 +31,13 @@ import VocabCore
 /// The merge itself is idempotent, so merging once too often does no harm.
 @MainActor @Observable
 final class VersionMerger {
-    /// Set when reading the file again ended a study session; the window says so.
+    /// Set when a new document ended a study session.
     var endedSession = false
-    /// Why a version in conflict couldn't be merged; the window shows it. Each version
+    /// Why a version in conflict couldn't be merged; the page of the deck shows it. Each version
     /// is reported once.
     var failure: String?
-    /// Whether a study session is under way; the document's view keeps it up to date
-    /// through `documentSync`.
+    /// Whether a study session is under way; the shell on the Mac and the document's view on
+    /// the iPhone (`documentSync`) keep it up to date.
     @ObservationIgnored var isInSession = false
 
     /// The current document of the window or scene.

@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 @testable import MacVocTrain
 @testable import VocabCore
 
-/// The folder that holds the decks, which the welcome window lists.
+/// The folder that holds the decks, which the sidebar lists.
 struct DeckFolderTests {
     @Test func listsTheDecksByName() throws {
         let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
@@ -17,9 +17,8 @@ struct DeckFolderTests {
         #expect(DeckFolder.decks(in: folder).map(\.lastPathComponent) == ["Greek A1–A2.voctrain", "Greek B1.mnemit", "Greek B10.mnemit"])
     }
 
-    /// A deck of MacVocTrain NG, `.voctrain`, opens like one of Mnemit, is listed next to
-    /// it, and the document may save it in place: its type is writable, the one of new decks
-    /// comes first.
+    /// A deck of MacVocTrain NG, `.voctrain`, opens like one of Mnemit and is listed next to it; the type of
+    /// new decks comes first.
     @Test func aVoctrainDeckOpensAndIsListedNextToAMnemitOne() throws {
         let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
         defer { try? FileManager.default.removeItem(at: folder) }
@@ -34,8 +33,7 @@ struct DeckFolderTests {
         let questions = try decks.map { try DeckFile.decode(FileWrapper(url: $0, options: .immediate)).cards.map(\.question) }
         #expect(questions == [["kot"], ["dom"]])
 
-        #expect(VocabularyDocument.readableContentTypes == [.vocabularyDeck, .legacyVocabularyDeck])
-        #expect(VocabularyDocument.writableContentTypes == [.vocabularyDeck, .legacyVocabularyDeck])
+        #expect(UTType.deckTypes == [.vocabularyDeck, .legacyVocabularyDeck])
         // The Info.plist declares the same types as document types, and the Anki package and collection after them.
         let documentTypes = Bundle.main.infoDictionary?["CFBundleDocumentTypes"] as? [[String: Any]] ?? []
         #expect(documentTypes.flatMap { $0["LSItemContentTypes"] as? [String] ?? [] } == (UTType.deckTypes + UTType.ankiPackages).map(\.identifier))

@@ -6228,28 +6228,6 @@
         }
       }
     },
-    "Decks in “%@”": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stapel in „%@“"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τράπουλες σε «%@»"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колоды в «%@»"
-          }
-        }
-      }
-    },
     "Default": {
       "localizations": {
         "de": {
@@ -9858,50 +9836,6 @@
         }
       }
     },
-    "Next review": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nächste Abfrage"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επόμενη επανάληψη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Следующая оценка"
-          }
-        }
-      }
-    },
-    "Next review %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nächste Abfrage %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επόμενη επανάληψη %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Следующее повторение %@"
-          }
-        }
-      }
-    },
     "Next: %@ · %@": {
       "localizations": {
         "de": {
@@ -9964,50 +9898,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Карточек пока нет"
-          }
-        }
-      }
-    },
-    "No Decks": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Stapel"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Καμία τράπουλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нет колод"
-          }
-        }
-      }
-    },
-    "No Decks Yet": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Noch keine Stapel"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Δεν υπάρχουν τράπουλες ακόμη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колод пока нет"
           }
         }
       }
@@ -10386,28 +10276,6 @@
         }
       }
     },
-    "Nothing due. Next review %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nichts fällig. Nächste Abfrage %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τίποτα προς επανάληψη. Επόμενη επανάληψη %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нечего повторять. Следующая оценка %@"
-          }
-        }
-      }
-    },
     "Notifications for Mnemit are off in iOS Settings.": {
       "localizations": {
         "de": {
@@ -10628,28 +10496,6 @@
         }
       }
     },
-    "Open Mnemit Folder…": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mnemit-Ordner öffnen …"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Άνοιγμα φακέλου Mnemit…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Открыть папку Mnemit…"
-          }
-        }
-      }
-    },
     "Open Mnemit to start": {
       "localizations": {
         "de": {
@@ -10712,28 +10558,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Открыть в Safari"
-          }
-        }
-      }
-    },
-    "Open your Mnemit folder to see the decks in it, or import cards from a table.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Öffne deinen Mnemit-Ordner, um die Stapel darin zu sehen, oder importiere Karten aus einer Tabelle."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Άνοιξε τον φάκελο Mnemit για να δεις τις τράπουλες που περιέχει ή εισήγαγε κάρτες από πίνακα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Открой папку Mnemit, чтобы увидеть её колоды, или импортируй карточки из таблицы."
           }
         }
       }
@@ -10932,28 +10756,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "На паузе"
-          }
-        }
-      }
-    },
-    "Paused. Today's plan leaves this deck out.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pausiert. Der heutige Plan lässt diesen Stapel aus."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σε παύση. Το σημερινό πρόγραμμα αφήνει εκτός αυτή την τράπουλα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На паузе. План дня не включает эту колоду."
           }
         }
       }
@@ -11504,28 +11306,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вспомнили карточку — кольцо сдвигается. Новое слово возвращается под стопку, пока вы не вспомните его дважды."
-          }
-        }
-      }
-    },
-    "Recent Decks": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zuletzt geöffnete Stapel"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πρόσφατες τράπουλες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Недавние колоды"
           }
         }
       }
@@ -13972,28 +13752,6 @@
         }
       }
     },
-    "Ten new cards now": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jetzt zehn neue Karten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Δέκα νέες κάρτες τώρα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Десять новых карточек сейчас"
-          }
-        }
-      }
-    },
     "The Deck Could Not Be Deleted": {
       "localizations": {
         "de": {
@@ -14166,28 +13924,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Колода переместится в Корзину, откуда её можно вернуть."
-          }
-        }
-      }
-    },
-    "The deck was changed on another device and opened anew. The reviews of the session are kept.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der Stapel wurde auf einem anderen Gerät geändert und neu geöffnet. Die Abfragen der Sitzung bleiben erhalten."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Η τράπουλα άλλαξε σε άλλη συσκευή και άνοιξε ξανά. Οι επαναλήψεις της συνεδρίας διατηρούνται."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колода была изменена на другом устройстве и открыта заново. Оценки сессии сохранены."
           }
         }
       }
@@ -14474,28 +14210,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Шаг стрика дня, карточки первых двух минут его плана, сохраняет стрик. Один пропущенный день наверстывается, когда следующий день закрывает своё кольцо; два пропущенных дня подряд обрывают стрик."
-          }
-        }
-      }
-    },
-    "The study session has ended": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Lernsitzung wurde beendet"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Η συνεδρία μελέτης τελείωσε"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Учебная сессия завершена"
           }
         }
       }
@@ -15552,28 +15266,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Когда тебе удобно учиться? Достаточно нескольких минут в день."
-          }
-        }
-      }
-    },
-    "What today's plan takes from this deck.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Das nimmt der heutige Plan aus diesem Stapel."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τι παίρνει το σημερινό πρόγραμμα από αυτή την τράπουλα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Что план дня берёт из этой колоды."
           }
         }
       }

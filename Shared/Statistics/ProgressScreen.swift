@@ -1,7 +1,7 @@
 import SwiftUI
 import VocabCore
 
-/// Progress, pushed from the header of Today on the iPhone, a window of its own on the Mac (`ProgressWindow`), a summary of four blocks (`references/learning-flow.md`,
+/// Progress, pushed from the header of Today on the iPhone, a page of the window on the Mac, a summary of four blocks (`references/learning-flow.md`,
 /// "Milestones, achievements and the Progress screen"): the streak hero, as on Today but larger, with the four totals,
 /// the calendar of the last 13 weeks with the runs of kept days joined, the latest medals and the way to all of them,
 /// and the ladder of memory. Everything is worked out from the review logs as the ring is, `DailyProgress.records`.

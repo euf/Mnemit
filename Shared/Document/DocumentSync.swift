@@ -2,14 +2,12 @@ import SwiftUI
 
 extension View {
     /// Wires the view of an open deck to its document and to the `VersionMerger` of the
-    /// window or scene: `DocumentView` on the Mac, `DeckView` on the iPhone (#267).
+    /// window or scene: `DeckView` on the iPhone (#267).
     ///
     /// - Attaches the document to the merger when the view appears, and again when the
     ///   document becomes ready to edit, or the file or whether it can be changed
-    ///   changes. The merger waits until the document `isReadyToEdit` (#305): on the
-    ///   Mac, the document's view attaches the undo manager, see
-    ///   `attachingUndoManager(to:)`; on the iPhone, `OpenDeck` attaches it before it
-    ///   shows the document.
+    ///   changes. The merger waits until the document `isReadyToEdit` (#305): `OpenDeck`
+    ///   attaches the undo manager before it shows the document.
     /// - Tells the merger whether a study session is under way.
     ///
     /// - Parameters:

@@ -110,6 +110,19 @@ extension DeckFileTests {
             await f.finish()
         }
 
+        /// A package that can't be read makes no deck, and the window says why.
+        @Test func aPackageThatCannotBeReadMakesNoDeck() async throws {
+            let f = try ShellFixture()
+            let package = f.directory.appending(path: "Greek.apkg")
+            try Data("not a package".utf8).write(to: package)
+
+            await f.shell.importIntoNewDeck(from: package)
+            #expect(f.shell.notice != nil)
+            #expect(f.shell.request == nil)
+            #expect(try FileManager.default.contentsOfDirectory(atPath: f.folderURL.path).isEmpty)
+            await f.finish()
+        }
+
         /// A grade made a moment before ⌘Q is in the deck's file when the app has quit: the quit answers AppKit after the
         /// decks are saved, not before.
         @Test func quitSavesAGradeMadeJustBefore() async throws {

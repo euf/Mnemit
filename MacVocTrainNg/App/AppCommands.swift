@@ -1,9 +1,11 @@
 import SwiftUI
 
-/// Actions of the focused document window, for the menu bar.
+/// What the menu bar offers for the page of the shell window.
 struct DeckActions {
+    enum Screen { case overview, cards, statistics }
+
     var isInSession: Bool
-    /// `false` while the deck can only be viewed, see `DocumentView.isEditable`, or
+    /// `false` while the deck can only be viewed, see `OpenDeck.isEditable`, or
     /// while the document has no undo manager yet (#305).
     var isEditable: Bool
     var canStartSession: Bool
@@ -14,7 +16,7 @@ struct DeckActions {
     /// Whether the deck has a newest batch to practice, see `Deck.newestBatchIDs`.
     var canPracticeNewest: Bool
     var practiceNewest: () -> Void
-    var show: (DocumentView.Screen) -> Void
+    var show: (Screen) -> Void
     var showOptions: () -> Void
     /// Whether the deck is paused (`LearningOptions.isPaused`): the menu then offers to resume it.
     var isPaused: Bool

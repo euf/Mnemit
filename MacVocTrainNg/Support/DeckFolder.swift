@@ -2,7 +2,7 @@ import AppKit
 import Observation
 import VocabCore
 
-/// The folder that holds the learner's decks, Mnemit in iCloud Drive: the welcome window
+/// The folder that holds the learner's decks, Mnemit in iCloud Drive: the sidebar
 /// lists the decks in it. Kept as a security-scoped bookmark of the folder in the user
 /// defaults, because the sandbox lets the app into a folder only after the learner chose
 /// it; the app then holds that access until it quits, so decks in the folder open without
@@ -14,7 +14,7 @@ final class DeckFolder {
 
     /// The folder, `nil` until the learner chose one.
     private(set) var url: URL?
-    /// The decks in it by name; read again whenever the welcome window comes to the front.
+    /// The decks in it by name; read again whenever the window comes to the front.
     private(set) var decks: [URL] = []
 
     @ObservationIgnored private let defaults: UserDefaults
@@ -58,15 +58,6 @@ final class DeckFolder {
         guard let bookmark = Self.bookmark(for: chosen) else { return }
         defaults.set(bookmark, forKey: Self.key)
         use(chosen)
-    }
-
-    /// Opens a deck as a document, as File ▸ Open does.
-    static func open(_ deck: URL) {
-        NSDocumentController.shared.openDocument(withContentsOf: deck, display: true) { _, _, error in
-            if let error {
-                NSApp.presentError(error)
-            }
-        }
     }
 
     private func resolve(_ bookmark: Data) {

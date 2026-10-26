@@ -6,7 +6,7 @@ import SwiftUI
 /// `VersionMerger`.
 ///
 /// The deck is the same `VocabularyDocument` as on the Mac, from the folder `Shared`.
-/// The app opens and saves it itself, without `DocumentGroup`: it starts on Today, which
+/// The app opens and saves it itself: it starts on Today, which
 /// lists the decks and starts studying with one tap, see `StartScreen`.
 @main
 struct VocTrainApp: App {

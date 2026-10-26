@@ -3,7 +3,7 @@ import VocabCore
 
 struct CardListView: View {
     @ObservedObject var document: VocabularyDocument
-    /// `false` while the deck can only be viewed, see `DocumentView.isEditable`, or
+    /// `false` while the deck can only be viewed, see `OpenDeck.isEditable`, or
     /// can't be changed yet, see `VocabularyDocument.isReadyToEdit`.
     var isEditable: Bool
     /// A card to select and show, from Today's search.

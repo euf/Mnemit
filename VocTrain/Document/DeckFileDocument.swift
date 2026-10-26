@@ -4,7 +4,7 @@ import os
 
 /// The file of an open deck: reads it, saves it in place and reads it again when
 /// another device changed it, coordinated with iCloud Drive (#285). The app keeps it
-/// itself instead of leaving it to `DocumentGroup`, so it can open the deck it showed
+/// itself, so it can open the deck it showed
 /// last at launch, without the document browser first.
 ///
 /// UIDocument isn't bound to the main actor: it reads and writes on a queue of its

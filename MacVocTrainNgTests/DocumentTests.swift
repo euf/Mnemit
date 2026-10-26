@@ -188,12 +188,11 @@ struct DocumentTests {
         #expect(document.deck.progress.map(\.day) == [day])
     }
 
-    @Test func snapshotSavesReadableDeck() throws {
+    @Test func theDeckToSaveIsReadable() throws {
         // The file stores dates with second precision.
         let created = Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))
         let document = try VocabularyDocument(deck: Deck(cards: [Card(text: CardText(question: "dom", answer: "Haus")!, created: created)]))
-        let snapshot = try document.snapshot(contentType: .vocabularyDeck)
-        #expect(try DeckFile.decode(DeckFile.fileWrapper(for: snapshot)) == document.deck)
+        #expect(try DeckFile.decode(document.fileWrapper(for: document.deckToSave)) == document.deck)
     }
 
     @Test func everyDeckFileErrorOpensWithItsOwnMessage() {
@@ -214,13 +213,13 @@ struct DocumentTests {
         #expect(error.userInfo[NSUnderlyingErrorKey] as? Cause == .test)
     }
 
-    /// The first save of a new deck takes the snapshot on a background thread.
-    @Test func snapshotOffTheMainThreadHoldsTheLatestChange() async throws {
+    /// A save takes the deck off the main thread.
+    @Test func theDeckToSaveOffTheMainThreadHoldsTheLatestChange() async throws {
         let document = VocabularyDocument()
         let undoManager = makeUndoManager(for: document)
         step(undoManager) { document.add(CardText(question: "dom", answer: "Haus")!) }
-        let snapshot = try await Task.detached { try document.snapshot(contentType: .vocabularyDeck) }.value
-        #expect(snapshot == document.deck)
+        let saved = await Task.detached { document.deckToSave }.value
+        #expect(saved == document.deck)
     }
 
     @Test func newParametersReplayMemoryInOneUndoableChange() throws {

@@ -3,8 +3,8 @@ import VocabCore
 
 /// The file of an open deck: its versions in conflict on iCloud Drive, and the
 /// document that saves it. Each app saves its own way and passes that as `Save`: the
-/// Mac through the NSDocument behind `DocumentGroup` (`DocumentWindow`), the iPhone
-/// through its own UIDocument (`OpenDeck`, #295).
+/// Mac through the headless NSDocument of `OpenDeck` (`DeckFileDocument`), the iPhone
+/// through its own UIDocument (#295).
 ///
 /// Hears of every change to the file by another process through a file presenter of
 /// its own, next to the document's. The Mac's sandbox allows it with the entitlement

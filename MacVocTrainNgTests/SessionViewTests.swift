@@ -17,7 +17,7 @@ extension WindowTests {
 
         init() throws {
             document = try VocabularyDocument(deck: Deck(cards: [Card(question: "blim", answer: "blom"), Card(question: "frax", answer: "frox")]))
-            // The window has no `DocumentView` to give the document its undo manager.
+            // The window has no shell to give the document its undo manager.
             undoManager = makeUndoManager(for: document)
             model = SessionViewModel(document: document)
             delegate = DocumentWindowDelegate(undoManager: undoManager)

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The window of the deck browser (`DeckWebBrowserView`), from the welcome window and the File
+/// The window of the deck browser (`DeckWebBrowserView`), from the sidebar, Today and the File
 /// menu: the learner browses the shared decks, and the file they download fills a new deck of the
 /// shell, the way of a package that Finder opens. One window; asking again brings it to the front.
 @MainActor

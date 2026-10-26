@@ -1,28 +1,19 @@
 import Foundation
 import VocabCore
 
-/// The decks open in the app. Two ways in, until the windows go (phase 5): a window adds its
-/// document while it shows it (`add`/`remove`, weak), and `open(_:)` keeps a deck by its file, as
-/// the one window will: a deck stays open until it is closed or the app quits, so its undo
-/// steps survive a switch to another deck and a study run uses the deck the sidebar shows. The
-/// ring on the Mac covers these decks (`DailyRingModel`).
+/// The decks open in the app, by their files: a deck stays open until it is closed or the app quits, so its undo
+/// steps survive a switch to another deck and a study run uses the deck the sidebar shows. The ring on the Mac covers
+/// these decks (`DailyRingModel`).
 @MainActor
 final class OpenDecks {
     static let shared = OpenDecks()
 
-    private struct Entry {
-        weak var document: VocabularyDocument?
-    }
-
-    private var entries: [Entry] = []
     private var kept: [String: OpenDeck] = [:]
     private var order: [String] = []
 
-    /// The open documents: those of the windows in the order they were added, then those of the
-    /// kept decks that are read, in the order they were opened.
+    /// The open decks' documents that are read, in the order the decks were opened.
     var documents: [VocabularyDocument] {
-        let windows = entries.compactMap(\.document)
-        return windows + order.compactMap { kept[$0]?.document }.filter { document in !windows.contains { $0 === document } }
+        order.compactMap { kept[$0]?.document }
     }
 
     /// The same file however its URL is spelled.
@@ -65,15 +56,6 @@ final class OpenDecks {
             await deck.settleChanges()
             await deck.close()
         }
-    }
-
-    func add(_ document: VocabularyDocument) {
-        guard !documents.contains(where: { $0 === document }) else { return }
-        entries.append(Entry(document: document))
-    }
-
-    func remove(_ document: VocabularyDocument) {
-        entries.removeAll { $0.document == nil || $0.document === document }
     }
 
     /// The words of the open decks but `document`'s, paused ones included, for the places that

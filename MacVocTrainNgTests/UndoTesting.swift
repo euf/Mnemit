@@ -3,7 +3,7 @@ import Foundation
 @testable import MacVocTrain
 
 /// An undo manager that groups explicitly, as there is no event loop in tests, given to
-/// `document` like `DocumentView` does in the app. The document holds it weakly, so the
+/// `document` like the open deck does in the app. The document holds it weakly, so the
 /// test keeps it.
 @MainActor
 func makeUndoManager(for document: VocabularyDocument) -> UndoManager {

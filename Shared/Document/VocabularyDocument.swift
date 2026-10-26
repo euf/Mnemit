@@ -4,7 +4,7 @@ import VocabCore
 import os
 
 /// The document of one deck, in the Mac app and in the iPhone app. On the Mac it is the
-/// `ReferenceFileDocument` behind `DocumentGroup`; the iPhone app opens and saves its
+/// headless NSDocument (`DeckFileDocument`); the iPhone app opens and saves its
 /// decks itself (#285). Both apps edit cards the same way.
 ///
 /// All changes go through methods that register undo actions. Besides providing
@@ -25,8 +25,7 @@ import os
 ///
 /// The changes of a study session, suspending and merging are here; adding, editing,
 /// deleting and resetting cards and the learning options are in the extension in
-/// `VocabularyDocument+Editing.swift`, which both apps compile. Only the conformance to
-/// `ReferenceFileDocument` is the Mac app's alone (#297).
+/// `VocabularyDocument+Editing.swift`, which both apps compile.
 ///
 /// The document lives on the main actor, so the compiler checks that the deck is only
 /// read and changed there. Initializers and what saves the deck are `nonisolated`:
@@ -79,16 +78,15 @@ final class VocabularyDocument: ObservableObject {
     private let reviewLog = ReviewLogEncoder()
     private let savedPackageURL = OSAllocatedUnfairLock<URL?>(initialState: nil)
     /// Where the deck's package is, once it has a file: a save clones the media files that are in
-    /// it instead of writing them again (`DeckMedia`). The Mac's `DocumentGroup` gives the document
-    /// no URL when it saves, so the merger sets it (`VersionMerger.attach(_:fileURL:isEditable:)`);
-    /// the iPhone's UIDocument passes the original contents itself. May be read on any thread.
+    /// it instead of writing them again (`DeckMedia`). The merger sets it
+    /// (`VersionMerger.attach(_:fileURL:isEditable:)`) once the document is attached to its file. May be read on any thread.
     nonisolated var packageURL: URL? {
         get { savedPackageURL.withLock { $0 } }
         set { savedPackageURL.withLock { $0 = newValue } }
     }
     /// The undo manager of the document's file; every change registers its undo action
-    /// here, see `attachUndoManager(_:)`. Weak: it belongs to the NSDocument behind
-    /// `DocumentGroup` on the Mac, to the app's own UIDocument on the iPhone. When it
+    /// here, see `attachUndoManager(_:)`. Weak: it belongs to the headless NSDocument
+    /// on the Mac, to the app's own UIDocument on the iPhone. When it
     /// goes away, the document can no longer be changed; that happens only as its file
     /// closes, so it tells no observer then.
     private(set) weak var undoManager: UndoManager?
@@ -189,9 +187,8 @@ final class VocabularyDocument: ObservableObject {
     /// observers hear of it, as `isReadyToEdit` may change.
     ///
     /// SwiftUI creates the document on the Mac but hands the undo manager only to
-    /// views, so the document's view attaches it, see `attachingUndoManager(to:)`. The
-    /// iPhone app attaches the one of its UIDocument before it shows the document, see
-    /// `OpenDeck`. Tests attach their own.
+    /// views, so `OpenDeck` attaches the one of its file's document before it shows the
+    /// document. Tests attach their own.
     ///
     /// Another undo manager in place of the one attached takes over without the undo
     /// actions of the document: they belong to the history of the other one. A detached
