@@ -24,9 +24,13 @@ struct ProgressScreen<Trailing: View>: View {
                 StreakCard(days: progress.streak.days, state: progress.streakState, best: longest)
             }
             Section {
+                #if os(iOS)
                 tiles
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
+                #else
+                tiles
+                #endif
             }
             Section {
                 WeeksGrid(records: records)
@@ -82,11 +86,28 @@ struct ProgressScreen<Trailing: View>: View {
             columns: dynamicTypeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: 150), spacing: Spacing.gap)],
             spacing: Spacing.gap
         ) {
-            FigureTile(label: Text("Days studied"), value: Text(records.filter { $0.done > 0 }.count, format: .number), footnote: Self.blank)
-            FigureTile(label: Text("Rings closed"), value: Text(ringsClosed, format: .number), footnote: Text("of \(records.count) days"))
-            FigureTile(label: Text("Words learned"), value: Text(progress.learned.words, format: .number), footnote: Self.blank)
-            FigureTile(label: Text("Your ring"), value: Text(verbatim: ring.value), unit: Text("min"), footnote: Text(verbatim: ring.footnote), tint: .appAccent)
+            total(Text("Days studied"), Text(records.filter { $0.done > 0 }.count, format: .number), footnote: Self.blank)
+            total(Text("Rings closed"), Text(ringsClosed, format: .number), footnote: Text("of \(records.count) days"))
+            total(Text("Words learned"), Text(progress.learned.words, format: .number), footnote: Self.blank)
+            total(Text("Your ring"), Text(verbatim: ring.value), unit: Text("min"), footnote: Text(verbatim: ring.footnote), tint: .appAccent)
         }
+    }
+
+    /// A total: a tile on the iPhone's page; on the Mac, whose grouped form keeps its card behind the row, the figure alone,
+    /// so the four share one card and no box stands in a box.
+    @ViewBuilder
+    private func total(_ label: Text, _ value: Text, unit: Text? = nil, footnote: Text, tint: Color = .primary) -> some View {
+        #if os(iOS)
+        FigureTile(label: label, value: value, unit: unit, footnote: footnote, tint: tint)
+        #else
+        VStack(alignment: .leading, spacing: 2) {
+            Figure(label: label, value: value, unit: unit, tint: tint)
+            footnote
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+        #endif
     }
 
     /// The line under a value that has nothing to say, so the tiles of a row are of one height.
