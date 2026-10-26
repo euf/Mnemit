@@ -56,6 +56,9 @@ struct RingCenterTests {
         #expect(atRisk.streakState == .kept)
         atRisk.streakKeptToday = false
         #expect(atRisk.streakState == .open)
+        var none = progress(done: 0, streak: 0)
+        none.streakKeptToday = true
+        #expect(none.streakState == .open, "a day with an empty plan is kept, but with no days there is no flame to fill")
     }
 
     @Test func texts() {

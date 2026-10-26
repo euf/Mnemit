@@ -98,7 +98,8 @@ extension DailyProgress {
     /// The state of the streak's flame: at risk after a missed day until the ring closes, else by today's streak step.
     var streakState: StreakState {
         if isStreakAtRisk { return .atRisk }
-        return streakKeptToday ? .kept : .open
+        // No days, nothing kept: a day with an empty plan counts as kept, but a streak of 0 has no flame to fill.
+        return streakKeptToday && streak.days > 0 ? .kept : .open
     }
 
     /// The day after a missed day, until the ring closes: the streak survives only if it does.
