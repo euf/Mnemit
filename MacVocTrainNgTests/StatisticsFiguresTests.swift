@@ -24,11 +24,12 @@ struct StatisticsFiguresTests {
         let figures = StatisticsFigures()
         var deck = try Deck(cards: [Card(question: "dom", answer: "Haus"), reviewCard("kot", dueIn: 1)])
         #expect(figures.summary(of: deck, at: now, calendar: calendar) == DeckStatistics.summary(of: deck, at: now, calendar: calendar))
-        // The new card is due right away.
-        #expect(figures.summary(of: deck, at: now, calendar: calendar).dueNow == 1)
+        // The new card is New, not Due; the scheduled one falls due with time.
+        #expect(figures.summary(of: deck, at: now, calendar: calendar).due == 0)
+        #expect(figures.summary(of: deck, at: now, calendar: calendar).new == 1)
 
         let later = now.addingTimeInterval(2 * 86400)
-        #expect(figures.summary(of: deck, at: later, calendar: calendar).dueNow == 2)
+        #expect(figures.summary(of: deck, at: later, calendar: calendar).due == 1)
 
         deck = try Deck(cards: deck.cards + [reviewCard("pies", dueIn: 3)])
         #expect(figures.summary(of: deck, at: later, calendar: calendar).total == 3)

@@ -792,11 +792,11 @@ struct SessionViewModelTests {
         #expect(state.due == calendar.start(ofDay: day - 1 + interval))
 
         clock.now = state.due.addingTimeInterval(-60)
-        #expect(document.deck.dueCount(at: clock.now) == 0)
+        #expect(document.deck.filterCounts(at: clock.now)[.due] == 0)
         #expect(SessionViewModel(document: document, autoAdvance: true).isResting)
 
         clock.now = state.due.addingTimeInterval(60)
-        #expect(document.deck.dueCount(at: clock.now) == 1)
+        #expect(document.deck.filterCounts(at: clock.now)[.due] == 1)
         let next = SessionViewModel(document: document, autoAdvance: true)
         #expect(next.currentCard?.id == card.id)
         next.input = "Haus"
