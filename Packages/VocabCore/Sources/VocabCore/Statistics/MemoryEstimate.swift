@@ -61,16 +61,8 @@ public struct MemoryEstimate: Hashable, Sendable {
                 recallNow = scheduler.recallProbability(of: state, at: now)
                 words += recallNow
             }
-            // The card as it stood when the day began, as `DeckActivity.plan(onDayOf:calendar:)`
-            // takes it: replayed from the reviews before the day, only when it has one today and
-            // its log reaches back to its first review. ponytail: a card with an incomplete log,
-            // reviewed today, stays as it is now, at 1 at the day's start, so it adds no gain;
-            // a gain is never overstated.
-            var before = card
-            let earlier = card.log.prefix { $0.date < start }
-            if card.hasCompleteLog, earlier.count < card.log.count, card.log[earlier.count].date <= now {
-                before = scheduler.replaying(Array(earlier), of: card)
-            }
+            // The card as it stood when the day began (`Scheduler.standing(_:atStartOf:now:)`).
+            let before = scheduler.standing(card, atStartOf: start, now: now)
             if let state = before.learningState {
                 recallAtStart = scheduler.recallProbability(of: state, at: start)
                 atStart += recallAtStart

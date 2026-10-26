@@ -43,7 +43,7 @@ struct CelebratedMedalsTests {
         #expect(defaults.stringArray(forKey: CelebratedMedals.defaultsKey) == ["firstRing@10", "streak-3@9"])
         // A new store reads them, and doesn't read the past again.
         let again = CelebratedMedals(defaults: defaults)
-        #expect(again.pending([past, today, Achievement(kind: .bigDay(cards: 100), day: 5)], today: 10) == [Achievement(kind: .bigDay(cards: 100), day: 5)])
+        #expect(again.pending([past, today, Achievement(kind: .tripleRing, day: 5)], today: 10) == [Achievement(kind: .tripleRing, day: 5)])
     }
 
     // MARK: The toasts
@@ -53,7 +53,7 @@ struct CelebratedMedalsTests {
         var progress = AchievementPresentationTests.sampleProgress()
         let today = try #require(progress.records.last?.day)
         progress.achievements = [
-            Achievement(kind: .firstRing, day: today - 3), Achievement(kind: .perfectWeek, day: today), Achievement(kind: .bigDay(cards: 50), day: today),
+            Achievement(kind: .firstRing, day: today - 3), Achievement(kind: .perfectWeek, day: today), Achievement(kind: .doubleRing, day: today),
         ]
         return (progress, today)
     }
@@ -68,7 +68,7 @@ struct CelebratedMedalsTests {
         #expect(toasts.current == Achievement(kind: .perfectWeek, day: today))
         #expect(toasts.shown == 1)
         // The second waits its turn, and the one of the earlier day is not today's.
-        #expect(store.pending(progress.achievements, today: today) == [Achievement(kind: .firstRing, day: today - 3), Achievement(kind: .bigDay(cards: 50), day: today)])
+        #expect(store.pending(progress.achievements, today: today) == [Achievement(kind: .firstRing, day: today - 3), Achievement(kind: .doubleRing, day: today)])
         // A rest drops the queue; it marks what it shows itself.
         toasts.clear()
         #expect(toasts.current == nil)

@@ -357,6 +357,13 @@ public struct DayRounds: Hashable, Sendable {
         return DailyGoal.minutes(seconds: seconds(ofFirst: end) - seconds(ofFirst: done))
     }
 
+    /// The minutes from `done` cards to the goal, the closing of the ring, in whole minutes up and 0 for under
+    /// one, as `minutesToNextRound(cardsDone:)`; `nil` once the goal is done.
+    public func minutesToGoal(cardsDone done: Int) -> Int? {
+        guard let end = ends.last, end > done else { return nil }
+        return DailyGoal.minutes(seconds: seconds(ofFirst: end) - seconds(ofFirst: done))
+    }
+
     /// The minutes round `number` (counting from 1) takes at the day's pace, whole minutes up and 0 for under
     /// one, as `minutesToNextRound(cardsDone:)`; `nil` for a round the day doesn't have.
     public func minutes(ofRound number: Int) -> Int? {
@@ -645,6 +652,16 @@ public struct DeckActivity: Sendable {
     /// The words this deck has in memory at `now`, `MemoryEstimate`.
     public func memory(at now: Date, calendar: StudyCalendar) -> MemoryEstimate {
         MemoryEstimate(deck: deck, at: now, calendar: calendar)
+    }
+
+    /// The words of this deck that have left learning, each with the day it first did, `WordsLearned.leftLearning`.
+    func leftLearning(calendar: StudyCalendar) -> [(key: WordKey?, day: Int?)] {
+        WordsLearned.leftLearning(in: deck, calendar: calendar)
+    }
+
+    /// The words this deck has learned at `now`, `WordsLearned`.
+    public func learned(at now: Date, calendar: StudyCalendar) -> WordsLearned {
+        WordsLearned(deck: deck, at: now, calendar: calendar)
     }
 
     /// The reviews of the study days that set the learner's pace, and the cards done on them
@@ -1152,8 +1169,12 @@ public struct DailyProgress: Hashable, Sendable {
     /// `evaluate(_:at:calendar:)`: the plan takes them as `newCardAllowance`. A paused deck has 0
     /// here and no share of the day's new cards; whoever builds its plan leaves the allowance out.
     public var newCardAllowances: [Int]
-    /// The words in memory across the decks now, and when the day began (`MemoryEstimate`).
+    /// The words in memory across the decks now, and when the day began (`MemoryEstimate`): the sum of recall
+    /// probabilities, for the details of Progress and "How It Works".
     public var memory: MemoryEstimate
+    /// The words learned across the decks now, and when the day began (`WordsLearned`): whole words, the gain the
+    /// app headlines, "+N today" once `shownGain` is not `nil`.
+    public var learned: WordsLearned
     /// The rings of the last seven study days, today last: closed or not, `nil` before the first study day.
     /// Today's is closed once its ring is.
     public var week: [Bool?]
@@ -1177,7 +1198,8 @@ public struct DailyProgress: Hashable, Sendable {
     public init(
         ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace(), time: Double = DailyGoal.initialSeconds,
         roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), seconds: DailyGoal.initialSeconds), streakKeptToday: Bool = false,
-        newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
+        newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0),
+        learned: WordsLearned = WordsLearned(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
         ladder: [Int] = [], climbedToday: Int = 0, records: [DayRecord] = [], achievements: [Achievement] = [],
         ringDays: [DailyGoal.RingDay] = []
     ) {
@@ -1197,6 +1219,7 @@ public struct DailyProgress: Hashable, Sendable {
         self.streakKeptToday = streakKeptToday
         self.newCardAllowances = newCardAllowances
         self.memory = memory
+        self.learned = learned
     }
 
     /// The cards left that were not new when the day began.
@@ -1207,6 +1230,22 @@ public struct DailyProgress: Hashable, Sendable {
 
     /// The one price of a card left, for the widget, whose forecast counts cards and not their kinds.
     public var secondsPerCardLeft: Double { pace.secondsPerCard(newCards: newCardsLeft, otherCards: otherCardsLeft) }
+
+    /// The minutes to the streak mark, the end of the first round, at the pace of the day: an estimate, so the
+    /// screen says "≈"; whole minutes up, 0 for under one. `nil` once the streak is kept today, or if the plan is empty.
+    public var minutesToStreak: Int? { streakKeptToday || roundsDone > 0 ? nil : roundPlan.minutesToNextRound(cardsDone: ring.done) }
+
+    /// The minutes to the ring's closing, the end of the goal, at the pace of the day, as `minutesToStreak`; `nil` once
+    /// the ring is closed.
+    public var minutesToRing: Int? { ring.isGoalMet ? nil : roundPlan.minutesToGoal(cardsDone: ring.done) }
+
+    /// The minutes of the due cards that stay in the plan after the ring is closed (the goal is the cards that fit the
+    /// day's time, due ones first), at the price of a card that was not new when the day began: what Catch Up asks.
+    /// An estimate, as `minutesToStreak`; `nil` when no due card is left after the ring.
+    public var minutesOfDueAfterRing: Int? {
+        let toRing = ring.isGoalMet ? 0 : max(0, ring.goal - ring.done)
+        return DailyGoal.minutesLeft(cards: max(0, otherCardsLeft - toRing), secondsPerCard: pace.otherCard)
+    }
 
     /// How many rounds today holds.
     public var rounds: Int { roundPlan.rounds }
@@ -1240,7 +1279,7 @@ public struct DailyProgress: Hashable, Sendable {
     /// `newCardAllowances`.
     ///
     /// A paused deck (`DeckActivity.isPaused`) takes no part in any of it: not in the plan, the goal, the
-    /// rounds, the time, the admission of new cards, the streak, the words in memory or the cards done.
+    /// rounds, the time, the admission of new cards, the streak, the words in memory, the words learned or the cards done.
     /// What is reviewed in it counts for the day through the cards of the other decks only.
     ///
     /// With a `cache` that an earlier call over the same decks filled, the days before today that the decks'
@@ -1344,11 +1383,12 @@ public struct DailyProgress: Hashable, Sendable {
             day: today, time: time, reason: size.reason,
             worked: startPace.seconds(newCards: newDoneByDay[today] ?? 0, otherCards: otherDoneByDay[today] ?? 0), closed: ring.isGoalMet, studied: ring.done > 0,
             filled: startRounds.filled)
+        let wordsByDay = WordsLearned.cumulative(decks.flatMap { $0.leftLearning(calendar: calendar) }, from: first, through: today)
         let records = (first...today).map { day in
             DayRecord(
                 day: day, done: day == today ? ring.done : before.done[day] ?? 0, goal: day == today ? ring.goal : before.goals[day] ?? 0,
                 kept: kept[day] ?? false, closed: closed[day] ?? false, streak: day == today ? streak.days : steps[day]?.days ?? 0,
-                savedStreak: steps[day]?.saved ?? false)
+                savedStreak: steps[day]?.saved ?? false, wordsLearned: wordsByDay[day] ?? 0)
         }
         // In the order of the decks given: the shares of the decks that take part, 0 for a paused one.
         var shares = allowances.makeIterator()
@@ -1357,6 +1397,7 @@ public struct DailyProgress: Hashable, Sendable {
             ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: pace(over: (today - DailyGoal.paceDays)...today), time: time,
             roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: givenAllowances,
             memory: MemoryEstimate.total(decks.map { $0.memory(at: now, calendar: calendar) }),
+            learned: WordsLearned.total(decks.map { $0.learned(at: now, calendar: calendar) }),
             week: (today - 6...today).map { $0 < first ? nil : closed[$0] ?? false },
             ladder: decks.map { $0.ladder() }.reduce(into: [Int](repeating: 0, count: MaturityCategory.allCases.count)) { sum, steps in
                 for index in sum.indices { sum[index] += steps[index] }

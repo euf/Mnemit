@@ -64,13 +64,50 @@ struct AchievementsTests {
         #expect(days(of: .perfectWeek, in: Achievements.earned(over: records)) == [111])
     }
 
-    @Test func aBigDayTierIsEarnedOnceOnTheFirstDayThatReachesIt() {
-        let records = [day(100, done: 49, goal: 49), day(101, done: 50, goal: 50), day(102, done: 120, goal: 120), day(103, done: 500, goal: 500), day(104, done: 500, goal: 500)]
+    @Test func aDoubleAndATripleRingAreEarnedOnEveryDayTheRingReachesThem() {
+        let records = [
+            day(100, done: 20, goal: 20), day(101, done: 39, goal: 20), day(102, done: 40, goal: 20), day(103, done: 60, goal: 20),
+            day(104, done: 200, goal: 20), day(105, done: 60, goal: 20),
+        ]
         let earned = Achievements.earned(over: records)
-        #expect(days(of: .bigDay(cards: 50), in: earned) == [101])
-        #expect(days(of: .bigDay(cards: 100), in: earned) == [102])
-        #expect(days(of: .bigDay(cards: 200), in: earned) == [103])
-        #expect(days(of: .bigDay(cards: 500), in: earned) == [103])
+        // 39 of 20 is not yet two laps, 40 is; 60 is three. Each day that reaches them earns them again, as Fitness's
+        // goal awards do.
+        #expect(days(of: .doubleRing, in: earned) == [102, 103, 104, 105])
+        #expect(days(of: .tripleRing, in: earned) == [103, 104, 105])
+    }
+
+    @Test func aDayThatReachesThreeLapsEarnsBothMedalsInOrder() {
+        let earned = Achievements.earned(over: [day(100, done: 90, goal: 30)])
+        #expect(earned.map(\.kind) == [.firstRing, .doubleRing, .tripleRing])
+    }
+
+    @Test func theLapsAreTheOnesTheRingIsDrawnWithAndAnOpenRingHasNone() {
+        // The same rule as `DayRecord.ringShare`: an open ring never reaches a lap, and a goal of nothing is one lap.
+        let open = Achievements.earned(over: [day(100, done: 59, goal: 20, closed: false)])
+        #expect(!open.map(\.kind).contains(.doubleRing))
+        let noGoal = Achievements.earned(over: [DayRecord(day: 100, done: 50, goal: 0, kept: true, closed: true, streak: 1)])
+        #expect(!noGoal.map(\.kind).contains(.doubleRing))
+        // Cards of a day far past its goal are three laps and no more.
+        #expect(Achievements.earned(over: [day(100, done: 1000, goal: 20)]).map(\.kind) == [.firstRing, .doubleRing, .tripleRing])
+    }
+
+    @Test func theCardCountTiersAreGone() {
+        // A learner with long days earns the laps of their own goal, whatever the number of cards.
+        let kinds = Achievements.earned(over: [day(100, done: 500, goal: 500)]).map(\.kind)
+        #expect(kinds == [.firstRing])
+    }
+
+    @Test func aWordsLearnedMedalIsEarnedOnceOnTheFirstDayTheCountReachesIt() {
+        func counted(_ number: Int, words: Int) -> DayRecord {
+            DayRecord(day: number, done: 5, goal: 20, kept: true, closed: false, streak: 1, wordsLearned: words)
+        }
+        let earned = Achievements.earned(over: [counted(100, words: 9), counted(101, words: 10), counted(102, words: 60), counted(103, words: 1000), counted(104, words: 2100)])
+        func words(_ count: Int) -> [Int] { days(of: .wordsLearned(count: count), in: earned) }
+        #expect(words(10) == [101])
+        #expect(words(50) == [102])
+        #expect(words(100) == [103] && words(250) == [103] && words(500) == [103] && words(1000) == [103])
+        #expect(words(2000) == [104])
+        #expect(words(3000) == [])
     }
 
     @Test func aComebackIsEarnedEveryTimeTheStreakIsSaved() {
@@ -82,7 +119,7 @@ struct AchievementsTests {
         let earned = Achievements.earned(over: closedDays(14) + [day(114, done: 60, goal: 20, streak: 15)])
         #expect(earned.map(\.day) == earned.map(\.day).sorted())
         #expect(earned.first == Achievement(kind: .firstRing, day: 100))
-        #expect(earned.last == Achievement(kind: .bigDay(cards: 50), day: 114))
+        #expect(earned.last == Achievement(kind: .tripleRing, day: 114))
     }
 
     @Test func aMonthRecapAddsUpTheDaysOfThatCalendarMonthOnly() throws {
@@ -148,11 +185,11 @@ extension DailyProgressTests {
         var deck = try Deck(learningOptions: options(), cards: (0..<5).map { due("c\($0)", onDay: today) })
         var progress = evaluate([deck])
         #expect(progress.records.map(\.day) == Array((today - interval)...today))
-        #expect(progress.records.last == DayRecord(day: today, done: 0, goal: 5, kept: false, closed: false, streak: interval, savedStreak: false))
+        #expect(progress.records.last == DayRecord(day: today, done: 0, goal: 5, kept: false, closed: false, streak: interval, savedStreak: false, wordsLearned: progress.records.last?.wordsLearned ?? -1))
         #expect(progress.records.last?.streak == progress.streak.days)
         reviewPlan(of: &deck, at: now)
         progress = evaluate([deck])
-        #expect(progress.records.last == DayRecord(day: today, done: 5, goal: 5, kept: true, closed: true, streak: interval + 1, savedStreak: false))
+        #expect(progress.records.last == DayRecord(day: today, done: 5, goal: 5, kept: true, closed: true, streak: interval + 1, savedStreak: false, wordsLearned: progress.records.last?.wordsLearned ?? -1))
         #expect(progress.records.last?.streak == progress.streak.days)
         #expect(progress.records.last?.done == progress.ring.done)
         // The streak of every day is the streak of that day: one more than the day before, all days kept.

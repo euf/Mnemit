@@ -126,6 +126,16 @@ public struct Scheduler: Sendable {
         return replayed
     }
 
+    /// `card` as it stood when the study day that began at `start` began: replayed from the reviews before the
+    /// day, when it has one by `now` and its log reaches back to its first review; as it is otherwise (a card
+    /// with an incomplete log reviewed today stays as it is now, so what is measured from the day's start
+    /// never overstates a gain).
+    func standing(_ card: Card, atStartOf start: Date, now: Date) -> Card {
+        let earlier = card.log.prefix { $0.date < start }
+        guard card.hasCompleteLog, earlier.count < card.log.count, card.log[earlier.count].date <= now else { return card }
+        return replaying(Array(earlier), of: card)
+    }
+
     /// The random source for fuzzing the review of the card with `id` at `date`, the
     /// same on every device. Counts whole seconds, like `reviews.jsonl`.
     static func random(forReviewOf id: Card.ID, at date: Date) -> SeededRandom {

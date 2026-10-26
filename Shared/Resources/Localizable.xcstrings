@@ -563,94 +563,6 @@
         }
       }
     },
-    "%lld cards in a day": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karte an einem Tag"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karten an einem Tag"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld κάρτα σε μία ημέρα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld κάρτες σε μία ημέρα"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld card in a day"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld cards in a day"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточки за день"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточек за день"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточка за день"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточки за день"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld cards in “%@”": {
       "localizations": {
         "de": {
@@ -2523,6 +2435,28 @@
         }
       }
     },
+    "%lld of %lld words": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld von %2$lld Wörtern"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld από %2$lld λέξεις"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld из %2$lld слов"
+          }
+        }
+      }
+    },
     "%lld of 7 rings closed this week": {
       "localizations": {
         "de": {
@@ -3088,6 +3022,94 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld слова в памяти!"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld words learned": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wort gelernt"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wörter gelernt"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld λέξη μαθημένη"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld λέξεις μαθημένες"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld word learned"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld words learned"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld слова выучено"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld слов выучено"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld слово выучено"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld слова выучено"
                 }
               }
             }
@@ -6994,6 +7016,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Готово · следующая оценка %@"
+          }
+        }
+      }
+    },
+    "Double ring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doppelter Ring"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Διπλός κύκλος"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Двойное кольцо"
           }
         }
       }
@@ -14478,6 +14522,28 @@
         }
       }
     },
+    "Three laps of the ring in a day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drei Runden des Rings an einem Tag"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Τρεις γύροι του κύκλου σε μία ημέρα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Три круга кольца за день"
+          }
+        }
+      }
+    },
     "Time": {
       "localizations": {
         "de": {
@@ -14720,6 +14786,28 @@
         }
       }
     },
+    "Triple ring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dreifacher Ring"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Τριπλός κύκλος"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тройное кольцо"
+          }
+        }
+      }
+    },
     "Try the Gestures": {
       "localizations": {
         "de": {
@@ -14738,6 +14826,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Попробуй жесты"
+          }
+        }
+      }
+    },
+    "Two laps of the ring in a day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwei Runden des Rings an einem Tag"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δύο γύροι του κύκλου σε μία ημέρα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Два круга кольца за день"
           }
         }
       }
