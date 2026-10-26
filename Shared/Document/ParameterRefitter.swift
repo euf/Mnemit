@@ -22,7 +22,7 @@ enum ParameterRefitter {
         let now = document.clock.now
         guard deck.learningOptions.updatesParametersAutomatically else { return }
         await run(
-            fit: { try ParameterRefit.fit(cards: deck.cards, options: deck.learningOptions, calendar: calendar, now: now) },
+            fit: { try ParameterRefit.fit(cards: deck.trainingCards, options: deck.learningOptions, calendar: calendar, now: now) },
             canApply: { document.isReadyToEdit && canApply() },
             apply: { document.applyParameterRefit($0) })
     }

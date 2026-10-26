@@ -112,8 +112,8 @@ extension LearningOptions {
 /// as one package (see `DeckFile`).
 ///
 /// Cards and learning options change only through `apply(_:at:calendar:)`, which
-/// keeps `progress`, `contentModified`, `learningOptionsChanged` and `deletedCards`
-/// in step with them.
+/// keeps `progress`, `contentModified`, `learningOptionsChanged`, `deletedCards` and
+/// `retiredCards` in step with them.
 public struct Deck: Hashable, Sendable {
     public internal(set) var learningOptions: LearningOptions
     public internal(set) var cards: [Card]
@@ -137,6 +137,14 @@ public struct Deck: Hashable, Sendable {
     /// `Deck.apply(_:at:calendar:)` keeps it: a card that is back in the deck is no
     /// longer in it.
     public internal(set) var deletedCards: [Card.ID: Date]
+    /// The cards the learner deleted that had reviews, as they stood when they went, with their learning
+    /// state and log: the reviews were real recall attempts. Only the day's done cards
+    /// (`doneCards(onDayOf:calendar:)`, so a card done today stays done after its deletion), the reviews
+    /// by day (`DeckActivity.reviewsByDay`) and the FSRS refit (`trainingCards`) see them; the plan, the
+    /// counts, the browser, search, export and the other statistics do not. A card is here or in `cards`,
+    /// never in both: `apply(_:at:calendar:)` retires a deleted card that has a log and takes a card out
+    /// again that comes back. A merge joins them, see `DeckChange.merging`.
+    public internal(set) var retiredCards: [Card]
     /// The images and sounds of the cards (`CardMedia`), the `media` folder of the package. Only
     /// `apply(_:at:calendar:)` changes them, and only by the files a change brings in or takes out
     /// again; see `DeckMedia` for what a package keeps.
@@ -156,6 +164,7 @@ public struct Deck: Hashable, Sendable {
         contentModified = nil
         learningOptionsChanged = nil
         deletedCards = [:]
+        retiredCards = []
         media = DeckMedia()
     }
 
@@ -172,6 +181,7 @@ public struct Deck: Hashable, Sendable {
         contentModified: Date? = nil,
         learningOptionsChanged: Date? = nil,
         deletedCards: [Card.ID: Date] = [:],
+        retiredCards: [Card] = [],
         media: DeckMedia = DeckMedia()
     ) throws {
         var ids = Set<Card.ID>()
@@ -186,6 +196,8 @@ public struct Deck: Hashable, Sendable {
         self.contentModified = contentModified
         self.learningOptionsChanged = learningOptionsChanged
         self.deletedCards = deletedCards.filter { !ids.contains($0.key) }
+        var retiredIDs = ids
+        self.retiredCards = retiredCards.filter { retiredIDs.insert($0.id).inserted }
         self.media = media
     }
 
@@ -241,6 +253,11 @@ public struct Deck: Hashable, Sendable {
         card.learningState.map {
             Scheduler(learningOptions: learningOptions, calendar: calendar).recallProbability(of: $0, at: now)
         }
+    }
+
+    /// The cards whose reviews the FSRS refit trains on: the cards and the retired ones.
+    public var trainingCards: [Card] {
+        retiredCards.isEmpty ? cards : cards + retiredCards
     }
 
     /// The names of the media files some card names.

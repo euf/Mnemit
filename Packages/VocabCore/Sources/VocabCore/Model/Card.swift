@@ -292,4 +292,14 @@ public struct Card: Identifiable, Hashable, Sendable {
         learningState = nil
         log = []
     }
+
+    /// Takes over what a review changes of `other`: the learning state and the log, the stamp of the
+    /// last reset, and whether the card is suspended (a review may make it a leech). The content stays.
+    mutating func takeLearning(from other: Card) {
+        learningState = other.learningState
+        log = other.log
+        learningStateReset = other.learningStateReset
+        isSuspended = other.isSuspended
+        suspensionChanged = other.suspensionChanged
+    }
 }

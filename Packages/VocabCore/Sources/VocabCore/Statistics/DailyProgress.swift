@@ -606,7 +606,8 @@ public struct DeckActivity: Sendable {
     private static func reviewsByDay(of deck: Deck, calendar: StudyCalendar) -> [Int: Int] {
         var counts: [Int: Int] = [:]
         var dayOfQuarter: [Int: Int] = [:]
-        for card in deck.cards {
+        // The reviews of a deleted card were real, too (`Deck.retiredCards`).
+        for card in deck.trainingCards {
             for entry in card.log {
                 let quarter = Int((entry.date.timeIntervalSince1970 / 900).rounded(.down))
                 let day: Int
@@ -1120,11 +1121,12 @@ extension Deck {
     /// How many cards are done on the study day of `now`: those whose last review of the day left them
     /// due after its end (`DeckActivity.done(onDayOf:calendar:)`). It reads the cards only, not the
     /// logs, so the study stream can ask it after every grade to find where it stands in the day's rounds.
+    /// A card done today and deleted since stays done (`retiredCards`): the ring does not jump back.
     public func doneCards(onDayOf now: Date, calendar: StudyCalendar) -> Int {
         let day = calendar.dayNumber(for: now)
         let start = calendar.start(ofDay: day)
         let end = calendar.start(ofDay: day + 1)
-        return cards.reduce(0) { count, card in
+        return [cards, retiredCards].joined().reduce(0) { count, card in
             guard let state = card.learningState, state.due >= end, state.lastReview >= start, state.lastReview < end else { return count }
             return count + 1
         }
@@ -1138,7 +1140,7 @@ extension Deck {
         let day = calendar.dayNumber(for: now)
         let start = calendar.start(ofDay: day)
         let end = calendar.start(ofDay: day + 1)
-        return cards.reduce(0) { sum, card in
+        return [cards, retiredCards].joined().reduce(0) { sum, card in
             guard let state = card.learningState, state.due < end, state.lastReview >= start, state.lastReview < end else { return sum }
             return sum + card.credit(onDayOf: now, calendar: calendar, steps: learningOptions.steps)
         }

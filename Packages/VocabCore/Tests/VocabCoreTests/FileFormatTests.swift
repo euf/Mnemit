@@ -121,8 +121,9 @@ struct DeckFileTests {
         #expect(deck.cards[1].media == CardMedia(answerImage: "e3b0c44298fc1c14.png"))
         #expect(deck.cards[2].media.isEmpty)
 
-        // The fixture still has options the app no longer writes.
-        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == withoutRemovedOptions(data))
+        // The fixture still has options the app no longer writes, and the version before.
+        let written = withoutRemovedOptions(data).replacingOccurrences(of: "\"version\" : 5", with: "\"version\" : \(DeckFile.currentVersion)")
+        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 
     /// A deck written while the options `revealedRecallWeight`, `optimizeFromRevealed` and `caseSensitive` existed
