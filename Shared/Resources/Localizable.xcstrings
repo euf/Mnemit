@@ -3431,6 +3431,28 @@
         }
       }
     },
+    "A Meaning → Word card stays locked until the Word → Meaning card of its word has reached the interval set in Unlock after. A word is asked in one direction per day.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte „Bedeutung → Wort“ bleibt gesperrt, bis die Karte „Wort → Bedeutung“ desselben Worts das bei „Freischalten nach“ eingestellte Intervall erreicht hat. Ein Wort wird pro Tag nur in einer Richtung abgefragt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μια κάρτα «σημασία → λέξη» μένει κλειδωμένη μέχρι η κάρτα «λέξη → σημασία» της ίδιας λέξης να φτάσει το διάστημα που ορίζει το «Ξεκλείδωμα μετά από». Μια λέξη ρωτιέται σε μία κατεύθυνση την ημέρα."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карточка «значение → слово» закрыта, пока у карточки «слово → значение» того же слова не появится интервал, заданный в «Открыть после». Одно слово спрашивают в день только в одном направлении."
+          }
+        }
+      }
+    },
     "A Meaning → Word card waits until the Word → Meaning card of its word has an interval this long.": {
       "localizations": {
         "de": {
@@ -3471,6 +3493,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Карточку нужно повторить снова, когда вероятность вспомнить её падает до целевой. 21 параметр FSRS-6 моделирует твою память; приложение подбирает их по логу оценок колоды и оставляет подбор, только если он точнее предсказывает твои последние оценки."
+          }
+        }
+      }
+    },
+    "A card you forget as many times as Difficult after sets, and again after every further multiple, is suspended and marked Difficult. Resume it from the card list. Off never suspends.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte, die du so oft vergisst, wie bei „Schwierig nach“ eingestellt ist, und danach bei jedem weiteren Vielfachen, wird ausgesetzt und als Schwierig markiert. Setze sie in der Kartenliste fort. Bei „Aus“ wird nie ausgesetzt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μια κάρτα που ξεχνάς τόσες φορές όσες ορίζει το «Δύσκολη μετά από», και ξανά μετά από κάθε επόμενο πολλαπλάσιο, τίθεται σε αναστολή και σημειώνεται ως δύσκολη. Συνέχισέ την από τη λίστα καρτών. Με «Ανενεργό» δεν τίθεται ποτέ σε αναστολή."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карточка, которую ты забываешь столько раз, сколько задано в «Сложная после», и затем после каждого следующего кратного, приостанавливается и помечается как сложная. Возобнови её в списке карточек. При «Выкл.» ничего не приостанавливается."
           }
         }
       }
@@ -7394,6 +7438,28 @@
         }
       }
     },
+    "FSRS starts with parameters averaged over many learners. Fitted to the deck's review log, they follow your memory, so a card needs fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FSRS beginnt mit Parametern, die über viele Lernende gemittelt sind. An das Wiederholungsprotokoll des Stapels angepasst, folgen sie deinem Gedächtnis, sodass eine Karte für dieselbe angestrebte Abrufquote weniger Wiederholungen braucht. Die Karten behalten ihre Fälligkeit; neue Intervalle gelten ab der nächsten Wiederholung."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το FSRS ξεκινά με παραμέτρους που προκύπτουν ως μέσος όρος πολλών μαθητών. Προσαρμοσμένες στο ιστορικό επαναλήψεων της τράπουλας, ακολουθούν τη μνήμη σου, οπότε μια κάρτα χρειάζεται λιγότερες επαναλήψεις για τον ίδιο στόχο ανάκλησης. Οι κάρτες κρατούν τις ημερομηνίες τους· τα νέα διαστήματα ισχύουν από την επόμενη επανάληψή τους."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FSRS начинает со средних параметров по многим ученикам. Подогнанные под журнал повторений колоды, они следуют твоей памяти, и карточке нужно меньше повторений для той же целевой запоминаемости. Сроки карточек не меняются; новые интервалы действуют со следующего повторения."
+          }
+        }
+      }
+    },
     "Filter": {
       "localizations": {
         "de": {
@@ -9568,6 +9634,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Допущено новых карточек"
+          }
+        }
+      }
+    },
+    "New cards and cards you forgot come back in the session until you have graded them Good as many times as Steps per card sets. Good moves a card one step on, Hard keeps its step, Forgot resets it, and Easy graduates it at once.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Karten und Karten, die du vergessen hast, kommen in der Sitzung wieder, bis du sie so oft mit „Gut“ bewertet hast, wie bei „Lernschritte pro Karte“ eingestellt ist. „Gut“ rückt einen Schritt vor, „Schwer“ behält den Schritt, „Vergessen“ setzt ihn zurück, und „Leicht“ schließt die Karte sofort ab."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι νέες κάρτες και οι κάρτες που ξέχασες επιστρέφουν στη συνεδρία, μέχρι να τις βαθμολογήσεις «Καλά» τόσες φορές όσες ορίζουν τα «Βήματα ανά κάρτα». Το «Καλά» προχωρά ένα βήμα, το «Δύσκολο» κρατά το βήμα, το «Ξέχασα» το μηδενίζει και το «Εύκολο» ολοκληρώνει αμέσως την κάρτα."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые карточки и те, что ты забыл, возвращаются в сессии, пока ты не оценишь их «Хорошо» столько раз, сколько задано в «Шагов на карточку». «Хорошо» — шаг вперёд, «Трудно» оставляет шаг, «Не вспомнил» сбрасывает его, «Легко» сразу завершает обучение карточки."
           }
         }
       }
@@ -13796,6 +13884,28 @@
         }
       }
     },
+    "Target recall is the chance that you still remember a card when it comes back. Higher means better recall and more reviews; %@ is a good balance.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die angestrebte Abrufquote ist die Wahrscheinlichkeit, dass du dich an eine Karte erinnerst, wenn sie wiederkommt. Höher bedeutet besseres Erinnern und mehr Wiederholungen; %@ ist ein guter Mittelweg."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο στόχος ανάκλησης είναι η πιθανότητα να θυμάσαι ακόμη μια κάρτα όταν επιστρέφει. Υψηλότερος σημαίνει καλύτερη ανάκληση και περισσότερες επαναλήψεις· το %@ είναι καλή ισορροπία."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Целевая запоминаемость — вероятность, что ты ещё помнишь карточку, когда она возвращается. Выше — лучше помнишь, но больше повторений; %@ — хороший баланс."
+          }
+        }
+      }
+    },
     "Target recall: %@": {
       "localizations": {
         "de": {
@@ -14078,6 +14188,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "В пакете нет коллекции, которую может прочитать Mnemit."
+          }
+        }
+      }
+    },
+    "The parameters are fitted first at %@ reviews, again at %@, then every %@ or after %@ more reviews. A fit replaces the current parameters only if it predicts your newest reviews better.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Parameter werden zum ersten Mal bei %@ Wiederholungen angepasst, wieder bei %@, danach alle %@ oder nach %@ weiteren Wiederholungen. Eine Anpassung ersetzt die aktuellen Parameter nur, wenn sie deine neuesten Wiederholungen besser vorhersagt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι παράμετροι προσαρμόζονται για πρώτη φορά στις %@ επαναλήψεις, ξανά στις %@, και μετά κάθε %@ ή μετά από %@ ακόμη επαναλήψεις. Μια προσαρμογή αντικαθιστά τις τρέχουσες παραμέτρους μόνο αν προβλέπει καλύτερα τις πιο πρόσφατες επαναλήψεις σου."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Параметры подгоняются впервые при %@ повторений, затем при %@, потом каждые %@ или после %@ новых повторений. Подгонка заменяет текущие параметры, только если лучше предсказывает твои последние повторения."
           }
         }
       }
@@ -15442,6 +15574,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Почему"
+          }
+        }
+      }
+    },
+    "With New words, a new card shows its answer first. That introduction records nothing, and the card is asked a few cards later. With Words I know, a new card is asked at once.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei „Neue Wörter“ zeigt eine neue Karte zuerst ihre Antwort. Diese Einführung wird nicht gewertet, und die Karte wird einige Karten später abgefragt. Bei „Wörter, die ich kenne“ wird eine neue Karte sofort abgefragt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Με τις «Νέες λέξεις», μια νέα κάρτα δείχνει πρώτα την απάντησή της. Αυτή η γνωριμία δεν καταγράφει τίποτα και η κάρτα ρωτιέται μερικές κάρτες αργότερα. Με τις «Λέξεις που ξέρω», μια νέα κάρτα ρωτιέται αμέσως."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "При «Новые слова» новая карточка сначала показывает ответ. Это знакомство ничего не записывает, а саму карточку спросят через несколько карточек. При «Слова, которые я знаю» новую карточку спрашивают сразу."
           }
         }
       }

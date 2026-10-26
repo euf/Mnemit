@@ -45,6 +45,57 @@ struct ReminderPlanTests {
         #expect(ReminderPlan.content([], streak: 5) == nil)
     }
 
+    // MARK: The evening reminder
+
+    private var studyCalendar: StudyCalendar { StudyCalendar(timeZone: calendar.timeZone, rolloverHour: 4) }
+
+    /// The evening reminders for `count` days from `now`, each day holding 23 cards.
+    private func evenings(now: Date, streak: Int, isKept: Bool, count: Int = 4, cards: Int = 23) -> [Date] {
+        let fires = ReminderPlan.streakFireDates(after: now, firstMinutes: 9 * 60, count: count, calendar: calendar)
+        let days = Array(repeating: [(name: "B1", total: cards)], count: fires.count)
+        return ReminderPlan.streakReminders(at: fires, days: days, now: now, streak: streak, isKeptToday: isKept, studyCalendar: studyCalendar).map(\.fire)
+    }
+
+    @Test func theEveningReminderIsAt21AndNeverAfterALateFirstOne() {
+        let now = date(21, 12)
+        #expect(ReminderPlan.streakFireDates(after: now, firstMinutes: 9 * 60, count: 3, calendar: calendar) == [date(21, 21), date(22, 21), date(23, 21)])
+        // Past 21:00 the first one is tomorrow's.
+        #expect(ReminderPlan.streakFireDates(after: date(21, 21, 30), firstMinutes: 9 * 60, count: 2, calendar: calendar) == [date(22, 21), date(23, 21)])
+        // The first reminder at or after 21:00 leaves no second one; a minute before it, there is one.
+        #expect(ReminderPlan.streakFireDates(after: now, firstMinutes: 21 * 60, calendar: calendar).isEmpty)
+        #expect(ReminderPlan.streakFireDates(after: now, firstMinutes: 22 * 60 + 30, calendar: calendar).isEmpty)
+        #expect(!ReminderPlan.streakFireDates(after: now, firstMinutes: 20 * 60 + 59, calendar: calendar).isEmpty)
+    }
+
+    @Test func theEveningReminderSaysWhatTheFirstOneSays() {
+        let now = date(21, 12)
+        let fires = ReminderPlan.streakFireDates(after: now, firstMinutes: 9 * 60, count: 1, calendar: calendar)
+        let reminders = ReminderPlan.streakReminders(
+            at: fires, days: [[(name: "B1", total: 23)]], now: now, streak: 12, isKeptToday: false, studyCalendar: studyCalendar)
+        #expect(reminders.map(\.fire) == [date(21, 21)])
+        #expect(reminders.first?.title == "Keep your 12-day streak")
+        #expect(reminders.first?.body == "≈ 2 min is enough.")
+    }
+
+    @Test func aStreakAtStakeGetsTheEveningReminder() {
+        // Today's step not done: tonight and the next days, as far as the streak reaches. It holds through one missed
+        // day, so tonight's miss still leaves tomorrow's.
+        #expect(evenings(now: date(21, 12), streak: 12, isKept: false) == [date(21, 21), date(22, 21)])
+    }
+
+    @Test func noEveningReminderOnceTheStreakStepIsDone() {
+        // Done today: tonight's goes; tomorrow's, and the day after's that a missed tomorrow would put at risk, stay.
+        #expect(evenings(now: date(21, 12), streak: 12, isKept: true) == [date(22, 21), date(23, 21)])
+        // Done today and it is past 21:00 already: nothing for today in any case.
+        #expect(evenings(now: date(21, 21, 30), streak: 12, isKept: true, count: 1) == [date(22, 21)])
+    }
+
+    @Test func noEveningReminderWithoutAStreakOrCards() {
+        #expect(evenings(now: date(21, 12), streak: 0, isKept: false).isEmpty)
+        // A day with nothing due asks nothing, and its streak step is done by itself.
+        #expect(evenings(now: date(21, 12), streak: 12, isKept: false, cards: 0).isEmpty)
+    }
+
     /// The icon counts what is left to close the ring, never a backlog of hundreds.
     @Test func theBadgeCountsTheCardsLeftToTheRing() {
         let open = DailyProgress(ring: DailyRing(done: 10, goal: 30), streak: Streak(days: 3, repairCards: nil))

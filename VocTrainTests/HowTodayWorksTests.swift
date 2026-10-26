@@ -57,13 +57,14 @@ struct HowTodayWorksTests {
 
     @Test func theRowsAreTheFiguresOfTheObjectsInTheOrderOfTheScreen() throws {
         let content = Self.content()
-        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Swipes", "FSRS"])
+        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Swipes", "Options", "FSRS"])
         // The first section is three plain sentences, with no rule under them: the ring, Catch Up, Learn 10 New Words.
         let today = content.sections[0]
         #expect(today.footer.isEmpty)
         #expect(today.rows.count == 3)
         #expect(today.rows.allSatisfy { if case .text = $0 { true } else { false } })
-        #expect(content.sections.dropFirst().allSatisfy { !$0.footer.isEmpty })
+        // Like "Today", the options are only sentences, with no rule under them.
+        #expect(content.sections.dropFirst().allSatisfy { $0.title == "Options" || !$0.footer.isEmpty })
 
         let plan = values(content.sections[1])
         #expect(plan["Due today, overdue included"] == "28")
@@ -130,7 +131,7 @@ struct HowTodayWorksTests {
             #expect(swipes.footer.contains(sector), "\(sector)")
         }
 
-        let fsrs = content.sections[7]
+        let fsrs = content.sections[8]
         #expect(values(fsrs)["Target recall"] == Format.percent(0.9))
         #expect(values(fsrs)["Parameters"] == "Default")
         #expect(values(fsrs)["Steps per card"] == "2")
@@ -152,10 +153,29 @@ struct HowTodayWorksTests {
             decks: [HowTodayWorks.DeckInfo(name: nil, options: LearningOptions()), HowTodayWorks.DeckInfo(name: "Greek", options: fitted)])
         #expect(values(content.sections[4]) == ["Days": "5", "Today": "Not yet", "Cards to repair yesterday": "7"])
         // Where nothing is swiped (the Mac) there is no section of swipes.
-        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "FSRS · Deck 1", "FSRS · Greek"])
-        #expect(values(content.sections[6])["Parameters"] == "Default")
-        #expect(values(content.sections[7])["Parameters"] == "Fitted")
-        #expect(values(content.sections[7])["Last automatic fit"] == "None yet")
+        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Options", "FSRS · Deck 1", "FSRS · Greek"])
+        #expect(values(content.sections[7])["Parameters"] == "Default")
+        #expect(values(content.sections[8])["Parameters"] == "Fitted")
+        #expect(values(content.sections[8])["Last automatic fit"] == "None yet")
+    }
+
+    /// The options section says in sentences what the one-line footers of the Options screen leave out: the rules
+    /// for any learner, not for one language, and with the fit schedule read from `ParameterRefit`.
+    @Test func theOptionsAreSevenSentencesInPlainWords() throws {
+        let options = try #require(Self.content().sections.first { $0.title == "Options" })
+        let sentences = options.rows.compactMap { row -> String? in if case let .text(text) = row { text } else { nil } }
+        #expect(sentences.count == 7)
+        #expect(options.rows.count == 7)
+        #expect(options.footer.isEmpty)
+        for word in ["Greek", "production", "recognition"] {
+            #expect(sentences.allSatisfy { !$0.localizedCaseInsensitiveContains(word) }, "\(word)")
+        }
+        #expect(sentences.allSatisfy { !$0.contains("%@") })
+        #expect(sentences[1].contains(Format.percent(0.9)))
+        let first = ParameterRefit.minimumReviewCount.formatted()
+        let second = ParameterRefit.secondFitReviewCount.formatted()
+        let step = ParameterRefit.reviewStep.formatted()
+        #expect(sentences[6].contains("\(first) reviews, again at \(second), then every 30 days or after \(step) more reviews"))
     }
 
     /// A ring closed on a plan smaller than its time is told as "Plan under the time" in the days' table.

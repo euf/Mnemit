@@ -25,6 +25,7 @@ struct WidgetContent: View {
                 case .systemMedium: MediumWidget(state: state)
                 case .accessoryCircular: CircularWidget(state: state)
                 case .accessoryRectangular: RectangularWidget(state: state)
+                case .accessoryInline: InlineWidget(state: state)
                 default: SmallWidget(state: state)
                 }
             } else {
@@ -60,9 +61,22 @@ extension WidgetState {
         due > 0 ? roundStatus?.title : nil
     }
 
-    /// "28 words in memory".
-    fileprivate var wordsLine: LocalizedStringResource? {
-        wordsInMemory.flatMap { MemoryEstimate.wordsLine($0) }
+    /// The streak's flame as every ring draws it: outlined until the streak step is done, filled after, and the day
+    /// after a missed one outlined in the streak's colour.
+    var streakState: StreakState { progress.streakState }
+
+    /// The cards left to close the ring, "20 cards left", in a closed ring "Ring closed" while the plan has more, and
+    /// "All done" once nothing is left.
+    var inlineLeft: String {
+        if toRing > 0 { return String(localized: "\(toRing) cards left") }
+        if due > 0 { return goal > 0 && done >= goal ? String(localized: "Ring closed") : String(localized: "\(due) cards left") }
+        return done > 0 ? String(localized: "All done") : String(localized: "Nothing due")
+    }
+
+    /// The line over the lock screen's clock, after the flame: "12 · 20 cards left", and without a streak the cards left alone.
+    var inlineLine: String {
+        guard streakDays > 0 else { return inlineLeft }
+        return streakDays.formatted(.number.grouping(.never)) + " · " + inlineLeft
     }
 }
 
@@ -74,7 +88,13 @@ private struct HeadlineLine: View {
     var font: Font
 
     var body: some View {
-        if let title = state.roundTitle {
+        if state.isStreakAtRisk {
+            // "Close the ring to save your 12-day streak" takes three lines at this width, in a smaller font.
+            Text(verbatim: state.todayLine)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(3)
+                .minimumScaleFactor(0.8)
+        } else if let title = state.roundTitle {
             // Long enough to take a second line.
             Text(title)
                 .font(font)
@@ -115,7 +135,7 @@ private struct StreakLine: View {
     var body: some View {
         if state.streakDays > 0 {
             HStack(spacing: 4) {
-                StreakFlame(state: state.isStreakKept ? .kept : .open)
+                StreakFlame(state: state.streakState)
                     .widgetAccentable(state.isStreakKept)
                 Text("\(state.streakDays)-day streak")
             }
@@ -130,7 +150,7 @@ private struct SmallWidget: View {
         // With the time under the headline, or a title of two lines, there are three lines of text, and the ring gives up 8 pt.
         let hasTime = state.timeLeft != nil || state.roundTitle != nil
         VStack(alignment: .leading, spacing: hasTime ? 6 : 8) {
-            DailyRingView(progress: state.progress, diameter: hasTime ? 56 : 64)
+            DailyRingView(progress: state.progress, diameter: state.isStreakAtRisk ? 48 : hasTime ? 56 : 64)
                 .widgetAccentable()
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: 0) {
@@ -147,39 +167,44 @@ private struct SmallWidget: View {
     }
 }
 
-/// The ring with the streak in its middle, the headline, one line under it, the words in memory, and Study while the
-/// ring is open; once it is closed the headline has the width (the whole widget still opens the stream).
+/// The ring with the streak in its middle and the line Today shows under its ring (`TodayHeadline`), then the week's
+/// rings, and Study while the ring is open (the whole widget still opens the stream).
 private struct MediumWidget: View {
     var state: WidgetState
 
     var body: some View {
-        HStack(spacing: 12) {
-            DailyRingView(progress: state.progress, diameter: 76)
-                .widgetAccentable()
-            VStack(alignment: .leading, spacing: 2) {
-                HeadlineLine(state: state, font: .title2.weight(.semibold))
-                state.progressLine?
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                if let words = state.wordsLine {
-                    Text(words)
-                        .font(.footnote)
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
+                DailyRingView(progress: state.progress, diameter: 60)
+                    .widgetAccentable()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: state.todayLine)
+                        .font(.title3.weight(.semibold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                    state.progressLine?
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .padding(.top, 2)
+                        .lineLimit(1)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            if state.due > 0 && !state.isGoalMet {
-                Link(destination: WidgetLink.study) {
-                    Text("Study")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Color.appAccent, in: Capsule())
-                        .widgetAccentable()
+            HStack {
+                if let week = state.week {
+                    WeekRings(week: week, today: state.progress.ring.fraction, now: state.date, diameter: 20, spacing: 8)
+                        .fixedSize()
+                }
+                Spacer(minLength: 8)
+                if state.due > 0 && !state.isGoalMet {
+                    Link(destination: WidgetLink.study) {
+                        Text("Study")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Color.appAccent, in: Capsule())
+                            .widgetAccentable()
+                    }
                 }
             }
         }
@@ -209,25 +234,55 @@ private struct RectangularWidget: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Group {
-                if let title = state.roundTitle {
-                    Text(title)
-                } else {
-                    state.headline
+            if state.isStreakAtRisk {
+                // The line Today shows; it names the streak, so the streak line is left out.
+                Text(verbatim: state.todayLine)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
+                    .widgetAccentable()
+            } else {
+                Group {
+                    if let title = state.roundTitle {
+                        Text(title)
+                    } else {
+                        state.headline
+                    }
                 }
+                .font(.headline)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .widgetAccentable()
+                state.progressLine?
+                    .font(.caption)
+                    .lineLimit(1)
+                StreakLine(state: state)
+                    .font(.caption)
+                    .lineLimit(1)
             }
-            .font(.headline)
-            .minimumScaleFactor(0.6)
-            .widgetAccentable()
-            state.progressLine?
-                .font(.caption)
-            StreakLine(state: state)
-                .font(.caption)
         }
         .monospacedDigit()
-        .lineLimit(1)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// The line over the lock screen's clock: the flame, the days of the streak and the cards left, "12 · 20 cards left";
+/// without a streak the cards left alone.
+private struct InlineWidget: View {
+    var state: WidgetState
+
+    var body: some View {
+        if state.streakDays > 0 {
+            Label {
+                Text(verbatim: state.inlineLine)
+            } icon: {
+                StreakFlame(state: state.streakState)
+                    .widgetAccentable(state.isStreakKept)
+            }
+        } else {
+            Text(verbatim: state.inlineLine)
+        }
     }
 }
 
@@ -238,6 +293,8 @@ private struct EmptyWidget: View {
 
     var body: some View {
         switch family {
+        case .accessoryInline:
+            Text("Open Mnemit to start")
         case .accessoryCircular, .accessoryRectangular:
             Text("Open Mnemit to start")
                 .font(.caption)

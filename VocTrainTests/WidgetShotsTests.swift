@@ -20,6 +20,9 @@ struct WidgetShotsTests {
 
     static let now = Fixtures.date(22, 10, 20)
 
+    /// The rings of the last seven study days, today last.
+    static let week: [Bool?] = [nil, true, true, false, true, true, false]
+
     /// What a widget shows in the states worth a picture.
     static let states: [(name: String, state: WidgetState?)] = [
         // Between rounds: round 2 of 4 under way, 12 of 20, 8 left, the streak kept, the words in memory, the reminder ahead.
@@ -27,34 +30,48 @@ struct WidgetShotsTests {
             "progress",
             WidgetState(
                 date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10, rounds: 4,
-                roundsDone: 1, minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15)
+                roundsDone: 1, minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15, week: week)
+        ),
+        // The day after a missed one: the flame's outline is the streak's colour until the ring closes.
+        (
+            "at-risk",
+            WidgetState(
+                date: now, done: 3, goal: 20, streakDays: 7, isGoalMet: false, due: 17, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 0,
+                minutesToNextRound: 2, isStreakAtRisk: true, week: [true, true, false, true, true, false, false])
         ),
         // Before the first round: the streak is not kept yet.
         (
             "first-round",
             WidgetState(
                 date: now, done: 3, goal: 20, streakDays: 7, isGoalMet: false, due: 17, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 0,
-                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 0)
+                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 0, week: week)
         ),
         // The rounds are done with cards still left: the ring is closed.
         (
             "closed",
             WidgetState(
                 date: now, done: 21, goal: 20, streakDays: 8, isGoalMet: true, due: 6, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 4,
-                wordsInMemory: 120, wordsToday: 9)
+                wordsInMemory: 120, wordsToday: 9, week: [true, true, false, true, true, true, true])
         ),
         // A snapshot of the old kind, 12 of 20 and 42 due: the cards left stand.
         ("old", WidgetState(date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10)),
         // Goal reached twice over, nothing left due, the streak kept.
-        ("beyond-goal", WidgetState(date: now, done: 45, goal: 20, streakDays: 31, isGoalMet: true, due: 0, nextReminder: nil)),
+        (
+            "beyond-goal",
+            WidgetState(date: now, done: 45, goal: 20, streakDays: 31, isGoalMet: true, due: 0, nextReminder: nil, week: [true, true, true, true, true, true, true])
+        ),
         // A fresh day: nothing reviewed, three digits due, no streak yet.
-        ("fresh", WidgetState(date: now, done: 0, goal: 20, streakDays: 0, isGoalMet: false, due: 120, nextReminder: nil, secondsPerCard: 20)),
+        (
+            "fresh",
+            WidgetState(date: now, done: 0, goal: 20, streakDays: 0, isGoalMet: false, due: 120, nextReminder: nil, secondsPerCard: 20, week: [nil, nil, nil, nil, nil, nil, false])
+        ),
         // No snapshot yet.
         ("empty", nil),
     ]
 
     static let families: [(name: String, family: WidgetFamily)] = [
         ("small", .systemSmall), ("medium", .systemMedium), ("circular", .accessoryCircular), ("rectangular", .accessoryRectangular),
+        ("inline", .accessoryInline),
     ]
 
     private var directory: URL {
@@ -128,12 +145,13 @@ private struct WidgetFrame: View {
         case .systemMedium: CGSize(width: 329, height: 155)
         case .accessoryCircular: CGSize(width: 72, height: 72)
         case .accessoryRectangular: CGSize(width: 160, height: 72)
+        case .accessoryInline: CGSize(width: 230, height: 26)
         default: CGSize(width: 155, height: 155)
         }
     }
 
     private var isAccessory: Bool {
-        family == .accessoryCircular || family == .accessoryRectangular
+        family == .accessoryCircular || family == .accessoryRectangular || family == .accessoryInline
     }
 
     var body: some View {
