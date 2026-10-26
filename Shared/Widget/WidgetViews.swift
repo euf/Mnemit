@@ -88,7 +88,13 @@ private struct HeadlineLine: View {
     var font: Font
 
     var body: some View {
-        if let title = state.roundTitle {
+        if state.isStreakAtRisk {
+            // "Close the ring to save your 12-day streak" takes three lines at this width, in a smaller font.
+            Text(verbatim: state.todayLine)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(3)
+                .minimumScaleFactor(0.8)
+        } else if let title = state.roundTitle {
             // Long enough to take a second line.
             Text(title)
                 .font(font)
@@ -144,7 +150,7 @@ private struct SmallWidget: View {
         // With the time under the headline, or a title of two lines, there are three lines of text, and the ring gives up 8 pt.
         let hasTime = state.timeLeft != nil || state.roundTitle != nil
         VStack(alignment: .leading, spacing: hasTime ? 6 : 8) {
-            DailyRingView(progress: state.progress, diameter: hasTime ? 56 : 64)
+            DailyRingView(progress: state.progress, diameter: state.isStreakAtRisk ? 48 : hasTime ? 56 : 64)
                 .widgetAccentable()
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: 0) {
@@ -228,23 +234,34 @@ private struct RectangularWidget: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Group {
-                if let title = state.roundTitle {
-                    Text(title)
-                } else {
-                    state.headline
+            if state.isStreakAtRisk {
+                // The line Today shows; it names the streak, so the streak line is left out.
+                Text(verbatim: state.todayLine)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
+                    .widgetAccentable()
+            } else {
+                Group {
+                    if let title = state.roundTitle {
+                        Text(title)
+                    } else {
+                        state.headline
+                    }
                 }
+                .font(.headline)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .widgetAccentable()
+                state.progressLine?
+                    .font(.caption)
+                    .lineLimit(1)
+                StreakLine(state: state)
+                    .font(.caption)
+                    .lineLimit(1)
             }
-            .font(.headline)
-            .minimumScaleFactor(0.6)
-            .widgetAccentable()
-            state.progressLine?
-                .font(.caption)
-            StreakLine(state: state)
-                .font(.caption)
         }
         .monospacedDigit()
-        .lineLimit(1)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
     }

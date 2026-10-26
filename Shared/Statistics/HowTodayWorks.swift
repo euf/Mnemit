@@ -8,8 +8,8 @@ import VocabCore
 ///
 /// Built into sections of rows that are already text, so a test can compare them and the view only lays
 /// them out. The sections come in the order of the screen: the three sentences, the plan, the day's time, the pace, the
-/// streak, the words in memory, the swipes (where the screen has them: the iPhone), then the FSRS
-/// settings of each deck. A section's footer is its rule.
+/// streak, the words in memory, the swipes (where the screen has them: the iPhone), the options (the rules
+/// the Options screen only names), then the FSRS settings of each deck. A section's footer is its rule.
 struct HowTodayWorks: Equatable, Sendable {
     enum Row: Equatable, Sendable {
         /// A sentence to read.
@@ -48,6 +48,7 @@ struct HowTodayWorks: Equatable, Sendable {
                 Self.streak(progress),
                 Self.wordsInMemory(memory),
             ] + (swipes.map { [Self.swipes($0)] } ?? [])
+            + [Self.options()]
             + decks.indices.map { Self.fsrs(decks[$0], position: $0, of: decks.count) }
     }
 
@@ -192,6 +193,48 @@ struct HowTodayWorks: Equatable, Sendable {
                 "A swipe that goes \(Int(GradeSwipe.commitDistance)) points or flicks gives the grade of its direction, unless it points into a gap: 210° to 240° or 300° to 330°, where the card springs back. Clockwise from the top: Easy 330° to 45°, Good 45° to 135°, Hard 135° to 210°, Forgot 240° to 300°. Counted from when the app started, per study day."
         )
         return Section(title: String(localized: "Swipes"), rows: rows, footer: footer)
+    }
+
+    /// What the Options screen's one-line footers leave out: one sentence per option that has a rule behind it.
+    private static func options() -> Section {
+        let rows: [Row] = [
+            .text(
+                String(
+                    localized:
+                        "With New words, a new card shows its answer first. That introduction records nothing, and the card is asked a few cards later. With Words I know, a new card is asked at once."
+                )),
+            .text(
+                String(
+                    localized:
+                        "Target recall is the chance that you still remember a card when it comes back. Higher means better recall and more reviews; \(Format.percent(0.9)) is a good balance."
+                )),
+            .text(
+                String(
+                    localized:
+                        "A Meaning → Word card stays locked until the Word → Meaning card of its word has reached the interval set in Unlock after. A word is asked in one direction per day."
+                )),
+            .text(
+                String(
+                    localized:
+                        "A card you forget as many times as Difficult after sets, and again after every further multiple, is suspended and marked Difficult. Resume it from the card list. Off never suspends."
+                )),
+            .text(
+                String(
+                    localized:
+                        "New cards and cards you forgot come back in the session until you have graded them Good as many times as Steps per card sets. Good moves a card one step on, Hard keeps its step, Forgot resets it, and Easy graduates it at once."
+                )),
+            .text(
+                String(
+                    localized:
+                        "FSRS starts with parameters averaged over many learners. Fitted to the deck's review log, they follow your memory, so a card needs fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review."
+                )),
+            .text(
+                String(
+                    localized:
+                        "The parameters are fitted first at \(ParameterRefit.minimumReviewCount.formatted()) reviews, again at \(ParameterRefit.secondFitReviewCount.formatted()), then every \(Format.days(Double(ParameterRefit.intervalDays))) or after \(ParameterRefit.reviewStep.formatted()) more reviews. A fit replaces the current parameters only if it predicts your newest reviews better."
+                )),
+        ]
+        return Section(title: String(localized: "Options"), rows: rows, footer: "")
     }
 
     private static func fsrs(_ deck: DeckInfo, position: Int, of count: Int) -> Section {
