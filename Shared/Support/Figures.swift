@@ -72,7 +72,7 @@ extension Figure where Leading == EmptyView {
 }
 
 /// A tile, two to a row: a figure on its own ground, with at most one small line under it ("started at 2.5").
-struct Tile: View {
+struct FigureTile: View {
     var label: Text
     var value: Text
     var unit: Text?
