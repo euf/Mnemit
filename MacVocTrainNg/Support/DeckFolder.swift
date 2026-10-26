@@ -72,12 +72,12 @@ final class DeckFolder {
         }
     }
 
-    /// Takes `folder` as the folder, and keeps its access, in place of the previous one's.
-    func use(_ folder: URL) {
+    /// Takes `folder` as the folder, and keeps its access, in place of the previous one's; `nil` lets go of it.
+    func use(_ folder: URL?) {
         if isAccessing, let url {
             url.stopAccessingSecurityScopedResource()
         }
-        isAccessing = folder.startAccessingSecurityScopedResource()
+        isAccessing = folder?.startAccessingSecurityScopedResource() ?? false
         url = folder
         refresh()
     }

@@ -7350,24 +7350,24 @@
         }
       }
     },
-    "Export Cards…": {
+    "Export Deck…": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karten exportieren …"
+            "value": "Stapel exportieren …"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Εξαγωγή καρτών…"
+            "value": "Εξαγωγή τράπουλας…"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Экспортировать карточки…"
+            "value": "Экспортировать колоду…"
           }
         }
       }
@@ -7874,6 +7874,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Трудно"
+          }
+        }
+      }
+    },
+    "Hide Inspector": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details ausblenden"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Απόκρυψη λεπτομερειών"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скрыть подробности"
           }
         }
       }
@@ -10650,28 +10672,6 @@
         }
       }
     },
-    "Overview": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Übersicht"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επισκόπηση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обзор"
-          }
-        }
-      }
-    },
     "Pace": {
       "localizations": {
         "de": {
@@ -12724,6 +12724,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Details anzeigen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εμφάνιση λεπτομερειών"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать подробности"
+          }
+        }
+      }
+    },
+    "Show Inspector": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details einblenden"
           }
         },
         "el": {

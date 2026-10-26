@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 import VocabCore
 
 extension CardExport {
-    /// "Export Cards…": asks for the format and the file, then writes the cards.
+    /// File ▸ Export Deck…: asks for the format and the file, then writes the cards.
     @MainActor
     static func run(cards: [Card], calendar: StudyCalendar, suggestedName: String) {
         let options = Options()

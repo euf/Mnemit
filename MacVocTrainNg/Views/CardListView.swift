@@ -10,6 +10,8 @@ struct CardListView: View {
     var shownCard: Card.ID?
     /// Opens Add Cards, for the empty deck's button.
     var addCards: (() -> Void)?
+    /// Whether the inspector is open, when the window keeps that for its menu; else the list keeps it.
+    var inspector: Binding<Bool>?
     @State private var selection = Set<Card.ID>()
     @State private var sortOrder = [KeyPathComparator(\CardRow.position)]
     @State private var columnCustomization = TableColumnCustomization<CardRow>()
@@ -19,10 +21,12 @@ struct CardListView: View {
     @State private var searchText = ""
     /// The filter of the scope bar, see `CardFilter`.
     @State private var scope = CardFilter.all
-    @State private var showingInspector = false
+    @State private var ownInspector = false
     @State private var table = CardTable()
     /// The card that `CardEditSheet` edits, as it was when the sheet opened.
     @State private var editedCard: Card?
+
+    private var showingInspector: Binding<Bool> { inspector ?? $ownInspector }
 
     var body: some View {
         // Re-evaluated every minute because cards become due as time passes. The rows
@@ -31,7 +35,7 @@ struct CardListView: View {
             list(at: document.clock.now)
         }
         .searchable(text: $searchText, prompt: "Search cards")
-        .inspector(isPresented: $showingInspector) {
+        .inspector(isPresented: showingInspector) {
             CardInspector(document: document, selection: selection, isEditable: isEditable, onEdit: edit, onDelete: delete, onSelect: show)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
@@ -41,13 +45,13 @@ struct CardListView: View {
         .onChange(of: shownCard, initial: true) { _, id in
             if let id {
                 show(id)
-                showingInspector = true
+                showingInspector.wrappedValue = true
             }
         }
         .toolbar {
             ToolbarItem {
                 Button {
-                    showingInspector.toggle()
+                    showingInspector.wrappedValue.toggle()
                 } label: {
                     Label("Details", systemImage: "sidebar.trailing")
                 }
@@ -110,7 +114,7 @@ struct CardListView: View {
                 if !ids.isEmpty {
                     Button("Show Details") {
                         selection = ids
-                        showingInspector = true
+                        showingInspector.wrappedValue = true
                     }
                     Group {
                         if ids.count == 1, let id = ids.first {
@@ -133,7 +137,7 @@ struct CardListView: View {
                 if ids.count == 1, let id = ids.first {
                     edit(id)
                 } else {
-                    showingInspector = true
+                    showingInspector.wrappedValue = true
                 }
             }
             .onDeleteCommand {

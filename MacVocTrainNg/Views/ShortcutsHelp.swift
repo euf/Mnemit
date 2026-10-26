@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// The cheat sheet of the keys of a flash card session: it comes up by itself in the first
-/// session, with "?" in a session and with Keyboard Shortcuts in the Help menu, and any key
-/// closes it again.
+/// The cheat sheet of the keys: in a flash card session those of the session, anywhere else those
+/// of the menus (`MenuKey`). It comes up by itself in the first session, with "?" in a session and
+/// with Keyboard Shortcuts in the Help menu, and any key closes it again.
 ///
 /// A key goes through the window's key equivalents before any view sees it, and the keys of
 /// a session are such equivalents, so the sheet watches the keys itself, with a monitor for
@@ -71,14 +71,16 @@ final class ShortcutsHelp {
 }
 
 extension View {
-    /// Puts the cheat sheet over the view, and lets `help` watch the keys of the view's window.
-    func shortcutsHelp(_ help: ShortcutsHelp) -> some View {
-        modifier(ShortcutsHelpModifier(help: help))
+    /// Puts the cheat sheet over the view, and lets `help` watch the keys of the view's window. `menu` is what the
+    /// menus say now, for the titles of the rows.
+    func shortcutsHelp(_ help: ShortcutsHelp, menu: @escaping () -> MenuState) -> some View {
+        modifier(ShortcutsHelpModifier(help: help, menu: menu))
     }
 }
 
 private struct ShortcutsHelpModifier: ViewModifier {
     var help: ShortcutsHelp
+    var menu: () -> MenuState
 
     func body(content: Content) -> some View {
         content
@@ -93,7 +95,7 @@ private struct ShortcutsHelpModifier: ViewModifier {
             )
             .overlay {
                 if help.isShown {
-                    ShortcutsOverlay { help.isShown = false }
+                    ShortcutsOverlay(inSession: help.opensWithQuestionMark, menu: menu) { help.isShown = false }
                         .transition(.opacity)
                 }
             }
@@ -130,8 +132,10 @@ private struct WindowReader: NSViewRepresentable {
     }
 }
 
-/// The keys of a flash card session, over a dimmed window; a click closes it too.
+/// The keys of a flash card session or of the menus, over a dimmed window; a click closes it too.
 private struct ShortcutsOverlay: View {
+    var inSession: Bool
+    var menu: () -> MenuState
     var close: () -> Void
 
     var body: some View {
@@ -145,21 +149,17 @@ private struct ShortcutsOverlay: View {
                 Text("Keyboard Shortcuts")
                     .font(.title2.weight(.semibold))
 
-                Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 18, verticalSpacing: 12) {
-                    row(keys: [String(localized: "Space")]) {
-                        Text("Show the answer, then grade Good")
-                    }
-                    row(keys: ["←", "→", "↑", "↓"]) {
-                        Text("Grade: ← Forgot, → Good, ↑ Easy, ↓ Hard")
-                    }
-                    row(keys: ["Z", "Esc"], areAlternatives: true) {
-                        Text("Undo the last grade")
-                    }
-                    row(keys: ["S"]) {
-                        Text("Pronounce")
-                    }
-                    row(keys: ["?"]) {
-                        Text("This help")
+                // Twelve rows of the menus fit the window's least height at this spacing.
+                Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 18, verticalSpacing: inSession ? 12 : 6) {
+                    if inSession {
+                        sessionRows
+                    } else {
+                        let state = menu()
+                        ForEach(MenuKey.allCases, id: \.self) { key in
+                            row(keys: key.caps) {
+                                Text(key.title(state))
+                            }
+                        }
                     }
                 }
 
@@ -178,6 +178,25 @@ private struct ShortcutsOverlay: View {
             .shadow(radius: 24, y: 8)
             .accessibilityElement(children: .contain)
             .accessibilityAddTraits(.isModal)
+        }
+    }
+
+    @ViewBuilder
+    private var sessionRows: some View {
+        row(keys: [String(localized: "Space")]) {
+            Text("Show the answer, then grade Good")
+        }
+        row(keys: ["←", "→", "↑", "↓"]) {
+            Text("Grade: ← Forgot, → Good, ↑ Easy, ↓ Hard")
+        }
+        row(keys: ["Z", "Esc"], areAlternatives: true) {
+            Text("Undo the last grade")
+        }
+        row(keys: ["S"]) {
+            Text("Pronounce")
+        }
+        row(keys: ["?"]) {
+            Text("This help")
         }
     }
 

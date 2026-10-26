@@ -27,11 +27,10 @@ struct ShellView: View {
         }
         .toolbar(removing: shell.run != nil ? .sidebarToggle : nil)
         .frame(minWidth: 760, minHeight: 520)
-        .shortcutsHelp(shell.shortcuts)
+        .shortcutsHelp(shell.shortcuts) { shell.menu }
         .onChange(of: shell.session != nil, initial: true) { _, inSession in
             shell.shortcuts.opensWithQuestionMark = inSession
         }
-        .focusedSceneValue(\.deckActions, shell.deckActions)
         .background(WindowUndoRouting(shell: shell))
         .onAppear {
             shell.refresh()

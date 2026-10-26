@@ -12,7 +12,7 @@ struct MacVocTrainApp: App {
                 .brandTint()
         }
         .commands {
-            AppCommands()
+            AppCommands(shell: .shared)
         }
 
         Settings {

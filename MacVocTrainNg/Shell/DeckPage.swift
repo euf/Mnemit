@@ -11,6 +11,7 @@ struct DeckPage: View {
             if let document = deck.document {
                 DeckPageContent(
                     document: document, isEditable: deck.isEditable, screen: Binding(get: { shell.screen }, set: { shell.showScreen($0) }),
+                    showsInspector: Binding(get: { shell.showsInspector }, set: { shell.showsInspector = $0 }),
                     shownCard: shell.shownCard, request: Binding(get: { shell.request }, set: { shell.request = $0 }),
                     start: { shell.study(.deck(deck.url), entry: $0) }
                 )
@@ -49,6 +50,8 @@ struct DeckPageContent: View {
     /// `false` while the deck can only be viewed: nothing then changes it or starts a stream.
     var isEditable: Bool
     @Binding var screen: Shell.DeckScreen
+    /// Whether the cards' inspector is open, for View ▸ Show Inspector.
+    @Binding var showsInspector: Bool
     /// A card Search All Cards asked the table to show.
     var shownCard: Card.ID?
     /// A sheet the menus and the strip ask for; taken at once.
@@ -72,7 +75,7 @@ struct DeckPageContent: View {
             Divider()
             switch screen {
             case .cards:
-                CardListView(document: document, isEditable: canEdit, shownCard: shownCard, addCards: { addingCards = true })
+                CardListView(document: document, isEditable: canEdit, shownCard: shownCard, addCards: { addingCards = true }, inspector: $showsInspector)
             case .statistics:
                 StatisticsView(document: document)
             }

@@ -7,7 +7,7 @@ import Testing
 
 extension DeckFileTests {
     /// Draws the Mac's one window (`ShellView`) over decks in a temporary folder, light and dark, to PNGs to look at: Today,
-    /// a deck and Progress. The directory is `STUDY_SHOTS_DIR` (pass it as `TEST_RUNNER_STUDY_SHOTS_DIR`), else the
+    /// a deck and Progress, and the shortcuts sheet. The directory is `STUDY_SHOTS_DIR` (pass it as `TEST_RUNNER_STUDY_SHOTS_DIR`), else the
     /// temporary directory of the test host's container. The window is not active, so the selected row of the sidebar and
     /// the prominent buttons draw in the colours of an inactive window. The test fails only if a picture can't be made;
     /// what it shows is for a person to judge. The dark frames are not to be trusted: offscreen, the sidebar and the table
@@ -44,22 +44,38 @@ extension DeckFileTests {
                     if case .deck = item {
                         let deck = try #require(shell.selectedDeck)
                         try await f.waitFor("the deck is open") { deck.document != nil }
-                        #expect(shell.deckActions.canStartSession)
+                        #expect(shell.menu.canStudyDeck)
                     }
                     try await Task.sleep(for: .seconds(1.5))
-                    hosting.layoutSubtreeIfNeeded()
-                    let rep = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
-                    hosting.cacheDisplay(in: hosting.bounds, to: rep)
-                    let data = try #require(rep.representation(using: .png, properties: [:]))
-                    let file = "shell-\(name)-\(dark ? "dark" : "light").png"
-                    do {
-                        try data.write(to: directory.appendingPathComponent(file))
-                    } catch {
-                        try data.write(to: FileManager.default.temporaryDirectory.appendingPathComponent(file))
-                    }
+                    try write(hosting, to: "shell-\(name)-\(dark ? "dark" : "light").png")
                 }
             }
             await f.finish()
+        }
+
+        /// Help ▸ Keyboard Shortcuts outside a stream: the twelve keys of the menus over the window at its least size,
+        /// where they have to fit.
+        @Test func theKeyboardShortcutsOfTheMenusInTheSmallestWindow() async throws {
+            let f = try ShellFixture(decks: [("Greek A1–A2", 14)])
+            try await f.waitUntilRead(decks: 1)
+            f.shell.shortcuts.isShown = true
+            let window = f.window(width: 760, height: 520, shown: false)
+            defer { window.close() }
+            try await Task.sleep(for: .seconds(1))
+            try write(try #require(window.contentView), to: "shell-shortcuts-light.png")
+            await f.finish()
+        }
+
+        private func write(_ hosting: NSView, to file: String) throws {
+            hosting.layoutSubtreeIfNeeded()
+            let rep = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+            hosting.cacheDisplay(in: hosting.bounds, to: rep)
+            let data = try #require(rep.representation(using: .png, properties: [:]))
+            do {
+                try data.write(to: directory.appendingPathComponent(file))
+            } catch {
+                try data.write(to: FileManager.default.temporaryDirectory.appendingPathComponent(file))
+            }
         }
     }
 }
