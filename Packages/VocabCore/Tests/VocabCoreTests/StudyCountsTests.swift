@@ -174,4 +174,29 @@ struct StudyCountsTests {
         #expect(try taken(both, options: options).nextDue == tomorrow)
         #expect(try taken(both + [learning("soon", dueIn: 600)], options: options).nextDue == now.addingTimeInterval(600))
     }
+
+    @Test func theDueCountIsAnkisAndTheDeckIsDoneWhenThePlanIsEmpty() throws {
+        var options = options()
+        options.newCardsPerSession = 1
+        var suspended = review("suspended")
+        suspended.suspend(at: now)
+        let cards = [
+            review("due1"), review("due2"), learning("learning"), learning("later", dueIn: 600), review("tomorrow", dueInDays: 1), suspended,
+            fresh("new1"), fresh("new2"),
+        ]
+        let deck = try Deck(learningOptions: options, cards: cards)
+        let counts = StudySession.counts(for: deck, at: now, calendar: calendar)
+        // Due now: two review cards and the learning card due; not new, not suspended, not due later.
+        #expect(counts.due == 3)
+        #expect(counts.due == deck.filterCounts(at: now)[.due])
+        // The plan has the new card within its limit on top.
+        #expect(counts.total == 4 && !counts.isDone)
+
+        let finished = try Deck(learningOptions: options, cards: [review("tomorrow", dueInDays: 1), suspended])
+        let none = StudySession.counts(for: finished, at: now, calendar: calendar)
+        #expect(none.due == 0 && none.isDone)
+        // A deck with only new cards past the limit has nothing due and, once its limit is spent, nothing left.
+        let spent = StudySession.counts(for: try Deck(learningOptions: options, cards: [fresh("n")]), at: now, calendar: calendar, newCardAllowance: 0)
+        #expect(spent.due == 0 && spent.isDone)
+    }
 }

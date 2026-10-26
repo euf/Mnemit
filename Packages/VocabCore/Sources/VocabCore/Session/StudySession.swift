@@ -186,6 +186,7 @@ public struct StudySession: Sendable {
         let nextStudyDay = calendar.start(ofDay: calendar.dayNumber(for: now) + 1)
         for card in deck.cards where !card.isSuspended {
             guard let due = card.learningState?.due else { continue }
+            if due <= now { counts.due += 1 }
             let next = due > now ? due : (selectedIDs.contains(card.id) ? nil : nextStudyDay)
             if let next, next < counts.nextDue ?? .distantFuture { counts.nextDue = next }
         }
@@ -417,7 +418,15 @@ public struct StudyCounts: Hashable, Sendable {
     /// `nil` if no card has been studied. Meant for `total == 0`.
     public internal(set) var nextDue: Date?
 
+    /// The studied cards of the deck whose due date has come, suspended ones apart, as Anki counts "Due" and as
+    /// `CardFilter.due` and `Deck.filterCounts(at:)` do: what the deck's row on Today shows, not the plan (burying and
+    /// the limits don't cut it, learning cards due now are in it). 0 in the counts of a past day's plan.
+    public internal(set) var due = 0
+
     public var new: Int { newProduction + newOther }
+
+    /// The deck has nothing left of today's plan: the row shows a tick.
+    public var isDone: Bool { total == 0 }
 
     /// The cards that were new when the study day began: `new`, and the new cards started
     /// today that are still in learning (`learningFromNew`). What the time left prices as new
