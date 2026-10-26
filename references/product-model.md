@@ -164,8 +164,9 @@ Every surface is the entities above and nothing else.
 | **Reminders** | "Keep your 12-day streak · ≈ 2 min", and at 21:00 while the streak is at stake; the badge "1" while the ring is open |
 | **The Mac** | one window: the same Today, stream, decks and Progress, by keyboard |
 
-A medal's toast never covers the ring, the card or a button: on Today it stands below the button, in the stream above the
-answer's buttons where the card leaves room, never over the card.
+A medal's toast never covers the ring, the card or a button: on the Mac's Today it stands below the Study button, on the
+iPhone's over the large title; in the Mac's stream in the empty middle of the header row, in the iPhone's as one compact
+line in the gap above the answer's buttons.
 
 ### Why the ring leads and the streak has a line of its own
 
@@ -206,7 +207,7 @@ lock screen's circular widget is the ring alone with its minutes, the inline one
 | The introduction | the four swipes, the day in four lines | first a new word's first showing (Don't know, Know, it comes back), then the swipes |
 | Words on screen | sentences that explain | short and plain everywhere; no text that explains the interface |
 | Today's order | the ring, then one sentence led by the flame with the days in it | the ring, the streak line, the sentence of the next moment |
-| The Mac's medal toast | over the ring | below the button |
+| Medal toasts | over the ring (Mac), over the card or a deck row | where they cover nothing |
 
 ## 12. Details settled in the build
 
