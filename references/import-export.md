@@ -1,5 +1,8 @@
 # Getting cards in and out: TSV sync, Anki, deck sites, CSV/TSV, lesson words, word key
 
+Cards come in through Add Cards, `deck-from-tsv`, CSV/TSV files and Anki packages. Mnemit has no import of
+MacVocTrain 1 documents.
+
 ## deck-from-tsv: sync a deck with a TSV in place
 
 - Keeps progress:
@@ -129,20 +132,20 @@
 - While onboarding or the Study stream covers the screen, the package waits (`waitingAnki`).
 - The link "Shared Decks on AnkiWeb" (`AnkiWebLink`), in the "+" menu, on an empty Today and on the
   deck screen, opens the deck site browser (below).
-- Mac: `AppDelegate.application(_:open:)` sends an `.apkg` from Finder the same way as the welcome
-  window's "Import Cards" (`WelcomeRequest.importIntoNewDeck(from:)`: request and a new document). The
-  new document's window calls `DocumentView.importCards(from:namesDeck:)` and names the untitled deck
-  after the Anki deck (`nameWindow`: the document's `displayName` and
-  `synchronizeWindowTitleWithDocumentName` on its windows; AppKit puts a new `displayName` in the title
-  only on that call, before it the title says "Untitled") and takes the preset's settings
-  (`isNewDeck`: `namesDeck`, a document without a file and cards). "Import Cards" from a deck window's
-  menu (`namesDeck` false) keeps the deck's settings. Decks from Finder go from there to
-  `NSDocumentController.openDocument`.
+- Mac: `AppDelegate.application(_:open:)` hands an `.apkg` from Finder to `Shell.receive`, as the AnkiWeb
+  window's downloads and File ▸ Import Cards… with no deck selected reach `Shell.importIntoNewDeck(from:)`.
+  It reads the package once (`CardImport.loadAnki`, passed on to the preview), makes a deck in the Mnemit folder
+  named after the Anki deck (`CardImport.deckName`; a taken name gets " 2", " 3"), starts it with New words,
+  selects it and shows the preview of its cards. That preview heads with "Words in this deck", New words / Words
+  I know, preset to Words I know when any card has review history, else New words (`Preview.makesDeck`), and
+  takes the preset's settings. A table does the same, named after the file. File ▸ Import Cards… (⇧⌘I) with a
+  deck selected imports into that deck, keeps its settings and asks nothing. New Deck… (⌘N) asks the same
+  New words / Words I know question beside the name. Decks from Finder go to `Shell.open`.
 
 ## Deck site browser
 
 - `Shared/Web/DeckWebBrowser` and `DeckWebBrowserView`: a sheet on the iPhone, the window
-  `DeckWebWindow` on the Mac (from the Today window and File ▸ "Shared Decks on AnkiWeb…").
+  `DeckWebWindow` on the Mac (from the sidebar's (+) menu, Today's empty state and File ▸ "Shared Decks on AnkiWeb…").
 - A plain `WKWebView` driven by the person: no scripts in pages, no custom user agent, no page parsing
   or preloading. The app gets only the file the person downloaded.
 - Sources: one constant `DeckSources.all` in `Shared/Support/DeckSources.swift` (AnkiWeb Shared Decks as
@@ -158,7 +161,7 @@
   folder.
 - The file goes the same way as "Open in Mnemit" and the picker. iPhone: `StartScreen.receiveDownload`
   (a package to `receiveAnki`, a table to the preview of the last used deck, or with no decks into a new
-  one named after the file). Mac: `WelcomeRequest.importIntoNewDeck(from:)`.
+  one named after the file). Mac: `Shell.importIntoNewDeck(from:)`.
 - WebKit files are excluded from the widget target (`PBXFileSystemSynchronizedBuildFileExceptionSet` on
   the `Shared` group). The sandboxed Mac app has `com.apple.security.network.client`; without it
   `WKWebView` loads nothing.
@@ -189,8 +192,9 @@
 
 ## Lesson words
 
-- "Add Lesson Words…" (⇧⌘L on the Mac) is `LessonWords` in VocabCore: `note` is the recorded word key
-  (`WordKey`, below; `key()` in `greek-lessons/vocab/merge.py` cuts only at the first comma and
+- The From a List mode of Add Cards is `LessonWords` in VocabCore with `WordList` in `Shared/Support`. The Mac's
+  sheet (`AddCardsView`, Study ▸ Add Cards… ⇧⌘L) has the iPhone's two modes, One Card and From a List. `note` is
+  the recorded word key (`WordKey`, below; `key()` in `greek-lessons/vocab/merge.py` cuts only at the first comma and
   bracket), two cards per word, one Undo.
 - Sides are separated by `=`, `–`, `—`, a tab, or a hyphen with spaces on both sides (the phone keyboard
   types it); a hyphen inside a word doesn't split.
@@ -217,11 +221,10 @@
     <deck>: word → answer"; `Candidate.similar` checked, "Similar to word in <deck>: answer". The "in the
     deck" and "earlier in the file" checks come first; the per-deck summary is
     `CardImport.Preview.otherDeckLines`;
-  - lesson words (`LessonWords.plan(…elsewhere:)`): a word of another deck is skipped entirely
-    (`Plan.skippedElsewhere`); a similar one is added (`Plan.similar`); the deck's notes compare as keys,
-    `οδηγός#ο/η` holds `ο οδηγός`;
-  - Add Cards on the iPhone (list row unchecked, a caption under the One Card field) and the Mac sheet
-    Add Lesson Words (switch "Add the words other decks have, too");
+  - Add Cards, both apps (`WordList`): in From a List a row whose word another deck holds is unchecked with the
+    line "Also in <deck>", and a similar one is checked; One Card shows a caption under the field. As a
+    function the same is `LessonWords.plan(…elsewhere:)` (`Plan.skippedElsewhere`, `Plan.similar`); the deck's
+    notes compare as keys, `οδηγός#ο/η` holds `ο οδηγός`;
   - the card in the browser and inspector ("Also in <deck>" next to the sibling, `Deck.siblings(of:)`).
 - The index is built off the main thread when the sheet or screen opens. iPhone: all known decks
   (`KnownDeckFiles` in the environment, set by `StartScreen`; files read by `DeckFileReader`; the
