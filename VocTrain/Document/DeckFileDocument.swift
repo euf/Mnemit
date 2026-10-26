@@ -77,6 +77,18 @@ final class DeckFileDocument: UIDocument {
         NotificationCenter.default.post(name: Self.didLoad, object: self)
     }
 
+    /// UIDocument empties its undo manager as it reads the file again; it reads into one that is empty
+    /// anyway, so the steps of the session's reviews stay undoable. `OpenDeck` drops the steps that
+    /// must go once it merged what the file holds, see `VocabularyDocument.forgetEditUndoSteps()`.
+    override func revert(toContentsOf url: URL, completionHandler: (@Sendable (Bool) -> Void)? = nil) {
+        let undoManager = self.undoManager
+        self.undoManager = UndoManager()
+        super.revert(toContentsOf: url) { success in
+            self.undoManager = undoManager
+            completionHandler?(success)
+        }
+    }
+
     /// Saves in place, even if the UIDocument hasn't counted the change yet: the
     /// `VersionMerger` of `OpenDeck` saves this way a few seconds after each change
     /// (#295).
