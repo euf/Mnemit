@@ -32,6 +32,9 @@ for each term.
 
 Read the file for the area you work on.
 
+- `references/product-model.md`: **the product model**: the promise, the personas, the principles, the seven entities,
+  the day and its moments, the loops, rewards, the goal's size, every surface. Start here; a change that needs a new
+  entity changes this page first.
 - `references/deck-package.md`: the `.mnemit` package and legacy `.voctrain`, editing and merging on
   two devices, deck file operations, card media files.
 - `references/scheduling.md`: today's counts and daily limits, a new card's first showing, reviews, leeches,
