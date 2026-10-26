@@ -10179,6 +10179,28 @@
         }
       }
     },
+    "Past the ring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Über den Ring hinaus"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πέρα από τον κύκλο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сверх кольца"
+          }
+        }
+      }
+    },
     "Pause Deck": {
       "localizations": {
         "de": {
@@ -13567,24 +13589,24 @@
         }
       }
     },
-    "The time follows your days: rings you close make it grow, a ring left open makes it smaller, and a ring closed on a plan smaller than the time or a day without study leaves it as it was. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan.": {
+    "The time follows your days: rings you close make it grow, a ring left open makes it smaller, and a ring closed on a plan smaller than the time or a day without study leaves it as it was. Going well past the ring on most days lifts it to what you do. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Zeit folgt deinen Tagen: Ringe, die du schließt, lassen sie wachsen, ein offener Ring macht sie kleiner, und ein Ring, der bei einem Plan unter der Zeit geschlossen wird, oder ein Tag ohne Lernen lässt sie, wie sie war. Zwischen zwei Minuten und einer Stunde, und zweieinhalb Minuten vor jedem Lernen. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
+            "value": "Die Zeit folgt deinen Tagen: Ringe, die du schließt, lassen sie wachsen, ein offener Ring macht sie kleiner, und ein Ring, der bei einem Plan unter der Zeit geschlossen wird, oder ein Tag ohne Lernen lässt sie, wie sie war. Gehst du an den meisten Tagen weit über den Ring hinaus, steigt sie auf das, was du lernst. Zwischen zwei Minuten und einer Stunde, und zweieinhalb Minuten vor jedem Lernen. Der Serienschritt sind die Karten, die in die ersten zwei Minuten des Plans passen."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ο χρόνος ακολουθεί τις μέρες σου: οι κύκλοι που κλείνεις τον μεγαλώνουν, ένας κύκλος που μένει ανοιχτός τον μικραίνει, ενώ ένας κύκλος που κλείνει με πρόγραμμα μικρότερο από τον χρόνο ή μια ημέρα χωρίς μελέτη τον αφήνουν όπως ήταν. Από δύο λεπτά έως μία ώρα, και δυόμισι λεπτά πριν από κάθε μελέτη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
+            "value": "Ο χρόνος ακολουθεί τις μέρες σου: οι κύκλοι που κλείνεις τον μεγαλώνουν, ένας κύκλος που μένει ανοιχτός τον μικραίνει, ενώ ένας κύκλος που κλείνει με πρόγραμμα μικρότερο από τον χρόνο ή μια ημέρα χωρίς μελέτη τον αφήνουν όπως ήταν. Αν τις περισσότερες μέρες πας πολύ πέρα από τον κύκλο, ο χρόνος ανεβαίνει σε όσα κάνεις. Από δύο λεπτά έως μία ώρα, και δυόμισι λεπτά πριν από κάθε μελέτη. Το βήμα του σερί είναι οι κάρτες που χωράνε στα πρώτα δύο λεπτά του προγράμματος."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Время подстраивается под твои дни: закрытые кольца его увеличивают, открытое кольцо уменьшает, а кольцо, закрытое на плане меньше времени, и день без учёбы оставляют его как было. От двух минут до часа, а до первой учёбы — две с половиной минуты. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
+            "value": "Время подстраивается под твои дни: закрытые кольца его увеличивают, открытое кольцо уменьшает, а кольцо, закрытое на плане меньше времени, и день без учёбы оставляют его как было. Если на большинстве дней ты идёшь далеко за кольцо, время поднимается до того, что ты делаешь. От двух минут до часа, а до первой учёбы — две с половиной минуты. Шаг стрика — карточки, которые умещаются в первые две минуты плана."
           }
         }
       }

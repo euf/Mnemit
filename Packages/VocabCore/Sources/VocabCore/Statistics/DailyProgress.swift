@@ -156,6 +156,20 @@ public enum DailyGoal {
     /// What an open ring multiplies the next time by: a quarter less.
     public static let shrinks = 0.775
 
+    /// A study day is past the ring when its work reached this many times the time it asked (`RingDay.worked` over
+    /// `RingDay.time`). The sustained-overshoot step's flags (`references/ring-design.md`, `Tools/ring-sim/overshoot.md`).
+    public static let overshootRatio = 1.5
+    /// Of the last `overshootWindow` study days, this many past the ring set the time to what the learner does.
+    public static let overshootHits = 3
+    /// The study days the sustained-overshoot step reads.
+    public static let overshootWindow = 4
+    /// The share of those days' work, as a quantile, the time is set to: the 25th percentile.
+    public static let overshootQuantile = 0.25
+    /// The most the step raises the time in one day, times that day's time.
+    public static let overshootJump = 1.5
+    /// The step reads from the end of this study day on: the first week is the staircase's alone.
+    public static let overshootFromStudyDay = 8
+
     /// Why a day has the size it has.
     public enum SizeReason: Hashable, Sendable {
         /// No study day before it to go by: `initialSeconds`.
@@ -168,6 +182,9 @@ public enum DailyGoal {
         case ringOpen
         /// The last study day closed its ring on a plan smaller than its time (`RingDay.filled` false): its time again.
         case smallPlan
+        /// The learner went past the ring on `overshootHits` of the last `overshootWindow` study days: the time is what
+        /// those days' work was at the 25th percentile, above what the staircase asks.
+        case sustainedOvershoot
     }
 
     /// One day of the ring as the size rule reads it, plain values: the size it had and what came of it.
@@ -208,7 +225,28 @@ public enum DailyGoal {
     /// and `T × shrinks` when it stayed open, within `timeRange`; `initialSeconds` before any study day. A ring closed on a
     /// plan smaller than its time (`RingDay.filled` false: a deck's new-card limit or an exhausted deck set the goal)
     /// keeps `T`: the learner was not asked for it. A day without work, missed or not, changes nothing.
+    ///
+    /// On top of the staircase, a learner who goes on past the ring day after day is asked what they do. From the end of
+    /// the `overshootFromStudyDay`-th study day, when `overshootHits` of the last `overshootWindow` study days reached
+    /// `overshootRatio` × their own time (`worked` / `time`), the time is the larger of the staircase's and the
+    /// `overshootQuantile` quantile of those days' `worked`, at most `overshootJump` × the last study day's time and
+    /// `timeRange.upperBound` (reason `sustainedOvershoot`, only when that is above the staircase's). A learner who stops
+    /// at the ring never works `overshootRatio` × the time, so the step never acts for them (`Tools/ring-sim/overshoot.md`).
     public static func nextTime(after days: [RingDay]) -> (time: Double, reason: SizeReason) {
+        let step = staircaseTime(after: days)
+        guard let last = days.last(where: \.studied) else { return step }
+        // The last study days, newest first, as many as the rule has to wait for or read, whichever is more.
+        let recent = Array(days.reversed().lazy.filter(\.studied).prefix(max(overshootFromStudyDay, overshootWindow)))
+        let window = recent.prefix(overshootWindow)
+        guard recent.count >= overshootFromStudyDay, window.filter({ $0.worked / $0.time >= overshootRatio }).count >= overshootHits
+        else { return step }
+        let work = quantile(overshootQuantile, of: window.map(\.worked).sorted())
+        let raised = min(max(step.time, work), timeRange.upperBound, max(step.time, overshootJump * last.time))
+        return raised > step.time ? (raised, .sustainedOvershoot) : step
+    }
+
+    /// The staircase alone: what `nextTime(after:)` is before the sustained-overshoot step.
+    private static func staircaseTime(after days: [RingDay]) -> (time: Double, reason: SizeReason) {
         guard let last = days.last(where: \.studied) else { return (initialSeconds, .start) }
         if last.closed && !last.filled { return (last.time, .smallPlan) }
         guard last.closed else { return (max(last.time * shrinks, timeRange.lowerBound), .ringOpen) }

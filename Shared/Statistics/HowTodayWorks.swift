@@ -118,7 +118,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "The time follows your days: rings you close make it grow, a ring left open makes it smaller, and a ring closed on a plan smaller than the time or a day without study leaves it as it was. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan."
+                "The time follows your days: rings you close make it grow, a ring left open makes it smaller, and a ring closed on a plan smaller than the time or a day without study leaves it as it was. Going well past the ring on most days lifts it to what you do. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan."
         )
         return Section(title: String(localized: "Today's time"), rows: rows, footer: footer)
     }
@@ -130,6 +130,7 @@ struct HowTodayWorks: Equatable, Sendable {
         case .ringClosed, .closedInARow: String(localized: "Ring closed")
         case .ringOpen: String(localized: "Ring open")
         case .smallPlan: String(localized: "Plan under the time")
+        case .sustainedOvershoot: String(localized: "Past the ring")
         }
     }
 
