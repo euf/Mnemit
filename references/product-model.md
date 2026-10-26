@@ -181,8 +181,8 @@ row of small rings for the week; a calendar of rings. Mnemit takes that grammar 
   (secondary on the grouped background); Liquid Glass is only for the bars and the controls that float over content:
   Study and search in the iPhone's bottom toolbar, the toolbar groups. Buttons inside content are bordered, not glass.
 - **A screen** is a large title (on the iPhone) over grouped sections; Today's date is the navigation subtitle. A section
-  is one card: its title inside, top left, in title case, a chevron where it opens more; never a box inside a box, and
-  corners concentric with their container.
+  is one card under its title (the list's own section header, title case), a chevron on a row that opens more; never a
+  box inside a box (tiles stand on the page, not in a card), and corners concentric with their container.
 - **A hero card** holds the ring on the left and its figures on the right: each figure a label over a value, the value
   in a text style with rounded numerals and in its entity's colour (the ring's indigo for the minutes, the streak's
   orange for the days), the others in the primary colour; each value carries its unit or its label says it ("Day streak
