@@ -27,10 +27,11 @@ struct SessionSnapshotMacTests {
             pace: pace, roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0)
     }
 
-    private func write(_ model: SessionViewModel, name: String, done: Int? = nil) async throws {
+    /// `defaults` stand in for the preferences, for a session that reads the setting "Hard and Easy Buttons".
+    private func write(_ model: SessionViewModel, name: String, done: Int? = nil, defaults: UserDefaults = .standard) async throws {
         for dark in [false, true] {
             let ring = DailyRingModel(progress: done.map(progress(done:)))
-            let hosting = NSHostingView(rootView: SessionView(model: model, ring: ring, onClose: {}).frame(width: 800, height: 600).brandTint())
+            let hosting = NSHostingView(rootView: SessionView(model: model, ring: ring, onClose: {}).defaultAppStorage(defaults).frame(width: 800, height: 600).brandTint())
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -68,6 +69,24 @@ struct SessionSnapshotMacTests {
         model.reveal()
         try await write(model, name: "4-first-showing", done: 3)
         withExtendedLifetime(undoManager) {}
+    }
+
+    /// A card on a later showing with its answer open: two buttons, Forgot and Good, and with the setting "Hard and Easy
+    /// Buttons" four.
+    @Test(arguments: [false, true])
+    func laterShowing(four: Bool) async throws {
+        let suite = "mnemit.tests.answer-buttons-\(four)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(four, forKey: GradeChoice.showsFourButtonsKey)
+        let document = try VocabularyDocument(deck: Deck(cards: [Card(question: "το σπίτι", answer: "дом · the house")]))
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, rounds: RoundGuide(ends: [6, 12]))
+        model.reveal()
+        step(undoManager) { model.grade(.again) }
+        #expect(model.currentCard?.isNew == false)
+        model.reveal()
+        try await write(model, name: "5-later-showing-\(four ? "four" : "two")", done: 3, defaults: defaults)
     }
 
     /// Catch Up after the ring: the header's ring is full and the stack goes on under the card, the cards left in the plan.

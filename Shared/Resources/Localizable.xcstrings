@@ -7605,6 +7605,28 @@
         }
       }
     },
+    "Hard and Easy Buttons": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasten für Schwer und Leicht"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κουμπιά Δύσκολο και Εύκολο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кнопки «Трудно» и «Легко»"
+          }
+        }
+      }
+    },
     "Hide Inspector": {
       "localizations": {
         "de": {
@@ -8283,6 +8305,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Горячие клавиши"
+          }
+        }
+      }
+    },
+    "Keys 2 and 4 give Hard and Easy either way.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Tasten 2 und 4 geben Schwer und Leicht, so oder so."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Τα πλήκτρα 2 και 4 δίνουν Δύσκολο και Εύκολο σε κάθε περίπτωση."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клавиши 2 и 4 дают «Трудно» и «Легко» в любом случае."
           }
         }
       }
@@ -12947,6 +12991,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Смахни дальше в направлении стрелки: карточка уйдёт, когда ты пройдёшь порог."
+          }
+        }
+      }
+    },
+    "Swipe up for Easy and down for Hard either way.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nach oben wischen gibt Leicht, nach unten Schwer, so oder so."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σύρσιμο προς τα πάνω για Εύκολο, προς τα κάτω για Δύσκολο, σε κάθε περίπτωση."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свайп вверх даёт «Легко», вниз — «Трудно» в любом случае."
           }
         }
       }

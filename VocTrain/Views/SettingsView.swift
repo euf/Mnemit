@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// The settings of the app: the daily reminder, on or off and at what time, and the way
-/// back to the introduction.
+/// The settings of the app: the daily reminder, on or off and at what time, whether Hard and Easy
+/// have buttons, and the way back to the introduction.
 struct SettingsView: View {
     var reminders: Reminders
     var showIntroduction: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @AppStorage(GradeChoice.showsFourButtonsKey) private var showsFourButtons = false
 
     var body: some View {
         @Bindable var reminders = reminders
@@ -22,6 +23,12 @@ struct SettingsView: View {
                     Text("Reminder")
                 } footer: {
                     footer
+                }
+
+                Section {
+                    Toggle("Hard and Easy Buttons", isOn: $showsFourButtons)
+                } footer: {
+                    Text("Swipe up for Easy and down for Hard either way.")
                 }
 
                 Section {
