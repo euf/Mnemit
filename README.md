@@ -12,10 +12,12 @@ are in [`references/`](references/).
 
 ### Grading
 
-- **One "no", three "yes".** Forgot is red and set apart; Hard, Good and Easy are three greens
-  under "Recalled". FSRS works as well or better with consistent grading as with four
+- **One "no", three "yes".** Forgot is red and set apart; Hard, Good and Easy are three greens. FSRS works as well or better with consistent grading as with four
   free choices, and its costliest input is Hard on a forgotten card, which still grows the
   interval ([`fsrs-research.md`](references/fsrs-research.md) §1).
+- **A new card's first showing is asked.** A word never seen is asked like any card: question,
+  Show Answer, the four grades. Its red button reads Don't know in place of Forgot, the grade underneath
+  is the same, and later showings read Forgot ([`docs/adr/0007-first-showing-is-asked-as-dont-know.md`](docs/adr/0007-first-showing-is-asked-as-dont-know.md)).
 - **Swipes with dead zones.** ← Forgot, → Good, ↑ Easy, ↓ Hard. The recognised sectors follow a
   clock face, 0 at the top, clockwise: Easy 330°…45°, Good 45°…135°, Hard 135°…210°, Forgot
   240°…300°, and nothing in the two gaps between the "no" and the "yes" sectors (210°…240°,
@@ -48,20 +50,20 @@ are in [`references/`](references/).
   plan (cards in learning, then review cards with the lowest recall probability first, then new
   cards within the day's limits, taken from the decks in turn), each card from the deck whose next
   card is most urgent and graded into that deck. Study This Deck runs it over one deck. When
-  today's cards are done the stack rests ("Ring closed") and offers one way on: Catch Up when the
-  plan has cards left; once the stack is done, Push On, ten new words from the decks, mixed, whose reviews make
-  the next days harder. A card is never reviewed before it is due: an early review gains FSRS
+  the ring is closed the stack rests ("Ring closed") and offers Catch Up while the plan has cards
+  left; once the plan is done it offers Learn 10 New Words, ten new cards from the decks, mixed, whose
+  reviews make the next days harder. A card is never reviewed before it is due: an early review gains FSRS
   little, and more work is a new card.
 - **One ring a day, two rests at most.** The model, and what was dropped from 4.0, are in
   [`learning-flow.md`](references/learning-flow.md). Inside, the day has a time in minutes of work at your own pace,
-  and its first two minutes are the streak step; only How Today Works names them. Today shows the ring with the cards left in it (a check once it is closed), the streak chip under it ("≈ 2
+  and its first two minutes are the streak step; only How It Works names them. Today shows the ring with the cards left in it (a check once it is closed), the streak chip under it ("≈ 2
   min to keep your 12-day streak" before the streak step, then "12-day streak") and the time the ring needs. The button under it names what comes next: Study while the ring is open, Catch Up once it is
-  closed and the plan has cards left, Push On once the plan is done. The streak is kept once the streak
+  closed and the plan has cards left, Learn 10 New Words once the plan is done. The streak is kept once the streak
   step is done, and Study rests there once
   ("Streak kept": Keep Going or Done for Now); the next rest is the closed ring, with the rings of
   the last seven days. The time of a day comes from
   your review logs: two and a half minutes on the first day, then more after rings you close (15 % after every
-  second in a row) and a quarter less after one left open, between two minutes and an hour; a day without study
+  second in a row) and 22.5 % less after one left open, between two minutes and an hour; a day without study
   changes nothing. New cards are admitted up to the time it leaves after the day's reviews, so a
   break does not turn into a wall of work.
 - **The ring counts cards, and every answer recalled moves it.** A ring in the manner of Apple
@@ -70,9 +72,9 @@ are in [`references/`](references/).
   review cards due, overdue ones included, and the new cards the day's time admits. A card is done
   once its last review of the day left it due on a later day, so a review card graded Hard,
   Good or Easy is done at once, a new card after its learning steps, and a card graded Forgot
-  when it is through relearning. A card counts once, however many reviews it took. Today says
-  "12 of 24 cards" and, once the ring is closed, "24 cards today · 3 left"; done and left add up to the
-  plan. The ring also shows the cards on their way: an
+  when it is through relearning. A card counts once, however many reviews it took. Today
+  counts the cards left in the ring ("12 cards left") and, once the ring is closed, the line says "3 left"
+  while the stream's header says "24 cards today"; done and left add up to the plan. The ring also shows the cards on their way: an
   answer recalled moves its card by the answers recalled today over those plus the steps still
   needed, so a new word is half a card after its first Good; Forgot moves nothing, and nothing
   is taken back (`Card.credit`). Each review records how long its
@@ -83,9 +85,9 @@ are in [`references/`](references/).
   in neither count. Older logs without times are priced from the pauses between reviews, by their
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
-  cards added later, Push On and Catch Up count as cards done beyond it ("31 cards today"). The ring is
+  cards added later, Learn 10 New Words and Catch Up count as cards done beyond it ("31 cards today"). The ring is
   full at the goal and goes on over itself past it, up to three laps. The streak is the chip under Today's ring, the flame and
-  one sentence: the flame is lit once the day keeps the streak, grey otherwise; the rings themselves hold the cards left, or nothing
+  one sentence: the flame is lit once the day keeps the streak, an orange outline with an exclamation mark the day after a missed one, a grey outline otherwise; the rings themselves hold the cards left, or nothing
   where they are small. A missed day is repaired when the next day closes its ring, the streak step
   is not enough then; two missed days in a row end the streak. Everything is computed
   from the review logs; nothing extra is stored. A study day starts at 4:00.
@@ -145,8 +147,8 @@ are in [`references/`](references/).
   fit. The queue cannot run away, since intake is what the reviews leave (Reddy et al. 2016:
   a review queue fed faster than it is served grows without bound), and a break is paced by the
   time instead of becoming a wall. The target recall stays at 0.9, the value Anki's guide calls
-  a good balance, and only the time adapts. Push On is the one way past the time, and
-  says what it costs. Sources and measurements: [`ring-design.md`](references/ring-design.md),
+  a good balance, and only the time adapts. Learn 10 New Words is the one way past the
+  time: ten new cards at once, whose reviews fill the next days. Sources and measurements: [`ring-design.md`](references/ring-design.md),
   [`day-model-research.md`](references/day-model-research.md), Part 1 §3.
 - **FSRS-6, fitted per deck, without a button.** Each deck starts with the default
   parameters, or with the FSRS settings of the Anki preset it was imported from. The
@@ -191,6 +193,8 @@ are in [`references/`](references/).
 - **CSV/TSV that Anki reads as it is.** Exports start with Anki's `#separator`, `#html` and
   `#columns` lines and carry the word key and the card kind; imports accept them back. Media are
   not part of a table and stay out of it.
+- **No MacVocTrain 1 import.** Cards come in through Add Cards, `deck-from-tsv`, CSV/TSV files and
+  Anki packages; Mnemit reads no MacVocTrain 1 documents.
 - **Ready-made decks come from AnkiWeb.** Mnemit ships no content: the good shared decks
   are licensed for personal study and cannot be bundled. "Shared Decks on AnkiWeb" opens
   AnkiWeb (and MintDeck) in a plain web view inside the app; a deck the learner downloads
@@ -222,18 +226,21 @@ are in [`references/`](references/).
 ### Constraints that shaped the above
 
 - Mnemit is signed with a free Apple ID team. Such a team gets no iCloud container, so the
-  app cannot create its own iCloud folder: the learner picks one once. The home-screen
+  app cannot create its own iCloud folder: the learner picks one once. The
   widget gets its numbers from the app through a shared keychain item, since App Groups
   are not relied on for free teams.
 
 ## Platforms
 
 - **iPhone** (iOS 26): study, browse and edit cards, add words after a lesson (one card or
-  a pasted `word = translation` list), decks, options, import and export, reminders, widget.
-- **Mac** (macOS 26): the same plus the card table with filters and inspector, statistics,
-  the optimizer, study by typing, and a Today window (Window ▸ Today, ⌘0): the day's ring over the decks
-  of the Mnemit folder, with the same Study, Catch Up and Push On button.
-- **How Today Works** (a sheet from the last row of the Progress screen on the iPhone, a window in the Study menu on the Mac): the numbers
+  a pasted `word = translation` list), decks, options, import and export, reminders, and a widget
+  (a ring with the cards left and the streak).
+- **Mac** (macOS 26): one window. Its sidebar lists Today (the cards left as its badge), Progress and the
+  decks of the Mnemit folder; Today holds the day's ring over all of them with the same button as the
+  iPhone (Study, Catch Up or Learn 10 New Words); a deck's page has its strip with Study This Deck and
+  either the card table (filters, inspector, multi-select, keyboard) or its statistics. Study is by
+  keys and buttons, and neither app has a typed answer. The Mac has no reminders and no widget.
+- **How It Works** (the last row of the Progress screen, a sheet on both apps): the numbers
   and rules under the ring, read-only: the plan, the day's time, pace, streak, words in memory and each deck's FSRS settings.
 
 ## Build and test
