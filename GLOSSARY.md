@@ -212,9 +212,12 @@ A card's stage in MacVocTrain 1, which fixed its next interval. Stability takes 
 ## Mnemit: the day, the ring, the streak
 
 Terms of the fork. Each entry gives the term in code, the words on screen (EN / DE) and the
-Russian word. The rule behind them: **a card is never a review, and a review is never a card.**
+Russian word. The product model, the one description of what Mnemit is, is `references/product-model.md`; this section
+names its terms. Seven entities appear on screen: **Deck**, **Card**, **Stack**, **Ring**, **Streak**, **Words learned**
+and **Medal**. The rule behind the numbers: **a card is never a review, and a review is never a card.**
 A day is measured in cards; reviews only price the time. The day has a time in seconds, and the app learns it from the work
-the learner really does.
+the learner really does. Minutes on screen ("≈ 2 min") translate cards into a decision and are estimates at the
+learner's own pace.
 
 **Review** (on screen: not counted; RU «оценка»):
 One grade of one card, as above: one swipe, button or key. A card can take several reviews on
@@ -236,18 +239,20 @@ where the cost reaches 120 s, and the goal ends the day: `DayRounds.ends` has at
 when they coincide. Doing the step keeps the streak (`DailyProgress.streakKeptToday`) and Study rests
 there once; the goal is the ring's rest. `DailyProgress` holds `rounds` (the number of ends),
 `roundsDone`, `roundEnds`, `cardsToNextRound` and `minutesToNextRound`, at the pace the day began with.
-A day that began with an empty plan cuts the cards as they stand. Before the step the streak chip of Today says
+A day that began with an empty plan cuts the cards as they stand. Before the step the sentence of Today says
 "≈ 2 min to keep your 12-day streak"; How It Works names the step (`references/learning-flow.md`).
 _Avoid_: round, session, lap, segment
 
 **Day's time** (RU «время дня»):
 The seconds of work the day asks, 120 to 3600, never rounded (`DailyProgress.time`). It comes from the
 review logs alone, forward from the first study day, so every device that reads the same logs gets the
-same: 150 s before any study; then the time of the last study day (a day with work) times 1.15 when its ring was
+same: 150 s before any study; then a staircase on the last study day (a day with work): times 1.15 when its ring was
 the second (fourth, …) in a row closed on a goal that filled the time, the same time after the first of such a run
-or a ring closed on a smaller plan, and times 0.775 when it stayed open, held to 120 to 3600
-(`DailyGoal.nextTime(after:)`). The learner is never told the rule. Nothing else changes it. The day's time
-sets the goal and the admission of new cards.
+or a ring closed on a smaller plan, times 0.775 when it stayed open; above it the sustained-overshoot step from the 8th
+study day (rule D, `DailyGoal.nextTime(after:)`): when the work reached 1.5 × the day's time on 3 of the last 4 study days
+(a day **past the ring**, the label of the Why column in How It Works), the time becomes the larger of the staircase's and
+the 25th percentile of those four days' work, at most × 1.5 a day. Held to 120 to 3600. The learner is never told the rule.
+Nothing else changes it. The day's time sets the goal and the admission of new cards.
 _Avoid_: capacity, limit, quota, level
 
 **Admission** (new-card allowance; RU «допуск новых»):
@@ -260,56 +265,54 @@ the ceilings, by largest remainder (`DailyGoal.split`); each deck's share is its
 today count against it, and Learn 10 New Words comes beyond it.
 _Avoid_: new-card limit, daily new cards
 
-**Daily goal** (the K of "M of K cards" / „M von K Karten“; RU «цель дня»):
+**Daily goal** (in code and How It Works only, as "Daily goal (cards)"; DE „Tagesziel“; RU «цель дня»):
 The cards of the plan, as it stood when the study day began at 04:00, that fit the day's time:
 learning cards and reviews in the stream's order, then new cards, at the day's prices, up to the
 time in seconds; at least one card if the plan has any (`DayRounds.goal`). With admission the
 plan normally fits. After a break the reviews beyond the day's time stay in the plan and are done
-beyond the goal. The goal stays for the day: cards added later, Learn 10 New Words and an Again don't raise it. A day
-that began with an empty plan takes the plan as it stands (`DailyGoal.goal`).
+beyond the goal. The goal stays for the day: cards added later, Learn 10 New Words, Study These Now and an Again don't raise
+it. A day that began with an empty plan takes the plan as it stands (`DailyGoal.goal`).
 _Avoid_: reviews goal, target, quota
 
-**Done card** (the M of "M of K cards"; RU «сделанная карточка»):
+**Done card** (the cards the ring counts; RU «сделанная карточка»):
 A card whose last review of the study day left it due on a later day: FSRS let it go. A review
 card answered Hard, Good or Easy is done at once; a new card after its last learning step; a
 card answered Again once it leaves relearning. It counts once a day, however many reviews it
 took (`DeckActivity.done`).
 _Avoid_: reviewed card, answered card, «повторённая карточка»
 
-**Cards left** ("N cards left" / „noch N Karten“; RU «осталось»):
-Cards of the plan not done yet (`StudySession.counts(...).total` now). Done + left = the plan,
-which is the goal or more: the reviews beyond the day's time are left, too.
-
 **Backlog** (RU «хвост»):
-Overdue cards, part of the plan, worked off as the day's time allows.
+Overdue cards, part of the plan, worked off as the day's time allows: after the ring they are the cards of Catch Up, priced
+as "≈ 12 min of reviews left".
 
 **Ring** (RU «кольцо»):
-Done cards against the daily goal, with the **cards underway**: a card reviewed today and still due
+How far today is: done cards against the daily goal, with the **cards underway**: a card reviewed today and still due
 today counts as the part of a card its answers recalled made, recalled answers over those plus the
 steps it still needs (`Card.credit`), so every answer recalled moves the ring and Forgot moves
 nothing. The ring is full at done ≥ goal, in whole cards, and goes on over itself past it, as the Fitness rings do,
-to three laps: done cards beyond the goal (Catch Up, Learn 10 New Words) count as cards done ("31 cards today") and
-draw the second lap. `DailyRing.fraction` is capped at 1 and says whether the goal is met; the drawing takes
-`DailyRingFigure.fraction`. Past days draw their own laps (`DayRecord.ringShare`). Its middle holds the cards left, large, with "cards left" as a caption where the ring is big enough
-(from 88 pt; the figure alone from 56 pt), and a `checkmark` once it is closed (`RingCenter`); the small rings
-of the bars and the week are empty inside. No flame and no days in any ring.
+to three laps: done cards beyond the goal (Catch Up, Learn 10 New Words, Study These Now) draw the second and third lap.
+`DailyRing.fraction` is capped at 1 and says whether the goal is met; the drawing takes
+`DailyRingFigure.fraction`. Past days draw their own share of their goal (`DayRecord.ringShare`). The ring is a picture: it holds
+no number and no flame at any size, and the minutes and the streak are in the sentence beside it.
+_Avoid_: progress bar, goal ring, «счётчик»
 
 **Streak** (RU «стрик»):
 Study days in a row that kept it. A day keeps it with its streak step done (done ≥ the first end of
 `DayRounds.ends`); an empty plan counts. One missed day is repaired when the next day closes its ring
 (done ≥ goal): the streak step of that day is not enough, and then the streak starts anew with
-it. Two missed days in a row end the streak. Days before `DailyGoal.planRuleStart` (23.10.2026)
-count with one review. The streak is a chip outside the ring, the flame and one sentence (`StreakChip`: "12-day streak",
-"≈ 2 min to keep your 12-day streak", "Close the ring to save your 12-day streak"; **Flame**).
+it. Two missed days in a row end the streak; the best run stays in Progress. Days before `DailyGoal.planRuleStart` (23.10.2026)
+count with one review. On screen the streak is a flame and its days in the sentence (`NextStep`): "12-day streak",
+"≈ 2 min to keep your 12-day streak", "≈ 6 min to close the ring and save your 12-day streak" (**Flame**).
+_Avoid_: streak chip, series, «серия»
 
 **Flame** (the streak's sign on every screen; RU «пламя»):
 The streak's symbol, drawn by `StreakFlame(state:)` from the `StreakState` of the day
 (`DailyProgress.streakState`), with three states in shape and colour: **open**, a grey outline, while today's
 streak step is not done; **kept**, `flame.fill` in `Color.streak`, once it is done; **at risk**, an outline in
 `Color.streak` followed by an `exclamationmark`, on the day after a missed one until the ring closes
-(`DailyProgress.isStreakAtRisk`). It stands outside every ring: in the streak chip on Today and the rests and in
-the widget, beside the ring in the study bar and the Mac's header, and above the days on the Progress screen.
-VoiceOver says the state: "12-day streak, kept today", "not kept yet"; at risk it reads the chip's sentence.
+(`DailyProgress.isStreakAtRisk`). It leads the sentence on Today, the rests and the widgets, stands beside the ring in the
+stream's header, and is above the days on the Progress screen; it is never inside a ring.
+VoiceOver says the state: "12-day streak, kept today", "not kept yet"; at risk it reads the sentence.
 _Avoid_: lit and unlit flame, streak icon
 
 **Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):
@@ -345,19 +348,63 @@ how many cards are left, and keeps one price: the time left over the cards left.
 _Avoid_: seconds per review, seconds per answer
 
 **Stack** (Study; RU «стопка дня»):
-Study without sessions: the day's plan over all decks, mixed by FSRS's urgency, with a rest after its
-streak step ("Streak kept"), then a rest at the ring ("Ring closed", where Catch Up goes on with the
-plan); it ends with the plan (`StudyStream`; the type keeps the old name "stream"). A card is never
+The cards left before the next moment of the day, drawn as up to four edges under the card, fewer at the end, never as a
+number. Study without sessions: the day's plan over all decks, mixed by FSRS's urgency, in a stack that ends at each
+moment (**Streak kept**, **Ring closed**, **All done**); after the ring the stack is the cards of Catch Up, of Learn 10 New
+Words or of Study These Now. It ends with the plan (`StudyStream`; the type keeps the old name "stream"). A card is never
 reviewed before it is due. The paths through a day: `references/learning-flow.md`, "The journey".
 _Avoid_: session (except for the upstream types that still carry the name)
 
 **Learn 10 New Words** (the button of the stack's end; DE „10 neue Wörter lernen“; RU «Выучить 10 новых слов»):
-Ten new cards beyond the day's limits once the stack is done, shared over the decks that have new cards
+Ten new cards beyond the day's limits, shared over the decks that have new cards
 left and asked mixed (`StudyModel.addNewCards`). It raises the stakes: their reviews come in the next days;
-the day's time stays as it is. Today, the deck screen and the rests carry it as the third button of the day
-after Study and Catch Up (`DayAction`). The code keeps the old name: `DayAction.pushOn`,
+the day's time stays as it is. Today carries it as the third button of the day after Study and Catch Up
+(`DayAction`), the rests and the deck screen as well. The code keeps the old name `DayAction.pushOn`,
 `StudyModel.Entry.pushOn`.
-_Avoid_: Push On, +10 new, extra new cards, Go on
+_Avoid_: +10 new, extra new cards, Go on
+
+**Words learned** ("412 words learned · +12 today", "Words learned" in the totals of Progress; DE „Gelernte Wörter“; RU «выученные слова»):
+The gain the app headlines: whole words whose Word → Meaning card has left learning, is in the review phase, is not
+suspended and lies in an active deck (`WordsLearned`). A card without a kind counts as a word; a word held twice (the same
+**Word key**) counts once, a card without a key is a word of its own. A lapse takes the word out until it is relearned. The
+**gain of the day** (`shownGain`, "+12 today") is the count now less the count at 04:00 from the card states before the day's
+reviews, and is left out on a day that has none. Words-learned medals: 10, 50, 100, 250, 500, 1000, then every 1000.
+_Avoid_: words in memory (the sum of recall probabilities, a detail), vocabulary size
+
+**Medal** (DE Medaille; RU «медаль»):
+A moment worth remembering, shown as a toast when it is earned and kept on the shelf of Progress (All Medals): streak
+milestones (3, 7, 14, 30, 61, 91, 183, 365, 548, 730 days), First ring, Perfect week, Comeback, **Double ring** and
+**Triple ring**, and Words learned. A medal is for consistency and gain, never for the cards answered. The next tier of
+a line shows as a grey medal.
+_Avoid_: badge (that is the "1" on the app's icon), achievement (the code's name, `Achievement`), «достижение»
+
+**Double ring** / **Triple ring** (DE „Doppelter Ring“ / „Dreifacher Ring“; RU «Двойное кольцо» / «Тройное кольцо»):
+Medals for a day whose ring reached two or three laps of the goal (`DayRecord.ringShare` ≥ 2 or 3). They are earned on
+the first such day, derived from the day records, so history earns them; a three-lap day earns both. The goal's size keeps
+them rare (sustained overshoot, **Day's time**).
+
+**Streak kept** (the first moment of the day; DE „Serie gehalten“; RU «стрик сохранён»):
+The end of the first stack, when the streak step is done: today counts in the streak and the flame fills. The rest shows the
+streak, the medal and the price of the ring, with **Keep Going** and **Done for Now**. After a missed day there is no such
+rest: only the closed ring keeps the streak ("Streak saved").
+
+**Ring closed** (the second moment; DE „Ring geschlossen“; RU «кольцо закрыто»):
+The end of the stack that closes the goal: the day's learning is done and the ring bursts. The rest shows the medal, the
+words learned, the week and "≈ 12 min of reviews left" when due cards remain, with **Done** and **Catch Up**, or **Done**
+and **Learn 10 New Words** when none remain.
+
+**All done** (the third moment; on screen "All done for today"; DE „Alles für heute erledigt“; RU «всё на сегодня сделано»):
+The end of the plan's last due card, Catch Up included: nothing is due until tomorrow. It is also the title of a rest that
+stands where the ring's moment lies behind the stream. On most days the ring takes the whole plan and this moment does not
+exist.
+
+**Study These Now** (the button of Add Cards and of the import into a new deck; DE „Diese jetzt lernen“; RU «Учить их сейчас»):
+A stream over the one deck the cards went to: the cards just added first, then that deck's plan (`StudyModel.Entry.studyNow`,
+`StudyStream.addCards`). It asks only the cards a stream would ask now (new, unlocked and not buried, so the second
+direction of a pair waits for its first). The added cards take the place of the day's new cards, so tomorrow's load is the
+same as if the deck had chosen them, and they count toward the ring and its laps. The import offers it for a table of 1 to 50
+cards into an empty deck.
+_Avoid_: Study Now, Learn Added, «учить добавленные»
 
 **Word → Meaning / Meaning → Word** (the direction of a card; DE „Wort → Bedeutung“ / „Bedeutung → Wort“;
 RU «Слово → значение» / «Значение → слово»):
@@ -369,10 +416,11 @@ rule.
 _Avoid_: Greek → translation, translation → Greek, direction (alone, on screen)
 
 **How It Works** (DE „So funktioniert es“; RU «Как это работает»):
-The screen that tells the learner what the ring, Catch Up and Learn 10 New Words are, in three plain
-sentences, and then the numbers under the day: the plan, the day's time, the pace, the streak, the words in
-memory, the swipes (iPhone), the options and the FSRS figures of each deck. The last row of the Progress screen; on the
-Mac a sheet of the Progress page. The types keep the old name: `HowTodayWorks`, `HowTodayWorksView`.
+The screen that tells the learner the three moments of the day in plain sentences (the first minutes keep the streak; the
+ring is the goal and Catch Up studies the reviews waiting; nothing due means all done), and then the numbers under the day:
+the plan, the day's time, the pace, the streak, the words in memory, the swipes (iPhone), the options and the FSRS figures of
+each deck. The last row of the Progress screen; on the Mac a sheet of the Progress page. The types keep the old name:
+`HowTodayWorks`, `HowTodayWorksView`.
 _Avoid_: How Today Works, statistics (those are of a deck)
 
 **Don't know** (the name of Again's button on a card's first showing; DE „Weiß ich nicht“; RU «Не знаю»; EL «Δεν ξέρω»):
@@ -382,26 +430,18 @@ the position, the ← key, the left swipe and the red are the same, and FSRS rec
 (`Grade.buttonTitle(isNew:)`, `docs/adr/0007-first-showing-is-asked-as-dont-know.md`).
 _Avoid_: introduction, new word (as a card state), unknown
 
-**Words in memory** ("≈ N words in memory"; RU «слов в памяти»):
+**Words in memory** ("In memory now" in How It Works, the Memory section of Progress; DE „Wörter im Gedächtnis“; RU «слов в памяти»):
 The number of words the learner would recall right now, from FSRS alone: the sum, over the
 recognition cards that have been reviewed and are not suspended, of each card's probability of
 recall (`Scheduler.recallProbability`, `MemoryEstimate`). A word is its recognition card (a card
 without a kind, from an older deck, is one too); a production card is the same word the other way
 round and counts nothing, so a word with two cards counts once. A card never reviewed counts
-nothing; one in learning or relearning counts by the same function from its state. Nothing is
-stored, and the number is the model's own prediction, so it is honest by construction: it grows
-when the learner learns, falls over days without reviews and grows back with the reviews, and no
-count of cards or reviews can inflate it. The probability counts whole study days since the last
-review, as everywhere in the app: the number moves at the study day's change (04:00), a day
-without reviews has a gain of 0, and the fall shows against the day before. It is shown rounded
-down, so "≈ 412" never promises more than the model says. The **gain of the day** is now minus the
-number at 04:00, which takes each card as it stood before the day's reviews (replayed from its log,
-as `DeckActivity.plan` does) and is rounded to the nearest word. **Milestones** are 50, 100, 250,
-500, 1000, 1500, 2000, 3000 and 5000: the next one above the number now, and the one crossed
-today (the number at 04:00 below it, now at or above it). The decks add up (`MemoryEstimate.total`), and a
-word that several decks hold, or one deck holds twice, counts once, at the highest probability among its cards
-(**Word key**).
-_Avoid_: words learned, vocabulary size, «выученные слова»
+nothing. Nothing is stored; the number is the model's own prediction: it grows when the learner learns, falls over days
+without reviews and grows back with the reviews. The probability counts whole study days since the last review, so the
+number moves at the study day's change (04:00). The decks add up (`MemoryEstimate.total`), and a word that several decks
+hold, or one deck holds twice, counts once, at the highest probability among its cards (**Word key**). It is a detail for
+the learner who looks; the gain Today headlines is **Words learned**.
+_Avoid_: vocabulary size
 
 **Word key** (on screen: "Word Key" in the card detail, "Also in <deck>", "Similar to … in <deck>"; RU «ключ слова»):
 The word a Greek card is about, written `lemma#article` in `Card.note` and compared by `WordKey`. Two cards hold the

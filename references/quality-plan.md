@@ -68,24 +68,7 @@ Mac).
 
 ## 4. The model on one page
 
-On screen there are seven nouns, **Today, Deck, Card, Word, Ring, Streak, Words in memory**, and three verbs,
-**Study, Catch Up, Learn 10 New Words**. Plan, round, review, stability, word key and FSRS live in How It Works,
-Options and the Details of a card.
-
-Rules every surface keeps:
-
-1. The ring is the day's cards and its middle holds the same quantity: the cards left, large, where a number fits
-   (from 56 pt), a `checkmark` once the ring is closed, nothing in the small rings. The streak is a chip outside
-   the ring, the flame and its sentence. No flame and no days in a ring, at any size.
-   Revised 26.10: rings hold cards left, the streak is a chip outside the ring (`references/ring-streak-design.md`).
-2. The streak's state is shape and colour: `flame` outlined in secondary grey until the day's streak step is
-   done, `flame.fill` in `Color.streak` after; at risk (the day after a missed one) the outline turns
-   `Color.streak` and an `exclamationmark` follows it. Colour is never the only sign.
-3. One definition per count (§4.1), taken from the same function on every screen.
-4. Cards are the work, words the gain: the ring and the decks count cards, the gain line counts words.
-5. One action per state, named by what it does: Study (ring open), Catch Up (ring closed, plan has cards left),
-   Learn 10 New Words (plan done).
-6. No label names a language: "Word → Meaning", "Meaning → Word".
+The model is `product-model.md`.
 
 ### 4.1 Counts
 
