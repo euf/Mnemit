@@ -269,15 +269,15 @@ struct DeckChangeTests {
         #expect(deck.learningOptions.parameters == options.parameters)
     }
 
-    @Test func theOptimizerOptionAloneLeavesTheCards() throws {
+    @Test func anOptionThatChangesNoParameterLeavesTheCards() throws {
         let studied = studiedCard()
         var deck = try Deck(cards: [studied])
         var options = LearningOptions()
-        options.optimizeFromRevealed = false
+        options.fuzzing = false
         let change = try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing))
         _ = deck.apply(change, day: 100)
         #expect(deck.cards == [studied])
-        #expect(!deck.learningOptions.optimizeFromRevealed)
+        #expect(!deck.learningOptions.fuzzing)
     }
 
     @Test func changesToTheContentStampTheirTimeInWholeSeconds() throws {

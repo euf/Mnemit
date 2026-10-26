@@ -31,13 +31,9 @@ public struct LearningOptions: Hashable, Sendable {
     public var productionUnlockDays: Int = 7
     /// In which order a session introduces new cards when it can't take all of them.
     public var newCardOrder: NewCardOrder = .deckOrder
-    public var caseSensitive: Bool = true
     /// Spreads review intervals slightly so cards learned together don't stay clustered.
     public var fuzzing: Bool = true
     public var parameters: FSRSParameters = .default
-    /// Whether the optimizer also learns from revealed reviews. Off, only typed reviews
-    /// (those of upstream's decks) are its targets.
-    public var optimizeFromRevealed: Bool = true
     /// Lapses (Again on a card in the review phase) after which a study session suspends
     /// the card as a leech, and after every further multiple of it; 0 never does. A card is
     /// a leech from that many lapses on, resumed or not: `Card.isLeech(threshold:)`.

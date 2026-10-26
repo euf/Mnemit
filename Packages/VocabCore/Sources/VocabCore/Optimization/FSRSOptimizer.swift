@@ -50,7 +50,7 @@ public struct FSRSOptimizer: Sendable {
 
     public init(cards: [Card], learningOptions: LearningOptions, calendar: StudyCalendar) {
         self.init(
-            items: TrainingItem.items(from: cards, calendar: calendar, revealedAreTargets: learningOptions.optimizeFromRevealed),
+            items: TrainingItem.items(from: cards, calendar: calendar),
             relearningSteps: learningOptions.steps
         )
     }
@@ -61,8 +61,7 @@ public struct FSRSOptimizer: Sendable {
     }
 
     /// Reviews the optimizer learns from: those on a later study day than the previous
-    /// review of the same card, of cards with a complete review log; revealed ones only
-    /// with `LearningOptions.optimizeFromRevealed`.
+    /// review of the same card, of cards with a complete review log.
     public var reviewCount: Int { items.count }
 
     // MARK: - Training

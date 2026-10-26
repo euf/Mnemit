@@ -115,20 +115,22 @@ struct DeckFileTests {
         #expect(deck.learningOptions.newProductionPerSession == nil)
         #expect(deck.learningOptions.productionUnlockDays == 14)
         #expect(deck.learningOptions.newCardOrder == .newestFirst)
-        #expect(!deck.learningOptions.optimizeFromRevealed)
         #expect(deck.learningOptions.leechThreshold == 6)
 
         #expect(deck.cards[0].media == CardMedia(questionImage: "e3b0c44298fc1c14.png", questionAudio: "ba7816bf8f01cfea.mp3", answerAudio: "ba7816bf8f01cfea.mp3"))
         #expect(deck.cards[1].media == CardMedia(answerImage: "e3b0c44298fc1c14.png"))
         #expect(deck.cards[2].media.isEmpty)
 
-        // The fixture still has the option `revealedRecallWeight` of ADR 0005, which the app no longer writes.
-        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == withoutRevealedRecallWeight(data))
+        // The fixture still has options the app no longer writes.
+        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == withoutRemovedOptions(data))
     }
 
-    /// A deck written while the option `revealedRecallWeight` existed reads, and its next save leaves the key out.
-    func withoutRevealedRecallWeight(_ data: Data) -> String {
-        String(decoding: data, as: UTF8.self).replacingOccurrences(of: "    \"revealedRecallWeight\" : 0.5,\n", with: "")
+    /// A deck written while the options `revealedRecallWeight`, `optimizeFromRevealed` and `caseSensitive` existed
+    /// reads, and its next save leaves the keys out.
+    func withoutRemovedOptions(_ data: Data) -> String {
+        ["revealedRecallWeight\" : 0.5", "optimizeFromRevealed\" : false", "caseSensitive\" : true"].reduce(String(decoding: data, as: UTF8.self)) {
+            $0.replacingOccurrences(of: "    \"\($1),\n", with: "")
+        }
     }
 
     /// Version 4 has no media; it is written back as version 5 and is otherwise the same.
@@ -139,42 +141,39 @@ struct DeckFileTests {
         expectFixedDeck(deck)
         #expect(deck.cards.allSatisfy { $0.media.isEmpty })
         #expect(deck.media.isEmpty)
-        let written = withoutRevealedRecallWeight(data).replacingOccurrences(of: "\"version\" : 4", with: "\"version\" : \(DeckFile.currentVersion)")
+        let written = withoutRemovedOptions(data).replacingOccurrences(of: "\"version\" : 4", with: "\"version\" : \(DeckFile.currentVersion)")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 
-    /// The options for revealed reviews (ADR 0005) are new: an older deck lacks them and
-    /// reads with the defaults of the fork.
-    @Test func revealedReviewAndLeechOptionsRoundTripAndDefault() throws {
+    /// The leech threshold is newer than version 3: an older deck lacks it and reads with the default.
+    @Test func leechOptionRoundTripsAndDefaults() throws {
         var deck = try sampleDeck()
-        #expect(deck.learningOptions.optimizeFromRevealed)
         #expect(deck.learningOptions.leechThreshold == 8)
         var options = deck.learningOptions
-        options.optimizeFromRevealed = false
         options.leechThreshold = 0
         _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), day: 100)
         let read = try DeckFile.decode(DeckFile.fileWrapper(for: deck))
-        #expect(!read.learningOptions.optimizeFromRevealed)
         #expect(read.learningOptions.leechThreshold == 0)
 
         let old = try DeckFile.decode(deckJSON()).learningOptions
-        #expect(old.optimizeFromRevealed)
         #expect(old.leechThreshold == 8)
     }
 
-    /// The option `revealedRecallWeight` (ADR 0004, ADR 0005) is gone: a deck with it, whatever the value, reads with
-    /// the other options as they are, and saving leaves the key out.
-    @Test func theRevealedRecallWeightOfOlderDecksIsIgnored() throws {
+    /// The options `revealedRecallWeight` (ADR 0004, ADR 0005), `optimizeFromRevealed` and `caseSensitive` are gone: a
+    /// deck with them, whatever the values, reads with the other options as they are, and saving leaves the keys out.
+    @Test func theRemovedOptionsOfOlderDecksAreIgnored() throws {
         for stored in ["0.05", "0.33", "1", "7", "\"nonsense\""] {
             let older = Data(
                 """
                 {"format": "de.fluch-it-consulting.voctrain.deck", "version": 4, "progress": [],
-                 "learningOptions": {"revealedRecallWeight": \(stored), "optimizeFromRevealed": false, "leechThreshold": 5}, "cards": []}
+                 "learningOptions": {"revealedRecallWeight": \(stored), "optimizeFromRevealed": false, "caseSensitive": false, "leechThreshold": 5}, "cards": []}
                 """.utf8)
             let deck = try DeckFile.decode(older)
-            #expect(!deck.learningOptions.optimizeFromRevealed)
             #expect(deck.learningOptions.leechThreshold == 5)
-            #expect(!String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).contains("revealedRecallWeight"))
+            let written = String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self)
+            for key in ["revealedRecallWeight", "optimizeFromRevealed", "caseSensitive"] {
+                #expect(!written.contains(key))
+            }
         }
     }
 
@@ -297,8 +296,9 @@ struct DeckFileTests {
             // The options added since take their defaults.
             .replacingOccurrences(of: "\"newCardsPerSession\" : 15,", with: "\"newCardOrder\" : \"deckOrder\",\n    \"newCardsPerSession\" : 15,\n    \"newProductionPerSession\" : 7,")
             .replacingOccurrences(of: "    \"steps\" : 2,", with: "    \"productionUnlockDays\" : 7,\n    \"steps\" : 2,")
-            .replacingOccurrences(of: "    \"parameters\" : [", with: "    \"optimizeFromRevealed\" : true,\n    \"parameters\" : [")
             .replacingOccurrences(of: "    \"maximumInterval\" :", with: "    \"leechThreshold\" : 8,\n    \"maximumInterval\" :")
+            // The option the app no longer has is left out.
+            .replacingOccurrences(of: "    \"caseSensitive\" : true,\n", with: "")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 
@@ -329,8 +329,9 @@ struct DeckFileTests {
         for key in ["learningOptions", "targetRecall", "steps", "learningState", "learningStateReset", "reviews", "hint", "progress", "contentModified", "suspended", "suspensionChanged", "note", "kind", "newProductionPerSession", "productionUnlockDays", "newCardOrder"] {
             #expect(deckJSON.contains("\"\(key)\" :"), "missing key \(key)")
         }
-        #expect(deckJSON.contains("\"optimizeFromRevealed\" :"))
-        #expect(!deckJSON.contains("revealedRecallWeight"))
+        for key in ["revealedRecallWeight", "optimizeFromRevealed", "caseSensitive"] {
+            #expect(!deckJSON.contains(key))
+        }
         #expect(!deckJSON.contains("\"log\""))
         #expect(!deckJSON.contains("\"hint\" : \"\""))
 

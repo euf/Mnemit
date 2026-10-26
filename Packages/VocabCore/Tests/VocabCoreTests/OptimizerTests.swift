@@ -7,7 +7,7 @@ struct OptimizerTests {
     let calendar = StudyCalendar(timeZone: TimeZone(identifier: "UTC")!)
 
     func items(_ histories: [SyntheticLearner.History]) -> [TrainingItem] {
-        TrainingItem.items(from: histories.enumerated().map { $1.card(index: $0, calendar: calendar) }, calendar: calendar, revealedAreTargets: true)
+        TrainingItem.items(from: histories.enumerated().map { $1.card(index: $0, calendar: calendar) }, calendar: calendar)
     }
 
     func syntheticItems(cards: Int, seed: UInt64, revealedShare: Double = 0) -> [TrainingItem] {
@@ -28,7 +28,7 @@ struct OptimizerTests {
             log: log.map { ReviewLogEntry(date: start.addingTimeInterval($0), grade: $1) }
         )
 
-        let items = TrainingItem.items(from: [card], calendar: calendar, revealedAreTargets: false)
+        let items = TrainingItem.items(from: [card], calendar: calendar)
         #expect(items.map(\.reviews.count) == [3, 4])
         #expect(items[1].reviews.map(\.elapsedDays) == [0, 0, 1, 2])
         #expect(items[1].reviews.map(\.grade) == [.again, .good, .good, .again])
@@ -40,9 +40,9 @@ struct OptimizerTests {
         let log = [ReviewLogEntry(date: start, grade: .good), ReviewLogEntry(date: start.addingTimeInterval(86400), grade: .good)]
         var imported = Card(question: "q", answer: "a", learningState: LearningState(phase: .review, stability: 3, difficulty: 5, lastReview: start, due: start, reviews: 5), log: log)
         #expect(!imported.hasCompleteLog)
-        #expect(TrainingItem.items(from: [imported], calendar: calendar, revealedAreTargets: false).isEmpty)
+        #expect(TrainingItem.items(from: [imported], calendar: calendar).isEmpty)
         imported.learningState?.reviews = 2
-        #expect(TrainingItem.items(from: [imported], calendar: calendar, revealedAreTargets: false).count == 1)
+        #expect(TrainingItem.items(from: [imported], calendar: calendar).count == 1)
     }
 
     @Test func itemsAreOrderedByTimeOfTheirReview() {
@@ -51,7 +51,7 @@ struct OptimizerTests {
             let log = [firstDay, secondDay].map { ReviewLogEntry(date: start.addingTimeInterval(Double($0) * 86400), grade: .good) }
             return Card(question: "q", answer: "a", learningState: LearningState(phase: .review, stability: 1, difficulty: 5, lastReview: start, due: start, reviews: 2), log: log)
         }
-        let items = TrainingItem.items(from: [card(firstDay: 0, secondDay: 9), card(firstDay: 0, secondDay: 4)], calendar: calendar, revealedAreTargets: false)
+        let items = TrainingItem.items(from: [card(firstDay: 0, secondDay: 9), card(firstDay: 0, secondDay: 4)], calendar: calendar)
         #expect(items.map(\.target.elapsedDays) == [4, 9])
     }
 
@@ -66,26 +66,13 @@ struct OptimizerTests {
         return Card(question: "q", answer: "a", learningState: LearningState(phase: .relearning, stability: 1, difficulty: 5, lastReview: start, due: start, reviews: 3), log: log)
     }
 
-    @Test func revealedReviewsAreNoTargetsButHistoryIfAskedSo() {
-        let items = TrainingItem.items(from: [cardWithRevealedReview()], calendar: calendar, revealedAreTargets: false)
-        #expect(items.map(\.target.elapsedDays) == [2])
-        #expect(items[0].reviews.map(\.mode) == [.typed, .revealed, .typed])
-    }
-
-    @Test func revealedReviewsAreTargetsByDefaultOfTheFork() {
-        let items = TrainingItem.items(from: [cardWithRevealedReview()], calendar: calendar, revealedAreTargets: true)
-        #expect(items.map(\.target.elapsedDays) == [1, 2])
-        #expect(items.map(\.target.mode) == [.revealed, .typed])
-        #expect(items.map(\.reviews.count) == [2, 3])
-    }
-
-    @Test func theOptimizerCountsRevealedReviewsOnlyWithTheOption() {
+    /// Every review is a target, revealed or typed: the optimizer learns from all of them.
+    @Test func revealedAndTypedReviewsAreTargets() {
         let cards = [cardWithRevealedReview()]
-        var options = LearningOptions()
-        #expect(options.optimizeFromRevealed)
-        #expect(FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar).reviewCount == 2)
-        options.optimizeFromRevealed = false
-        #expect(FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar).reviewCount == 1)
+        let items = TrainingItem.items(from: cards, calendar: calendar)
+        #expect(items.map(\.target.elapsedDays) == [1, 2])
+        #expect(items.map(\.reviews.count) == [2, 3])
+        #expect(FSRSOptimizer(cards: cards, learningOptions: LearningOptions(), calendar: calendar).reviewCount == 2)
     }
 
     // MARK: - Model and gradient
@@ -175,17 +162,11 @@ struct OptimizerTests {
         #expect(reported.last == 1)
     }
 
-    /// Learning from revealed targets uses reviews that typed-only training discards, and
-    /// the parameters it finds predict them better than the defaults.
+    /// Revealed reviews are targets, and the parameters learned from them predict them better than the defaults.
     @Test func trainingLearnsFromRevealedTargets() throws {
         var learner = SyntheticLearner(parameters: SyntheticLearner.unusual, seed: 7, revealedShare: 0.8)
         let cards = learner.histories(cards: 600, days: 365).enumerated().map { $1.card(index: $0, calendar: calendar) }
-        var options = LearningOptions()
-        let all = FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar)
-        options.optimizeFromRevealed = false
-        let typedOnly = FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar)
-        #expect(all.reviewCount > typedOnly.reviewCount * 2)
-
+        let all = FSRSOptimizer(cards: cards, learningOptions: LearningOptions(), calendar: calendar)
         let parameters = try all.computeParameters()
         let before = try #require(all.evaluate(.default))
         let after = try #require(all.evaluate(parameters))
