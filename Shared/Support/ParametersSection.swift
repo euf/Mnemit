@@ -56,8 +56,7 @@ struct ParametersSection: View {
             Text("Algorithm Parameters")
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                Text("FSRS starts with parameters averaged over many learners. Computed from this deck's review log, they fit your memory, so cards need fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review.")
-                refitFooter
+                Text("Fitted to this deck's review log, the parameters need fewer reviews for the same target recall.")
                 if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {
                     Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: reviews on a later study day than the previous review of the same card.")
                 }
@@ -65,13 +64,6 @@ struct ParametersSection: View {
             .foregroundStyle(.secondary)
         }
         .onDisappear { task?.cancel() }
-    }
-
-    private var refitFooter: Text {
-        let second = ParameterRefit.secondFitReviewCount.formatted()
-        let days = ParameterRefit.intervalDays
-        let step = ParameterRefit.reviewStep.formatted()
-        return Text("The parameters are fitted again at \(second) reviews, then every \(days) days or after \(step) more reviews, and replace the current ones only if they predict your newest reviews better.")
     }
 
     @ViewBuilder

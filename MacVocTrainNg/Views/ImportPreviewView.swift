@@ -33,6 +33,15 @@ struct ImportPreviewView: View {
             }
             .padding(16)
 
+            if preview.makesDeck {
+                Form {
+                    WordsInDeckSection(introducesNewCards: $preview.introducesNewCards)
+                }
+                .formStyle(.grouped)
+                .scrollDisabled(true)
+                .frame(height: 170)
+            }
+
             Table(preview.candidates) {
                 TableColumn(Text(verbatim: "")) { candidate in
                     Toggle("Import", isOn: isSelected(candidate.id))
@@ -72,7 +81,7 @@ struct ImportPreviewView: View {
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Button("Import \(preview.selection.count) Cards") {
-                    document.importCards(preview.selectedCards, learningOptions: preview.learningOptions, media: preview.media)
+                    document.importCards(preview.selectedCards, learningOptions: preview.learningOptions(over: document.deck.learningOptions), media: preview.media)
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)

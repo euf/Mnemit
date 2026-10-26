@@ -162,7 +162,7 @@ struct ScreenGallerySnapshotTests {
     // MARK: Sheets of the decks
 
     @Test func newDeck() async throws {
-        try await shoot("new-deck", NewDeckSheet { _ in })
+        try await shoot("new-deck", NewDeckSheet { _, _ in })
         try await shoot("new-deck-filled", DeckNameSheet(title: "New Deck", actionTitle: "Create", current: nil, prefill: "Greek B2") { _ in })
         try await shoot(
             "new-deck-name-taken",

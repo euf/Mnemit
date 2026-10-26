@@ -387,14 +387,14 @@ struct StartScreen: View {
 
     /// Makes the deck in the folder of decks, which is the app's own folder on the iPhone while the
     /// learner has chosen none, and prepares its screen: an empty deck is for adding cards.
-    private func createDeck(named name: String) async throws {
-        openAfterSheet = pushed.open(try await makeDeck(named: name))
+    private func createDeck(named name: String, introducesNewCards: Bool) async throws {
+        openAfterSheet = pushed.open(try await makeDeck(named: name, introducesNewCards: introducesNewCards))
         showsNewDeck = false
     }
 
     /// Creates the deck `name` in the folder of decks and lists it. A name that is taken is a
     /// failure, unless `numbered`: then the deck is "name 2", "name 3" and so on.
-    private func makeDeck(named name: String, numbered: Bool = false) async throws -> URL {
+    private func makeDeck(named name: String, introducesNewCards: Bool = false, numbered: Bool = false) async throws -> URL {
         if knownDecks.folder == nil {
             knownDecks.useLocalFolder()
         }
@@ -402,7 +402,7 @@ struct StartScreen: View {
         var number = 1
         while true {
             do {
-                let url = try await DeckFiles.create(named: number == 1 ? name : "\(name) \(number)", in: folder)
+                let url = try await DeckFiles.create(named: number == 1 ? name : "\(name) \(number)", introducesNewCards: introducesNewCards, in: folder)
                 knownDecks.remember(url)
                 knownDecks.refreshFolder()
                 return url

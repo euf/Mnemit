@@ -22,7 +22,7 @@ struct DeckActions {
     var setPaused: (Bool) -> Void
     var importCards: () -> Void
     var exportCards: () -> Void
-    var addLessonWords: () -> Void
+    var addCards: () -> Void
     var showShortcuts: () -> Void
 }
 
@@ -47,7 +47,7 @@ struct AppCommands: Commands {
             Button("Shared Decks on AnkiWeb…") { DeckWebWindow.show() }
             Button("Export Cards…") { actions?.exportCards() }
                 .disabled(actions == nil)
-            Button("Add Lesson Words…") { actions?.addLessonWords() }
+            Button("Add Cards…") { actions?.addCards() }
                 .keyboardShortcut("l", modifiers: [.command, .shift])
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
         }

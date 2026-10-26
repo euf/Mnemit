@@ -54,7 +54,7 @@ extension VocabularyDocument {
     @discardableResult
     func addLessonCards(_ cards: [Card]) -> Int {
         guard isReadyToEdit, let change = DeckChange.adding(cards, to: deck) else { return 0 }
-        perform(change, actionName: String(localized: "Add Lesson Words"))
+        perform(change, actionName: String(localized: "Add Cards"))
         return cards.count
     }
 

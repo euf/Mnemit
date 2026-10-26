@@ -158,7 +158,7 @@ struct DeckEditingSnapshotTests {
 
     @Test(arguments: [false, true])
     func nameSheets(dark: Bool) async throws {
-        let empty = try await host(NewDeckSheet(onCreate: { _ in }), dark: dark)
+        let empty = try await host(NewDeckSheet(onCreate: { _, _ in }), dark: dark)
         try write(empty, name: "deck-1-new-empty", dark: dark)
         empty.isHidden = true
 

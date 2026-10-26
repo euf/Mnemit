@@ -60,16 +60,17 @@ enum DeckFiles {
 
     // MARK: - Creating
 
-    /// Creates an empty deck `<name>.mnemit` in `folder` and returns its URL.
+    /// Creates an empty deck `<name>.mnemit` in `folder` and returns its URL. `introducesNewCards` is the
+    /// mark the deck starts with, see `LearningOptions.introducesNewCards`.
     ///
     /// - Throws: `Failure.invalidName`; `Failure.nameTaken` if the folder holds a deck of
     ///   that name already, `.voctrain` too, or one iCloud Drive hasn't downloaded yet.
     @discardableResult
-    static func create(named name: String, in folder: URL) async throws -> URL {
+    static func create(named name: String, introducesNewCards: Bool = false, in folder: URL) async throws -> URL {
         guard let name = fileName(for: name) else { throw Failure.invalidName }
         return try await Task.detached {
             let url = deckURL(named: name, extension: DeckFile.fileExtension, in: folder)
-            let package = try DeckFile.fileWrapper(for: Deck())
+            let package = try DeckFile.fileWrapper(for: Deck.new(introducesNewCards: introducesNewCards))
             try coordinate(writing: url, options: .forReplacing) { url in
                 guard !holdsDeck(named: name, in: folder, except: nil) else { throw Failure.nameTaken(name) }
                 try package.write(to: url, options: .atomic, originalContentsURL: nil)
@@ -197,5 +198,20 @@ enum DeckFiles {
         if let coordinationError { throw coordinationError }
         // The coordinator runs the accessor exactly once, or reports an error.
         return try outcome!.get()
+    }
+}
+
+extension Deck {
+    /// An empty deck with its mark: New words, `LearningOptions.introducesNewCards`, or Words I know. What a
+    /// learner makes in New Deck on either platform starts with the mark they chose.
+    static func new(introducesNewCards: Bool) -> Deck {
+        var deck = Deck()
+        var options = deck.learningOptions
+        options.introducesNewCards = introducesNewCards
+        let calendar = StudyCalendar()
+        if let change = DeckChange.changingLearningOptions(options, in: deck, calendar: calendar) {
+            _ = deck.apply(change, at: Date(), calendar: calendar)
+        }
+        return deck
     }
 }

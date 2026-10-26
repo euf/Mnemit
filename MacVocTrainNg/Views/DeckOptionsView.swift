@@ -16,6 +16,8 @@ struct DeckOptionsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Form {
+                WordsInDeckSection(introducesNewCards: $options.introducesNewCards)
+
                 Section {
                     LabeledContent("Target recall") {
                         HStack {
@@ -28,39 +30,36 @@ struct DeckOptionsView: View {
                 } header: {
                     Text("Scheduling")
                 } footer: {
-                    Text("Cards in the review phase are asked again when their recall probability drops to this value. Higher means more reviews but fewer lapses; 90 % is a good balance.")
-                        .foregroundStyle(.secondary)
+                    Text("Higher means better recall and more reviews.")
                 }
 
                 Section {
-                    LimitField(title: "Cards per session", value: $options.cardsPerSession, defaultValue: 100, step: 10)
-                    LimitField(title: "New cards per day", value: $options.newCardsPerSession, defaultValue: 20, step: 5)
+                    LimitStepper(title: "Cards per session", value: $options.cardsPerSession, step: 10, ceiling: 300, range: LearningOptions.sessionLimitRange)
+                    LimitStepper(title: "New cards per day", value: $options.newCardsPerSession, step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
+                    Picker("New card order", selection: $options.newCardOrder) {
+                        Text("Deck order").tag(NewCardOrder.deckOrder)
+                        Text("Newest first").tag(NewCardOrder.newestFirst)
+                    }
                     Stepper(value: $options.steps, in: LearningOptions.stepsRange) {
                         LabeledContent("Steps per card", value: options.steps.formatted())
                     }
                 } header: {
                     Text("Sessions")
                 } footer: {
-                    Text("New cards and cards after a lapse come back within the session until they have been graded Good this many times. Hard keeps a card on its step, Again resets it, Easy moves it to the review phase at once.")
-                        .foregroundStyle(.secondary)
+                    Text("New and lapsed cards come back in the session until you have graded them Good this many times.")
                 }
 
                 Section {
-                    LimitField(title: "New production cards per day", value: $options.newProductionPerSession, defaultValue: 7, step: 1, range: LearningOptions.productionLimitRange)
+                    LimitStepper(title: "New per day", value: $options.newProductionPerSession, step: 1, ceiling: 30, range: LearningOptions.productionLimitRange)
                     Stepper(value: $options.productionUnlockDays, in: LearningOptions.productionUnlockDaysRange) {
                         LabeledContent(
-                            "Unlock production cards after",
+                            "Unlock after",
                             value: options.productionUnlockDays == 0 ? String(localized: "Never locked") : Format.days(Double(options.productionUnlockDays)))
                     }
-                    Picker("New card order", selection: $options.newCardOrder) {
-                        Text("Deck order").tag(NewCardOrder.deckOrder)
-                        Text("Newest first").tag(NewCardOrder.newestFirst)
-                    }
                 } header: {
-                    Text("Word cards")
+                    Text("Meaning → Word cards")
                 } footer: {
-                    Text("A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per day counts all other new cards.")
-                        .foregroundStyle(.secondary)
+                    Text("A Meaning → Word card waits until the Word → Meaning card of its word has an interval this long.")
                 }
 
                 Section {
@@ -85,7 +84,10 @@ struct DeckOptionsView: View {
 
             HStack {
                 Button("Restore Defaults") {
-                    options = LearningOptions()
+                    // The mark says what the words are, not how they are tuned: it stays.
+                    var defaults = LearningOptions()
+                    defaults.introducesNewCards = options.introducesNewCards
+                    options = defaults
                 }
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
@@ -99,37 +101,5 @@ struct DeckOptionsView: View {
             .padding(16)
         }
         .frame(width: 520, height: 640)
-    }
-}
-
-/// A number with an "unlimited" option.
-private struct LimitField: View {
-    var title: LocalizedStringKey
-    @Binding var value: Int?
-    var defaultValue: Int
-    var step: Int
-    var range = LearningOptions.sessionLimitRange
-
-    var body: some View {
-        LabeledContent(title) {
-            HStack {
-                if let limit = value {
-                    // A stepper rather than a text field: a text field only commits on
-                    // Return, so clicking Save right after typing would lose the value.
-                    Stepper(value: Binding(get: { limit }, set: { value = $0 }), in: range, step: step) {
-                        Text(limit.formatted())
-                            .monospacedDigit()
-                    }
-                }
-                Toggle(
-                    "Unlimited",
-                    isOn: Binding(
-                        get: { value == nil },
-                        set: { value = $0 ? nil : defaultValue }
-                    )
-                )
-                .toggleStyle(.checkbox)
-            }
-        }
     }
 }
