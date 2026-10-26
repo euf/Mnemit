@@ -6,18 +6,18 @@ import VocabCore
 @MainActor
 enum AllDecks {
     /// The open documents, and the decks of the folder that none of them holds.
-    static func current() -> (documents: [VocabularyDocument], files: [URL]) {
-        let documents = OpenDecks.shared.documents
+    static func current(decks: OpenDecks = .shared, folder: DeckFolder = .shared) -> (documents: [VocabularyDocument], files: [URL]) {
+        let documents = decks.documents
         let open = Set(documents.compactMap { $0.packageURL?.standardizedFileURL })
-        return (documents, DeckFolder.shared.decks.filter { !open.contains($0.standardizedFileURL) })
+        return (documents, folder.decks.filter { !open.contains($0.standardizedFileURL) })
     }
 }
 
 extension DailyRingModel {
     /// Evaluates the ring over `AllDecks`.
     @discardableResult
-    func refreshAllDecks(reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) -> Task<Void, Never> {
-        let decks = AllDecks.current()
+    func refreshAllDecks(decks open: OpenDecks = .shared, folder: DeckFolder = .shared, reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) -> Task<Void, Never> {
+        let decks = AllDecks.current(decks: open, folder: folder)
         return refresh(documents: decks.documents, files: decks.files, reloadFiles: reloadFiles, delay: delay)
     }
 }

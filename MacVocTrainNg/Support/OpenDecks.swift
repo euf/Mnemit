@@ -26,7 +26,7 @@ final class OpenDecks {
     }
 
     /// The same file however its URL is spelled.
-    private static func key(_ url: URL) -> String {
+    static func key(_ url: URL) -> String {
         url.standardizedFileURL.resolvingSymlinksInPath().path
     }
 

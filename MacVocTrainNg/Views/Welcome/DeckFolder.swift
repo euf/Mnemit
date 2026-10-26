@@ -39,17 +39,19 @@ final class DeckFolder {
         decks = url.map(Self.decks(in:)) ?? []
     }
 
-    /// Asks for the folder. One without decks is refused, as it is most likely the wrong one.
-    func choose() {
+    /// Asks for the folder. One without decks is refused, as it is most likely the wrong one, unless
+    /// `requiringDecks` is off: a learner who has no deck yet makes the folder for the first one.
+    func choose(requiringDecks: Bool = true) {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
+        panel.canCreateDirectories = !requiringDecks
         panel.allowsMultipleSelection = false
         panel.directoryURL = url
         panel.message = String(localized: "Choose the Mnemit folder, the one that holds your decks.")
         panel.prompt = String(localized: "Choose")
         guard panel.runModal() == .OK, let chosen = panel.url else { return }
-        guard !Self.decks(in: chosen).isEmpty else {
+        guard !requiringDecks || !Self.decks(in: chosen).isEmpty else {
             NSAlert.showWarning(String(localized: "No decks in this folder"), message: String(localized: "“\(chosen.lastPathComponent)” holds no Mnemit decks. Choose the folder with your decks in it."))
             return
         }
@@ -80,7 +82,7 @@ final class DeckFolder {
     }
 
     /// Takes `folder` as the folder, and keeps its access, in place of the previous one's.
-    private func use(_ folder: URL) {
+    func use(_ folder: URL) {
         if isAccessing, let url {
             url.stopAccessingSecurityScopedResource()
         }
