@@ -20,7 +20,7 @@ struct StreamMenuItems: View {
             .disabled(!hasCard)
         Button("Suspend Card", systemImage: "pause.circle", action: onSuspend)
             .disabled(!hasCard)
-            .help("Don't ask this card again until you resume it in the card list")
+            .help("No session asks it until you resume it")
         if GreekSpeech.shared.voice != nil {
             Divider()
             Toggle("Pronounce Automatically", systemImage: "speaker.wave.2", isOn: $autoSpeak)

@@ -2,8 +2,8 @@ import SwiftUI
 import VocabCore
 
 /// The introduction: shown once at the first launch, and again from Settings. It starts with
-/// the app, lets the learner try the four swipes on sample cards, says in four lines how a day
-/// works, asks where the cards are kept, and offers the daily reminder.
+/// the app, shows a new word's first showing, lets the learner try the four swipes on sample cards,
+/// says in four lines how a day works, asks where the cards are kept, and offers the daily reminder.
 struct OnboardingView: View {
     /// Where the decks are chosen; the start screen lists what it finds.
     var knownDecks: KnownDecks
@@ -29,6 +29,8 @@ struct OnboardingView: View {
                 switch step {
                 case .welcome:
                     WelcomeStep(next: advance)
+                case .firstShowing:
+                    FirstShowingView(done: advance)
                 case .swipe:
                     // Skipping the practice goes where finishing it goes.
                     GesturePracticeView(done: advance)
@@ -87,7 +89,7 @@ private struct WelcomeStep: View {
     }
 }
 
-/// The third step: how a day works, in the words of the screens: the stack, the ring, the streak, the ladder
+/// The fourth step: how a day works, in the words of the screens: the stack, the ring, the streak, the ladder
 /// (`references/learning-flow.md`). The ring fills as it shows.
 private struct DayStep: View {
     var next: () -> Void
@@ -120,9 +122,9 @@ private struct DayStep: View {
                 .font(.title.bold())
                 .padding(.bottom, 16)
             VStack(alignment: .leading, spacing: 14) {
-                row("rectangle.stack", Text("Every day Mnemit lays out the cards due today: a few minutes' worth."))
-                row("circle.circle", Text("Recall a card and the ring moves. A new word comes back under the stack until you know it twice."))
-                row("flame.fill", Text("The first two minutes keep your streak. Close the ring, and the day is done."))
+                row("rectangle.stack", Text("Mnemit lays out a few minutes' worth of cards every day."))
+                row("circle.circle", Text("Recall a card and the ring moves."))
+                row("flame.fill", Text("Two minutes keep your streak. Close the ring and the day is done."))
                 row("chart.bar.fill", Text("Words climb from New to Mastered as they stick."))
             }
             Spacer()
@@ -153,7 +155,7 @@ private struct DayStep: View {
     }
 }
 
-/// The fourth step: where the cards are kept. iCloud Drive, in a folder named Mnemit that the
+/// The fifth step: where the cards are kept. iCloud Drive, in a folder named Mnemit that the
 /// Mac fills with decks, or the app's own storage on the iPhone.
 private struct SyncStep: View {
     var knownDecks: KnownDecks

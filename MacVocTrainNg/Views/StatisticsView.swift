@@ -45,7 +45,7 @@ struct StatisticsView: View {
                         .labelsHidden()
                         .frame(width: 240)
                     }
-                    Text("How well the cards are known, by how long they are remembered.")
+                    Text("How long your cards stay remembered.")
                         .foregroundStyle(.secondary)
                     ProgressChart(
                         series: figures.progress(

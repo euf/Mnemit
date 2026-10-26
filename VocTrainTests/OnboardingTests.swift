@@ -21,9 +21,10 @@ struct OnboardingTests {
 
     // MARK: Steps
 
-    @Test func theStepsGoFromWelcomeThroughSwipesAndSyncToTheReminder() {
-        #expect(OnboardingStep.allCases == [.welcome, .swipe, .day, .sync, .reminder])
-        #expect(OnboardingStep.welcome.next == .swipe)
+    @Test func theStepsGoFromWelcomeThroughTheFirstShowingAndSwipesAndSyncToTheReminder() {
+        #expect(OnboardingStep.allCases == [.welcome, .firstShowing, .swipe, .day, .sync, .reminder])
+        #expect(OnboardingStep.welcome.next == .firstShowing)
+        #expect(OnboardingStep.firstShowing.next == .swipe)
         #expect(OnboardingStep.swipe.next == .day)
         #expect(OnboardingStep.day.next == .sync)
         #expect(OnboardingStep.sync.next == .reminder)
@@ -121,6 +122,60 @@ struct OnboardingTests {
         #expect(SwipePractice(index: 2).current == .hard)
         #expect(SwipePractice(index: 9).isDone)
         #expect(SwipePractice(index: -3).index == 0)
+    }
+
+    // MARK: First showing
+
+    @Test func theFirstShowingTakesDontKnowOrKnowOnceAndNothingElse() {
+        var showing = FirstShowing()
+        #expect(!showing.isAnswered)
+        // Hard and Easy are not buttons of a new card.
+        let hard = showing.give(.hard)
+        let easy = showing.give(.easy)
+        #expect(!hard && !easy)
+        #expect(showing.answer == nil)
+        let good = showing.give(.good)
+        #expect(good)
+        #expect(showing.answer == .good)
+        // The first answer stays.
+        let again = showing.give(.again)
+        #expect(!again)
+        #expect(showing.answer == .good)
+        #expect(FirstShowing(answer: .easy).answer == nil)
+    }
+
+    @Test func eachAnswerSaysWhatHappensNext() {
+        #expect(FirstShowing.line(after: .again) == "It comes back after a few cards.")
+        #expect(FirstShowing.line(after: .good) == "It comes back once more before you're done.")
+        #expect(FirstShowing.line(after: .hard) == nil)
+        #expect(FirstShowing.line(after: .easy) == nil)
+    }
+
+    /// The two lines are what the stream does to a new card: Don't know and Know both leave it in learning and due, so the
+    /// session asks it again; Know is one of the two steps a card needs, so a second Know ends the learning.
+    @Test func whatTheFirstShowingSaysIsWhatTheSchedulerDoes() throws {
+        let options = LearningOptions()
+        #expect(options.steps == 2)
+        let scheduler = Scheduler(learningOptions: options, calendar: StudyCalendar())
+        let now = Date()
+        var random = SystemRandomNumberGenerator()
+        let card = Card(text: try #require(CardText(question: "a janela", answer: "the window")), created: now)
+        #expect(card.isNew)
+
+        let dontKnow = try #require(scheduler.review(card, grade: .again, at: now, using: &random).learningState)
+        #expect(dontKnow.phase == .learning && dontKnow.step == 0 && dontKnow.due <= now)
+
+        let know = scheduler.review(card, grade: .good, at: now, using: &random)
+        let state = try #require(know.learningState)
+        #expect(state.phase == .learning && state.step == 1 && state.due <= now)
+        let again = try #require(scheduler.review(know, grade: .good, at: now, using: &random).learningState)
+        #expect(again.phase == .review)
+    }
+
+    @Test func theFirstShowingsWordIsNotOneOfTheFourOfTheSwipes() {
+        let sample = FirstShowing.sample
+        #expect(!sample.question.isEmpty && !sample.answer.isEmpty)
+        #expect(!SwipePractice.order.map { SwipePractice.sample(for: $0).question }.contains(sample.question))
     }
 
     // MARK: Storage
@@ -250,6 +305,31 @@ struct OnboardingSnapshotTests {
 
     @Test func welcome() async throws {
         try await HomeSnapshotTests().shoot("onboarding-1-welcome", step(.welcome))
+    }
+
+    private func firstShowing(_ answer: Grade? = nil, isRevealed: Bool = false) -> some View {
+        ZStack {
+            Color(.systemGroupedBackground).ignoresSafeArea()
+            FirstShowingView(showing: FirstShowing(answer: answer), isRevealed: isRevealed, done: {})
+        }
+    }
+
+    @Test func theFirstShowingInItsStates() async throws {
+        let shots = HomeSnapshotTests()
+        try await shots.shoot("onboarding-1b-first-showing", firstShowing(), types: [nil, .accessibility5])
+        try await shots.shoot("onboarding-1b-first-showing-answer", firstShowing(isRevealed: true), types: [nil, .accessibility5])
+        try await shots.shoot("onboarding-1b-first-showing-dont-know", firstShowing(.again), types: [nil, .accessibility5])
+        try await shots.shoot("onboarding-1b-first-showing-know", firstShowing(.good))
+    }
+
+    /// The largest text size of the other steps.
+    @Test func theOtherStepsAtTheLargestText() async throws {
+        let shots = HomeSnapshotTests()
+        try await shots.shoot("onboarding-1-welcome", step(.welcome), types: [.accessibility5])
+        try await shots.shoot("onboarding-2-swipe-1", practice(0), types: [.accessibility5])
+        try await shots.shoot("onboarding-2-swipe-done", practice(4), types: [.accessibility5])
+        try await shots.shoot("onboarding-3-day", step(.day), types: [nil, .accessibility5])
+        try await shots.shoot("onboarding-4-reminder", step(.reminder), types: [.accessibility5])
     }
 
     @Test func practiceCards() async throws {

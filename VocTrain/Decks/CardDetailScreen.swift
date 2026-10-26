@@ -155,7 +155,7 @@ private struct CardDetailList: View {
         Section("Memory") {
             CardMemoryLine(card: card, now: now)
             if card.isSuspended {
-                Label("Suspended: no study session asks this card.", systemImage: "pause.circle")
+                Label("Suspended: no session asks it.", systemImage: "pause.circle")
                     .foregroundStyle(.secondary)
             }
             if document.deck.isLeech(card) {

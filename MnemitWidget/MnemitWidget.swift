@@ -55,7 +55,7 @@ struct MnemitWidget: Widget {
                 .containerBackground(WidgetContent.background, for: .widget)
         }
         .configurationDisplayName("Daily Goal")
-        .description("Cards due and your progress toward today's goal.")
+        .description("Today's ring and your streak.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }

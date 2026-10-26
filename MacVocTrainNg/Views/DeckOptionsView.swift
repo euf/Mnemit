@@ -44,7 +44,7 @@ struct DeckOptionsView: View {
                 } header: {
                     Text("Sessions")
                 } footer: {
-                    Text("New and lapsed cards come back in the session until you have graded them Good this many times.")
+                    Text("New and forgotten cards come back until you grade them Good this many times.")
                 }
 
                 Section {
@@ -57,13 +57,13 @@ struct DeckOptionsView: View {
                 } header: {
                     Text("Meaning → Word cards")
                 } footer: {
-                    Text("A Meaning → Word card waits until the Word → Meaning card of its word has an interval this long.")
+                    Text("Meaning → Word waits until Word → Meaning has this interval.")
                 }
 
                 Section {
                     DisclosureGroup("Advanced", isExpanded: $showsAdvanced) {
                         Toggle("Spread out intervals", isOn: $options.fuzzing)
-                            .help("Varies intervals slightly so cards learned together don't always come back together.")
+                            .help("Spreads cards learned together over nearby days.")
                         Stepper(value: $options.maximumInterval, in: LearningOptions.maximumIntervalRange, step: 30) {
                             LabeledContent("Longest interval", value: Format.days(Double(options.maximumInterval)))
                         }

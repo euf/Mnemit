@@ -56,9 +56,9 @@ struct ParametersSection: View {
             Text("Algorithm Parameters")
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Fitted to this deck's review log, the parameters need fewer reviews for the same target recall.")
+                Text("Parameters fitted to your reviews need fewer reviews for the same recall.")
                 if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {
-                    Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: reviews on a later study day than the previous review of the same card.")
+                    Text("Needs \(FSRSOptimizer.minimumReviewCount) reviews, each on a later day than the card's previous one.")
                 }
             }
             .foregroundStyle(.secondary)

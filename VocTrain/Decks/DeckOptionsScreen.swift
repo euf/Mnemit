@@ -49,7 +49,7 @@ struct DeckOptionsScreen: View {
             } header: {
                 Text("Meaning → Word cards")
             } footer: {
-                Text("A Meaning → Word card waits until the Word → Meaning card of its word has an interval this long.")
+                Text("Meaning → Word waits until Word → Meaning has this interval.")
             }
 
             Section {
@@ -103,7 +103,7 @@ struct DeckAdvancedOptionsScreen: View {
                 }
                 Toggle("Spread out intervals", isOn: document.option(\.fuzzing))
             } footer: {
-                Text("Varies intervals slightly so cards learned together don't always come back together.")
+                Text("Spreads cards learned together over nearby days.")
             }
 
             Section {
@@ -113,7 +113,7 @@ struct DeckAdvancedOptionsScreen: View {
                     }
                 }
             } footer: {
-                Text("New and lapsed cards come back in the session until you have graded them Good this many times.")
+                Text("New and forgotten cards come back until you grade them Good this many times.")
             }
 
             ParametersSection(options: document.option(\.self), cards: document.deck.trainingCards, calendar: document.calendar, appliesAtOnce: true)

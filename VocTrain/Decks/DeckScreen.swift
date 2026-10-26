@@ -152,7 +152,7 @@ struct DeckContent: View {
                 }
             }
         } message: {
-            Text("The deck moves to the Trash, from where you can put it back.")
+            Text("The deck goes to the Trash.")
         }
         .alert("The Deck Could Not Be Deleted", isPresented: Binding(get: { deleteFailure != nil }, set: { if !$0 { deleteFailure = nil } })) {
             Button("OK") {}

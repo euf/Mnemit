@@ -1,7 +1,7 @@
 import SwiftUI
 import VocabCore
 
-/// The second step of the introduction: four sample cards, not those of a deck, each asking for
+/// The third step of the introduction: four sample cards, not those of a deck, each asking for
 /// one swipe: left, up, down, right. The prompt above the card names what the direction means,
 /// so the four meanings are the rules of the app. The card is the study screen's own,
 /// `FlightCard` driven by `CardFlight` and `GradeSwipe`, and it goes the way of the study
@@ -188,7 +188,7 @@ struct GesturePracticeView: View {
                 Text("Touch the card to see the answer, then swipe toward the arrow.")
                     .opacity(wasShort ? 0 : 1)
                     .accessibilityHidden(wasShort)
-                Text("Swipe farther, in the direction of the arrow: the card leaves once you pass the threshold.")
+                Text("Swipe a little farther toward the arrow.")
                     .opacity(wasShort ? 1 : 0)
                     .accessibilityHidden(!wasShort)
             }
@@ -308,7 +308,7 @@ struct GesturePracticeView: View {
                 .accessibilityHidden(true)
             Text("Well Done")
                 .font(.title.bold())
-            Text("Every card works like this: touch to see the answer, then swipe how well you remembered it.")
+            Text("Every card works like this.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

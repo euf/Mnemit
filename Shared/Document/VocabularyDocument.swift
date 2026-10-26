@@ -143,7 +143,7 @@ final class VocabularyDocument: ObservableObject {
         case .unsupportedVersion:
             return AppError(String(localized: "This deck was created by a newer version of Mnemit."))
         case .outdatedVersion:
-            return AppError(String(localized: "This deck was saved by a test version of MacVocTrain from before its first release and can no longer be opened."))
+            return AppError(String(localized: "This deck is from a test version before the first release and can't be opened."))
         case let .damagedReviewLog(line):
             return AppError(String(localized: "The review log of this deck is damaged (line \(line))."))
         case .missingReviewLog:

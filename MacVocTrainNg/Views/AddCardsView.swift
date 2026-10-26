@@ -200,7 +200,7 @@ struct AddCardsView: View {
         Section {
             Toggle("Both directions", isOn: $bothDirections)
         } footer: {
-            Text("Adds a second card that asks the other way round. It unlocks once you know the first.")
+            Text("Adds a card that asks the other way round, once you know the first.")
         }
     }
 
@@ -226,7 +226,7 @@ struct AddCardsView: View {
                 }
                 .accessibilityLabel(Text("Lesson words"))
         } footer: {
-            Text("One word per line: the Greek word, an equals sign, a dash or a hyphen with spaces around it, then the translation.")
+            Text("One word per line: the word, then =, – or - with spaces, then the translation.")
         }
 
         if !preview.invalidLines.isEmpty {
@@ -252,7 +252,7 @@ struct AddCardsView: View {
 
         Section {
             if preview.rows.isEmpty {
-                Text("Type a word and its translation to see its cards.")
+                Text("Type a word and its translation.")
                     .foregroundStyle(.secondary)
             }
             ForEach(preview.rows) { row in
@@ -264,7 +264,7 @@ struct AddCardsView: View {
             Text("Preview")
         } footer: {
             if !preview.rows.isEmpty {
-                Text("The production card unlocks after the recognition card is learned")
+                Text("Meaning → Word unlocks once Word → Meaning is learned")
             }
         }
     }

@@ -11,7 +11,7 @@ struct RetentionTables: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Cards in the review phase that you recalled (Hard, Good or Easy) when they were asked again.")
+                Text("Review cards you recalled: Hard, Good or Easy.")
                     .foregroundStyle(.secondary)
                 Text("Target recall: \(Format.percent(retention.desiredRetention))")
                     .font(.callout.weight(.medium))
@@ -20,7 +20,7 @@ struct RetentionTables: View {
             RetentionGrid(
                 rows: TrueRetention.Period.allCases.map { RetentionRow(id: "\($0)", title: $0.title, split: retention.all[$0]) })
 
-            Text("Young cards had an interval under 21 days when they were asked, mature cards 21 days or more. Learning steps, first reviews and further reviews on the same study day are not counted.")
+            Text("Young: an interval under 21 days when asked; mature: 21 days or more. Learning steps, first reviews and repeats on the same day don't count.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

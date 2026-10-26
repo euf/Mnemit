@@ -199,7 +199,7 @@ struct CardListView: View {
             ContentUnavailableView {
                 Label("No Cards Yet", systemImage: "rectangle.stack.badge.plus")
             } description: {
-                Text("Add your first cards one by one or from a list.")
+                Text("Add your first cards.")
             } actions: {
                 if let addCards {
                     Button("Add Cards…", action: addCards)
@@ -309,13 +309,13 @@ struct SuspensionButtons: View {
             Button("Suspend") {
                 document.setSuspended(true, of: ids)
             }
-            .help("Don't ask these cards in study sessions until you resume them")
+            .help("No session asks them until you resume them")
         }
         if cards.contains(where: \.isSuspended) {
             Button("Resume") {
                 document.setSuspended(false, of: ids)
             }
-            .help("Ask these cards in study sessions again")
+            .help("Ask these cards again")
         }
     }
 }
