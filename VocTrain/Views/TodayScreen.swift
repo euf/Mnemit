@@ -214,8 +214,9 @@ struct TodayScreen: View {
             Text(stage.title)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
-                // The bar sizes its items to their content: the button takes the width the search button leaves.
-                .containerRelativeFrame(.horizontal) { width, _ in max(120, width - 140) }
+                // The bar sizes its items to their content: the button takes the width the search button and its gap leave
+                // (the bar's 291 pt at 375 pt: 211 for the button, room for "Learn 10 New Words" at 17 pt in one line).
+                .containerRelativeFrame(.horizontal) { width, _ in max(180, width - 80) }
         }
         .buttonStyle(.borderedProminent)
         .tint(stage == .study ? nil : Color.secondary)
