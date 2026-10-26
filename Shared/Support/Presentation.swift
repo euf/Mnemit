@@ -658,11 +658,19 @@ extension Color {
     /// accent shows instead unless it is Multicolor.
     static var dailyRing: Color { .appAccent }
 
-    /// The tail of the ring's gradient (`ProgressRing`): the accent mixed with a quarter of white
-    /// in device RGB. It follows the accent in all four appearances. A quarter is the most that
-    /// keeps 3:1 on the light grouped grey (a third does not); `AccentContrastTests` holds the
-    /// tail to 3:1 on the surfaces and to 1.3:1 against the accent.
-    static var dailyRingTail: Color { Color.appAccent.mix(with: .white, by: 0.25, in: .device) }
+    /// The two ends of the ring's gradient (`ProgressRing`), made from the accent in device RGB so they follow it in all
+    /// four appearances. Light mode: the head is the accent with a quarter of black, the tail the accent with a quarter of
+    /// white (the most white that keeps 3:1 on the light grouped grey). Dark mode: the head is the accent, the tail the
+    /// accent with half white. The ends differ by about 2.5:1 in every appearance, where a lightened tail alone gave 1.65:1
+    /// and the start and the tail of a ring looked alike (owner, 26.10.2026). `AccentContrastTests` holds the tail to 3:1
+    /// on the surfaces and the two ends to 2:1 against each other.
+    static func dailyRingHead(_ scheme: ColorScheme) -> Color {
+        scheme == .dark ? .appAccent : Color.appAccent.mix(with: .black, by: 0.25, in: .device)
+    }
+
+    static func dailyRingTail(_ scheme: ColorScheme) -> Color {
+        Color.appAccent.mix(with: .white, by: scheme == .dark ? 0.5 : 0.25, in: .device)
+    }
 
     /// The streak's flame, filled once today keeps it and outlined in this colour when the streak is at risk: orange,
     /// the one hue of the app that means the habit (red is Forgot, the greens are recalled, indigo is the ring and

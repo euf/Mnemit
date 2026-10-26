@@ -228,11 +228,10 @@ struct AccentContrastTests {
         return (color(centers[0]), color(centers[1]))
     }
 
-    /// The ring's gradient runs from `Color.dailyRingTail` (the accent lightened) to the
-    /// accent. The head is the accent, held above, and drawn as the asset says; the tail holds the
-    /// same 3:1 on every surface, so no part of the stroke fades into it, and it is lighter than the
-    /// accent by 1.3:1 at least, so the gradient shows. Both ends are read from the pixels of a
-    /// view in the appearance.
+    /// The ring's gradient runs from `Color.dailyRingHead` to `Color.dailyRingTail` (`Presentation.swift`): the head is
+    /// the accent (darkened in light mode), the tail the accent lightened. The tail holds 3:1 on every surface, so no part
+    /// of the stroke fades into it, and the two ends differ by 2:1 at least, so the start and the tail of a ring tell
+    /// apart. Both ends are read from the pixels of a view in the appearance.
     @MainActor @Test func ringGradientHoldsItsContrastInEveryAppearance() async throws {
         var lines: [String] = []
         for appearance in Self.appearances {
@@ -241,13 +240,19 @@ struct AccentContrastTests {
             ])
             let accent = try #require(UIColor(named: "AccentColor", in: .main, compatibleWith: traits))
             let accentLuminance = Self.luminance(accent, in: traits)
-            let (head, tail) = try await Self.shown(.dailyRing, .dailyRingTail, in: appearance)
-            #expect(abs(Self.luminance(head, in: traits) - accentLuminance) < 0.01, "the head is the asset's accent, \(appearance.name)")
+            let scheme: ColorScheme = appearance.style == .dark ? .dark : .light
+            let (head, tail) = try await Self.shown(.dailyRingHead(scheme), .dailyRingTail(scheme), in: appearance)
+            let headLuminance = Self.luminance(head, in: traits)
+            if scheme == .dark {
+                #expect(abs(headLuminance - accentLuminance) < 0.01, "the head is the asset's accent, \(appearance.name)")
+            } else {
+                #expect(headLuminance < accentLuminance, "the head is the accent darkened, \(appearance.name)")
+            }
             let tailLuminance = Self.luminance(tail, in: traits)
-            let flatness = Self.contrast(tailLuminance, accentLuminance)
-            lines.append("\(appearance.name): tail against accent \(String(format: "%.2f", flatness))")
+            let spread = Self.contrast(tailLuminance, headLuminance)
+            lines.append("\(appearance.name): tail against head \(String(format: "%.2f", spread))")
             #expect(tailLuminance > accentLuminance, "the tail is the lighter end, \(appearance.name)")
-            #expect(flatness >= 1.3, "the gradient is visible, \(appearance.name)")
+            #expect(spread >= 2, "the start and the tail tell apart, \(appearance.name)")
             for surface in Self.surfaces {
                 let ratio = Self.contrast(tailLuminance, Self.luminance(surface.color, in: traits))
                 lines.append("    tail on \(surface.name) \(String(format: "%.2f", ratio))")

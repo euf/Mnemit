@@ -78,6 +78,7 @@ struct ProgressRing: View {
     /// The stroke's thickness; `nil` takes `lineWidth(diameter:)`.
     var lineWidth: CGFloat?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
     /// The laps drawn at most: three times the goal.
     static let maxLaps = DayRecord.maxLaps
@@ -88,7 +89,7 @@ struct ProgressRing: View {
     }
 
     var body: some View {
-        ActivityRing(progress: min(Self.maxLaps, max(0, fraction)), color: .dailyRing, tipColor: .dailyRingTail, lineWidth: lineWidth ?? Self.lineWidth(diameter: diameter))
+        ActivityRing(progress: min(Self.maxLaps, max(0, fraction)), color: .dailyRingHead(colorScheme), tipColor: .dailyRingTail(colorScheme), lineWidth: lineWidth ?? Self.lineWidth(diameter: diameter))
             .animation(reduceMotion ? nil : filling, value: fraction)
             .frame(width: diameter, height: diameter)
             .accessibilityHidden(true)
