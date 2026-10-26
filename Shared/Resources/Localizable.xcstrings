@@ -4258,28 +4258,6 @@
         }
       }
     },
-    "All Medals": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle Medaillen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Όλα τα μετάλλια"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Все медали"
-          }
-        }
-      }
-    },
     "All done for today": {
       "localizations": {
         "de": {
@@ -5885,6 +5863,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "День"
+          }
+        }
+      }
+    },
+    "Day streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tage in Folge"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ημέρες σερί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дней подряд"
           }
         }
       }
@@ -9673,6 +9673,28 @@
         }
       }
     },
+    "Next review %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nächste Wiederholung %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επόμενη επανάληψη %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Следующее повторение %@"
+          }
+        }
+      }
+    },
     "No Cards": {
       "localizations": {
         "de": {
@@ -12331,6 +12353,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Общие колоды на AnkiWeb…"
+          }
+        }
+      }
+    },
+    "Show All": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle anzeigen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εμφάνιση όλων"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать все"
           }
         }
       }
@@ -15305,46 +15349,68 @@
         }
       }
     },
-    "Your ring: %@ min a day": {
+    "Your ring": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dein Ring: %@ Min. pro Tag"
+            "value": "Dein Ring"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ο κύκλος σου: %@ λεπτά την ημέρα"
+            "value": "Ο κύκλος σου"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Твоё кольцо: %@ мин в день"
+            "value": "Твоё кольцо"
           }
         }
       }
     },
-    "Your ring: %@ min a day · started at %@": {
+    "a day": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dein Ring: %@ Min. pro Tag · Start bei %@"
+            "value": "pro Tag"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ο κύκλος σου: %@ λεπτά την ημέρα · ξεκίνησε στα %@"
+            "value": "την ημέρα"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Твоё кольцо: %@ мин в день · начало: %@"
+            "value": "в день"
+          }
+        }
+      }
+    },
+    "a day · started at %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pro Tag · Start bei %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "την ημέρα · ξεκίνησε στα %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "в день · начало: %@"
           }
         }
       }
@@ -15858,13 +15924,101 @@
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "λεπ."
+            "value": "λεπτά"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
             "value": "мин"
+          }
+        }
+      }
+    },
+    "of %lld days": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "von %lld Tag"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "von %lld Tagen"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "από %lld ημέρα"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "από %lld ημέρες"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "of %lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "of %lld days"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "из %lld дней"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "из %lld дней"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "из %lld дня"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "из %lld дня"
+                }
+              }
+            }
           }
         }
       }

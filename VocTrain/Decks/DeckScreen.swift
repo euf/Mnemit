@@ -1,8 +1,8 @@
 import SwiftUI
 import VocabCore
 
-/// A deck, pushed on Today by the tap on its row: one line on where it stands today, its cards, the
-/// statistics and the options, with Study This Deck at the bottom. Add Cards and Import Cards… are the
+/// A deck, pushed on Today by the tap on its row: its Today card (the time and the counts of the plan), then its cards, the
+/// statistics and the options as rows, with Study This Deck in the bottom bar. Add Cards and Import Cards… are the
 /// plus of the bar; the practices, Rename, Pause, Export and Delete are in its menu.
 ///
 /// The deck is held open by `PushedDecks` for as long as the screen is on the stack, so the
@@ -87,7 +87,9 @@ struct DeckContent: View {
             if let document, let merger {
                 LoadedSections(document: document, merger: merger, pace: pace, canEdit: canEdit, addCards: { showsAddCards = true })
             } else if failure == nil, let headline = DeckHeadline(counts: knownCounts, pace: pace, isPaused: false, hasCards: true, now: Date()) {
-                HeadlineRow(headline: headline)
+                Section {
+                    DeckTodayCard(headline: headline, counts: knownCounts, pace: pace, isPaused: false, now: Date())
+                }
             }
         }
         .listStyle(.insetGrouped)
@@ -105,6 +107,7 @@ struct DeckContent: View {
                     AddMenu(document: document, canEdit: canEdit, addCards: { showsAddCards = true }, importCards: { isChoosingImport = true })
                 }
             }
+            ToolbarItem(placement: .bottomBar) { studyButton }
             ToolbarItem(placement: .primaryAction) {
                 Menu("More", systemImage: "ellipsis") {
                     if let document {
@@ -119,10 +122,6 @@ struct DeckContent: View {
                     Button("Delete Deck", systemImage: "trash", role: .destructive) { confirmsDelete = true }
                 }
             }
-        }
-        .safeAreaBar(edge: .bottom) {
-            StudyButton(stage: studyIsDue ? .study : .pushOn, due: due, studyTitle: "Study This Deck") { start($0 == .pushOn ? .pushOn : .study) }
-                .disabled(!canEdit || (document?.deck.cards.isEmpty ?? true))
         }
         .sheet(isPresented: $showsRename) {
             RenameDeckSheet(currentName: name) { newName in
@@ -159,6 +158,25 @@ struct DeckContent: View {
         } message: {
             Text(deleteFailure ?? "")
         }
+    }
+
+    /// The deck's one action in the bottom bar: Study This Deck, prominent while cards are due, Learn 10 New Words when
+    /// nothing is.
+    private var studyButton: some View {
+        let stage: DayAction = studyIsDue ? .study : .pushOn
+        return Button {
+            start(stage == .pushOn ? .pushOn : .study)
+        } label: {
+            Text(stage == .study ? "Study This Deck" : stage.title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                // The bar sizes its items to their content: the button takes the bar's width, as on Today.
+                .containerRelativeFrame(.horizontal) { width, _ in max(180, width - 64) }
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(stage == .study ? nil : Color.secondary)
+        .disabled(!canEdit || (document?.deck.cards.isEmpty ?? true))
+        .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
     }
 
     /// Study These Now: the sheet has gone, the stream of this deck puts the cards it added first.
@@ -268,26 +286,6 @@ private struct PracticeButtons: View {
     }
 }
 
-/// `DeckHeadline` as the first row of the list, on the background of the screen: a header, not a row of a group.
-private struct HeadlineRow: View {
-    var headline: DeckHeadline
-
-    var body: some View {
-        Section {
-            HStack(spacing: Spacing.tight) {
-                if headline.isDone {
-                    Image(systemName: "checkmark")
-                        .accessibilityHidden(true)
-                }
-                Text(verbatim: headline.text)
-            }
-            .font(.subheadline.weight(.semibold))
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
-        }
-    }
-}
-
 /// The sections that need the deck itself.
 private struct LoadedSections: View {
     @ObservedObject var document: VocabularyDocument
@@ -306,8 +304,11 @@ private struct LoadedSections: View {
             }
         }
 
-        if let headline = DeckHeadline(counts: counts, pace: pace, isPaused: document.deck.learningOptions.isPaused, hasCards: !document.deck.cards.isEmpty, now: now) {
-            HeadlineRow(headline: headline)
+        let isPaused = document.deck.learningOptions.isPaused
+        if let headline = DeckHeadline(counts: counts, pace: pace, isPaused: isPaused, hasCards: !document.deck.cards.isEmpty, now: now) {
+            Section {
+                DeckTodayCard(headline: headline, counts: counts, pace: pace, isPaused: isPaused, now: now)
+            }
         }
 
         Section {

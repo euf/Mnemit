@@ -53,6 +53,13 @@ extension DeckFileTests {
                     }
                     try await Task.sleep(for: .seconds(1.5))
                     try write(hosting, to: "shell-\(name)-\(dark ? "dark" : "light").png")
+                    if case .deck = item {
+                        // The deck's statistics, its tiles over the retention table and the charts.
+                        shell.showScreen(.statistics)
+                        try await Task.sleep(for: .seconds(1.5))
+                        try write(hosting, to: "shell-deck-statistics-\(dark ? "dark" : "light").png")
+                        shell.showScreen(.cards)
+                    }
                 }
             }
             await f.finish()
@@ -88,6 +95,35 @@ extension DeckFileTests {
             try await Task.sleep(for: .seconds(1))
             try write(try #require(window.contentView), to: "shell-shortcuts-light.png")
             await f.finish()
+        }
+
+        /// Progress with a history of 110 days, which the fixture's decks have not: the streak card with its best run, the tiles
+        /// two to a row, the calendar, the medals and the ladder of memory, in the iPhone's screen on a Mac window.
+        @Test func progressWithAHistory() async throws {
+            let today = StudyCalendar().dayNumber(for: Date())
+            var streak = 0
+            var records: [DayRecord] = []
+            for index in 0..<110 {
+                let isToday = index == 109
+                let missed = !isToday && index % 31 == 5
+                let partial = !isToday && !missed && index % 11 == 3
+                let done = isToday ? 14 : missed ? 0 : partial ? 9 : index % 17 == 0 ? 75 : 24 + index % 3
+                streak = missed ? 0 : streak + 1
+                records.append(
+                    DayRecord(day: today - 109 + index, done: done, goal: 24, kept: !missed && done > 0, closed: done >= 24, streak: streak, savedStreak: index == 6))
+            }
+            let progress = DailyProgress(
+                ring: DailyRing(done: 14, goal: 24), streak: Streak(days: streak, repairCards: nil), time: 480, streakKeptToday: true,
+                learned: WordsLearned(words: 412, wordsAtDayStart: 400), ladder: [180, 36, 64, 85, 42, 9], records: records,
+                achievements: Achievements.earned(over: records),
+                ringDays: [DailyGoal.RingDay(day: today - 109, time: 150, worked: 0, closed: true, studied: true)])
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 760, height: 1150), styleMask: [.titled], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.appearance = NSAppearance(named: .aqua)
+            window.contentView = NSHostingView(rootView: NavigationStack { ProgressScreen(progress: progress) }.brandTint().frame(width: 760, height: 1150))
+            defer { window.close() }
+            try await Task.sleep(for: .seconds(1))
+            try write(try #require(window.contentView), to: "shell-progress-history-light.png")
         }
 
         private func write(_ hosting: NSView, to file: String) throws {

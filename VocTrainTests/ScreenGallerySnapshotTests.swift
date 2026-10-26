@@ -143,6 +143,31 @@ struct ScreenGallerySnapshotTests {
         try await shoot("statistics", NavigationStack { StatisticsScreen(document: document) }, tall: 1600)
     }
 
+    /// A deck's Today card in its states: a plan with the three counts, a plan with only new cards, done with its next
+    /// review, and paused; in a list, as the deck's screen has it.
+    @Test func deckTodayCard() async throws {
+        let now = Date()
+        let tomorrow = now.addingTimeInterval(86_400)
+        let states: [(StudyCounts, Bool)] = [
+            (HomeSnapshotTests.counts(new: 6, learning: 2, review: 14), false),
+            (HomeSnapshotTests.counts(new: 10, learning: 0, review: 0), false),
+            (HomeSnapshotTests.counts(new: 0, learning: 0, review: 0, nextDue: tomorrow), false),
+            (HomeSnapshotTests.counts(new: 6, learning: 2, review: 14), true),
+        ]
+        let list = List {
+            ForEach(states.indices, id: \.self) { index in
+                let (counts, isPaused) = states[index]
+                if let headline = DeckHeadline(counts: counts, pace: Pace(), isPaused: isPaused, hasCards: true, now: now) {
+                    Section {
+                        DeckTodayCard(headline: headline, counts: counts, pace: Pace(), isPaused: isPaused, now: now)
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        try await shoot("deck-today-card", NavigationStack { list.navigationTitle("Greek B1") })
+    }
+
     @Test func deckOptions() async throws {
         let document = try sampleDeck().document
         try await shoot("deck-options", NavigationStack { DeckOptionsScreen(document: document) }, tall: 1900)

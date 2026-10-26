@@ -42,9 +42,9 @@ struct DeckPage: View {
     }
 }
 
-/// What a deck's page shows of a deck, from a document so a test can host it: the strip with the day's word on the deck
-/// and Study This Deck over the table of cards or the statistics, and in the toolbar the switch between them, Add Cards and
-/// Learning Options. The sheets of the deck, its options, an import and Add Cards, come up from here.
+/// What a deck's page shows of a deck, from a document so a test can host it: the strip with the deck's Today card and Study
+/// This Deck over the table of cards or the statistics, and in the toolbar the switch between them, Add Cards, Learning
+/// Options and Study This Deck again. The sheets of the deck, its options, an import and Add Cards, come up from here.
 struct DeckPageContent: View {
     @ObservedObject var document: VocabularyDocument
     /// `false` while the deck can only be viewed: nothing then changes it or starts a stream.
@@ -105,6 +105,8 @@ struct DeckPageContent: View {
                     .help("Learning Options")
                     .disabled(!canEdit)
             }
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarItem(placement: .primaryAction) { studyButton }
         }
         .sheet(isPresented: $showingOptions) {
             DeckOptionsView(document: document)
@@ -141,8 +143,8 @@ struct DeckPageContent: View {
         }
     }
 
-    /// The word of the deck and its one button: the cards of today's plan, Done with the next review or Paused, and
-    /// Study This Deck, or Learn 10 New Words once nothing is left.
+    /// The deck's Today card and its one button: the time and the counts of today's plan, Done with the next review or
+    /// Paused, and Study This Deck, or Learn 10 New Words once nothing is left.
     private var stripBar: some View {
         VStack(spacing: 0) {
             strip
@@ -151,33 +153,33 @@ struct DeckPageContent: View {
     }
 
     private var strip: some View {
+        let isPaused = document.deck.learningOptions.isPaused
         let counts = document.dueCards.counts
-        let hasCards = !document.deck.cards.isEmpty
-        let headline = DeckHeadline(counts: counts, pace: pace, isPaused: document.deck.learningOptions.isPaused, hasCards: hasCards, now: document.clock.now)
+        let now = document.clock.now
+        let headline = DeckHeadline(counts: counts, pace: pace, isPaused: isPaused, hasCards: !document.deck.cards.isEmpty, now: now)
         return HStack(spacing: Spacing.gap) {
             if let headline {
-                HStack(spacing: Spacing.tight) {
-                    if headline.isDone {
-                        Image(systemName: "checkmark")
-                            .accessibilityHidden(true)
-                    }
-                    Text(verbatim: headline.text)
-                }
-                .font(.title3.weight(.semibold))
+                DeckTodayCard(headline: headline, counts: counts, pace: pace, isPaused: isPaused, now: now)
             }
             Spacer()
-            Button {
-                start(counts.total > 0 ? .study : .pushOn)
-            } label: {
-                Text(counts.total > 0 ? "Study This Deck" : "Learn 10 New Words")
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(counts.total > 0 ? Color.appAccent : .secondary)
-            .controlSize(.large)
-            .disabled(!canEdit || !hasCards)
+            studyButton
+                .controlSize(.large)
         }
         .padding(.horizontal, Spacing.margin)
-        .padding(.vertical, Spacing.tight)
+        .padding(.vertical, Spacing.gap)
+    }
+
+    /// Study This Deck while cards are due, Learn 10 New Words when nothing is: in the strip and in the toolbar.
+    private var studyButton: some View {
+        let isDue = document.dueCards.counts.total > 0
+        return Button {
+            start(isDue ? .study : .pushOn)
+        } label: {
+            Text(isDue ? "Study This Deck" : "Learn 10 New Words")
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(isDue ? Color.appAccent : .secondary)
+        .disabled(!canEdit || document.deck.cards.isEmpty)
     }
 
     /// Study These Now: the sheet has gone, the stream of this deck puts the cards it added first.
