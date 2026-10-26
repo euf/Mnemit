@@ -138,7 +138,11 @@ public struct StudyStream: Sendable {
     }
 
     public mutating func perform(_ command: SessionCommand) {
-        if case .suspend = command, session.currentCardID != nil { stepCount += 1 }
+        switch command {
+        case .suspend: if session.currentCardID != nil { stepCount += 1 }
+        case .setAside, .keep: stepCount += 1
+        case .finishUp, .skip: break
+        }
         mode.perform(command)
     }
 

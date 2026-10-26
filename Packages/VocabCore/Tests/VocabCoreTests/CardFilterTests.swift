@@ -22,7 +22,7 @@ struct CardFilterTests {
     }
 
     @Test func theFiltersAreNamedAndOrderedLikeTheSpec() {
-        #expect(CardFilter.allCases.map(\.rawValue) == ["all", "due", "new", "learning", "suspended", "difficult"])
+        #expect(CardFilter.allCases.map(\.rawValue) == ["all", "due", "new", "learning", "suspended", "leeches"])
     }
 
     @Test func allMatchesEveryCard() {
@@ -58,7 +58,7 @@ struct CardFilterTests {
         #expect(matching(.learning, in: cards) == ["learning", "relearning"])
     }
 
-    @Test func suspendedCardsShowOnlyUnderSuspendedAndDifficult() {
+    @Test func suspendedCardsShowOnlyUnderSuspendedAndLeeches() {
         let cards = [
             card("new", isSuspended: true),
             card("due", phase: .review, isSuspended: true),
@@ -70,15 +70,15 @@ struct CardFilterTests {
         #expect(matching(.due, in: cards).isEmpty)
         #expect(matching(.new, in: cards) == ["active"])
         #expect(matching(.learning, in: cards).isEmpty)
-        #expect(matching(.difficult, in: cards) == ["leech"])
+        #expect(matching(.leeches, in: cards) == ["leech"])
     }
 
-    /// Difficult is the leech of `Card.isLeech(threshold:)`, resumed or not.
-    @Test func difficultFollowsTheLeechThreshold() {
+    /// Leeches are the cards of `Card.isLeech(threshold:)`, resumed or not.
+    @Test func leechesFollowTheLeechThreshold() {
         let cards = [card("seven", phase: .review, lapses: 7), card("eight", phase: .review, lapses: 8), card("ten", phase: .relearning, lapses: 10), card("new")]
-        #expect(matching(.difficult, in: cards) == ["eight", "ten"])
-        #expect(matching(.difficult, in: cards, threshold: 5) == ["seven", "eight", "ten"])
-        #expect(matching(.difficult, in: cards, threshold: 0).isEmpty)
+        #expect(matching(.leeches, in: cards) == ["eight", "ten"])
+        #expect(matching(.leeches, in: cards, threshold: 5) == ["seven", "eight", "ten"])
+        #expect(matching(.leeches, in: cards, threshold: 0).isEmpty)
     }
 
     @Test func countsComeInOnePassAndMatchTheFilters() throws {
@@ -102,7 +102,7 @@ struct CardFilterTests {
         #expect(counts[.new] == 1)
         #expect(counts[.learning] == 1)
         #expect(counts[.suspended] == 2)
-        #expect(counts[.difficult] == 1)
+        #expect(counts[.leeches] == 1)
     }
 
     @Test func anEmptyDeckCountsZeroForEveryFilter() {

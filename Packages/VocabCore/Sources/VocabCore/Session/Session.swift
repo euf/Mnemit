@@ -18,7 +18,8 @@ public struct Session: Sendable {
     public private(set) var mistakeIDs: [Card.ID] = []
     /// Cards suspended during the session, by the learner or as leeches; they left it.
     public private(set) var suspendedCount = 0
-    /// Cards that became leeches during the session and were suspended for it, in order.
+    /// Cards that became leeches during the session, in order: the moments the stream shows, whatever the
+    /// deck's leech action does to the card.
     public private(set) var leechIDs: [Card.ID] = []
 
     private var queue: SessionQueue
@@ -49,9 +50,10 @@ public struct Session: Sendable {
     ///
     /// - Parameters:
     ///   - isDone: Whether the current card leaves the session.
-    ///   - isLeech: Whether the review made the card a leech, which suspends it: it leaves
-    ///     the session, too, and counts as suspended.
-    mutating func record(_ grade: Grade, isDone: Bool, isLeech: Bool = false, at now: Date) {
+    ///   - isLeech: Whether the review made the card a leech: a moment of the stream.
+    ///   - isSuspended: Whether the review suspended the card, as a leech under the deck's action
+    ///     Suspend: it leaves the session, too, and counts as suspended.
+    mutating func record(_ grade: Grade, isDone: Bool, isLeech: Bool = false, isSuspended: Bool = false, at now: Date) {
         guard let id = currentCardID else { return }
         lastReviewedAt = now
         reviewCount += 1
@@ -62,9 +64,11 @@ public struct Session: Sendable {
         }
         if isLeech {
             leechIDs.append(id)
+        }
+        if isSuspended {
             suspendedCount += 1
         }
-        if isDone || isLeech {
+        if isDone || isSuspended {
             queue.remove(id)
         }
         advance()
@@ -78,6 +82,17 @@ public struct Session: Sendable {
             guard currentCardID != nil else { return }
             suspendedCount += 1
             skip()
+        case let .setAside(id):
+            guard queue.contains(id) else { return }
+            queue.remove(id)
+            suspendedCount += 1
+            totalCount -= 1
+            if currentCardID == id { advance() }
+        case let .keep(id):
+            guard suspendedCount > 0, !queue.contains(id) else { return }
+            suspendedCount -= 1
+            queue.add(id)
+            if currentCardID == nil { advance() }
         }
     }
 

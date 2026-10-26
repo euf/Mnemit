@@ -159,6 +159,24 @@ struct DeckFileTests {
         #expect(old.leechThreshold == 8)
     }
 
+    /// The leech action is newer still: a deck without the key reads as keep, and the key says "suspend" or "keep".
+    @Test func leechActionRoundTripsAndDefaultsToKeep() throws {
+        var deck = try sampleDeck()
+        #expect(deck.learningOptions.leechAction == .keep)
+        // Left out while keep, so the files of decks that never changed it stay as they were.
+        #expect(!String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).contains("leechAction"))
+        var options = deck.learningOptions
+        options.leechAction = .suspend
+        _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), day: 100)
+        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).contains("\"leechAction\" : \"suspend\""))
+        #expect(try DeckFile.decode(DeckFile.fileWrapper(for: deck)).learningOptions.leechAction == .suspend)
+
+        // Missing, as in every deck of an older app, and a value this version doesn't know.
+        #expect(try DeckFile.decode(deckJSON()).learningOptions.leechAction == .keep)
+        let unknown = String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).replacingOccurrences(of: "\"suspend\"", with: "\"bury\"")
+        #expect(try DeckFile.decode(Data(unknown.utf8)).learningOptions.leechAction == .keep)
+    }
+
     /// The options `revealedRecallWeight` (ADR 0004, ADR 0005), `optimizeFromRevealed` and `caseSensitive` are gone: a
     /// deck with them, whatever the values, reads with the other options as they are, and saving leaves the keys out.
     @Test func theRemovedOptionsOfOlderDecksAreIgnored() throws {

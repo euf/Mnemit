@@ -34,10 +34,12 @@ public struct LearningOptions: Hashable, Sendable {
     /// Spreads review intervals slightly so cards learned together don't stay clustered.
     public var fuzzing: Bool = true
     public var parameters: FSRSParameters = .default
-    /// Lapses (Again on a card in the review phase) after which a study session suspends
-    /// the card as a leech, and after every further multiple of it; 0 never does. A card is
-    /// a leech from that many lapses on, resumed or not: `Card.isLeech(threshold:)`.
+    /// The lapses (Again on a card in the review phase) at which a study session meets a leech, see
+    /// `StudySession.isLeechMoment(lapses:threshold:)`; 0 never does. A card is a leech from that many
+    /// lapses on, resumed or not: `Card.isLeech(threshold:)`.
     public var leechThreshold: Int = 8
+    /// What a leech does to the card: it stays in rotation, or is suspended.
+    public var leechAction: LeechAction = .keep
     /// Whether the app fits `parameters` to the review log again from time to time and keeps
     /// the fit when it predicts the reviews better, see `ParameterRefit`.
     public var updatesParametersAutomatically: Bool = true
@@ -80,6 +82,14 @@ public struct LearningOptions: Hashable, Sendable {
     public static let productionUnlockDaysRange: ClosedRange<Int> = 0...365
     /// For `leechThreshold`; 0 is off.
     public static let leechThresholdRange: ClosedRange<Int> = 0...99
+}
+
+/// What a deck does to a card that becomes a leech, see `LearningOptions.leechAction`.
+public enum LeechAction: String, Sendable, CaseIterable {
+    /// The card stays in rotation, and FSRS goes on scheduling it.
+    case keep
+    /// The card is suspended, as Anki's classic leech action does.
+    case suspend
 }
 
 /// The order in which a study session takes new cards when a limit leaves some out.

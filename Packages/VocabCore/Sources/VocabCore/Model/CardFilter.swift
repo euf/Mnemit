@@ -1,12 +1,11 @@
 import Foundation
 
 /// The filters of a card browser, the same on every platform: **All · Due · New ·
-/// Learning · Suspended · Difficult**.
+/// Learning · Suspended · Leeches**.
 ///
 /// Due, New and Learning list the cards a study session may ask, so a suspended card
-/// shows only under Suspended. Difficult is the leech of `Card.isLeech(threshold:)`,
-/// suspended or not: a session suspends a leech, and it stays under Difficult after the
-/// learner resumes it. The filters overlap: a learning card that is due is both Due and
+/// shows only under Suspended. Leeches are the cards of `Card.isLeech(threshold:)`, suspended
+/// or not: a card stays under Leeches after the learner resumes it. The filters overlap: a learning card that is due is both Due and
 /// Learning.
 public enum CardFilter: String, CaseIterable, Identifiable, Sendable {
     case all
@@ -17,7 +16,7 @@ public enum CardFilter: String, CaseIterable, Identifiable, Sendable {
     /// Cards in learning or relearning, due or not.
     case learning
     case suspended
-    case difficult
+    case leeches
 
     public var id: String { rawValue }
 
@@ -35,7 +34,7 @@ public enum CardFilter: String, CaseIterable, Identifiable, Sendable {
             !card.isSuspended && card.learningState.map { $0.phase != .review } == true
         case .suspended:
             card.isSuspended
-        case .difficult:
+        case .leeches:
             card.isLeech(threshold: leechThreshold)
         }
     }
