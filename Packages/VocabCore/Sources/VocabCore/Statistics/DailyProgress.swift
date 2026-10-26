@@ -647,6 +647,11 @@ public struct DeckActivity: Sendable {
         MemoryEstimate(deck: deck, at: now, calendar: calendar)
     }
 
+    /// The words this deck has learned at `now`, `WordsLearned`.
+    public func learned(at now: Date, calendar: StudyCalendar) -> WordsLearned {
+        WordsLearned(deck: deck, at: now, calendar: calendar)
+    }
+
     /// The reviews of the study days that set the learner's pace, and the cards done on them
     /// (`DailyGoal.pace(days:newDone:otherDone:)`): the study day of `now` and the `DailyGoal.paceDays`
     /// before it, see `replayLog(from:through:calendar:keepsStates:)`.
@@ -1152,8 +1157,12 @@ public struct DailyProgress: Hashable, Sendable {
     /// `evaluate(_:at:calendar:)`: the plan takes them as `newCardAllowance`. A paused deck has 0
     /// here and no share of the day's new cards; whoever builds its plan leaves the allowance out.
     public var newCardAllowances: [Int]
-    /// The words in memory across the decks now, and when the day began (`MemoryEstimate`).
+    /// The words in memory across the decks now, and when the day began (`MemoryEstimate`): the sum of recall
+    /// probabilities, for the details of Progress and "How It Works".
     public var memory: MemoryEstimate
+    /// The words learned across the decks now, and when the day began (`WordsLearned`): whole words, the gain the
+    /// app headlines, "+N today" once `shownGain` is not `nil`.
+    public var learned: WordsLearned
     /// The rings of the last seven study days, today last: closed or not, `nil` before the first study day.
     /// Today's is closed once its ring is.
     public var week: [Bool?]
@@ -1177,7 +1186,8 @@ public struct DailyProgress: Hashable, Sendable {
     public init(
         ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace(), time: Double = DailyGoal.initialSeconds,
         roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), seconds: DailyGoal.initialSeconds), streakKeptToday: Bool = false,
-        newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
+        newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0),
+        learned: WordsLearned = WordsLearned(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
         ladder: [Int] = [], climbedToday: Int = 0, records: [DayRecord] = [], achievements: [Achievement] = [],
         ringDays: [DailyGoal.RingDay] = []
     ) {
@@ -1197,6 +1207,7 @@ public struct DailyProgress: Hashable, Sendable {
         self.streakKeptToday = streakKeptToday
         self.newCardAllowances = newCardAllowances
         self.memory = memory
+        self.learned = learned
     }
 
     /// The cards left that were not new when the day began.
@@ -1240,7 +1251,7 @@ public struct DailyProgress: Hashable, Sendable {
     /// `newCardAllowances`.
     ///
     /// A paused deck (`DeckActivity.isPaused`) takes no part in any of it: not in the plan, the goal, the
-    /// rounds, the time, the admission of new cards, the streak, the words in memory or the cards done.
+    /// rounds, the time, the admission of new cards, the streak, the words in memory, the words learned or the cards done.
     /// What is reviewed in it counts for the day through the cards of the other decks only.
     ///
     /// With a `cache` that an earlier call over the same decks filled, the days before today that the decks'
@@ -1357,6 +1368,7 @@ public struct DailyProgress: Hashable, Sendable {
             ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: pace(over: (today - DailyGoal.paceDays)...today), time: time,
             roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: givenAllowances,
             memory: MemoryEstimate.total(decks.map { $0.memory(at: now, calendar: calendar) }),
+            learned: WordsLearned.total(decks.map { $0.learned(at: now, calendar: calendar) }),
             week: (today - 6...today).map { $0 < first ? nil : closed[$0] ?? false },
             ladder: decks.map { $0.ladder() }.reduce(into: [Int](repeating: 0, count: MaturityCategory.allCases.count)) { sum, steps in
                 for index in sum.indices { sum[index] += steps[index] }
