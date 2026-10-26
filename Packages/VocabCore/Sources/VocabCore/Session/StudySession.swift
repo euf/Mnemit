@@ -120,6 +120,28 @@ public struct StudySession: Sendable {
         selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, newCardAllowance: newCardAllowance, using: &random).map(\.card.id)
     }
 
+    /// Which of `ids`, the cards the learner has just added (Add Cards, an import), a stream asks first: the cards of
+    /// `deck` that are new and not suspended, in the order of `ids`, once each, under the lock and burying of
+    /// `selection`: a production card waits until its word is learned, a word gives one card a day, and none if another
+    /// of its cards was reviewed today. The limits don't hold: the learner asked for these cards, see
+    /// `StudyStream.addCards(_:in:at:calendar:)`.
+    static func givenCards(_ ids: [Card.ID], in deck: Deck, at now: Date, calendar: StudyCalendar) -> [Card.ID] {
+        let wanted = Set(ids)
+        let cards = Dictionary(deck.cards.filter { wanted.contains($0.id) }.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let locked = notesAwaitingRecognition(in: deck, calendar: calendar)
+        let reviewedToday = notesReviewed(onDayOf: now, in: deck, calendar: calendar)
+        var seen = Set<Card.ID>()
+        var takenNotes = Set<String>()
+        return ids.filter { id in
+            guard let card = cards[id], card.isNew, card.isDue(at: now), seen.insert(id).inserted else { return false }
+            guard let note = card.note else { return true }
+            if card.kind == .production, locked.contains(note) { return false }
+            guard !takenNotes.contains(note), !(reviewedToday[note] ?? []).contains(where: { $0 != id }) else { return false }
+            takenNotes.insert(note)
+            return true
+        }
+    }
+
     /// The plan of the study day of `now` over `deck`, by kind: the very selection of
     /// `selectCards`, so the counts can't drift from what a stream takes, but without the
     /// size `cardsPerSession` gives one session. That is the size of a segment of the stream,

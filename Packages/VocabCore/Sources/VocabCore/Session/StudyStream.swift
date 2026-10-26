@@ -222,6 +222,31 @@ public struct StudyStream: Sendable {
         return true
     }
 
+    /// The cards of `ids` that `addCards(_:in:at:calendar:)` would put first now, in that order, for the count
+    /// "Study These Now" offers.
+    public static func addableCards(_ ids: [Card.ID], in deck: Deck, at now: Date, calendar: StudyCalendar) -> [Card.ID] {
+        StudySession.givenCards(ids, in: deck, at: now, calendar: calendar)
+    }
+
+    /// Puts the cards just added (`ids`, as Add Cards or an import made them) first in the stream, ahead of the plan:
+    /// "Study These Now". They are new cards beyond the plan, under the lock and burying of the plan
+    /// (`addableCards(_:in:at:calendar:)`) but not its limits, and the plan, as it stands, follows them: entering
+    /// them changes no count of the plan. Once reviewed they are new cards introduced today like any other, so the
+    /// plan's new cards that come after them are those the day's limits still allow (what the counts say, the
+    /// stream and the counts never part). They count toward the ring like any card done: one is done once its
+    /// learning steps are through (`Deck.doneCards(onDayOf:calendar:)`). The rests of the rounds stay as they are.
+    /// Replaces the running segment, as `addNewCards` does: nothing is lost, the cards it had left are still due.
+    ///
+    /// - Returns: Whether there was a card to ask; the stream stays as it was if not.
+    @discardableResult
+    public mutating func addCards(_ ids: [Card.ID], in deck: Deck, at now: Date, calendar: StudyCalendar) -> Bool {
+        guard !isPracticeOnly else { return false }
+        let given = Self.addableCards(ids, in: deck, at: now, calendar: calendar)
+        guard !given.isEmpty else { return false }
+        install(.study(StudySession(cardIDs: given, at: now, random: SeededRandom(seed: random.next()), reviewMode: reviewMode)), as: .plan)
+        return true
+    }
+
     // MARK: - Segments
 
     /// Installs the first of `stages` that has a card to ask.
