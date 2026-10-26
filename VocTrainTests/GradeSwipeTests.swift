@@ -139,12 +139,35 @@ struct GradeSwipeTests {
     }
 
     @Test func eachSectorLiesWithinReachOfItsReference() {
-        // The two never cancel when they are averaged: no sector goes 45° beyond its reference.
+        // No sector goes 45° beyond its reference, the middle of its sector.
         for degrees in stride(from: 0.0, to: 360.0, by: 1) {
             guard let grade = GradeSwipe.zone(swipe(degrees)) else { continue }
             var apart = abs(degrees - GradeSwipe.reference(of: grade)).truncatingRemainder(dividingBy: 360)
             if apart > 180 { apart = 360 - apart }
             #expect(apart < 45.001, "\(grade) at \(degrees)°")
+        }
+    }
+
+    @Test func easyAndHardFlyTowardTheGreenSide() {
+        // Compass: Easy's target 60°, Hard's 120°, 30° above and below due east; Good and Forgot as before.
+        #expect(GradeSwipe.yesTilt == 30)
+        #expect(GradeSwipe.easyTarget == 30)
+        #expect(GradeSwipe.hardTarget == 330)
+        #expect(bearing(ofMath: GradeSwipe.target(of: .easy)) == 60)
+        #expect(bearing(ofMath: GradeSwipe.target(of: .hard)) == 120)
+        #expect(GradeSwipe.target(of: .good) == 0)
+        #expect(GradeSwipe.target(of: .again) == 180)
+        // The flight goes further right than up or down, and the two mirror each other.
+        let easy = GradeSwipe.exit(of: .easy)
+        let hard = GradeSwipe.exit(of: .hard)
+        #expect(easy.width > abs(easy.height) && easy.height < 0)
+        #expect(abs(hard.width - easy.width) < 0.001 && abs(hard.height + easy.height) < 0.001 && hard.height > 0)
+        // The two never cancel when they are averaged: every direction of a sector lies within 90° of its target.
+        for degrees in stride(from: 0.0, to: 360.0, by: 1) {
+            guard let grade = GradeSwipe.zone(swipe(degrees)) else { continue }
+            var apart = abs(degrees - GradeSwipe.target(of: grade)).truncatingRemainder(dividingBy: 360)
+            if apart > 180 { apart = 360 - apart }
+            #expect(apart < 90.001, "\(grade) at \(degrees)°")
         }
     }
 
@@ -215,40 +238,40 @@ struct GradeSwipeTests {
 
     // MARK: The way of the card
 
-    @Test func theFingerAndTheReferenceAreAveraged() {
+    @Test func theFingerAndTheTargetAreAveraged() {
         func card(_ degrees: Double, _ grade: Grade, length: CGFloat = 100) -> (angle: Double, length: Double) {
             let moved = GradeSwipe.pull(swipe(degrees, length: length), toward: grade)
             return (direction(moved), hypot(moved.width, moved.height))
         }
-        // A finger straight up is pulled to 7.5° right of up: compass 7.5°, 82.5° in the code's degrees.
-        #expect(abs(card(90, .easy).angle - 82.5) < 0.001)
-        #expect(abs(bearing(ofMath: card(90, .easy).angle) - 7.5) < 0.001)
-        // Straight down, 7.5° right of down: compass 172.5°.
-        #expect(abs(bearing(ofMath: card(270, .hard).angle) - 172.5) < 0.001)
+        // A finger straight up is pulled to 30° right of up: compass 30°, 60° in the code's degrees.
+        #expect(abs(card(90, .easy).angle - 60) < 0.001)
+        #expect(abs(bearing(ofMath: card(90, .easy).angle) - 30) < 0.001)
+        // Straight down, 30° right of down: compass 150°.
+        #expect(abs(bearing(ofMath: card(270, .hard).angle) - 150) < 0.001)
         // Straight left stays at west, straight right at east.
         #expect(abs(card(180, .again).angle - 180) < 0.001)
         #expect(abs(card(0, .good).angle - 0) < 0.001 || abs(card(0, .good).angle - 360) < 0.001)
-        // Along the reference there is nothing to bend.
-        #expect(abs(card(75, .easy).angle - 75) < 0.001)
-        #expect(abs(card(285, .hard).angle - 285) < 0.001)
-        // The edges of the sectors: halfway to the reference.
-        #expect(abs(card(45, .easy).angle - 60) < 0.001)
-        #expect(abs(card(120, .easy).angle - 97.5) < 0.001)
+        // Along the target there is nothing to bend.
+        #expect(abs(card(30, .easy).angle - 30) < 0.001)
+        #expect(abs(card(330, .hard).angle - 330) < 0.001)
+        // The edges of the sectors: halfway to the target.
+        #expect(abs(card(45, .easy).angle - 37.5) < 0.001)
+        #expect(abs(card(120, .easy).angle - 75) < 0.001)
         #expect(abs(card(45, .good).angle - 22.5) < 0.001)
         #expect(abs(card(-45, .good).angle - (360 - 22.5)) < 0.001)
         #expect(abs(card(150, .again).angle - 165) < 0.001)
         #expect(abs(card(210, .again).angle - 195) < 0.001)
-        #expect(abs(card(240, .hard).angle - 262.5) < 0.001)
-        #expect(abs(card(315, .hard).angle - 300) < 0.001)
+        #expect(abs(card(240, .hard).angle - 285) < 0.001)
+        #expect(abs(card(315, .hard).angle - 322.5) < 0.001)
         // At the finger's distance, whatever the angle and the length.
         for grade in Grade.allCases {
             for length in [20.0, 60, 100, 250] {
-                #expect(abs(card(GradeSwipe.reference(of: grade) + 20, grade, length: CGFloat(length)).length - length) < 0.001)
+                #expect(abs(card(GradeSwipe.target(of: grade) + 20, grade, length: CGFloat(length)).length - length) < 0.001)
             }
         }
     }
 
-    @Test func theCardStaysNearItsReferenceAndForgotNeverLeansUpOrDown() {
+    @Test func theCardStaysNearItsTargetAndForgotNeverLeansUpOrDown() {
         for degrees in stride(from: 0.0, to: 360.0, by: 1) {
             let finger = swipe(degrees)
             guard let grade = GradeSwipe.zone(finger) else { continue }
@@ -256,16 +279,16 @@ struct GradeSwipeTests {
             let way = direction(moved)
             switch grade {
             case .again:
-                // Forgot's reference is due west: it pulls the card toward the horizontal, never away.
+                // Forgot's target is due west: it pulls the card toward the horizontal, never away.
                 #expect(abs(moved.height) <= abs(finger.height) + 0.001)
                 #expect(moved.width < 0)
             case .good:
                 #expect(moved.width > 0, "\(grade) at \(degrees)°")
             case .easy:
-                // Between 30° right of up (the near edge) and 7.5° left of up (the far edge).
-                #expect(way > 60 - 0.001 && way < 97.5 + 0.001, "\(grade) at \(degrees)°")
+                // Between 52.5° right of up (the near edge) and 15° right of up (the far edge): always right of up.
+                #expect(way > 37.5 - 0.001 && way < 75 + 0.001, "\(grade) at \(degrees)°")
             case .hard:
-                #expect(way > 262.5 - 0.001 && way < 300 + 0.001, "\(grade) at \(degrees)°")
+                #expect(way > 285 - 0.001 && way < 322.5 + 0.001, "\(grade) at \(degrees)°")
             }
         }
     }
@@ -281,12 +304,12 @@ struct GradeSwipeTests {
         #expect(GradeSwipe.cardOffset(for: short) == short)
         // In a zone: bent.
         let up = GradeSwipe.cardOffset(for: swipe(90))
-        #expect(abs(direction(up) - 82.5) < 0.001)
+        #expect(abs(direction(up) - 60) < 0.001)
     }
 
-    @Test func aCardFliesOffAlongTheReferenceOfItsGrade() {
+    @Test func aCardFliesOffAlongTheTargetOfItsGrade() {
         for grade in Grade.allCases {
-            var apart = abs(direction(GradeSwipe.exit(of: grade)) - GradeSwipe.reference(of: grade)).truncatingRemainder(dividingBy: 360)
+            var apart = abs(direction(GradeSwipe.exit(of: grade)) - GradeSwipe.target(of: grade)).truncatingRemainder(dividingBy: 360)
             if apart > 180 { apart = 360 - apart }
             #expect(apart < 0.001, "\(grade)")
             let exit = GradeSwipe.exit(of: grade)

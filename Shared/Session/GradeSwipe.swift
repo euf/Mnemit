@@ -31,10 +31,12 @@ import VocabCore
 /// is and however fast.
 ///
 /// While a swipe is under way the card is not moved along the finger but along the average of the
-/// finger's direction and the grade's reference direction (`cardOffset`): a finger straight up
-/// moves the card 7.5° to the right of up, Good goes right, and Forgot, whose reference is due
-/// west, never leans up or down. Easy's card goes between 7.5° left of up and 30° right of up,
-/// Hard's between 7.5° left of down and 30° right of down.
+/// finger's direction and the grade's target direction (`cardOffset`, `target(of:)`): Good goes
+/// right and Forgot, whose target is due west, never leans up or down. Easy and Hard lean to the
+/// green side: their target is `yesTilt` = 30° above (Easy) or below (Hard) due east, so a finger
+/// straight up moves the card 30° to the right of up, a finger straight down 30° to the right of
+/// down, Easy's card goes between 15° and 52.5° right of up and Hard's between 15° and 52.5° right
+/// of down, and the card flies off at the target.
 enum GradeSwipe {
     /// How far a drag must go before letting go grades, in points.
     static let commitDistance: CGFloat = 100
@@ -57,16 +59,25 @@ enum GradeSwipe {
     /// here lies the gap (compass 210° to 240°) that keeps Forgot and Hard apart.
     static let hardStart = 240.0
 
-    /// The direction each grade pulls the card in, in degrees as `angle(of:)`, and the direction
-    /// it flies off in: compass 15° for Easy (right of up), 90° for Good, 165° for Hard (right
-    /// of down) and 270° for Forgot. Each lies inside its sector, within 45° of every direction
-    /// of it, so the average with the finger never cancels.
+    /// The middle of each grade's sector, in degrees as `angle(of:)`: compass 15° for Easy (right
+    /// of up), 90° for Good, 165° for Hard (right of down) and 270° for Forgot. It is where a
+    /// finger goes that means the grade (the onboarding hint plays it), inside the sector.
     static let easyReference = 75.0
     static let goodReference = 0.0
     static let hardReference = 285.0
     static let forgotReference = 180.0
 
-    /// How far a card flies off, in points, along its grade's reference direction.
+    /// How far Easy's and Hard's target lies from due east, up and down: the cards of the two
+    /// "yes" grades that lie off to the side fly toward the green side, Good's, not straight up
+    /// or down. Compass 60° for Easy, 120° for Hard.
+    static let yesTilt = 30.0
+    /// The direction each grade pulls the card in and flies it off in, in degrees as `angle(of:)`.
+    /// Each lies within 90° of every direction of its sector, so the average with the finger
+    /// never cancels.
+    static let easyTarget = yesTilt
+    static let hardTarget = 360 - yesTilt
+
+    /// How far a card flies off, in points, along its grade's target direction.
     static let exitDistance: CGFloat = 640
     /// The share of the finger's way the card follows in a gap.
     static let gapTravel: CGFloat = 0.5
@@ -125,17 +136,27 @@ enum GradeSwipe {
         }
     }
 
+    /// The direction a grade pulls the card in and flies it off in, in degrees as `angle(of:)`.
+    static func target(of grade: Grade) -> Double {
+        switch grade {
+        case .good: goodReference
+        case .easy: easyTarget
+        case .again: forgotReference
+        case .hard: hardTarget
+        }
+    }
+
     /// Where the card is for a finger at `translation` while it points into the zone of `grade`:
     /// at the finger's distance, along the normalized average of the finger's unit direction
-    /// and the grade's reference direction.
+    /// and the grade's target direction.
     static func pull(_ translation: CGSize, toward grade: Grade) -> CGSize {
         let distance = hypot(translation.width, translation.height)
         guard distance > 0 else { return .zero }
-        let reference = reference(of: grade) * .pi / 180
-        let x = translation.width / distance + cos(reference)
-        let y = translation.height / distance - sin(reference)
+        let target = target(of: grade) * .pi / 180
+        let x = translation.width / distance + cos(target)
+        let y = translation.height / distance - sin(target)
         let length = hypot(x, y)
-        // The sectors lie within 45° of their references, so the two never cancel.
+        // The sectors lie within 90° of their targets, so the two never cancel.
         guard length > 0 else { return translation }
         return CGSize(width: x / length * distance, height: y / length * distance)
     }
@@ -151,9 +172,9 @@ enum GradeSwipe {
     }
 
     /// Where a card ends when it has flown out, from where it started: `exitDistance` along the
-    /// grade's reference direction.
+    /// grade's target direction.
     static func exit(of grade: Grade) -> CGSize {
-        let reference = reference(of: grade) * .pi / 180
-        return CGSize(width: exitDistance * cos(reference), height: -exitDistance * sin(reference))
+        let target = target(of: grade) * .pi / 180
+        return CGSize(width: exitDistance * cos(target), height: -exitDistance * sin(target))
     }
 }

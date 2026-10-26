@@ -152,13 +152,17 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
 - The vertical sectors are wider and reach toward the NE–SW diagonal: for a right-handed one-thumb user
   the vertical and the diagonal are fastest, the horizontal slowest and most precise (Trudeau et al.,
   Human Factors, 2012). Forgot stays 60°, Good an even 90°.
-- Reference directions: Easy 15° (up and to the right), Good 90°, Hard 165° (down and to the right),
-  Forgot 270°.
+- Reference directions (the middle of each sector, where a finger that means the grade goes): Easy 15°
+  (up and to the right), Good 90°, Hard 165° (down and to the right), Forgot 270°. Target directions
+  (where the card is pulled and flies off to): Good 90°, Forgot 270°, Easy 60° and Hard 120°, that is
+  30° above and below due east (`GradeSwipe.yesTilt`), so Easy and Hard fly toward Good's green side.
 - The code measures the finger's angle counterclockwise from east, screen y up (math degrees = 90 −
   compass): `goodReach` 45, `easyEnd` 120, `forgotStart` 150, `forgotEnd` 210, `hardStart` 240 (Good
   −45°…45°, Easy 45°…120°, Forgot 150°…210°, Hard 240°…360 − `goodReach` = 315°); references
-  `easyReference` 75, `goodReference` 0, `hardReference` 285, `forgotReference` 180; `exitDistance` 640.
-  Every boundary and reference is a named constant of `GradeSwipe`, to be tuned there; `GradeSwipeTests`
+  `easyReference` 75, `goodReference` 0, `hardReference` 285, `forgotReference` 180; targets
+  `easyTarget` 30 (`yesTilt`), `hardTarget` 330, Good's and Forgot's the same as their references;
+  `exitDistance` 640. Every boundary, reference and target is a named constant of `GradeSwipe`, to be
+  tuned there; `GradeSwipeTests`
   names the compass ranges.
 - Forgot is the only "no", and Easy given for a forgotten card is the costly slip, so Forgot has a gap
   on each side (210°…240° and 300°…330°). Between two "yes" grades (right and up, right and down) there
@@ -166,12 +170,12 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
 - Gaps give no grade: no tint, no button highlight, no commit. The card travels `gapTravel` (half) of
   the finger's path, so it reads as "not a choice", and release brings it back, even past the commit
   distance and with a flick; a flick also has to start in a zone and end in one.
-- The card follows the normalized mean of the finger's unit direction and the grade's reference
+- The card follows the normalized mean of the finger's unit direction and the grade's target
   direction, at the finger's distance, from the dead zone on (`GradeSwipe.pull`): a finger straight up
-  pulls it 7.5° right of up; a finger straight down 7.5° right of down; a finger straight left leaves
-  it due west. An Easy card moves between 7.5° left of up (the far edge of the sector) and 30° right of
-  up (the near edge), Hard the same downward, Good to the right. No sector lies more than 45° from its
-  reference, so the mean is always defined. Rotation and pivot are computed from the card's own offset.
+  pulls it 30° right of up; a finger straight down 30° right of down; a finger straight left leaves
+  it due west. An Easy card moves between 15° right of up (the far edge of the sector) and 52.5° right
+  of up (the near edge), Hard the same downward, Good to the right. No sector lies more than 90° from
+  its target, so the mean is always defined. Rotation and pivot are computed from the card's own offset.
   Tint, the lit button and the commit follow the recognized grade. Under the dead zone the card goes
   with the finger one to one.
 - The tint (`Grade.tint`) covers the card at most 70 % and never changes the text colour. Hard's tint
@@ -183,7 +187,8 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
   the swipe is one to one.
 - Commit distance 100 pt, dead zone 20 pt, flick 30 pt of travel and 300 pt of prediction
   (`GradeSwipe.commitDistance`, `deadZone`, `flickMinimum`, `flickReach`); the exit follows the
-  reference direction of the grade, 640 pt (`GradeSwipe.exit`).
+  target direction of the grade, 640 pt (`GradeSwipe.exit`); on the Mac the arrow keys and the buttons
+  fly the card the same way (`CardFlight.fly`).
 - One haptic per grade (`CardFlight.gradeFeedback`): a swipe feels it when it reaches the commit
   distance of a grade, so letting go now grades, and again only if it reaches another grade's; the card
   that flies on letting go adds none. A button, a key or a flick, which never reach the commit distance,
