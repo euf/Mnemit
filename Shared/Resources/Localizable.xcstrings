@@ -2985,94 +2985,6 @@
         }
       }
     },
-    "+%lld climbed today": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld heute aufgestiegen"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld heute aufgestiegen"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld ανέβηκε σήμερα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld ανέβηκαν σήμερα"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld climbed today"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld climbed today"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld поднялись сегодня"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld поднялись сегодня"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld поднялась сегодня"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "+%lld поднялись сегодня"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "+%lld more": {
       "localizations": {
         "de": {
@@ -5546,28 +5458,6 @@
         }
       }
     },
-    "Choose a CSV or TSV file with a question, an answer and an optional hint per row.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wähle eine CSV- oder TSV-Datei mit Frage, Antwort und optionalem Hinweis je Zeile."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επίλεξε ένα αρχείο CSV ή TSV με ερώτηση, απάντηση και προαιρετική υπόδειξη σε κάθε γραμμή."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выбери файл CSV или TSV, где в каждой строке вопрос, ответ и необязательная подсказка."
-          }
-        }
-      }
-    },
     "Choose a MacVocTrain 1 document (.mvt) to import.": {
       "localizations": {
         "de": {
@@ -6294,28 +6184,6 @@
         }
       }
     },
-    "Deck Details": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stapeldetails"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Λεπτομέρειες τράπουλας"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "О колоде"
-          }
-        }
-      }
-    },
     "Deck Moved": {
       "localizations": {
         "de": {
@@ -6400,50 +6268,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Колоды"
-          }
-        }
-      }
-    },
-    "Decks are created and edited in Mnemit on the Mac. Here you only study them.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stapel werden in Mnemit auf dem Mac angelegt und bearbeitet. Hier lernst du sie nur."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι τράπουλες δημιουργούνται και επεξεργάζονται στο Mnemit στο Mac. Εδώ απλώς τις μελετάς."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колоды создаются и редактируются в Mnemit на Mac. Здесь их только учат."
-          }
-        }
-      }
-    },
-    "Decks are created in Mnemit on the Mac. Choose the Mnemit folder in iCloud Drive, or open a single deck.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stapel werden in Mnemit auf dem Mac angelegt. Wähle den Mnemit-Ordner in iCloud Drive oder öffne einen einzelnen Stapel."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι τράπουλες δημιουργούνται στο Mnemit στο Mac. Επίλεξε τον φάκελο Mnemit στο iCloud Drive ή άνοιξε μία μεμονωμένη τράπουλα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колоды создаются в Mnemit на Mac. Выбери папку Mnemit в iCloud Drive или открой одну колоду."
           }
         }
       }
@@ -7786,28 +7610,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Подобранные"
-          }
-        }
-      }
-    },
-    "Fix this card without leaving the stream": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Karte korrigieren, ohne das Lernen zu unterbrechen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Διόρθωσε αυτή την κάρτα χωρίς να βγεις από τη ροή"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Исправить эту карточку, не выходя из потока"
           }
         }
       }
@@ -9264,72 +9066,6 @@
         }
       }
     },
-    "Leech: you keep forgetting this card.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernbremse: Du vergisst diese Karte immer wieder."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Βδέλλα: ξεχνάς συνεχώς αυτή την κάρτα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пиявка: ты постоянно забываешь эту карточку."
-          }
-        }
-      }
-    },
-    "Leeches": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernbremsen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Βδέλλες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пиявки"
-          }
-        }
-      }
-    },
-    "Leeches: %lld": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernbremsen: %lld"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Βδέλλες: %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пиявки: %lld"
-          }
-        }
-      }
-    },
     "Lesson words": {
       "localizations": {
         "de": {
@@ -10232,28 +9968,6 @@
         }
       }
     },
-    "No Deck Open": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kein Stapel geöffnet"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Δεν είναι ανοιχτή καμία τράπουλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нет открытой колоды"
-          }
-        }
-      }
-    },
     "No Decks": {
       "localizations": {
         "de": {
@@ -10294,28 +10008,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Колод пока нет"
-          }
-        }
-      }
-    },
-    "No Leeches": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Lernbremsen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Καμία βδέλλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нет пиявок"
           }
         }
       }
@@ -11376,28 +11068,6 @@
         }
       }
     },
-    "Practice Mistakes (%lld)": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fehler üben (%lld)"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Εξάσκηση στα λάθη (%lld)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отработать ошибки (%lld)"
-          }
-        }
-      }
-    },
     "Practice Newest Words": {
       "localizations": {
         "de": {
@@ -11416,28 +11086,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отработать самые новые слова"
-          }
-        }
-      }
-    },
-    "Practice Newest Words (%lld)": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neueste Wörter üben (%lld)"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Εξάσκηση στις πιο πρόσφατες λέξεις (%lld)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отработать самые новые слова (%lld)"
           }
         }
       }
@@ -12300,28 +11948,6 @@
         }
       }
     },
-    "Reminder at %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erinnerung um %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Υπενθύμιση στις %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Напоминание в %@"
-          }
-        }
-      }
-    },
     "Remove from List": {
       "localizations": {
         "de": {
@@ -12780,28 +12406,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Фаза повторения"
-          }
-        }
-      }
-    },
-    "Review phase · remembered for %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wiederholungsphase · bleibt %@ im Gedächtnis"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Φάση επανάληψης · μένει στη μνήμη %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фаза повторения · помнится %@"
           }
         }
       }
@@ -13620,28 +13224,6 @@
         }
       }
     },
-    "Show only leeches: cards you keep forgetting": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nur Lernbremsen zeigen: Karten, die du immer wieder vergisst"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Εμφάνιση μόνο βδελλών: κάρτες που ξεχνάς συνεχώς"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Показывать только пиявки: карточки, которые ты постоянно забываешь"
-          }
-        }
-      }
-    },
     "Show or hide card details": {
       "localizations": {
         "de": {
@@ -13770,28 +13352,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пропустить"
-          }
-        }
-      }
-    },
-    "Soon": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bald"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σύντομα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скоро"
           }
         }
       }
@@ -14298,28 +13858,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Учить %lld"
-          }
-        }
-      }
-    },
-    "Study (%lld)": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernen (%lld)"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μελέτη (%lld)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Учить (%lld)"
           }
         }
       }
@@ -15270,28 +14808,6 @@
         }
       }
     },
-    "This deck has no cards": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dieser Stapel hat keine Karten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αυτή η τράπουλα δεν έχει κάρτες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В этой колоде нет карточек"
-          }
-        }
-      }
-    },
     "This deck was created by a newer version of Mnemit.": {
       "localizations": {
         "de": {
@@ -15640,28 +15156,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Всего"
-          }
-        }
-      }
-    },
-    "Total cards %lld": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten gesamt %lld"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σύνολο καρτών %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Всего карточек: %lld"
           }
         }
       }
@@ -16344,28 +15838,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вес оценок после показа ответа"
-          }
-        }
-      }
-    },
-    "Welcome to Mnemit": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Willkommen bei Mnemit"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Καλώς ήρθες στο Mnemit"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Добро пожаловать в Mnemit"
           }
         }
       }
