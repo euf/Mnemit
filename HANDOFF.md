@@ -57,7 +57,7 @@ In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
 The plan of 7.0–7.1 is `references/quality-plan.md`.
 
-1. **7.0 on the iPhone, to verify live:** the search minimised beside Study, the Don't know label (a new
+1. **7.2 on the iPhone, to verify live:** the search minimised beside Study, the Don't know label (a new
    card's first showing), the 21:00 streak reminder, the stack of cards in the stream;
    and from 6.1 the flame in Today's ring and in the widgets, Learn 10 New Words from Today, a reminder that
    names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and reviews from
@@ -115,7 +115,7 @@ Drafts from 23.10, not approved by EF; the decisions and everything measured are
    hundreds of cards: "480 cards have piled up; the ring takes the most forgotten first; at this pace about 3 weeks").
 2. **The ring's size as progress** on the Progress screen ("Your ring: 12 min a day. You started at 2.5"): any adaptive
    rule fixes the closure share, the size is what differs between people.
-3. **Forecast** in How Today Works: what the current intake of new words costs in a month and a year (as Anki's simulator
+3. **Forecast** in How It Works: what the current intake of new words costs in a month and a year (as Anki's simulator
    and Noos do).
 4. **Rings without new words**: a learner who runs Learn 10 New Words one day in three has no new word in the ring
    on 46 % of study days (the reviews of earlier Learn 10 New Words cards fill the time); new words then come only
