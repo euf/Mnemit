@@ -2,9 +2,13 @@
 
 ## State
 
-- Version 6.1 on `main`; the iPhone runs 6.1.4 (111151d), signed until 02.11; the Mac app 6.1.4 (111151d). The day's model (one ring that stays full at the goal, the streak as a flame, the
-  stack that ends with the plan, Study / Catch Up / Push On, partial credit, the streak step, two rests, medals, the
-  Progress screen on both apps, the Mac's Today window)
+- Version 7.1.x on `main`: the Mac is one window (a sidebar of Today, Progress and the decks; the stream
+  takes the window), new words are introduced, not graded, every review counts in full, neither app asks for
+  a typed answer, and the widgets and reminders follow the day (the flame's three states, the week, the inline
+  accessory, a 21:00 streak reminder). The iPhone runs 7.0.11 (64d0f54), signed until 02.11; a newer build goes
+  on at the end of the release. The day's model (one ring that stays full at the goal, the streak as a flame, the
+  stack that ends with the plan, Study / Catch Up / Learn 10 New Words, partial credit, the streak step, two
+  rests, medals, the Progress screen on both apps)
   and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
   ring's size (seconds, a staircase on closed and open rings) is `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
   and the logs of 2,000 Anki users, and the other decisions of the day with their evidence: `references/ring-design.md`;
@@ -50,18 +54,20 @@ deck folder is chosen in the file picker. Team limits: 3 apps per device (now Fi
 
 In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
-The next release is planned in `references/quality-plan.md` (audit of 26.10, phases in its §9); it takes in item 5
-and the first point of item 6 below.
+The plan of 7.0–7.1 is `references/quality-plan.md`.
 
-1. **6.1 on the iPhone, to check on the device:** the flame in Today's ring and in the widgets, Push On from Today, a
-   reminder that names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and
-   reviews from the Mac arriving while Today stays open (it reads the decks every minute). Xcode's Apple ID was lost once (24.10): `ios-renew` then
-   fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
-2. **The Mac, seen live on 25.10:** Today, a deck's Overview and the stream with its stack. Still to see live (EF
-   was at the screen): Today's Study opening the decks and mixing them in one stream, the search over all decks
-   and a hit selecting its card, a deck row's menu (Pause through the deck's window), the medal toasts in the
-   stream and the month's sheet. A deck window shows "Greek B1.mnemit" because Finder shows every extension on
-   this Mac (a document window takes the file's name).
+1. **7.0 on the iPhone, to verify live:** the search minimised beside Study, the introduction gesture (a new
+   word's first showing, Next or a swipe any way), the 21:00 streak reminder, the stack of cards in the stream;
+   and from 6.1 the flame in Today's ring and in the widgets, Learn 10 New Words from Today, a reminder that
+   names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and reviews from
+   the Mac arriving while Today stays open (it reads the decks every minute). Xcode's Apple ID was lost once
+   (24.10): `ios-renew` then fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
+2. **The Mac's one window, to see live:** a cold launch with a deck from Finder, ⌘Q with a stream running, a Dock
+   click after ⌘W, the Open Deck… panel and the New Deck sheet, the menu bar and the cheat sheet in the real
+   window, ⌘1 to ⌘4 with real keys, Catch Up in the menu (it needs a closed ring), Edit ▸ Undo in the real
+   window, the selected sidebar row's colour and dark mode, Today's Study mixing the decks in one stream, the
+   search over all decks and a hit selecting its card, a sidebar row's menu (Pause), the medal toasts and the
+   month's sheet.
 3. **Progress must not depend on the decks in the list.** The ring, the streak and the medals are worked
    out from the logs of the active decks: deleting or pausing a deck, or deleting a card, rewrites past
    days. Plan: a progress ledger in the deck folder, one line per study day (done, goal, kept, closed),
@@ -69,13 +75,10 @@ and the first point of item 6 below.
    read from it, today from the logs.
 4. **Share Deck**: a clean `.mnemit` copy (cards and media, no states, no log, no fitted parameters) from
    the deck's menu on both apps; sending the package today sends one's history.
-5. **How Today Works → "Under the Hood"**: it is the last row of Progress on both apps; still open: a short "Today"
-   section in plain words on top, the tables folded.
-6. **From the reviews of three personas (23.10: Anki veteran, newcomer, no-decks learner)**: a new
-   word's first showing as an introduction, not a red Forgot (New Deck now goes straight on to Add Cards);
-   FSRS figures (RMSE, log loss) for Anki users; Anki import fidelity (cloze,
-   several media per side) and an export back with history.
-7. **Decisions to revisit by evidence** (`references/ring-design.md`, "What would reopen it" and "Other
+5. **From the reviews of three personas (23.10: Anki veteran, newcomer, no-decks learner)**: FSRS figures
+   (RMSE, log loss) for Anki users; Anki import fidelity (cloze, several media per side) and an export back
+   with history.
+6. **Decisions to revisit by evidence** (`references/ring-design.md`, "What would reopen it" and "Other
    decisions of the day and their evidence"; four to measure on EF's own log):
    - The day's time: at 60 study days count the closed rings in the Progress calendar: a share outside
      0.7-0.85 reopens it.
@@ -85,17 +88,17 @@ and the first point of item 6 below.
      sort-order simulator with EF's fitted parameters, at the first backlog over 100 cards.
    - Production cards: the Forgot share of the first two production reviews; over 25 % lifts the
      7-day gate to 14, at or below 10 % under a gate of 14 or more lowers it; wait for 100 reviews.
-8. **The Mac suite** ran on 24.10 with the screen locked: 194 tests, one failure,
-   `CardListViewTests.firstClickIntoTableSelectsRow`, which fails whenever the test app isn't in front (so may
-   `focusedTableHandsFocusToNewTableWhenSorted`). Run it once on the unlocked screen.
-9. **Known behaviour, decide on complaint:** pace starts from defaults until 20 timed reviews; a deck with
-   nothing in today's plan doesn't open with Study, so the plan-end rest's Push On can't take its new cards (Push On
+7. **The Mac suite** ran on 26.10: 231 tests, one failure, `CardListViewTests.firstClickIntoTableSelectsRow`, which
+   fails whenever the test app isn't in front (so may `focusedTableHandsFocusToNewTableWhenSorted`, by turns). Run
+   it once on the unlocked screen.
+8. **Known behaviour, decide on complaint:** pace starts from defaults until 20 timed reviews; a deck with
+   nothing in today's plan doesn't open with Study, so the plan-end rest's Learn 10 New Words can't take its new cards (Learn 10 New Words
    from Today opens every active deck); xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
-   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another.
-10. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
+   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
+9. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
    duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
-11. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
+10. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
    (store the chosen date in the log first); hiding siblings across decks once pairs exceed 1 %
    (`references/cross-deck-overlap.md`); a listening mode.
 
@@ -111,6 +114,6 @@ Drafts from 23.10, not approved by EF; the decisions and everything measured are
    rule fixes the closure share, the size is what differs between people.
 3. **Forecast** in How Today Works: what the current intake of new words costs in a month and a year (as Anki's simulator
    and Noos do).
-4. **Push On rings without new words**: a learner who pushes on one day in three has no new word in the ring on 46 % of
-   study days (the reviews of earlier Push On cards fill the time); new words then come only through Push On. Watch it in
-   Mnemit's own log before changing anything.
+4. **Rings without new words**: a learner who runs Learn 10 New Words one day in three has no new word in the ring
+   on 46 % of study days (the reviews of earlier Learn 10 New Words cards fill the time); new words then come only
+   through Learn 10 New Words. Watch it in Mnemit's own log before changing anything.

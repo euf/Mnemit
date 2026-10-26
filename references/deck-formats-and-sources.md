@@ -11,7 +11,7 @@ Confidence markers:
 - [I] my inference from the cited sources.
 - [U] not verified.
 
-Existing code that bears on this: CSV/TSV read and write already exist (`Packages/VocabCore/Sources/VocabCore/Exchange/DelimitedText.swift`, `CardImporter.swift`; question, answer, optional hint columns). `Import/LegacyImporter.swift` reads MacVocTrain 1 files. A `reviews.jsonl` line carries `card` (UUID), `date` (Int), `grade`, optional `mode` (`ReviewLogEncoder.swift`).
+Existing code that bears on this: CSV/TSV read and write already exist (`Packages/VocabCore/Sources/VocabCore/Exchange/DelimitedText.swift`, `CardImporter.swift`; question, answer, optional hint columns). A `reviews.jsonl` line carries `card` (UUID), `date` (Int), `grade`, optional `mode` (`ReviewLogEncoder.swift`).
 
 ## 1. Anki packages (.apkg, .colpkg)
 

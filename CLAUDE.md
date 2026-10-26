@@ -81,16 +81,17 @@ The active developer dir may be the Command Line Tools; prefix with
   `Scheduler` applies a `Grade` to a `Card` (FSRS-6 in `FSRS.swift`, ported from py-fsrs);
   `SessionMode` runs a `StudySession` or a `Practice` and records reviews, each over
   a shared `Session` that only tracks card IDs and order.
-- `Shared/Document/VocabularyDocument.swift`: the document of both apps; only its
-  `ReferenceFileDocument` conformance is the Mac's (`MacVocTrainNg/Document/`). The methods
+- `Shared/Document/VocabularyDocument.swift`: the document of both apps. `OpenDeck`
+  (`Shared/Document/`) holds it open over the file document: a UIDocument on the iPhone, the headless
+  NSDocument `DeckFileDocument` (`MacVocTrainNg/Document/`) on the Mac. The methods
   that edit cards and options (`add`, `editText`, `editCard`, `setNote`, `setKind`, `delete`,
   `resetLearningState`, `updateLearningOptions`, `setSuspended`, the imports) are the
   same on both, in `Shared/Document/VocabularyDocument+Editing.swift`, with the same undo
-  action names (#297). Every change must go through its `@MainActor` methods: they register undo, which is also how SwiftUI
-  marks the document dirty. They register with the document's own `undoManager`, attached
-  with `attachUndoManager(_:)`: on the Mac by the document's view from its environment
-  (`attachingUndoManager(to:)`), on the iPhone by `OpenDeck` before it shows the document,
-  in tests by the test; callers don't pass one. Until then the document is only read:
+  action names (#297). Every change must go through its `@MainActor` methods: they register undo, which is also how the file document counts a change as unsaved. They register
+  with the document's own `undoManager`, attached with `attachUndoManager(_:)` by `OpenDeck` on both apps before
+  it shows the document (the file document's own manager, so NSDocument or UIDocument counts and autosaves
+  the changes), in tests by the test; callers don't pass one. The Mac's `UndoRouter` (`MacVocTrainNg/Shell/`)
+  answers Edit ▸ Undo with the manager of the deck the window shows. Until a manager is attached the document is only read:
   whatever changes it checks `isReadyToEdit` first (#305). Don't mutate `deck` elsewhere. Underneath, cards and learning
   options change only through `Deck.apply(_:at:calendar:)`: it returns the inverse change
   and keeps `progress` and `contentModified` in step. `VocabCore` builds each `DeckChange`; a card's learning state and
@@ -100,8 +101,9 @@ The active developer dir may be the Command Line Tools; prefix with
 - Reviews are undoable: the document applies the change `SessionMode.grade` returns and
   runs the restore of the `Session`, an opaque `UndoCompanion`, in the same undo action,
   after the card. The document knows no sessions.
-- NSDocument, or UIDocument on the iPhone, reads a deck again on its own when another
-  device changes the file; the window or scene then gets a new document.
+- The file document (`DeckFileDocument`: a headless NSDocument on the Mac, a UIDocument on the iPhone) reads
+  a deck again on its own when another device changes the file; `OpenDeck` merges what it read into the
+  document it holds, which the views keep.
   `VersionMerger` (in `Shared/`, used by both apps) outlives it and merges what the
   file lacks and the versions iCloud Drive keeps in conflict, through
   `VocabularyDocument.merge(_:)`. File presenter callbacks must not ask the document

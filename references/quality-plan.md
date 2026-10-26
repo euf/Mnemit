@@ -1,5 +1,7 @@
 # Mnemit 7: the quality plan
 
+Built in 7.0–7.1 (26.10.2026); the docs describe the result.
+
 Audit of 6.1.5 on 26.10.2026, under EF's full autonomy: every decision below is taken, with its reason and,
 where it is not a plain revert, its rollback. Nothing here is built yet. Order of work: §9.
 
