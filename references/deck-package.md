@@ -26,7 +26,7 @@ The deck file, how both apps edit and merge it, and the media files of cards.
 - Both apps hold a deck the same way. `OpenDeck` (`Shared/Document/OpenDeck.swift`) owns the
   `VocabularyDocument` the views show and a file document that reads and saves the package: a UIDocument
   on the iPhone, the headless NSDocument `DeckFileDocument` (`MacVocTrainNg/Document/`) on the Mac. The Mac
-  document has no window and no `ReferenceFileDocument` conformance; it registers itself in
+  document is an NSDocument without windows; it registers itself in
   `NSDocumentController`, so a deck stays open while no window shows it. It reads with
   `DeckFile.read(at:)` off the main actor, coordinated, saves in place (`autosavesInPlace`; the
   `VersionMerger` also saves a few seconds after each change) and writes through
