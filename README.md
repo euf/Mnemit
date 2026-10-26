@@ -229,11 +229,15 @@ are in [`references/`](references/).
 - **iPhone** (iOS 26): study, browse and edit cards, add words after a lesson (one card or
   a pasted `word = translation` list), decks, options, import and export, reminders, and a widget
   (the ring and the sentence).
-- **Mac** (macOS 26): one window. Its sidebar lists Today (the cards left as its badge), Progress and the
-  decks of the Mnemit folder; Today holds the day's ring over all of them with the same button as the
-  iPhone (Study, Catch Up or Learn 10 New Words); a deck's page has its strip with Study This Deck and
-  either the card table (filters, inspector, multi-select, keyboard) or its statistics. Study is by
-  keys and buttons, and neither app has a typed answer. The Mac has no reminders and no widget.
+- **Mac** (macOS 26): one window. Its sidebar lists Today, Progress and the decks of the Mnemit folder, each
+  deck with "≈ 4 min" or a check (the minutes left of its plan); Today holds the day's ring
+  and sentence over all of them with the same button as the iPhone (Study, Catch Up or Learn 10 New Words);
+  a deck's page has its strip ("≈ 2 min · 4 new", Anki's counts after the time) with Study This Deck and
+  either the card table (filters, inspector, multi-select, keyboard) or its statistics. Study is by keys and
+  buttons, and neither app has a typed answer: a new card's first showing has ← Don't know and → Know, the
+  grades of later showings are Forgot, Hard, Good and Easy (←, ↓, →, ↑ or 1 to 4), and the cheat sheet (?) names
+  the keys of the card on screen. Study These Now sits in the Add Cards sheet, and after importing a table into
+  an empty deck, and studies the added cards first. The Mac has no reminders and no widget.
 - **How It Works** (the last row of the Progress screen, a sheet on both apps): the numbers
   and rules under the ring, read-only: the plan, the day's time, pace, streak, words in memory and each deck's FSRS settings.
 

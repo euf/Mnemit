@@ -135,7 +135,8 @@ sizes: `design-spec.md` §4.
   which is also its own button. The items are disabled at a rest, never hidden.
 - **A new card's first showing** is asked like any card, with two wide buttons side by side, as tall as the two rows
   they replace: **Don't know** (the grade underneath is Again, red) and **Know** (Good, green); the swipes keep all four
-  grades, and on the Mac the keys are 2 and 4. On every later showing the four buttons read Forgot, Hard, Good, Easy. The
+  grades; on the Mac ← and → or the keys 1 and 3 grade the two buttons, and ↓ and ↑ or the keys 2 and 4 still
+  give Hard and Easy. On every later showing the four buttons read Forgot, Hard, Good, Easy. The
   receipt chip and its VoiceOver announcement use the same names (`Grade.buttonTitle(isNew:)`). The rules: `scheduling.md`,
   "A new card's first showing".
 - The card lies on a stack drawn as a book's page edges, 8 pt apart, each 7 pt narrower on a side and
@@ -303,7 +304,10 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   new, unlocked, not buried; the second direction of a pair waits for its first). From Today (`AddCardsHost`) the stream starts
   after the sheet has gone and the deck is saved and closed; from the deck screen the sheet's `onDismiss` starts it on the open
   deck. The sheet is the Mac's too
-  (`WordList.swift`, `LimitStepper.swift` in `Shared/Support` hold what the two share).
+  (`WordList.swift`, `LimitStepper.swift` in `Shared/Support` hold what the two share). On the Mac **Study These Now**
+  sits between Add and Done once cards are added, and Done stays the default button (Return): the iPhone's "prominent while
+  nothing is left to add" has no counterpart. It adds what is typed, closes the sheet and the deck page starts the stream
+  over that deck with the added cards first (`Shell.study(.deck(url), entry: .studyNow(ids))`, from the sheet's `onDismiss`).
 - **New Deck**: a name field; creates `<name>.mnemit` in the deck folder (iCloud Drive or this iPhone)
   (`DeckFiles.create(named:in:)`) and pushes its screen, where Add Cards opens by
   itself: the deck screen of an empty deck opens it once.
@@ -313,7 +317,9 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   Anki package heads with the Anki deck names, the number of cards, how many have review history and
   what was left out (cloze, media, empty); the history comes along, replayed into FSRS; text fields
   have their HTML stripped. The preview of a table of 1 to 50 cards into a deck that had no card (a new deck) also offers **Study
-  These Now**, which adds the checked cards and studies them; a package or a larger table goes to the plan. Mnemit registers `.apkg` and `.colpkg`, so **Open in Mnemit** (Files,
+  These Now**, which adds the checked cards and studies them; a package or a larger table goes to the plan. The Mac's
+  preview (`ImportPreviewView`) offers it beside Import under the same rule, counted on the checked cards (1 to 50, a new
+  card among them): File ▸ Import Cards… into an empty deck and the import into a new deck. Mnemit registers `.apkg` and `.colpkg`, so **Open in Mnemit** (Files,
   Safari, Mail) opens a sheet that asks where the cards go: a New Deck named after the Anki deck, or
   one of the decks; then the same preview. Facts of the formats: `deck-formats-and-sources.md`.
 - "Shared Decks on AnkiWeb" (Today's + menu, Today's empty state, the deck screen) opens the deck
@@ -479,7 +485,9 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
 | Search over all decks | Today's search | the window's search field; a hit shows the card in its deck's table |
 | Medals | toasts in the stream, new medals of other days on Today, the month's sheet | the same |
 | Studying | question, Show Answer, grade; swipes | question, Show Answer, grade; keys and buttons; no typed answer on either |
-| A new card's first showing | asked like any card; two wide buttons, Don't know and Know | the same, keys 2 and 4 |
+| A new card's first showing | asked like any card; two wide buttons, Don't know and Know | the same, each with its arrow as a keycap (← and →); keys 1 and 3; 2 and 4 and ↓ ↑ grade Hard and Easy |
+| Study These Now | Add Cards; the import of a table of 1 to 50 cards into an empty deck | the same two places; File ▸ Import Cards… into an empty deck and the import into a new deck both reach it |
+| Deck rows, deck header | "≈ 4 min" or a check; header "≈ 4 min · 14 due · 6 new · 2 learning" | the sidebar's badges and the deck page's strip say the same |
 | Reminders, the icon's number | yes | no: one device reminds, the Mac would remind twice |
 | Widget | yes | no: a Mac widget needs an App Group, which the self-signed Mac app has no team for |
 
@@ -493,11 +501,12 @@ menu item brings it back (`Shell.showWindow`, `applicationShouldHandleReopen`); 
 first (`applicationShouldTerminate` replies once `Shell.closeAll()` is done). Settings (⌘,) is the one other
 window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`.
 
-- **Sidebar** (`SidebarContent`, 200 to 320 pt): Today with the cards left of the day as its badge, Progress, then
-  the sections Decks, Paused and Other Decks. A deck's badge is the cards left of today's plan for it (new
-  cards limited by the deck's share of the day's allowance, learning, reviews), and the Today badge is their sum,
-  the number on the Today page; a paused deck has none. A new card graded Good stays counted, as it is learning;
-  Easy takes it out. Decks lists the folder's decks that take part in the day, Paused the paused ones, Other
+- **Sidebar** (`SidebarContent`, 200 to 320 pt): Today with the plan left of the day as its badge, Progress, then
+  the sections Decks, Paused and Other Decks. A badge (`SidebarBadge`) is the iPhone's deck row: "≈ 4 min" (`DailyGoal.minutesLeft`:
+  the plan left in the deck at the day's pace, "< 1 min" under a minute) or a check once nothing is left. Today's
+  badge prices the plan of all the decks of the day as one (the new cards at their price, the rest at theirs), so it can
+  differ from the sum of the decks' rounded minutes. A paused deck, a deck not read yet and every row before the ring is
+  worked out have no badge; VoiceOver says "Done" for the check. Decks lists the folder's decks that take part in the day, Paused the paused ones, Other
   Decks the decks opened from outside the Mnemit folder (Finder, Open Deck…) until the app quits; a deck of the
   folder is never listed there. A deck row's menu: Study This Deck, Pause Deck / Resume Deck, Show in Finder,
   Rename…, Delete Deck; Rename and Delete are only there. Rename is a sheet and selects the deck under its new
@@ -506,20 +515,23 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
 - **Search All Cards** (`AllCardsSearch`) is the toolbar's search field, over every deck, on Today, Progress and
   a deck's Statistics (a deck's Cards has its own field). Hits list the card with its deck; a click shows the
   card selected in its deck's table (`Shell.showCard`).
-- **Today page** (`TodayPageContent`): the iPhone's hero (`TodayHero`, the ring at 200 pt, the week) as a button
-  to Progress, and the day's one button under it, `DayAction` (Study in the accent, Catch Up or Learn 10 New
-  Words grey; extra large, the default action; also in the toolbar). Without a deck: the empty ring, one line,
-  New Deck, Use iCloud Drive Folder and Shared Decks on AnkiWeb…. The medals of earlier days this Mac never
+- **Today page** (`TodayPageContent`): the iPhone's hero (`TodayHero` at 200 pt: the ring without a number, the
+  sentence, "412 words learned · +12 today", the week of rings) as a button to Progress, and the day's one button under
+  it, `DayAction` (Study in the accent, Catch Up or Learn 10 New Words grey; extra large, the default action; also in
+  the toolbar). Without a deck: the empty ring, one line, **New Deck** (prominent), **Shared Decks on AnkiWeb…**
+  (bordered) and **Use iCloud Drive Folder** as a footnote-size link under them. The medals of earlier days this Mac never
   celebrated come once as toasts, and the month's sheet (`MonthRecapSheet`) shows on the first open of a month,
   its See All Progress opening Progress. The window reads the folder again when it becomes key and every minute.
-- **Progress page** (`ProgressPage`): the iPhone's `ProgressScreen` over every deck, with How It Works as a
+- **Progress page** (`ProgressPage`): the iPhone's `ProgressScreen` over every deck (the totals Days studied, Rings
+  closed, Words learned; "Your ring: 8 min a day · started at 2.5"; the words in memory in the Memory section), with How It Works as a
   sheet (`HowItWorksSheet`, 520 x 640, Done).
 - **A deck's page** (`DeckPage`, `DeckPageContent`): the strip, then the Cards table or the Statistics. The
-  strip holds the deck's headline (`DeckHeadline`: "14 cards today", a check and "Done · next review tomorrow",
-  or "Paused") and its one button, **Study This Deck** while the plan has cards left in it, else **Learn 10 New
+  strip holds the deck's headline (`DeckHeadline`, priced at the day's pace as the iPhone's deck screen is: "≈ 4 min ·
+  14 due · 6 new · 2 learning" with zero parts left out and the time left out until the ring is worked out; or a check and
+  "Done · next review tomorrow"; or "Paused") and its one button, **Study This Deck** while the plan has cards left in it, else **Learn 10 New
   Words** (grey). Toolbar: the segmented Cards | Statistics in the middle, Add Cards and Learning Options, and on
   Cards the Details button. Sheets: Learning Options, Add Cards and the
-  preview of an import; an empty deck opens Add Cards by itself, once. A deck still being read shows a spinner,
+  preview of an import, the two that offer Study These Now (a stream over the deck once the sheet has gone); an empty deck opens Add Cards by itself, once. A deck still being read shows a spinner,
   one that cannot be opened says why. An error of a deck (autosave, read) is a sheet of the window, never
   app-modal. Cards, filters, inspector and edit sheet: Card browser.
 - **The stream** (`SessionView`) takes the whole window: the sidebar goes (`columnVisibility = .detailOnly`, the
@@ -543,22 +555,28 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
     Inspector ⌥⌘I (only on a deck's Cards), then the system's sidebar items.
   - Help: Keyboard Shortcuts, always on. `MenuKey` is the one table (shortcut, caps, title) that the menus and
     the cheat sheet (`ShortcutsHelp`) share; the sheet lists its twelve rows outside a stream and the five keys of
-    the stream (Space, arrows, Z or Esc, S, ?) in one. "?" opens it in a stream only, and it comes up by itself in
-    the first stream.
+    the stream (Space, arrows, Z or Esc, S, ?) in one. In a stream the sheet names the grades of the card on screen
+    (`MenuState.onNewCard`): on a first showing "Show the answer, then grade Know" and "Grade: ← Don't know, → Know,
+    ↑ Easy, ↓ Hard", on later showings "… grade Good" and "← Forgot, → Good, ↑ Easy, ↓ Hard". "?" opens it in a stream
+    only, and it comes up by itself in the first stream. Study's first item reads Study, Catch Up or Learn 10 New
+    Words by `DayAction` (`MenuKey.studyDay.title`).
 - The Mac's day counts `AllDecks`: the open decks and the rest of the Mnemit folder. The ring in the stream's
   header, Today, Progress and How It Works all count them.
 - **The Mac's stream** (`SessionView`) looks as the iPhone's does: the card on the grouped backdrop
-  (`Color.studyBackdrop`, the card `Color.cardSurface`) over the stack's edges (`StackEdges`, the cards of the
-  round behind it, at most four, `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done and, right
-  after it, the day's ring (empty inside), the streak's flame and the figures ("≈ 4 min", then "36 cards today"),
-  then Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
+  (`Color.studyBackdrop`, the card `Color.cardSurface`) over the stack's edges (`StackEdges`, the cards left before the
+  next moment, at most four, after the ring too: the cards of Catch Up, of Learn 10 New Words and of Study These Now;
+  `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done and, right
+  after it, the day's ring (empty inside), the streak's flame and the minutes to the next moment of the day as the iPhone's
+  bar says them (`NextStep`: "≈ 4 min"; none once all is done), then Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
   Automatically, disabled at a rest); Show Answer prominent in indigo with a keycap "Space or ↩". The bar of
-  the last answer (`UndoChip`) stays under the header.
+  the last answer (`UndoChip`) stays under the header. The rests are the iPhone's `StreamRestView`, titles included
+  ("Ring closed", "All done for today").
   - Keys: Space or Return show the answer; then ← Forgot, ↓ Hard, → Good, ↑ Easy (the iPhone's swipes;
     `Grade.arrowKey`), 1–4 also grade, Return and Space mean Good, Esc, Z and ⌘Z undo, S pronounces, ⌘E edits
     the card. Every grade button shows its arrow as a keycap (`KeyCap`); the ring on Good marks Return. Done
     has no shortcut.
-  - A card on its first showing: its ← button reads "Don't know" in place of "Forgot"; keys and arrows are the same.
+  - A card on its first showing has the iPhone's two wide buttons, **Don't know** (←, key 1) and **Know** (→, key 3),
+    each with its arrow keycap; Return and Space mean Know; ↓ and 2 give Hard, ↑ and 4 give Easy.
   - Edit Card opens `CardEditSheet`; Card Info a sheet with the card list's inspector
     (`MacVocTrainNg/Views/Session/CardInfoSheet.swift`), whose Edit swaps it for the edit sheet.
   - At the end of a deck's plan, while another deck of the day has cards left, the rest's first button is
