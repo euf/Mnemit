@@ -21,22 +21,12 @@ public struct Session: Sendable {
     /// Cards that became leeches during the session and were suspended for it, in order.
     public private(set) var leechIDs: [Card.ID] = []
 
-    /// The card being asked is shown as a new word, which is no question: its answer is open and
-    /// nothing is graded. `introduce(duration:)` moves on; the card is asked a few cards later.
-    public private(set) var isIntroduction = false
-
     private var queue: SessionQueue
     private var random: SeededRandom
-    /// The cards that are shown once as new words before they are asked, until they are.
-    private var unintroduced: Set<Card.ID>
-    /// How long each introduced card was on screen, until its first review takes it.
-    private var introductionTimes: [Card.ID: Duration] = [:]
 
-    /// - Parameter introducing: The cards whose first showing is an introduction, see `isIntroduction`.
-    init(cardIDs: [Card.ID], startedAt: Date, random: SeededRandom, introducing: Set<Card.ID> = []) {
+    init(cardIDs: [Card.ID], startedAt: Date, random: SeededRandom) {
         self.startedAt = startedAt
         self.random = random
-        unintroduced = introducing
         queue = SessionQueue(cardIDs: cardIDs)
         totalCount = cardIDs.count
         advance()
@@ -55,25 +45,6 @@ public struct Session: Sendable {
         return max(0, lastReviewedAt.timeIntervalSince(startedAt))
     }
 
-    /// How long the card was on screen as an introduction, if it was introduced and not reviewed yet.
-    func introductionTime(of id: Card.ID) -> Duration? { introductionTimes[id] }
-
-    /// Whether the card was introduced in this session and has not been reviewed since.
-    public func wasIntroduced(_ id: Card.ID) -> Bool { introductionTimes[id] != nil }
-
-    /// The introduction of the current card is over: no grade is recorded, and the card is asked as
-    /// a question after a few others (`SessionQueue.introductionGap`).
-    ///
-    /// - Parameter duration: How long the introduction was on screen; the card's first review adds it
-    ///   to its own.
-    mutating func introduce(duration: Duration) {
-        guard isIntroduction, let id = currentCardID else { return }
-        unintroduced.remove(id)
-        introductionTimes[id] = duration
-        queue.hold(id)
-        advance()
-    }
-
     /// Counts the review of the current card at `now` and moves on to the next one.
     ///
     /// - Parameters:
@@ -83,7 +54,6 @@ public struct Session: Sendable {
     mutating func record(_ grade: Grade, isDone: Bool, isLeech: Bool = false, at now: Date) {
         guard let id = currentCardID else { return }
         lastReviewedAt = now
-        introductionTimes[id] = nil
         reviewCount += 1
         if grade.isRecall {
             recalledCount += 1
@@ -129,6 +99,5 @@ public struct Session: Sendable {
 
     private mutating func advance() {
         currentCardID = queue.next(using: &random)
-        isIntroduction = currentCardID.map(unintroduced.contains) ?? false
     }
 }

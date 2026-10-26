@@ -41,10 +41,10 @@ public enum SessionMode: Sendable {
     ///
     /// - Parameter duration: How long the card was on screen, for the review log of a study
     ///   session; practice writes no log and ignores it.
-    /// - Returns: `nil`, and the mode stays as it is, if the session is finished, `deck` doesn't
-    ///   hold the current card, or the card is shown as an introduction (`Session.isIntroduction`).
+    /// - Returns: `nil`, and the mode stays as it is, if the session is finished or
+    ///   `deck` doesn't hold the current card.
     public mutating func grade(_ grade: Grade, in deck: Deck, at now: Date, calendar: StudyCalendar, duration: Duration? = nil) -> Outcome? {
-        guard let id = session.currentCardID, !session.isIntroduction, let card = deck.card(withID: id) else { return nil }
+        guard let id = session.currentCardID, let card = deck.card(withID: id) else { return nil }
         switch self {
         case var .study(study):
             guard let scheduled = study.review(grade, of: card, with: deck.learningOptions, at: now, calendar: calendar, duration: duration) else { return nil }
@@ -55,14 +55,6 @@ public enum SessionMode: Sendable {
             self = .practice(practice)
             return .practiced
         }
-    }
-
-    /// Ends the introduction of the current card: no grade is recorded and nothing in the deck changes,
-    /// and the card comes back as a question after a few others. Only a study session introduces.
-    public mutating func introduce(duration: Duration) {
-        guard case var .study(study) = self else { return }
-        study.introduce(duration: duration)
-        self = .study(study)
     }
 
     /// Carries out `command` on the session.

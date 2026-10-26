@@ -49,11 +49,6 @@ public struct LearningOptions: Hashable, Sendable {
     /// Study chain) but stays open to study by itself. It travels with the options, so a merge
     /// takes it from the version that changed them last, and resuming is the same change.
     public var isPaused: Bool = false
-    /// Whether the deck's new cards are new words to the learner: the first showing of each is an
-    /// introduction, with the answer open and no grade, and the card is asked as a question a few
-    /// cards later (`Session.isIntroduction`). Off for a deck of words the learner already knows,
-    /// whose new cards are asked at once.
-    public var introducesNewCards: Bool = false
 
     /// One automatic fit of the parameters, kept or not.
     public struct AutoFit: Hashable, Sendable {

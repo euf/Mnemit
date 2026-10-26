@@ -137,13 +137,6 @@ public struct StudyStream: Sendable {
         return outcome
     }
 
-    /// Ends the introduction of the current card, see `SessionMode.introduce(duration:)`. It is no
-    /// step: nothing was graded, so there is nothing for undo to take back.
-    public mutating func introduce(duration: Duration) {
-        guard roundRest == nil else { return }
-        mode.introduce(duration: duration)
-    }
-
     public mutating func perform(_ command: SessionCommand) {
         if case .suspend = command, session.currentCardID != nil { stepCount += 1 }
         mode.perform(command)

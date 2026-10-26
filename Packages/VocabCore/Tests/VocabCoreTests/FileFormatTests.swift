@@ -248,6 +248,20 @@ struct DeckFileTests {
         #expect(!(try DeckFile.decode(odd)).learningOptions.isPaused)
     }
 
+    /// A deck that still has the key `introducesNewCards` of an earlier version reads, and saving it leaves the key out.
+    @Test func theRetiredIntroducesNewCardsKeyReadsAndIsDroppedOnSave() throws {
+        let old = Data(
+            """
+            {"format": "de.fluch-it-consulting.voctrain.deck", "version": 4, "progress": [],
+             "learningOptions": {"introducesNewCards": true, "paused": true}, "cards": []}
+            """.utf8)
+        let deck = try DeckFile.decode(old)
+        #expect(deck.learningOptions.isPaused)
+        let saved = String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self)
+        #expect(!saved.contains("introducesNewCards"))
+        #expect(saved.contains("\"paused\""))
+    }
+
     /// The keys for notes and production cards are new: an older deck lacks them and reads
     /// with the defaults, and a value out of range or unknown is clamped or ignored.
     @Test func noteKindAndProductionOptionsRoundTripAndDefault() throws {
