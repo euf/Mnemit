@@ -55,6 +55,9 @@ struct Figure<Leading: View>: View {
             label
                 .font(size.labelFont)
                 .foregroundStyle(.primary)
+                // A widget has the room of one line, and a label that wraps there costs the figure its height.
+                .lineLimit(size == .compact ? 1 : nil)
+                .minimumScaleFactor(size == .compact ? 0.75 : 1)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 leading
                 value

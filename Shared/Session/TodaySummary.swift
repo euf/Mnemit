@@ -50,7 +50,7 @@ struct TodayFigures: View {
     }
 
     private func learned(_ words: Int) -> some View {
-        Figure(label: Text("Words learned"), value: Text(words, format: .number), caption: gain.map { Text("+\($0) today") }, size: size, accentable: accentable)
+        Figure(label: Text("Words learned"), value: Text(words, format: .number), caption: gain.flatMap { $0 > 0 ? Text("+\($0) today") : nil }, size: size, accentable: accentable)
     }
 }
 
@@ -135,42 +135,36 @@ struct TodayCard: View {
 
     private var week: some View {
         let loaded = isLoaded ? progress : nil
-        return WeekRings(week: loaded?.week.count == 7 ? loaded!.week : Array(repeating: nil, count: 7), rings: loaded?.weekRings, today: DailyRingFigure.fraction(loaded, shown: nil), now: now)
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .trailing) {
-                if open != nil {
-                    Image(systemName: "chevron.forward")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                        .accessibilityHidden(true)
-                }
-            }
+        let chevron = Image(systemName: "chevron.forward")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.tertiary)
+            .accessibilityHidden(true)
+        // The rings stay centred: an invisible chevron balances the visible one, and the two never overlap the letters.
+        return HStack(spacing: 8) {
+            if open != nil { chevron.hidden() }
+            WeekRings(week: loaded?.week.count == 7 ? loaded!.week : Array(repeating: nil, count: 7), rings: loaded?.weekRings, today: DailyRingFigure.fraction(loaded, shown: nil), now: now)
+                .frame(maxWidth: .infinity)
+            if open != nil { chevron }
+        }
     }
 }
 
 /// The card of a day with no deck: the empty ring and what to do, "Add the words you are learning."
 struct EmptyTodayCard: View {
     @ScaledMetric(relativeTo: .title) private var ringSize: CGFloat = 112
+    @Environment(\.dynamicTypeSize) private var type
 
+    /// The sentence wraps beside the ring; at the accessibility sizes the ring stands over it.
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 20) {
-                HeroRing(progress: nil, diameter: ringSize)
-                prompt
-            }
-            VStack(spacing: 16) {
-                HeroRing(progress: nil, diameter: ringSize)
-                prompt
-            }
+        let layout = type.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 16)) : AnyLayout(HStackLayout(spacing: 20))
+        layout {
+            HeroRing(progress: nil, diameter: ringSize)
+            Text("Add the words you are learning.")
+                .font(.title3.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-    }
-
-    private var prompt: some View {
-        Text("Add the words you are learning.")
-            .font(.title3.weight(.semibold))
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
