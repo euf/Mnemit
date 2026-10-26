@@ -1,17 +1,18 @@
 import Combine
 import Foundation
 import Observation
-import UIKit
 import VocabCore
 
 /// A deck the app has open (#285): its file, which a `DeckFileDocument` reads and
-/// saves, and the `VocabularyDocument` the views show.
+/// saves, and the `VocabularyDocument` the views show. The `DeckFileDocument` is a
+/// UIDocument on the iPhone and a headless NSDocument on the Mac; this class uses only
+/// what both give it.
 ///
 /// The deck keeps its document while it is open: when another device changed the file,
 /// the `VersionMerger` merges what the file holds into it, and a study session goes on
-/// (#296, #303). Changes register with the UIDocument's own undo manager, so it counts
+/// (#296, #303). Changes register with the file document's own undo manager, so it counts
 /// them and saves them by itself; the merger saves a few seconds after each change too,
-/// through the same UIDocument (#295).
+/// through the same file document (#295).
 @MainActor @Observable
 final class OpenDeck {
     let url: URL
@@ -41,13 +42,13 @@ final class OpenDeck {
             NotificationCenter.default.publisher(for: DeckFileDocument.didLoad, object: file)
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in self?.takeLoadedDeck() },
-            NotificationCenter.default.publisher(for: UIDocument.stateChangedNotification, object: file)
+            NotificationCenter.default.publisher(for: DeckFileDocument.stateDidChange, object: file)
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in self?.updateState() },
         ]
-        file.open { @Sendable [weak self] success in
+        file.open(completion: { @Sendable [weak self] success in
             Task { @MainActor [weak self] in self?.didOpen(success) }
-        }
+        })
     }
 
     /// The name of the deck, without the extension.
@@ -57,7 +58,7 @@ final class OpenDeck {
 
     /// The undo manager every change of the deck registers with.
     var undoManager: UndoManager {
-        file.undoManager
+        file.undoManager!
     }
 
     private func didOpen(_ success: Bool) {
@@ -81,7 +82,7 @@ final class OpenDeck {
         return nil
     }
 
-    /// Waits for the run loop to close the undo group of the last change, which the UIDocument
+    /// Waits for the run loop to close the undo group of the last change, which the file document
     /// counts as unsaved: closing the deck before saves nothing. Gives up after five seconds.
     func settleChanges() async {
         let deadline = ContinuousClock.now + .seconds(5)
@@ -94,9 +95,9 @@ final class OpenDeck {
     /// closed already.
     func close() async {
         merger.suspend()
-        if !file.documentState.contains(.closed) {
+        if !file.isClosed {
             await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                file.close { @Sendable _ in continuation.resume() }
+                file.close(completion: { @Sendable _ in continuation.resume() })
             }
         }
         if isAccessingFile {
@@ -108,9 +109,7 @@ final class OpenDeck {
     /// `VersionMerger.suspend()`, and saves what is unsaved.
     func suspend() {
         merger.suspend()
-        if file.hasUnsavedChanges {
-            file.autosave(completionHandler: nil)
-        }
+        file.autosaveIfNeeded()
     }
 
     func resume() {
@@ -119,7 +118,7 @@ final class OpenDeck {
 
     /// Takes the deck the file just read: as the document when the file is read first,
     /// else for the merger to merge into the document once the file can be changed
-    /// again. The UIDocument then takes the file as saved; the merger saves what the
+    /// again. The file document then takes the file as saved; the merger saves what the
     /// document holds beyond it.
     private func takeLoadedDeck() {
         guard let deck = file.takeLoadedDeck() else { return }
@@ -141,8 +140,7 @@ final class OpenDeck {
     /// the merger waits for the file to be editable again before it merges the deck
     /// read again, and a deck may be read again while no view shows it.
     private func updateState() {
-        let state = file.documentState
-        isEditable = document != nil && !state.contains(.closed) && !state.contains(.editingDisabled)
+        isEditable = document != nil && !file.isClosed && !file.isEditingDisabled
         if let document {
             merger.attach(document, fileURL: url, isEditable: isEditable)
         }
@@ -150,12 +148,15 @@ final class OpenDeck {
 
     /// Runs after the merger merged what another device wrote to the file (#296). Undo
     /// takes back neither the merge nor any step before it: it would take back what the
-    /// other device did, or bring back cards it changed since. As on the Mac, where
-    /// reading the file again ends the session, the session's steps until now can no
-    /// longer be undone.
+    /// other device did, or bring back cards it changed since. The session's steps until
+    /// now can no longer be undone.
     private func forgetUndoSteps() {
         undoManager.removeAllActions()
     }
+}
+
+extension OpenDeck: Identifiable {
+    nonisolated var id: ObjectIdentifier { ObjectIdentifier(self) }
 }
 
 extension OpenDeck: Hashable {

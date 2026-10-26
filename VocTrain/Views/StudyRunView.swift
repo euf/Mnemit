@@ -1,50 +1,6 @@
 import SwiftUI
 import VocabCore
 
-/// One go at studying that covers the screen: one stream over the decks of the run. Study on
-/// Today opens every deck with cards today and the stream takes each card from the deck whose next
-/// card is most urgent (`StudyModel`); Study This Deck runs over one deck.
-@MainActor @Observable
-final class StudyRun {
-    /// What the stream starts with; a practice takes the first deck only.
-    let entry: StudyModel.Entry
-    /// The decks of the run: the one it starts with, then the others with cards today.
-    let decks: [OpenDeck]
-    /// Whether the run closes the deck it starts with. A run started from a Deck screen
-    /// studies the deck the screen holds open, which the screen closes.
-    let ownsDeck: Bool
-
-    init(deck: OpenDeck, entry: StudyModel.Entry = .study, upcoming: [URL] = [], ownsDeck: Bool = true) {
-        decks = [deck] + upcoming.map { OpenDeck(url: $0) }
-        self.entry = entry
-        self.ownsDeck = ownsDeck
-    }
-
-    /// The deck the run starts with.
-    var deck: OpenDeck { decks[0] }
-
-    /// Saves what is unsaved and lets go of the decks the run owns.
-    func close() async {
-        for (index, deck) in decks.enumerated() where index > 0 || ownsDeck {
-            await deck.close()
-        }
-    }
-}
-
-extension StudyRun: Identifiable, Hashable {
-    nonisolated static func == (lhs: StudyRun, rhs: StudyRun) -> Bool {
-        lhs === rhs
-    }
-
-    nonisolated func hash(into hasher: inout Hasher) {
-        hasher.combine(ObjectIdentifier(self))
-    }
-}
-
-extension OpenDeck: Identifiable {
-    nonisolated var id: ObjectIdentifier { ObjectIdentifier(self) }
-}
-
 /// What covers the screen while the learner studies: the stream once the decks are read, before
 /// it a spinner, or why no deck could be opened.
 struct StudyRunView: View {

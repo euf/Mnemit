@@ -15,6 +15,9 @@ final class DeckFileDocument: UIDocument {
     /// on the queue that read it. `takeLoadedDeck()` then returns what it read.
     static let didLoad = Notification.Name("DeckFileDocument.didLoad")
 
+    /// Posted when the document opened, closed or could be changed or no longer.
+    static let stateDidChange = UIDocument.stateChangedNotification
+
     private let loadedDeck = OSAllocatedUnfairLock<Deck?>(initialState: nil)
     private let savedDocument = OSAllocatedUnfairLock<VocabularyDocument?>(initialState: nil)
     private let lastError = OSAllocatedUnfairLock<String?>(initialState: nil)
@@ -28,6 +31,28 @@ final class DeckFileDocument: UIDocument {
     /// Why reading or saving failed last, for the learner.
     var failure: String? {
         lastError.withLock { $0 }
+    }
+
+    var isClosed: Bool { documentState.contains(.closed) }
+
+    /// Not while the file is read again, or a version of it is in conflict.
+    var isEditingDisabled: Bool { documentState.contains(.editingDisabled) }
+
+    /// `open(completionHandler:)` under the name the Mac's `DeckFileDocument` has too, which
+    /// `OpenDeck` uses.
+    func open(completion: @escaping @Sendable (Bool) -> Void) {
+        open(completionHandler: completion)
+    }
+
+    func close(completion: @escaping @Sendable (Bool) -> Void) {
+        close(completionHandler: completion)
+    }
+
+    /// Saves what the document counted as unsaved, without waiting.
+    func autosaveIfNeeded() {
+        if hasUnsavedChanges {
+            autosave(completionHandler: nil)
+        }
     }
 
     /// The deck read last, once.

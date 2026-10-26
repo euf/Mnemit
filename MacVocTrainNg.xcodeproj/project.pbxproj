@@ -87,6 +87,8 @@
 		7A0000000000000000000070 /* Exceptions for "Shared" folder in "MnemitWidget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Document/OpenDeck.swift,
+				Document/StudyRun.swift,
 				Web/DeckWebBrowser.swift,
 				Web/DeckWebBrowserView.swift,
 			);
