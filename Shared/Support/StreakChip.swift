@@ -31,8 +31,9 @@ struct StreakChip: View {
         .accessibilityLabel(Text(verbatim: Self.spoken(days: shown, state: state, minutesToKeep: minutesToKeep)))
     }
 
-    /// The chip's sentence for `days` in `state`.
-    static func text(days: Int, state: StreakState, minutesToKeep: Int?) -> String {
+    /// The chip's sentence for `days` in `state`. `nonisolated`: a view is main-actor, and the closures in here trap when
+    /// a test or a widget builds the text off the main queue.
+    nonisolated static func text(days: Int, state: StreakState, minutesToKeep: Int?) -> String {
         let time = minutesToKeep.map(Format.timeLeft(minutes:))
         guard days > 0 else {
             return [String(localized: "Start your streak"), time].compactMap { $0 }.joined(separator: " · ")
@@ -45,7 +46,7 @@ struct StreakChip: View {
     }
 
     /// What VoiceOver reads: the sentence, with the state added where the sentence does not say it.
-    static func spoken(days: Int, state: StreakState, minutesToKeep: Int?) -> String {
+    nonisolated static func spoken(days: Int, state: StreakState, minutesToKeep: Int?) -> String {
         guard days > 0 else { return text(days: days, state: state, minutesToKeep: minutesToKeep) }
         switch state {
         case .kept: return String(localized: "\(days)-day streak, kept today")
