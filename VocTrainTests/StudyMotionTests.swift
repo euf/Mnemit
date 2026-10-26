@@ -212,8 +212,8 @@ struct StudyMotionTests {
     @Test func theEdgesAreLowerAndNarrowerWithDepth() {
         #expect(StackPose.maxEdges == 4)
         for level in 1...StackPose.maxEdges {
-            #expect(StackPose.drop(level) == 6 * CGFloat(level))
-            #expect(StackPose.width(level, cardWidth: 343) == 343 - 12 * CGFloat(level))
+            #expect(StackPose.drop(level) == 10 * CGFloat(level))
+            #expect(StackPose.width(level, cardWidth: 343) == 343 - 18 * CGFloat(level))
             #expect(StackPose.faintness(level) > 0 && StackPose.faintness(level) <= 1)
             if level > 1 { #expect(StackPose.faintness(level) < StackPose.faintness(level - 1)) }
         }
