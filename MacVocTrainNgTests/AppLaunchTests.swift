@@ -29,6 +29,23 @@ extension DeckFileTests {
             #expect(AppDelegate().applicationShouldOpenUntitledFile(NSApp) == false)
         }
 
+        /// The File menu of the app: New Deck and Open Deck for the shell, from the document types' New and Open that
+        /// went with the DocumentGroup, and nothing of the debug item that opened the shell beside the windows.
+        @Test func theFileMenuNewDeckOpensTheNameSheetOfTheShell() async throws {
+            _ = try await waitForAppWindow()
+            let file = try #require(NSApp.mainMenu?.items.first { $0.submenu?.title == String(localized: "File") }?.submenu)
+            let new = try #require(file.items.first { $0.title == String(localized: "New Deck…") })
+            let open = try #require(file.items.first { $0.title == String(localized: "Open Deck…") })
+            #expect(new.keyEquivalent == "n" && new.keyEquivalentModifierMask == .command)
+            #expect(open.keyEquivalent == "o" && open.keyEquivalentModifierMask == .command)
+            #expect(NSApp.mainMenu?.items.flatMap { $0.submenu?.items ?? [] }.contains { $0.title.contains("Open Shell") } == false)
+
+            Shell.shared.isNamingDeck = false
+            file.performActionForItem(at: file.index(of: new))
+            try await waitUntil("File > New Deck asks for a name", timeout: .seconds(30)) { Shell.shared.isNamingDeck }
+            Shell.shared.isNamingDeck = false
+        }
+
         /// ⌘W leaves the app running (SwiftUI quits a single-window app with its window otherwise), and the Dock icon and a
         /// Finder open bring the window back, with another window of the app open too, as Settings is.
         @Test func theWindowComesBackAfterCommandWFromTheDockAndFromFinder() async throws {
