@@ -86,9 +86,14 @@ of text is all there is room for (the rests, the small widgets, the reminders, V
 sentence: "≈ 2 min to keep your streak", "≈ 5 min to close the ring", "Ring closed · ≈ 12 min of reviews left", "All done
 for today". **The button** follows the moment: Study, then Catch Up, then Learn 10 New Words.
 
-**A card** is asked; a tap shows the answer; the learner grades it: left no (Forgot; "Don't know" on its first showing,
-where two wide buttons, Don't know and Know, replace the four), right Good, up Easy, down Hard. A card leaves the stack
-and moves the ring when FSRS lets it go until another day; a Forgot slides it back under the stack and moves neither.
+**A card** is asked; a tap shows the answer; the learner answers with two buttons, Forgot and Good ("Don't know" and
+"Know" on its first showing), or swipes: left Forgot, right Good, and two more for those who want them, up Easy, down
+Hard (on the Mac the keys 1 to 4, as in Anki). A setting shows all four as buttons. Two answers are enough for FSRS,
+which predicts as well or better from Again and Good alone (`fsrs-research.md` §1), and 17 % of 2,000 Anki users answer
+that way with the same recall; Easy is kept as a swipe because a familiar word marked Easy comes back 3 to 4 times in a
+year instead of 6, and the median Anki user still presses Hard or Easy on a quarter of reviews (`grades-research.md`). A card
+leaves the stack and moves the ring when FSRS lets it go until another day; a Forgot slides it back under the stack and
+moves neither.
 The colour says how easily the word came: red for Forgot; three greens whose chroma rises from Hard, a dull sage, through
 Good to Easy, a vivid jade.
 
@@ -226,6 +231,7 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
 | Words on screen | sentences that explain | short and plain everywhere; no text that explains the interface |
 | Today | the ring, then one sentence led by the flame with the days in it | the date under the title; one card: the ring left, Day streak, the next moment with ≈ minutes and Words learned right, the week under them |
 | Progress, a deck, Statistics | a streak block with small totals; a bold header line; grey boxes | cards with their titles inside, tiles with large values, the deck's Today card |
+| Answer buttons | four (Forgot, Hard, Good, Easy); two only on a first showing | two everywhere (Forgot, Good); Hard and Easy as swipes and keys; a setting shows four |
 | Medal toasts | over the ring (Mac), over the card or a deck row | where they cover nothing |
 
 ## 12. Details settled in the build
