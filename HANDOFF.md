@@ -2,10 +2,10 @@
 
 ## State
 
-- Version 7.1.x on `main`: the Mac is one window (a sidebar of Today, Progress and the decks; the stream
+- Version 7.2.x on `main`: the Mac is one window (a sidebar of Today, Progress and the decks; the stream
   takes the window), a new card is asked like any card and its first Forgot reads Don't know, every review counts in full, neither app asks for
   a typed answer, and the widgets and reminders follow the day (the flame's three states, the week, the inline
-  accessory, a 21:00 streak reminder). The iPhone and the Mac run 7.1.11 (32be5c5), the iPhone signed until
+  accessory, a 21:00 streak reminder). The iPhone and the Mac run 7.2.0 (75ff961), the iPhone signed until
   02.11. The day's model (one ring that stays full at the goal, the streak as a flame, the
   stack that ends with the plan, Study / Catch Up / Learn 10 New Words, partial credit, the streak step, two
   rests, medals, the Progress screen on both apps)
@@ -66,7 +66,8 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
 2. **The Mac's one window, to see live:** seen on 26.10 (vqa): one window on Today, the badges, ⌘1/⌘2/⌘4, a deck's
    Cards and Statistics, Learning Options ⌘;, a deck opened from Finder under Other Decks, the stream by Space, →
    and Z, Done ⌘. bringing the sidebar back. Still to see: a cold launch with a deck from Finder, ⌘Q with a stream
-   running, a Dock click after ⌘W, the Open Deck… panel and the New Deck sheet, the cheat sheet, Catch Up in the
+   running (an AppleScript quit was once answered "User cancelled" (-128) after a long QA session; a fresh
+   launch then quit cleanly), a Dock click after ⌘W, the Open Deck… panel and the New Deck sheet, the cheat sheet, Catch Up in the
    menu (it needs a closed ring), Edit ▸ Undo on a deck's page, dark mode, Today's Study mixing the decks, the
    search over all decks and a hit selecting its card, a sidebar row's menu (Pause), the medal toasts and the
    month's sheet.
