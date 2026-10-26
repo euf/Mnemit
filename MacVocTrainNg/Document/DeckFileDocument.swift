@@ -180,6 +180,14 @@ final class DeckFileDocument: NSDocument {
         NotificationCenter.default.post(name: Self.stateDidChange, object: self)
     }
 
+    /// The app's one window, where an error of a deck is a sheet: a deck has no window of its own, and
+    /// without one NSDocument shows the error app-modal. Set by the window (`UndoRouter`).
+    static weak var sheetWindow: NSWindow?
+
+    override var windowForSheet: NSWindow? {
+        Self.sheetWindow ?? super.windowForSheet
+    }
+
     /// Records why reading or saving failed, for the learner.
     override func willPresentError(_ error: any Error) -> any Error {
         failure = error.localizedDescription

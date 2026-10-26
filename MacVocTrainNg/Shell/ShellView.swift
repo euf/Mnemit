@@ -32,6 +32,7 @@ struct ShellView: View {
             shell.shortcuts.opensWithQuestionMark = inSession
         }
         .focusedSceneValue(\.deckActions, shell.deckActions)
+        .background(WindowUndoRouting(shell: shell))
         .onAppear { shell.refresh() }
         // The decks may have changed while the window was behind others.
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in shell.refresh() }
