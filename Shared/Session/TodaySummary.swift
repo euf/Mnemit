@@ -1,56 +1,24 @@
 import SwiftUI
 import VocabCore
 
-/// The one line of the widget, by the state of the day: "≈ 2 min to keep your streak" before the streak step,
-/// "20 cards left · ≈ 5 min" while the ring is open, "Ring closed · 3 left", "All done", "Nothing due · next tomorrow",
-/// and the day after a missed one "Close the ring to save your 12-day streak". Today says it with the ring and the
-/// streak chip (`TodayLead`).
-enum TodayHeadline {
-    /// - Parameters:
-    ///   - due: The cards of today's plan not done yet, "N cards left": not the cards that are due in all.
-    ///   - nextDue: When something comes back that today's plans leave out.
-    static func text(due: Int, progress: DailyProgress, nextDue: Date?, now: Date) -> String {
-        text(
-            due: due, ring: progress.ring, isStreakAtRisk: progress.isStreakAtRisk, streakDays: progress.streak.days, round: RoundStatus(progress),
-            secondsPerCard: progress.secondsPerCardLeft, nextDue: nextDue, now: now)
-    }
-
-    /// The same line from the figures alone, which the widget's snapshot holds: `round` and `secondsPerCard` are `nil`
-    /// where it has none, and the line then has no time.
-    static func text(
-        due: Int, ring: DailyRing, isStreakAtRisk: Bool, streakDays: Int, round: RoundStatus?, secondsPerCard: Double?, nextDue: Date?, now: Date
-    ) -> String {
-        if isStreakAtRisk {
-            return String(localized: "Close the ring to save your \(streakDays)-day streak")
-        }
-        if due > 0 {
-            if ring.isGoalMet {
-                return [String(localized: "Ring closed"), String(localized: "\(due) left")].joined(separator: " · ")
-            }
-            if let title = round?.line { return title }
-            // The cards to close the ring: the plan may hold more after a break, and those come after the ring.
-            let cards = ring.goal > 0 ? min(due, ring.goal - ring.done) : due
-            let time = secondsPerCard.flatMap { DailyGoal.minutesLeft(cards: cards, secondsPerCard: $0) }.map(Format.timeLeft(minutes:))
-            return ([String(localized: "\(cards) cards left")] + [time].compactMap { $0 }).joined(separator: " · ")
-        }
-        if ring.done > 0 { return String(localized: "All done") }
-        if let nextDue { return String(localized: "Nothing due · next \(Format.due(nextDue, now: now))") }
-        return String(localized: "Nothing due")
-    }
-}
-
 /// What leads the gain line under the streak chip, by the state of the day: the time that closes the ring, "≈ 5 min",
 /// while it is open; "3 left" of the plan once it is closed; "Nothing due · next tomorrow" on a day without cards. The
 /// ring says the cards left and the chip the streak, so neither is repeated here; `nil` when there is nothing to add.
 enum TodayLead {
     static func text(due: Int, progress: DailyProgress, nextDue: Date?, now: Date) -> String? {
+        text(due: due, ring: progress.ring, secondsPerCard: progress.secondsPerCardLeft, nextDue: nextDue, now: now)
+    }
+
+    /// The same from the figures alone, which the widget's snapshot holds: `secondsPerCard` is `nil` where it has none,
+    /// and the line then has no time.
+    static func text(due: Int, ring: DailyRing, secondsPerCard: Double?, nextDue: Date?, now: Date) -> String? {
         if due > 0 {
-            if progress.ring.isGoalMet { return String(localized: "\(due) left") }
+            if ring.isGoalMet { return String(localized: "\(due) left") }
             // The cards to close the ring: the plan may hold more after a break, and those come after the ring.
-            let cards = progress.ring.goal > 0 ? min(due, progress.ring.goal - progress.ring.done) : due
-            return DailyGoal.minutesLeft(cards: cards, secondsPerCard: progress.secondsPerCardLeft).map(Format.timeLeft(minutes:))
+            let cards = ring.goal > 0 ? min(due, ring.goal - ring.done) : due
+            return secondsPerCard.flatMap { DailyGoal.minutesLeft(cards: cards, secondsPerCard: $0) }.map(Format.timeLeft(minutes:))
         }
-        if progress.ring.done > 0 { return nil }
+        if ring.done > 0 { return nil }
         if let nextDue { return String(localized: "Nothing due · next \(Format.due(nextDue, now: now))") }
         return String(localized: "Nothing due")
     }

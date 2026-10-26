@@ -66,7 +66,7 @@ struct TodayScreen: View {
 
     /// Whether the day can be told at once: every deck read and the ring evaluated. They come in on their
     /// own, so until both are there the header holds its placeholders, and it changes once instead of
-    /// going from "All done" to "Ring closed · 3 left" as each figure arrives.
+    /// going from a closed ring to an open one as each figure arrives.
     private var isDayReady: Bool {
         progress != nil && decks.allSatisfy { counts[$0.url] != nil } && (!decks.isEmpty || !paused.isEmpty)
     }

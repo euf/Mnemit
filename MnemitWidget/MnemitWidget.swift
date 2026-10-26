@@ -41,7 +41,8 @@ struct MnemitProvider: TimelineProvider {
             date: now,
             state: WidgetState(
                 date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 1,
-                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15, week: [true, true, false, true, true, true, false]))
+                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15, week: [true, true, false, true, true, true, false],
+                weekRings: [1, 1.4, 0.3, 1, 1, 3, 0.6]))
     }
 }
 

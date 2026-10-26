@@ -4,43 +4,18 @@ import Testing
 @testable import VocTrain
 @testable import VocabCore
 
-/// The lines the day is told in: the streak to keep, the closed ring, and the words in memory. Rounds never show.
+/// What the day tells: the streak to keep, and the words in memory. Rounds never show.
 struct DayLinesTests {
     func line(_ title: LocalizedStringResource?) -> String? { title.map { String(localized: $0) } }
 
-    @Test func beforeTheFirstRoundTheLineIsTheTimeToKeepTheStreak() {
-        let status = RoundStatus(rounds: 4, roundsDone: 0, minutesToNext: 2)
-        #expect(line(status.title) == "≈ 2 min to keep your streak")
-        #expect(status.line == "≈ 2 min to keep your streak")
-        #expect(!status.isStreakKept)
-        #expect(line(RoundStatus(rounds: 4, roundsDone: 0, minutesToNext: 0).title) == "< 1 min to keep your streak")
-    }
-
     @Test func theStreakCostsTheFirstRoundUntilItIsDone() {
         #expect(RoundStatus(rounds: 4, roundsDone: 0, minutesToNext: 2).minutesToKeep == 2)
+        #expect(!RoundStatus(rounds: 4, roundsDone: 0, minutesToNext: 2).isStreakKept)
         #expect(RoundStatus(rounds: 4, roundsDone: 1, minutesToNext: 3).minutesToKeep == nil, "kept")
+        #expect(RoundStatus(rounds: 4, roundsDone: 1, minutesToNext: 3).isStreakKept)
         #expect(RoundStatus(rounds: 4, roundsDone: 4, minutesToNext: nil).minutesToKeep == nil)
         #expect(RoundStatus(rounds: 0, roundsDone: 0, minutesToNext: nil).minutesToKeep == nil, "no plan, nothing to keep")
-    }
-
-    @Test func betweenTheStreakAndTheRingThereIsNoLine() {
-        let status = RoundStatus(rounds: 4, roundsDone: 1, minutesToNext: 2)
-        #expect(status.title == nil && status.line == nil)
-        #expect(status.isStreakKept)
-    }
-
-    @Test func afterTheLastRoundTheRingIsClosed() {
-        let status = RoundStatus(rounds: 4, roundsDone: 4, minutesToNext: nil)
-        #expect(status.isClosed)
-        #expect(line(status.title) == "Ring closed")
-        #expect(status.line == "Ring closed")
-    }
-
-    @Test func aDayWithoutARoundHasNoLineAndKeepsTheStreak() {
-        let status = RoundStatus(rounds: 0, roundsDone: 0, minutesToNext: nil)
-        #expect(!status.hasRounds && !status.isClosed)
-        #expect(status.title == nil && status.line == nil)
-        #expect(status.isStreakKept)
+        #expect(RoundStatus(rounds: 0, roundsDone: 0, minutesToNext: nil).isStreakKept, "an empty plan keeps the streak")
     }
 
     @Test func theStatusReadsTheProgress() {

@@ -136,28 +136,6 @@
         }
       }
     },
-    "%@ to keep your streak": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, um deine Serie zu halten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ για να κρατήσεις το σερί σου"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, чтобы сохранить стрик"
-          }
-        }
-      }
-    },
     "%@ · due now": {
       "localizations": {
         "de": {
@@ -4549,28 +4527,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Все медали"
-          }
-        }
-      }
-    },
-    "All done": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alles erledigt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ολοκληρώθηκαν όλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Всё сделано"
           }
         }
       }

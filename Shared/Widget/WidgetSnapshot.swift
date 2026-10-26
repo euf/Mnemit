@@ -63,6 +63,10 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// The rings of the last seven study days, today last (`DailyProgress.week`); `nil` in a snapshot an older app
     /// wrote, and then the medium widget has no week.
     var week: [Bool?]?
+    /// The same days as they are drawn, each ring in laps of its goal (`DailyProgress.weekRings`, up to 3, `nil` before
+    /// the first study day); an optional key, so the app and the widget of different builds still read each other: without
+    /// it a past day is full when it closed and empty otherwise.
+    var weekRings: [Double?]?
 
     /// How far ahead the forecast reaches.
     static let forecastHours = 48
@@ -72,16 +76,17 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         case date
         case done = "reviews"
         case goal, streakDays, isGoalMet, due, nextReminder, secondsPerCard
-        case rounds, roundsDone, minutesToNextRound, wordsInMemory, wordsToday, ladder, isStreakAtRisk, week
+        case rounds, roundsDone, minutesToNextRound, wordsInMemory, wordsToday, ladder, isStreakAtRisk, week, weekRings
     }
 
     init(
         date: Date, done: Int, goal: Int, streakDays: Int, isGoalMet: Bool, due: [Due], nextReminder: Date?, secondsPerCard: Double? = nil,
         rounds: Int? = nil, roundsDone: Int? = nil, minutesToNextRound: Int? = nil, wordsInMemory: Int? = nil, wordsToday: Int? = nil,
-        ladder: [Int]? = nil, isStreakAtRisk: Bool? = nil, week: [Bool?]? = nil
+        ladder: [Int]? = nil, isStreakAtRisk: Bool? = nil, week: [Bool?]? = nil, weekRings: [Double?]? = nil
     ) {
         self.isStreakAtRisk = isStreakAtRisk
         self.week = week
+        self.weekRings = weekRings
         self.ladder = ladder
         self.rounds = rounds
         self.roundsDone = roundsDone
@@ -107,7 +112,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
             isGoalMet: progress.ring.isGoalMet, due: zip(dates, totals).map { Due(date: $0, count: $1) }, nextReminder: nextReminder,
             secondsPerCard: progress.secondsPerCardLeft, rounds: progress.rounds, roundsDone: progress.roundsDone,
             minutesToNextRound: progress.minutesToNextRound, wordsInMemory: progress.memory.shownWords, wordsToday: progress.memory.shownGain,
-            ladder: progress.ladder, isStreakAtRisk: progress.isStreakAtRisk, week: progress.week.count == 7 ? progress.week : nil)
+            ladder: progress.ladder, isStreakAtRisk: progress.isStreakAtRisk, week: progress.week.count == 7 ? progress.week : nil,
+            weekRings: progress.week.count == 7 ? progress.weekRings : nil)
     }
 
     /// The moments the forecast looks at: `now`, then each full hour after it.
@@ -180,6 +186,8 @@ struct WidgetState: Equatable, Sendable {
     /// The rings of the last seven study days, today last, as `DailyProgress.week` has them; `nil` for a snapshot of
     /// an older app.
     var week: [Bool?]? = nil
+    /// The same days in laps of their goals (`WidgetSnapshot.weekRings`); `nil` for a snapshot of an older app.
+    var weekRings: [Double?]? = nil
 
     /// Where the learner stands in the rounds; `nil` when the snapshot has none.
     var roundStatus: RoundStatus? {
@@ -208,11 +216,10 @@ struct WidgetState: Equatable, Sendable {
             cardsLeft: due, streakKeptToday: isStreakKept)
     }
 
-    /// The line Today shows under its ring for these figures (`TodayHeadline`); the snapshot has no "next due".
-    var todayLine: String {
-        TodayHeadline.text(
-            due: due, ring: DailyRing(done: done, goal: goal), isStreakAtRisk: isStreakAtRisk, streakDays: streakDays, round: roundStatus,
-            secondsPerCard: secondsPerCard, nextDue: nil, now: date)
+    /// What leads the line under the chip, as Today has it (`TodayLead`): the time that closes the ring, "≈ 2 min", "3 left"
+    /// of the plan once it is closed, "Nothing due" on a day without cards; the snapshot has no "next due".
+    var lead: String? {
+        TodayLead.text(due: due, ring: DailyRing(done: done, goal: goal), secondsPerCard: secondsPerCard, nextDue: nil, now: date)
     }
 
     /// The same figures at another moment of the timeline.
@@ -239,7 +246,7 @@ extension WidgetSnapshot {
         let same = WidgetState(
             date: moment, done: done, goal: goal, streakDays: streakDays, isGoalMet: isGoalMet, due: count, nextReminder: reminder,
             secondsPerCard: secondsPerCard, rounds: rounds, roundsDone: roundsDone, minutesToNextRound: minutesToNextRound,
-            wordsInMemory: wordsInMemory, wordsToday: wordsToday, ladder: ladder, isStreakAtRisk: isStreakAtRisk ?? false, week: week)
+            wordsInMemory: wordsInMemory, wordsToday: wordsToday, ladder: ladder, isStreakAtRisk: isStreakAtRisk ?? false, week: week, weekRings: weekRings)
         guard days > 0 else { return same }
         // A day that kept the streak (its first round done) is no missed day, whatever became of its ring.
         let missed = days - (same.isStreakKept ? 1 : 0)
@@ -248,14 +255,15 @@ extension WidgetSnapshot {
         return WidgetState(
             date: moment, done: 0, goal: count, streakDays: kept, isGoalMet: count == 0, due: count, nextReminder: reminder,
             secondsPerCard: secondsPerCard, ladder: ladder, isStreakAtRisk: missed == 1 && count > 0 && kept > 0,
-            week: week.map { Self.movedWeek($0, endingWith: isGoalMet, daysLater: days, today: count == 0) })
+            week: week.map { Self.moved($0, ending: isGoalMet, between: false, today: count == 0, daysLater: days) },
+            weekRings: weekRings.map { Self.moved($0, ending: $0.last.flatMap { $0 } ?? (isGoalMet ? 1 : 0), between: 0, today: count == 0 ? 1 : 0, daysLater: days) })
     }
 
-    /// The week of a snapshot `daysLater` study days on: the snapshot's day with its ring as it ended, the days
-    /// between missed, and `today` for the one now.
-    private static func movedWeek(_ week: [Bool?], endingWith lastClosed: Bool, daysLater: Int, today: Bool) -> [Bool?] {
-        var moved = Array(week.dropLast()) + [lastClosed]
-        moved += Array(repeating: false, count: daysLater - 1) + [today]
+    /// The week of a snapshot `daysLater` study days on, whether as closed or as laps: the snapshot's day as it ended (`last`),
+    /// the days between `missed`, and `today` for the one now.
+    private static func moved<Ring>(_ week: [Ring?], ending last: Ring, between missed: Ring, today: Ring, daysLater: Int) -> [Ring?] {
+        var moved = Array(week.dropLast()) + [last]
+        moved += Array(repeating: missed, count: daysLater - 1) + [today]
         return Array(moved.suffix(week.count))
     }
 

@@ -181,13 +181,16 @@ struct WidgetSnapshotTests {
         let progress = DailyProgress(ring: DailyRing(done: 3, goal: 20), streak: Streak(days: 7, repairCards: 17), week: week)
         let snapshot = WidgetSnapshot(now: now, progress: progress, dates: [now], dueByDeck: [[17]], nextReminder: nil)
         #expect(snapshot.isStreakAtRisk == true && snapshot.week == week)
+        // Without the logs of the days, the rings of the week are the closed ones; each is its own share otherwise.
+        let rings: [Double?] = [nil, 1, 1, 0, 1, 1, 0]
+        #expect(snapshot.weekRings == rings)
         #expect(WidgetSnapshot.decoded(from: try snapshot.encoded()) == snapshot)
 
         let state = snapshot.state(at: now, calendar: Fixtures.studyCalendar)
-        #expect(state.isStreakAtRisk && state.week == week)
-        // The ring of the widget draws it as Today does: an outlined flame in the streak's colour.
+        #expect(state.isStreakAtRisk && state.week == week && state.weekRings == rings)
+        // The chip of the widget draws it as Today does: an outlined flame in the streak's colour, with an exclamation mark.
         #expect(state.progress.streakState == .atRisk)
-        #expect(state.todayLine == "Close the ring to save your 7-day streak")
+        #expect(state.inlineLine == "7 · 17 left")
         // A ring that is closed is not at risk any more.
         let closed = WidgetSnapshot(
             now: now, progress: DailyProgress(ring: DailyRing(done: 20, goal: 20), streak: Streak(days: 7, repairCards: 17)), dates: [now], dueByDeck: [[0]],
@@ -200,13 +203,20 @@ struct WidgetSnapshotTests {
         let json = #"{"date":1792663200,"reviews":12,"goal":20,"streakDays":7,"isGoalMet":false,"due":[{"date":1792663200,"count":8}]}"#
         let snapshot = try #require(WidgetSnapshot.decoded(from: Data(json.utf8)))
         let state = snapshot.state(at: Date(timeIntervalSince1970: 1_792_663_200))
-        #expect(!state.isStreakAtRisk && state.week == nil && state.progress.streakState == .open)
+        #expect(!state.isStreakAtRisk && state.week == nil && state.weekRings == nil && state.progress.streakState == .open)
         let written = try #require(JSONSerialization.jsonObject(with: snapshot.encoded()) as? [String: Any])
-        #expect(written["isStreakAtRisk"] == nil && written["week"] == nil)
-        // A newer app's snapshot keeps the days with no ring, as null.
-        let newer = #"{"date":1792663200,"reviews":12,"goal":20,"streakDays":7,"isGoalMet":false,"due":[],"isStreakAtRisk":true,"week":[null,true,false,true,true,true,false]}"#
+        #expect(written["isStreakAtRisk"] == nil && written["week"] == nil && written["weekRings"] == nil)
+        // A snapshot with the week but not its laps (the app of the build before) still reads: the widget draws closed or open.
+        let before = #"{"date":1792663200,"reviews":12,"goal":20,"streakDays":7,"isGoalMet":false,"due":[],"week":[null,true,false,true,true,true,false]}"#
+        let beforeRead = try #require(WidgetSnapshot.decoded(from: Data(before.utf8)))
+        #expect(beforeRead.week == [nil, true, false, true, true, true, false] && beforeRead.weekRings == nil)
+        // A newer app's snapshot keeps the days with no ring, as null, and the laps of the rings.
+        let newer = #"{"date":1792663200,"reviews":12,"goal":20,"streakDays":7,"isGoalMet":false,"due":[],"isStreakAtRisk":true,"week":[null,true,false,true,true,true,false],"weekRings":[null,1,0.4,1.5,3,1,0]}"#
         let read = try #require(WidgetSnapshot.decoded(from: Data(newer.utf8)))
         #expect(read.isStreakAtRisk == true && read.week == [nil, true, false, true, true, true, false])
+        #expect(read.weekRings == [nil, 1, 0.4, 1.5, 3, 1, 0])
+        // And what the new app writes, the widget of the build before reads: an unknown key is ignored.
+        #expect(WidgetSnapshot.decoded(from: try read.encoded()) == read)
     }
 
     @Test func theDayAfterAMissedOneIsAtRiskUntilTheRingCloses() {
@@ -253,39 +263,64 @@ struct WidgetSnapshotTests {
         #expect(empty.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).week?.last == true)
     }
 
-    @Test func theInlineLineHasThreeTextsAndTheStreakBeforeThem() {
+    @Test func theLapsOfTheWeekMoveWithTheStudyDays() {
+        var snapshot = Fixtures.snapshot(now: Fixtures.date(22, 20), done: 30, streak: 4, isGoalMet: true) { _ in 10 }
+        snapshot.week = [nil, true, true, false, true, true, true]
+        snapshot.weekRings = [nil, 1, 2.5, 0.4, 1, 3, 1.5]
+        #expect(snapshot.state(at: Fixtures.date(22, 23), calendar: Fixtures.studyCalendar).weekRings == snapshot.weekRings)
+        // The 22nd's ring stays as it ended, the new day is open.
+        #expect(snapshot.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).weekRings == [1, 2.5, 0.4, 1, 3, 1.5, 0])
+        // A day nobody studied is an empty ring.
+        #expect(snapshot.state(at: Fixtures.date(24, 5), calendar: Fixtures.studyCalendar).weekRings == [2.5, 0.4, 1, 3, 1.5, 0, 0])
+        // A day with an empty plan counts as one lap.
+        var empty = Fixtures.snapshot(now: Fixtures.date(22, 20), done: 20, streak: 4, isGoalMet: true) { _ in 0 }
+        empty.weekRings = snapshot.weekRings
+        #expect(empty.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).weekRings?.last == 1)
+        // No laps in the snapshot, none after a day either.
+        snapshot.weekRings = nil
+        #expect(snapshot.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).weekRings == nil)
+    }
+
+    @Test func theInlineLineHasTheStreakAndTheCardsToTheRing() {
         func state(done: Int, goal: Int = 20, streak: Int, due: Int) -> WidgetState {
             WidgetState(date: Fixtures.date(22, 10), done: done, goal: goal, streakDays: streak, isGoalMet: done >= goal, due: due, nextReminder: nil)
         }
-        #expect(state(done: 0, streak: 12, due: 20).inlineLine == "12 · 20 cards left")
-        #expect(state(done: 20, streak: 12, due: 0).inlineLine == "12 · All done")
+        #expect(state(done: 0, streak: 12, due: 20).inlineLine == "12 · 20 left")
         #expect(state(done: 0, streak: 0, due: 20).inlineLine == "20 cards left")
-        // The ring open: the cards that close it, not the whole plan; closed with more in the plan: said so.
-        #expect(state(done: 15, streak: 3, due: 40).inlineLine == "3 · 5 cards left")
+        // The ring open: the cards that close it, not the whole plan.
+        #expect(state(done: 15, streak: 3, due: 40).inlineLine == "3 · 5 left")
+        #expect(state(done: 15, streak: 0, due: 40).inlineLine == "5 cards left")
+        // Closed, with the plan done or with more in it.
+        #expect(state(done: 20, streak: 12, due: 0).inlineLine == "12 · Ring closed")
         #expect(state(done: 20, streak: 3, due: 40).inlineLine == "3 · Ring closed")
-        // No streak and nothing left.
-        #expect(state(done: 20, streak: 0, due: 0).inlineLine == "All done")
+        #expect(state(done: 20, streak: 0, due: 0).inlineLine == "Ring closed")
         #expect(state(done: 0, goal: 0, streak: 0, due: 0).inlineLine == "Nothing due")
+        // The middle of every ring says the same count.
+        #expect(state(done: 15, streak: 3, due: 40).progress.cardsToClose == 5)
     }
 
-    @Test func theMediumLineIsTheOneTodayShows() {
-        // Between rounds: the cards left to the ring and their time, as Today says them.
+    @Test func theLeadIsTheOneTodayShows() {
+        // Between rounds: the time that closes the ring, as Today says it.
         let state = WidgetState(
             date: Fixtures.date(22, 10), done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: nil, secondsPerCard: 10, rounds: 4,
             roundsDone: 1, minutesToNextRound: 2)
-        #expect(state.todayLine == "8 cards left · \(Format.timeLeft(minutes: 2))")
-        // Before the first round it is the time to keep the streak; with the ring closed, the rest of the plan.
+        #expect(state.lead == Format.timeLeft(minutes: 2))
+        // Before the first round the same: the chip is the one that says the streak.
         var first = state
         first.done = 3
         first.roundsDone = 0
-        #expect(first.todayLine == "\(Format.timeLeft(minutes: 2)) to keep your streak")
+        #expect(first.lead == Format.timeLeft(minutes: 2))
+        // With the ring closed, the rest of the plan; with nothing left, no lead.
         var closed = state
         closed.done = 21
         closed.isGoalMet = true
         closed.roundsDone = 4
-        #expect(closed.todayLine == "Ring closed · 8 left")
-        // A snapshot of an older app has no rounds and no price: the cards, no time.
-        #expect(WidgetState(date: Fixtures.date(22, 10), done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: nil).todayLine == "8 cards left")
+        #expect(closed.lead == "8 left")
+        closed.due = 0
+        #expect(closed.lead == nil)
+        // A snapshot of an older app has no price: no time.
+        #expect(WidgetState(date: Fixtures.date(22, 10), done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: nil).lead == nil)
+        #expect(WidgetState(date: Fixtures.date(22, 10), done: 0, goal: 20, streakDays: 0, isGoalMet: false, due: 0, nextReminder: nil).lead == "Nothing due")
     }
 
     @Test func unreadableDataIsNoSnapshot() {

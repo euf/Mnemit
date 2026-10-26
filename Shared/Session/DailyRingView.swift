@@ -15,9 +15,11 @@ struct DailyRingView: View {
     var shown: Double?
     /// Whether the middle shows: the ring that comes down to the rest shows it once it has arrived.
     var showsCenter = true
+    /// The stroke's thickness; `nil` takes `ProgressRing.lineWidth(diameter:)`.
+    var lineWidth: CGFloat?
 
     var body: some View {
-        ProgressRing(fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: diameter, center: center)
+        ProgressRing(fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: diameter, center: center, lineWidth: lineWidth)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(center.shown(at: diameter).spokenLabel.map { Text(verbatim: $0) } ?? Text("Daily Goal"))
             .accessibilityValue(progress.map { Text("\($0.ring.done) / \($0.ring.goal)") } ?? Text(verbatim: ""))

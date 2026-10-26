@@ -20,8 +20,9 @@ struct WidgetShotsTests {
 
     static let now = Fixtures.date(22, 10, 20)
 
-    /// The rings of the last seven study days, today last.
+    /// The rings of the last seven study days, today last, and the same days in laps of their goals.
     static let week: [Bool?] = [nil, true, true, false, true, true, false]
+    static let weekRings: [Double?] = [nil, 1, 2.2, 0.4, 1, 3, 0.6]
 
     /// What a widget shows in the states worth a picture.
     static let states: [(name: String, state: WidgetState?)] = [
@@ -30,14 +31,15 @@ struct WidgetShotsTests {
             "progress",
             WidgetState(
                 date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10, rounds: 4,
-                roundsDone: 1, minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15, week: week)
+                roundsDone: 1, minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15, week: week, weekRings: weekRings)
         ),
         // The day after a missed one: the flame's outline is the streak's colour until the ring closes.
         (
             "at-risk",
             WidgetState(
                 date: now, done: 3, goal: 20, streakDays: 7, isGoalMet: false, due: 17, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 0,
-                minutesToNextRound: 2, isStreakAtRisk: true, week: [true, true, false, true, true, false, false])
+                minutesToNextRound: 2, isStreakAtRisk: true, week: [true, true, false, true, true, false, false],
+                weekRings: [1, 1.6, 0.3, 1, 1, 0.5, 0])
         ),
         // Before the first round: the streak is not kept yet.
         (
@@ -51,14 +53,17 @@ struct WidgetShotsTests {
             "closed",
             WidgetState(
                 date: now, done: 21, goal: 20, streakDays: 8, isGoalMet: true, due: 6, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 4,
-                wordsInMemory: 120, wordsToday: 9, week: [true, true, false, true, true, true, true])
+                wordsInMemory: 120, wordsToday: 9, week: [true, true, false, true, true, true, true],
+                weekRings: [1, 1.4, 0.2, 1.5, 1, 3, 1.05])
         ),
         // A snapshot of the old kind, 12 of 20 and 42 due: the cards left stand.
         ("old", WidgetState(date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10)),
         // Goal reached twice over, nothing left due, the streak kept.
         (
             "beyond-goal",
-            WidgetState(date: now, done: 45, goal: 20, streakDays: 31, isGoalMet: true, due: 0, nextReminder: nil, week: [true, true, true, true, true, true, true])
+            WidgetState(
+                date: now, done: 45, goal: 20, streakDays: 31, isGoalMet: true, due: 0, nextReminder: nil, week: [true, true, true, true, true, true, true],
+                weekRings: [1, 1.4, 1, 2, 1, 3, 1])
         ),
         // A fresh day: nothing reviewed, three digits due, no streak yet.
         (
