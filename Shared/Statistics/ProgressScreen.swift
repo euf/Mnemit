@@ -167,8 +167,8 @@ let medalColumns = [GridItem(.adaptive(minimum: 97), spacing: Spacing.hairline, 
 
 /// The calendar of the last 13 weeks: a column per weekday, Monday to Sunday, under its initial, and a row per
 /// week from the one of the first study day to this one, the oldest on top, at most 13. A closed ring is full, a
-/// day kept but not closed has its ring at the share of the goal done, a missed study day an empty track; the
-/// days of this week still to come are a faint track, and the days before the first study day are blank.
+/// partial day has its ring at the share of the goal done (`DayRecord.ringShare`), a missed study day an empty
+/// track; the days of this week still to come are a faint track, and the days before the first study day are blank.
 struct WeeksGrid: View {
     var records: [DayRecord]
     static let weeks = 13
@@ -236,7 +236,7 @@ struct WeeksGrid: View {
                             if day > today {
                                 ProgressRing(fraction: 0, diameter: diameter).opacity(0.3)
                             } else if day >= first, let record = byDay[day] {
-                                ProgressRing(fraction: Self.fraction(record, isToday: day == today), diameter: diameter)
+                                ProgressRing(fraction: record.ringShare, diameter: diameter)
                             } else {
                                 Color.clear.frame(width: diameter, height: diameter)
                             }
@@ -270,12 +270,6 @@ struct WeeksGrid: View {
         .accessibilityHidden(true)
     }
 
-    /// How full a day's ring is drawn. Today's ring, not kept yet, is not missed: it shows what is done.
-    static func fraction(_ record: DayRecord, isToday: Bool) -> Double {
-        if record.closed { return 1 }
-        guard record.kept || isToday else { return 0 }
-        return min(1, Double(record.done) / Double(max(1, record.goal)))
-    }
 }
 
 extension ProgressScreen where Trailing == EmptyView {

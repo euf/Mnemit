@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// How a flash card moves and looks while it is swiped, graded and replaced: it goes with the
-/// finger but bent toward the reference direction of the grade the swipe would give (`GradeSwipe.cardOffset`),
+/// finger but bent toward the target direction of the grade the swipe would give (`GradeSwipe.cardOffset`),
 /// turns about the point where it was grabbed, tints with the colour of that grade, springs back
 /// when let go too early or between two zones, and flies out when a grade is given, by swipe,
 /// key or button. A view shows it with `FlightCard`.
@@ -140,7 +140,7 @@ final class CardFlight {
         return .degrees(max(-maxRotation, min(maxRotation, degrees)))
     }
 
-    /// The card goes with the finger, bent toward the reference direction of the grade the finger's direction
+    /// The card goes with the finger, bent toward the target direction of the grade the finger's direction
     /// stands for (`GradeSwipe.cardOffset`), and turns about the point grabbed at `start`, in the
     /// card's own coordinates. In a gap between two zones it takes no grade and goes half way.
     /// Before the answer is shown it only gives way a little, without tint. When the finger

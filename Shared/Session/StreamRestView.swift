@@ -291,7 +291,7 @@ struct StreamRestView: View {
             if cards > 0 { lines.append(Line("cards") { Text("\(cards) cards today") }) }
         }
         if let progress, progress.week.count == 7 {
-            lines.append(Line("week") { WeekRings(week: progress.week, today: progress.ring.fraction, now: rest.now).padding(.vertical, Spacing.tight) })
+            lines.append(Line("week") { WeekRings(week: progress.week, rings: progress.weekRings, today: progress.ring.fraction, now: rest.now).padding(.vertical, Spacing.tight) })
         }
         return lines
     }
@@ -369,10 +369,13 @@ extension View {
     }
 }
 
-/// The rings of the last seven study days, today last, each with the initial of its weekday: closed,
-/// open, or faint before the first study day. Today's as it stands.
+/// The rings of the last seven study days, today last, each with the initial of its weekday: each day's own
+/// share of its goal, or faint before the first study day. Today's as it stands.
 struct WeekRings: View {
     var week: [Bool?]
+    /// The past days' shares of their goals (`DailyProgress.weekRings`). Without it a past day is full when it
+    /// closed and empty otherwise, which is all the widget's week keeps.
+    var rings: [Double?]? = nil
     /// Today's ring, 1 when closed.
     var today: Double
     var now: Date
@@ -384,7 +387,7 @@ struct WeekRings: View {
         HStack(spacing: spacing) {
             ForEach(week.indices, id: \.self) { index in
                 VStack(spacing: 4) {
-                    ProgressRing(fraction: fraction(index), diameter: diameter)
+                    ProgressRing(fraction: Self.fraction(index, week: week, rings: rings, today: today), diameter: diameter)
                         .opacity(week[index] == nil ? 0.35 : 1)
                     Text(verbatim: letter(index))
                         .font(.caption2.weight(index == week.count - 1 ? .bold : .regular))
@@ -393,11 +396,19 @@ struct WeekRings: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(week.filter { $0 == true }.count) of 7 rings closed this week"))
+        .accessibilityLabel(Text("\(week.indices.filter { Self.isClosed($0, week: week, rings: rings) }.count) of 7 rings closed this week"))
     }
 
-    private func fraction(_ index: Int) -> Double {
-        index == week.count - 1 ? min(1, today) : (week[index] == true ? 1 : 0)
+    /// How full the ring of day `index` is drawn: today's as it stands, a past day's by its own share, else by
+    /// whether it closed.
+    static func fraction(_ index: Int, week: [Bool?], rings: [Double?]?, today: Double) -> Double {
+        if index == week.count - 1 { return min(1, today) }
+        if let rings, rings.indices.contains(index), let share = rings[index] { return share }
+        return week[index] == true ? 1 : 0
+    }
+
+    private static func isClosed(_ index: Int, week: [Bool?], rings: [Double?]?) -> Bool {
+        index == week.count - 1 ? week[index] == true : fraction(index, week: week, rings: rings, today: 0) >= 1
     }
 
     /// The weekday's initial, "M"; the study day starts at 04:00.

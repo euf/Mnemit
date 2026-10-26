@@ -884,6 +884,41 @@ struct DailyProgressTests {
         #expect(evaluate([deck]).climbedToday == 1)
     }
 
+    @Test func theWeekDrawsEachPastDayByItsOwnShareOfItsGoal() throws {
+        // Three days back 30 cards were learned: the first study day, nothing due on it, closed. The day after nothing was due
+        // and nothing was done. Yesterday 5 of a plan of 15 were done, today none yet.
+        var deck = try Deck(learningOptions: options(), cards: (0..<30).map { due("c\($0)", onDay: today - 1) })
+        review(5, of: &deck, at: calendar.start(ofDay: today - 1).addingTimeInterval(12 * 3600))
+        let progress = evaluate([deck])
+        let yesterday = try #require(progress.records.first { $0.day == today - 1 })
+        #expect(yesterday.done == 5 && yesterday.goal == 15 && !yesterday.closed)
+        let rings = progress.weekRings
+        #expect(rings.count == 7)
+        #expect(rings[0...2].allSatisfy { $0 == nil })
+        #expect(rings[3] == 1)
+        // Closed by an empty plan, but nothing was done: an empty track, not a full ring.
+        #expect(progress.records.first { $0.day == today - 2 }?.closed == true)
+        #expect(rings[4] == 0)
+        // The partial day is partial.
+        #expect(abs(try #require(rings[5]) - 5.0 / 15) < 1e-9)
+        #expect(rings[6] == 0)
+        // Told as closed or not, the week keeps saying that the empty-plan days were closed.
+        #expect(progress.week == [nil, nil, nil, true, true, false, false])
+    }
+
+    @Test func aDayRecordDrawsItsShare() {
+        func record(done: Int, goal: Int, kept: Bool, closed: Bool) -> DayRecord {
+            DayRecord(day: 1, done: done, goal: goal, kept: kept, closed: closed, streak: 0)
+        }
+        #expect(record(done: 15, goal: 15, kept: true, closed: true).ringShare == 1)
+        #expect(record(done: 52, goal: 15, kept: true, closed: true).ringShare == 1)
+        #expect(record(done: 3, goal: 0, kept: true, closed: true).ringShare == 1)
+        #expect(record(done: 0, goal: 0, kept: true, closed: true).ringShare == 0)
+        #expect(record(done: 10, goal: 15, kept: true, closed: false).ringShare == 10.0 / 15)
+        #expect(record(done: 5, goal: 15, kept: false, closed: false).ringShare == 5.0 / 15)
+        #expect(record(done: 0, goal: 15, kept: false, closed: false).ringShare == 0)
+    }
+
     @Test func theWeekEndsWithTodaysRing() throws {
         var deck = try Deck(learningOptions: options(), cards: (0..<2).map { due("c\($0)", onDay: today) })
         #expect(evaluate([deck]).week.count == 7)

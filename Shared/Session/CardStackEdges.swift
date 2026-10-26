@@ -8,9 +8,9 @@ enum StackPose {
     /// The edges that show under the top card, however many cards wait.
     static let maxEdges = 4
     /// How much lower each edge lies than the one above.
-    static let step: CGFloat = 10
+    static let step: CGFloat = 8
     /// How much narrower, on each side.
-    static let side: CGFloat = 9
+    static let side: CGFloat = 7
 
     /// How far the edge of `level` lies below the place of the top card.
     static func drop(_ level: Int) -> CGFloat { step * CGFloat(level) }
@@ -18,10 +18,10 @@ enum StackPose {
     static func width(_ level: Int, cardWidth: CGFloat) -> CGFloat { max(0, cardWidth - 2 * side * CGFloat(level)) }
 
     /// How much of the outline's colour an edge keeps: all of the first, less with depth.
-    static func faintness(_ level: Int) -> Double { 1 - 0.15 * Double(level - 1) }
+    static func faintness(_ level: Int) -> Double { 1 - 0.18 * Double(level - 1) }
 
     /// How much darker than the card's surface the sheet of `level` is (lighter in dark mode).
-    static func shade(_ level: Double) -> Double { 0.06 * level }
+    static func shade(_ level: Double) -> Double { 0.035 * level }
 
     /// The room the edges take under the top card, the same whether or not there are any, so the card never
     /// changes its size with the number of cards behind it. The edges' step is fixed: the parameter is the
@@ -45,7 +45,7 @@ struct StackSheet: View {
             .overlay { shape.fill(Color.primary.opacity(shade)) }
             .overlay { shape.fill(tint) }
             .overlay { shape.strokeBorder(Color.cardEdge.opacity(faintness), lineWidth: 1) }
-            .shadow(color: .black.opacity(0.14), radius: 5, y: 3)
+            .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
             .frame(width: width, height: height)
     }
 }
