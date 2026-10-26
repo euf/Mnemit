@@ -105,47 +105,19 @@ struct SchedulerTests {
         #expect(scheduler.replaying(timed.log, of: timed).log == timed.log)
     }
 
-    /// The scheduler with the weight for revealed recalls set to `weight`.
-    func weighted(_ weight: Double) -> Scheduler {
-        var scheduler = scheduler
-        scheduler.learningOptions.revealedRecallWeight = weight
-        return scheduler
-    }
-
-    @Test(arguments: [1.0 / 3, 0.5, 0.8])
-    func revealedRecallGainsTheWeightOfTheStability(weight: Double) throws {
-        let scheduler = weighted(weight)
-        var card = Card(question: "dom", answer: "Haus")
-        card.learningState = LearningState(phase: .review, stability: 20, difficulty: 5, lastReview: now.addingTimeInterval(-20 * 86400), due: now)
-        var random = SeededRandom(seed: 0)
-        for grade in [Grade.hard, .good, .easy] {
-            let typed = try #require(scheduler.review(card, grade: grade, at: now, mode: .typed, using: &random).learningState)
-            let revealed = try #require(scheduler.review(card, grade: grade, at: now, mode: .revealed, using: &random).learningState)
-            #expect(abs(revealed.stability - (20 + (typed.stability - 20) * weight)) < 1e-9)
-            #expect(revealed.difficulty == typed.difficulty)
-            #expect(revealed.due < typed.due)
-        }
-    }
-
-    /// The fork treats a revealed review like a typed one, as Anki does; ADR 0005.
-    @Test func revealedRecallCountsInFullByDefault() throws {
-        #expect(LearningOptions().revealedRecallWeight == 1)
+    /// A review counts in full whatever its mode, as in Anki (ADR 0005): the card holds exactly the memory FSRS computes.
+    @Test func everyReviewCountsInFull() throws {
         var card = Card(question: "dom", answer: "Haus")
         card.learningState = LearningState(phase: .review, stability: 20, difficulty: 5, lastReview: now.addingTimeInterval(-20 * 86400), due: now)
         var random = SeededRandom(seed: 0)
         for grade in Grade.allCases {
-            let typed = scheduler.review(card, grade: grade, at: now, mode: .typed, using: &random)
-            let revealed = scheduler.review(card, grade: grade, at: now, mode: .revealed, using: &random)
-            #expect(revealed.learningState == typed.learningState)
+            let fsrs = scheduler.fsrs.review(FSRS.Memory(stability: 20, difficulty: 5), elapsedDays: 20, grade: grade)
+            let typed = try #require(scheduler.review(card, grade: grade, at: now, mode: .typed, using: &random).learningState)
+            let revealed = try #require(scheduler.review(card, grade: grade, at: now, mode: .revealed, using: &random).learningState)
+            #expect(revealed == typed)
+            #expect(revealed.stability == fsrs.stability)
+            #expect(revealed.difficulty == fsrs.difficulty)
         }
-    }
-
-    /// Setting the weight to 0.33 brings back the damping of ADR 0004: a third, exactly.
-    @Test func theLowestWeightIsExactlyAThird() {
-        var options = LearningOptions()
-        options.revealedRecallWeight = 0.33
-        options.sanitize()
-        #expect(options.revealedRecallWeight == 1.0 / 3)
     }
 
     @Test func revealedAgainCountsInFull() {
@@ -165,9 +137,7 @@ struct SchedulerTests {
         #expect(revealed.learningState == typed.learningState)
     }
 
-    @Test(arguments: [1.0 / 3, 0.5, 1.0])
-    func replayingRevealedReviewsGivesTheSameCard(weight: Double) {
-        let scheduler = weighted(weight)
+    @Test func replayingRevealedReviewsGivesTheSameCard() {
         let reviews: [(hours: Double, grade: Grade, mode: ReviewMode)] = [
             (0, .good, .revealed), (0.1, .good, .typed), (30, .good, .revealed), (100, .again, .revealed),
             (100.1, .good, .revealed), (300, .easy, .revealed), (900, .hard, .typed),
@@ -307,23 +277,6 @@ struct SchedulerTests {
         #expect(fuzzing.previewIntervals(of: card, at: now) == scheduler.previewIntervals(of: card, at: now))
         #expect(card == copy)
         #expect(card.log.isEmpty)
-    }
-
-    @Test func previewUsesTheModeOfTheReview() throws {
-        let card = cardInReview
-        #expect(scheduler.previewIntervals(of: card, at: now, mode: .typed) == scheduler.previewIntervals(of: card, at: now, mode: .revealed))
-
-        let damping = weighted(1.0 / 3)
-        let typed = damping.previewIntervals(of: card, at: now, mode: .typed)
-        let revealed = damping.previewIntervals(of: card, at: now, mode: .revealed)
-        #expect(typed[.again] == revealed[.again])
-        for grade in [Grade.hard, .good, .easy] {
-            guard case let .days(typedDays)? = typed[grade], case let .days(revealedDays)? = revealed[grade] else {
-                Issue.record("a recalled review card keeps a number of days")
-                return
-            }
-            #expect(revealedDays < typedDays)
-        }
     }
 
     @Test func previewRespectsTheMaximumInterval() {

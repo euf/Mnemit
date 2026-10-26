@@ -3,9 +3,8 @@ import Observation
 import VocabCore
 
 /// Drives the study stream of both apps: shows the question, reveals the answer on request and applies the
-/// grade the learner gives. On the iPhone, flash cards (#258): there is no response to check, so the app suggests
-/// no grade; the reviews record `.revealed`. The Mac's `SessionViewModel` runs on it too, with flash cards or with
-/// a typed response it checks itself (`ReviewMode.typed`). The
+/// grade the learner gives (#258): there is no response to check, so the app suggests no grade; the reviews record
+/// `.revealed`. The Mac's `SessionViewModel` runs on it too. The
 /// stack is today's plan, with its rests, and ends with it; Push On adds new cards past the end.
 ///
 /// Like `SessionViewModel` on the Mac, it leaves applying grades and keeping the
@@ -72,10 +71,6 @@ final class StudyModel: Identifiable {
     /// The receipt of each step, in step with `destinations`; `nil` for a step that gave no grade.
     private var receipts: [GradeReceipt?] = []
     private var undoIsComing = false
-    /// Called after every move to another card or to rest, and after the card asked changed in its deck: the Mac
-    /// clears the response typed for the card before.
-    @ObservationIgnored var onMoveOn: (() -> Void)?
-    @ObservationIgnored var onCardChange: (() -> Void)?
 
     /// Uses the document's clock, so reviews and the snapshot they update fall on the
     /// same study day. With `rounds`, the plan rests at the end of each round of the day but the
@@ -88,8 +83,7 @@ final class StudyModel: Identifiable {
     /// A stream over `documents`, the decks of the run; a practice takes the first only. With `rounds`
     /// (tests), the first deck's guide is that one; otherwise the rounds come from `ring`.
     init(
-        documents: [VocabularyDocument], entry: Entry = .study, rounds: RoundGuide? = nil, ring: DailyRingModel? = nil,
-        reviewMode: ReviewMode = .revealed
+        documents: [VocabularyDocument], entry: Entry = .study, rounds: RoundGuide? = nil, ring: DailyRingModel? = nil
     ) {
         precondition(!documents.isEmpty, "a stream needs a deck")
         // Before the first card shows: the voice and the audio session are ready by then, and
@@ -109,7 +103,7 @@ final class StudyModel: Identifiable {
             switch entry {
             case .study, .pushOn:
                 stream = StudyStream(
-                    deck: document.deck, at: now, calendar: document.calendar, reviewMode: reviewMode, newCardAllowance: document.newCardAllowance)
+                    deck: document.deck, at: now, calendar: document.calendar, newCardAllowance: document.newCardAllowance)
             case .practiceMistakes:
                 stream = StudyStream(practicingMistakesIn: document.deck, at: now, calendar: document.calendar)
             case .practiceNewest:
@@ -384,11 +378,6 @@ extension StudyModel: SessionDriverDelegate {
         activateCurrentLane()
         questionNumber += 1
         stage = driver.isResting ? .resting : (returnedByUndo ? .revealed : .asking)
-        onMoveOn?()
-    }
-
-    func sessionDriverCardDidChange(_ changed: SessionDriver) {
-        if changed === driver { onCardChange?() }
     }
 
     /// Undo or redo of a step: the steps of the stream are as many as the stream says now. A card

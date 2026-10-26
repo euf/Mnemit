@@ -4597,28 +4597,6 @@
         }
       }
     },
-    "Almost – check the spelling": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fast – achte auf die Schreibweise"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σχεδόν – έλεγξε την ορθογραφία"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Почти — проверь написание"
-          }
-        }
-      }
-    },
     "Already earlier in the file: %@ → %@": {
       "localizations": {
         "de": {
@@ -4729,28 +4707,6 @@
         }
       }
     },
-    "Also computes the parameters from reviews you graded after revealing the answer, which is every review on the iPhone and on the Mac with flash cards. Off uses typed reviews only.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Berechnet die Parameter auch aus Abfragen, die du nach dem Aufdecken der Antwort bewertet hast: auf dem iPhone und am Mac mit Karteikarten jede. Aus nutzt nur getippte Abfragen."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Υπολογίζει τις παραμέτρους και από επαναλήψεις που βαθμολόγησες μετά την αποκάλυψη της απάντησης, δηλαδή κάθε επανάληψη στο iPhone και στο Mac με κάρτες. Με «Ανενεργό» χρησιμοποιούνται μόνο επαναλήψεις με πληκτρολόγηση."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Параметры считаются и по оценкам, которые ты поставил после показа ответа: на iPhone и на Mac с карточками это каждая оценка. При значении «Выкл.» учитываются только оценки с вводом ответа."
-          }
-        }
-      }
-    },
     "Also in %@": {
       "localizations": {
         "de": {
@@ -4857,28 +4813,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ответ"
-          }
-        }
-      }
-    },
-    "Answer (alternatives separated by /)": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Antwort (Alternativen mit / trennen)"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Απάντηση (εναλλακτικές χωρισμένες με /)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ответ (варианты через /)"
           }
         }
       }
@@ -5102,28 +5036,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "В обе стороны"
-          }
-        }
-      }
-    },
-    "By review mode and card kind": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nach Abfrageart und Kartenart"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ανά τρόπο επανάληψης και είδος κάρτας"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "По способу оценки и виду карточки"
           }
         }
       }
@@ -5590,28 +5502,6 @@
         }
       }
     },
-    "Case-sensitive": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Groß-/Kleinschreibung beachten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Διάκριση πεζών-κεφαλαίων"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "С учётом регистра"
-          }
-        }
-      }
-    },
     "Catch Up": {
       "localizations": {
         "de": {
@@ -5678,6 +5568,28 @@
         }
       }
     },
+    "Change…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ändern …"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αλλαγή…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изменить…"
+          }
+        }
+      }
+    },
     "Checked %@, kept: no better fit": {
       "localizations": {
         "de": {
@@ -5696,28 +5608,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Проверено %@, оставлено: подбор не лучше"
-          }
-        }
-      }
-    },
-    "Checking": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prüfen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Έλεγχος"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверка"
           }
         }
       }
@@ -5788,28 +5678,6 @@
         }
       }
     },
-    "Choose a MacVocTrain 1 document (.mvt) to import.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wähle ein MacVocTrain-1-Dokument (.mvt) zum Importieren."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επίλεξε ένα έγγραφο MacVocTrain 1 (.mvt) για εισαγωγή."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выбери документ MacVocTrain 1 (.mvt) для импорта."
-          }
-        }
-      }
-    },
     "Choose an Anki package, or a CSV or TSV file with a question, an answer and an optional hint per row.": {
       "localizations": {
         "de": {
@@ -5872,28 +5740,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Закрыть"
-          }
-        }
-      }
-    },
-    "Close the deck before replacing it, or choose another name.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schließe den Stapel, bevor du ihn ersetzt, oder wähle einen anderen Namen."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κλείσε την τράπουλα πριν την αντικαταστήσεις ή επίλεξε άλλο όνομα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрой колоду, прежде чем заменять её, или выбери другое название."
           }
         }
       }
@@ -6096,28 +5942,6 @@
         }
       }
     },
-    "Computing needs %lld usable reviews: typed reviews on a later study day than the previous review of the same card.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Berechnung braucht %lld verwertbare Abfragen: getippte Abfragen an einem späteren Lerntag als die vorige Abfrage derselben Karte."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ο υπολογισμός χρειάζεται %lld αξιοποιήσιμες επαναλήψεις: επαναλήψεις με πληκτρολόγηση σε μεταγενέστερη ημέρα μελέτης από την προηγούμενη επανάληψη της ίδιας κάρτας."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для расчёта нужно пригодных оценок: %lld. Пригодна оценка с вводом ответа, поставленная в более поздний учебный день, чем предыдущая оценка той же карточки."
-          }
-        }
-      }
-    },
     "Continue": {
       "localizations": {
         "de": {
@@ -6136,50 +5960,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Продолжить"
-          }
-        }
-      }
-    },
-    "Continue automatically when the response is correct": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Automatisch weiter, wenn die Eingabe richtig ist"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αυτόματη συνέχεια όταν η πληκτρολόγηση είναι σωστή"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Продолжать автоматически, если ввод верный"
-          }
-        }
-      }
-    },
-    "Correct": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Richtig"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σωστό"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Верно"
           }
         }
       }
@@ -7922,50 +7702,6 @@
         }
       }
     },
-    "Flashcards": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karteikarten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες μνήμης"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Флеш-карточки"
-          }
-        }
-      }
-    },
-    "Flashcards: reveal the answer, then grade yourself. Typing: the app checks your response.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karteikarten: Antwort aufdecken, dann selbst bewerten. Eintippen: Die App prüft deine Eingabe."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες μνήμης: αποκάλυψε την απάντηση και βαθμολόγησε τον εαυτό σου. Πληκτρολόγηση: η εφαρμογή ελέγχει όσα γράφεις."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Флеш-карточки: открой ответ и оцени себя сам. Ввод: приложение проверяет введённое."
-          }
-        }
-      }
-    },
     "Forgot": {
       "localizations": {
         "de": {
@@ -8472,28 +8208,6 @@
         }
       }
     },
-    "How much a recalled review after revealing the answer, on flash cards and on the iPhone, adds to a card's memory compared with a typed one. 100 % treats both alike, as Anki does; 33 % damps revealed reviews to a third.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wie viel eine gewusste Abfrage nach dem Aufdecken der Antwort, bei Karteikarten und auf dem iPhone, zum Gedächtnis einer Karte beiträgt, verglichen mit einer getippten. 100 % behandelt beide gleich, wie Anki; 33 % dämpft aufgedeckte Abfragen auf ein Drittel."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πόσο προσθέτει στη μνήμη μιας κάρτας μια επανάληψη που θυμήθηκες μετά την αποκάλυψη της απάντησης, στις κάρτες μνήμης και στο iPhone, σε σύγκριση με μια επανάληψη με πληκτρολόγηση. Το 100 % μετρά και τις δύο ίδια, όπως το Anki· το 33 % μειώνει τις επαναλήψεις με αποκάλυψη στο ένα τρίτο."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сколько добавляет к памяти карточки оценка «вспомнил» после показа ответа (на флеш-карточках и на iPhone) по сравнению с оценкой после ввода ответа. 100 % — обе считаются одинаково, как в Anki; 33 % — оценки после показа ответа ослабляются до трети."
-          }
-        }
-      }
-    },
     "How well the cards are known, by how long they are remembered.": {
       "localizations": {
         "de": {
@@ -8776,28 +8490,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Импортировать карточки…"
-          }
-        }
-      }
-    },
-    "Import MacVocTrain 1 Document…": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MacVocTrain-1-Dokument importieren …"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Εισαγωγή εγγράφου MacVocTrain 1…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Импортировать документ MacVocTrain 1…"
           }
         }
       }
@@ -9704,6 +9396,28 @@
         }
       }
     },
+    "Mnemit Folder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mnemit-Ordner"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Φάκελος Mnemit"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Папка Mnemit"
+          }
+        }
+      }
+    },
     "Mnemit keeps your cards and progress in iCloud Drive, so your iPhone and Mac stay in step.": {
       "localizations": {
         "de": {
@@ -10518,28 +10232,6 @@
         }
       }
     },
-    "No response": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Eingabe"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Καμία πληκτρολόγηση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нет ввода"
-          }
-        }
-      }
-    },
     "None yet": {
       "localizations": {
         "de": {
@@ -10580,6 +10272,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не сейчас"
+          }
+        }
+      }
+    },
+    "Not chosen": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht gewählt"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δεν έχει επιλεγεί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не выбрана"
           }
         }
       }
@@ -11508,50 +11222,6 @@
         }
       }
     },
-    "Press Return to check your response.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drücke ↩, um deine Eingabe zu prüfen."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πάτα ↩ για να ελέγξεις την πληκτρολόγησή σου."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нажми ↩, чтобы проверить ввод."
-          }
-        }
-      }
-    },
-    "Press ⌥⌘Q to do the opposite once.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit ⌥⌘Q gilt beim Beenden einmal das Gegenteil."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πάτα ⌥⌘Q για να κάνεις μία φορά το αντίθετο."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нажми ⌥⌘Q, чтобы один раз поступить наоборот."
-          }
-        }
-      }
-    },
     "Preview": {
       "localizations": {
         "de": {
@@ -11574,28 +11244,6 @@
         }
       }
     },
-    "Previous:": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vorige:"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Προηγούμενο:"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Предыдущее:"
-          }
-        }
-      }
-    },
     "Production": {
       "localizations": {
         "de": {
@@ -11614,28 +11262,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Воспроизведение"
-          }
-        }
-      }
-    },
-    "Production cards": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Produktionskarten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες παραγωγής"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки на воспроизведение"
           }
         }
       }
@@ -11728,6 +11354,28 @@
         }
       }
     },
+    "Pronounce Automatically": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch aussprechen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αυτόματη προφορά"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Произносить автоматически"
+          }
+        }
+      }
+    },
     "Question": {
       "localizations": {
         "de": {
@@ -11790,28 +11438,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Чтение «%@»…"
-          }
-        }
-      }
-    },
-    "Reads a Greek question aloud when its card comes up, and a Greek answer when it shows. Needs a Greek voice on this Mac.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Liest eine griechische Frage vor, sobald ihre Karte erscheint, und eine griechische Antwort, sobald sie aufgedeckt wird. Benötigt eine griechische Stimme auf diesem Mac."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Διαβάζει δυνατά μια ελληνική ερώτηση όταν εμφανίζεται η κάρτα της και μια ελληνική απάντηση όταν αποκαλύπτεται. Χρειάζεται ελληνική φωνή σε αυτό το Mac."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Озвучивает греческий вопрос, когда появляется его карточка, и греческий ответ, когда он показан. Нужен греческий голос на этом Mac."
           }
         }
       }
@@ -11944,28 +11570,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Узнавание"
-          }
-        }
-      }
-    },
-    "Recognition cards": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erkennungskarten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες αναγνώρισης"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки на узнавание"
           }
         }
       }
@@ -12340,28 +11944,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Переименовать…"
-          }
-        }
-      }
-    },
-    "Reopen the decks that were open when you quit": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beim Start die zuletzt geöffneten Stapel öffnen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Να ανοίγουν ξανά οι τράπουλες που ήταν ανοιχτές κατά την έξοδο"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Открывать колоды, которые были открыты при выходе"
           }
         }
       }
@@ -12912,94 +12494,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сохранить"
-          }
-        }
-      }
-    },
-    "Save the imported deck with %lld cards.": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sichere den importierten Stapel mit %lld Karte."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sichere den importierten Stapel mit %lld Karten."
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Αποθήκευση της εισαγόμενης τράπουλας με %lld κάρτα."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Αποθήκευση της εισαγόμενης τράπουλας με %lld κάρτες."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Save the imported deck with %lld card."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Save the imported deck with %lld cards."
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Сохранить импортированную колоду с %lld карточками."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Сохранить импортированную колоду с %lld карточками."
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Сохранить импортированную колоду с %lld карточкой."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Сохранить импортированную колоду с %lld карточки."
-                }
-              }
-            }
           }
         }
       }
@@ -13774,50 +13268,6 @@
         }
       }
     },
-    "Speak Greek Automatically": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Griechisch automatisch vorlesen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αυτόματη εκφώνηση ελληνικών"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Озвучивать греческий автоматически"
-          }
-        }
-      }
-    },
-    "Speak Greek automatically": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Griechisch automatisch vorlesen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αυτόματη εκφώνηση ελληνικών"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Озвучивать греческий автоматически"
-          }
-        }
-      }
-    },
     "Spread out intervals": {
       "localizations": {
         "de": {
@@ -14210,28 +13660,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Учить эту колоду"
-          }
-        }
-      }
-    },
-    "Study by": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernen mit"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μέθοδος μελέτης"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Способ учёбы"
           }
         }
       }
@@ -15600,28 +15028,6 @@
         }
       }
     },
-    "Typed reviews": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Getippte Abfragen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επαναλήψεις με πληκτρολόγηση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оценки с вводом"
-          }
-        }
-      }
-    },
     "Typing": {
       "localizations": {
         "de": {
@@ -16128,28 +15534,6 @@
         }
       }
     },
-    "Weight of revealed recalls": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gewicht aufgedeckter Abfragen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Βάρος των επαναλήψεων με αποκάλυψη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вес оценок после показа ответа"
-          }
-        }
-      }
-    },
     "Well Done": {
       "localizations": {
         "de": {
@@ -16212,28 +15596,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Что план дня берёт из этой колоды."
-          }
-        }
-      }
-    },
-    "When off, you grade every review yourself, e.g. as Easy.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wenn aus, bewertest du jede Abfrage selbst, z. B. als „Leicht“."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Όταν είναι ανενεργό, βαθμολογείς εσύ κάθε επανάληψη, π.χ. ως «Εύκολο»."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Если выключено, каждую оценку ставишь ты, например «Легко»."
           }
         }
       }
@@ -16410,28 +15772,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сделано (мин)"
-          }
-        }
-      }
-    },
-    "Wrong": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Falsch"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Λάθος"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неверно"
           }
         }
       }
@@ -17308,28 +16648,6 @@
         }
       }
     },
-    "“%@” could not be read as a MacVocTrain 1 document.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„%@“ konnte nicht als MacVocTrain-1-Dokument gelesen werden."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Το «%@» δεν ήταν δυνατό να διαβαστεί ως έγγραφο MacVocTrain 1."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "«%@» не удалось прочитать как документ MacVocTrain 1."
-          }
-        }
-      }
-    },
     "“%@” has no cards Mnemit can import.": {
       "localizations": {
         "de": {
@@ -17392,28 +16710,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "В «%@» нет колод Mnemit. Выбери папку, в которой лежат твои колоды."
-          }
-        }
-      }
-    },
-    "“%@” is open.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„%@“ ist geöffnet."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Η τράπουλα «%@» είναι ανοιχτή."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колода «%@» открыта."
           }
         }
       }
@@ -17546,28 +16842,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Хватит ≈ 2 мин."
-          }
-        }
-      }
-    },
-    "⌘Z to undo": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⌘Z zum Widerrufen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⌘Z για αναίρεση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⌘Z — отменить"
           }
         }
       }

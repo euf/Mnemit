@@ -6,8 +6,6 @@ import Foundation
 /// The forward pass repeats the formulas of `FSRS` with the bounds of fsrs-rs (stability
 /// also at most `maximumStability`) and records which branch each review took, so the
 /// backward pass follows the same path. Gradients stop where a bound is exceeded.
-/// Like `Scheduler`, it scales the stability gain of a recalled revealed review by
-/// `LearningOptions.revealedRecallWeight`.
 struct FSRSGradient {
     static let maximumStability = 36500.0
     /// Predictions are clamped to `minimumProbability...(1 - minimumProbability)`
@@ -17,18 +15,14 @@ struct FSRSGradient {
     private static let stabilityRange = FSRS.minimumStability...maximumStability
 
     let w: [Double]
-    /// The share of the stability gain a recalled revealed review keeps, see
-    /// `ReviewMode.stabilityGainShare(revealedRecallWeight:)`.
-    let revealedRecallWeight: Double
     private let decay: Double
     private let factor: Double
     private let factorDerivative: Double
     private let failureFloorDivisor: Double
     private let easyDifficulty: Double
 
-    init(weights: [Double], revealedRecallWeight: Double) {
+    init(weights: [Double]) {
         w = weights
-        self.revealedRecallWeight = revealedRecallWeight
         decay = -weights[20]
         let c = log(0.9)
         factor = exp(c / decay) - 1
@@ -82,8 +76,6 @@ struct FSRSGradient {
         var sameDayRaw = 0.0
         var sameDayValue = 0.0
         var sameDayRawActive = false
-        /// The share of the stability gain the review kept; 1 if not scaled.
-        var gainShare = 1.0
         var preClampS: Double
         var preClampD: Double
     }
@@ -143,11 +135,6 @@ struct FSRSGradient {
                 * hardPenalty * easyBonus
             newS = lastS * (increase + 1)
         }
-        if grade.isRecall && newS > lastS {
-            step.gainShare = review.mode.stabilityGainShare(revealedRecallWeight: revealedRecallWeight)
-            newS = lastS + (newS - lastS) * step.gainShare
-        }
-
         let deltaD = -w[6] * (rating - 3)
         let nextD = lastD + (10 - lastD) * deltaD / 9
         let meanD = w[7] * (easyDifficulty - nextD) + nextD
@@ -203,9 +190,8 @@ struct FSRSGradient {
 
     private func backward(_ step: Step, gS gOutS: Double, gD gOutD: Double, into g: inout [Double]) -> (Double, Double) {
         let gScaledS = gOutS * Self.passes(step.preClampS, Self.stabilityRange)
-        // scaled = lastS + (newS - lastS) * share
-        let gPreS = gScaledS * step.gainShare
-        var gLastS = gScaledS * (1 - step.gainShare)
+        let gPreS = gScaledS
+        var gLastS = 0.0
         var gLastD = 0.0
         var gR = 0.0
 

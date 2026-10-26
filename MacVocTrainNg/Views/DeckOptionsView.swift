@@ -63,10 +63,6 @@ struct DeckOptionsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Checking") {
-                    Toggle("Case-sensitive", isOn: $options.caseSensitive)
-                }
-
                 Section {
                     DisclosureGroup("Advanced", isExpanded: $showsAdvanced) {
                         Toggle("Spread out intervals", isOn: $options.fuzzing)
@@ -78,15 +74,6 @@ struct DeckOptionsView: View {
                             LabeledContent("Leech threshold", value: options.leechThreshold == 0 ? String(localized: "Off") : options.leechThreshold.formatted())
                         }
                         .help("A card you forget this many times, and again after every further multiple of it, is suspended as a leech. Resume it in the card list. Off never suspends.")
-                        LabeledContent("Weight of revealed recalls") {
-                            HStack {
-                                Slider(value: $options.revealedRecallWeight, in: LearningOptions.revealedRecallWeightRange)
-                                Text(Format.percent(options.revealedRecallWeight))
-                                    .monospacedDigit()
-                                    .frame(width: 44, alignment: .trailing)
-                            }
-                        }
-                        .help("How much a recalled review after revealing the answer, on flash cards and on the iPhone, adds to a card's memory compared with a typed one. 100 % treats both alike, as Anki does; 33 % damps revealed reviews to a third.")
                     }
                 }
 

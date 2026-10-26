@@ -299,13 +299,23 @@ extension Grade {
     }
 
     /// The direction of the swipe that gives the grade; the review history shows it beside
-    /// the grade's colour.
+    /// the grade's colour, and on the Mac the grade's button carries it as its key.
     var arrow: String {
         switch self {
         case .again: "←"
         case .hard: "↓"
         case .good: "→"
         case .easy: "↑"
+        }
+    }
+
+    /// The arrow key that gives the grade on the Mac: the swipe's direction, `arrow`.
+    var arrowKey: KeyEquivalent {
+        switch self {
+        case .again: .leftArrow
+        case .hard: .downArrow
+        case .good: .rightArrow
+        case .easy: .upArrow
         }
     }
 
@@ -445,15 +455,6 @@ extension CardFilter {
         case .learning: String(localized: "No card is being learned or relearned.")
         case .suspended: String(localized: "No card is suspended.")
         case .difficult: String(localized: "Cards you keep forgetting show up here.")
-        }
-    }
-}
-
-extension ReviewMode {
-    var title: String {
-        switch self {
-        case .typed: String(localized: "Typed")
-        case .revealed: String(localized: "Revealed")
         }
     }
 }

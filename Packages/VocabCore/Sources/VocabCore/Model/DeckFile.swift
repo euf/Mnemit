@@ -33,10 +33,10 @@ import Foundation
 /// still holds them keeps the card suspended. `note` and `kind` of a card and the
 /// options `newProductionPerSession`, `productionUnlockDays` and `newCardOrder` came
 /// without a new version too: an older app version drops them on save, and its sessions
-/// then ask production cards like any other. So did `revealedRecallWeight` and
-/// `optimizeFromRevealed` (ADR 0005): an older app version drops them, rates revealed
-/// reviews with its fixed third and trains the optimizer on typed reviews only, until a
-/// newer version writes the deck again. `leechThreshold` came the same way: an older app
+/// then ask production cards like any other. The options `revealedRecallWeight` (ADR 0005),
+/// `optimizeFromRevealed` and `caseSensitive` are gone: a deck that has the keys still
+/// reads, and the next save leaves them out; an older app version reads their defaults.
+/// `leechThreshold` came the same way: an older app
 /// version drops it, and its sessions suspend no leeches. So did `contentChanged` of a
 /// card, `learningOptionsChanged` and `deletedCards` of the deck, which merges between
 /// devices that both edit cards need: an older app version drops them on save, and a
@@ -281,11 +281,8 @@ extension DeckFile {
         var productionUnlockDays: Int
         /// `NewCardOrder.rawValue`; a value this version doesn't know reads as the default.
         var newCardOrder: String
-        var caseSensitive: Bool
         var fuzzing: Bool
         var parameters: [Double]
-        var revealedRecallWeight: Double
-        var optimizeFromRevealed: Bool
         var leechThreshold: Int
         /// Left out while on, the default.
         var updatesParametersAutomatically: Bool?
@@ -303,11 +300,8 @@ extension DeckFile {
             newProductionPerSession = options.newProductionPerSession
             productionUnlockDays = options.productionUnlockDays
             newCardOrder = options.newCardOrder.rawValue
-            caseSensitive = options.caseSensitive
             fuzzing = options.fuzzing
             parameters = options.parameters.weights
-            revealedRecallWeight = options.revealedRecallWeight
-            optimizeFromRevealed = options.optimizeFromRevealed
             leechThreshold = options.leechThreshold
             updatesParametersAutomatically = options.updatesParametersAutomatically ? nil : false
             lastAutoFit = options.lastAutoFit.map(AutoFitRecord.init)
@@ -330,11 +324,8 @@ extension DeckFile {
             options.newProductionPerSession = newProductionPerSession
             options.productionUnlockDays = productionUnlockDays
             options.newCardOrder = NewCardOrder(rawValue: newCardOrder) ?? options.newCardOrder
-            options.caseSensitive = caseSensitive
             options.fuzzing = fuzzing
             options.parameters = parameters
-            options.revealedRecallWeight = revealedRecallWeight
-            options.optimizeFromRevealed = optimizeFromRevealed
             options.leechThreshold = leechThreshold
             options.updatesParametersAutomatically = updatesParametersAutomatically ?? options.updatesParametersAutomatically
             options.lastAutoFit = lastAutoFit?.autoFit
@@ -345,7 +336,7 @@ extension DeckFile {
         private enum CodingKeys: String, CodingKey {
             case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
             case newProductionPerSession, productionUnlockDays, newCardOrder
-            case caseSensitive, fuzzing, parameters, revealedRecallWeight, optimizeFromRevealed, leechThreshold
+            case fuzzing, parameters, leechThreshold
             case updatesParametersAutomatically, lastAutoFit, paused
         }
 
@@ -370,11 +361,8 @@ extension DeckFile {
                 : defaults.newProductionPerSession
             productionUnlockDays = try container.decodeIfPresent(Int.self, forKey: .productionUnlockDays) ?? defaults.productionUnlockDays
             newCardOrder = try container.decodeIfPresent(String.self, forKey: .newCardOrder) ?? defaults.newCardOrder
-            caseSensitive = try container.decodeIfPresent(Bool.self, forKey: .caseSensitive) ?? defaults.caseSensitive
             fuzzing = try container.decodeIfPresent(Bool.self, forKey: .fuzzing) ?? defaults.fuzzing
             parameters = try container.decodeIfPresent([Double].self, forKey: .parameters) ?? defaults.parameters
-            revealedRecallWeight = try container.decodeIfPresent(Double.self, forKey: .revealedRecallWeight) ?? defaults.revealedRecallWeight
-            optimizeFromRevealed = try container.decodeIfPresent(Bool.self, forKey: .optimizeFromRevealed) ?? defaults.optimizeFromRevealed
             leechThreshold = try container.decodeIfPresent(Int.self, forKey: .leechThreshold) ?? defaults.leechThreshold
             updatesParametersAutomatically = try container.decodeIfPresent(Bool.self, forKey: .updatesParametersAutomatically)
             // A damaged record costs the deck one more fit, not its readability.
@@ -393,11 +381,8 @@ extension DeckFile {
             try container.encode(newProductionPerSession, forKey: .newProductionPerSession)
             try container.encode(productionUnlockDays, forKey: .productionUnlockDays)
             try container.encode(newCardOrder, forKey: .newCardOrder)
-            try container.encode(caseSensitive, forKey: .caseSensitive)
             try container.encode(fuzzing, forKey: .fuzzing)
             try container.encode(parameters, forKey: .parameters)
-            try container.encode(revealedRecallWeight, forKey: .revealedRecallWeight)
-            try container.encode(optimizeFromRevealed, forKey: .optimizeFromRevealed)
             try container.encode(leechThreshold, forKey: .leechThreshold)
             try container.encodeIfPresent(updatesParametersAutomatically, forKey: .updatesParametersAutomatically)
             try container.encodeIfPresent(lastAutoFit, forKey: .lastAutoFit)

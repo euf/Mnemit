@@ -13,17 +13,12 @@ struct ParametersSection: View {
     /// Save button to take effect.
     var appliesAtOnce = false
 
-    /// Counted once per opening of the sheet and again when `optimizeFromRevealed`
-    /// changes, not in `init`: the parent rebuilds this view on every change to the
-    /// options, and counting goes through the whole log.
-    @State private var counted: (fromRevealed: Bool, count: Int)?
+    /// The usable reviews, counted once per opening of the sheet, not in `init`: the parent
+    /// rebuilds this view on every change to the options, and counting goes through the
+    /// whole log. `nil` while counting.
+    @State private var reviewCount: Int?
     @State private var state = ComputationState.idle
     @State private var task: Task<Void, Never>?
-
-    /// The count for the current setting of `optimizeFromRevealed`; `nil` while counting.
-    private var reviewCount: Int? {
-        counted.flatMap { $0.fromRevealed == options.optimizeFromRevealed ? $0.count : nil }
-    }
 
     private enum ComputationState {
         case idle
@@ -36,9 +31,7 @@ struct ParametersSection: View {
         Section {
             LabeledContent("Current parameters", value: options.parameters == .default ? String(localized: "Default") : String(localized: "Custom"))
                 // On a row that is always there, whatever the count.
-                .task(id: options.optimizeFromRevealed) { await countReviews() }
-            Toggle("Learn from revealed reviews", isOn: $options.optimizeFromRevealed)
-                .help("Also computes the parameters from reviews you graded after revealing the answer, which is every review on the iPhone and on the Mac with flash cards. Off uses typed reviews only.")
+                .task { await countReviews() }
             Toggle("Update parameters automatically", isOn: $options.updatesParametersAutomatically)
             if let fit = options.lastAutoFit {
                 Text(Self.summary(of: fit))
@@ -66,19 +59,12 @@ struct ParametersSection: View {
                 Text("FSRS starts with parameters averaged over many learners. Computed from this deck's review log, they fit your memory, so cards need fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review.")
                 refitFooter
                 if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {
-                    if options.optimizeFromRevealed {
-                        Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: reviews on a later study day than the previous review of the same card.")
-                    } else {
-                        Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: typed reviews on a later study day than the previous review of the same card.")
-                    }
+                    Text("Computing needs \(FSRSOptimizer.minimumReviewCount) usable reviews: reviews on a later study day than the previous review of the same card.")
                 }
             }
             .foregroundStyle(.secondary)
         }
         .onDisappear { task?.cancel() }
-        // A comparison made with other inputs says nothing about the current ones.
-        .onChange(of: options.optimizeFromRevealed) { resetComputation() }
-        .onChange(of: options.revealedRecallWeight) { resetComputation() }
     }
 
     private var refitFooter: Text {
@@ -86,11 +72,6 @@ struct ParametersSection: View {
         let days = ParameterRefit.intervalDays
         let step = ParameterRefit.reviewStep.formatted()
         return Text("The parameters are fitted again at \(second) reviews, then every \(days) days or after \(step) more reviews, and replace the current ones only if they predict your newest reviews better.")
-    }
-
-    private func resetComputation() {
-        task?.cancel()
-        state = .idle
     }
 
     @ViewBuilder
@@ -168,7 +149,7 @@ struct ParametersSection: View {
         let count = await Task.detached(priority: .userInitiated) {
             FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar).reviewCount
         }.value
-        counted = (options.optimizeFromRevealed, count)
+        reviewCount = count
     }
 
     private func start() {

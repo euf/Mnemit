@@ -49,7 +49,7 @@ struct DocumentTests {
         let document = try VocabularyDocument(deck: Deck(cards: [card]))
         let undoManager = makeUndoManager(for: document)
         var options = LearningOptions()
-        options.caseSensitive.toggle()
+        options.fuzzing.toggle()
         let changes: [() -> Void] = [
             { _ = document.add(CardText(question: "kot", answer: "Katze")!) },
             { document.importCards([Card(question: "pies", answer: "Hund")]) },

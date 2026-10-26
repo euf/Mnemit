@@ -80,29 +80,18 @@ extension LearningState {
 
 /// How a review was asked.
 public enum ReviewMode: Sendable {
-    /// The learner typed a response, and the app suggested a grade. The Mac asks so.
+    /// The learner typed a response, and the app suggested a grade. Upstream's Mac app asked so;
+    /// the log keeps those reviews readable, and nothing records a new one.
     case typed
-    /// The learner revealed the answer and graded without a response.
+    /// The learner revealed the answer and graded without a response: every review of the app.
     case revealed
-
-    /// Share of the stability FSRS adds on a recall that the card keeps: all after a typed
-    /// review, `revealedRecallWeight` (`LearningOptions.revealedRecallWeight`) after a
-    /// revealed one. Applies neither to a lapse nor to a card's first review; see
-    /// `Scheduler`.
-    public func stabilityGainShare(revealedRecallWeight: Double) -> Double {
-        switch self {
-        case .typed: 1
-        case .revealed: revealedRecallWeight
-        }
-    }
 }
 
 /// One review in a study session.
 public struct ReviewLogEntry: Hashable, Sendable {
     public var date: Date
     public var grade: Grade
-    /// A recalled revealed review may gain less stability, see
-    /// `LearningOptions.revealedRecallWeight`.
+    /// How the card was asked; the scheduler treats both modes alike.
     public var mode: ReviewMode
     /// How long the card was on screen before it was graded, in whole milliseconds (the unit of
     /// `reviews.jsonl`); `nil` where the time wasn't measured, as in every review before it was.
@@ -188,12 +177,12 @@ public struct Card: Identifiable, Hashable, Sendable {
         return note
     }
 
-    /// A new card with unchecked texts, for `LegacyImporter` and tests.
+    /// A new card with unchecked texts, for tests.
     init(id: UUID = UUID(), question: String, answer: String, hint: String = "", created: Date) {
         self.init(id: id, question: question, answer: answer, hint: hint, created: created, learningState: nil)
     }
 
-    /// A card with a learning state, for `DeckFile`, `LegacyImporter` and tests.
+    /// A card with a learning state, for `DeckFile` and tests.
     init(
         id: UUID = UUID(),
         question: String,

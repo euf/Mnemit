@@ -134,8 +134,8 @@ struct DocumentView: View {
         }
         .animation(.easeOut(duration: 0.2), value: toast)
         .shortcutsHelp(shortcutsHelp)
-        .onChange(of: session?.studyBy == .flashcards, initial: true) { _, isFlashcards in
-            shortcutsHelp.opensWithQuestionMark = isFlashcards
+        .onChange(of: session != nil, initial: true) { _, inSession in
+            shortcutsHelp.opensWithQuestionMark = inSession
         }
         .onChange(of: canEdit, initial: true) { _, canEdit in
             // The welcome window made this document to import cards into: a new deck, which
@@ -266,18 +266,16 @@ struct DocumentView: View {
     /// `others`, the decks Today opened beside this one, the stream mixes them all, as the iPhone's does.
     private func startSession(_ entry: SessionViewModel.Entry = .study, with others: [VocabularyDocument] = []) {
         guard canEdit, session == nil, !document.deck.cards.isEmpty else { return }
-        let model = SessionViewModel(documents: [document] + others, studyBy: Preferences.studyBy(), entry: entry, ring: ring)
+        let model = SessionViewModel(documents: [document] + others, entry: entry, ring: ring)
         session = model
-        if model.studyBy == .flashcards {
-            shortcutsHelp.showForFirstSession()
-        }
+        shortcutsHelp.showForFirstSession()
     }
 
     /// Practices the cards that went wrong today, whatever their schedule: the reviews
     /// change no card.
     private func practiceMistakes() {
         guard canEdit, session == nil else { return }
-        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy(), entry: .practiceMistakes)
+        let model = SessionViewModel(document: document, entry: .practiceMistakes)
         if !model.isResting {
             session = model
         }
@@ -287,7 +285,7 @@ struct DocumentView: View {
     /// the reviews change no card.
     private func practiceNewestWords() {
         guard canEdit, session == nil else { return }
-        let model = SessionViewModel(document: document, studyBy: Preferences.studyBy(), entry: .practiceNewest)
+        let model = SessionViewModel(document: document, entry: .practiceNewest)
         if !model.isResting {
             session = model
         }

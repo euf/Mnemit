@@ -136,8 +136,6 @@ struct TrueRetentionTests {
             #expect(retention.all[period] == TrueRetention.Split())
             #expect(retention.all[period].total.retention == nil)
         }
-        #expect(retention.byMode.isEmpty)
-        #expect(retention.byKind.isEmpty)
     }
 
     // MARK: - Periods
@@ -186,7 +184,8 @@ struct TrueRetentionTests {
 
     // MARK: - Mode and kind
 
-    @Test func modeAndKindSplitTheSameFigures() throws {
+    /// There is one table: typed reviews of upstream's decks, revealed ones and every kind of card count in it alike.
+    @Test func everyModeAndKindCountsInTheOneTable() throws {
         let cards = [
             card([step(noon(daysAgo: 8), .good), step(noon(daysAgo: 4), .good, .typed)], kind: .recognition),
             card([step(noon(daysAgo: 8), .good), step(noon(daysAgo: 4), .again, .revealed)], kind: .production),
@@ -194,13 +193,6 @@ struct TrueRetentionTests {
         ]
         let retention = try retention(of: cards)
         #expect(retention.all[.last7Days].total == TrueRetention.Tally(passed: 2, failed: 1))
-        // The mode of a review is the one of the review itself, not of the card's first.
-        #expect(retention.byMode[.typed]?[.last7Days].total == TrueRetention.Tally(passed: 1, failed: 0))
-        #expect(retention.byMode[.revealed]?[.last7Days].total == TrueRetention.Tally(passed: 1, failed: 1))
-        #expect(retention.byKind[.recognition]?[.last7Days].total == TrueRetention.Tally(passed: 1, failed: 0))
-        #expect(retention.byKind[.production]?[.last7Days].total == TrueRetention.Tally(passed: 0, failed: 1))
-        #expect(retention.byKind.count == 2)
-        #expect(retention.byMode[.typed]?[.today].total.retention == nil)
     }
 
     @Test func desiredRetentionIsTheDecksTarget() throws {

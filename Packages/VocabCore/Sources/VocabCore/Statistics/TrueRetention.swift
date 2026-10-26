@@ -82,10 +82,6 @@ public struct TrueRetention: Hashable, Sendable {
     public static let matureInterval = 21
 
     public private(set) var all = Table()
-    /// The same figures for the reviews asked in one mode; a mode without reviews is absent.
-    public private(set) var byMode: [ReviewMode: Table] = [:]
-    /// The same figures for the cards of one kind; cards without a kind count in `all` only.
-    public private(set) var byKind: [CardKind: Table] = [:]
     /// What the deck aims at, `LearningOptions.targetRecall`, to read the figures against.
     public let desiredRetention: Double
 
@@ -106,10 +102,6 @@ public struct TrueRetention: Hashable, Sendable {
                     let isPassed = entry.grade.isRecall
                     let isMature = calendar.days(from: found.lastReview, to: found.due) >= Self.matureInterval
                     all.add(passed: isPassed, isMature: isMature, daysAgo: daysAgo)
-                    byMode[entry.mode, default: Table()].add(passed: isPassed, isMature: isMature, daysAgo: daysAgo)
-                    if let kind = card.kind {
-                        byKind[kind, default: Table()].add(passed: isPassed, isMature: isMature, daysAgo: daysAgo)
-                    }
                 }
                 var random = Scheduler.random(forReviewOf: card.id, at: entry.date)
                 replayed = scheduler.review(replayed, grade: entry.grade, at: entry.date, mode: entry.mode, using: &random)

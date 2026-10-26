@@ -21,8 +21,6 @@ struct LocalizationTests {
             ("\(2) rows without a question or an answer are left out.", "2 rows without a question or an answer are left out."),
             ("Export \(1) cards.", "Export 1 card."),
             ("Export \(2) cards.", "Export 2 cards."),
-            ("Save the imported deck with \(1) cards.", "Save the imported deck with 1 card."),
-            ("Save the imported deck with \(2) cards.", "Save the imported deck with 2 cards."),
             ("\(0) of \(1) cards", "0 of 1 card"),
             ("\(1) of \(2) cards", "1 of 2 cards"),
         ]
@@ -35,8 +33,6 @@ struct LocalizationTests {
             ("\(2) rows without a question or an answer are left out.", "2 Zeilen ohne Frage oder Antwort werden ausgelassen."),
             ("Export \(1) cards.", "1 Karte exportieren."),
             ("Export \(2) cards.", "2 Karten exportieren."),
-            ("Save the imported deck with \(1) cards.", "Sichere den importierten Stapel mit 1 Karte."),
-            ("Save the imported deck with \(2) cards.", "Sichere den importierten Stapel mit 2 Karten."),
             ("\(0) of \(1) cards", "0 von 1 Karte"),
             ("\(1) of \(2) cards", "1 von 2 Karten"),
         ]

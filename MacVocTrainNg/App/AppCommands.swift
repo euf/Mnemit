@@ -42,9 +42,6 @@ struct AppCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .importExport) {
-            Button("Import MacVocTrain 1 Document…") {
-                LegacyImport.run()
-            }
             Button("Import Cards…") { actions?.importCards() }
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
             Button("Shared Decks on AnkiWeb…") { DeckWebWindow.show() }

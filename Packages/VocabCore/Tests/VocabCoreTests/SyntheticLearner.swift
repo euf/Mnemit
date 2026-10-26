@@ -16,17 +16,14 @@ struct SyntheticLearner {
 
     var parameters: FSRSParameters
     var random: SeededRandom
-    /// The share of reviews that are revealed, and what the learner's memory gains from a
-    /// recalled one: `LearningOptions.revealedRecallWeight`. Without revealed reviews the
-    /// learner draws the same numbers as before.
+    /// The share of reviews that are revealed; the learner's memory gains the same from either.
+    /// Without revealed reviews the learner draws the same numbers as before.
     var revealedShare: Double
-    var revealedRecallWeight: Double
 
-    init(parameters: FSRSParameters = .default, seed: UInt64, revealedShare: Double = 0, revealedRecallWeight: Double = 1) {
+    init(parameters: FSRSParameters = .default, seed: UInt64, revealedShare: Double = 0) {
         self.parameters = parameters
         random = SeededRandom(seed: seed)
         self.revealedShare = revealedShare
-        self.revealedRecallWeight = revealedRecallWeight
     }
 
     /// Learner parameters that differ clearly from the defaults.
@@ -47,10 +44,6 @@ struct SyntheticLearner {
 
     mutating func histories(cards: Int, days: Int) -> [History] {
         let fsrs = FSRS(parameters: parameters)
-        var options = LearningOptions()
-        options.parameters = parameters
-        options.revealedRecallWeight = revealedRecallWeight
-        let scheduler = Scheduler(learningOptions: options, calendar: .testing)
         let revealedShare = revealedShare
         // Apart from `random`, so choosing a mode draws nothing from it.
         var modeRandom = SeededRandom(seed: 99)
@@ -59,11 +52,10 @@ struct SyntheticLearner {
             var reviews: [[Int]] = []
             var memory: FSRS.Memory?
             func review(_ grade: Grade, after elapsed: Int) {
+                memory = fsrs.review(memory, elapsedDays: elapsed, grade: grade)
                 if revealedShare > 0, Double.random(in: 0..<1, using: &modeRandom) < revealedShare {
-                    memory = scheduler.memory(after: memory, elapsedDays: elapsed, grade: grade, mode: .revealed)
                     reviews.append([grade.rawValue, elapsed, 1])
                 } else {
-                    memory = fsrs.review(memory, elapsedDays: elapsed, grade: grade)
                     reviews.append([grade.rawValue, elapsed])
                 }
             }

@@ -20,7 +20,7 @@ struct SessionViewModelTests {
         let second = try makeDocument(cards: 2)
         let firstUndo = makeUndoManager(for: first)
         let secondUndo = makeUndoManager(for: second)
-        let model = SessionViewModel(documents: [first, second], studyBy: .flashcards)
+        let model = SessionViewModel(documents: [first, second])
         let asked = model.document
         let askedUndo = try #require(asked.undoManager)
         let card = try #require(model.currentCard)
@@ -38,23 +38,23 @@ struct SessionViewModelTests {
     @Test func theStreamTakesTheNewCardsOfTheDocumentsAllowance() throws {
         let document = try makeDocument(cards: 6)
         document.newCardAllowance = 2
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         #expect(model.session.totalCount == 2)
         // Without an allowance the plan is the deck's limits.
         document.newCardAllowance = nil
-        #expect(SessionViewModel(document: document, autoAdvance: true).session.totalCount == 6)
+        #expect(SessionViewModel(document: document).session.totalCount == 6)
     }
 
-    @Test func correctResponseMovesOnAndCanBeUndone() throws {
+    @Test func aGradeMovesOnAndCanBeUndone() throws {
         let document = try makeDocument(cards: 2)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         let first = try #require(model.currentCard)
 
-        model.input = first.answer
-        step(undoManager) { model.submit() }
+        model.reveal()
+
+        step(undoManager) { model.grade(.good) }
         #expect(document.card(withID: first.id)?.learningState?.phase == .review)
-        #expect(model.previous?.grade == .good)
         #expect(model.currentCard?.id != first.id)
         #expect(model.session.completedCount == 1)
 
@@ -64,7 +64,7 @@ struct SessionViewModelTests {
         #expect(document.card(withID: first.id)?.isNew == true)
         #expect(model.currentCard == first)
         #expect(model.session.completedCount == 0)
-        #expect(model.stage == .asking)
+        #expect(model.stage == .revealed)  // the card comes back with its answer shown
         #expect(!undoManager.canUndo)  // card and session in one step
         #expect(undoManager.redoActionName == String(localized: "Review"))
 
@@ -78,12 +78,12 @@ struct SessionViewModelTests {
     @Test func undoingAReviewOfAnEarlierStreamOnlyTakesBackTheCard() throws {
         let document = try makeDocument(cards: 2, steps: 2)
         let undoManager = makeUndoManager(for: document)
-        let earlier = SessionViewModel(document: document, autoAdvance: true)
+        let earlier = SessionViewModel(document: document)
         let first = try #require(earlier.currentCard)
-        earlier.input = first.answer
-        step(undoManager) { earlier.submit() }
+        earlier.reveal()
+        step(undoManager) { earlier.grade(.good) }
 
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         let session = model.session.id
         let current = try #require(model.currentCard)
 
@@ -105,7 +105,6 @@ struct SessionViewModelTests {
         var completedCount: Int
         var totalCount: Int
         var reviewCount: Int
-        var stage: SessionViewModel.Stage
 
         @MainActor init(_ model: SessionViewModel) {
             cards = model.document.deck.cards
@@ -113,7 +112,6 @@ struct SessionViewModelTests {
             completedCount = model.session.completedCount
             totalCount = model.session.totalCount
             reviewCount = model.session.reviewCount
-            stage = model.stage
         }
     }
 
@@ -121,11 +119,11 @@ struct SessionViewModelTests {
     @Test func severalReviewsAreUndoneAndRedoneOneByOne() throws {
         let document = try makeDocument(cards: 3)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         var places = [Place(model)]
         for _ in 0..<3 {
-            model.input = try #require(model.currentCard).answer
-            step(undoManager) { model.submit() }
+            model.reveal()
+            step(undoManager) { model.grade(.good) }
             places.append(Place(model))
         }
         #expect(model.isResting)
@@ -146,14 +144,14 @@ struct SessionViewModelTests {
     @Test func undoingTheReviewThatEmptiedThePlanAsksAgain() throws {
         let document = try makeDocument(cards: 1)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         let card = try #require(model.currentCard)
-        model.input = card.answer
-        step(undoManager) { model.submit() }
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
         #expect(model.isResting)
 
         undoManager.undo()
-        #expect(model.stage == .asking)
+        #expect(model.stage == .revealed)
         #expect(model.currentCard == card)
 
         undoManager.redo()
@@ -172,15 +170,17 @@ struct SessionViewModelTests {
         let card = Card(question: "dom", answer: "Haus", learningState: learningState)
         let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [card]), clock: ManualClock(now).studyClock, calendar: .testing)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
 
-        model.input = "Haus"
-        step(undoManager) { model.submit() }
+        model.reveal()
+
+        step(undoManager) { model.grade(.good) }
         #expect(document.card(withID: card.id)?.learningState?.step == 1)
         #expect(model.currentCard?.id == card.id)  // stays in the session
 
-        model.input = "Haus"
-        step(undoManager) { model.submit() }
+        model.reveal()
+
+        step(undoManager) { model.grade(.good) }
         let reviewed = try #require(document.card(withID: card.id)?.learningState)
         #expect(reviewed.phase == .review)
         #expect(model.isResting)
@@ -192,8 +192,9 @@ struct SessionViewModelTests {
         #expect(document.card(withID: card.id)?.learningState?.step == 1)
         #expect(model.currentCard?.learningState?.step == 1)
 
-        model.input = "Haus"
-        step(undoManager) { model.submit() }
+        model.reveal()
+
+        step(undoManager) { model.grade(.good) }
         #expect(document.card(withID: card.id)?.learningState == reviewed)
     }
 
@@ -208,7 +209,7 @@ struct SessionViewModelTests {
         let pushed = Card(question: "pushed", answer: "gedrängt")
         let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [planned, pushed]), calendar: .testing)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, studyBy: .flashcards)
+        let model = SessionViewModel(document: document)
         #expect(model.streamStage == .plan)
         #expect(model.currentCard?.id == planned.id)
 
@@ -240,15 +241,14 @@ struct SessionViewModelTests {
     @Test func aNewReviewAfterUndoDropsTheRedo() throws {
         let document = try makeDocument(cards: 2)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         let first = try #require(model.currentCard)
-        model.input = first.answer
-        step(undoManager) { model.submit() }
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
 
         undoManager.undo()
         #expect(model.currentCard == first)
-        model.input = "wrong"
-        model.submit()
+        model.reveal()
         step(undoManager) { model.grade(.again) }
         #expect(!undoManager.canRedo)
         #expect(document.card(withID: first.id)?.log.map(\.grade) == [.again])
@@ -261,16 +261,14 @@ struct SessionViewModelTests {
         #expect(!undoManager.canUndo)
     }
 
-    @Test func wrongResponseAsksForGrade() throws {
+    @Test func forgottenCardIsAMistakeAndAsksAgain() throws {
         let document = try makeDocument(cards: 2, steps: 2)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         let card = try #require(model.currentCard)
 
-        model.input = "nonsense"
-        model.submit()
-        #expect(model.stage == .feedback(.wrong, response: "nonsense"))
-        #expect(model.suggestedGrade == .again)
+        model.reveal()
+        #expect(model.stage == .revealed)
         #expect(document.card(withID: card.id)?.isNew == true)  // nothing applied yet
 
         step(undoManager) { model.grade(.again) }
@@ -279,64 +277,20 @@ struct SessionViewModelTests {
         #expect(model.stage == .asking)
     }
 
-    @Test func typoCanBeAcceptedAsCorrect() throws {
-        let document = try VocabularyDocument(deck: Deck(cards: [Card(question: "Tag", answer: "dzień")]))
-        let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
-
-        model.input = "dzien"
-        model.submit()
-        #expect(model.stage == .feedback(.almostCorrect, response: "dzien"))
-        step(undoManager) { model.grade(.good) }
-        #expect(document.deck.cards[0].log.map(\.grade) == [.good])
-    }
-
-    @Test(arguments: [false, true])
-    func highlightingFollowsTheCaseSensitivityOfTheDeck(caseSensitive: Bool) throws {
-        var learningOptions = LearningOptions()
-        learningOptions.caseSensitive = caseSensitive
-        let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [Card(question: "Ding", answer: "Wumbel")]))
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        #expect(model.highlightedAnswer == nil)
-
-        model.input = "wumbl"
-        model.submit()
-        #expect(model.stage == .feedback(.almostCorrect, response: "wumbl"))
-        let marked = model.highlightedAnswer?.filter(\.isMismatch).map(\.text)
-        #expect(marked == (caseSensitive ? ["W", "e"] : ["e"]))
-    }
-
-    @Test func withoutAutoAdvanceCorrectResponsesAreConfirmed() throws {
-        let document = try makeDocument(cards: 1)
-        let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: false)
-        model.input = "a0"
-        model.submit()
-        #expect(model.suggestedGrade == .good)
-        step(undoManager) { model.grade(.easy) }
-        #expect(document.deck.cards[0].log.map(\.grade) == [.easy])
-        #expect(model.isResting)
-    }
-
-    @Test func flashCardsGradeOnlyAfterRevealingAndCanBeUndone() throws {
+    @Test func gradingNeedsTheAnswerShownAndCanBeUndone() throws {
         let document = try makeDocument(cards: 2)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, studyBy: .flashcards)
+        let model = SessionViewModel(document: document)
         let first = try #require(model.currentCard)
 
         step(undoManager) { model.grade(.good) }
         #expect(model.stage == .asking)
         #expect(document.card(withID: first.id)?.log.isEmpty == true)
-        model.input = first.answer
-        model.submit()
-        #expect(model.stage == .asking)
 
         model.reveal()
         #expect(model.stage == .revealed)
-        #expect(model.suggestedGrade == nil)
         step(undoManager) { model.grade(.good) }
         #expect(document.card(withID: first.id)?.log.map(\.mode) == [.revealed])
-        #expect(model.previous?.grade == .good)
         #expect(model.currentCard?.id != first.id)
         #expect(model.stage == .asking)
 
@@ -345,13 +299,6 @@ struct SessionViewModelTests {
         #expect(document.card(withID: first.id)?.isNew == true)
         #expect(model.currentCard == first)
         #expect(model.stage == .revealed)
-    }
-
-    @Test func typingIgnoresReveal() throws {
-        let document = try makeDocument(cards: 1)
-        let model = SessionViewModel(document: document)
-        model.reveal()
-        #expect(model.stage == .asking)
     }
 
     /// "Practice Newest Words" practises the newest batch, from a fresh window, and changes
@@ -364,14 +311,14 @@ struct SessionViewModelTests {
         let ids = Set(newest.map(\.id))
         let before = document.deck
 
-        let model = SessionViewModel(document: document, autoAdvance: true, entry: .practiceNewest)
+        let model = SessionViewModel(document: document, entry: .practiceNewest)
         #expect(model.isPracticing)
         #expect(model.session.totalCount == 2)
         while !model.isResting {
             let card = try #require(model.currentCard)
             #expect(ids.contains(card.id))
-            model.input = card.answer
-            step(undoManager) { model.submit() }
+            model.reveal()
+            step(undoManager) { model.grade(.good) }
         }
         #expect(model.rest.recap.cards == 2)
         #expect(model.rest.isPracticeOnly)
@@ -394,10 +341,9 @@ struct SessionViewModelTests {
         let leech = Card(question: "q", answer: "a", learningState: state)
         let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [leech]), calendar: .testing)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
 
-        model.input = "wrong"
-        model.submit()
+        model.reveal()
         step(undoManager) { model.grade(.again) }
         let stored = try #require(document.card(withID: leech.id))
         #expect(stored.isSuspended)
@@ -412,11 +358,11 @@ struct SessionViewModelTests {
         #expect(model.session.leechIDs.isEmpty)
     }
 
-    /// A practice asks the way the learner studies, and changes no card.
-    @Test func flashCardsCarryOverToPractice() throws {
+    /// A practice asks like the plan: the answer is revealed before it is graded. It changes no card.
+    @Test func practiceAsksLikeThePlan() throws {
         let document = try makeDocument(cards: 1)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, studyBy: .flashcards)
+        let model = SessionViewModel(document: document)
         model.reveal()
         step(undoManager) { model.grade(.again) }
         model.reveal()
@@ -424,9 +370,8 @@ struct SessionViewModelTests {
         #expect(model.isResting)
 
         let before = document.deck
-        let practice = SessionViewModel(document: document, studyBy: .flashcards, entry: .practiceMistakes)
+        let practice = SessionViewModel(document: document, entry: .practiceMistakes)
         #expect(practice.streamStage == .practiceMistakes)
-        // The answer has to be revealed before it is graded, in practice too.
         step(undoManager) { practice.grade(.good) }
         #expect(practice.session.reviewCount == 0)
         practice.reveal()
@@ -441,12 +386,11 @@ struct SessionViewModelTests {
     @Test func practicingMistakesLeavesScheduleAlone() throws {
         let document = try makeDocument(cards: 1)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        model.input = "wrong"
-        model.submit()
+        let model = SessionViewModel(document: document)
+        model.reveal()
         step(undoManager) { model.grade(.again) }
-        model.input = "a0"
-        step(undoManager) { model.submit() }
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
         #expect(model.isResting)
         #expect(model.streamStage == .rest)
         #expect(!model.isPracticing)
@@ -458,11 +402,11 @@ struct SessionViewModelTests {
         #expect(model.streamStage == .rest)
         #expect(document.deck == before)
 
-        let practice = SessionViewModel(document: document, autoAdvance: true, entry: .practiceMistakes)
+        let practice = SessionViewModel(document: document, entry: .practiceMistakes)
         #expect(practice.isPracticing)
         #expect(practice.streamStage == .practiceMistakes)
-        practice.input = "a0"
-        step(undoManager) { practice.submit() }
+        practice.reveal()
+        step(undoManager) { practice.grade(.good) }
         #expect(practice.isResting)
         #expect(practice.rest.isPracticeOnly)
         #expect(document.deck == before)
@@ -472,24 +416,20 @@ struct SessionViewModelTests {
     @Test func suspendedMistakesAreNotPractised() throws {
         let document = try makeDocument(cards: 1, steps: 2)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         let card = try #require(model.currentCard)
-        model.input = "wrong"
-        model.submit()
+        model.reveal()
         step(undoManager) { model.grade(.again) }
         #expect(model.currentCard == document.card(withID: card.id))
 
         step(undoManager) { model.suspendCurrentCard() }
         #expect(model.isResting)
-        #expect(model.previous?.question == card.question)
-        #expect(model.previous?.grade == nil)
         #expect(document.deck.mistakes(onDayOf: document.clock.now, calendar: document.calendar).isEmpty)
         #expect(SessionViewModel(document: document, entry: .practiceMistakes).isResting)
 
         undoManager.undo()
         #expect(!model.isResting)
         #expect(model.currentCard?.id == card.id)
-        #expect(model.previous == nil)
     }
 
     @Test func undoingPracticeReviewKeepsTheEarlierPlanIntact() throws {
@@ -498,9 +438,9 @@ struct SessionViewModelTests {
         plannedMistake(in: document, undoManager: undoManager)
         let scheduled = document.deck
 
-        let model = SessionViewModel(document: document, autoAdvance: true, entry: .practiceMistakes)
-        model.input = "a0"
-        step(undoManager) { model.submit() }
+        let model = SessionViewModel(document: document, entry: .practiceMistakes)
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
         #expect(model.isResting)
         undoManager.undo()
         #expect(model.streamStage == .practiceMistakes)
@@ -514,21 +454,20 @@ struct SessionViewModelTests {
 
     /// A plan with a mistake, as the learner went through it; the model is gone at the end.
     private func plannedMistake(in document: VocabularyDocument, undoManager: UndoManager) {
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        model.input = "wrong"
-        step(undoManager) { model.submit() }
+        let model = SessionViewModel(document: document)
+        model.reveal()
         step(undoManager) { model.grade(.again) }
-        model.input = "a0"
-        step(undoManager) { model.submit() }
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
     }
 
     /// A plan with a mistake, then a practice review of it. Nothing else holds the model,
     /// as in the app once the view closes the stream.
     private func practicedMistake(in document: VocabularyDocument, undoManager: UndoManager) -> SessionViewModel {
         plannedMistake(in: document, undoManager: undoManager)
-        let model = SessionViewModel(document: document, autoAdvance: true, entry: .practiceMistakes)
-        model.input = "a0"
-        step(undoManager) { model.submit() }
+        let model = SessionViewModel(document: document, entry: .practiceMistakes)
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
         return model
     }
 
@@ -579,10 +518,10 @@ struct SessionViewModelTests {
     @Test func reviewOfAClosedSessionIsUndoneAndRedone() throws {
         let document = try makeDocument(cards: 1)
         let undoManager = makeUndoManager(for: document)
-        var model: SessionViewModel? = SessionViewModel(document: document, autoAdvance: true)
+        var model: SessionViewModel? = SessionViewModel(document: document)
         let card = try #require(model?.currentCard)
-        model?.input = card.answer
-        step(undoManager) { model?.submit() }
+        model?.reveal()
+        step(undoManager) { model?.grade(.good) }
         let reviewed = try #require(document.card(withID: card.id))
         weak let closed = model
         model = nil
@@ -595,30 +534,27 @@ struct SessionViewModelTests {
     }
 
     @Test(arguments: [false, true])
-    func removingTheCurrentCardMovesOn(whileShowingFeedback: Bool) throws {
+    func removingTheCurrentCardMovesOn(whileTheAnswerIsShown: Bool) throws {
         let document = try makeDocument(cards: 2)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         let current = try #require(model.currentCard)
-        if whileShowingFeedback {
-            model.input = "wrong"
-            model.submit()
-            #expect(model.stage == .feedback(.wrong, response: "wrong"))
+        if whileTheAnswerIsShown {
+            model.reveal()
+            #expect(model.stage == .revealed)
         }
         step(undoManager) { document.delete([current.id]) }
         #expect(model.currentCard != nil)
         #expect(model.currentCard?.id != current.id)
         #expect(model.session.totalCount == 1)
         #expect(model.stage == .asking)
-        #expect(model.input.isEmpty)
-        #expect(model.suggestedGrade == nil)
     }
 
     /// The session used to notice removals only by a changed number of cards (#57).
     @Test func removingTheCurrentCardMovesOnEvenIfTheCountStays() throws {
         let document = try makeDocument(cards: 2)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         let current = try #require(model.currentCard)
         step(undoManager) {
             document.delete([current.id])
@@ -636,75 +572,65 @@ struct SessionViewModelTests {
         let undoManager = makeUndoManager(for: document)
         let card = document.deck.cards[0]
         step(undoManager) { document.editText(of: card.id, to: CardText(question: "dom", answer: card.answer)!) }
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
         #expect(model.currentCard?.question == "dom")
 
         undoManager.undo()
         #expect(model.currentCard?.question == "q0")
     }
 
-    @Test func undoingAndRedoingAnAnswerEditRechecksFeedback() throws {
+    /// Editing the card being asked, as the session's edit sheet does, shows the edit and asks on (#289).
+    @Test func editingTheCardBeingAskedKeepsTheQuestion() throws {
+        let card = Card(question: "dom", answer: "Haus")
+        let document = try VocabularyDocument(deck: Deck(cards: [card]))
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document)
+        let questionNumber = model.questionNumber
+
+        step(undoManager) { document.editText(of: card.id, to: CardText(question: "dom", answer: "Haus", hint: "der")!) }
+        #expect(model.currentCard?.hint == "der")
+        #expect(model.stage == .asking)
+        #expect(model.questionNumber == questionNumber)
+
+        model.reveal()
+        #expect(model.stage == .revealed)
+    }
+
+    /// Undoing and redoing an edit of the answer while it is shown changes the answer and keeps it shown.
+    @Test func undoingAndRedoingAnAnswerEditKeepsTheAnswerShown() throws {
         let card = Card(question: "dom", answer: "Haus")
         let document = try VocabularyDocument(deck: Deck(cards: [card]))
         let undoManager = makeUndoManager(for: document)
         step(undoManager) { document.editText(of: card.id, to: CardText(question: card.question, answer: "Heim")!) }
-        let model = SessionViewModel(document: document, autoAdvance: false)
-        model.input = "Heim"
-        model.submit()
-        #expect(model.stage == .feedback(.correct, response: "Heim"))
+        let model = SessionViewModel(document: document)
+        model.reveal()
         let questionNumber = model.questionNumber
-        model.input = "not submitted"
 
         undoManager.undo()
         #expect(model.currentCard?.unstamped == card)
-        #expect(model.stage == .feedback(.wrong, response: "Heim"))
-        #expect(model.suggestedGrade == .again)
+        #expect(model.stage == .revealed)
         #expect(model.session.reviewCount == 0)
         #expect(model.questionNumber == questionNumber)
 
         undoManager.redo()
         #expect(model.currentCard?.unstamped == card.withAnswer("Heim"))
-        #expect(model.stage == .feedback(.correct, response: "Heim"))
-        #expect(model.suggestedGrade == .good)
+        #expect(model.stage == .revealed)
         #expect(model.session.reviewCount == 0)
         #expect(model.questionNumber == questionNumber)
     }
 
-    /// Editing the card being asked, as the session's edit sheet does, keeps the
-    /// response typed so far and asks on (#289).
-    @Test func editingTheCardBeingAskedKeepsTheResponse() throws {
-        let card = Card(question: "dom", answer: "Haus")
-        let document = try VocabularyDocument(deck: Deck(cards: [card]))
-        let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: false)
-        let questionNumber = model.questionNumber
-        model.input = "Haus"
-
-        step(undoManager) { document.editText(of: card.id, to: CardText(question: "dom", answer: "Haus", hint: "der")!) }
-        #expect(model.currentCard?.hint == "der")
-        #expect(model.stage == .asking)
-        #expect(model.input == "Haus")
-        #expect(model.questionNumber == questionNumber)
-
-        model.submit()
-        #expect(model.stage == .feedback(.correct, response: "Haus"))
-    }
-
-    /// Fixing the answer once it is shown checks the response against the fixed card;
-    /// the grade is still the learner's to give. Undo takes back the review first, then
-    /// the edit (#289).
-    @Test func fixingTheShownAnswerChecksTheResponseAgain() throws {
+    /// Fixing the answer once it is shown keeps it shown; the grade is still the learner's to give.
+    /// Undo takes back the review first, then the edit (#289).
+    @Test func fixingTheShownAnswerKeepsItShown() throws {
         let card = Card(question: "dom", answer: "Heim")
         let document = try VocabularyDocument(deck: Deck(cards: [card]))
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        model.input = "Haus"
-        model.submit()
-        #expect(model.stage == .feedback(.wrong, response: "Haus"))
+        let model = SessionViewModel(document: document)
+        model.reveal()
 
         step(undoManager) { document.editText(of: card.id, to: CardText(question: "dom", answer: "Haus")!) }
-        #expect(model.stage == .feedback(.correct, response: "Haus"))
-        #expect(model.suggestedGrade == .good)
+        #expect(model.stage == .revealed)
+        #expect(model.currentCard?.answer == "Haus")
         #expect(model.session.reviewCount == 0)
 
         step(undoManager) { model.grade(.good) }
@@ -717,46 +643,6 @@ struct SessionViewModelTests {
         #expect(document.card(withID: card.id)?.answer == "Haus")
         undoManager.undo()
         #expect(document.card(withID: card.id)?.answer == "Heim")
-    }
-
-    @Test func undoingAndRedoingCaseSensitivityRechecksWithoutAutoAdvance() throws {
-        var options = LearningOptions()
-        options.caseSensitive = false
-        let card = Card(question: "dom", answer: "Haus")
-        let document = try VocabularyDocument(deck: Deck(learningOptions: options, cards: [card]))
-        let undoManager = makeUndoManager(for: document)
-        options.caseSensitive = true
-        step(undoManager) { document.updateLearningOptions(options) }
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        model.input = "haus"
-        model.submit()
-        #expect(model.stage == .feedback(.almostCorrect, response: "haus"))
-        let questionNumber = model.questionNumber
-
-        undoManager.undo()
-        #expect(model.stage == .feedback(.correct, response: "haus"))
-        #expect(model.suggestedGrade == .good)
-        #expect(model.highlightedAnswer == nil)
-        #expect(document.deck.cards == [card])
-        #expect(model.currentCard == card)
-        #expect(model.session.reviewCount == 0)
-        #expect(model.questionNumber == questionNumber)
-
-        undoManager.redo()
-        #expect(model.stage == .feedback(.almostCorrect, response: "haus"))
-        #expect(model.suggestedGrade == .again)
-        #expect(model.highlightedAnswer?.filter(\.isMismatch).map(\.text) == ["H"])
-        #expect(document.deck.cards == [card])
-        #expect(model.currentCard == card)
-        #expect(model.session.reviewCount == 0)
-        #expect(model.questionNumber == questionNumber)
-    }
-
-    @Test func emptyResponseRevealsTheAnswer() throws {
-        let document = try makeDocument(cards: 1)
-        let model = SessionViewModel(document: document, autoAdvance: true)
-        model.submit()
-        #expect(model.stage == .feedback(.wrong, response: ""))
     }
 
     @Test func nothingDueMeansTheStreamRestsAtOnce() throws {
@@ -777,10 +663,11 @@ struct SessionViewModelTests {
         let card = Card(question: "dom", answer: "Haus")
         let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [card]), clock: clock.studyClock, calendar: calendar)
         let undoManager = makeUndoManager(for: document)
-        let model = SessionViewModel(document: document, autoAdvance: true)
+        let model = SessionViewModel(document: document)
 
-        model.input = "Haus"
-        step(undoManager) { model.submit() }
+        model.reveal()
+
+        step(undoManager) { model.grade(.good) }
         let state = try #require(document.card(withID: card.id)?.learningState)
         #expect(state.phase == .review)
         #expect(state.lastReview == clock.now)
@@ -793,14 +680,14 @@ struct SessionViewModelTests {
 
         clock.now = state.due.addingTimeInterval(-60)
         #expect(document.deck.filterCounts(at: clock.now)[.due] == 0)
-        #expect(SessionViewModel(document: document, autoAdvance: true).isResting)
+        #expect(SessionViewModel(document: document).isResting)
 
         clock.now = state.due.addingTimeInterval(60)
         #expect(document.deck.filterCounts(at: clock.now)[.due] == 1)
-        let next = SessionViewModel(document: document, autoAdvance: true)
+        let next = SessionViewModel(document: document)
         #expect(next.currentCard?.id == card.id)
-        next.input = "Haus"
-        step(undoManager) { next.submit() }
+        next.reveal()
+        step(undoManager) { next.grade(.good) }
         #expect(document.card(withID: card.id)?.learningState?.lastReview == clock.now)
         #expect(document.deck.progress.map(\.day) == [day - 1, day - 1 + interval])
     }
@@ -822,11 +709,11 @@ struct SessionViewModelTests {
         let document = try VocabularyDocument(deck: Deck(learningOptions: learningOptions, cards: [card]), clock: clock.studyClock, calendar: .testing)
         let undoManager = makeUndoManager(for: document)
 
-        let earlier = sessionStartedBefore ? SessionViewModel(document: document, autoAdvance: true) : nil
+        let earlier = sessionStartedBefore ? SessionViewModel(document: document) : nil
         document.switchTimeZone(to: StudyCalendar.newYork.timeZone)
-        let model = earlier ?? SessionViewModel(document: document, autoAdvance: true)
-        model.input = "Haus"
-        step(undoManager) { model.submit() }
+        let model = earlier ?? SessionViewModel(document: document)
+        model.reveal()
+        step(undoManager) { model.grade(.good) }
 
         func review(in calendar: StudyCalendar) -> Card {
             var random = SeededRandom(seed: 0)  // unused without fuzzing

@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import SwiftUI
 import Testing
 
 @testable import VocTrain
@@ -30,6 +31,25 @@ struct GradeSwipeTests {
     /// The direction of a size in degrees, as `GradeSwipe.angle(of:)`.
     private func direction(_ size: CGSize) -> Double {
         GradeSwipe.angle(of: size)
+    }
+
+    // MARK: Keys
+
+    /// The Mac's arrow keys are the directions of the swipes, and each grade's button shows its
+    /// arrow: swapping two keys in `Grade.arrowKey`, or two glyphs in `Grade.arrow`, fails here.
+    @Test func theArrowKeysAreTheDirectionsOfTheSwipes() throws {
+        let swipes: [(translation: CGSize, key: KeyEquivalent, glyph: String)] = [
+            (CGSize(width: -100, height: 0), .leftArrow, "←"),
+            (CGSize(width: 0, height: 100), .downArrow, "↓"),
+            (CGSize(width: 100, height: 0), .rightArrow, "→"),
+            (CGSize(width: 0, height: -100), .upArrow, "↑"),
+        ]
+        #expect(swipes.map { GradeSwipe.zone($0.translation) } == [.again, .hard, .good, .easy])
+        for swipe in swipes {
+            let grade = try #require(GradeSwipe.zone(swipe.translation))
+            #expect(grade.arrowKey == swipe.key)
+            #expect(grade.arrow == swipe.glyph)
+        }
     }
 
     // MARK: Sectors

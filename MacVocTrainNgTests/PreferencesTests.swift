@@ -4,36 +4,16 @@ import Testing
 @testable import MacVocTrain
 
 struct PreferencesTests {
-    let domain = "PreferencesTests.\(UUID().uuidString)"
-
-    @Test func reopensDecksByDefault() throws {
+    /// Launch opens no decks of the last run, also for a learner whose older version stored the preference as on.
+    @Test(arguments: [nil, true, false])
+    func launchReopensNoDecks(stored: Bool?) throws {
+        let domain = "PreferencesTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: domain))
         defer { defaults.removePersistentDomain(forName: domain) }
+        if let stored { defaults.set(stored, forKey: Preferences.reopenDecksKey) }
 
-        Preferences.setUpDefaults(defaults, domain: domain)
+        Preferences.setUpDefaults(defaults)
 
-        #expect(defaults.persistentDomain(forName: domain)?[Preferences.reopenDecksKey] as? Bool == true)
-    }
-
-    @Test func studiesByFlashcardsUnlessChosenOtherwise() throws {
-        let defaults = try #require(UserDefaults(suiteName: domain))
-        defer { defaults.removePersistentDomain(forName: domain) }
-        #expect(Preferences.studyBy(defaults) == .flashcards)
-
-        defaults.set("typing", forKey: Preferences.studyByKey)
-        #expect(Preferences.studyBy(defaults) == .typing)
-
-        defaults.set("unknown", forKey: Preferences.studyByKey)
-        #expect(Preferences.studyBy(defaults) == .flashcards)
-    }
-
-    @Test func keepsTheChosenSetting() throws {
-        let defaults = try #require(UserDefaults(suiteName: domain))
-        defer { defaults.removePersistentDomain(forName: domain) }
-        defaults.set(false, forKey: Preferences.reopenDecksKey)
-
-        Preferences.setUpDefaults(defaults, domain: domain)
-
-        #expect(defaults.bool(forKey: Preferences.reopenDecksKey) == false)
+        #expect(defaults.persistentDomain(forName: domain)?[Preferences.reopenDecksKey] as? Bool == false)
     }
 }

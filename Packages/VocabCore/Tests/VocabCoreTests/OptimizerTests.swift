@@ -7,11 +7,11 @@ struct OptimizerTests {
     let calendar = StudyCalendar(timeZone: TimeZone(identifier: "UTC")!)
 
     func items(_ histories: [SyntheticLearner.History]) -> [TrainingItem] {
-        TrainingItem.items(from: histories.enumerated().map { $1.card(index: $0, calendar: calendar) }, calendar: calendar, revealedAreTargets: true)
+        TrainingItem.items(from: histories.enumerated().map { $1.card(index: $0, calendar: calendar) }, calendar: calendar)
     }
 
-    func syntheticItems(cards: Int, seed: UInt64, revealedShare: Double = 0, revealedRecallWeight: Double = 1) -> [TrainingItem] {
-        var learner = SyntheticLearner(parameters: SyntheticLearner.unusual, seed: seed, revealedShare: revealedShare, revealedRecallWeight: revealedRecallWeight)
+    func syntheticItems(cards: Int, seed: UInt64, revealedShare: Double = 0) -> [TrainingItem] {
+        var learner = SyntheticLearner(parameters: SyntheticLearner.unusual, seed: seed, revealedShare: revealedShare)
         return items(learner.histories(cards: cards, days: 365))
     }
 
@@ -28,7 +28,7 @@ struct OptimizerTests {
             log: log.map { ReviewLogEntry(date: start.addingTimeInterval($0), grade: $1) }
         )
 
-        let items = TrainingItem.items(from: [card], calendar: calendar, revealedAreTargets: false)
+        let items = TrainingItem.items(from: [card], calendar: calendar)
         #expect(items.map(\.reviews.count) == [3, 4])
         #expect(items[1].reviews.map(\.elapsedDays) == [0, 0, 1, 2])
         #expect(items[1].reviews.map(\.grade) == [.again, .good, .good, .again])
@@ -40,9 +40,9 @@ struct OptimizerTests {
         let log = [ReviewLogEntry(date: start, grade: .good), ReviewLogEntry(date: start.addingTimeInterval(86400), grade: .good)]
         var imported = Card(question: "q", answer: "a", learningState: LearningState(phase: .review, stability: 3, difficulty: 5, lastReview: start, due: start, reviews: 5), log: log)
         #expect(!imported.hasCompleteLog)
-        #expect(TrainingItem.items(from: [imported], calendar: calendar, revealedAreTargets: false).isEmpty)
+        #expect(TrainingItem.items(from: [imported], calendar: calendar).isEmpty)
         imported.learningState?.reviews = 2
-        #expect(TrainingItem.items(from: [imported], calendar: calendar, revealedAreTargets: false).count == 1)
+        #expect(TrainingItem.items(from: [imported], calendar: calendar).count == 1)
     }
 
     @Test func itemsAreOrderedByTimeOfTheirReview() {
@@ -51,7 +51,7 @@ struct OptimizerTests {
             let log = [firstDay, secondDay].map { ReviewLogEntry(date: start.addingTimeInterval(Double($0) * 86400), grade: .good) }
             return Card(question: "q", answer: "a", learningState: LearningState(phase: .review, stability: 1, difficulty: 5, lastReview: start, due: start, reviews: 2), log: log)
         }
-        let items = TrainingItem.items(from: [card(firstDay: 0, secondDay: 9), card(firstDay: 0, secondDay: 4)], calendar: calendar, revealedAreTargets: false)
+        let items = TrainingItem.items(from: [card(firstDay: 0, secondDay: 9), card(firstDay: 0, secondDay: 4)], calendar: calendar)
         #expect(items.map(\.target.elapsedDays) == [4, 9])
     }
 
@@ -66,50 +66,20 @@ struct OptimizerTests {
         return Card(question: "q", answer: "a", learningState: LearningState(phase: .relearning, stability: 1, difficulty: 5, lastReview: start, due: start, reviews: 3), log: log)
     }
 
-    @Test func revealedReviewsAreNoTargetsButHistoryIfAskedSo() {
-        let items = TrainingItem.items(from: [cardWithRevealedReview()], calendar: calendar, revealedAreTargets: false)
-        #expect(items.map(\.target.elapsedDays) == [2])
-        #expect(items[0].reviews.map(\.mode) == [.typed, .revealed, .typed])
-    }
-
-    @Test func revealedReviewsAreTargetsByDefaultOfTheFork() {
-        let items = TrainingItem.items(from: [cardWithRevealedReview()], calendar: calendar, revealedAreTargets: true)
-        #expect(items.map(\.target.elapsedDays) == [1, 2])
-        #expect(items.map(\.target.mode) == [.revealed, .typed])
-        #expect(items.map(\.reviews.count) == [2, 3])
-    }
-
-    @Test func theOptimizerCountsRevealedReviewsOnlyWithTheOption() {
+    /// Every review is a target, revealed or typed: the optimizer learns from all of them.
+    @Test func revealedAndTypedReviewsAreTargets() {
         let cards = [cardWithRevealedReview()]
-        var options = LearningOptions()
-        #expect(options.optimizeFromRevealed)
-        #expect(FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar).reviewCount == 2)
-        options.optimizeFromRevealed = false
-        #expect(FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar).reviewCount == 1)
-    }
-
-    @Test func theOptimizerCarriesTheWeightOfRevealedRecalls() {
-        var options = LearningOptions()
-        options.revealedRecallWeight = 0.6
-        #expect(FSRSOptimizer(cards: [], learningOptions: options, calendar: calendar).revealedRecallWeight == 0.6)
+        let items = TrainingItem.items(from: cards, calendar: calendar)
+        #expect(items.map(\.target.elapsedDays) == [1, 2])
+        #expect(items.map(\.reviews.count) == [2, 3])
+        #expect(FSRSOptimizer(cards: cards, learningOptions: LearningOptions(), calendar: calendar).reviewCount == 2)
     }
 
     // MARK: - Model and gradient
 
-    /// `items` with every other review before the target revealed.
-    func revealingHistories(of items: [TrainingItem]) -> [TrainingItem] {
-        items.map { item in
-            var item = item
-            for index in item.reviews.indices.dropLast() where index % 2 == 1 {
-                item.reviews[index].mode = .revealed
-            }
-            return item
-        }
-    }
-
     @Test func forwardPassMatchesTheModel() {
         let parameters = SyntheticLearner.unusual
-        let gradient = FSRSGradient(weights: parameters.weights, revealedRecallWeight: 1)
+        let gradient = FSRSGradient(weights: parameters.weights)
         let fsrs = FSRS(parameters: parameters)
         for item in syntheticItems(cards: 40, seed: 1) {
             var memory: FSRS.Memory?
@@ -120,36 +90,16 @@ struct OptimizerTests {
         }
     }
 
-    @Test(arguments: [1.0 / 3, 0.5, 1.0])
-    func forwardPassWithRevealedReviewsMatchesTheScheduler(weight: Double) {
-        var learningOptions = LearningOptions()
-        learningOptions.parameters = SyntheticLearner.unusual
-        learningOptions.revealedRecallWeight = weight
-        let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
-        let gradient = FSRSGradient(weights: SyntheticLearner.unusual.weights, revealedRecallWeight: weight)
-        let items = revealingHistories(of: syntheticItems(cards: 40, seed: 1))
-        #expect(items.contains { $0.history.contains { $0.mode == .revealed && $0.grade.isRecall && $0.elapsedDays > 0 } })
-        for item in items {
-            var memory: FSRS.Memory?
-            for review in item.history {
-                memory = scheduler.memory(after: memory, elapsedDays: review.elapsedDays, grade: review.grade, mode: review.mode)
-            }
-            #expect(abs(gradient.stability(before: item) - memory!.stability) <= 1e-9 * memory!.stability)
-        }
-    }
-
-    @Test(arguments: [false, true])
-    func gradientMatchesFiniteDifferences(revealing: Bool) {
-        let synthetic = syntheticItems(cards: 40, seed: 2)
-        let items = FSRSOptimizer.recencyWeighted(revealing ? revealingHistories(of: synthetic) : synthetic)[...]
+    @Test func gradientMatchesFiniteDifferences() {
+        let items = FSRSOptimizer.recencyWeighted(syntheticItems(cards: 40, seed: 2))[...]
         var weights = SyntheticLearner.unusual.weights
         weights[7] = 0.05  // away from its lower bound
         var analytic = [Double](repeating: 0, count: FSRSParameters.count)
-        _ = FSRSGradient(weights: weights, revealedRecallWeight: 0.5).lossAndGradient(of: items, into: &analytic)
+        _ = FSRSGradient(weights: weights).lossAndGradient(of: items, into: &analytic)
 
         func loss(_ weights: [Double]) -> Double {
             var ignored = [Double](repeating: 0, count: FSRSParameters.count)
-            return FSRSGradient(weights: weights, revealedRecallWeight: 0.5).lossAndGradient(of: items, into: &ignored)
+            return FSRSGradient(weights: weights).lossAndGradient(of: items, into: &ignored)
         }
         for i in weights.indices {
             let h = 1e-6 * max(1, abs(weights[i]))
@@ -190,17 +140,17 @@ struct OptimizerTests {
             TrainingItem(reviews: [TrainingReview(grade: .good, elapsedDays: 0), TrainingReview(grade: second, elapsedDays: 3)])
         }
         let few = Array(repeating: item(.good), count: 5)
-        #expect(try FSRSOptimizer(items: few, relearningSteps: 2, revealedRecallWeight: 1).computeParameters() == .default)
+        #expect(try FSRSOptimizer(items: few, relearningSteps: 2).computeParameters() == .default)
 
         // Too few to train, enough to fit the initial stabilities.
         let some = Array(repeating: item(.good), count: 30) + Array(repeating: item(.again), count: 10)
-        let parameters = try FSRSOptimizer(items: some, relearningSteps: 2, revealedRecallWeight: 1).computeParameters()
+        let parameters = try FSRSOptimizer(items: some, relearningSteps: 2).computeParameters()
         #expect(parameters.weights[4...] == FSRSParameters.default.weights[4...])
         #expect(parameters[2] != FSRSParameters.default[2])
     }
 
     @Test func trainingImprovesPredictions() throws {
-        let optimizer = FSRSOptimizer(items: syntheticItems(cards: 600, seed: 4), relearningSteps: 2, revealedRecallWeight: 1)
+        let optimizer = FSRSOptimizer(items: syntheticItems(cards: 600, seed: 4), relearningSteps: 2)
         var reported: [Double] = []
         let parameters = try optimizer.computeParameters { reported.append($0) }
 
@@ -212,31 +162,11 @@ struct OptimizerTests {
         #expect(reported.last == 1)
     }
 
-    /// A learner whose revealed recalls gain 40 % of FSRS's stability, half of whose
-    /// reviews are revealed: the model that knows the weight predicts them best.
-    @Test func evaluationPrefersTheWeightOfTheLearner() throws {
-        let items = syntheticItems(cards: 500, seed: 6, revealedShare: 0.5, revealedRecallWeight: 0.4)
-        #expect(items.contains { $0.reviews.contains { $0.mode == .revealed } })
-        func logLoss(weight: Double) throws -> Double {
-            try #require(FSRSOptimizer(items: items, relearningSteps: 2, revealedRecallWeight: weight).evaluate(SyntheticLearner.unusual)).logLoss
-        }
-        let right = try logLoss(weight: 0.4)
-        #expect(right < (try logLoss(weight: 1)))
-        #expect(right < (try logLoss(weight: 1.0 / 3)))
-    }
-
-    /// Learning from revealed targets uses reviews that typed-only training discards, and
-    /// the parameters it finds predict them better than the defaults.
+    /// Revealed reviews are targets, and the parameters learned from them predict them better than the defaults.
     @Test func trainingLearnsFromRevealedTargets() throws {
-        var learner = SyntheticLearner(parameters: SyntheticLearner.unusual, seed: 7, revealedShare: 0.8, revealedRecallWeight: 0.6)
+        var learner = SyntheticLearner(parameters: SyntheticLearner.unusual, seed: 7, revealedShare: 0.8)
         let cards = learner.histories(cards: 600, days: 365).enumerated().map { $1.card(index: $0, calendar: calendar) }
-        var options = LearningOptions()
-        options.revealedRecallWeight = 0.6
-        let all = FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar)
-        options.optimizeFromRevealed = false
-        let typedOnly = FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar)
-        #expect(all.reviewCount > typedOnly.reviewCount * 2)
-
+        let all = FSRSOptimizer(cards: cards, learningOptions: LearningOptions(), calendar: calendar)
         let parameters = try all.computeParameters()
         let before = try #require(all.evaluate(.default))
         let after = try #require(all.evaluate(parameters))
@@ -245,7 +175,7 @@ struct OptimizerTests {
     }
 
     @Test func trainingCanBeCancelled() async throws {
-        let optimizer = FSRSOptimizer(items: syntheticItems(cards: 300, seed: 5), relearningSteps: 2, revealedRecallWeight: 1)
+        let optimizer = FSRSOptimizer(items: syntheticItems(cards: 300, seed: 5), relearningSteps: 2)
         let task = Task { try optimizer.computeParameters() }
         task.cancel()
         await #expect(throws: CancellationError.self) { try await task.value }
@@ -274,7 +204,7 @@ struct OptimizerTests {
         }
         let histories = try JSONDecoder().decode([SyntheticLearner.History].self, from: load("fsrs-reference-histories"))
         let reference = try JSONDecoder().decode(Reference.self, from: load("fsrs-reference-results"))
-        return (FSRSOptimizer(items: items(histories), relearningSteps: 2, revealedRecallWeight: 1), reference)
+        return (FSRSOptimizer(items: items(histories), relearningSteps: 2), reference)
     }
 
     @Test func evaluationMatchesFSRSRS() throws {

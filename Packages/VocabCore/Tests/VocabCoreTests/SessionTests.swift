@@ -145,7 +145,7 @@ struct SessionTests {
         let current = deck.card(withID: study.session.currentCardID!)!
         let card = study.review(.good, of: current, with: deck.learningOptions, at: now, calendar: .testing)!
         var random = SeededRandom(seed: 1)
-        let expected = Scheduler(learningOptions: deck.learningOptions, calendar: .testing).review(current, grade: .good, at: now, using: &random)
+        let expected = Scheduler(learningOptions: deck.learningOptions, calendar: .testing).review(current, grade: .good, at: now, mode: .revealed, using: &random)
         #expect(card == expected)
         #expect(study.session.reviewCount == 1)
     }
@@ -516,7 +516,7 @@ struct SessionTests {
         _ = deck.apply(change, day: 100)
 
         var random = SeededRandom(seed: 0)  // unused without fuzzing
-        let expected = Scheduler(learningOptions: deck.learningOptions, calendar: later).review(card, grade: .good, at: now, using: &random)
+        let expected = Scheduler(learningOptions: deck.learningOptions, calendar: later).review(card, grade: .good, at: now, mode: .revealed, using: &random)
         #expect(deck.cards == [expected])
         #expect(expected.learningState?.due != Scheduler(learningOptions: deck.learningOptions, calendar: .testing).review(card, grade: .good, at: now, using: &random).learningState?.due)
     }

@@ -43,7 +43,7 @@ struct AddCardForm: View {
             HStack(spacing: 8) {
                 TextField("Question", text: $question)
                     .focused($focus, equals: .question)
-                TextField("Answer", text: $answer, prompt: Text("Answer (alternatives separated by /)"))
+                TextField("Answer", text: $answer)
                     .focused($focus, equals: .answer)
                 TextField("Hint", text: $hint, prompt: Text("Hint (optional)"))
                     .focused($focus, equals: .hint)

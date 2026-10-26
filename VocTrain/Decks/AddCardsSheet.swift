@@ -162,7 +162,7 @@ struct AddCardsSheet: View {
                 .focused($focus, equals: .question)
                 .submitLabel(.next)
                 .onSubmit { focus = .answer }
-            TextField("Answer", text: $answer, prompt: Text("Answer (alternatives separated by /)"))
+            TextField("Answer", text: $answer)
                 .focused($focus, equals: .answer)
                 .submitLabel(.next)
                 .onSubmit { focus = .hint }
