@@ -12,6 +12,8 @@ struct CardListView: View {
     var addCards: (() -> Void)?
     /// Whether the inspector is open, when the window keeps that for its menu; else the list keeps it.
     var inspector: Binding<Bool>?
+    /// What the page shows above the scope bar, in the same top bar: the deck page's strip.
+    var header: AnyView?
     @State private var selection = Set<Card.ID>()
     @State private var sortOrder = [KeyPathComparator(\CardRow.position)]
     @State private var columnCustomization = TableColumnCustomization<CardRow>()
@@ -63,95 +65,100 @@ struct CardListView: View {
     private func list(at now: Date) -> some View {
         let rows = rows(at: now)
 
-        return VStack(spacing: 0) {
-            ScopeBar(scope: $scope, counts: document.deck.filterCounts(at: now))
-
-            Divider()
-
-            Table(rows, selection: $selection, sortOrder: sortOrderKeepingFocus, columnCustomization: $columnCustomization) {
-                TableColumn("Question", value: \.question) { row in
-                    SideText(text: row.question, image: row.media.questionImage, audio: row.media.questionAudio)
-                }
-                .customizationID("question")
-                .disabledCustomizationBehavior([.reorder, .visibility])
-                TableColumn("Answer", value: \.answer) { row in
-                    SideText(text: row.answer, image: row.media.answerImage, audio: row.media.answerAudio)
-                }
-                .customizationID("answer")
-                .disabledCustomizationBehavior([.reorder, .visibility])
-                TableColumn("Hint", value: \.hint)
-                    .customizationID("hint")
-                    .disabledCustomizationBehavior([.reorder, .visibility])
-                TableColumn("Kind", value: \.kindRank) { row in
-                    Text(row.kind?.title ?? "")
-                        .foregroundStyle(.secondary)
-                }
-                .width(min: 130, ideal: 160)
-                .customizationID("kind")
-                .disabledCustomizationBehavior([.reorder, .visibility])
-                TableColumn("Maturity", value: \.categoryRank) { row in
-                    MaturityLabel(category: row.category)
-                }
-                .width(min: 90, ideal: 110)
-                .customizationID("maturity")
-                .disabledCustomizationBehavior([.reorder, .visibility])
-                TableColumn("Due", value: \.dueSortKey) { row in
-                    // Formatted per visible cell rather than for all rows up front.
-                    DueText(due: row.due, isSuspended: row.isSuspended, now: now)
-                }
-                .width(min: 80, ideal: 110)
-                .customizationID("due")
-                .disabledCustomizationBehavior([.reorder, .visibility])
+        // The scope and status bars are bars of the table, so the table is flush with its pane: an NSTableView that is
+        // not drew its scroll edge effect over the view above it, blurring the scope bar (macOS 26, seen live 26.10).
+        return Table(rows, selection: $selection, sortOrder: sortOrderKeepingFocus, columnCustomization: $columnCustomization) {
+            TableColumn("Question", value: \.question) { row in
+                SideText(text: row.question, image: row.media.questionImage, audio: row.media.questionAudio)
             }
-            .focused($tableIsFocused)
-            .background(TableClickFocus())
-            // A new sort order builds a new table: diffing the old order against the
-            // new one moves every row on its own, which is slow with many cards (#168).
-            // The column widths live in `columnCustomization`, and the focus moves over
-            // through `sortOrderKeepingFocus`.
-            .id(sortOrder)
-            .contextMenu(forSelectionType: Card.ID.self) { ids in
-                if !ids.isEmpty {
-                    Button("Show Details") {
-                        selection = ids
-                        showingInspector.wrappedValue = true
-                    }
-                    Group {
-                        if ids.count == 1, let id = ids.first {
-                            Button("Edit…") { edit(id) }
-                        }
-                        SuspensionButtons(document: document, ids: ids)
-                        Button("Reset Learning State") {
-                            document.resetLearningState(of: ids)
-                        }
-                        Divider()
-                        Button("Delete", role: .destructive) {
-                            delete(ids)
-                        }
-                    }
-                    .disabled(!isEditable)
-                }
-            } primaryAction: { ids in
-                // A double-click edits one card and shows the details of several.
-                selection = ids
-                if ids.count == 1, let id = ids.first {
-                    edit(id)
-                } else {
+            .customizationID("question")
+            .disabledCustomizationBehavior([.reorder, .visibility])
+            TableColumn("Answer", value: \.answer) { row in
+                SideText(text: row.answer, image: row.media.answerImage, audio: row.media.answerAudio)
+            }
+            .customizationID("answer")
+            .disabledCustomizationBehavior([.reorder, .visibility])
+            TableColumn("Hint", value: \.hint)
+                .customizationID("hint")
+                .disabledCustomizationBehavior([.reorder, .visibility])
+            TableColumn("Kind", value: \.kindRank) { row in
+                Text(row.kind?.title ?? "")
+                    .foregroundStyle(.secondary)
+            }
+            .width(min: 130, ideal: 160)
+            .customizationID("kind")
+            .disabledCustomizationBehavior([.reorder, .visibility])
+            TableColumn("Maturity", value: \.categoryRank) { row in
+                MaturityLabel(category: row.category)
+            }
+            .width(min: 90, ideal: 110)
+            .customizationID("maturity")
+            .disabledCustomizationBehavior([.reorder, .visibility])
+            TableColumn("Due", value: \.dueSortKey) { row in
+                // Formatted per visible cell rather than for all rows up front.
+                DueText(due: row.due, isSuspended: row.isSuspended, now: now)
+            }
+            .width(min: 80, ideal: 110)
+            .customizationID("due")
+            .disabledCustomizationBehavior([.reorder, .visibility])
+        }
+        .focused($tableIsFocused)
+        .background(TableClickFocus())
+        // A new sort order builds a new table: diffing the old order against the
+        // new one moves every row on its own, which is slow with many cards (#168).
+        // The column widths live in `columnCustomization`, and the focus moves over
+        // through `sortOrderKeepingFocus`.
+        .id(sortOrder)
+        .contextMenu(forSelectionType: Card.ID.self) { ids in
+            if !ids.isEmpty {
+                Button("Show Details") {
+                    selection = ids
                     showingInspector.wrappedValue = true
                 }
-            }
-            .onDeleteCommand {
-                delete(selection)
-            }
-            .overlay {
-                if rows.isEmpty {
-                    emptyState
+                Group {
+                    if ids.count == 1, let id = ids.first {
+                        Button("Edit…") { edit(id) }
+                    }
+                    SuspensionButtons(document: document, ids: ids)
+                    Button("Reset Learning State") {
+                        document.resetLearningState(of: ids)
+                    }
+                    Divider()
+                    Button("Delete", role: .destructive) {
+                        delete(ids)
+                    }
                 }
+                .disabled(!isEditable)
             }
-
-            Divider()
-
-            StatusBar(total: document.deck.cards.count, shownCount: rows.count, isFiltered: !searchText.isEmpty || scope != .all)
+        } primaryAction: { ids in
+            // A double-click edits one card and shows the details of several.
+            selection = ids
+            if ids.count == 1, let id = ids.first {
+                edit(id)
+            } else {
+                showingInspector.wrappedValue = true
+            }
+        }
+        .onDeleteCommand {
+            delete(selection)
+        }
+        .overlay {
+            if rows.isEmpty {
+                emptyState
+            }
+        }
+        .safeAreaBar(edge: .top, spacing: 0) {
+            VStack(spacing: 0) {
+                header
+                ScopeBar(scope: $scope, counts: document.deck.filterCounts(at: now))
+                Divider()
+            }
+        }
+        .safeAreaBar(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                Divider()
+                StatusBar(total: document.deck.cards.count, shownCount: rows.count, isFiltered: !searchText.isEmpty || scope != .all)
+            }
         }
     }
 

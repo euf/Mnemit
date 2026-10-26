@@ -70,14 +70,17 @@ struct DeckPageContent: View {
     private var canEdit: Bool { isEditable && document.isReadyToEdit }
 
     var body: some View {
-        VStack(spacing: 0) {
-            strip
-            Divider()
+        // The strip is a bar over the page's content, in the table's own top bar on Cards: an NSTableView that is not
+        // flush with its pane draws its scroll edge effect over the views above it (macOS 26, seen live 26.10).
+        Group {
             switch screen {
             case .cards:
-                CardListView(document: document, isEditable: canEdit, shownCard: shownCard, addCards: { addingCards = true }, inspector: $showsInspector)
+                CardListView(
+                    document: document, isEditable: canEdit, shownCard: shownCard, addCards: { addingCards = true }, inspector: $showsInspector,
+                    header: AnyView(stripBar))
             case .statistics:
                 StatisticsView(document: document)
+                    .safeAreaBar(edge: .top, spacing: 0) { stripBar }
             }
         }
         .toolbar {
@@ -135,6 +138,13 @@ struct DeckPageContent: View {
 
     /// The word of the deck and its one button: the cards of today's plan, Done with the next review or Paused, and
     /// Study This Deck, or Learn 10 New Words once nothing is left.
+    private var stripBar: some View {
+        VStack(spacing: 0) {
+            strip
+            Divider()
+        }
+    }
+
     private var strip: some View {
         let counts = document.dueCards.counts
         let hasCards = !document.deck.cards.isEmpty
