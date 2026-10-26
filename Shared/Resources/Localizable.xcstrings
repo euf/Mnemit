@@ -4,28 +4,6 @@
     "%@ %@": {
       "shouldTranslate": false
     },
-    "%@ left": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "noch %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ ακόμη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "осталось %@"
-          }
-        }
-      }
-    },
     "%@ min": {
       "localizations": {
         "de": {
@@ -334,9 +312,6 @@
         }
       }
     },
-    "%@ → %@": {
-      "shouldTranslate": false
-    },
     "%@, %lld cards": {
       "localizations": {
         "de": {
@@ -418,100 +393,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%@, %lld карточки"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld": {
-      "shouldTranslate": false
-    },
-    "%lld / %lld": {
-      "shouldTranslate": false
-    },
-    "%lld answers": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Antwort"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Antworten"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld απάντηση"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld απαντήσεις"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld answer"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld answers"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld ответа"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld ответов"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld ответ"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld ответа"
                 }
               }
             }
@@ -871,94 +752,6 @@
         }
       }
     },
-    "%lld cards left (caption)": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karte übrig"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karten übrig"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld κάρτα που απομένει"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld κάρτες που απομένουν"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld card left"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld cards left"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточки осталось"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточек осталось"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточка осталась"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточки осталось"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld cards selected": {
       "localizations": {
         "de": {
@@ -1040,94 +833,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "выбрано %lld карточки"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld cards today": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karte heute"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karten heute"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld κάρτα σήμερα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld κάρτες σήμερα"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld card today"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld cards today"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточки сегодня"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточек сегодня"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточка сегодня"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld карточки сегодня"
                 }
               }
             }
@@ -1883,28 +1588,6 @@
         }
       }
     },
-    "%lld left": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "noch %lld"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld ακόμη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "осталось %lld"
-          }
-        }
-      }
-    },
     "%lld lines without a word and a translation are left out.": {
       "localizations": {
         "de": {
@@ -1989,28 +1672,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "%lld min": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Min."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld λεπ."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld мин"
           }
         }
       }
@@ -2611,28 +2272,6 @@
         }
       }
     },
-    "%lld or ↩": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld oder ↩"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld ή ↩"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld или ↩"
-          }
-        }
-      }
-    },
     "%lld review": {
       "localizations": {
         "de": {
@@ -2941,28 +2580,6 @@
         }
       }
     },
-    "%lld suspended": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld ausgesetzt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld σε αναστολή"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld приостановлено"
-          }
-        }
-      }
-    },
     "%lld with review history": {
       "localizations": {
         "de": {
@@ -3066,94 +2683,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld слова в памяти"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld words in memory!": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Wort im Gedächtnis!"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Wörter im Gedächtnis!"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld λέξη στη μνήμη!"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld λέξεις στη μνήμη!"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld word in memory!"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld words in memory!"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слова в памяти!"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слов в памяти!"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слово в памяти!"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слова в памяти!"
                 }
               }
             }
@@ -4135,94 +3664,6 @@
         }
       }
     },
-    "Add %lld cards to %@": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karte zu %@ hinzufügen"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Karten zu %@ hinzufügen"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Προσθήκη %lld κάρτας σε %@"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Προσθήκη %lld καρτών σε %@"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Add %lld card to %@"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Add %lld cards to %@"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Добавить %lld карточки в %@"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Добавить %lld карточек в %@"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Добавить %lld карточку в %@"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Добавить %lld карточки в %@"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Add Card": {
       "localizations": {
         "de": {
@@ -4949,28 +4390,6 @@
         }
       }
     },
-    "Answer:": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Antwort:"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Απάντηση:"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ответ:"
-          }
-        }
-      }
-    },
     "Any key closes this help.": {
       "localizations": {
         "de": {
@@ -5652,28 +5071,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Наверстать"
-          }
-        }
-      }
-    },
-    "Catch Up studies the cards still left in today's plan once the ring is closed.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nachholen übt die Karten, die im Plan für heute noch übrig sind, sobald der Ring geschlossen ist."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Η «Αναπλήρωση» μελετά τις κάρτες που έμειναν στο πρόγραμμα της ημέρας, αφού κλείσει ο κύκλος."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "«Наверстать» разбирает карточки, которые ещё остались в плане дня, когда кольцо уже замкнуто."
           }
         }
       }
@@ -7126,28 +6523,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пока всё"
-          }
-        }
-      }
-    },
-    "Done for today": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Für heute erledigt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τέλος για σήμερα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На сегодня всё"
           }
         }
       }
@@ -8736,28 +8111,6 @@
         }
       }
     },
-    "Incomplete": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unvollständig"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ελλιπές"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неполно"
-          }
-        }
-      }
-    },
     "Keep Going": {
       "localizations": {
         "de": {
@@ -9132,50 +8485,6 @@
         }
       }
     },
-    "Learn 10 New Words adds ten new words to study at once when nothing is left for today.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„10 neue Wörter lernen“ fügt zehn neue Wörter zum sofortigen Lernen hinzu, wenn für heute nichts mehr übrig ist."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Το «Μάθε 10 νέες λέξεις» προσθέτει αμέσως δέκα νέες λέξεις, όταν δεν έχει μείνει τίποτα για σήμερα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "«Выучить 10 новых слов» сразу добавляет десять новых слов, когда на сегодня ничего не осталось."
-          }
-        }
-      }
-    },
-    "Learn from revealed reviews": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aus aufgedeckten Abfragen lernen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μάθηση από επαναλήψεις με αποκάλυψη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Учитывать оценки после показа ответа"
-          }
-        }
-      }
-    },
     "Learning": {
       "localizations": {
         "de": {
@@ -9238,28 +8547,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Опции колоды…"
-          }
-        }
-      }
-    },
-    "Learning State": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernstand"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κατάσταση εκμάθησης"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Состояние обучения"
           }
         }
       }
@@ -10078,28 +9365,6 @@
         }
       }
     },
-    "Next": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weiter"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επόμενο"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Далее"
-          }
-        }
-      }
-    },
     "Next milestone": {
       "localizations": {
         "de": {
@@ -10118,28 +9383,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Следующая веха"
-          }
-        }
-      }
-    },
-    "Next: %@ · %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weiter: %@ · %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επόμενο: %@ · %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Далее: %@ · %@"
           }
         }
       }
@@ -10514,50 +9757,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Заметка"
-          }
-        }
-      }
-    },
-    "Nothing due": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nichts fällig"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τίποτα προς επανάληψη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нечего повторять"
-          }
-        }
-      }
-    },
-    "Nothing due · next %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nichts fällig · wieder %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τίποτα προς επανάληψη · ξανά %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нечего повторять · снова %@"
           }
         }
       }
@@ -11090,28 +10289,6 @@
         }
       }
     },
-    "Phase": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Phase"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Φάση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фаза"
-          }
-        }
-      }
-    },
     "Pick or create a folder named Mnemit.": {
       "localizations": {
         "de": {
@@ -11306,28 +10483,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Предпросмотр"
-          }
-        }
-      }
-    },
-    "Production": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Produktion"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Παραγωγή"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Воспроизведение"
           }
         }
       }
@@ -11570,28 +10725,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вспомнили карточку — кольцо сдвигается. Новое слово возвращается под стопку, пока вы не вспомните его дважды."
-          }
-        }
-      }
-    },
-    "Recognition": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erkennung"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αναγνώριση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Узнавание"
           }
         }
       }
@@ -12058,28 +11191,6 @@
         }
       }
     },
-    "Response": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eingabe"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πληκτρολόγηση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ввод"
-          }
-        }
-      }
-    },
     "Restore Defaults": {
       "localizations": {
         "de": {
@@ -12212,50 +11323,6 @@
         }
       }
     },
-    "Revealed": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgedeckt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Με αποκάλυψη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Показан ответ"
-          }
-        }
-      }
-    },
-    "Revealed reviews": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgedeckte Abfragen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επαναλήψεις με αποκάλυψη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оценки после показа ответа"
-          }
-        }
-      }
-    },
     "Review": {
       "localizations": {
         "de": {
@@ -12274,28 +11341,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оценка"
-          }
-        }
-      }
-    },
-    "Review Log": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verlauf"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ιστορικό επαναλήψεων"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Лог оценок"
           }
         }
       }
@@ -12934,28 +11979,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Общие колоды на AnkiWeb…"
-          }
-        }
-      }
-    },
-    "Show": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zeigen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Εμφάνιση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Показать"
           }
         }
       }
@@ -13660,28 +12683,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "Study %lld": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernen %lld"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μελέτη %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Учить %lld"
           }
         }
       }
@@ -14522,28 +13523,6 @@
         }
       }
     },
-    "The ring is your goal for the day: it fills as you study and closes when you have done what today's plan asks.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der Ring ist dein Ziel für den Tag: Er füllt sich beim Lernen und schließt sich, wenn du erledigt hast, was der Plan für heute verlangt."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ο κύκλος είναι ο στόχος σου για τη μέρα: γεμίζει όσο μελετάς και κλείνει όταν κάνεις ό,τι ζητά το πρόγραμμα της ημέρας."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Кольцо — твоя цель на день: оно заполняется, пока ты учишь, и замыкается, когда ты сделал всё, что просит план дня."
-          }
-        }
-      }
-    },
     "The streak step of a day, the cards that fit the first two minutes of its plan, keeps the streak. One missed day is repaired when the next day closes its ring; two missed days in a row end it.": {
       "localizations": {
         "de": {
@@ -14830,28 +13809,6 @@
         }
       }
     },
-    "Time to study": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zeit zum Lernen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ώρα για μελέτη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пора учиться"
-          }
-        }
-      }
-    },
     "Today": {
       "localizations": {
         "de": {
@@ -14940,28 +13897,6 @@
         }
       }
     },
-    "Today: %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heute: %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σήμερα: %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сегодня: %@"
-          }
-        }
-      }
-    },
     "Total": {
       "localizations": {
         "de": {
@@ -14980,28 +13915,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Всего"
-          }
-        }
-      }
-    },
-    "Total cards %lld · Suspended %lld": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten gesamt %lld · Ausgesetzt %lld"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σύνολο καρτών %lld · Σε αναστολή %lld"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Всего карточек: %lld · Приостановлено: %lld"
           }
         }
       }
@@ -15134,28 +14047,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "С вводом"
-          }
-        }
-      }
-    },
-    "Typing": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eintippen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πληκτρολόγηση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ввод"
           }
         }
       }
@@ -15556,28 +14447,6 @@
         }
       }
     },
-    "Version %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Version %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Έκδοση %@"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Версия %@"
-          }
-        }
-      }
-    },
     "Version %@ (%@)": {
       "localizations": {
         "de": {
@@ -15772,28 +14641,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ключ слова"
-          }
-        }
-      }
-    },
-    "Word cards": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wortkarten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες λέξεων"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки слов"
           }
         }
       }
@@ -16758,28 +15605,6 @@
         }
       }
     },
-    "this deck": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "diesem Stapel"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "αυτή την τράπουλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "эту колоду"
-          }
-        }
-      }
-    },
     "tomorrow": {
       "localizations": {
         "de": {
@@ -16996,50 +15821,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "≈ 2 min is enough to start.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "≈ 2 Min. reichen für den Anfang."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Για αρχή αρκούν ≈ 2 λεπ."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для начала хватит ≈ 2 мин."
-          }
-        }
-      }
-    },
-    "≈ 2 min is enough.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "≈ 2 Min. reichen."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αρκούν ≈ 2 λεπ."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Хватит ≈ 2 мин."
           }
         }
       }

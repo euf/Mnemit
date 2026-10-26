@@ -90,25 +90,25 @@ struct LocalizationTests {
         }
     }
 
-    /// The lines of the stream at rest: "≈ +1 card/day" but "≈ +2 cards/day".
-    @Test func streamPhrasesAreSingularForOne() throws {
+    /// A text with a count has the plural forms of each language: Russian has four.
+    @Test func countsFollowThePluralsOfTheLanguage() throws {
         let english: [(String.LocalizationValue, String)] = [
-            ("\(1) answers", "1 answer"),
-            ("\(2) answers", "2 answers"),
+            ("\(1) cards selected", "1 card selected"),
+            ("\(2) cards selected", "2 cards selected"),
         ]
         let german: [(String.LocalizationValue, String)] = [
-            ("\(1) answers", "1 Antwort"),
-            ("\(2) answers", "2 Antworten"),
+            ("\(1) cards selected", "1 Karte ausgewählt"),
+            ("\(2) cards selected", "2 Karten ausgewählt"),
         ]
         let russian: [(String.LocalizationValue, String)] = [
-            ("\(1) answers", "1 ответ"),
-            ("\(2) answers", "2 ответа"),
-            ("\(5) answers", "5 ответов"),
-            ("\(21) answers", "21 ответ"),
+            ("\(1) cards selected", "выбрана 1 карточка"),
+            ("\(2) cards selected", "выбрано 2 карточки"),
+            ("\(5) cards selected", "выбрано 5 карточек"),
+            ("\(21) cards selected", "выбрана 21 карточка"),
         ]
         let greek: [(String.LocalizationValue, String)] = [
-            ("\(1) answers", "1 απάντηση"),
-            ("\(2) answers", "2 απαντήσεις"),
+            ("\(1) cards selected", "1 επιλεγμένη κάρτα"),
+            ("\(2) cards selected", "2 επιλεγμένες κάρτες"),
         ]
         for (language, cases) in [("en", english), ("de", german), ("ru", russian), ("el", greek)] {
             for (value, expected) in cases {
