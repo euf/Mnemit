@@ -147,11 +147,11 @@ final class OpenDeck {
     }
 
     /// Runs after the merger merged what another device wrote to the file (#296). Undo
-    /// takes back neither the merge nor any step before it: it would take back what the
-    /// other device did, or bring back cards it changed since. The session's steps until
-    /// now can no longer be undone.
+    /// takes back neither the merge nor any edit before it: it would take back what the
+    /// other device did, or bring back cards it changed since. The reviews of the session
+    /// stay undoable: an undo changes only the card it graded, and only if the deck holds it.
     private func forgetUndoSteps() {
-        undoManager.removeAllActions()
+        document?.forgetEditUndoSteps()
     }
 }
 

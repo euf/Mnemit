@@ -90,6 +90,11 @@ final class VocabularyDocument: ObservableObject {
     /// goes away, the document can no longer be changed; that happens only as its file
     /// closes, so it tells no observer then.
     private(set) weak var undoManager: UndoManager?
+    /// The target of the undo actions of edits and merges, while reviews and practice register with
+    /// the document itself: a deck read again drops the steps of the first kind and keeps the
+    /// second, see `forgetEditUndoSteps()`. The undo manager holds a target weakly, so the
+    /// document owns it.
+    private let editsUndoTarget = EditsUndoTarget()
     /// Switches the calendar when the machine's time zone changes; ends with the document.
     private var timeZoneObservation: AnyCancellable?
 
@@ -198,8 +203,17 @@ final class VocabularyDocument: ObservableObject {
         objectWillChange.send()
         if let previous = self.undoManager, undoManager != nil {
             previous.removeAllActions(withTarget: self)
+            previous.removeAllActions(withTarget: editsUndoTarget)
         }
         self.undoManager = undoManager
+    }
+
+    /// Drops the undo and redo steps of edits and merges, as the deck is read again after another
+    /// device changed the file (#296): undoing one would take back what the other device did, or
+    /// bring back cards it changed since. The steps of reviews stay: they replace only what the
+    /// learner did with a card the deck still holds, see `DeckChange.learningOnly`.
+    func forgetEditUndoSteps() {
+        undoManager?.removeAllActions(withTarget: editsUndoTarget)
     }
 
     /// The undo manager a change registers with. Every way to change the deck checks
@@ -258,7 +272,7 @@ final class VocabularyDocument: ObservableObject {
     /// back its place with it, see `SessionDriver.grade(_:)`, which checks
     /// `isReadyToEdit` before it grades.
     func applyReview(_ change: DeckChange, alongside companion: UndoCompanion) {
-        perform(change, actionName: String(localized: "Review"), alongside: companion)
+        perform([change], actionName: String(localized: "Review"), alongside: companion, registeringWith: attachedUndoManager, isReview: true)
     }
 
     /// Merges other versions of the deck into it, in turn, as one undo action, see
@@ -302,16 +316,30 @@ final class VocabularyDocument: ObservableObject {
         perform(changes, actionName: actionName, alongside: companion, registeringWith: attachedUndoManager)
     }
 
-    /// Undo and redo register their reverse with the undo manager that runs them.
-    private func perform(_ changes: [DeckChange], actionName: String, alongside companion: UndoCompanion?, registeringWith undoManager: UndoManager) {
+    /// Undo and redo register their reverse with the undo manager that runs them, and with the
+    /// target of the action they undo: the document for a review, `editsUndoTarget` for the rest.
+    private func perform(_ changes: [DeckChange], actionName: String, alongside companion: UndoCompanion?, registeringWith undoManager: UndoManager, isReview: Bool = false) {
         var deck = deck
         let inverses = changes.map { deck.apply($0, at: clock.now, calendar: calendar) }
         self.deck = deck
-        undoManager.registerMainActorUndo(withTarget: self, actionName: actionName) { document, undoManager in
-            document.perform(Array(inverses.reversed()), actionName: actionName, alongside: companion?.reversed, registeringWith: undoManager)
+        let undo: @MainActor (VocabularyDocument, UndoManager) -> Void = { document, undoManager in
+            document.perform(Array(inverses.reversed()), actionName: actionName, alongside: companion?.reversed, registeringWith: undoManager, isReview: isReview)
             companion?.undo()
         }
+        if isReview {
+            undoManager.registerMainActorUndo(withTarget: self, actionName: actionName, handler: undo)
+        } else {
+            editsUndoTarget.document = self
+            undoManager.registerMainActorUndo(withTarget: editsUndoTarget, actionName: actionName) { target, undoManager in
+                if let document = target.document { undo(document, undoManager) }
+            }
+        }
     }
+}
+
+/// What the undo actions of edits and merges register with, see `VocabularyDocument.editsUndoTarget`.
+@MainActor private final class EditsUndoTarget {
+    weak var document: VocabularyDocument?
 }
 
 /// An error with a user-facing message.

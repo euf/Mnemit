@@ -112,7 +112,7 @@ struct DeckAdvancedOptionsScreen: View {
                 Text("New and lapsed cards come back in the session until you have graded them Good this many times.")
             }
 
-            ParametersSection(options: document.option(\.self), cards: document.deck.cards, calendar: document.calendar, appliesAtOnce: true)
+            ParametersSection(options: document.option(\.self), cards: document.deck.trainingCards, calendar: document.calendar, appliesAtOnce: true)
         }
         .monospacedDigit()
         .navigationTitle("Advanced")

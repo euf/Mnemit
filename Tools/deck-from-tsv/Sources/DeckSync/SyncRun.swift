@@ -3,6 +3,10 @@ import VocabCore
 
 /// One run of the tool: reads the TSV and the deck, plans, and unless it is a dry run
 /// backs the deck up and writes it.
+///
+/// The deck is read and written inside one coordinated write (`NSFileCoordinator`), as an app
+/// writes it: iCloud Drive and the apps that have the deck open are told of the change, and
+/// the deck can't change between the read and the write. A dry run only reads.
 public enum SyncRun {
     /// - Returns: The report to print.
     /// - Throws: `SyncError` before anything is written if the input or the deck can't be
@@ -17,15 +21,32 @@ public enum SyncRun {
             throw SyncError("can't read \(options.input.path): \(error.localizedDescription)")
         }
 
-        let exists = FileManager.default.fileExists(atPath: options.deck.path)
+        var coordinationError: NSError?
+        var report: Result<String, any Error>?
+        let coordinator = NSFileCoordinator()
+        let accessor = { (url: URL) in report = Result { try sync(options, input: input, deckAt: url, now: now, calendar: calendar) } }
+        if options.dryRun {
+            coordinator.coordinate(readingItemAt: options.deck, options: [], error: &coordinationError, byAccessor: accessor)
+        } else {
+            coordinator.coordinate(writingItemAt: options.deck, options: .forMerging, error: &coordinationError, byAccessor: accessor)
+        }
+        if let coordinationError {
+            throw SyncError("can't get access to \(options.deck.path): \(coordinationError.localizedDescription)")
+        }
+        return try report!.get()
+    }
+
+    /// Plans and writes at `url`, which the caller holds the coordination of.
+    private static func sync(_ options: SyncOptions, input: SyncInput, deckAt url: URL, now: Date, calendar: StudyCalendar) throws -> String {
+        let exists = FileManager.default.fileExists(atPath: url.path)
         var deck = Deck()
         if exists {
             do {
                 // Read at once: a lazy wrapper listed an empty package when the same
                 // process had replaced the package before.
-                deck = try DeckFile.decode(FileWrapper(url: options.deck, options: .immediate))
+                deck = try DeckFile.decode(FileWrapper(url: url, options: .immediate))
             } catch {
-                throw SyncError("can't read the deck \(options.deck.path): \(error)")
+                throw SyncError("can't read the deck \(url.path): \(error)")
             }
         }
         let before = deck
@@ -53,7 +74,7 @@ public enum SyncRun {
         }
         let optionChanges = OptionOverrides.changes(from: before.learningOptions, to: deck.learningOptions)
 
-        var report = ["\(options.deck.lastPathComponent): \(before.cards.count) → \(deck.cards.count) cards"]
+        var report = ["\(url.lastPathComponent): \(before.cards.count) → \(deck.cards.count) cards"]
         report.append(
             "added \(plan.added.count), edited \(plan.edited.count), adopted \(plan.adopted.count), suspended \(plan.suspended.count), unchanged \(plan.unchanged)"
                 + (skipped > 0 ? ", \(skipped) empty rows skipped" : ""))
@@ -70,10 +91,10 @@ public enum SyncRun {
             return report.joined(separator: "\n")
         }
         if exists {
-            let copy = try Backup.make(of: options.deck, in: options.backupDirectory, at: now)
+            let copy = try Backup.make(of: url, in: options.backupDirectory, at: now)
             report.append("backup: \(copy.path)")
         }
-        try DeckFile.fileWrapper(for: deck).write(to: options.deck, options: .atomic, originalContentsURL: nil)
+        try DeckFile.fileWrapper(for: deck).write(to: url, options: .atomic, originalContentsURL: nil)
         return report.joined(separator: "\n")
     }
 

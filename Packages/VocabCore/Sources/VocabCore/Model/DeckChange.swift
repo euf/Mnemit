@@ -21,6 +21,15 @@ public struct DeckChange: Sendable {
     /// the removals and the cards that come back: those removed are noted `now`, those
     /// that come back dropped. Only a merge and its inverse replace them.
     var deletedCards: [Card.ID: Date]?
+    /// The retired cards that replace `Deck.retiredCards`; `nil` keeps them in step with the
+    /// removals and the cards that come back: a card removed that has a log is retired, a card
+    /// that comes back leaves them. Only a merge and its inverse replace them.
+    var retiredCards: [Card]?
+    /// Whether the upserts replace only the learning of the cards the deck holds (`Card.takeLearning(from:)`)
+    /// and leave a card it lacks out: a review and its inverse. The card may have changed since the
+    /// review, e.g. its text by a merge, and undoing the review must not take that back, nor bring a
+    /// card back that was deleted meanwhile.
+    var learningOnly = false
     /// Media files the deck takes in: those of an import or of a merge, or those a card's new
     /// media come in. Files the deck holds already stay as they are.
     var addedMedia = DeckMedia()
@@ -193,9 +202,16 @@ extension Deck {
             learningOptionsChanged = learningOptionsDate
         }
 
+        inverse.learningOnly = change.learningOnly
+
         if let deletedCards = change.deletedCards {
             inverse.deletedCards = self.deletedCards
             self.deletedCards = deletedCards
+        }
+
+        if let retiredCards = change.retiredCards {
+            inverse.retiredCards = self.retiredCards
+            self.retiredCards = retiredCards
         }
 
         if let learningOptions = change.learningOptions {
@@ -225,12 +241,23 @@ extension Deck {
                     deletedCards[id] = stamp
                 }
             }
+            if change.retiredCards == nil {
+                // The reviews of a deleted card stay (`Deck.retiredCards`).
+                retiredCards.append(contentsOf: inverse.upserts.map(\.card).filter { !$0.log.isEmpty })
+            }
         }
 
         var indices = Dictionary(cards.enumerated().map { ($0.element.id, $0.offset) }) { first, _ in first }
         var insertions: [(card: Card, index: Int)] = []
+        var comingBack = Set<Card.ID>()
         for (card, position) in change.upserts {
             var card = card
+            if change.learningOnly {
+                guard let index = indices[card.id] else { continue }
+                inverse.upserts.append((cards[index], nil))
+                cards[index].takeLearning(from: card)
+                continue
+            }
             if let index = indices[card.id] {
                 if isContentChange, card.hasOtherContent(than: cards[index]) {
                     card.contentChanged = stamp
@@ -253,6 +280,10 @@ extension Deck {
             if change.deletedCards == nil {
                 deletedCards[card.id] = nil
             }
+            comingBack.insert(card.id)
+        }
+        if change.retiredCards == nil, !retiredCards.isEmpty, !comingBack.isEmpty {
+            retiredCards.removeAll { comingBack.contains($0.id) }
         }
         if !insertions.isEmpty {
             cards = Self.inserting(insertions, into: cards)

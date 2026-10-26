@@ -49,7 +49,9 @@ public enum SessionMode: Sendable {
         case var .study(study):
             guard let scheduled = study.review(grade, of: card, with: deck.learningOptions, at: now, calendar: calendar, duration: duration) else { return nil }
             self = .study(study)
-            return .rescheduled(DeckChange(upserts: [scheduled], contentStamp: .keep))
+            var change = DeckChange(upserts: [scheduled], contentStamp: .keep)
+            change.learningOnly = true
+            return .rescheduled(change)
         case var .practice(practice):
             practice.record(grade, with: deck.learningOptions, at: now)
             self = .practice(practice)

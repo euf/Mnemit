@@ -267,6 +267,29 @@ struct SyncRunTests {
         #expect(throws: SyncError.self) { try SyncRun.run(options([tsv.path, deckURL.path, "--suspend-missing"]), now: now) }
     }
 
+    /// An app with the deck open is asked to give the file up for the tool's write, as for any coordinated writer, and for no dry run.
+    @Test func theWriteIsCoordinatedSoOpenAppsHearOfIt() throws {
+        let directory = try scratch()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let deckURL = directory.appendingPathComponent("Greek.mnemit")
+        _ = try writeDeck(at: deckURL, questions: [("a", "α")])
+        let tsv = directory.appendingPathComponent("cards.tsv")
+        try "note\tkind\tquestion\tanswer\thint\nα\tproduction\ta\tα\t\nβ\tproduction\tb\tβ\t\n".write(to: tsv, atomically: true, encoding: .utf8)
+        let app = OpenApp(deckURL)
+        NSFileCoordinator.addFilePresenter(app)
+        defer { NSFileCoordinator.removeFilePresenter(app) }
+
+        _ = try SyncRun.run(options([tsv.path, deckURL.path, "--dry-run"]), now: now)
+        Thread.sleep(forTimeInterval: 0.5)
+        #expect(app.heard == 0)
+
+        _ = try SyncRun.run(options([tsv.path, deckURL.path]), now: now)
+        let deadline = Date().addingTimeInterval(10)
+        while app.heard == 0, Date() < deadline { Thread.sleep(forTimeInterval: 0.05) }
+        #expect(app.heard > 0)
+        #expect(try DeckFile.decode(FileWrapper(url: deckURL, options: .immediate)).cards.count == 2)
+    }
+
     @Test func newDeckIsCreatedWithoutBackup() throws {
         let directory = try scratch()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -315,5 +338,23 @@ struct SyncRunTests {
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-per-session", "0"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-order", "random"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--bogus"]) }
+    }
+}
+
+/// Stands for an app that has the deck open: counts the writers it was asked to give the file up for. Only a
+/// coordinated write asks; the changes of the file system it hears of anyway are not counted.
+final class OpenApp: NSObject, NSFilePresenter, @unchecked Sendable {
+    let presentedItemURL: URL?
+    let presentedItemOperationQueue = OperationQueue()
+    private let count = NSLock()
+    private var writers = 0
+
+    init(_ url: URL) { presentedItemURL = url }
+
+    var heard: Int { count.withLock { writers } }
+
+    func relinquishPresentedItem(toWriter writer: @escaping @Sendable ((@Sendable () -> Void)?) -> Void) {
+        count.withLock { writers += 1 }
+        writer(nil)
     }
 }

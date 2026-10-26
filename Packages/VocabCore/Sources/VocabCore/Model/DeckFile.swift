@@ -15,7 +15,9 @@ import Foundation
 /// a card names its files in the keys `questionImage`, `questionAudio`, `answerImage` and
 /// `answerAudio` of `deck.json`, which are left out for a side without one. Version 5 added
 /// them: an older app version would drop the folder, and the media with it, the next time it
-/// saves the deck, so it rejects the deck instead.
+/// saves the deck, so it rejects the deck instead. So did version 6 for `retired` in `deck.json`,
+/// the cards deleted that had reviews (`Deck.retiredCards`), and their lines in `reviews.jsonl`: an
+/// older app version would drop the key and reject the lines of a card it doesn't know.
 ///
 /// `deck.json` is pretty-printed JSON with sorted keys, so it stays readable and
 /// diffs well. Its keys are spelled out by the records at the end of this file and
@@ -76,7 +78,7 @@ public enum DeckFile {
     /// What decks said in `format` before the app moved to the company's identifiers;
     /// still read, never written.
     static let legacyFormats: Set = ["com.mfluch.voctrain.deck"]
-    public static let currentVersion = 5
+    public static let currentVersion = 6
     /// The oldest version this app version reads: 3 and 4 read as decks without media.
     public static let oldestReadableVersion = 3
     public static let deckFileName = "deck.json"
@@ -114,7 +116,7 @@ public enum DeckFile {
     public static func fileWrapper(for deck: Deck, reviewLog: ReviewLogEncoder = ReviewLogEncoder(), original: URL? = nil) throws -> FileWrapper {
         let deckFile = FileWrapper(regularFileWithContents: try encodeDeck(deck))
         deckFile.preferredFilename = deckFileName
-        let reviewsFile = FileWrapper(regularFileWithContents: reviewLog.encode(deck.cards))
+        let reviewsFile = FileWrapper(regularFileWithContents: reviewLog.encode(deck.trainingCards))
         reviewsFile.preferredFilename = reviewsFileName
         var children = [deckFileName: deckFile, reviewsFileName: reviewsFile]
         children[DeckMedia.folderName] = deck.media.folderWrapper(original: original)
@@ -154,14 +156,18 @@ public enum DeckFile {
             throw Error.notADeck
         }
         var deck = try decode(deckData)
+        // The retired cards keep their reviews in the same file, after those of the cards.
+        var all = deck.trainingCards
         if let reviews = wrapper.fileWrappers?[reviewsFileName]?.regularFileContents {
-            try ReviewLogEncoder.attach(reviews, to: &deck.cards)
-        } else if deck.cards.contains(where: { ($0.learningState?.reviews ?? 0) > 0 }) {
+            try ReviewLogEncoder.attach(reviews, to: &all)
+        } else if all.contains(where: { ($0.learningState?.reviews ?? 0) > 0 }) {
             throw Error.missingReviewLog
         }
-        if let card = deck.cards.first(where: { $0.log.count > ($0.learningState?.reviews ?? 0) }) {
+        if let card = all.first(where: { $0.log.count > ($0.learningState?.reviews ?? 0) }) {
             throw Error.reviewLogTooLong(question: card.question)
         }
+        deck.cards = Array(all[..<deck.cards.count])
+        deck.retiredCards = Array(all[deck.cards.count...])
         if withMedia {
             let named = deck.namedMedia
             if let url {
@@ -234,6 +240,9 @@ extension DeckFile {
         /// Left out while no card was deleted; by ID, so the file stays the same when the
         /// deck is saved again.
         var deletedCards: [DeletionRecord]?
+        /// The cards deleted that had reviews, without their logs, which `reviews.jsonl` holds
+        /// after those of `cards` (`Deck.retiredCards`); left out while there are none.
+        var retired: [CardRecord]?
 
         init(_ deck: Deck) {
             format = DeckFile.format
@@ -245,6 +254,7 @@ extension DeckFile {
             learningOptionsChanged = deck.learningOptionsChanged
             let deletions = deck.deletedCards.map { DeletionRecord(id: $0.key, date: $0.value) }
             deletedCards = deletions.isEmpty ? nil : deletions.sorted { $0.id.uuidString < $1.id.uuidString }
+            retired = deck.retiredCards.isEmpty ? nil : deck.retiredCards.map(CardRecord.init)
         }
 
         func deck() throws -> Deck {
@@ -255,7 +265,8 @@ extension DeckFile {
                     progress: try progress.map { try $0.snapshot() },
                     contentModified: contentModified,
                     learningOptionsChanged: learningOptionsChanged,
-                    deletedCards: Dictionary((deletedCards ?? []).map { ($0.id, $0.date) }) { first, _ in first }
+                    deletedCards: Dictionary((deletedCards ?? []).map { ($0.id, $0.date) }) { first, _ in first },
+                    retiredCards: (retired ?? []).map(\.card)
                 )
             } catch Deck.Error.duplicateCardID(let card) {
                 throw DeckFile.Error.duplicateCardID(question: card.question)

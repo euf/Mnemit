@@ -10,10 +10,14 @@ extension DeckChange {
     ///   later `contentModified`, or of `deck` if they are the same, followed by the
     ///   cards only the other version holds.
     /// - A card deleted in one version (`Deck.deletedCards`) and still in the other is
-    ///   deleted, with its reviews, unless something was done to it after the deletion:
+    ///   deleted, unless something was done to it after the deletion:
     ///   edited, reset, suspended or resumed, reviewed (`Card.lastChange`). A card
     ///   the other version changed later than the deletion stays, so a review never
     ///   gets lost; with the same time, too.
+    /// - The reviews of a deleted card stay: the retired cards (`Deck.retiredCards`) of both versions
+    ///   are joined by ID, their logs like those of a card, and a card the rule above deletes
+    ///   is retired with its log joined to the one the other version retired, if it did. A card that stays
+    ///   takes the log its retired version holds, so a review never gets lost that way either.
     /// - The texts, the media, the note and the kind of a card come from the version that
     ///   changed them last (`Card.contentChanged`), or, with the same stamp or none, from the
     ///   version with the later `contentModified`.
@@ -57,23 +61,35 @@ extension DeckChange {
         let theirs = Dictionary(other.cards.map { ($0.id, $0) }) { first, _ in first }
         let inFirst = Set(first.cards.map(\.id))
 
+        func join(_ mine: Card, _ theirs: Card) -> Card {
+            merging(
+                mine, and: theirs,
+                mineModel: deck.learningOptions.parameters, theirsModel: other.learningOptions.parameters,
+                otherHasContent: otherHasContent, scheduler: scheduler
+            )
+        }
+        let retiredMine = Dictionary(deck.retiredCards.map { ($0.id, $0) }) { first, _ in first }
+        let retiredTheirs = Dictionary(other.retiredCards.map { ($0.id, $0) }) { first, _ in first }
+
         var change = DeckChange(contentStamp: .keep)
         var kept = Set<Card.ID>()
         var named = Set<String>()
+        var dropped: [(card: Card, isMine: Bool)] = []
         for card in first.cards + second.cards.filter({ !inFirst.contains($0.id) }) {
             let merged: Card
             switch (mine[card.id], theirs[card.id]) {
             case let (mine?, theirs?):
-                merged = merging(
-                    mine, and: theirs,
-                    mineModel: deck.learningOptions.parameters, theirsModel: other.learningOptions.parameters,
-                    otherHasContent: otherHasContent, scheduler: scheduler
-                )
+                merged = join(mine, theirs)
             case let (only?, nil), let (nil, only?):
                 // Only one version holds it: it is deleted in the other, or new in this one.
-                let deletion = (mine[card.id] == nil ? deck : other).deletedCards[card.id]
-                if let deletion, deletion > only.lastChange { continue }
-                merged = only
+                let isMine = mine[card.id] != nil
+                let deletion = (isMine ? other : deck).deletedCards[card.id]
+                if let deletion, deletion > only.lastChange {
+                    dropped.append((only, isMine))
+                    continue
+                }
+                // A card that stays takes the reviews its deletion kept.
+                merged = (isMine ? retiredTheirs : retiredMine)[card.id].map { isMine ? join(only, $0) : join($0, only) } ?? only
             case (nil, nil):
                 continue
             }
@@ -97,6 +113,27 @@ extension DeckChange {
             deleted[id] = nil
         }
 
+        // The retired cards of both versions and the cards dropped now, joined by ID, those that stay out.
+        var pool: [Card.ID: (mine: Card?, theirs: Card?)] = [:]
+        var order: [Card.ID] = []
+        func add(_ card: Card, isMine: Bool) {
+            if pool[card.id] == nil { order.append(card.id) }
+            if isMine { pool[card.id, default: (nil, nil)].mine = card } else { pool[card.id, default: (nil, nil)].theirs = card }
+        }
+        for card in deck.retiredCards { add(card, isMine: true) }
+        for card in other.retiredCards { add(card, isMine: false) }
+        for (card, isMine) in dropped { add(card, isMine: isMine) }
+        let retired: [Card] = order.compactMap { id in
+            guard !kept.contains(id), let versions = pool[id] else { return nil }
+            let card: Card
+            switch (versions.mine, versions.theirs) {
+            case let (mine?, theirs?): card = join(mine, theirs)
+            case let (only?, nil), let (nil, only?): card = only
+            case (nil, nil): return nil
+            }
+            return card.log.isEmpty ? nil : card
+        }
+
         if learningOptions != deck.learningOptions {
             change.learningOptions = learningOptions
         }
@@ -110,12 +147,13 @@ extension DeckChange {
             change.progress = progress
         }
 
-        if case .keep = change.contentStamp, change.upserts.isEmpty, change.removals.isEmpty, change.learningOptions == nil, change.progress == nil, change.addedMedia.isEmpty, deleted == deck.deletedCards {
+        if case .keep = change.contentStamp, change.upserts.isEmpty, change.removals.isEmpty, change.learningOptions == nil, change.progress == nil, change.addedMedia.isEmpty, deleted == deck.deletedCards, retired == deck.retiredCards {
             return nil
         }
-        // Always set: undoing a merge must restore the deleted cards, not note the cards
-        // it takes back as deleted now.
+        // Always set: undoing a merge must restore the deleted and retired cards, not note the
+        // cards it takes back as deleted now.
         change.deletedCards = deleted
+        change.retiredCards = retired
         return change
     }
 

@@ -143,6 +143,243 @@ extension DeckFileTests {
             await deck.close()
         }
 
+        // MARK: A deck edited in place while the app runs
+
+        /// What `Tools/deck-from-tsv` and the other device do to the file under a running app: the tests write
+        /// the open deck with a change, as another process does, and look at the document and at the study
+        /// stream that asks its cards.
+        private struct Running {
+            let url: URL
+            let deck: OpenDeck
+            let document: VocabularyDocument
+            let model: StudyModel
+        }
+
+        private func openAndStudy(_ questions: [String]) async throws -> Running {
+            let url = try write(Deck(cards: questions.map(makeCard)))
+            let deck = OpenDeck(url: url)
+            let document = try await waitForDocument(of: deck)
+            deck.undoManager.groupsByEvent = false
+            return Running(url: url, deck: deck, document: document, model: StudyModel(document: document))
+        }
+
+        /// Grades the card asked, as the learner does, in one undo group.
+        private func grade(_ grade: Grade, in running: Running) {
+            step(running.deck.undoManager) {
+                running.model.reveal()
+                running.model.grade(grade)
+            }
+        }
+
+        /// The open deck as another device left it after `change`: a moment later, so its changes count as newer.
+        private func fileAfter(_ running: Running, _ change: (inout Deck) throws -> DeckChange?) throws -> Deck {
+            var other = running.document.deck
+            let change = try #require(try change(&other))
+            _ = other.apply(change, at: .now.addingTimeInterval(5), calendar: running.document.calendar)
+            return other
+        }
+
+        /// Whether both cards hold the same progress: the file keeps times to the second, so a card that
+        /// came through it differs from the one in memory in the fractions.
+        private func sameProgress(_ card: Card?, _ other: Card?) -> Bool {
+            guard let card, let other, card.log.count == other.log.count else { return false }
+            let sameLog = zip(card.log, other.log).allSatisfy { $0.grade == $1.grade && abs($0.date.timeIntervalSince($1.date)) < 1 }
+            guard let state = card.learningState, let otherState = other.learningState else {
+                return sameLog && card.learningState == nil && other.learningState == nil
+            }
+            return sameLog && state.phase == otherState.phase && state.step == otherState.step && state.reviews == otherState.reviews
+                && state.lapses == otherState.lapses && abs(state.due.timeIntervalSince(otherState.due)) < 1
+                && abs(state.stability - otherState.stability) < 0.001
+        }
+
+        private func writeAndWait(_ deck: Deck, to running: Running, until condition: () -> Bool) async throws {
+            try await writeUntil("the document has what the file holds", write: { try await writeCoordinated(deck, to: running.url) }, until: condition)
+        }
+
+        /// Cards added in the file arrive in the document as new cards and in today's plan, within the allowance.
+        @Test func cardsAddedInTheFileAreNewAndInTheDaysPlanWithinTheAllowance() async throws {
+            let running = try await openAndStudy(["dom"])
+            let document = running.document
+            document.newCardAllowance = 2
+            let other = try fileAfter(running) { DeckChange.adding(["kot", "pies", "ryba"].map(makeCard), to: $0) }
+            try await writeAndWait(other, to: running) { document.deck.cards.count == 4 }
+
+            #expect(Set(document.deck.cards.map(\.id)) == Set(other.cards.map(\.id)))
+            let allNew = document.deck.cards.allSatisfy { $0.isNew }
+            #expect(allNew)
+            #expect(document.dueCards.count == 2)
+            let stream = StudyStream(deck: document.deck, at: document.clock.now, calendar: document.calendar, newCardAllowance: 2)
+            #expect(stream.session.remainingCount == 2)
+            await running.deck.close()
+        }
+
+        /// Texts edited in the file: the cards kept keep their progress, and the card on screen and the cards
+        /// still to come show the new text.
+        @Test func textsEditedInTheFileKeepTheProgressAndShowInTheStream() async throws {
+            let running = try await openAndStudy(["dom", "kot", "pies"])
+            let document = running.document
+            let model = running.model
+            let first = try #require(model.currentCard?.id)
+            grade(.good, in: running)
+            let graded = try #require(document.card(withID: first))
+            #expect(graded.log.count == 1)
+            let asked = try #require(model.currentCard?.id)
+            let last = try #require(document.deck.cards.map(\.id).first { $0 != first && $0 != asked })
+
+            var other = document.deck
+            for id in [first, asked, last] {
+                let card = try #require(other.card(withID: id))
+                let text = CardText(question: card.question, answer: card.answer + " (edited)")!
+                _ = other.apply(try #require(DeckChange.editingText(of: id, to: text, in: other)), at: .now.addingTimeInterval(5), calendar: document.calendar)
+            }
+            try await writeAndWait(other, to: running) { document.card(withID: last)?.answer.hasSuffix("(edited)") == true }
+
+            let kept = try #require(document.card(withID: first))
+            #expect(kept.answer.hasSuffix("(edited)"))
+            #expect(sameProgress(kept, graded))
+            #expect(model.currentCard?.id == asked)
+            #expect(model.currentCard?.answer.hasSuffix("(edited)") == true)
+            grade(.good, in: running)
+            // The next card is the one graded first, due again, or the last: the text of both is new.
+            #expect(model.currentCard.map { [first, last].contains($0.id) } == true)
+            #expect(model.currentCard?.answer.hasSuffix("(edited)") == true)
+            await running.deck.close()
+        }
+
+        /// Cards deleted on the other device leave the document, the plan and the stream, also the one on screen:
+        /// the stream moves on without a grade. The reviews of a deleted card stay, and the ring does not jump back.
+        @Test func cardsDeletedInTheFileLeaveTheStreamAndKeepTheirReviews() async throws {
+            let running = try await openAndStudy(["dom", "kot", "pies", "ryba"])
+            let document = running.document
+            let model = running.model
+            let done = try #require(model.currentCard?.id)
+            grade(.easy, in: running)
+            let asked = try #require(model.currentCard?.id)
+            let ringBefore = document.deck.doneCards(onDayOf: document.clock.now, calendar: document.calendar)
+            #expect(ringBefore == 1)
+            let reviewed = try #require(document.card(withID: done))
+
+            let other = try fileAfter(running) { DeckChange.removing([done, asked], from: $0) }
+            try await writeAndWait(other, to: running) { document.deck.card(withID: asked) == nil }
+
+            #expect(document.deck.cards.count == 2)
+            #expect(document.card(withID: done) == nil)
+            #expect(document.deck.retiredCards.map(\.id) == [done])
+            #expect(sameProgress(document.deck.retiredCards.first, reviewed))
+            #expect(document.deck.doneCards(onDayOf: document.clock.now, calendar: document.calendar) == ringBefore)
+            let noneGraded = document.deck.cards.allSatisfy { $0.log.isEmpty }
+            #expect(noneGraded)
+            let next = try #require(model.currentCard)
+            #expect(next.id != asked && next.id != done)
+            #expect(model.stage == .asking)
+            #expect(StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar, newCardAllowance: nil).total == 2)
+            await running.deck.close()
+        }
+
+        /// The same in the app: a card deleted while it is on screen takes no grade, the stream asks the next one.
+        @Test func aCardDeletedInTheAppWhileOnScreenIsNotAsked() async throws {
+            let running = try await openAndStudy(["dom", "kot", "pies"])
+            let document = running.document
+            let model = running.model
+            let done = try #require(model.currentCard?.id)
+            grade(.easy, in: running)
+            let asked = try #require(model.currentCard?.id)
+
+            step(running.deck.undoManager) { document.delete([asked, done]) }
+
+            #expect(document.deck.cards.count == 1)
+            #expect(document.deck.retiredCards.map(\.id) == [done])
+            #expect(document.deck.doneCards(onDayOf: document.clock.now, calendar: document.calendar) == 1)
+            let next = try #require(model.currentCard)
+            #expect(next.id != asked && next.id != done)
+            let noneGraded = document.deck.cards.allSatisfy { $0.log.isEmpty }
+            #expect(noneGraded)
+
+            // Undo brings the cards back and takes them out of the retired ones.
+            running.deck.undoManager.undo()
+            #expect(document.deck.cards.count == 3)
+            #expect(document.deck.retiredCards.isEmpty)
+            await running.deck.close()
+        }
+
+        /// Cards that `deck-from-tsv --suspend-missing` suspends leave the plan and the stream, also the one on
+        /// screen, and keep their progress.
+        @Test func cardsSuspendedInTheFileLeaveThePlanAndTheStreamAndKeepTheirProgress() async throws {
+            let running = try await openAndStudy(["dom", "kot", "pies", "ryba"])
+            let document = running.document
+            let model = running.model
+            let first = try #require(model.currentCard?.id)
+            grade(.good, in: running)
+            let asked = try #require(model.currentCard?.id)
+            let reviewed = try #require(document.card(withID: first))
+
+            let other = try fileAfter(running) { DeckChange.settingSuspended(true, of: [first, asked], in: $0, at: .now) }
+            try await writeAndWait(other, to: running) { document.card(withID: asked)?.isSuspended == true }
+
+            #expect(document.card(withID: first)?.isSuspended == true)
+            #expect(sameProgress(document.card(withID: first), reviewed))
+            #expect(document.deck.cards.count == 4)
+            let next = try #require(model.currentCard)
+            #expect(next.id != asked && next.id != first)
+            #expect(document.deck.cards.filter { !$0.isSuspended }.contains { $0.id == next.id })
+            #expect(StudySession.counts(for: document.deck, at: document.clock.now, calendar: document.calendar, newCardAllowance: nil).total == 2)
+            let stream = StudyStream(deck: document.deck, at: document.clock.now, calendar: document.calendar)
+            #expect(stream.session.remainingCount == 2)
+            #expect(stream.session.currentCardID != first && stream.session.currentCardID != asked)
+            await running.deck.close()
+        }
+
+        /// Undo survives a reread: the grade is undone and its card is in the stream again. The merge of the file
+        /// and the edit before it stay, and are not on the undo stack any more.
+        @Test func undoTakesBackAGradeAfterTheFileWasMergedAndNothingElse() async throws {
+            let running = try await openAndStudy(["dom", "kot", "pies"])
+            let document = running.document
+            let model = running.model
+            let undoManager = running.deck.undoManager
+            step(undoManager) { document.add(CardText(question: "wilk", answer: "Wolf")!) }
+            let first = try #require(model.currentCard?.id)
+            let before = try #require(document.card(withID: first))
+            grade(.good, in: running)
+            #expect(model.canUndo)
+
+            let added = makeCard("ryba")
+            let other = try fileAfter(running) { DeckChange.adding([added], to: $0) }
+            try await writeAndWait(other, to: running) { document.card(withID: added.id) != nil }
+            #expect(model.canUndo)
+
+            model.undoLast()
+
+            #expect(sameProgress(document.card(withID: first), before))
+            #expect(model.currentCard?.id == first)
+            #expect(document.card(withID: added.id) != nil)
+            #expect(document.deck.cards.count == 5)
+            #expect(!undoManager.canUndo)
+            await running.deck.close()
+        }
+
+        /// The merge deleted the graded card: undo has no card to bring back and leaves the deck as the merge made it.
+        @Test func undoAfterAMergedDeletionOfTheGradedCardDoesNothingHarmful() async throws {
+            let running = try await openAndStudy(["dom", "kot", "pies"])
+            let document = running.document
+            let model = running.model
+            let first = try #require(model.currentCard?.id)
+            grade(.good, in: running)
+            let asked = try #require(model.currentCard?.id)
+
+            let other = try fileAfter(running) { DeckChange.removing([first], from: $0) }
+            try await writeAndWait(other, to: running) { document.card(withID: first) == nil }
+            #expect(document.deck.retiredCards.map(\.id) == [first])
+
+            model.undoLast()
+
+            #expect(document.card(withID: first) == nil)
+            #expect(document.deck.cards.count == 2)
+            #expect(model.currentCard?.id != first)
+            #expect(model.currentCard != nil)
+            #expect(asked != first)
+            await running.deck.close()
+        }
+
         // MARK: Registry
 
         /// The registry keeps one deck per file however its URL is spelled, keeps it open until it is closed,

@@ -24,7 +24,7 @@ enum DeckRefits {
     /// `nil` for a deck that can't be read now, or is not due.
     nonisolated static func fit(deckAt url: URL) throws -> ParameterRefit.Result? {
         guard let deck = DeckFileReader.deck(at: url) else { return nil }
-        return try ParameterRefit.fit(cards: deck.cards, options: deck.learningOptions, calendar: StudyCalendar(), now: Date())
+        return try ParameterRefit.fit(cards: deck.trainingCards, options: deck.learningOptions, calendar: StudyCalendar(), now: Date())
     }
 
     /// Opens the deck, applies `result` as the undo step "Update Parameters" and saves. A
