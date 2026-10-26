@@ -379,6 +379,8 @@ struct WeekRings: View {
     /// Today's ring in laps of the goal, 1 when closed (`DailyRingFigure.fraction`).
     var today: Double
     var now: Date
+    /// The weekday initials under the rings; the widget leaves them out.
+    var showsLetters = true
     /// 22 pt on the screens; the widget's week is smaller.
     var diameter: CGFloat = 22
     var spacing: CGFloat = 10
@@ -389,9 +391,11 @@ struct WeekRings: View {
                 VStack(spacing: 4) {
                     ProgressRing(fraction: Self.fraction(index, week: week, rings: rings, today: today), diameter: diameter)
                         .opacity(week[index] == nil ? 0.35 : 1)
-                    Text(verbatim: letter(index))
-                        .font(.caption2.weight(index == week.count - 1 ? .bold : .regular))
-                        .foregroundStyle(index == week.count - 1 ? .primary : .secondary)
+                    if showsLetters {
+                        Text(verbatim: letter(index))
+                            .font(.caption2.weight(index == week.count - 1 ? .bold : .regular))
+                            .foregroundStyle(index == week.count - 1 ? .primary : .secondary)
+                    }
                 }
             }
         }

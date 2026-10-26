@@ -4,6 +4,28 @@
     "%@ %@": {
       "shouldTranslate": false
     },
+    "%@ left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noch %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ακόμη"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "осталось %@"
+          }
+        }
+      }
+    },
     "%@ min": {
       "localizations": {
         "de": {
@@ -16138,6 +16160,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "меньше дня"
+          }
+        }
+      }
+    },
+    "min": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Min."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "λεπ."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "мин"
           }
         }
       }

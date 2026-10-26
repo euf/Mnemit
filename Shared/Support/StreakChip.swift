@@ -6,32 +6,26 @@ import VocabCore
 ///
 /// The sentence by state: kept "12-day streak"; open, with the time to the end of the first round, "≈ 2 min to keep
 /// your 12-day streak"; the day after a missed one "Close the ring to save your 12-day streak"; with no streak
-/// "Start your streak · ≈ 2 min". The state is also a shape (`StreakFlame`), so the chip reads in one colour. In a widget
-/// (`isCompact`) the sentence is the days alone and the flame says the rest.
+/// "Start your streak · ≈ 2 min". The state is also a shape (`StreakFlame`), so the chip reads in one colour.
 struct StreakChip: View {
     /// The streak in days; `nil` while the day is not read: a placeholder.
     var days: Int?
     var state: StreakState
     /// The minutes the first round takes while it is not done, `RoundStatus.minutesToKeep`.
     var minutesToKeep: Int?
-    /// The size for a widget, where the cards left and the time stand beside the chip: "12-day streak" in any state,
-    /// in a smaller font. VoiceOver still reads the whole sentence.
-    var isCompact = false
 
     var body: some View {
         let shown = days ?? 12
-        HStack(spacing: isCompact ? 4 : 6) {
+        HStack(spacing: 6) {
             StreakFlame(state: state)
-                .imageScale(isCompact ? .medium : .large)
+                .imageScale(.large)
             // A non-breaking hyphen: "12-day" never splits across two lines when the sentence wraps.
-            Text(verbatim: Self.text(days: shown, state: isCompact ? .kept : state, minutesToKeep: isCompact ? nil : minutesToKeep).replacingOccurrences(of: "-", with: "\u{2011}"))
-                .lineLimit(isCompact ? 1 : nil)
-                .minimumScaleFactor(isCompact ? 0.7 : 1)
+            Text(verbatim: Self.text(days: shown, state: state, minutesToKeep: minutesToKeep).replacingOccurrences(of: "-", with: "\u{2011}"))
         }
-        .font((isCompact ? Font.footnote : .subheadline).weight(.semibold))
+        .font(.subheadline.weight(.semibold))
         .multilineTextAlignment(.center)
-        .padding(.horizontal, isCompact ? 8 : 12)
-        .padding(.vertical, isCompact ? 4 : 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(state == .open ? Color.secondary.opacity(0.12) : Color.streak.opacity(0.14), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .redacted(reason: days == nil ? .placeholder : [])
         .accessibilityElement(children: .ignore)

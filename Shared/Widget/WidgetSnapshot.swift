@@ -47,7 +47,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var secondsPerCard: Double?
     /// The rounds today holds (`DailyProgress.rounds`) and how many are done, and the minutes to the end of the
     /// round the learner is in (`DailyProgress.minutesToNextRound`; `nil` once the rounds are done).
-    /// `nil` in a snapshot an older app wrote: the widget then shows the cards left.
+    /// `nil` in a snapshot an older app wrote: the widget then has no time for the streak step.
     var rounds: Int?
     var roundsDone: Int?
     var minutesToNextRound: Int?
@@ -214,12 +214,6 @@ struct WidgetState: Equatable, Sendable {
         DailyProgress(
             ring: DailyRing(done: done, goal: goal), streak: Streak(days: streakDays, repairCards: isStreakAtRisk ? max(1, toRing) : nil),
             cardsLeft: due, streakKeptToday: isStreakKept)
-    }
-
-    /// What leads the line under the chip, as Today has it (`TodayLead`): the time that closes the ring, "≈ 2 min", "3 left"
-    /// of the plan once it is closed, "Nothing due" on a day without cards; the snapshot has no "next due".
-    var lead: String? {
-        TodayLead.text(due: due, ring: DailyRing(done: done, goal: goal), secondsPerCard: secondsPerCard, nextDue: nil, now: date)
     }
 
     /// The same figures at another moment of the timeline.

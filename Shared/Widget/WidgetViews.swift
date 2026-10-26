@@ -3,13 +3,14 @@ import SwiftUI
 import VocabCore
 import WidgetKit
 
-/// The picture of the widget in each family, from the figures of one timeline entry: the day's ring with the cards
-/// left in its middle (a check once it is closed), the streak chip beside or under it, and the time that closes the ring.
-/// The ring holds the day's cards and the chip the streak, as on Today. `nil` before the app wrote a snapshot.
+/// The picture of the widget in each family, from the figures of one timeline entry: the day's ring as a picture, nothing
+/// in its middle, and one sentence that carries the streak and the price of the next step (`WidgetState.sentence`), led
+/// by the flame. The medium widget adds the week's rings; the lock screen's circle, a gauge, has the minutes of the next
+/// step. `nil` before the app wrote a snapshot.
 ///
 /// In `Shared` and not in the extension, so the tests of the app can draw it with fixed
 /// sizes; the extension only puts a timeline under it. Everything that opens the app is the
-/// widget's own URL, `WidgetLink.study`; "Study" in the medium widget is the same link.
+/// widget's own URL, `WidgetLink.study`; no widget has a button of its own.
 struct WidgetContent: View {
     var state: WidgetState?
     var family: WidgetFamily
@@ -37,141 +38,96 @@ struct WidgetContent: View {
 }
 
 extension WidgetState {
-    /// The streak's flame as the chip draws it: outlined until the streak step is done, filled after, and the day
-    /// after a missed one outlined in the streak's colour with an exclamation mark.
-    var streakState: StreakState { progress.streakState }
-
-    /// The middle of the ring: the cards left to close it, or a check.
-    fileprivate var center: RingCenter { RingCenter(progress) }
-
     /// Today's ring in laps of the goal, as every ring draws it.
     fileprivate var ringFraction: Double { DailyRingFigure.fraction(progress, shown: nil) }
 
-    /// What the line over the lock screen's clock says after the flame: "8 left", or "8 cards left" where there is no
-    /// streak to take the room, and "Ring closed" once it is.
-    var inlineLeft: String {
-        switch center {
-        case .cardsLeft(let count): streakDays > 0 ? String(localized: "\(count) left") : String(localized: "\(count) cards left")
-        default: due == 0 && done == 0 ? String(localized: "Nothing due") : String(localized: "Ring closed")
-        }
-    }
+    /// The flame and the one sentence of the widget.
+    var nextStep: NextStep { NextStep(progress, minutesToKeep: roundStatus?.minutesToKeep, minutesToClose: minutesLeft) }
+}
 
-    /// The line over the lock screen's clock, after the flame: "7 · 8 left", and without a streak "8 cards left".
-    var inlineLine: String {
-        guard streakDays > 0 else { return inlineLeft }
-        return streakDays.formatted(.number.grouping(.never)) + " · " + inlineLeft
+/// The day's ring as a picture, with nothing in its middle: the arc and its laps.
+private struct WidgetRing: View {
+    var state: WidgetState
+    var diameter: CGFloat
+
+    var body: some View {
+        DailyRingView(progress: state.progress, diameter: diameter, showsCenter: false)
+            .widgetAccentable()
     }
 }
 
-/// The streak chip at the widget's size, once there is a streak; the flame is what the tinted style colours.
-private struct WidgetChip: View {
-    var state: WidgetState
+/// The one sentence (`WidgetState.sentence`), led by the flame; the second and third lines start under the flame. The flame
+/// is filled once today keeps the streak and carries an exclamation mark the day after a missed one. The size, the weight
+/// and the number of lines are the caller's.
+private struct StreakSentence: View {
+    var step: NextStep
 
     var body: some View {
-        if state.streakDays > 0 {
-            StreakChip(days: state.streakDays, state: state.streakState, minutesToKeep: state.roundStatus?.minutesToKeep, isCompact: true)
-                .widgetAccentable(state.streakState != .open)
-        }
-    }
-}
-
-/// The flame and the days of the streak without a capsule, for the lock screen's rectangle: the flame is filled once
-/// today keeps the streak, outlined with an exclamation mark the day after a missed one.
-private struct StreakLine: View {
-    var state: WidgetState
-
-    var body: some View {
-        if state.streakDays > 0 {
-            HStack(spacing: 4) {
-                StreakFlame(state: state.streakState)
-                    .widgetAccentable(state.streakState != .open)
-                Text("\(state.streakDays)-day streak")
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            if let flame = step.flame {
+                StreakFlame(state: flame)
+                    .widgetAccentable(flame != .open)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(
-                Text(verbatim: StreakChip.spoken(days: state.streakDays, state: state.streakState, minutesToKeep: state.roundStatus?.minutesToKeep)))
+            // Non-breaking: the hyphen, as in the chip ("7-day" never splits), and the spaces of the time ("≈ 2 min" stays whole).
+            Text(
+                verbatim: step.sentence.replacingOccurrences(of: "-", with: "\u{2011}")
+                    .replacingOccurrences(of: "([≈<]) (\\d+) (\\S+)", with: "$1\u{00A0}$2\u{00A0}$3", options: .regularExpression))
         }
     }
 }
 
-/// The line under or beside the chip: the time that closes the ring, "≈ 2 min", or "3 left" of the plan once it is
-/// closed (`WidgetState.lead`).
-private struct LeadLine: View {
-    var state: WidgetState
-
-    var body: some View {
-        if let lead = state.lead {
-            Text(verbatim: lead)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-    }
-}
-
-/// The ring with the cards left in it; under it the streak chip and the time.
+/// The ring, large, and the sentence under it: two lines, three for the longest, the day after a missed one.
 private struct SmallWidget: View {
     var state: WidgetState
 
     var body: some View {
         VStack(spacing: 6) {
-            DailyRingView(progress: state.progress, diameter: 64)
-                .widgetAccentable()
-            WidgetChip(state: state)
-            LeadLine(state: state)
-                .font(.footnote)
+            WidgetRing(state: state, diameter: 72)
+            StreakSentence(step: state.nextStep)
+                .font(.caption)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .minimumScaleFactor(0.85)
         }
-        .monospacedDigit()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: state.nextStep.sentence))
     }
 }
 
-/// The ring with the cards left in it on the left; on the right the chip, the time, the week's rings (each day's own
-/// share of its goal), and Study while the ring is open (the whole widget still opens the stream).
+/// The ring on the left; on the right the sentence as the headline and under it the week's rings, without initials.
+/// The widget opens the stream; it has no button.
 private struct MediumWidget: View {
     var state: WidgetState
 
+    private static let ring: CGFloat = 104
+
     var body: some View {
         HStack(spacing: 16) {
-            // A stroke thinner than the default, so that "cards left" under the figure clears it.
-            DailyRingView(progress: state.progress, diameter: 92, lineWidth: 10.5)
-                .widgetAccentable()
+            WidgetRing(state: state, diameter: Self.ring)
+            // As tall as the ring: the sentence at its top, the week at its bottom.
             VStack(alignment: .leading, spacing: 8) {
-                WidgetChip(state: state)
-                HStack {
-                    LeadLine(state: state)
-                        .font(.subheadline)
-                    Spacer(minLength: 8)
-                    if state.due > 0 && !state.isGoalMet {
-                        Link(destination: WidgetLink.study) {
-                            Text("Study")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 6)
-                                .background(Color.appAccent, in: Capsule())
-                                .widgetAccentable()
-                        }
-                    }
-                }
+                StreakSentence(step: state.nextStep)
+                    .font(.headline)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.75)
+                Spacer(minLength: 0)
                 if let week = state.week {
-                    WeekRings(week: week, rings: state.weekRings, today: state.ringFraction, now: state.date, diameter: 20, spacing: 7)
+                    WeekRings(week: week, rings: state.weekRings, today: state.ringFraction, now: state.date, showsLetters: false, diameter: 18, spacing: 6)
                         .fixedSize()
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: Self.ring, alignment: .topLeading)
         }
-        .monospacedDigit()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: state.nextStep.sentence))
     }
 }
 
-/// The system's gauge, which the lock screen draws in each of its styles (full colour, vibrant, tinted), with the cards
-/// left in its middle and a check once the ring is closed; no flame. A gauge is one lap, so past the goal it is full.
+/// The system's gauge, which the lock screen draws in each of its styles (full colour, vibrant, tinted), with the minutes
+/// of the next step in its middle, "2" over "min", and a check once the ring is closed. A gauge is one lap, so past the
+/// goal it is full.
 private struct CircularWidget: View {
     var state: WidgetState
 
@@ -179,58 +135,65 @@ private struct CircularWidget: View {
         Gauge(value: min(1, state.ringFraction)) {
             Text("Daily Goal")
         } currentValueLabel: {
-            if let figure = state.center.text {
-                Text(verbatim: figure)
-                    .minimumScaleFactor(0.5)
-            } else {
+            if state.nextStep.isClosed {
                 Image(systemName: "checkmark")
+            } else if let minutes = state.nextStep.minutes {
+                VStack(spacing: -2) {
+                    Text(verbatim: minutes == 0 ? "<1" : String(minutes))
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .minimumScaleFactor(0.5)
+                    Text("min")
+                        .font(.system(size: 9))
+                }
             }
         }
         .gaugeStyle(.accessoryCircularCapacity)
         .tint(Color.dailyRing)
         .widgetAccentable()
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: state.center.spokenLabel ?? ""))
+        .accessibilityLabel(Text(verbatim: state.nextStep.sentence))
     }
 }
 
-/// The ring with the cards left in it on the left; on the right the streak and the time.
+/// A small ring on the left and the sentence beside it.
 private struct RectangularWidget: View {
     var state: WidgetState
 
     var body: some View {
         HStack(spacing: 8) {
-            DailyRingView(progress: state.progress, diameter: 60)
-                .widgetAccentable()
-            VStack(alignment: .leading, spacing: 2) {
-                StreakLine(state: state)
-                LeadLine(state: state)
-            }
-            .font(.caption)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            WidgetRing(state: state, diameter: 56)
+            StreakSentence(step: state.nextStep)
+                .font(.caption)
+                .lineLimit(3)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .monospacedDigit()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: state.nextStep.sentence))
     }
 }
 
-/// The line over the lock screen's clock: the flame, the days of the streak and the cards left, "7 · 8 left"; the flame
-/// carries an exclamation mark at risk. Without a streak the cards left alone.
+/// The line over the lock screen's clock: the flame and "7 · ≈ 2 min"; the flame carries an exclamation mark at risk.
+/// Without a streak the sentence alone.
 private struct InlineWidget: View {
     var state: WidgetState
 
     var body: some View {
-        if state.streakDays > 0 {
-            Label {
-                Text(verbatim: state.inlineLine)
-            } icon: {
-                StreakFlame(state: state.streakState)
-                    .widgetAccentable(state.streakState != .open)
+        let step = state.nextStep
+        Group {
+            if step.days > 0, let flame = step.flame {
+                Label {
+                    Text(verbatim: step.short)
+                } icon: {
+                    StreakFlame(state: flame)
+                        .widgetAccentable(flame != .open)
+                }
+            } else {
+                Text(verbatim: step.short)
             }
-        } else {
-            Text(verbatim: state.inlineLine)
         }
+        .accessibilityLabel(Text(verbatim: step.sentence))
     }
 }
 

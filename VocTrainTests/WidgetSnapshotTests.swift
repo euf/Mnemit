@@ -188,9 +188,9 @@ struct WidgetSnapshotTests {
 
         let state = snapshot.state(at: now, calendar: Fixtures.studyCalendar)
         #expect(state.isStreakAtRisk && state.week == week && state.weekRings == rings)
-        // The chip of the widget draws it as Today does: an outlined flame in the streak's colour, with an exclamation mark.
+        // The widget draws it as Today does: an outlined flame in the streak's colour, with an exclamation mark.
         #expect(state.progress.streakState == .atRisk)
-        #expect(state.inlineLine == "7 · 17 left")
+        #expect(state.nextStep.sentence == "Close the ring to save your 7-day streak")
         // A ring that is closed is not at risk any more.
         let closed = WidgetSnapshot(
             now: now, progress: DailyProgress(ring: DailyRing(done: 20, goal: 20), streak: Streak(days: 7, repairCards: 17)), dates: [now], dueByDeck: [[0]],
@@ -281,46 +281,28 @@ struct WidgetSnapshotTests {
         #expect(snapshot.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).weekRings == nil)
     }
 
-    @Test func theInlineLineHasTheStreakAndTheCardsToTheRing() {
-        func state(done: Int, goal: Int = 20, streak: Int, due: Int) -> WidgetState {
-            WidgetState(date: Fixtures.date(22, 10), done: done, goal: goal, streakDays: streak, isGoalMet: done >= goal, due: due, nextReminder: nil)
-        }
-        #expect(state(done: 0, streak: 12, due: 20).inlineLine == "12 · 20 left")
-        #expect(state(done: 0, streak: 0, due: 20).inlineLine == "20 cards left")
-        // The ring open: the cards that close it, not the whole plan.
-        #expect(state(done: 15, streak: 3, due: 40).inlineLine == "3 · 5 left")
-        #expect(state(done: 15, streak: 0, due: 40).inlineLine == "5 cards left")
-        // Closed, with the plan done or with more in it.
-        #expect(state(done: 20, streak: 12, due: 0).inlineLine == "12 · Ring closed")
-        #expect(state(done: 20, streak: 3, due: 40).inlineLine == "3 · Ring closed")
-        #expect(state(done: 20, streak: 0, due: 0).inlineLine == "Ring closed")
-        #expect(state(done: 0, goal: 0, streak: 0, due: 0).inlineLine == "Nothing due")
-        // The middle of every ring says the same count.
-        #expect(state(done: 15, streak: 3, due: 40).progress.cardsToClose == 5)
+    /// A day with a price: 10 s a card, 4 rounds of which `roundsDone` are done, the first round 2 min.
+    private static func priced(done: Int, goal: Int = 20, streak: Int, due: Int, roundsDone: Int, atRisk: Bool = false) -> WidgetState {
+        WidgetState(
+            date: Fixtures.date(22, 10), done: done, goal: goal, streakDays: streak, isGoalMet: done >= goal, due: due, nextReminder: nil, secondsPerCard: 10,
+            rounds: 4, roundsDone: roundsDone, minutesToNextRound: 2, isStreakAtRisk: atRisk)
     }
 
-    @Test func theLeadIsTheOneTodayShows() {
-        // Between rounds: the time that closes the ring, as Today says it.
-        let state = WidgetState(
-            date: Fixtures.date(22, 10), done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: nil, secondsPerCard: 10, rounds: 4,
-            roundsDone: 1, minutesToNextRound: 2)
-        #expect(state.lead == Format.timeLeft(minutes: 2))
-        // Before the first round the same: the chip is the one that says the streak.
-        var first = state
-        first.done = 3
-        first.roundsDone = 0
-        #expect(first.lead == Format.timeLeft(minutes: 2))
-        // With the ring closed, the rest of the plan; with nothing left, no lead.
-        var closed = state
-        closed.done = 21
-        closed.isGoalMet = true
-        closed.roundsDone = 4
-        #expect(closed.lead == "8 left")
-        closed.due = 0
-        #expect(closed.lead == nil)
-        // A snapshot of an older app has no price: no time.
-        #expect(WidgetState(date: Fixtures.date(22, 10), done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: nil).lead == nil)
-        #expect(WidgetState(date: Fixtures.date(22, 10), done: 0, goal: 20, streakDays: 0, isGoalMet: false, due: 0, nextReminder: nil).lead == "Nothing due")
+    @Test func theWidgetHandsTheNextStepItsFigures() {
+        // The streak step open: the first round's 2 min, and the 17 cards that close the ring at 10 s each, 3 min.
+        let open = Self.priced(done: 3, streak: 7, due: 17, roundsDone: 0)
+        #expect(open.nextStep == NextStep(days: 7, state: .open, isClosed: false, minutesToKeep: 2, minutesToClose: 3))
+        #expect(open.nextStep.sentence == "\(Format.timeLeft(minutes: 2)) to keep your 7-day streak")
+        // The step done: the first round is behind, the 8 cards left that close the ring take 2 min.
+        let kept = Self.priced(done: 12, streak: 7, due: 8, roundsDone: 1)
+        #expect(kept.nextStep == NextStep(days: 7, state: .kept, isClosed: false, minutesToKeep: nil, minutesToClose: 2))
+        // The ring closed with nothing left in the plan.
+        #expect(Self.priced(done: 20, streak: 7, due: 0, roundsDone: 4).nextStep == NextStep(days: 7, state: .kept, isClosed: true, minutesToKeep: nil, minutesToClose: nil))
+        // The day after a missed one.
+        #expect(Self.priced(done: 3, streak: 7, due: 17, roundsDone: 0, atRisk: true).nextStep.state == .atRisk)
+        // A snapshot of an older app has no price: the streak alone.
+        let old = WidgetState(date: Fixtures.date(22, 10), done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: nil)
+        #expect(old.nextStep.sentence == "7-day streak" && old.nextStep.short == "7")
     }
 
     @Test func unreadableDataIsNoSnapshot() {
