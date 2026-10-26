@@ -82,12 +82,14 @@ final class ShellFixture {
         try? FileManager.default.removeItem(at: directory)
     }
 
-    /// A window with the shell's view in it, as the app's one window will have it.
-    func window(width: CGFloat = 1000, height: CGFloat = 640) -> NSWindow {
+    /// A window with the shell's view in it, as the app's one window will have it. One that never shows draws in the
+    /// window's appearance, which one ordered front, and not active, does not for the colour scheme of SwiftUI.
+    func window(width: CGFloat = 1000, height: CGFloat = 640, dark: Bool = false, shown: Bool = true) -> NSWindow {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: height), styleMask: [.titled, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: ShellView(shell: shell).brandTint().frame(width: width, height: height))
-        window.makeKeyAndOrderFront(nil)
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        window.contentView = NSHostingView(rootView: ShellView(shell: shell).brandTint().environment(\.colorScheme, dark ? .dark : .light).frame(width: width, height: height))
+        if shown { window.makeKeyAndOrderFront(nil) }
         return window
     }
 }
