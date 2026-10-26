@@ -284,33 +284,35 @@ struct StudyScreenSnapshotTests {
         try await shoot(resting, moreRing, "52-rest-learn-new")
     }
 
-    /// The bar's ring before and after the streak step: its flame is outlined, then filled.
+    /// The bar's flame before and after the streak step, outlined then filled, and at risk with its mark. The figures are
+    /// made by hand: the fixture deck has no plan at the start of its day, which counts as a kept streak.
     @Test(arguments: [false, true])
     func headerAroundTheStreakStep(dark: Bool) async throws {
-        let (model, ring, document, undoManager) = try await prepareRound(done: 3)
-        let before = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
-        try write(before, name: "53-header-before-step", dark: dark)
-        before.isHidden = true
-
-        grade(model, .easy, undoManager: undoManager)
-        #expect(model.isRoundRest)
-        model.continueRound()
-        await ring.refresh(documents: [document], delay: .zero).value
-        let after = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
-        try write(after, name: "54-header-after-step", dark: dark)
-        after.isHidden = true
+        let (model, _, _, _) = try await prepareRound(done: 1)
+        for (name, progress, state) in [
+            ("53-header-before-step", HomeSnapshotTests.roundsProgress(done: 3, streak: 12), StreakState.open),
+            ("54-header-after-step", HomeSnapshotTests.roundsProgress(done: 9, streak: 12), .kept),
+            ("55-header-at-risk", HomeSnapshotTests.roundsProgress(done: 3, streak: 12, repairCards: 8), .atRisk),
+        ] {
+            #expect(progress.streakState == state)
+            let window = try await host(model, ring: DailyRingModel(progress: progress), flight: CardFlight(), dark: dark)
+            try write(window, name: name, dark: dark)
+            window.isHidden = true
+        }
     }
 
     /// The bar's ring is left, right after the close button, so it is where it was whatever the text beside it says: the
-    /// time left, "≈ 1 min", while the goal is open and "5 cards today" once it is met.
+    /// time left, "≈ 3 min", while the goal is open and "30 cards today" once it is met.
     @Test func theBarsRingStaysWhereItIsWhateverTheTextSays() async throws {
+        let (model, _, _, _) = try await prepareRound(done: 1)
         var places: [CGFloat] = []
-        for done in [3, 5] {
-            let (model, ring, _, _) = try await prepareRound(done: done)
+        for done in [3, 30] {
+            let ring = DailyRingModel(progress: HomeSnapshotTests.roundsProgress(done: done, streak: 12))
             let motion = StudyMotion(ring: ring)
             let window = try await host(model, ring: ring, flight: CardFlight(), motion: motion, dark: false)
             try await until { motion.ringHome.width > 0 }
             places.append(motion.ringHome.minX)
+            try write(window, name: "56-header-text-\(done)", dark: false)
             window.isHidden = true
         }
         #expect(places.count == 2 && places[0] > 0, "the ring has a place")

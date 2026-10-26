@@ -19,7 +19,8 @@ struct StreakChip: View {
         HStack(spacing: 6) {
             StreakFlame(state: state)
                 .imageScale(.large)
-            Text(verbatim: Self.text(days: shown, state: state, minutesToKeep: minutesToKeep))
+            // A non-breaking hyphen: "12-day" never splits across two lines when the sentence wraps.
+            Text(verbatim: Self.text(days: shown, state: state, minutesToKeep: minutesToKeep).replacingOccurrences(of: "-", with: "\u{2011}"))
         }
         .font(.subheadline.weight(.semibold))
         .multilineTextAlignment(.center)

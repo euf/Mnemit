@@ -98,12 +98,13 @@ struct StudyView: View {
             // Under the bar, over the top of the card.
             .medalToast(toasts)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarLeading) {
                     closeButton
                 }
                 // Left, right after the close button: the ring stays where it is whatever the text beside it says.
                 ToolbarItem(placement: .topBarLeading) {
                     StudyHeader(model: model, ring: ring, motion: motion)
+                        .fixedSize()
                 }
                 .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .primaryAction) {
