@@ -54,7 +54,7 @@ struct PhoneEditingTests {
             ("Add Card", { document.add(CardText(question: "słońce", answer: "Sonne")!) }),
             ("Add Cards", { document.add(newCards) }),
             ("Import Cards", { document.importCards([self.makeCard("woda")]) }),
-            ("Add Lesson Words", { document.addLessonCards([self.makeCard("chleb")]) }),
+            ("Add Cards", { document.addLessonCards([self.makeCard("chleb")]) }),
             ("Edit Card", { document.editText(of: dom.id, to: text) }),
             ("Edit Card", { document.editCard(kot.id, text: CardText(question: "kot", answer: "Kater")!, note: "kot") }),
             ("Edit Card", { document.setNote("pies", kind: .recognition, of: pies.id) }),

@@ -36,7 +36,11 @@ struct DocumentView: View {
     @State private var importPreview: CardImport.Preview?
     /// Whether an import file is being read: an Anki package takes a while.
     @State private var isReadingImport = false
-    @State private var addingLessonWords = false
+    @State private var addingCards = false
+    /// New Deck is asked of a deck File ▸ New just made, once its window can be edited.
+    @State private var namingDeck = false
+    /// Add Cards opens when the New Deck sheet has gone, so the two sheets don't meet.
+    @State private var opensAddCardsAfterNaming = false
     @State private var toast: Toast?
     @State private var shortcutsHelp = ShortcutsHelp()
     /// Today's cards done against the daily goal and the streak, over all decks open in the app.
@@ -62,7 +66,7 @@ struct DocumentView: View {
                     DeckOverviewView(
                         document: document, canEdit: canEdit, start: startOrPractise, show: { screen = $0 },
                         showOptions: { showingOptions = true })
-                case .cards: CardListView(document: document, isEditable: canEdit, shownCard: shownCard)
+                case .cards: CardListView(document: document, isEditable: canEdit, shownCard: shownCard, addCards: { addingCards = true })
                 case .statistics: StatisticsView(document: document)
                 }
             }
@@ -91,11 +95,11 @@ struct DocumentView: View {
                 ToolbarSpacer(.fixed, placement: .primaryAction)
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        addingLessonWords = true
+                        addingCards = true
                     } label: {
-                        Label("Add Lesson Words", systemImage: "text.badge.plus")
+                        Label("Add Cards", systemImage: "text.badge.plus")
                     }
-                    .help("Add Lesson Words…")
+                    .help("Add Cards…")
                     .disabled(!canEdit)
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -115,9 +119,22 @@ struct DocumentView: View {
         .sheet(item: $importPreview) { preview in
             ImportPreviewView(document: document, preview: preview)
         }
-        .sheet(isPresented: $addingLessonWords) {
-            LessonWordsSheet(document: document, deckName: deckName) { count in
+        .sheet(isPresented: $addingCards) {
+            AddCardsView(document: document) { count in
                 toast = Toast(String(localized: "Added \(count) cards. The production cards unlock after the recognition cards are learned."))
+            }
+        }
+        .sheet(isPresented: $namingDeck, onDismiss: openAddCardsAfterNaming) {
+            NewDeckView(introducesNewCards: document.deck.learningOptions.introducesNewCards) { name, introducesNewCards in
+                if let name {
+                    nameWindow(name)
+                }
+                if introducesNewCards != document.deck.learningOptions.introducesNewCards {
+                    var options = document.deck.learningOptions
+                    options.introducesNewCards = introducesNewCards
+                    document.updateLearningOptions(options)
+                }
+                opensAddCardsAfterNaming = true
             }
         }
         .overlay {
@@ -140,8 +157,13 @@ struct DocumentView: View {
         .onChange(of: canEdit, initial: true) { _, canEdit in
             // The welcome window made this document to import cards into: a new deck, which
             // an Anki package names.
-            if canEdit, let request = WelcomeRequest.takeImportCards() {
-                Task { importCards(from: request.file, namesDeck: true) }
+            if canEdit {
+                let isNewDeck = NewDecks.take(document)
+                if let request = WelcomeRequest.takeImportCards() {
+                    Task { importCards(from: request.file, namesDeck: true) }
+                } else if isNewDeck {
+                    namingDeck = true
+                }
             }
             takeStudyRequest()
         }
@@ -192,7 +214,7 @@ struct DocumentView: View {
                 setPaused: { document.setPaused($0) },
                 importCards: { importCards() },
                 exportCards: exportCards,
-                addLessonWords: { addingLessonWords = canEdit && session == nil },
+                addCards: { addingCards = canEdit && session == nil },
                 showShortcuts: { shortcutsHelp.isShown = true }
             )
         )
@@ -257,9 +279,11 @@ struct DocumentView: View {
         )
     }
 
-    /// The name of the deck as the file has it, for the lesson words sheet.
-    private var deckName: String {
-        fileURL?.deletingPathExtension().lastPathComponent ?? String(localized: "this deck")
+    /// The New Deck sheet has gone: Add Cards, if its Create made the deck.
+    private func openAddCardsAfterNaming() {
+        guard opensAddCardsAfterNaming else { return }
+        opensAddCardsAfterNaming = false
+        addingCards = canEdit
     }
 
     /// Opens the study stream, which rests at once if today's plan is empty; Push On adds ten new cards at once. With

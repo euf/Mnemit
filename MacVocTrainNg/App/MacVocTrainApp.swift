@@ -9,7 +9,7 @@ struct MacVocTrainApp: App {
     }
 
     var body: some Scene {
-        DocumentGroup(newDocument: { VocabularyDocument() }) { file in
+        DocumentGroup(newDocument: { NewDecks.newDocument() }) { file in
             DocumentWindow(file: file)
         }
         .commands {

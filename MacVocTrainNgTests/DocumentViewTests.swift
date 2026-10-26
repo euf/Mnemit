@@ -25,7 +25,7 @@ extension WindowTests {
             window.delegate = delegate
         }
 
-        /// The window on the card list, where the form is: a deck opens on its overview.
+        /// The window on the card list: a deck opens on its overview.
         private func show(isEditable: Bool) {
             window.contentView = NSHostingView(
                 rootView: DocumentView(document: document, fileURL: nil, isEditable: isEditable, merger: VersionMerger { _ in }, initialScreen: .cards))
@@ -33,51 +33,25 @@ extension WindowTests {
             window.contentView?.layoutSubtreeIfNeeded()
         }
 
-        /// The fields of the form for adding cards, left to right: the topmost text fields.
-        private func formFields() async throws -> [NSTextField] {
-            var fields: [NSTextField] = []
-            try await waitUntil("the form shows its fields") {
-                let all = window.contentView.map { descendants(of: $0).compactMap { $0 as? NSTextField }.filter(\.isEditable) } ?? []
-                let top = all.map { $0.convert($0.bounds, to: nil).maxY }.max()
-                fields = all.filter { $0.convert($0.bounds, to: nil).maxY == top }
-                return fields.count == 3
-            }
-            return fields.sorted { $0.convert($0.bounds, to: nil).minX < $1.convert($1.bounds, to: nil).minX }
-        }
-
-        private func descendants(of view: NSView) -> [NSView] {
-            view.subviews.flatMap { [$0] + descendants(of: $0) }
-        }
-
-        /// Types `text` into `field` if the field takes the focus.
-        private func type(_ text: String, into field: NSTextField) async throws {
-            guard window.makeFirstResponder(field), let editor = window.firstResponder as? NSTextView else { return }
-            editor.insertText(text, replacementRange: editor.selectedRange())
-            try await waitUntil("the field holds the text") { field.stringValue == text }
-            // The form reads its text from the view's state, which follows the field
-            // on a later turn.
-            try await Task.sleep(for: .milliseconds(100))
-        }
-
-        /// Types a question and an answer into the form and presses Return, as when adding a
-        /// card. The view attaches the undo manager of the window, which takes the new card
-        /// as an undoable change (#305).
+        /// The view attaches the undo manager of the window to the document, which can be changed from then on
+        /// (#305): the Add Cards sheet and the table's edits register their undo steps with it.
         @Test(arguments: [true, false])
-        func formAddsCardOnlyToEditableDeck(isEditable: Bool) async throws {
+        func theViewAttachesTheUndoManagerOfTheWindow(isEditable: Bool) async throws {
             defer { window.close() }
             #expect(!document.isReadyToEdit)
             show(isEditable: isEditable)
             try await waitUntil("the view attaches the undo manager") { document.undoManager === undoManager }
-            let fields = try await formFields()
-            #expect(fields.allSatisfy { $0.isEnabled == isEditable })
+            #expect(document.isReadyToEdit)
+        }
 
-            try await type("blim", into: fields[0])
-            try await type("blom", into: fields[1])
-            (window.firstResponder as? NSTextView)?.insertNewline(nil)
-            try await Task.sleep(for: .milliseconds(200))
-
-            #expect(document.deck.cards.count == (isEditable ? 2 : 1))
-            #expect(undoManager.canUndo == isEditable)
+        /// File ▸ New makes a deck that starts with New words and is asked about once: Cancel of its window's
+        /// New Deck sheet leaves that mark. A document that was opened is never asked about.
+        @Test func aNewDeckIsAskedAboutOnce() {
+            let made = NewDecks.newDocument()
+            #expect(made.deck.learningOptions.introducesNewCards)
+            #expect(NewDecks.take(made))
+            #expect(!NewDecks.take(made))
+            #expect(!NewDecks.take(document))
         }
     }
 }

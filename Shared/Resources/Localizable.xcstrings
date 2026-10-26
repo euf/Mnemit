@@ -2743,182 +2743,6 @@
         }
       }
     },
-    "%lld words are in other decks, and are left out.": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Wort ist in einem anderen Stapel und wird ausgelassen."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Wörter sind in anderen Stapeln und werden ausgelassen."
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld λέξη υπάρχει σε άλλη τράπουλα και παραλείπεται."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld λέξεις υπάρχουν σε άλλες τράπουλες και παραλείπονται."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld word is in another deck, and is left out."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld words are in other decks, and are left out."
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слова есть в других колодах и пропущены."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слов есть в других колодах и пропущены."
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слово есть в другой колоде и пропущено."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слова есть в других колодах и пропущены."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld words are in the deck already, or earlier in the list, and are left out.": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Wort ist schon im Stapel oder weiter oben in der Liste und wird ausgelassen."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Wörter sind schon im Stapel oder weiter oben in der Liste und werden ausgelassen."
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld λέξη υπάρχει ήδη στην τράπουλα ή νωρίτερα στη λίστα και παραλείπεται."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld λέξεις υπάρχουν ήδη στην τράπουλα ή νωρίτερα στη λίστα και παραλείπονται."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld word is in the deck already, or earlier in the list, and is left out."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld words are in the deck already, or earlier in the list, and are left out."
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слова уже есть в колоде или выше в списке и пропущены."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слов уже есть в колоде или выше в списке и пропущены."
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слово уже есть в колоде или выше в списке и пропущено."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld слова уже есть в колоде или выше в списке и пропущены."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld words in memory": {
       "localizations": {
         "de": {
@@ -3607,24 +3431,24 @@
         }
       }
     },
-    "A Translation → Greek card stays locked until its Greek → translation card has an interval this long. A word is asked in one direction per day.": {
+    "A Meaning → Word card waits until the Word → Meaning card of its word has an interval this long.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eine Karte Übersetzung → Griechisch bleibt gesperrt, bis ihre Karte Griechisch → Übersetzung ein so langes Intervall hat. Ein Wort wird pro Tag nur in einer Richtung abgefragt."
+            "value": "Eine Karte „Bedeutung → Wort“ wartet, bis die Karte „Wort → Bedeutung“ desselben Worts ein Intervall dieser Länge hat."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Μια κάρτα «μετάφραση → ελληνικά» μένει κλειδωμένη μέχρι η κάρτα «ελληνικά → μετάφραση» να αποκτήσει τόσο μεγάλο διάστημα. Μια λέξη ρωτιέται σε μία κατεύθυνση την ημέρα."
+            "value": "Μια κάρτα «σημασία → λέξη» περιμένει μέχρι η κάρτα «λέξη → σημασία» της ίδιας λέξης να έχει τόσο μεγάλο διάστημα."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карточка «перевод → греческий» остаётся закрытой, пока у карточки «греческий → перевод» интервал не станет не меньше этого значения. Слово спрашивается за день только в одном направлении."
+            "value": "Карточка «значение → слово» ждёт, пока у карточки «слово → значение» того же слова не появится такой интервал."
           }
         }
       }
@@ -3651,6 +3475,28 @@
         }
       }
     },
+    "A card you forget this many times is suspended and marked Difficult.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte, die du so oft vergisst, wird ausgesetzt und als Schwierig markiert."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μια κάρτα που ξεχνάς τόσες φορές τίθεται σε αναστολή και σημειώνεται ως δύσκολη."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карточка, которую ты забываешь столько раз, приостанавливается и помечается как сложная."
+          }
+        }
+      }
+    },
     "A card you forget this many times, and again after every further multiple of it, is suspended as a leech. Resume it in the card list. Off never suspends.": {
       "localizations": {
         "de": {
@@ -3669,28 +3515,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Если карточка забыта столько раз, а затем снова при каждом следующем кратном этому числу, она приостанавливается как «пиявка». Возобновить её можно в списке карточек. При значении «Выкл.» ничего не приостанавливается."
-          }
-        }
-      }
-    },
-    "A card you forget this many times, and again after every further multiple, is suspended and marked Difficult. Resume it in the Card Browser. Off never suspends.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Karte, die du so oft vergisst, und danach bei jedem weiteren Vielfachen davon, wird ausgesetzt und als Schwierig markiert. Nimm sie in der Kartenliste wieder auf. Aus setzt nie aus."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μια κάρτα που ξεχνάς τόσες φορές, και ξανά σε κάθε επόμενο πολλαπλάσιο, αναστέλλεται και σημειώνεται ως «Δύσκολη». Άρε την αναστολή της στον περιηγητή καρτών. Με «Ανενεργό» δεν αναστέλλεται ποτέ καμία."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Если карточка забыта столько раз, а затем снова при каждом следующем кратном этому числу, она приостанавливается и помечается как «Сложная». Возобновить её можно в обозревателе карточек. При значении «Выкл.» ничего не приостанавливается."
           }
         }
       }
@@ -3757,28 +3581,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Месяц подряд"
-          }
-        }
-      }
-    },
-    "A production card (native to foreign) stays locked until the recognition card of its word (foreign to native) has an interval this long. A session asks only one card of a word per day. New cards per day counts all other new cards.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Produktionskarte (Muttersprache zu Fremdsprache) bleibt gesperrt, bis die Erkennungskarte ihres Wortes (Fremdsprache zu Muttersprache) ein so langes Intervall hat. Eine Sitzung fragt von den Karten eines Wortes nur eine pro Tag ab. „Neue Karten pro Tag“ zählt alle anderen neuen Karten."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μια κάρτα παραγωγής (από τη μητρική στην ξένη γλώσσα) μένει κλειδωμένη μέχρι η κάρτα αναγνώρισης της λέξης της (από την ξένη στη μητρική) να αποκτήσει τόσο μεγάλο διάστημα. Από τις κάρτες μιας λέξης ρωτιέται μία μόνο την ημέρα. Το «Νέες κάρτες ανά ημέρα» μετρά όλες τις άλλες νέες κάρτες."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточка на воспроизведение (с родного языка на иностранный) остаётся закрытой, пока у карточки на узнавание её слова (с иностранного на родной) интервал не станет не меньше этого значения. Из карточек одного слова в день спрашивается только одна. «Новых карточек в день» учитывает все остальные новые карточки."
           }
         }
       }
@@ -4157,46 +3959,24 @@
         }
       }
     },
-    "Add Lesson Words": {
+    "Add Cards…": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lektionswörter hinzufügen"
+            "value": "Karten hinzufügen …"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Προσθήκη λέξεων μαθήματος"
+            "value": "Προσθήκη καρτών…"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Добавить слова урока"
-          }
-        }
-      }
-    },
-    "Add Lesson Words…": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lektionswörter hinzufügen …"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Προσθήκη λέξεων μαθήματος…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Добавить слова урока…"
+            "value": "Добавить карточки…"
           }
         }
       }
@@ -4223,28 +4003,6 @@
         }
       }
     },
-    "Add the words other decks have, too": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auch Wörter hinzufügen, die andere Stapel haben"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Προσθήκη και των λέξεων που έχουν άλλες τράπουλες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Добавить и слова, которые есть в других колодах"
-          }
-        }
-      }
-    },
     "Add the words you are learning.": {
       "localizations": {
         "de": {
@@ -4263,6 +4021,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Добавь слова, которые ты учишь."
+          }
+        }
+      }
+    },
+    "Add your first cards one by one or from a list.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Füge deine ersten Karten einzeln oder aus einer Liste hinzu."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πρόσθεσε τις πρώτες σου κάρτες μία-μία ή από λίστα."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавь первые карточки по одной или списком."
           }
         }
       }
@@ -5348,28 +5128,6 @@
         }
       }
     },
-    "Cards in the review phase are asked again when their recall probability drops to this value. Higher means more reviews but fewer lapses; 90 % is a good balance.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten in der Wiederholungsphase werden wieder abgefragt, wenn ihre Abrufwahrscheinlichkeit auf diesen Wert sinkt. Höher bedeutet mehr Abfragen, dafür seltener Vergessen; 90 % ist ein guter Kompromiss."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι κάρτες στη φάση επανάληψης ρωτιούνται ξανά όταν η πιθανότητα ανάκλησης πέσει σε αυτή την τιμή. Όσο υψηλότερη, τόσο περισσότερες επαναλήψεις αλλά λιγότερες φορές που ξεχνάς· το 90 % είναι καλή ισορροπία."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки в фазе повторения спрашиваются снова, когда вероятность вспомнить падает до этого значения. Чем выше значение, тем больше оценок и меньше провалов; 90 % — хороший баланс."
-          }
-        }
-      }
-    },
     "Cards in the review phase that you recalled (Hard, Good or Easy) when they were asked again.": {
       "localizations": {
         "de": {
@@ -6048,28 +5806,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не удалось загрузить страницу"
-          }
-        }
-      }
-    },
-    "Counts every new card except the Translation → Greek ones.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zählt alle neuen Karten außer den Karten Übersetzung → Griechisch."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μετρά κάθε νέα κάρτα εκτός από τις «μετάφραση → ελληνικά»."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Учитывает все новые карточки, кроме «перевод → греческий»."
           }
         }
       }
@@ -7416,28 +7152,6 @@
         }
       }
     },
-    "Enter a question and its answer above to add your first card.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gib oben eine Frage und ihre Antwort ein, um deine erste Karte anzulegen."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Γράψε παραπάνω μια ερώτηση και την απάντησή της για να προσθέσεις την πρώτη σου κάρτα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введи выше вопрос и ответ, чтобы добавить первую карточку."
-          }
-        }
-      }
-    },
     "Every card has been studied.": {
       "localizations": {
         "de": {
@@ -7680,28 +7394,6 @@
         }
       }
     },
-    "FSRS starts with parameters averaged over many learners. Computed from this deck's review log, they fit your memory, so cards need fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FSRS beginnt mit Parametern, die über viele Lernende gemittelt sind. Aus dem Verlauf dieses Stapels berechnet, passen sie zu deinem Gedächtnis: Bei gleicher angestrebter Abrufquote brauchen die Karten weniger Abfragen. Fälligkeiten bleiben; neue Abstände gelten ab der nächsten Abfrage einer Karte."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Το FSRS ξεκινά με παραμέτρους που προκύπτουν από τον μέσο όρο πολλών μαθητών. Υπολογισμένες από το ιστορικό επαναλήψεων αυτής της τράπουλας, ταιριάζουν στη μνήμη σου: για τον ίδιο στόχο ανάκλησης, οι κάρτες χρειάζονται λιγότερες επαναλήψεις. Οι ημερομηνίες επανάληψης μένουν· τα νέα διαστήματα ισχύουν από την επόμενη επανάληψη της κάρτας."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FSRS начинает с параметров, усреднённых по многим ученикам. Подобранные по логу оценок этой колоды, они подходят твоей памяти: при той же целевой запоминаемости карточкам нужно меньше оценок. Сроки карточек сохраняются; новые интервалы действуют со следующей оценки карточки."
-          }
-        }
-      }
-    },
     "Filter": {
       "localizations": {
         "de": {
@@ -7764,6 +7456,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Подобранные"
+          }
+        }
+      }
+    },
+    "Fitted to this deck's review log, the parameters need fewer reviews for the same target recall.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An das Wiederholungsprotokoll dieses Stapels angepasst, brauchen die Parameter weniger Wiederholungen für dasselbe Ziel."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Προσαρμοσμένες στο ιστορικό επαναλήψεων αυτής της τράπουλας, οι παράμετροι χρειάζονται λιγότερες επαναλήψεις για τον ίδιο στόχο."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подогнанные под журнал повторений этой колоды, параметры дают ту же целевую запоминаемость с меньшим числом повторений."
           }
         }
       }
@@ -8076,28 +7790,6 @@
         }
       }
     },
-    "Greek → translation": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Griechisch → Übersetzung"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ελληνικά → μετάφραση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Греческий → перевод"
-          }
-        }
-      }
-    },
     "Half a year in a row": {
       "localizations": {
         "de": {
@@ -8164,24 +7856,24 @@
         }
       }
     },
-    "Higher means better recall but more reviews. 90% is a good balance.": {
+    "Higher means better recall and more reviews.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Höher bedeutet besseres Erinnern, aber mehr Abfragen. 90 % ist ein guter Kompromiss."
+            "value": "Höher bedeutet besseres Erinnern und mehr Wiederholungen."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Όσο υψηλότερη, τόσο καλύτερη ανάκληση αλλά περισσότερες επαναλήψεις. Το 90% είναι καλή ισορροπία."
+            "value": "Υψηλότερο σημαίνει καλύτερη ανάκληση και περισσότερες επαναλήψεις."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Чем выше, тем лучше запоминание, но больше оценок. 90 % — хороший баланс."
+            "value": "Выше — лучше помнишь, но больше повторений."
           }
         }
       }
@@ -9440,6 +9132,50 @@
         }
       }
     },
+    "Meaning → Word cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten „Bedeutung → Wort“"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κάρτες «σημασία → λέξη»"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карточки «значение → слово»"
+          }
+        }
+      }
+    },
+    "Meaning → Word cards have a limit of their own.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten „Bedeutung → Wort“ haben ein eigenes Limit."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι κάρτες «σημασία → λέξη» έχουν δικό τους όριο."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У карточек «значение → слово» свой лимит."
+          }
+        }
+      }
+    },
     "Medals": {
       "localizations": {
         "de": {
@@ -9748,6 +9484,28 @@
         }
       }
     },
+    "New and lapsed cards come back in the session until you have graded them Good this many times.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue und vergessene Karten kommen in der Sitzung wieder, bis du sie so oft mit „Gut“ bewertet hast."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι νέες και οι ξεχασμένες κάρτες επιστρέφουν στη συνεδρία, μέχρι να τις βαθμολογήσεις «Καλά» τόσες φορές."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые и забытые карточки возвращаются в сессии, пока ты не оценишь их «Хорошо» столько раз."
+          }
+        }
+      }
+    },
     "New card": {
       "localizations": {
         "de": {
@@ -9814,28 +9572,6 @@
         }
       }
     },
-    "New cards and cards after a lapse come back within the session until they have been graded Good this many times. Hard keeps a card on its step, Again resets it, Easy moves it to the review phase at once.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Karten und Karten nach einem Vergessen kommen in der Sitzung wieder, bis sie so oft mit „Gut“ bewertet wurden. „Schwer“ hält eine Karte auf ihrem Lernschritt, „Nochmal“ setzt sie zurück, „Leicht“ bringt sie sofort in die Wiederholungsphase."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι νέες κάρτες και οι κάρτες μετά από αστοχία επιστρέφουν μέσα στη συνεδρία μέχρι να βαθμολογηθούν «Καλά» τόσες φορές. Το «Δύσκολο» κρατά μια κάρτα στο βήμα της, το «Ξανά» την επαναφέρει, το «Εύκολο» τη μεταφέρει αμέσως στη φάση επανάληψης."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые карточки и карточки после провала возвращаются в рамках сессии, пока не получат оценку «Хорошо» столько раз. «Трудно» оставляет карточку на её шаге, «Снова» сбрасывает её, «Легко» сразу переводит в фазу повторения."
-          }
-        }
-      }
-    },
     "New cards per day": {
       "localizations": {
         "de": {
@@ -9880,28 +9616,6 @@
         }
       }
     },
-    "New production cards per day": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Produktionskarten pro Tag"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Νέες κάρτες παραγωγής ανά ημέρα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новых карточек на воспроизведение в день"
-          }
-        }
-      }
-    },
     "New word": {
       "localizations": {
         "de": {
@@ -9920,6 +9634,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новое слово"
+          }
+        }
+      }
+    },
+    "New words": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Wörter"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Νέες λέξεις"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые слова"
+          }
+        }
+      }
+    },
+    "New words are shown with their answer before you are asked; words you know are asked at once.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Wörter siehst du zuerst mit ihrer Antwort, bevor du gefragt wirst; bekannte Wörter werden sofort abgefragt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι νέες λέξεις εμφανίζονται πρώτα με την απάντησή τους και μετά ρωτιούνται· οι λέξεις που ξέρεις ρωτιούνται αμέσως."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые слова сначала показываются с ответом, и только потом тебя спрашивают; знакомые слова спрашивают сразу."
           }
         }
       }
@@ -14324,28 +14082,6 @@
         }
       }
     },
-    "The parameters are fitted again at %@ reviews, then every %lld days or after %@ more reviews, and replace the current ones only if they predict your newest reviews better.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Parameter werden bei %@ Abfragen, danach alle %lld Tage oder nach %@ weiteren Abfragen neu angepasst und ersetzen die aktuellen nur, wenn sie deine neuesten Abfragen besser vorhersagen."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι παράμετροι προσαρμόζονται ξανά στις %@ επαναλήψεις, έπειτα κάθε %lld ημέρες ή μετά από %@ ακόμη επαναλήψεις, και αντικαθιστούν τις τρέχουσες μόνο αν προβλέπουν καλύτερα τις πιο πρόσφατες επαναλήψεις σου."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Параметры подбираются заново при %@ оценках, затем каждые %lld дн. или после ещё %@ оценок и заменяют текущие, только если лучше предсказывают твои последние оценки."
-          }
-        }
-      }
-    },
     "The parameters could not be computed.": {
       "localizations": {
         "de": {
@@ -15028,28 +14764,6 @@
         }
       }
     },
-    "Translation → Greek": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Übersetzung → Griechisch"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μετάφραση → ελληνικά"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевод → греческий"
-          }
-        }
-      }
-    },
     "Try the Gestures": {
       "localizations": {
         "de": {
@@ -15270,24 +14984,24 @@
         }
       }
     },
-    "Unlock production cards after": {
+    "Untitled": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Produktionskarten freischalten nach"
+            "value": "Ohne Titel"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ξεκλείδωμα καρτών παραγωγής μετά από"
+            "value": "Χωρίς τίτλο"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Открывать карточки на воспроизведение после"
+            "value": "Без названия"
           }
         }
       }
@@ -15820,6 +15534,28 @@
         }
       }
     },
+    "Words I know": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wörter, die ich kenne"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Λέξεις που ξέρω"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слова, которые я знаю"
+          }
+        }
+      }
+    },
     "Words climb from New to Mastered as they stick.": {
       "localizations": {
         "de": {
@@ -15860,6 +15596,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Слов в памяти"
+          }
+        }
+      }
+    },
+    "Words in this deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wörter in diesem Stapel"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Λέξεις σε αυτή την τράπουλα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слова в этой колоде"
           }
         }
       }

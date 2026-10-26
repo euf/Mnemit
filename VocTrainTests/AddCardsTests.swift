@@ -127,7 +127,7 @@ struct AddCardsTests {
         step(undoManager) { added = document.addLessonCards(cards) }
         #expect(added == 4)
         #expect(document.deck.cards.count == 5)
-        #expect(undoManager.undoActionName == String(localized: "Add Lesson Words"))
+        #expect(undoManager.undoActionName == String(localized: "Add Cards"))
         undoManager.undo()
         #expect(document.deck.cards.map(\.question) == ["κλέβω"])
         #expect(!undoManager.canUndo)
@@ -173,7 +173,7 @@ struct AddCardsTests {
     @Test func aSingleCardKeepsNoWordKey() throws {
         let (document, undoManager) = try makeDocument()
         var added = 0
-        step(undoManager) { added = AddCardsSheet.add(CardText(question: "dom", answer: "Haus")!, bothDirections: false, to: document) }
+        step(undoManager) { added = document.addCards(for: CardText(question: "dom", answer: "Haus")!, bothDirections: false) }
         #expect(added == 1)
         #expect(document.deck.cards.map(\.note) == [nil])
         #expect(document.deck.cards.map(\.kind) == [nil])
@@ -186,13 +186,13 @@ struct AddCardsTests {
         let (document, undoManager) = try makeDocument()
         let text = try #require(CardText(question: "ο κλέφτης", answer: "thief"))
         var both = 0
-        step(undoManager) { both = AddCardsSheet.add(text, bothDirections: true, to: document) }
+        step(undoManager) { both = document.addCards(for: text, bothDirections: true) }
         #expect(both == 2)
         #expect(document.deck.cards.count == 2)
 
         let detached = try VocabularyDocument(deck: Deck(), clock: StudyClock { created })
-        #expect(AddCardsSheet.add(text, bothDirections: true, to: detached) == 0)
-        #expect(AddCardsSheet.add(text, bothDirections: false, to: detached) == 0)
+        #expect(detached.addCards(for: text, bothDirections: true) == 0)
+        #expect(detached.addCards(for: text, bothDirections: false) == 0)
         #expect(detached.deck.cards.isEmpty)
     }
 }

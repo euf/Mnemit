@@ -8,6 +8,8 @@ struct CardListView: View {
     var isEditable: Bool
     /// A card to select and show, from Today's search.
     var shownCard: Card.ID?
+    /// Opens Add Cards, for the empty deck's button.
+    var addCards: (() -> Void)?
     @State private var selection = Set<Card.ID>()
     @State private var sortOrder = [KeyPathComparator(\CardRow.position)]
     @State private var columnCustomization = TableColumnCustomization<CardRow>()
@@ -24,8 +26,7 @@ struct CardListView: View {
 
     var body: some View {
         // Re-evaluated every minute because cards become due as time passes. The rows
-        // stay in `table`, so a tick only formats the visible due dates again. The
-        // status bar reads the counts of `DueCardCounter`, which ticks at the same time.
+        // stay in `table`, so a tick only formats the visible due dates again.
         TimelineView(.everyMinute) { _ in
             list(at: document.clock.now)
         }
@@ -60,14 +61,6 @@ struct CardListView: View {
 
         return VStack(spacing: 0) {
             ScopeBar(scope: $scope, counts: document.deck.filterCounts(at: now))
-
-            Divider()
-
-            AddCardForm(document: document) { id in
-                selection = [id]
-            }
-            .disabled(!isEditable)
-            .padding(12)
 
             Divider()
 
@@ -154,7 +147,7 @@ struct CardListView: View {
 
             Divider()
 
-            StatusBar(document: document, shownCount: rows.count, isFiltered: !searchText.isEmpty || scope != .all)
+            StatusBar(total: document.deck.cards.count, shownCount: rows.count, isFiltered: !searchText.isEmpty || scope != .all)
         }
     }
 
@@ -164,11 +157,16 @@ struct CardListView: View {
         } else if let description = scope.emptyDescription {
             ContentUnavailableView("No Matching Cards", systemImage: "checkmark.circle", description: Text(description))
         } else {
-            ContentUnavailableView(
-                "No Cards Yet",
-                systemImage: "rectangle.stack.badge.plus",
-                description: Text("Enter a question and its answer above to add your first card.")
-            )
+            ContentUnavailableView {
+                Label("No Cards Yet", systemImage: "rectangle.stack.badge.plus")
+            } description: {
+                Text("Add your first cards one by one or from a list.")
+            } actions: {
+                if let addCards {
+                    Button("Add Cards…", action: addCards)
+                        .disabled(!isEditable)
+                }
+            }
         }
     }
 
@@ -282,22 +280,18 @@ struct SuspensionButtons: View {
     }
 }
 
+/// How many cards the table shows of the deck's; what is due today is the strip above the table's.
 private struct StatusBar: View {
-    @ObservedObject var document: VocabularyDocument
+    var total: Int
     var shownCount: Int
     var isFiltered: Bool
 
     var body: some View {
-        let total = document.deck.cards.count
-        let today = document.dueCards.counts
         HStack(spacing: 16) {
             if isFiltered {
                 Text("\(shownCount) of \(total) cards")
             } else {
                 Text("\(total) cards")
-            }
-            if today.total > 0 {
-                Text("Today: \(today.parts)")
             }
             Spacer()
         }

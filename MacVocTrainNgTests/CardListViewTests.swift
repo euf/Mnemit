@@ -12,6 +12,21 @@ private final class KeyWindow: NSWindow {
     override var isKeyWindow: Bool { true }
 }
 
+/// The card list under a text field of its own, which the focus can be in before the table gets it: the
+/// card list has no field to type into, the search field is in the window's toolbar.
+private struct ListWithField: View {
+    var document: VocabularyDocument
+    @State private var text = ""
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TextField("Other field", text: $text)
+                .padding(12)
+            CardListView(document: document, isEditable: true)
+        }
+    }
+}
+
 extension WindowTests {
     /// The card list in a real window, sorted through its `NSTableView` and clicked into with
     /// synthetic mouse events.
@@ -28,7 +43,7 @@ extension WindowTests {
             undoManager = makeUndoManager(for: document)
             window = KeyWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: CardListView(document: document, isEditable: true))
+            window.contentView = NSHostingView(rootView: ListWithField(document: document))
             // Key for real where the test host is active, as in CI. Another window, such
             // as the open panel of the document app, may be key there.
             window.makeKeyAndOrderFront(nil)
@@ -39,8 +54,8 @@ extension WindowTests {
             window.contentView.flatMap { descendants(of: $0).lazy.compactMap { $0 as? NSTableView }.first }
         }
 
-        /// The field "Question" of the form above the table: the leftmost editable text field.
-        private var questionField: NSTextField? {
+        /// The text field above the table (`ListWithField`), standing in for the toolbar's search field: the leftmost editable one.
+        private var otherField: NSTextField? {
             window.contentView.flatMap { contentView in
                 descendants(of: contentView)
                     .compactMap { $0 as? NSTextField }
@@ -123,10 +138,10 @@ extension WindowTests {
             table.sortDescriptors = [prototype]
         }
 
-        private func focusQuestionField(_ table: NSTableView) async throws -> NSTextField {
-            let field = try #require(questionField)
+        private func focusOtherField(_ table: NSTableView) async throws -> NSTextField {
+            let field = try #require(otherField)
             #expect(window.makeFirstResponder(field))
-            try await waitUntil("the field \"Question\" has the focus") { editedField === field }
+            try await waitUntil("the text field above the table has the focus") { editedField === field }
             try await updateList(table)
             return field
         }
@@ -158,10 +173,10 @@ extension WindowTests {
             try await waitUntil("the new table has the focus") { tableView.map { window.firstResponder === $0 } ?? false }
         }
 
-        @Test func focusedQuestionFieldKeepsFocusWhenSorted() async throws {
+        @Test func focusedFieldKeepsFocusWhenSorted() async throws {
             defer { window.close() }
             let table = try await showList()
-            let field = try await focusQuestionField(table)
+            let field = try await focusOtherField(table)
 
             try sortByQuestion(table)
             try await waitUntil("a new table replaces the old one") { tableView.map { $0 !== table } ?? false }
@@ -170,7 +185,7 @@ extension WindowTests {
         }
 
         /// Before #171 the table lost the click that moved the focus into it: the first click,
-        /// from the field "Question", selects the row and makes the table first responder, so
+        /// from another text field, selects the row and makes the table first responder, so
         /// Delete, ⌘E and the arrow keys act on the selection.
         ///
         /// A click of the mouse selects the row without asking for the focus on macOS 27: the
@@ -182,7 +197,7 @@ extension WindowTests {
         @Test func firstClickIntoTableSelectsRow() async throws {
             defer { window.close() }
             let table = try await showList()
-            _ = try await focusQuestionField(table)
+            _ = try await focusOtherField(table)
 
             let rect = table.rect(ofRow: 1)
             try clickThroughApplication(at: NSPoint(x: rect.midX, y: rect.midY), in: table)
@@ -196,7 +211,7 @@ extension WindowTests {
         @Test func aClickInTheTableMovesTheFocusIntoItAndOneOutsideDoesNot() async throws {
             defer { window.close() }
             let table = try await showList()
-            let field = try await focusQuestionField(table)
+            let field = try await focusOtherField(table)
             let focus = try #require(clickFocus)
 
             let outside = field.convert(NSPoint(x: field.bounds.midX, y: field.bounds.midY), to: nil)

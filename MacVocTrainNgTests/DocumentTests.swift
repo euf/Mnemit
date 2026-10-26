@@ -95,7 +95,7 @@ struct DocumentTests {
         #expect(added == 4)
         #expect(document.deck.cards.map(\.kind) == [nil, .recognition, .recognition, .production, .production])
         #expect(document.deck.cards.compactMap(\.note) == ["κλέβω", "κλοπή#η", "κλέβω", "κλοπή#η"])
-        #expect(undoManager.undoActionName == "Add Lesson Words" || undoManager.undoActionName == "Lektionswörter hinzufügen")
+        #expect(undoManager.undoActionName == "Add Cards" || undoManager.undoActionName == "Karten hinzufügen")
 
         // The same words again make nothing new.
         let again = LessonWords.plan(for: entries, existingNotes: document.deck.cards.compactMap(\.note), created: document.clock.now)

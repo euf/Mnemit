@@ -69,18 +69,17 @@ struct LocalizationTests {
         }
     }
 
-    /// The phrases of the lesson words sheet.
-    @Test func lessonWordPhrasesAreSingularForOne() throws {
-        let deck = "Greek B1"
+    /// The phrases of the Add Cards sheet's list.
+    @Test func addCardsPhrasesAreSingularForOne() throws {
         let english: [(String.LocalizationValue, String)] = [
-            ("Add \(1) cards to \(deck)", "Add 1 card to Greek B1"),
-            ("Add \(4) cards to \(deck)", "Add 4 cards to Greek B1"),
+            ("Add \(1) Cards", "Add 1 Card"),
+            ("Add \(4) Cards", "Add 4 Cards"),
             ("\(1) lines without a word and a translation are left out.", "1 line without a word and a translation is left out."),
             ("\(3) lines without a word and a translation are left out.", "3 lines without a word and a translation are left out."),
         ]
         let german: [(String.LocalizationValue, String)] = [
-            ("Add \(1) cards to \(deck)", "1 Karte zu Greek B1 hinzufügen"),
-            ("Add \(4) cards to \(deck)", "4 Karten zu Greek B1 hinzufügen"),
+            ("Add \(1) Cards", "1 Karte hinzufügen"),
+            ("Add \(4) Cards", "4 Karten hinzufügen"),
             ("\(1) lines without a word and a translation are left out.", "1 Zeile ohne Wort und Übersetzung wird ausgelassen."),
             ("\(3) lines without a word and a translation are left out.", "3 Zeilen ohne Wort und Übersetzung werden ausgelassen."),
         ]
