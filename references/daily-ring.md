@@ -63,7 +63,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   first study day, the same on every device, never rounded. The goal is the cards of the plan that fit
   it, and new cards fill what the plan's other cards leave.
 - **The rule**, one pure step per study day, `DailyGoal.nextTime(after:)`, over the days before it as plain
-  values (`DailyGoal.RingDay`): a staircase. The last study day (a day with work) asked T (its
+  values (`DailyGoal.RingDay`): a staircase and, above it, the sustained-overshoot step (below). The staircase: the last study day (a day with work) asked T (its
   `RingDay.time`); the next time is T × 1.15 (`DailyGoal.grows`, reason `ringClosed`) when its ring was the
   `DailyGoal.closedToGrow`-th (2nd, 4th, …) in a row closed on a goal that filled T, T when it was the first of
   such a run (reason `closedInARow`), T when it closed on a plan smaller than T (`RingDay.filled` false: a deck's
@@ -72,16 +72,30 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   120…3600 s; 150 s before any study day. A day without work is no step, and the days after it ask what they
   would have asked without it. worked(d) is the cards done on `d` at the day's own prices, new × new price +
   other × other price at the pace of the seven study days before `d`, cards beyond the goal included; How It Works shows it.
+- **Sustained overshoot** (`DailyGoal.nextTime(after:)`, reason `sustainedOvershoot`): a study day is *past the ring*
+  when worked ≥ `overshootRatio` (1.5) × its own time. From the end of the `overshootFromStudyDay`-th (8th) study
+  day, when `overshootHits` (3) of the last `overshootWindow` (4) study days are past the ring, the next time is
+  max(the staircase's T, the `overshootQuantile` (25th) percentile of those four days' worked, over all four, linear
+  interpolation), at most `overshootJump` (1.5) × the last study day's time and at most 3600 s (`timeRange`). The reason is
+  `sustainedOvershoot` only where this is above the staircase's T. Study days 1–8 ask the staircase's time alone, and
+  rest days are no study days in the window. The work is `RingDay.worked`, the same quantity the sim calls work; the
+  staircase's counters (`closed`, `filled`) read the days as before, whatever raised T. A learner who stops at the
+  ring never works 1.5 × the time (the goal's cost never exceeds T), so the step never acts for them. The constants are
+  named static values of `DailyGoal`, the flags for a rollback; the rule is rule D of `Tools/ring-sim/overshoot.md`,
+  and `RingRuleTests` reproduces its numbers on fixed days (342.2, 513.3, 600 s; 475 s with an open day; the hour).
 - **Filled** (`DayRounds.filled`): the goal's cost plus one new card's price exceeds T, so the time, not the
   plan, set the goal. A closed ring on a smaller plan says nothing about more time and moves nothing.
 - **Why**: `ring-design.md`. The staircase puts the share of closed rings where p² ln 1.15 = (1 − p²) ln(1/0.775),
-  0.80, whatever the work, and changes the ring on half the study days. How It Works names the direction only
-  ("Ring closed", "Ring open"), never the rule.
+  0.80, whatever the work, and changes the ring on half the study days; the overshoot step is what lets a learner who
+  goes on every day see fewer laps (`product-model.md` §8, `Tools/ring-sim/overshoot.md`: Double ring on 26 % → 16 % of
+  days synthetic, 50 % → 25 % real, at a closure of 0.75 / 0.70). How It Works names the direction only
+  ("Ring closed", "Ring open", "Plan under the time", "Past the ring"), never the rule.
 - Model learners (`RingRuleTests`): one who stops at the ring asks 150, 150, 172.5, 172.5, 198.4 s …, 150 × 1.15^⌊(d − 1)/2⌋
   on study day d; one who works less than the ring asks falls to 2 minutes on day 2 (150 × 0.775 = 116.25 is under
-  the floor) and holds there; a ring closed on a small plan keeps its time; a day without work changes nothing.
+  the floor) and holds there; a ring closed on a small plan keeps its time; a day without work changes nothing; one who
+  works 600 s every day asks 150 … 228.1 s on days 1–8, then 342.2, 513.3 and 600 s (the jump limit, then the percentile).
 - `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring, filled) with today live, and
-  the reason is `start`, `ringClosed`, `smallPlan` or `ringOpen`; `DailyProgressCache.Before.days` keeps the
+  the reason is `start`, `ringClosed`, `closedInARow`, `smallPlan`, `ringOpen` or `sustainedOvershoot`; `DailyProgressCache.Before.days` keeps the
   days before today.
 
 ## New-card allowance

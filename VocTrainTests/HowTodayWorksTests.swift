@@ -187,6 +187,15 @@ struct HowTodayWorksTests {
         #expect(table.map { $0.last } == ["Ring open", "Plan under the time", "Start"])
     }
 
+    /// A time that rose to what the learner does past the ring is told as "Past the ring".
+    @Test func aTimeRaisedByWorkPastTheRingIsToldWhy() throws {
+        var breakdown = Self.breakdown
+        breakdown.days[2] = DayBreakdown.Day(start: Self.day, time: 400, isClosed: false, worked: 300, reason: .sustainedOvershoot)
+        let content = HowTodayWorks(progress: Self.progress, breakdown: breakdown, memory: Self.memory, swipes: nil, decks: [])
+        let table = try #require(content.sections[2].rows.compactMap { row -> [[String]]? in if case let .table(_, rows) = row { rows } else { nil } }.first)
+        #expect(table.first?.last == "Past the ring")
+    }
+
     /// A paused deck is named in the plan as "Paused: <name>", with no share of the new cards, and the figures are
     /// those of the decks that take part; its FSRS settings are still shown.
     @Test func aPausedDeckIsNamedInThePlanAndLeftOutOfTheFigures() throws {

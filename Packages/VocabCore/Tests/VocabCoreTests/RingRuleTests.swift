@@ -165,12 +165,78 @@ struct RingRuleTests {
         #expect(tiny[0].time > 120 && tiny[1...].allSatisfy { $0.time == 120 })
         #expect(DailyGoal.nextTime(after: [Day(day: 0, time: 120, worked: 10, closed: false, studied: true)]).time == 120)
         // Ring closed every day: 150 × 1.15^22 = 3246.7 on the 45th and 46th days, whose step, 3733.7, is cut to 3600 s on the 47th.
-        let huge = simulate(days: 60) { _ in 10_000 }
+        let huge = simulate(days: 60) { $0 * 1.2 }
         #expect(huge[45].time < 3600 && huge[46...].allSatisfy { $0.time == 3600 })
         let top = Day(day: 0, time: 3600, worked: 10_000, closed: true, studied: true)
         #expect(DailyGoal.nextTime(after: [top, top]).time == 3600)
         // From the floor two closed days grow it again: 120 × 1.15 = 138.
         let floor = Day(day: 0, time: 120, worked: 120, closed: true, studied: true)
         #expect(abs(DailyGoal.nextTime(after: [floor, floor]).time - 138) < 1e-9)
+    }
+
+    // MARK: The sustained-overshoot step (`Tools/ring-sim/overshoot.md`, rule D)
+
+    /// One study day per entry of `work` (seconds; 0 is a day without study), the ring closed except on the days of `open`.
+    func replay(_ work: [Double], open: Set<Int> = []) -> [Day] {
+        var all: [Day] = []
+        for (day, worked) in work.enumerated() {
+            let size = DailyGoal.nextTime(after: all)
+            all.append(Day(day: day, time: size.time, reason: size.reason, worked: worked, closed: !open.contains(day), studied: worked > 0))
+        }
+        return all
+    }
+
+    @Test func aLearnerWhoStopsAtTheRingNeverTriggersTheOvershootStepAndAsksTheStaircaseAlone() {
+        // Closing the ring takes the time and no more; 1.49 × is the most that stays under the step's 1.5; 0.9 leaves it open.
+        for share in [1.0, 1.49, 0.9] {
+            #expect(!simulate(days: 60) { $0 * share }.contains { $0.reason == .sustainedOvershoot })
+        }
+        for (index, day) in simulate(days: 40) { $0 }.enumerated() {
+            #expect(abs(day.time - 150 * pow(1.15, Double(index / 2))) < 1e-9)
+        }
+    }
+
+    @Test func aLearnerWhoGoesOnWithMostDaysPastTheRingRisesToTheirOwnMinutesFromTheNinthDayOn() {
+        // 600 s every day, which is 3.9 × the 150 s of the first day: from the end of the 8th study day on, the time
+        // is the 25th percentile of the last four days' work (600 s), at most 1.5 × the day's time. The numbers are
+        // those of `overshoot.py`'s rule D on the same days (`Tools/ring-sim/overshoot.md`).
+        let days = replay(Array(repeating: 600, count: 14))
+        let sim = [150, 150, 172.5, 172.5, 198.375, 198.375, 228.131_25, 228.131_25, 342.196_875, 513.295_312_5, 600, 600, 690, 690]
+        for (day, time) in zip(days, sim) { #expect(abs(day.time - time) < 1e-6) }
+        #expect(days[0..<8].allSatisfy { $0.reason != .sustainedOvershoot })
+        #expect(days[8...10].allSatisfy { $0.reason == .sustainedOvershoot })
+        // The window no longer holds three days past the ring (600 s is 1 × 600 s) and the staircase takes over: 600 s held, then × 1.15.
+        #expect(days[11].reason == .closedInARow && days[12].reason == .ringClosed)
+    }
+
+    @Test func theRiseIsTheLowerQuartileOfAllFourDaysAndNotOnlyOfTheDaysPastTheRing() {
+        // 600 s a day, then 100 s on an open 9th day: three of the last four days are past the ring, and the 25th percentile of
+        // [100, 600, 600, 600] is 475 s, under the 1.5 × 342.2 = 513.3 s the jump allows (`overshoot.py`: 475.0).
+        let days = replay(Array(repeating: 600, count: 8) + [100, 600, 600, 600], open: [8])
+        #expect(abs(days[8].time - 342.196_875) < 1e-6 && days[8].reason == .sustainedOvershoot)
+        #expect(abs(days[9].time - 475) < 1e-6 && days[9].reason == .sustainedOvershoot)
+        // Two days past the ring in the last four are not enough, 475 s is held and then grows by 1.15: 546.25 s.
+        #expect(days[10].reason == .closedInARow && abs(days[11].time - 546.25) < 1e-6)
+    }
+
+    @Test func theRiseIsAtMostOneAndAHalfTimesTheDaysTimeAndAnHour() {
+        let days = replay(Array(repeating: 600, count: 8) + Array(repeating: 5_000, count: 10))
+        #expect(abs(days[8].time - 1.5 * days[7].time) < 1e-9)
+        for (day, next) in zip(days, days.dropFirst()) { #expect(next.time <= 1.5 * day.time + 1e-9 && next.time <= 3600) }
+        // 5000 s is far above, so the time climbs by 1.5 a day: 3037.5 s, then the hour (`overshoot.py`: 3600).
+        #expect(abs(days[14].time - 3037.5) < 1e-6 && days[15].time == 3600 && days[15].reason == .sustainedOvershoot)
+        #expect(days[15...].allSatisfy { $0.time == 3600 })
+    }
+
+    @Test func twoDaysPastTheRingInFourDoNotTriggerItAndADayWithoutStudyIsNotAStudyDay() {
+        var count = 0
+        let alternating = simulate(days: 40) { asked in
+            count += 1
+            return count % 2 == 0 ? asked * 3 : asked
+        }
+        #expect(!alternating.contains { $0.reason == .sustainedOvershoot })
+        // Days 2 and 3 are rest days: the 8th study day is the 10th day, so the first rise is the 11th day's.
+        let rested = simulate(days: 12, rest: [2, 3]) { _ in 600 }
+        #expect(rested[0...9].allSatisfy { $0.reason != .sustainedOvershoot } && rested[10].reason == .sustainedOvershoot)
     }
 }
