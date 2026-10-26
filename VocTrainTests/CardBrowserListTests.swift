@@ -57,13 +57,13 @@ struct CardBrowserListTests {
         #expect(questions(.leeches) == ["suspended leech", "leech"])
     }
 
-    @Test func aSuspendedCardIsInNoFilterButAllSuspendedAndDifficult() {
+    @Test func aSuspendedCardIsInNoFilterButAllSuspendedAndLeeches() {
         let suspended = card("s", learning: state(.learning, due: -60, lapses: 9), suspended: true)
         let holding = CardFilter.allCases.filter { $0.matches(suspended, at: now, leechThreshold: threshold) }
         #expect(holding == [.all, .suspended, .leeches])
     }
 
-    @Test func aThresholdOfZeroHasNoDifficultCards() {
+    @Test func aThresholdOfZeroHasNoLeeches() {
         #expect(cards.filter { CardFilter.leeches.matches($0, at: now, leechThreshold: 0) }.isEmpty)
     }
 
@@ -113,6 +113,17 @@ struct CardBrowserListTests {
         #expect(shown(list, sort: .difficulty) == ["hard", "middle", "easy", "new"])
     }
 
+    @Test func lapsesPutTheMostForgottenFirstAndNewCardsLast() {
+        let list = [
+            card("two", learning: state(.review, due: 0, lapses: 2)),
+            card("new"),
+            card("nine", learning: state(.review, due: 0, lapses: 9)),
+            card("none", learning: state(.review, due: 0)),
+            card("two too", learning: state(.review, due: 0, lapses: 2)),
+        ]
+        #expect(shown(list, sort: .lapses) == ["nine", "two", "two too", "none", "new"])
+    }
+
     // MARK: Search
 
     @Test func aSearchNarrowsWhatTheFilterHoldsIgnoringCaseAccentsAndTheWordKey() {
@@ -137,7 +148,7 @@ struct CardBrowserListTests {
 
     // MARK: State
 
-    @Test func aRowSaysSuspendedBeforeDifficultBeforeNewBeforeTheDate() {
+    @Test func aRowSaysSuspendedBeforeLeechBeforeNewBeforeTheDate() {
         let due = now.addingTimeInterval(3 * 86_400)
         #expect(BrowserState(card("a", learning: state(.review, due: 0, lapses: 9), suspended: true), leechThreshold: threshold) == .suspended)
         #expect(BrowserState(card("b", learning: state(.review, due: 0, lapses: 9)), leechThreshold: threshold) == .leech)

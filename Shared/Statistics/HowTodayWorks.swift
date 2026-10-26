@@ -217,7 +217,7 @@ struct HowTodayWorks: Equatable, Sendable {
             .text(
                 String(
                     localized:
-                        "A card you forget as many times as Difficult after sets, and again after every further multiple, is suspended and marked Difficult. Resume it from the card list. Off never suspends."
+                        "A leech is a card you have forgotten as often as the deck's threshold says, and again after every half of it. Its answer stays on screen so you can edit the card or set it aside."
                 )),
             .text(
                 String(

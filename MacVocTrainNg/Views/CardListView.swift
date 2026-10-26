@@ -101,6 +101,34 @@ struct CardListView: View {
             .width(min: 80, ideal: 110)
             .customizationID("due")
             .disabledCustomizationBehavior([.reorder, .visibility])
+            TableColumn("Lapses", value: \.lapses) { row in
+                Text(row.hasMemory ? row.lapses.formatted() : "")
+            }
+            .width(min: 60, ideal: 70)
+            .alignment(.numeric)
+            .customizationID("lapses")
+            .disabledCustomizationBehavior(.reorder)
+            TableColumn("Stability", value: \.stability) { row in
+                Text(row.hasMemory ? Format.days(row.stability) : "")
+            }
+            .width(min: 80, ideal: 100)
+            .alignment(.numeric)
+            .customizationID("stability")
+            .disabledCustomizationBehavior(.reorder)
+            TableColumn("Difficulty", value: \.difficulty) { row in
+                Text(row.hasMemory ? Format.difficulty(row.difficulty) : "")
+            }
+            .width(min: 80, ideal: 100)
+            .alignment(.numeric)
+            .customizationID("difficulty")
+            .disabledCustomizationBehavior(.reorder)
+            TableColumn("Recall", value: \.recall) { row in
+                Text(row.hasMemory ? Format.percent(row.recall) : "")
+            }
+            .width(min: 90, ideal: 110)
+            .alignment(.numeric)
+            .customizationID("recall")
+            .disabledCustomizationBehavior(.reorder)
         }
         .focused($tableIsFocused)
         .background(TableClickFocus())
@@ -219,7 +247,8 @@ struct CardListView: View {
     /// The rows of the cards that match the search and the scope bar's filter at `now`.
     private func rows(at now: Date) -> [CardRow] {
         let deck = document.deck
-        let rows = table.rows(of: deck.cards, sortedBy: sortOrder, matching: searchText)
+        let recall = RecallBasis(options: deck.learningOptions, calendar: document.calendar, now: now)
+        let rows = table.rows(of: deck.cards, sortedBy: sortOrder, matching: searchText, recall: recall)
         guard scope != .all else { return rows }
         let threshold = deck.learningOptions.leechThreshold
         // A row's position is that of its card in the deck.
@@ -314,7 +343,7 @@ private struct StatusBar: View {
     }
 }
 
-/// The filters All, Due, New, Learning, Suspended and Difficult under the toolbar, each with
+/// The filters All, Due, New, Learning, Suspended and Leeches under the toolbar, each with
 /// its count in the whole deck.
 ///
 /// A segmented control in the content area, above the table it filters: the HIG offers a

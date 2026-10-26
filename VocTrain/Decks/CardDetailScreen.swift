@@ -159,7 +159,7 @@ private struct CardDetailList: View {
                     .foregroundStyle(.secondary)
             }
             if document.deck.isLeech(card) {
-                Label("Difficult: you keep forgetting this card.", systemImage: "exclamationmark.triangle")
+                Label("Leech: you keep forgetting this card.", systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
             }
             if card.learningState != nil || card.note != nil {
@@ -177,7 +177,7 @@ private struct CardDetailList: View {
         if let learningState = card.learningState {
             LabeledContent("State", value: card.stateTitle)
             LabeledContent("Stability", value: Format.days(learningState.stability))
-            LabeledContent("Difficulty", value: learningState.difficulty.formatted(.number.precision(.fractionLength(1))) + " / 10")
+            LabeledContent("Difficulty", value: Format.difficulty(learningState.difficulty))
             if let probability = document.deck.recallProbability(of: card, at: now, calendar: document.calendar) {
                 LabeledContent("Recall Now", value: Format.percent(probability))
             }

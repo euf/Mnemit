@@ -3,7 +3,7 @@ import Testing
 
 @testable import VocabCore
 
-/// The filters of the card browser, **All · Due · New · Learning · Suspended · Difficult**.
+/// The filters of the card browser, **All · Due · New · Learning · Suspended · Leeches**.
 struct CardFilterTests {
     /// 2026-10-05 18:00 in Berlin.
     let now = Date(timeIntervalSince1970: 1_791_216_000)

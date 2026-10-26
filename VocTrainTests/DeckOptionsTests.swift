@@ -50,6 +50,7 @@ struct DeckOptionsTests {
         step(undoManager) { document.option(\.newProductionPerSession).wrappedValue = nil }
         step(undoManager) { document.option(\.productionUnlockDays).wrappedValue = 0 }
         step(undoManager) { document.option(\.leechThreshold).wrappedValue = 5 }
+        step(undoManager) { document.option(\.leechAction).wrappedValue = .suspend }
         step(undoManager) { document.option(\.maximumInterval).wrappedValue = 365 }
         step(undoManager) { document.option(\.steps).wrappedValue = 3 }
         step(undoManager) { document.option(\.fuzzing).wrappedValue = false }
@@ -61,6 +62,7 @@ struct DeckOptionsTests {
         expected.newProductionPerSession = nil
         expected.productionUnlockDays = 0
         expected.leechThreshold = 5
+        expected.leechAction = .suspend
         expected.maximumInterval = 365
         expected.steps = 3
         expected.fuzzing = false
@@ -73,8 +75,8 @@ struct DeckOptionsTests {
         #expect(saved.learningOptions.newProductionPerSession == nil)
         #expect(saved.learningOptions.newCardsPerSession == 15)
 
-        // One step each: nine undos bring back the defaults.
-        for _ in 0..<9 { undoManager.undo() }
+        // One step each: ten undos bring back the defaults.
+        for _ in 0..<10 { undoManager.undo() }
         #expect(!undoManager.canUndo)
         #expect(document.deck.learningOptions == LearningOptions())
     }

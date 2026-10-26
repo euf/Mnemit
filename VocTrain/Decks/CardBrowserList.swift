@@ -12,6 +12,8 @@ enum BrowserSort: String, CaseIterable, Identifiable {
     case alphabetical
     /// The most difficult first (FSRS difficulty), new cards last.
     case difficulty
+    /// The most lapses first, new cards last.
+    case lapses
 
     var id: Self { self }
 
@@ -21,6 +23,7 @@ enum BrowserSort: String, CaseIterable, Identifiable {
         case .added: String(localized: "Added")
         case .alphabetical: String(localized: "A–Z")
         case .difficulty: String(localized: "Difficulty")
+        case .lapses: String(localized: "Lapses")
         }
     }
 
@@ -32,6 +35,7 @@ enum BrowserSort: String, CaseIterable, Identifiable {
             case .added: Self.compare(rhs.card.created, lhs.card.created)
             case .alphabetical: lhs.card.question.localizedStandardCompare(rhs.card.question)
             case .difficulty: Self.compare(difficultyKey(rhs.card), difficultyKey(lhs.card))
+            case .lapses: Self.compare(rhs.card.learningState?.lapses ?? -1, lhs.card.learningState?.lapses ?? -1)
             }
         return order == .orderedSame ? lhs.position < rhs.position : order == .orderedAscending
     }

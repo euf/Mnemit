@@ -70,7 +70,11 @@ struct DeckOptionsView: View {
                         Stepper(value: $options.leechThreshold, in: LearningOptions.leechThresholdRange) {
                             LabeledContent("Leech threshold", value: options.leechThreshold == 0 ? String(localized: "Off") : options.leechThreshold.formatted())
                         }
-                        .help("A card you forget this many times, and again after every further multiple of it, is suspended as a leech. Resume it in the card list. Off never suspends.")
+                        .help("A card you forget this many times becomes a leech, and again after every half of that.")
+                        Picker("When a card becomes a leech", selection: $options.leechAction) {
+                            Text("Keep").tag(LeechAction.keep)
+                            Text("Suspend").tag(LeechAction.suspend)
+                        }
                     }
                 }
 

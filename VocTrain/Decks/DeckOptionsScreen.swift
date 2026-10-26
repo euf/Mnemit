@@ -54,7 +54,7 @@ struct DeckOptionsScreen: View {
 
             Section {
                 Stepper(value: document.option(\.leechThreshold), in: LearningOptions.leechThresholdRange) {
-                    ValueLabel("Difficult after") {
+                    ValueLabel("Leech after") {
                         if options.leechThreshold == 0 {
                             Text("Off")
                         } else {
@@ -62,8 +62,12 @@ struct DeckOptionsScreen: View {
                         }
                     }
                 }
+                Picker("When a card becomes a leech", selection: document.option(\.leechAction)) {
+                    Text("Keep").tag(LeechAction.keep)
+                    Text("Suspend").tag(LeechAction.suspend)
+                }
             } footer: {
-                Text("A card you forget this many times is suspended and marked Difficult.")
+                Text("A card you forget this many times becomes a leech, and again after every half of that.")
             }
 
             Section {

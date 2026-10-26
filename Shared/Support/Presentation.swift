@@ -594,6 +594,11 @@ enum Format {
         minutes == 0 ? String(localized: "< 1 min") : String(localized: "≈ \(minutes) min")
     }
 
+    /// An FSRS difficulty as "5.2 / 10".
+    static func difficulty(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(1))) + " / 10"
+    }
+
     static func percent(_ value: Double) -> String {
         value.formatted(.percent.precision(.fractionLength(0)))
     }
