@@ -195,6 +195,9 @@ private struct ShortcutsOverlay: View {
         row(keys: ["S"]) {
             Text("Pronounce")
         }
+        row(keys: ["⌘."]) {
+            Text("Done")
+        }
         row(keys: ["?"]) {
             Text("This help")
         }

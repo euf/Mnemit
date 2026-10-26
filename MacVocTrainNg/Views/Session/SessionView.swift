@@ -2,9 +2,9 @@ import SwiftUI
 import VocabCore
 
 /// The screen of the day's stack: asks today's plan one card after another and ends with it
-/// (`StreamRestView`: Done, or Push On for new cards past the end). Every grade is saved
+/// (`StreamRestView`: Done, or Learn 10 New Words past the end). Every grade is saved
 /// at once, so "Done" leaves at any time and loses nothing. The ring in the header shows
-/// today's cards done against the goal (`DailyRingView`).
+/// today's cards done against the goal, with the streak's flame in its middle.
 ///
 /// Keyboard flow: Space or Return shows the answer, then ← Forgot, ↓ Hard, → Good, ↑ Easy, or 1–4 for
 /// Forgot, Hard, Good and Easy, and Space or Return mean Good; each grade button shows its arrow. The card
@@ -169,7 +169,7 @@ struct SessionView: View {
     /// "36 cards today" once it is met.
     private var ringAndFigures: some View {
         HStack(spacing: 8) {
-            DailyRingView(progress: ring.progress, showsStreak: false)
+            ProgressRing(fraction: DailyRingFigure.fraction(ring.progress, shown: nil), diameter: 28, center: .flame(ring.progress), speaksCenter: true)
             if let progress = ring.progress {
                 Group {
                     if progress.ring.isGoalMet {
@@ -190,8 +190,9 @@ struct SessionView: View {
     /// answer and rest, so the bar never changes and nothing below it moves; what doesn't apply is disabled.
     private var header: some View {
         HStack(spacing: 12) {
-            // Esc takes back a review, see `keys`; Done has no key.
+            // Esc takes back a review, see `keys`; Done is ⌘., the Mac's key for stopping.
             Button("Done", action: onClose)
+                .keyboardShortcut(".", modifiers: .command)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Group {
                 switch model.streamStage {
