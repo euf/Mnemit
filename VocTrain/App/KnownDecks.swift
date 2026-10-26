@@ -32,6 +32,8 @@ final class KnownDecks {
     private(set) var folder: URL?
     /// Whether the folder is the app's own Documents directory, not one in iCloud Drive.
     private(set) var isLocalFolder = false
+    /// Where the progress ledger of the folder's decks is kept.
+    var ledgerStore: ProgressLedgerStore { ProgressLedgerStore(folder: folder) }
     /// The decks in the folder, as `refreshFolder()` read them last.
     private var folderDecks: [KnownDeck] = []
     @ObservationIgnored private let defaults: UserDefaults

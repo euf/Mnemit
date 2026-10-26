@@ -18,6 +18,6 @@ extension DailyRingModel {
     @discardableResult
     func refreshAllDecks(decks open: OpenDecks = .shared, folder: DeckFolder = .shared, reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) -> Task<Void, Never> {
         let decks = AllDecks.current(decks: open, folder: folder)
-        return refresh(documents: decks.documents, files: decks.files, reloadFiles: reloadFiles, delay: delay)
+        return refresh(documents: decks.documents, files: decks.files, ledger: ProgressLedgerStore(folder: folder.url), reloadFiles: reloadFiles, delay: delay)
     }
 }

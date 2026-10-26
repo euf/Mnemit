@@ -112,7 +112,7 @@ private struct RunStream: View {
     /// files are. `reload` reads those files again.
     private func refreshRing(reload: Bool = false) {
         let others = knownDecks.byName.map(\.url).filter { url in !run.decks.contains { KnownDecks.isSameFile($0.url, url) } }
-        ring.refresh(documents: run.decks.compactMap(\.document), files: others, reloadFiles: reload)
+        ring.refresh(documents: run.decks.compactMap(\.document), files: others, ledger: knownDecks.ledgerStore, reloadFiles: reload)
     }
 }
 

@@ -24,6 +24,7 @@ struct HowTodayWorksSheet: View {
 /// their logs off the main actor, so it shows the figures Today shows.
 struct HowTodayWorksButton: View {
     var decks: [KnownDeck]
+    var ledger: ProgressLedgerStore?
     var now: Date
     @State private var isShown = false
     @State private var content: HowTodayWorks?
@@ -37,10 +38,10 @@ struct HowTodayWorksButton: View {
         .sheet(isPresented: $isShown) {
             HowTodayWorksSheet(content: content) { isShown = false }
                 .task {
-                    let files = decks.map(\.url)
+                    let (files, ledger) = (decks.map(\.url), ledger)
                     let now = now
                     let swipes = SwipeTally.shared.counts(at: now)
-                    content = await Task.detached(priority: .utility) { HowTodayWorks.read(files, at: now, swipes: swipes) }.value
+                    content = await Task.detached(priority: .utility) { HowTodayWorks.read(files, at: now, swipes: swipes, ledger: ledger) }.value
                 }
         }
     }

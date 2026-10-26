@@ -294,7 +294,7 @@ struct StartScreen: View {
             }
         case .progress:
             if let progress = ring.progress {
-                ProgressScreen(progress: progress) { HowTodayWorksButton(decks: knownDecks.byName, now: Date()) }
+                ProgressScreen(progress: progress) { HowTodayWorksButton(decks: knownDecks.byName, ledger: knownDecks.ledgerStore, now: Date()) }
             }
         }
     }
@@ -369,7 +369,7 @@ struct StartScreen: View {
     /// again, with this one as the document has it.
     private func refreshRing(withOpen deck: OpenDeck) {
         let others = knownDecks.byName.map(\.url).filter { !KnownDecks.isSameFile($0, deck.url) }
-        ring.refresh(documents: deck.document.map { [$0] } ?? [], files: others)
+        ring.refresh(documents: deck.document.map { [$0] } ?? [], files: others, ledger: knownDecks.ledgerStore)
     }
 
     /// The deck used last, as the list spells its file.
@@ -624,7 +624,7 @@ struct StartScreen: View {
     /// Reads the counts of every deck and the ring over them, and then sets the reminders by them.
     private func refreshCounts() async {
         // The ring first: the new cards each deck takes today are its allowance, which the ring works out.
-        await ring.refresh(documents: [], files: knownDecks.byName.map(\.url), reloadFiles: true, delay: .zero).value
+        await ring.refresh(documents: [], files: knownDecks.byName.map(\.url), ledger: knownDecks.ledgerStore, reloadFiles: true, delay: .zero).value
         await deckCounts.refresh(knownDecks.byName.map(\.url))
         await rescheduleReminders()
     }

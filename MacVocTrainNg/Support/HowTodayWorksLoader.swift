@@ -8,6 +8,7 @@ struct HowTodayWorksLoader: View {
     private var files: [URL]
     private var now: Date
     private var calendar: StudyCalendar
+    private var ledger: ProgressLedgerStore
     @State private var content: HowTodayWorks?
 
     /// Takes the decks as they are now.
@@ -16,6 +17,7 @@ struct HowTodayWorksLoader: View {
         let all = AllDecks.current(decks: decks, folder: folder)
         sources = all.documents.map { HowTodayWorks.Source(name: $0.packageURL?.deletingPathExtension().lastPathComponent, deck: $0.deck) }
         files = all.files
+        ledger = ProgressLedgerStore(folder: folder.url)
         calendar = all.documents.first?.calendar ?? StudyCalendar()
         now = all.documents.first?.clock.now ?? Date()
     }
@@ -23,12 +25,12 @@ struct HowTodayWorksLoader: View {
     var body: some View {
         HowTodayWorksView(content: content)
             .task {
-                let (sources, files, now, calendar) = (sources, files, now, calendar)
+                let (sources, files, now, calendar, ledger) = (sources, files, now, calendar, ledger)
                 content = await Task.detached(priority: .utility) {
                     let read = files.compactMap { url in
                         DeckFileReader.deck(at: url).map { HowTodayWorks.Source(name: url.deletingPathExtension().lastPathComponent, deck: $0) }
                     }
-                    return HowTodayWorks.make(sources + read, at: now, calendar: calendar, swipes: nil)
+                    return HowTodayWorks.make(sources + read, at: now, calendar: calendar, swipes: nil, ledger: ledger.read())
                 }.value
             }
     }

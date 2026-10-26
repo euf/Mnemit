@@ -7,10 +7,12 @@ import VocabCore
 /// app shows them (the iPhone's start screen asks `refresh(documents:files:)` for all its
 /// known decks).
 ///
-/// Derived from the review logs alone (`DailyProgress`), so there is nothing to store or
-/// sync: every device reads the same logs from the same deck files. The decks that are
-/// open come as documents, with their reviews not yet saved; the others are read from
-/// their files, once per `reloadFiles`, and kept.
+/// Today comes from the review logs (`DailyProgress`), the days before it from the progress ledger
+/// (`DayLedger`, kept on disk by `ProgressLedgerStore` in the folder of the decks, one file per device), which the
+/// logs raise and fill: so the past stays as it stood when a deck is paused, deleted or not downloaded yet. A day
+/// the ledger lacks is written to this device's file; every device reads all the files. The decks that are
+/// open come as documents, with their reviews not yet saved; the others are read from their files, and the ledger
+/// from its folder, once per `reloadFiles` (or when the folder changes), and kept.
 ///
 /// It also hands out the new-card allowance of each deck (`DailyProgress.newCardAllowances`), the
 /// deck's share of the new cards the day admits: to an open document as its `newCardAllowance`, and
@@ -40,6 +42,9 @@ final class DailyRingModel {
     }
 
     @ObservationIgnored private var fileActivities: [URL: DeckActivity] = [:]
+    /// The progress ledger as read from `ledgerStore` last, with what this device wrote since.
+    @ObservationIgnored private var ledger = DayLedger()
+    @ObservationIgnored private var ledgerStore: ProgressLedgerStore?
     /// The days before today of each open document, kept from one change to the next (`DeckHistoryCache`), so
     /// that a grade replays only today. A cache that outlives its document, or meets another with the same
     /// address, only fails to match and is replaced.
@@ -52,13 +57,15 @@ final class DailyRingModel {
     /// caller leaves the files of the documents out.
     ///
     /// - Parameters:
-    ///   - reloadFiles: Reads the files again, instead of using what was read before for
+    ///   - ledger: Where the progress ledger is kept. Without one (previews, tests) the days before today
+    ///     come from the logs alone and nothing is written.
+    ///   - reloadFiles: Reads the files again, and the ledger, instead of using what was read before for
     ///     the same files: after the app came back to the front, say. Without it the
-    ///     files are read only if they are not the ones of the last call.
+    ///     files are read only if they are not the ones of the last call, the ledger only if its store changed.
     ///   - delay: How long to wait for another call before evaluating.
     /// - Returns: The evaluation, which a later call cancels: its `value` is there when the figures are.
     @discardableResult
-    func refresh(documents: [VocabularyDocument], files: [URL] = [], reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) -> Task<Void, Never> {
+    func refresh(documents: [VocabularyDocument], files: [URL] = [], ledger store: ProgressLedgerStore? = nil, reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) -> Task<Void, Never> {
         let decks = documents.map(\.deck)
         let progressCache = progressCache
         let caches = documents.map { historyCaches[ObjectIdentifier($0)] ?? DeckHistoryCache() }
@@ -67,13 +74,15 @@ final class DailyRingModel {
         let now = documents.first?.clock.now ?? Date()
         let known = fileActivities
         let mustRead = reloadFiles || Set(files) != Set(known.keys)
+        let knownLedger = ledger
+        let mustReadLedger = reloadFiles || store != ledgerStore
 
         evaluation?.cancel()
         let evaluation = Task { [weak self] in
             try? await Task.sleep(for: delay)
             await GreekSpeech.shared.whenQuiet()
             guard !Task.isCancelled else { return }
-            let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity], NewCardAllowances, [URL]) in
+            let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity], NewCardAllowances, [URL], DayLedger) in
                 var fileActivities = known
                 if mustRead {
                     fileActivities = [:]
@@ -85,7 +94,15 @@ final class DailyRingModel {
                 }
                 let read = files.filter { fileActivities[$0] != nil }
                 let activities = zip(decks, caches).map { DeckActivity(deck: $0, calendar: calendar, historyCache: $1) } + read.compactMap { fileActivities[$0] }
-                let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar, cache: progressCache)
+                var ledger = knownLedger
+                if mustReadLedger {
+                    ledger = store?.read() ?? DayLedger()
+                }
+                let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar, ledger: ledger, cache: progressCache)
+                if let store, !progress.ledgerUpdates.isEmpty {
+                    ledger = ledger.updating(progress.ledgerUpdates)
+                    store.write(ledger)
+                }
                 // In the order of the activities: the documents, then the files that were read. A paused deck has
                 // none, and the allowance of its file from before it was paused goes with it.
                 var allowances = NewCardAllowances()
@@ -97,11 +114,13 @@ final class DailyRingModel {
                         allowances[url] = allowance
                     }
                 }
-                return (progress, fileActivities, allowances, paused)
+                return (progress, fileActivities, allowances, paused, ledger)
             }.value
             guard !Task.isCancelled, let self else { return }
             StallTrace.measure("ringApply") {
                 fileActivities = result.1
+                self.ledger = result.4
+                ledgerStore = store
                 progress = result.0
                 NewCardAllowances.today.merge(result.2)
                 for url in result.3 {
