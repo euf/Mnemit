@@ -77,12 +77,14 @@ Progress.
 added after a lesson, first in a stream over that deck, then the deck's plan; they take the place of the day's new
 cards, so tomorrow's load is the same as if the deck had chosen them). Both count toward the ring and its laps.
 
-**The streak line** stands under the ring: the flame and the days, "12-day streak", in the same place and form all day;
-the flame's shape is its state (an outline while today's step is open, filled once it is kept, an outline with "!" the day
-after a miss). **The sentence** under it is the next moment and its minutes, one at a time, with no days in it: "≈ 2 min to
-keep your streak" → "≈ 5 min to close the ring" → "Ring closed · ≈ 12 min of reviews left" → "All done for today". After a
-miss: "≈ 6 min to close the ring and save your streak"; without a streak: "≈ 2 min to start your streak", and no streak
-line. **The button** follows the sentence: Study, then Catch Up, then Learn 10 New Words.
+**The streak** stands beside the ring as a figure, "Day streak 🔥 12", in the same place and form all day; the flame's
+shape is its state (an outline while today's step is open, filled once it is kept, an outline with "!" the day after a
+miss). **The next moment** is the figure under it: its label names the moment and its value is the ≈ minutes: "To keep
+your streak ≈ 2 min" → "To close the ring ≈ 5 min" → "Reviews left ≈ 12 min" → "Today: All done". After a miss: "To save
+your streak ≈ 6 min" (the ring); without a streak the streak reads 0 and the moment "To start your streak". Where one line
+of text is all there is room for (the rests, the small widgets, the reminders, VoiceOver) the figure reads as one
+sentence: "≈ 2 min to keep your streak", "≈ 5 min to close the ring", "Ring closed · ≈ 12 min of reviews left", "All done
+for today". **The button** follows the moment: Study, then Catch Up, then Learn 10 New Words.
 
 **A card** is asked; a tap shows the answer; the learner grades it: left no (Forgot; "Don't know" on its first showing,
 where two wide buttons, Don't know and Know, replace the four), right Good, up Easy, down Hard. A card leaves the stack
@@ -156,11 +158,11 @@ Every surface is the entities above and nothing else.
 
 | Surface | Shows |
 |---|---|
-| **Today** | the ring (no number), the streak line, the sentence, "words learned · +today", the week of rings, deck rows (≈ min or ✓), the button; empty: New Deck, Shared Decks |
+| **Today** | the date under the title; the Today card: the ring (no number) left, its figures right (Day streak, the next moment with ≈ minutes, Words learned with +today), the week of rings under them, the card opening Progress; the Decks card (rows ≈ min or ✓); the button; empty: the ring and "Add the words you are learning.", New Deck, Shared Decks |
 | **The stream** | the card, the stack, the header: ring, flame and days, ≈ minutes to the next moment; the rests at the moments |
-| **A deck** | its header "≈ 4 min · 14 due · 6 new · 2 learning", Cards (browser with filters), Statistics (Cards, Due, New, Suspended, Recall now; retention), Options |
-| **Progress** | the streak (days, best), days studied, rings closed, words learned, the ring's size, the calendar, medals, the memory ladder, How It Works |
-| **Widgets** | small: the ring, the streak line, the sentence; medium: the ring beside the streak line, the sentence and the week; lock screen: circular the ring with ≈ minutes, rectangular the streak line and the sentence beside a small ring, inline "🔥 12 · ≈ 2 min" |
+| **A deck** | its Today card: "≈ 4 min" as the large value, Due, New and Learning as figures beside it; then Cards (browser with filters), Statistics (tiles Cards, Due, New, Suspended, Recall Now; the Retention card), Options |
+| **Progress** | the Streak card (flame, days, best); tiles Days studied, Rings closed, Words learned, Your ring (8 min a day, started at 2.5); the calendar card of rings; Medals; Memory; How It Works |
+| **Widgets** | medium: the Today card (the ring left, the three figures right); small: the ring, the streak and the sentence under it; lock screen: circular the ring with ≈ minutes, rectangular the streak and the sentence beside a small ring, inline "🔥 12 · ≈ 2 min" |
 | **Reminders** | "Keep your 12-day streak · ≈ 2 min", and at 21:00 while the streak is at stake; the badge "1" while the ring is open |
 | **The Mac** | one window: the same Today, stream, decks and Progress, by keyboard |
 
@@ -168,20 +170,24 @@ A medal's toast never covers the ring, the card or a button: on the Mac's Today 
 iPhone's over the large title; in the Mac's stream in the empty middle of the header row, in the iPhone's as one compact
 line in the gap above the answer's buttons.
 
-### Why the ring leads and the streak has a line of its own
+### The grammar of the screens
 
-Every surface has one hero (`today-layout-research.md`): Fitness opens on the rings and keeps streaks among the awards;
-Duolingo's home is the path, with the flame and its count small and always in the same place; a widget elects one thing,
-the rings in Apple's, the streak and whether today is done in Duolingo's tested one. No app shows a daily ring and a
-streak side by side as equals, and beside the ring the flame reads as a second meter of the same day, the confusion of
-8.0's frames (`ring-streak-design.md` §2). Minutes to the next moment are words everywhere they appear (Workout Buddy's
-"18 minutes away from closing", Speak's "2 hours left"), never a label on the ring.
+The owner's references of 27.10 are Apple's Fitness Summary and the Activity app: a large title with the date under it,
+over cards; the Activity Rings card with the ring on the left and its figures on the right, each a label over a large
+value in its ring's colour ("Move 450/800 CAL"); tiles two to a row (Step Count, Step Distance); a row of small rings for
+the week; a calendar of rings for the month. Mnemit's screens take that grammar:
 
-So the order on Today, by size and place: **the ring** (how far today is), **the streak line** (the habit: the flame and the
-days, which Duolingo's split showed is a mechanic of its own, day-14 retention +3.3 %), **the sentence** (what is next and
-its ≈ minutes, which leads to the button), then words learned and the week. The sentence no longer carries the days: each
-entity is shown once, as itself. On a widget the ring stays the hero and the streak line comes first after it; the
-lock screen's circular widget is the ring alone with its minutes, the inline one the flame and the days.
+- **A screen** is a large title over cards. A card has its title inside, top left, and a chevron where it opens more.
+- **A hero card** holds a picture on the left and its figures on the right: each figure a label over a value, the value
+  large, rounded and in its entity's colour (the ring's indigo for the minutes, the streak's orange for the days), the
+  others in the primary colour. A figure needs no unit where its label says it ("Day streak 12", "Words learned 412").
+- **Tiles**, two to a row: a label, a large value, at most one small line under it.
+- **Days** are small rings with their letters (the week on Today) and a calendar of rings (Progress).
+
+The ring still leads by size, and the figures beside it are the day in words: the streak first (the habit, a mechanic of its
+own: Duolingo's split, day-14 retention +3.3 %, `today-layout-research.md`), the next moment with its ≈ minutes (what the
+button does), words learned (the gain). Each entity shows once, as itself; the flame is never inside the ring (8.0's
+confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as words with "≈", never a label on it.
 
 ## 10. The personas through it
 
@@ -206,7 +212,8 @@ lock screen's circular widget is the ring alone with its minutes, the inline one
 | Grade colours | three greens by lightness, Hard the lightest | chroma rises from Hard to Easy: Hard a dull sage, Easy a vivid jade |
 | The introduction | the four swipes, the day in four lines | first a new word's first showing (Don't know, Know, it comes back), then the swipes |
 | Words on screen | sentences that explain | short and plain everywhere; no text that explains the interface |
-| Today's order | the ring, then one sentence led by the flame with the days in it | the ring, the streak line, the sentence of the next moment |
+| Today | the ring, then one sentence led by the flame with the days in it | the date under the title; one card: the ring left, Day streak, the next moment with ≈ minutes and Words learned right, the week under them |
+| Progress, a deck, Statistics | a streak block with small totals; a bold header line; grey boxes | cards with their titles inside, tiles with large values, the deck's Today card |
 | Medal toasts | over the ring (Mac), over the card or a deck row | where they cover nothing |
 
 ## 12. Details settled in the build
@@ -224,7 +231,8 @@ lock screen's circular widget is the ring alone with its minutes, the inline one
   two rows of the four buttons they replace; on the Mac their keys are ← or 1 (Don't know) and → or 3 (Know); ↓ ↑ 2 4 still give Hard and Easy.
 - **Progress totals** run Days studied, Rings closed, Words learned; the ring's size line reads "Your ring: 8 min a
   day · started at 2.5", or without the start while the ring has not moved; words in memory sit in the Memory section.
-- **The sentence** without a streak is "≈ 2 min to start your streak" and, once nothing is left, "All done for today".
+- **The sentence**, where a figure has no room, without a streak is "≈ 2 min to start your streak" and, once nothing is
+  left, "All done for today".
 - **Text** on every screen is one short sentence in plain words, in en, de, ru and el: what is there or what comes next,
   never how the interface works (no footers that explain a control, no "tap to …").
 - **The records of past days** live in the deck folder, one file per device, merged by day (`daily-ring.md`,
