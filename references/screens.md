@@ -179,8 +179,8 @@ sizes: `design-spec.md` §4.
 
 ## How It Works
 
-A sheet from the last row of the Progress screen (`HowTodayWorksSheet`). On the Mac
-the window of Study ▸ How It Works, over the open decks, which it names Deck 1, Deck 2.
+A sheet from the last row of the Progress screen (`HowTodayWorksSheet`). On the Mac a sheet of the
+Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 
 - For the learner who knows Anki and FSRS: after the three sentences, the numbers and rules under the ring
   and the rounds. Read-only: no controls, no charts. A grouped form; each section's footer holds its
@@ -200,6 +200,16 @@ the window of Study ▸ How It Works, over the open decks, which it names Deck 1
   milestone.
 - **Swipes** (iPhone only): "Swipes that sprang back from a gap: N of M today" (`SwipeTally`,
   `study-screen.md`), with the sectors in compass degrees in the footer.
+- **Options**: seven sentences and no footer, one for each option with a rule behind it. New words / Words I
+  know (an introduction shows the answer and records nothing, and the card is asked a few cards later; Words I
+  know asks at once). Target recall (higher means better recall and more reviews; 90 % is the balance). The
+  Meaning → Word unlock rule and one direction of a word per day. The leech rule (a card is suspended after N
+  lapses and every further multiple, marked Difficult and resumed from the card list; Off never suspends).
+  Learning steps (Good moves a step, Hard keeps it, Forgot resets it, Easy graduates at once). The FSRS
+  parameters (they start from averages, are fitted to the deck's log, give fewer reviews for the same recall,
+  and keep the due dates). The refit schedule, read from `ParameterRefit`: the first fit at 400 reviews, again at
+  1,500, then every 30 days or after 1,000 more; a fit replaces the parameters only if it predicts the newest
+  reviews better.
 - **FSRS**, one section per deck: target recall, default or fitted parameters with the 21 values
   (monospaced, four decimals, wrapped), the last automatic fit, steps per card, longest interval.
 - Code: `HowTodayWorks` (the rows) and `HowTodayWorksView` in `Shared/Statistics`; `DayBreakdown` in
@@ -246,12 +256,12 @@ the window of Study ▸ How It Works, over the open decks, which it names Deck 1
 - Mac: a segmented control `ScopeBar` above the table with a count in each segment (it replaces the
   Leeches toggle; `searchScopes` on the Mac live only during a search, and the filters must always be
   visible). Table columns as before plus Kind (Word → Meaning / Meaning → Word, `CardKind.title`); the Kind column sorts by `CardRow.kindRank`. There is no add form above the table: cards come from Add Cards…, and the empty table offers a button for it. The status line under the table says only "N cards", or "M of N cards" while filtered; the counts of the day are in the filter strip above. The
-  inspector shows the iPhone's Card Detail sections, kind and word key included, and links to the
+  inspector (View ▸ Show Inspector, ⌥⌘I, or the toolbar's Details button) shows the iPhone's Card Detail sections, kind and word key included, and links to the
   sibling (`Deck.siblings(of:)`).
   The edit sheet (Question, Answer, Hint, Word key) changes the word key through
   `VocabularyDocument.setNote` (`DeckChange.settingNote`, kind stays) and hides it while the session
-  still asks the card: the key of a Meaning → Word card is the answer. Keyboard: Delete, ⌘E,
-  ⌘L, ⌘1/⌘2/⌘3 (Overview, Cards, Statistics), Space/arrows in the stream.
+  still asks the card: the key of a Meaning → Word card is the answer. Keyboard: Delete, ⌘E;
+  the window's other keys are under The Mac's window.
 - On macOS 27 a click on a `Table` row selects the row but takes no focus (`NSTableView.mouseDown` is
   not called; measured with a live click on 22.10.2026), and the form field stays first responder:
   Delete, ⌘E and the arrows go to it. `TableClickFocus` (the table's background) moves focus into the
@@ -311,8 +321,8 @@ the window of Study ▸ How It Works, over the open decks, which it names Deck 1
 `SummaryTiles` (`Shared/Statistics`): Cards, Due, New, Suspended (only when above 0) and Recall Now, each the
 figure of the card filters (`Deck.filterCounts(at:)`; `DeckStatistics.Summary`); the figures scale with Dynamic
 Type. The iPhone screen (`StatisticsScreen`, pushed from the deck screen) shows the tiles over the Retention
-table: one table, Young / Mature / Total over Today … last 365 days (`TrueRetention.all`). The Mac keeps
-its charts beside the tiles.
+table: one table, Young / Mature / Total over Today … last 365 days (`TrueRetention.all`). The Mac's deck page
+shows its charts beside the tiles under Statistics (⌘4).
 
 ## Options
 
@@ -344,9 +354,9 @@ Cancel, and Restore Defaults, which keeps the mark.
 - Today row: swipe and context menu "Pause Deck" / "Resume Deck" (`pause.circle` / `play.circle`;
   `OpenDeck` opens the file, `VocabularyDocument.setPaused` changes it, then it closes). Paused decks
   sit in a "Paused" section at the bottom, grey, without counts or subtitle, swipe and context
-  menu Resume Deck; the deck screen menu has the same item. Mac: Study ▸ Pause Deck / Resume Deck
-  pauses the deck of the window; the ring in the toolbar and its help count the decks of the Mnemit folder that
-  aren't paused.
+  menu Resume Deck; the deck screen menu has the same item. Mac: the sidebar lists a paused deck
+  under Paused, grey and without a badge; its row's menu and Study ▸ Pause Deck / Resume Deck pause and resume the
+  selected deck.
 - "How It Works" names it in the plan with the line "Paused: <name>".
 - After resuming, its overdue cards are due like any and come back into the plan, with no special
   rules.
@@ -380,33 +390,53 @@ Cancel, and Restore Defaults, which keeps the mark.
   left to close today's ring, 0 once it is closed (`ReminderPlan.badge`); a later day's is that day's
   cards up to today's goal. Recomputed on going to the background, after closing a deck and on a time
   change.
+- Streak reminder: a second notification at 21:00 (`ReminderPlan.streakMinutes`), ids `streak-reminder-0…6`, in
+  the first reminder's words (title "Keep your 12-day streak", body "≈ 2 min is enough."), scheduled in the same
+  pass for the next seven 21:00s. A streak must be at stake: it is 1 or more and, for today, the streak step is
+  not done; for tomorrow, either way (a streak holds through one missed day); for the day after tomorrow, only
+  when today's step is done; and the day must have cards. None when the first reminder's time is at or after
+  21:00. The app withdraws today's when the streak step turns done (`StartScreen` reschedules when
+  `ring.progress.streakKeptToday` becomes true), on becoming active and on every refresh; each pass starts by
+  removing both sets of ids. Daily Reminder off removes both. There is no setting for the second. The badge is
+  the one above and rides on this request too.
 
 ## Widget
 
 - Target `MnemitWidget`, folder `MnemitWidget/`, bundle id `com.euf.mnemit.ios.widget`, embedded in the
-  iPhone app. Home screen small and medium, lock screen circular and rectangular; a tap goes through
+  iPhone app. Home screen small and medium, lock screen circular, rectangular and inline; a tap goes through
   `mnemit://study` straight into the stream (`StartScreen.open`).
-- It says what Today says, with the streak as the flame in the middle of every ring:
-  - Small: the ring, the headline under it (two lines where it doesn't fit) and the "N cards today" line
-    once the ring is closed.
-  - Medium: the ring, the headline, the "N cards today" line once the ring is closed, "≈ 28 words in
-    memory", and a Study button while
-    the ring is open; once it is closed the headline has the width. It has no streak line and no
-    reminder line.
-  - Circular: the ring (`DailyRingView`, 58 pt) with the streak in its middle: the flame over the days,
-    filled in the streak's orange once the day's streak step is done, a grey outline before. The cards left
-    are never in the middle (the headline stays the VoiceOver label); at 0 days the ring is empty.
-  - Rectangular (lock screen): the headline, the "N cards today" line once the ring is closed, and the
-    streak line with the flame, in the streak's orange once the day keeps it. The widget has no at-risk state: its snapshot carries no
-    repair cards, so the flame is open or kept.
-  Where the rounds are not known (an older app's snapshot) "N cards left" carries "· ≈ 7 min" after
-  it.
+- It says what Today says, with the streak as the flame in the middle of every ring. Every ring draws the flame by
+  `StreakState`: a grey outline until the day's streak step is done, filled in the streak's orange once it is, an
+  orange outline the day after a missed one while the ring is open (at risk).
+  - Small: the ring (64 pt; 56 pt with the time line under the headline; 48 pt at risk), the headline under it
+    (two lines where it doesn't fit) and the "N cards today" line once the ring is closed. At risk the headline
+    is the line Today shows, "Close the ring to save your 12-day streak" (`WidgetState.todayLine`), in the
+    subheadline font, up to three lines.
+  - Medium: the ring (60 pt, the streak in the middle), the headline Today shows (`TodayHeadline.text`, with no
+    "next due" part: "Nothing due" alone), the "N cards today" line once the ring is closed, the week as
+    `WeekRings` (20 pt rings, 8 pt apart), and a Study button at the right while the ring is open; once it is
+    closed the headline has the width. No words-in-memory line, no streak line, no reminder line.
+  - Circular: the ring (`DailyRingView`, 58 pt) with the streak in its middle: the flame over the days, by
+    state. The cards left are never in the middle (the headline stays the VoiceOver label); at 0 days the ring
+    is empty.
+  - Rectangular (lock screen): the headline, the "N cards today" line once the ring is closed, and the streak
+    line with the flame, in the streak's orange once the day keeps it. At risk the headline is the line Today
+    shows, up to three lines, and it names the streak, so the "N-day streak" line is left out.
+  - Inline (`accessoryInline`, over the lock screen's clock): the flame by state, then "12 · 20 cards left"
+    (the cards to close the ring); "12 · All done" when nothing is left; "12 · Ring closed" when the ring is
+    closed and the plan still has cards; "12 · Nothing due" before any study with nothing due; with no streak the
+    part after the dot alone ("20 cards left"). Before the first snapshot: "Open Mnemit to start".
+  On other days the small and rectangular widgets keep the short round title or "N cards left". Where the
+  rounds are not known (an older app's snapshot) "N cards left" carries "· ≈ 7 min" after it.
 - Data travels as one snapshot `WidgetSnapshot` (`Shared/Widget`): date, done cards and the day's
-  goal, streak and whether the ring is closed, rounds (`rounds`, `roundsDone`, `minutesToNextRound`),
-  words in memory (`wordsInMemory`, `wordsToday`; optional fields, an old app's snapshot still reads
-  and shows "N cards left"), the price of a card left (`secondsPerCard`; the forecast holds only card
-  counts per hour, so the snapshot keeps one price), a forecast of how many cards are in the plan for
-  each hour 48 hours ahead across all decks, and the time of the next reminder (`Reminders.nextFire`).
+  goal, streak and whether the ring is closed, whether the streak is at risk (`isStreakAtRisk`), the week
+  (`week`: seven entries, today last, true a closed ring, false an open one, null before the first study day),
+  rounds (`rounds`, `roundsDone`, `minutesToNextRound`), the price of a card left (`secondsPerCard`; the
+  forecast holds only card counts per hour, so the snapshot keeps one price), a forecast of how many cards are
+  in the plan for each hour 48 hours ahead across all decks, and the time of the next reminder
+  (`Reminders.nextFire`). `isStreakAtRisk` and `week` are optional and left out of the JSON when nil: an older
+  snapshot decodes as not at risk with no week, and an older widget ignores the keys. `wordsInMemory` and
+  `wordsToday` are still in the snapshot; the widget shows neither.
 - The app writes its JSON into a keychain item of the shared group
   `$(AppIdentifierPrefix)com.euf.mnemit.shared` (`KeychainSnapshotStore`, `AfterFirstUnlock`). There
   are no App Groups: the free Personal Team gives only keychain sharing. One
@@ -418,7 +448,10 @@ Cancel, and Restore Defaults, which keeps the mark.
   `reloadAllTimelines()`; under tests it is off.
 - The timeline (`WidgetSnapshot.timeline`) puts entries at the forecast hours, at the start of the
   next study day (4:00, not midnight: the ring resets then) and at the reminder time. While the
-  snapshot isn't updated, the streak holds through one missed day.
+  snapshot isn't updated, `WidgetSnapshot.state(at:)` works out the later days: the week moves (the snapshot
+  day's ring as it ended, a missed day is an open ring, today is closed only for an empty plan), and the streak
+  is at risk when exactly one day was missed, the plan has cards and the streak is above 0. A day whose first
+  round was done (`isStreakKept`) is no missed day, whatever its ring did.
 - The widget target builds all of `Shared` (that's where `DailyRingView`, everything it needs and the
   string catalog live): a new file in `Shared` with nothing to do in an extension
   (`UIApplication.shared`) must be excluded from its membership.
@@ -433,58 +466,87 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
 
 | | iPhone | Mac |
 |---|---|---|
-| Today | the root screen | the Today window |
+| Today | the root screen | the Today page of the window |
 | The day's button | Study / Catch Up / Learn 10 New Words | the same |
-| Study over several decks | one stream mixes the decks (`StudyModel`) | the same `StudyModel`: Today opens the decks of the day and mixes them in the window of the deck used last |
+| Study over several decks | one stream mixes the decks (`StudyModel`) | the same `StudyModel`: Today's button opens the decks of the day and mixes them in one stream over the window |
 | The stream | swipes, the stack, the ring travelling to the rests | keys and buttons, the stack, the rests |
-| Progress, medals, How It Works | pushed from Today | windows |
-| A deck | the deck screen | the deck window's Overview |
+| Progress, medals, How It Works | pushed from Today | the Progress page; How It Works is a sheet of it |
+| A deck | the deck screen | the deck's page: the strip, Cards \| Statistics |
 | Cards | the browser, Card Detail, Edit Card | the table, the inspector, the edit sheet; multi-select, keyboard |
-| Adding | Add Cards: One Card, From a List | the same sheet: File ▸ Add Cards… (⇧⌘L), the toolbar button, the empty table's button |
+| Adding | Add Cards: One Card, From a List | the same sheet: Study ▸ Add Cards… (⇧⌘L), the toolbar button, the empty table's button |
 | Import, export, AnkiWeb | yes | yes |
-| A deck from Today | swipe and menu: Pause Deck | menu: Study This Deck, Pause Deck, Show in Finder |
-| Search over all decks | Today's search | the Today window's search; a hit shows the card in its deck's table |
+| A deck from Today | swipe and menu: Pause Deck | the sidebar row's menu: Study This Deck, Pause Deck, Show in Finder, Rename…, Delete Deck |
+| Search over all decks | Today's search | the window's search field; a hit shows the card in its deck's table |
 | Medals | toasts in the stream, new medals of other days on Today, the month's sheet | the same |
 | Studying | question, Show Answer, grade; swipes | question, Show Answer, grade; keys and buttons; no typed answer on either |
 | A new word | introduction: the answer open, Next, swipe any way | introduction: Next, Space, Return, an arrow or a click |
 | Reminders, the icon's number | yes | no: one device reminds, the Mac would remind twice |
 | Widget | yes | no: a Mac widget needs an App Group, which the self-signed Mac app has no team for |
 
-## Mac windows
+## The Mac's window
 
-- **Today window** is the Mac's Today (`WelcomeWindow`, content `WelcomeView` → `TodayWindowContent`;
-  window title "Today", Window ▸ Today ⌘0; shown at launch while no document is open, and by a click on
-  the Dock icon then; to turn it off: `defaults write <bundle id> showsWelcomeWindow -bool NO`). It
-  stays open beside the deck windows; like every Mac window it takes the app's indigo as its tint
-  (`brandTint()`), whatever the system accent. Above the decks, Search All Cards (`AllCardsSearch`, as on the iPhone): a hit opens its deck
-  on Cards with the card selected and the inspector shown (`WelcomeRequest.requestCard(_:of:)`). A deck row's menu:
-  Study This Deck, Pause Deck or Resume Deck (`WelcomeRequest.requestPause(of:isPaused:)`, through the deck's
-  document), Show in Finder. The medals of earlier days this Mac never celebrated come once as toasts, and the
-  month's sheet (`MonthRecapSheet`) shows on the first open of a month, its See All Progress opening Progress. Left: `SummaryRow` (the same view as the iPhone's Today header,
-  ring 80 pt, a button with a chevron that opens Progress), the `DayAction` button (extra large, the default action) and the links Choose Mnemit
-  Folder…, New Deck, Import Cards…, Open Deck…, Shared Decks on AnkiWeb…. Right: the decks of the Mnemit folder
-  with what today's plan takes from each (`StudyCounts.parts`, else "Next review …", "Paused" for a
-  paused deck) and the cards left or a checkmark; Recent Decks below. Before the folder is chosen: the
-  icon, the name, the tagline, the version, Open Mnemit Folder… and the links. The button opens the deck
-  with cards left that was used last, and that deck's window starts the stream
-  (`WelcomeRequest.requestStudy(of:entry:)`); Learn 10 New Words opens the deck used last
-  (`SessionViewModel.Entry.pushOn`). The window reads again when it becomes key and every minute
-  (`KnownDeckCounts.refresh(_:)`). Import Cards… takes CSV, TSV, `.apkg`
-  and `.colpkg`; a package makes a new deck named after the Anki deck, in the window title as well as
-  in Save As. Opening an `.apkg` from Finder does the same, not a document window.
-- **Progress window** (`ProgressWindow`): the iPhone's `ProgressScreen` (`Shared/Statistics`) with All
-  Medals and, in its last section, a link to How It Works. From the day in the Today window, the ring
-  chip of a deck window and Window ▸ Progress; it reads the decks again when it becomes key.
-- The Mac's day counts `AllDecks`: the open documents and the rest of the Mnemit folder. The ring chip,
-  the session header, Today, Progress and How It Works all count them.
-- **Deck window**: Overview | Cards | Statistics (Study ▸ ⌘1, ⌘2, ⌘3), titled with the deck's name: the
-  window hides the package's extension (`hideExtension()`). A deck opens on **Overview**
-  (`DeckOverviewView`), the iPhone's deck screen: Today's counts (`CountsRow`) with the plan's footer, Study
-  This Deck (Learn 10 New Words once nothing is due), Practice Newest Words and Practice Today's
-  Mistakes, and rows to Cards, Statistics and Learning Options…. The toolbar carries the ring chip (a click
-  opens Progress) and the button: **Study** (prominent) while the deck has cards due, else **Learn 10 New Words**
-  (`design-spec.md` §6.2). Cards, filters, inspector and edit sheet: Card browser. Study ▸ Pause Deck /
-  Resume Deck: Pausing a deck.
+One window, `Window("Mnemit", id: "shell")` (`MacVocTrainApp.shellID`; `ShellView` over `Shell.shared`, in
+`MacVocTrainNg/Shell/`), titled by its page ("Today", "Progress", the deck's name), at least 760 x 520 pt. It opens
+on Today at launch and takes the app's indigo as its tint (`brandTint()`). ⌘W closes it and the app runs on
+(`applicationShouldTerminateAfterLastWindowClosed` is false); a click on the Dock icon, a file from Finder or any
+menu item brings it back (`Shell.showWindow`, `applicationShouldHandleReopen`); ⌘Q saves and closes every deck
+first (`applicationShouldTerminate` replies once `Shell.closeAll()` is done). Settings (⌘,) is the one other
+window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`.
+
+- **Sidebar** (`SidebarContent`, 200 to 320 pt): Today with the cards left of the day as its badge, Progress, then
+  the sections Decks, Paused and Other Decks. A deck's badge is the cards left of today's plan for it (new
+  cards limited by the deck's share of the day's allowance, learning, reviews), and the Today badge is their sum,
+  the number on the Today page; a paused deck has none. A new card graded Good stays counted, as it is learning;
+  Easy takes it out. Decks lists the folder's decks that take part in the day, Paused the paused ones, Other
+  Decks the decks opened from outside the Mnemit folder (Finder, Open Deck…) until the app quits; a deck of the
+  folder is never listed there. A deck row's menu: Study This Deck, Pause Deck / Resume Deck, Show in Finder,
+  Rename…, Delete Deck; Rename and Delete are only there. Rename is a sheet and selects the deck under its new
+  name (a taken name leaves it as it was); Delete asks once, moves the file to the Trash and shows Today. The
+  (+) menu under the list: New Deck…, Open Deck…, Shared Decks on AnkiWeb…, Choose Mnemit Folder….
+- **Search All Cards** (`AllCardsSearch`) is the toolbar's search field, over every deck, on Today, Progress and
+  a deck's Statistics (a deck's Cards has its own field). Hits list the card with its deck; a click shows the
+  card selected in its deck's table (`Shell.showCard`).
+- **Today page** (`TodayPageContent`): the iPhone's hero (`TodayHero`, the ring at 200 pt, the week) as a button
+  to Progress, and the day's one button under it, `DayAction` (Study in the accent, Catch Up or Learn 10 New
+  Words grey; extra large, the default action; also in the toolbar). Without a deck: the empty ring, one line,
+  New Deck, Use iCloud Drive Folder and Shared Decks on AnkiWeb…. The medals of earlier days this Mac never
+  celebrated come once as toasts, and the month's sheet (`MonthRecapSheet`) shows on the first open of a month,
+  its See All Progress opening Progress. The window reads the folder again when it becomes key and every minute.
+- **Progress page** (`ProgressPage`): the iPhone's `ProgressScreen` over every deck, with How It Works as a
+  sheet (`HowItWorksSheet`, 520 x 640, Done).
+- **A deck's page** (`DeckPage`, `DeckPageContent`): the strip, then the Cards table or the Statistics. The
+  strip holds the deck's headline (`DeckHeadline`: "14 cards today", a check and "Done · next review tomorrow",
+  or "Paused") and its one button, **Study This Deck** while the plan has cards left in it, else **Learn 10 New
+  Words** (grey). Toolbar: the segmented Cards | Statistics in the middle, Add Cards and Learning Options, and on
+  Cards the Details button. Sheets: Learning Options, Add Cards and the
+  preview of an import; an empty deck opens Add Cards by itself, once. A deck still being read shows a spinner,
+  one that cannot be opened says why. An error of a deck (autosave, read) is a sheet of the window, never
+  app-modal. Cards, filters, inspector and edit sheet: Card browser.
+- **The stream** (`SessionView`) takes the whole window: the sidebar goes (`columnVisibility = .detailOnly`, the
+  toggle removed) and Done gives it back in the state it had; the selection cannot change meanwhile. It is one
+  stream over the decks of the day (the day's button, ⌘L) or over one deck (Study This Deck, ⌥⌘L, the sidebar
+  menu, the practices). The decks of a run stay open until the app quits, the deck studied last first
+  (`StudyRun` with `open`).
+- **Files**: a deck from Finder or Open Deck… is selected; inside the Mnemit folder it is listed there, outside it
+  sits under Other Decks. An `.apkg` or a table from Finder, the AnkiWeb window or Import Cards… with no deck
+  selected makes a new deck named after the Anki deck or the file, numbered if taken, and shows the preview of its
+  cards (`Shell.importIntoNewDeck`). Import Cards… with a deck selected imports into it.
+- **Undo**: `UndoRouter` (`WindowUndoRouting.swift`), a responder in the window's chain, answers Edit ▸ Undo
+  and Redo with the undo manager of the deck the window shows; Today, Progress and the stream have none. A deck's
+  steps survive a switch to another page and back.
+- **Menus** (`AppCommands`; the items read `Shell.menu`, a `MenuState`). In a stream every item but Help is off.
+  - File: New Deck… ⌘N, Open Deck… ⌘O, Import Cards… ⇧⌘I, Shared Decks on AnkiWeb…, Export Deck…, Show in Finder
+    (the last two need a read deck).
+  - Study: the day's action ⌘L (Study, Catch Up or Learn 10 New Words, from any page), Study This Deck ⌥⌘L, Add
+    Cards… ⇧⌘L, Practice Newest Words, Practice Today's Mistakes, Pause Deck / Resume Deck, Learning Options… ⌘;.
+  - View: Today ⌘1, Progress ⌘2, Cards ⌘3, Statistics ⌘4 (the last two need a selected deck), Show Inspector / Hide
+    Inspector ⌥⌘I (only on a deck's Cards), then the system's sidebar items.
+  - Help: Keyboard Shortcuts, always on. `MenuKey` is the one table (shortcut, caps, title) that the menus and
+    the cheat sheet (`ShortcutsHelp`) share; the sheet lists its twelve rows outside a stream and the five keys of
+    the stream (Space, arrows, Z or Esc, S, ?) in one. "?" opens it in a stream only, and it comes up by itself in
+    the first stream.
+- The Mac's day counts `AllDecks`: the open decks and the rest of the Mnemit folder. The ring in the stream's
+  header, Today, Progress and How It Works all count them.
 - **The Mac's stream** (`SessionView`) looks as the iPhone's does: the card on the grouped backdrop
   (`Color.studyBackdrop`, the card `Color.cardSurface`) over the stack's edges (`StackEdges`, the cards of the
   round behind it, at most four, `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done, the
@@ -501,14 +563,10 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
     nothing.
   - Edit Card opens `CardEditSheet`; Card Info a sheet with the card list's inspector
     (`MacVocTrainNg/Views/Session/CardInfoSheet.swift`), whose Edit swaps it for the edit sheet.
-  - At the end of a deck's plan, while another deck of the folder has cards in today's plan, the rest's
-    first button is "Study Greek B1 · 14 cards" (`NextDeck`): it ends this stream and starts that deck's in
-    its window; a stream from Today mixes the decks of the day from the start.
+  - At the end of a deck's plan, while another deck of the day has cards left, the rest's first button is
+    "Study Greek B1 · 14 cards" (`NextDeck`): it ends this stream and starts that deck's, the sidebar still
+    away; a stream from Today mixes the decks of the day from the start.
 - The Mac's stream is the iPhone's `StudyModel` (`Shared/Session`) under `SessionViewModel`, whose stages are
-  asking, revealed and resting: Today's Study, Catch Up and Learn 10 New Words open the decks of the day
-  (`WelcomeRequest.requestStudy(of:entry:with:)`) and start one stream in the window of the deck used last,
-  the others joining once they can be edited (`WelcomeRequest.openDocuments(_:)`); each card from the deck
-  whose next card is most urgent, Undo (Z, Esc, ⌘Z) the last step in its own deck. Medals earned by a grade
-  come as toasts under the bar (`MedalToasts`).
-- How It Works: its own window (Study ▸ How It Works, or the link at the end of Progress), over
-  `AllDecks`, each deck named by its file.
+  asking, revealed and resting: `Shell.study` opens the decks of the run, the stream starts once every deck
+  is read, each card comes from the deck whose next card is most urgent, and Undo (Z, Esc, ⌘Z) takes back the
+  last step in its own deck. Medals earned by a grade come as toasts under the bar (`MedalToasts`).
