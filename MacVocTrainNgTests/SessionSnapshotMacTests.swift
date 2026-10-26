@@ -47,6 +47,20 @@ struct SessionSnapshotMacTests {
         withExtendedLifetime(undoManager) {}
     }
 
+    /// A deck that introduces its new words: the first card is a new word, its answer open, "New word" in the corner and
+    /// Next where the grade buttons would be.
+    @Test func introduction() async throws {
+        var options = LearningOptions()
+        options.introducesNewCards = true
+        let words = [("το σπίτι", "дом · the house"), ("ο δρόμος", "дорога · the road"), ("η αστυνομία", "полиция · the police")]
+        let document = try VocabularyDocument(deck: Deck(learningOptions: options, cards: words.map { Card(question: $0.0, answer: $0.1) }))
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, rounds: RoundGuide(ends: [6, 12]))
+        #expect(model.isIntroduction)
+        try await write(model, name: "4-introduction")
+        withExtendedLifetime(undoManager) {}
+    }
+
     /// A deck whose limit takes no new card today: the stream rests at the end of the plan at once, with Push On.
     @Test func planEnd() async throws {
         var options = LearningOptions()
