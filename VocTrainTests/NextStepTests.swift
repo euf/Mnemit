@@ -87,6 +87,30 @@ struct NextStepTests {
         #expect(NextStep.unbroken("Done", endTogether: true) == "Done")
     }
 
+    /// Today's second figure: the label names the moment, the value is its minutes.
+    @Test func theNextMomentIsAFigureOfALabelAndMinutes() {
+        typealias Moment = NextStep.Moment
+        #expect(step(.open, keep: 2, close: 9).moment == Moment(label: "To keep your streak", value: "≈ 2 min"))
+        #expect(step(.open, keep: 0).moment == Moment(label: "To keep your streak", value: "< 1 min"))
+        #expect(step(.kept, keep: 2, close: 5).moment == Moment(label: "To close the ring", value: "≈ 5 min"))
+        #expect(step(.atRisk, keep: 2, close: 6).moment == Moment(label: "To save your streak", value: "≈ 6 min"))
+        #expect(step(days: 0, .open, keep: 2).moment == Moment(label: "To start your streak", value: "≈ 2 min"))
+        #expect(step(.kept, closed: true, reviews: true, left: 12).moment == Moment(label: "Reviews left", value: "≈ 12 min"))
+        #expect(step(.kept, closed: true).moment == Moment(label: "Today", value: "All done"))
+        // A closed ring with cards left is the moment even without a streak.
+        #expect(step(days: 0, .open, closed: true, reviews: true, left: 4).moment == Moment(label: "Reviews left", value: "≈ 4 min"))
+        // Without a price the label stands and the value is missing.
+        #expect(step(.kept).moment == Moment(label: "To close the ring", value: nil))
+        #expect(step(.kept, closed: true, reviews: true).moment == Moment(label: "Reviews left", value: nil))
+    }
+
+    /// A tinted widget draws every lap in one tone: past the goal the ring says its lap as a number.
+    @Test func aRingPastItsGoalSaysItsLap() {
+        #expect(DailyRingFigure.laps(0) == nil && DailyRingFigure.laps(0.9) == nil && DailyRingFigure.laps(1) == nil)
+        #expect(DailyRingFigure.laps(1.4) == 2 && DailyRingFigure.laps(2) == 2)
+        #expect(DailyRingFigure.laps(2.2) == 3 && DailyRingFigure.laps(ProgressRing.maxLaps) == 3)
+    }
+
     @Test func theFiguresOfADayGiveTheSameStep() {
         func day(done: Int, left: Int, kept: Bool, repair: Int? = nil) -> DailyProgress {
             DailyProgress(ring: DailyRing(done: done, goal: 20), streak: Streak(days: 7, repairCards: repair), cardsLeft: left, streakKeptToday: kept)

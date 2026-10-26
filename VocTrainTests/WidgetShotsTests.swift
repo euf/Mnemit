@@ -31,7 +31,8 @@ struct WidgetShotsTests {
             "progress",
             WidgetState(
                 date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10, rounds: 4,
-                roundsDone: 1, minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15, week: week, weekRings: weekRings)
+                roundsDone: 1, minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15, week: week, weekRings: weekRings,
+                wordsLearned: 412, wordsLearnedToday: 12)
         ),
         // The day after a missed one: the flame's outline is the streak's colour until the ring closes.
         (
@@ -39,14 +40,14 @@ struct WidgetShotsTests {
             WidgetState(
                 date: now, done: 3, goal: 20, streakDays: 7, isGoalMet: false, due: 17, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 0,
                 minutesToNextRound: 2, isStreakAtRisk: true, week: [true, true, false, true, true, false, false],
-                weekRings: [1, 1.6, 0.3, 1, 1, 0.5, 0])
+                weekRings: [1, 1.6, 0.3, 1, 1, 0.5, 0], wordsLearned: 412, wordsLearnedToday: 0)
         ),
         // Before the first round: the streak is not kept yet.
         (
             "first-round",
             WidgetState(
                 date: now, done: 3, goal: 20, streakDays: 7, isGoalMet: false, due: 17, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 0,
-                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 0, week: week)
+                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 0, week: week, wordsLearned: 1204, wordsLearnedToday: 0)
         ),
         // The rounds are done with cards still left: the ring is closed.
         (
@@ -54,7 +55,7 @@ struct WidgetShotsTests {
             WidgetState(
                 date: now, done: 21, goal: 20, streakDays: 8, isGoalMet: true, due: 6, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 4,
                 wordsInMemory: 120, wordsToday: 9, week: [true, true, false, true, true, true, true],
-                weekRings: [1, 1.4, 0.2, 1.5, 1, 3, 1.05])
+                weekRings: [1, 1.4, 0.2, 1.5, 1, 3, 1.05], wordsLearned: 98, wordsLearnedToday: 9)
         ),
         // A snapshot of the old kind, 12 of 20 and 42 due: the cards left stand.
         ("old", WidgetState(date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: Fixtures.date(23, 9), secondsPerCard: 10)),
@@ -63,7 +64,7 @@ struct WidgetShotsTests {
             "beyond-goal",
             WidgetState(
                 date: now, done: 45, goal: 20, streakDays: 31, isGoalMet: true, due: 0, nextReminder: nil, week: [true, true, true, true, true, true, true],
-                weekRings: [1, 1.4, 1, 2, 1, 3, 1])
+                weekRings: [1, 1.4, 1, 2, 1, 3, 1], wordsLearned: 2310, wordsLearnedToday: 31)
         ),
         // A fresh day: nothing reviewed, three digits due, no streak yet.
         (
@@ -112,6 +113,18 @@ struct WidgetShotsTests {
         }
     }
 
+    /// The tinted and clear renderings of the families that draw the ring, the ring past its goal included: the system keeps one
+    /// tone and the opacity, so the pictures are in grey (`saturation(0)`) on a dark ground; the system's own tint is not drawn.
+    @Test func accentedRendering() async throws {
+        for (stateName, state) in Self.states where ["progress", "beyond-goal", "at-risk"].contains(stateName) {
+            for (familyName, family) in Self.families where [.systemSmall, .systemMedium, .accessoryRectangular].contains(family) {
+                let image = try await render(WidgetFrame(state: state, family: family, dark: true, mode: .accented), dark: true)
+                let data = try #require(image.pngData())
+                try data.write(to: directory.appendingPathComponent("widget-accented-\(stateName)-\(familyName).png"))
+            }
+        }
+    }
+
     /// The view in a window of the hosting app, so the accent and the traits are the app's, drawn
     /// at its own size.
     private func render(_ view: some View, dark: Bool) async throws -> UIImage {
@@ -143,6 +156,7 @@ private struct WidgetFrame: View {
     var state: WidgetState?
     var family: WidgetFamily
     var dark: Bool
+    var mode: WidgetRenderingMode = .fullColor
 
     /// The sizes of an iPhone 13 mini (375 × 812), from Apple's table of widget sizes.
     static func size(_ family: WidgetFamily) -> CGSize {
@@ -162,6 +176,8 @@ private struct WidgetFrame: View {
     var body: some View {
         let size = Self.size(family)
         let content = WidgetContent(state: state, family: family)
+            .environment(\.widgetRenderingMode, mode)
+            .saturation(mode == .fullColor ? 1 : 0)
         Group {
             if isAccessory {
                 // On the lock screen the widgets are vibrant: light on a dark wallpaper, dark on a light one.

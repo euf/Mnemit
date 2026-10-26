@@ -99,6 +99,28 @@ struct NextStep: Equatable, Sendable {
         }
     }
 
+    /// The next moment as a figure (`Figure`): the label names the moment, the value is its minutes, "To keep your streak" over
+    /// "≈ 2 min". `value` is `nil` without a price; once nothing is left the label is "Today" and the value "All done".
+    struct Moment: Equatable, Sendable {
+        var label: String
+        var value: String?
+    }
+
+    /// The next moment as a figure: "To keep your streak", "To close the ring", "To save your streak" (the day after a miss), "Reviews
+    /// left" (the ring closed, cards left), "To start your streak" (no days), each over its `minutes`.
+    var moment: Moment {
+        let value = minutes.map { Format.timeLeft(minutes: $0) }
+        if isClosed {
+            return reviewsLeft ? Moment(label: String(localized: "Reviews left"), value: value) : Moment(label: String(localized: "Today"), value: String(localized: "All done"))
+        }
+        guard days > 0 else { return Moment(label: String(localized: "To start your streak"), value: value) }
+        switch state {
+        case .atRisk: return Moment(label: String(localized: "To save your streak"), value: value)
+        case .open: return Moment(label: String(localized: "To keep your streak"), value: value)
+        case .kept: return Moment(label: String(localized: "To close the ring"), value: value)
+        }
+    }
+
     /// The sentence, "≈ 2 min to keep your streak", on one line.
     var sentence: String { lines.joined }
 

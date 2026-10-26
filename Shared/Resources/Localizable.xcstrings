@@ -4280,6 +4280,28 @@
         }
       }
     },
+    "All done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles erledigt"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όλα έτοιμα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё готово"
+          }
+        }
+      }
+    },
     "All done for today": {
       "localizations": {
         "de": {
@@ -5885,6 +5907,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "День"
+          }
+        }
+      }
+    },
+    "Day streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tage in Folge"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ημέρες σερί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дней подряд"
           }
         }
       }
@@ -8947,28 +8991,6 @@
         }
       }
     },
-    "Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lege einen Stapel für die Wörter an, die du lernst, oder nutze den Mnemit-Ordner in iCloud Drive, um deine Stapel zu finden."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Φτιάξε μια τράπουλα για τις λέξεις που μαθαίνεις ή χρησιμοποίησε τον φάκελο Mnemit στο iCloud Drive για να βρεις τις τράπουλες που έχεις."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Создай колоду для слов, которые ты учишь, или найди свои колоды через папку Mnemit в iCloud Drive."
-          }
-        }
-      }
-    },
     "Mastered": {
       "localizations": {
         "de": {
@@ -11719,6 +11741,28 @@
         }
       }
     },
+    "Reviews left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederholungen übrig"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Υπόλοιπες επαναλήψεις"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Осталось повторений"
+          }
+        }
+      }
+    },
     "Reviews per new card": {
       "localizations": {
         "de": {
@@ -14179,6 +14223,94 @@
           "stringUnit": {
             "state": "translated",
             "value": "Время суток"
+          }
+        }
+      }
+    },
+    "To close the ring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um den Ring zu schließen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να κλείσεις τον κύκλο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы закрыть кольцо"
+          }
+        }
+      }
+    },
+    "To keep your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um die Serie zu halten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να κρατήσεις το σερί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы сохранить стрик"
+          }
+        }
+      }
+    },
+    "To save your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um die Serie zu retten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να σώσεις το σερί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы спасти стрик"
+          }
+        }
+      }
+    },
+    "To start your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um die Serie zu starten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να ξεκινήσεις το σερί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы начать стрик"
           }
         }
       }

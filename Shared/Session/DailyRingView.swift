@@ -15,9 +15,11 @@ struct DailyRingView: View {
     var shown: Double?
     /// The stroke's thickness; `nil` takes `ProgressRing.lineWidth(diameter:)`.
     var lineWidth: CGFloat?
+    /// A tinted or clear widget's ring: one tone, a stronger track (`ProgressRing.isFlat`).
+    var isFlat = false
 
     var body: some View {
-        ProgressRing(fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: diameter, lineWidth: lineWidth)
+        ProgressRing(fraction: DailyRingFigure.fraction(progress, shown: shown), diameter: diameter, lineWidth: lineWidth, isFlat: isFlat)
             .accessibilityElement(children: .ignore)
             .accessibilityHidden(false)
             .accessibilityLabel(Text("Daily Goal"))

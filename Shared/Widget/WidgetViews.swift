@@ -4,9 +4,11 @@ import VocabCore
 import WidgetKit
 
 /// The picture of the widget in each family, from the figures of one timeline entry: the day's ring as a picture, nothing
-/// in its middle, the streak's line (the flame and "12-day streak") and one sentence that carries the next step and its price
-/// (`NextStep`). The medium widget adds the week's rings; the lock screen's circle, a gauge, has the minutes of the next
-/// step. `nil` before the app wrote a snapshot.
+/// in its middle. The medium widget is Today's card without its week: the ring on the left, its three figures on the right
+/// (`TodayFigures`: Day streak, the next moment, Words learned); the small one has the ring with the streak figure and the
+/// sentence under them (`NextStep`); the lock screen's circle, a gauge, has the minutes of the next step. In a tinted or clear
+/// rendering (`widgetRenderingMode`) the ring's track and arc differ by opacity, ring and values are `widgetAccentable`, and a
+/// ring past its goal says its lap as a number. `nil` before the app wrote a snapshot.
 ///
 /// In `Shared` and not in the extension, so the tests of the app can draw it with fixed
 /// sizes; the extension only puts a timeline under it. Everything that opens the app is the
@@ -45,13 +47,25 @@ extension WidgetState {
     var nextStep: NextStep { NextStep(progress, minutesToKeep: roundStatus?.minutesToKeep, minutesToClose: minutesLeft, minutesOfReviews: minutesLeft) }
 }
 
-/// The day's ring as a picture, with nothing in its middle: the arc and its laps.
+/// The day's ring as a picture, with nothing in its middle: the arc and its laps. In a tinted, clear or vibrant rendering the
+/// system keeps one tone and the opacity, so the ring is flat there with a stronger track, and a lap past the goal is a number,
+/// "2×", in its middle.
 private struct WidgetRing: View {
     var state: WidgetState
     var diameter: CGFloat
+    @Environment(\.widgetRenderingMode) private var mode
 
     var body: some View {
-        DailyRingView(progress: state.progress, diameter: diameter)
+        let tinted = mode != .fullColor
+        DailyRingView(progress: state.progress, diameter: diameter, isFlat: tinted)
+            .overlay {
+                if tinted, let laps = DailyRingFigure.laps(state.ringFraction) {
+                    Text(verbatim: "\(laps)×")
+                        .font(diameter >= 56 ? .caption.bold() : .caption2.bold())
+                        .monospacedDigit()
+                        .accessibilityHidden(true)
+                }
+            }
             .widgetAccentable()
     }
 }
@@ -75,59 +89,40 @@ private struct WidgetStreakLine: View {
     }
 }
 
-/// The ring, large; under it the streak line and the sentence: two lines, the sentence at its smallest.
+/// The ring and the streak figure side by side, the sentence under them: a small widget has room for little else.
 private struct SmallWidget: View {
     var state: WidgetState
 
     var body: some View {
         let step = state.nextStep
-        VStack(spacing: 4) {
-            WidgetRing(state: state, diameter: 64)
-                .padding(.bottom, 2)
-            WidgetStreakLine(step: step)
-                .font(.caption.weight(.semibold))
-            NextStepText(step: step)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                WidgetRing(state: state, diameter: 56)
+                StreakFigure(step: step, size: .compact, accentable: true)
+            }
+            NextStepText(step: step, alignment: .leading)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(.leading)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: step.spoken))
     }
 }
 
-/// The ring on the left; on the right the streak line as the headline, the sentence under it and the week's rings at the
-/// bottom, without initials. The widget opens the stream; it has no button.
+/// Today's card without its week, for room: the ring on the left, on the right Day streak, the next moment and Words learned.
+/// The widget opens the stream; it has no button.
 private struct MediumWidget: View {
     var state: WidgetState
-
-    private static let ring: CGFloat = 104
 
     var body: some View {
         let step = state.nextStep
         HStack(spacing: 16) {
-            WidgetRing(state: state, diameter: Self.ring)
-            // As tall as the ring: the streak and the sentence at its top, the week at its bottom.
-            VStack(alignment: .leading, spacing: 4) {
-                WidgetStreakLine(step: step)
-                    .font(.headline)
-                NextStepText(step: step, alignment: .leading)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-                    // Two lines: the day after a missed one is the longest sentence.
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                Spacer(minLength: 0)
-                if let week = state.week {
-                    WeekRings(week: week, rings: state.weekRings, today: state.ringFraction, now: state.date, showsLetters: false, diameter: 18, spacing: 6)
-                        .fixedSize()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: Self.ring, alignment: .topLeading)
+            WidgetRing(state: state, diameter: 96)
+            TodayFigures(step: step, words: state.wordsLearned, gain: state.wordsLearnedToday, size: .compact, accentable: true)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .ignore)

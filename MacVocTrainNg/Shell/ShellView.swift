@@ -119,6 +119,7 @@ struct ShellView: View {
         case .today:
             TodayPage(shell: shell, newDeck: { shell.isNamingDeck = true })
                 .navigationTitle("Today")
+                .todaySubtitle(Date())
         case .progress:
             ProgressPage(shell: shell)
                 .navigationTitle("Progress")
