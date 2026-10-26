@@ -658,19 +658,14 @@ extension Color {
     /// accent shows instead unless it is Multicolor.
     static var dailyRing: Color { .appAccent }
 
-    /// The two ends of the ring's gradient (`ProgressRing`), made from the accent in device RGB so they follow it in all
-    /// four appearances. Light mode: the head is the accent with an eighth of black, the tail the accent with a quarter of
-    /// white (the most white that keeps 3:1 on the light grouped grey). Dark mode: the head is the accent, the tail the
-    /// accent with half white. The ends differ by 2:1 in light mode and about 2.5:1 in dark mode, where a lightened tail
-    /// alone gave 1.65:1 and the start and the tail of a ring looked alike; a quarter of black made the light head too dark
-    /// for the accent (owner, 26.10.2026). `AccentContrastTests` holds the tail to 3:1 on the surfaces and the two ends to
-    /// 1.9:1 against each other.
-    static func dailyRingHead(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? .appAccent : Color.appAccent.mix(with: .black, by: 0.125, in: .device)
-    }
-
-    static func dailyRingTail(_ scheme: ColorScheme) -> Color {
-        Color.appAccent.mix(with: .white, by: scheme == .dark ? 0.5 : 0.25, in: .device)
+    /// The tail of the ring's gradient (`ProgressRing`); the head is the accent itself (`dailyRing`). Apple's Activity rings
+    /// run from a deeper colour to a lighter one of a neighbouring hue (Move #E10014 → #FF3287: about 20° of hue and 1.6×
+    /// the luminance, by the MKRingProgressView and Sarunw recreations), so the tail is the accent moved in OKLCH by 20° of
+    /// hue towards violet and by 0.11 of lightness (0.14 in dark mode), its chroma kept where sRGB holds it. The ends differ
+    /// by hue and by 1.55–1.75:1 of luminance; the tail keeps 3:1 on every surface (`AccentContrastTests`). A darkened head
+    /// made the accent read wrong (owner, 26.10.2026).
+    static func dailyRingTail(of head: Color.Resolved, scheme: ColorScheme) -> Color {
+        Color(OKLCH.shifted(head, lightness: scheme == .dark ? 0.14 : 0.11, hue: 20))
     }
 
     /// The streak's flame, filled once today keeps it and outlined in this colour when the streak is at risk: orange,
@@ -734,5 +729,68 @@ extension View {
     /// links look as they do on the iPhone.
     func brandTint() -> some View {
         tint(Color.appAccent)
+    }
+}
+
+/// Oklab and its polar form OKLCH (Björn Ottosson, 2020) on resolved colours: colours made from the accent move in
+/// lightness and hue as the eye sees them.
+enum OKLCH {
+    struct Value: Equatable {
+        var lightness: Double
+        var chroma: Double
+        /// Degrees, 0..<360.
+        var hue: Double
+    }
+
+    static func value(of color: Color.Resolved) -> Value {
+        let (l, a, b) = oklab(Double(color.linearRed), Double(color.linearGreen), Double(color.linearBlue))
+        let hue = (atan2(b, a) * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
+        return Value(lightness: l, chroma: (a * a + b * b).squareRoot(), hue: hue)
+    }
+
+    /// `color` with its lightness and hue moved, its chroma lowered only as far as sRGB requires.
+    static func shifted(_ color: Color.Resolved, lightness: Double, hue: Double) -> Color.Resolved {
+        let value = value(of: color)
+        let l = min(1, max(0, value.lightness + lightness))
+        let h = (value.hue + hue) * .pi / 180
+        func rgb(_ chroma: Double) -> (Double, Double, Double) { linear(l, chroma * cos(h), chroma * sin(h)) }
+        var chroma = value.chroma
+        if !inGamut(rgb(chroma)) {
+            var low = 0.0
+            var high = chroma
+            for _ in 0..<24 {
+                let middle = (low + high) / 2
+                if inGamut(rgb(middle)) { low = middle } else { high = middle }
+            }
+            chroma = low
+        }
+        let (r, g, b) = rgb(chroma)
+        return Color.Resolved(colorSpace: .sRGBLinear, red: Float(r), green: Float(g), blue: Float(b), opacity: color.opacity)
+    }
+
+    private static func inGamut(_ rgb: (Double, Double, Double)) -> Bool {
+        [rgb.0, rgb.1, rgb.2].allSatisfy { $0 >= -1e-6 && $0 <= 1 + 1e-6 }
+    }
+
+    private static func oklab(_ r: Double, _ g: Double, _ b: Double) -> (Double, Double, Double) {
+        let l = cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
+        let m = cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b)
+        let s = cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+        return (
+            0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+            1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
+        )
+    }
+
+    private static func linear(_ l: Double, _ a: Double, _ b: Double) -> (Double, Double, Double) {
+        let lc = pow(l + 0.3963377774 * a + 0.2158037573 * b, 3)
+        let mc = pow(l - 0.1055613458 * a - 0.0638541728 * b, 3)
+        let sc = pow(l - 0.0894841775 * a - 1.2914855480 * b, 3)
+        return (
+            4.0767416621 * lc - 3.3077115913 * mc + 0.2309699292 * sc,
+            -1.2684380046 * lc + 2.6097574011 * mc - 0.3413193965 * sc,
+            -0.0041960863 * lc - 0.7034186147 * mc + 1.7076147010 * sc
+        )
     }
 }

@@ -79,6 +79,7 @@ struct ProgressRing: View {
     var lineWidth: CGFloat?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.self) private var environment
 
     /// The laps drawn at most: three times the goal.
     static let maxLaps = DayRecord.maxLaps
@@ -89,9 +90,13 @@ struct ProgressRing: View {
     }
 
     var body: some View {
-        ActivityRing(progress: min(Self.maxLaps, max(0, fraction)), color: .dailyRingHead(colorScheme), tipColor: .dailyRingTail(colorScheme), lineWidth: lineWidth ?? Self.lineWidth(diameter: diameter))
-            .animation(reduceMotion ? nil : filling, value: fraction)
-            .frame(width: diameter, height: diameter)
-            .accessibilityHidden(true)
+        let head = Color.dailyRing.resolve(in: environment)
+        ActivityRing(
+            progress: min(Self.maxLaps, max(0, fraction)), color: Color(head), tipColor: .dailyRingTail(of: head, scheme: colorScheme),
+            lineWidth: lineWidth ?? Self.lineWidth(diameter: diameter)
+        )
+        .animation(reduceMotion ? nil : filling, value: fraction)
+        .frame(width: diameter, height: diameter)
+        .accessibilityHidden(true)
     }
 }

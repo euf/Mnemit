@@ -173,6 +173,13 @@ struct AccentContrastTests {
         }
     }
 
+    /// `color` in `traits` as SwiftUI's resolved colour, for `OKLCH`.
+    static func resolved(_ color: UIColor, in traits: UITraitCollection) -> Color.Resolved {
+        var (red, green, blue, alpha): (CGFloat, CGFloat, CGFloat, CGFloat) = (0, 0, 0, 0)
+        color.resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return Color.Resolved(colorSpace: .sRGB, red: Float(red), green: Float(green), blue: Float(blue), opacity: Float(alpha))
+    }
+
     /// The colours two SwiftUI `Color`s show side by side in a window of the given appearance, read from
     /// the pixels: `Color.accentColor` takes the app's accent (the asset, in the appearance's variant)
     /// only inside a view, so the ring's colours cannot be resolved by `UIColor` alone.
@@ -228,10 +235,10 @@ struct AccentContrastTests {
         return (color(centers[0]), color(centers[1]))
     }
 
-    /// The ring's gradient runs from `Color.dailyRingHead` to `Color.dailyRingTail` (`Presentation.swift`): the head is
-    /// the accent (darkened in light mode), the tail the accent lightened. The tail holds 3:1 on every surface, so no part
-    /// of the stroke fades into it, and the two ends differ by 1.9:1 at least, so the start and the tail of a ring tell
-    /// apart. Both ends are read from the pixels of a view in the appearance.
+    /// The ring's gradient runs from the accent (`Color.dailyRing`) to `Color.dailyRingTail(of:scheme:)`: lighter and
+    /// 20° of hue towards violet, as Apple's Activity rings move. The head is the asset's accent; the tail holds 3:1 on
+    /// every surface, so no part of the stroke fades into it, and differs from the head by 1.5:1 of luminance and 15–25°
+    /// of hue. Both ends are read from the pixels of a view in the appearance.
     @MainActor @Test func ringGradientHoldsItsContrastInEveryAppearance() async throws {
         var lines: [String] = []
         for appearance in Self.appearances {
@@ -241,18 +248,16 @@ struct AccentContrastTests {
             let accent = try #require(UIColor(named: "AccentColor", in: .main, compatibleWith: traits))
             let accentLuminance = Self.luminance(accent, in: traits)
             let scheme: ColorScheme = appearance.style == .dark ? .dark : .light
-            let (head, tail) = try await Self.shown(.dailyRingHead(scheme), .dailyRingTail(scheme), in: appearance)
+            let (head, tail) = try await Self.shown(.dailyRing, .dailyRingTail(of: Self.resolved(accent, in: traits), scheme: scheme), in: appearance)
             let headLuminance = Self.luminance(head, in: traits)
-            if scheme == .dark {
-                #expect(abs(headLuminance - accentLuminance) < 0.01, "the head is the asset's accent, \(appearance.name)")
-            } else {
-                #expect(headLuminance < accentLuminance, "the head is the accent darkened, \(appearance.name)")
-            }
             let tailLuminance = Self.luminance(tail, in: traits)
+            #expect(abs(headLuminance - accentLuminance) < 0.01, "the head is the asset's accent, \(appearance.name)")
             let spread = Self.contrast(tailLuminance, headLuminance)
-            lines.append("\(appearance.name): tail against head \(String(format: "%.2f", spread))")
-            #expect(tailLuminance > accentLuminance, "the tail is the lighter end, \(appearance.name)")
-            #expect(spread >= 1.9, "the start and the tail tell apart, \(appearance.name)")
+            let turn = OKLCH.value(of: Self.resolved(tail, in: traits)).hue - OKLCH.value(of: Self.resolved(head, in: traits)).hue
+            lines.append("\(appearance.name): tail against head \(String(format: "%.2f", spread)), hue \(String(format: "%.1f", turn))°")
+            #expect(tailLuminance > headLuminance, "the tail is the lighter end, \(appearance.name)")
+            #expect(spread >= 1.5, "the ends differ in luminance, \(appearance.name)")
+            #expect((15...25).contains(turn), "the tail turns towards violet, \(appearance.name)")
             for surface in Self.surfaces {
                 let ratio = Self.contrast(tailLuminance, Self.luminance(surface.color, in: traits))
                 lines.append("    tail on \(surface.name) \(String(format: "%.2f", ratio))")
