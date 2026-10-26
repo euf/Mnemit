@@ -39,6 +39,9 @@ extension FocusedValues {
 
 struct AppCommands: Commands {
     @FocusedValue(\.deckActions) private var actions
+    #if DEBUG
+    @Environment(\.openWindow) private var openWindow
+    #endif
 
     var body: some Commands {
         CommandGroup(after: .importExport) {
@@ -56,6 +59,13 @@ struct AppCommands: Commands {
             Button("Today") { WelcomeWindow.show() }
                 .keyboardShortcut("0")
             Button("Progress") { ProgressWindow.show() }
+            #if DEBUG
+            Button {
+                openWindow(id: MacVocTrainApp.shellID)
+            } label: {
+                Text(verbatim: "Open Shell (Debug)")
+            }
+            #endif
         }
 
         CommandGroup(after: .help) {
@@ -87,6 +97,7 @@ struct AppCommands: Commands {
             Divider()
 
             Button("Learning Options…") { actions?.showOptions() }
+                .keyboardShortcut(";", modifiers: .command)
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
             if actions?.isPaused == true {
                 Button("Resume Deck") { actions?.setPaused(false) }

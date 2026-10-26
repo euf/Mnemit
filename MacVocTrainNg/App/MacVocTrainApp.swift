@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct MacVocTrainApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    static let shellID = "shell"
 
     init() {
         Preferences.setUpDefaults()
@@ -15,6 +16,13 @@ struct MacVocTrainApp: App {
         .commands {
             AppCommands()
         }
+
+        // The one window of the new design, beside the document windows until it takes over their place.
+        Window(String("Mnemit"), id: Self.shellID) {
+            ShellView(shell: .shared)
+                .brandTint()
+        }
+        .defaultLaunchBehavior(.suppressed)
 
         Settings {
             PreferencesView()

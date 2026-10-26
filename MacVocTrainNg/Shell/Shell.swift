@@ -307,6 +307,7 @@ final class Shell {
         // A practice with nothing to practise doesn't open.
         guard run.entry == .study || run.entry == .pushOn || !model.isResting else { return endStudy() }
         session = model
+        for deck in run.decks { deck.merger.isInSession = true }
         shortcuts.showForFirstSession()
     }
 
@@ -316,6 +317,7 @@ final class Shell {
         nextDeck = nil
         runFailure = nil
         let finished = run
+        for deck in finished?.decks ?? [] { deck.merger.isInSession = false }
         run = nil
         columnVisibility = visibilityBeforeStudy
         Task { await finished?.close() }
@@ -334,6 +336,7 @@ final class Shell {
     /// Ends this stream and starts the one of the deck at `url`, with the sidebar still away.
     private func `continue`(with url: URL) {
         let saved = visibilityBeforeStudy
+        for deck in run?.decks ?? [] { deck.merger.isInSession = false }
         session = nil
         nextDeck = nil
         run = nil
@@ -431,5 +434,49 @@ final class Shell {
     /// page. Today, Progress and the stream have none (the stream's ⌘Z is its own button).
     var undoManagerForWindow: UndoManager? {
         run == nil ? selectedDeck?.undoManager : nil
+    }
+
+    // MARK: - Menus
+
+    /// What the menu bar asks of the window: the selected deck's, or the day's when Today or Progress is shown. It reads
+    /// `revision`, so the menu's enablement follows the open deck.
+    var deckActions: DeckActions {
+        _ = revision
+        let document = selectedDeck?.document
+        let canEdit = selectedDeck?.isEditable == true && document?.isReadyToEdit == true
+        let canAct = canEdit && run == nil
+        let now = document?.clock.now ?? Date()
+        let hasMistakes = document.map { !$0.deck.mistakes(onDayOf: now, calendar: $0.calendar).isEmpty } ?? false
+        let hasNewest = document.map { !$0.deck.newestBatchIDs.isEmpty } ?? false
+        let url = selectedURL
+        return DeckActions(
+            isInSession: run != nil,
+            isEditable: canEdit,
+            canStartSession: url == nil ? canStudyDay : canAct && document?.deck.cards.isEmpty == false,
+            startSession: { [unowned self] in study(url.map(Scope.deck) ?? .day) },
+            canPracticeMistakes: canAct && hasMistakes,
+            practiceMistakes: { [unowned self] in if let url { study(.deck(url), entry: .practiceMistakes) } },
+            canPracticeNewest: canAct && hasNewest,
+            practiceNewest: { [unowned self] in if let url { study(.deck(url), entry: .practiceNewest) } },
+            show: { [unowned self] screen in
+                switch screen {
+                case .overview: select(.today)
+                case .cards: showScreen(.cards)
+                case .statistics: showScreen(.statistics)
+                }
+            },
+            showOptions: { [unowned self] in if canAct { request = .options } },
+            isPaused: document?.deck.learningOptions.isPaused ?? false,
+            setPaused: { [unowned self] isPaused in if let url { Task { await setPaused(url, isPaused) } } },
+            importCards: { [unowned self] in if canAct { request = .importCards } },
+            exportCards: { [unowned self] in exportSelected() },
+            addCards: { [unowned self] in if canAct { request = .addCards } },
+            showShortcuts: { [unowned self] in shortcuts.isShown = true })
+    }
+
+    /// File ▸ Export Cards…: the selected deck's cards, to a file the learner names.
+    func exportSelected() {
+        guard let url = selectedURL, let document = selectedDeck?.document else { return }
+        CardExport.run(cards: document.deck.cards, calendar: document.calendar, suggestedName: url.deletingPathExtension().lastPathComponent)
     }
 }

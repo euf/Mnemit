@@ -9550,6 +9550,28 @@
         }
       }
     },
+    "New Deck…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Stapel …"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Νέα τράπουλα…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новая колода…"
+          }
+        }
+      }
+    },
     "New and lapsed cards come back in the session until you have graded them Good this many times.": {
       "localizations": {
         "de": {
@@ -10734,6 +10756,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Опции"
+          }
+        }
+      }
+    },
+    "Other Decks": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weitere Stapel"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Άλλες τράπουλες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Другие колоды"
           }
         }
       }

@@ -10,11 +10,7 @@ enum HowTodayWorksWindow {
     private static var window: NSWindow?
 
     static func show() {
-        let decks = AllDecks.current()
-        let sources = decks.documents.map { HowTodayWorks.Source(name: $0.packageURL?.deletingPathExtension().lastPathComponent, deck: $0.deck) }
-        let calendar = decks.documents.first?.calendar ?? StudyCalendar()
-        let now = decks.documents.first?.clock.now ?? Date()
-        let content = NSHostingController(rootView: Loader(sources: sources, files: decks.files, now: now, calendar: calendar).brandTint())
+        let content = NSHostingController(rootView: HowTodayWorksLoader().brandTint())
         if let window {
             window.contentViewController = content
             window.makeKeyAndOrderFront(nil)
@@ -32,26 +28,38 @@ enum HowTodayWorksWindow {
         self.window = window
         window.makeKeyAndOrderFront(nil)
     }
+}
 
-    /// Reads the decks that aren't open and replays the logs off the main actor, then shows the figures.
-    private struct Loader: View {
-        var sources: [HowTodayWorks.Source]
-        var files: [URL]
-        var now: Date
-        var calendar: StudyCalendar
-        @State private var content: HowTodayWorks?
+/// The figures of "How It Works" over `AllDecks`: the open decks as their documents have them, the others read from
+/// their files and every log replayed off the main actor, with a spinner until they are there. The window and the Progress
+/// page's sheet show it.
+struct HowTodayWorksLoader: View {
+    private var sources: [HowTodayWorks.Source]
+    private var files: [URL]
+    private var now: Date
+    private var calendar: StudyCalendar
+    @State private var content: HowTodayWorks?
 
-        var body: some View {
-            HowTodayWorksView(content: content)
-                .task {
-                    let (sources, files, now, calendar) = (sources, files, now, calendar)
-                    content = await Task.detached(priority: .utility) {
-                        let read = files.compactMap { url in
-                            DeckFileReader.deck(at: url).map { HowTodayWorks.Source(name: url.deletingPathExtension().lastPathComponent, deck: $0) }
-                        }
-                        return HowTodayWorks.make(sources + read, at: now, calendar: calendar, swipes: nil)
-                    }.value
-                }
-        }
+    /// Takes the decks as they are now.
+    @MainActor
+    init(decks: OpenDecks = .shared, folder: DeckFolder = .shared) {
+        let all = AllDecks.current(decks: decks, folder: folder)
+        sources = all.documents.map { HowTodayWorks.Source(name: $0.packageURL?.deletingPathExtension().lastPathComponent, deck: $0.deck) }
+        files = all.files
+        calendar = all.documents.first?.calendar ?? StudyCalendar()
+        now = all.documents.first?.clock.now ?? Date()
+    }
+
+    var body: some View {
+        HowTodayWorksView(content: content)
+            .task {
+                let (sources, files, now, calendar) = (sources, files, now, calendar)
+                content = await Task.detached(priority: .utility) {
+                    let read = files.compactMap { url in
+                        DeckFileReader.deck(at: url).map { HowTodayWorks.Source(name: url.deletingPathExtension().lastPathComponent, deck: $0) }
+                    }
+                    return HowTodayWorks.make(sources + read, at: now, calendar: calendar, swipes: nil)
+                }.value
+            }
     }
 }
