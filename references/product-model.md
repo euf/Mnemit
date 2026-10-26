@@ -72,7 +72,8 @@ moments are one: only the closed ring keeps the streak ("!" on the flame). Two m
 Progress.
 
 **Beyond the day**, by choice: **Learn 10 New Words** (the next ten new cards) and **Study These Now** (the cards just
-added after a lesson, first in tonight's stream). Both count toward the ring and its laps.
+added after a lesson, first in tonight's stream; they take the place of the day's new cards, so tomorrow's load is the
+same as if the deck had chosen them). Both count toward the ring and its laps.
 
 **The sentence** is the day in words, one at a time: "≈ 2 min to keep your 12-day streak" → "12-day streak · ≈ 5 min to
 close the ring" → "Ring closed · ≈ 12 min of reviews left" → "All done for today". After a miss: "≈ 6 min to close the
@@ -98,7 +99,7 @@ and moves the ring when FSRS lets it go until another day; a Forgot slides it ba
 | Streak milestones (3, 7, 14, 30, 50, 100 days …) | the habit | consistency is the goal; Duolingo's split of streak and goal raised 7-day streaks by over 40 % |
 | First ring, Perfect week | the learning loop | the first full day; a week of closed rings |
 | Comeback | returning after a break | a return is worth more than a perfect run |
-| Double ring, Triple ring | 2 or 3 laps of the goal | extra, kept rare by the goal's size (§8) |
+| Double ring, Triple ring | 2 or 3 laps of the goal, on every day that reaches them | extra, kept rare by the goal's size (§8) |
 | Words learned (10, 50, 100, 250, 500, 1000, then every 1000) | the gain | the newcomer's meta-progression |
 
 Rewards are for consistency and gain, never for volume alone: no medal for cards answered.
