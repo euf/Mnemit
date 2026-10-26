@@ -6448,6 +6448,28 @@
         }
       }
     },
+    "Decks in this folder appear here.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stapel in diesem Ordner erscheinen hier."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι τράπουλες αυτού του φακέλου εμφανίζονται εδώ."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Колоды из этой папки появятся здесь."
+          }
+        }
+      }
+    },
     "Decks in “%@”": {
       "localizations": {
         "de": {
@@ -6466,28 +6488,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Колоды в «%@»"
-          }
-        }
-      }
-    },
-    "Decks you create in Mnemit on the Mac appear here once they sync.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stapel, die du in Mnemit auf dem Mac anlegst, erscheinen hier, sobald sie synchronisiert sind."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι τράπουλες που δημιουργείς στο Mnemit στο Mac εμφανίζονται εδώ μόλις συγχρονιστούν."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Колоды, которые ты создаёшь в Mnemit на Mac, появятся здесь после синхронизации."
           }
         }
       }

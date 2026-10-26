@@ -255,7 +255,7 @@ private struct SyncStep: View {
                     if knownDecks.isLocalFolder {
                         Text("Add decks in Files, under On My iPhone → Mnemit.")
                     } else {
-                        Text("Decks you create in Mnemit on the Mac appear here once they sync.")
+                        Text("Decks in this folder appear here.")
                     }
                 }
                 .foregroundStyle(.secondary)
