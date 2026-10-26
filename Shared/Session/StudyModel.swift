@@ -215,11 +215,15 @@ final class StudyModel: Identifiable {
     /// What the stream shows at rest.
     var rest: StreamRest { driver.rest }
 
-    /// The cards of the current round waiting behind the one being asked, the ones that come back
-    /// today included: the view shows them as a stack of edges under the card. 0 without rounds,
-    /// in practice and once the goal is met.
+    /// The cards to the next moment of the day waiting behind the one being asked, the ones that come back today included:
+    /// the view shows them as a stack of edges under the card. In the rounds of the day it is the cards of the round; past the
+    /// ring's goal it is the cards Catch Up has left in the plan, or the cards Learn 10 New Words and Study These Now added,
+    /// across the decks of the run. 0 without rounds and in practice.
     var cardsBehind: Int {
-        max(0, (driver.cardsLeftInRound ?? 0) - 1)
+        if let left = driver.cardsLeftInRound { return max(0, left - 1) }
+        guard streamStage == .plan, !driver.isResting, driver.rounds != nil else { return 0 }
+        let planned = lanes.filter { $0.driver.stream.stage == .plan && !$0.driver.isResting }
+        return max(0, planned.reduce(0) { $0 + $1.driver.session.remainingCount } - 1)
     }
 
     /// Whether the app is active (the scene phase): the time while it isn't is left out of

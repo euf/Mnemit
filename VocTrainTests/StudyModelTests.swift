@@ -462,6 +462,24 @@ struct StudyModelTests {
         #expect(StudyModel(document: plain).cardsBehind == 0)
     }
 
+    /// Past the ring the stack goes on: Catch Up's cards left in the plan, not nothing.
+    @Test func afterTheRingTheStackIsTheCardsLeftInThePlan() throws {
+        let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d", "e", "f"])
+        let model = StudyModel(document: document, rounds: RoundGuide(ends: [1, 2]))
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        model.continueRound()
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.isRoundRest && model.cardsBehind == 0, "nothing is asked at a rest")
+        model.continueRound()
+        // Four cards are left in the plan: the one asked and three behind it.
+        #expect(model.cardsBehind == 3)
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(model.cardsBehind == 2)
+    }
+
     /// The ring is evaluated after the stream is opened, say: the rounds count from the next card on.
     @Test func roundsThatArriveWhileTheStreamIsOpenAreRestedFor() throws {
         let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d", "e", "f"])
