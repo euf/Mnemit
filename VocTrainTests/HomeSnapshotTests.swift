@@ -193,7 +193,7 @@ struct HomeSnapshotTests {
         }
     }
 
-    /// A medal's toast on Today stands above the bar that holds the Study button, below the ring and the list's top rows.
+    /// A medal's toast on Today stands over the large title, under the bar's buttons: over neither the ring nor a deck row.
     @Test func todayWithAMedalToast() async throws {
         let toasts = MedalToasts(store: CelebratedMedals(defaults: nil), frozen: Achievement(kind: .comeback, day: 0))
         try await shoot("today-toast", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12), toasts: toasts))

@@ -306,7 +306,7 @@ struct StreamRestView: View {
     /// the ring" at the streak's moment, "≈ 12 min of reviews left" at the ring's. `nil` without a price.
     private var priceLine: Line? {
         guard let progress, let price = NextStep(progress).priceLine else { return nil }
-        return Line("price") { Text(verbatim: NextStep.unbroken(price)) }
+        return Line("price") { Text(verbatim: NextStep.unbroken(price, endTogether: true)) }
     }
 
     // MARK: The buttons

@@ -129,11 +129,13 @@ struct NextStep: Equatable, Sendable {
         return [days.formatted(.number.grouping(.never)), tail].compactMap { $0 }.joined(separator: " · ")
     }
 
-    /// `text` where it must not break: the hyphen of "7-day" and the spaces of "≈ 2 min" stay whole.
-    nonisolated static func unbroken(_ text: String) -> String {
-        text.replacingOccurrences(of: "-", with: "\u{2011}")
+    /// `text` where it must not break: the hyphen of "7-day" and the spaces of "≈ 2 min" stay whole; with `endTogether`, the last
+    /// two words too, so a sentence never ends on a line of one word.
+    nonisolated static func unbroken(_ text: String, endTogether: Bool = false) -> String {
+        let text = text.replacingOccurrences(of: "-", with: "\u{2011}")
             .replacingOccurrences(of: "([≈<]) (\\d+) (\\S+)", with: "$1\u{00A0}$2\u{00A0}$3", options: .regularExpression)
             .replacingOccurrences(of: "< 1 min", with: "<\u{00A0}1\u{00A0}min")
+        return endTogether ? text.replacingOccurrences(of: "(\\S+) (\\S+)$", with: "$1\u{00A0}$2", options: .regularExpression) : text
     }
 }
 
@@ -146,12 +148,12 @@ struct NextStepText: View {
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            Text(verbatim: NextStep.unbroken(step.sentence))
+            Text(verbatim: NextStep.unbroken(step.sentence, endTogether: true))
                 .lineLimit(1)
             // Each part wraps by itself in a narrow place (the small widget), so no line ends on the dot between them.
             VStack(alignment: alignment, spacing: 0) {
-                Text(verbatim: NextStep.unbroken(step.lines.lead))
-                if let tail = step.lines.tail { Text(verbatim: NextStep.unbroken(tail)) }
+                Text(verbatim: NextStep.unbroken(step.lines.lead, endTogether: true))
+                if let tail = step.lines.tail { Text(verbatim: NextStep.unbroken(tail, endTogether: true)) }
             }
         }
         .accessibilityLabel(Text(verbatim: step.sentence))

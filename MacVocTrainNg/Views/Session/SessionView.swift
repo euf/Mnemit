@@ -24,7 +24,7 @@ struct SessionView: View {
     var nextDeck: NextDeck? = nil
     var onClose: () -> Void
 
-    /// The medals a grade earns, as toasts at the foot of the window, under the buttons.
+    /// The medals a grade earns, as one line in the middle of the header's row.
     @State private var toasts: MedalToasts
     @State private var sheet: StreamSheet?
 
@@ -61,6 +61,7 @@ struct SessionView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+                .medalToast(toasts, at: .header)
             if model.isResting {
                 // A rest with a medal and Push On's line is taller than a short window: it scrolls
                 // under the header instead of pushing the header out of the window, and is centred
@@ -80,7 +81,6 @@ struct SessionView: View {
             }
         }
         .background(Color.studyBackdrop)
-        .medalToast(toasts, at: .bottom)
         // A medal earned by a grade is celebrated once the ring has been evaluated; a rest shows its own.
         .onChange(of: ring.progress) {
             if !model.isResting { toasts.offer(ring.progress) }

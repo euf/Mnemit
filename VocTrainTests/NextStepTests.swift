@@ -80,6 +80,11 @@ struct NextStepTests {
         #expect(NextStep.unbroken("≈ 2 min to keep your streak") == "≈\u{00A0}2\u{00A0}min to keep your streak")
         #expect(NextStep.unbroken("12-day streak") == "12\u{2011}day streak")
         #expect(NextStep.unbroken("< 1 min to close the ring") == "<\u{00A0}1\u{00A0}min to close the ring")
+        #expect(
+            NextStep.unbroken("≈ 6 min to close the ring and save your streak", endTogether: true)
+                == "≈\u{00A0}6\u{00A0}min to close the ring and save your\u{00A0}streak")
+        #expect(NextStep.unbroken("All done for today", endTogether: true) == "All done for\u{00A0}today")
+        #expect(NextStep.unbroken("Done", endTogether: true) == "Done")
     }
 
     @Test func theFiguresOfADayGiveTheSameStep() {

@@ -95,8 +95,6 @@ struct StudyView: View {
             .animation(reduceMotion ? .easeInOut(duration: 0.25) : nil, value: motion.showsRest)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.systemGroupedBackground))
-            // Under the bar, over the top of the card.
-            .medalToast(toasts)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     closeButton
@@ -212,6 +210,7 @@ struct StudyView: View {
         VStack(spacing: isCompact ? Spacing.tight : Spacing.gap) {
             cardView(card)
                 .padding(.bottom, StackPose.reserve)
+                .medalToast(toasts, at: .gap)
             gradeArea
         }
         .padding(.horizontal, Spacing.margin)

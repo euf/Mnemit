@@ -201,7 +201,7 @@ struct TodayScreen: View {
         .refreshable { await refresh() }
         .onChange(of: progress, initial: true) { celebrateMissedMedals() }
         .onChange(of: isDayReady) { celebrateMissedMedals() }
-        .medalToast(toasts, at: .inset)
+        .medalToast(toasts, at: .title)
     }
 
     /// The day's one action, in the bottom bar beside the search: named by what it does next, prominent while the

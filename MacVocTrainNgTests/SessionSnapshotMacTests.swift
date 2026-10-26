@@ -58,9 +58,9 @@ struct SessionSnapshotMacTests {
         withExtendedLifetime(undoManager) {}
     }
 
-    /// A medal's toast in the stream stands at the foot of the window, under the grade buttons: over neither the header's
-    /// ring, nor the card, nor a button, in a window of 600 pt (the test's) and in a taller one.
-    @Test func medalToastAtTheFoot() async throws {
+    /// A medal's toast in the stream is one line in the middle of the header's row: over neither the ring, nor the card, nor a
+    /// button, in a window of 600 pt (the test's) and in a taller one.
+    @Test func medalToastInTheHeader() async throws {
         let words = [("το σπίτι", "дом · the house"), ("ο δρόμος", "дорога · the road"), ("η αστυνομία", "полиция · the police"), ("αφού", "после того как · after")]
         let document = try VocabularyDocument(deck: Deck(cards: words.map { Card(question: $0.0, answer: $0.1) }))
         let undoManager = makeUndoManager(for: document)
