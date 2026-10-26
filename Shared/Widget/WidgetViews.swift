@@ -64,9 +64,6 @@ extension WidgetState {
     fileprivate var wordsLine: LocalizedStringResource? {
         wordsInMemory.flatMap { MemoryEstimate.wordsLine($0) }
     }
-
-    /// The figure the headline counts, "8 cards left": the cards left to the ring, else of the plan.
-    fileprivate var cardsLeft: Int { toRing > 0 ? toRing : due }
 }
 
 /// The headline, "42 cards left", with the time they take after it: on the same line where the
@@ -193,35 +190,15 @@ private struct MediumWidget: View {
     }
 }
 
-/// The ring and, in its middle, the cards left; once none are, the streak's flame and days.
+/// The ring with the streak in its middle, as every ring has it; the headline is for VoiceOver.
 private struct CircularWidget: View {
     var state: WidgetState
 
     var body: some View {
         ZStack {
             AccessoryWidgetBackground()
-            ProgressRing(fraction: state.progress.ring.fraction, diameter: 58)
+            DailyRingView(progress: state.progress, diameter: 58)
                 .widgetAccentable()
-            Group {
-                if state.cardsLeft > 0 {
-                    Text(state.cardsLeft, format: .number)
-                        .font(.system(.title3, design: .rounded).weight(.semibold))
-                } else if state.streakDays > 0 {
-                    VStack(spacing: -2) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text(state.streakDays, format: .number)
-                            .font(.system(.headline, design: .rounded).weight(.semibold))
-                    }
-                } else {
-                    Image(systemName: "checkmark")
-                        .font(.system(.title3, design: .rounded).weight(.semibold))
-                }
-            }
-            .monospacedDigit()
-            .minimumScaleFactor(0.5)
-            .lineLimit(1)
-            .frame(width: 38)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(state.headline)
