@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import VocabCore
 
-/// The window "How Today Works" of the Study menu and of Progress: the figures under the ring and the rounds, for
+/// The window "How It Works" of the Study menu and of Progress: the figures under the ring and the rounds, for
 /// every deck of the Mnemit folder (`AllDecks`, as the ring on the Mac counts them), each named by its file. One
 /// window; asking again brings it to the front and works the figures out anew.
 @MainActor
@@ -22,7 +22,7 @@ enum HowTodayWorksWindow {
         }
         let window = NSWindow(contentViewController: content)
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        window.title = String(localized: "How Today Works")
+        window.title = String(localized: "How It Works")
         window.setContentSize(NSSize(width: 520, height: 760))
         window.isReleasedWhenClosed = false
         window.center()

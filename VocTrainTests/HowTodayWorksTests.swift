@@ -4,7 +4,7 @@ import Testing
 @testable import VocTrain
 @testable import VocabCore
 
-/// "How Today Works": the rows the figures of the objects make, and the sheet drawn to a PNG with
+/// "How It Works": the rows the figures of the objects make, and the sheet drawn to a PNG with
 /// the other home screens (`HomeSnapshotTests.directory`).
 @MainActor
 struct HowTodayWorksTests {
@@ -57,10 +57,15 @@ struct HowTodayWorksTests {
 
     @Test func theRowsAreTheFiguresOfTheObjectsInTheOrderOfTheScreen() throws {
         let content = Self.content()
-        #expect(content.sections.map(\.title) == ["Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Swipes", "FSRS"])
-        #expect(content.sections.allSatisfy { !$0.footer.isEmpty })
+        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Swipes", "FSRS"])
+        // The first section is three plain sentences, with no rule under them: the ring, Catch Up, Learn 10 New Words.
+        let today = content.sections[0]
+        #expect(today.footer.isEmpty)
+        #expect(today.rows.count == 3)
+        #expect(today.rows.allSatisfy { if case .text = $0 { true } else { false } })
+        #expect(content.sections.dropFirst().allSatisfy { !$0.footer.isEmpty })
 
-        let plan = values(content.sections[0])
+        let plan = values(content.sections[1])
         #expect(plan["Due today, overdue included"] == "28")
         #expect(plan["Overdue cards taken"] == nil)
         #expect(plan["Cards in learning"] == "2")
@@ -68,12 +73,12 @@ struct HowTodayWorksTests {
         // The plan has no row for a bound on the new cards: the day's time is the only one, told in its own section.
         #expect(plan.keys.filter { $0.hasPrefix("New cards: limited") }.isEmpty)
         #expect(plan["Greek B1"] == "6")
-        #expect(content.sections[0].rows.contains(.value(label: "Greek B1", value: "6", note: "Ceiling 27 (limits 20 new / 7 production)")))
+        #expect(content.sections[1].rows.contains(.value(label: "Greek B1", value: "6", note: "Ceiling 27 (limits 20 new / 7 production)")))
         #expect(plan["Cards done"] == "18")
         #expect(plan["Cards left"] == "22")
         #expect(plan["Catch-up beyond the plan"] == nil)
 
-        let time = content.sections[1]
+        let time = content.sections[2]
         #expect(values(time)["Time of the day"] == "\((8.0).formatted(.number.precision(.fractionLength(1)))) min")
         #expect(values(time)["Streak step (cards)"] == "12")
         #expect(values(time)["Daily goal (cards)"] == "34")
@@ -93,23 +98,23 @@ struct HowTodayWorksTests {
         #expect(!time.footer.contains("%"))
         #expect(time.footer.contains("two and a half minutes before any study"))
 
-        let pace = content.sections[2].rows
+        let pace = content.sections[3].rows
         #expect(pace[0] == .value(label: "New card", value: "31 s", note: "Durations (214)"))
         #expect(pace[1] == .value(label: "Reviews per new card", value: (2.5).formatted(.number.precision(.fractionLength(2)))))
         // Five timed answers and twelve gaps are under twenty: the price is the default.
         #expect(pace[2] == .value(label: "Other card", value: "9 s", note: "Default"))
         #expect(pace[3] == .value(label: "Reviews per other card", value: (1.0).formatted(.number.precision(.fractionLength(2)))))
 
-        #expect(values(content.sections[3]) == ["Days": "12", "Today": "Kept"])
+        #expect(values(content.sections[4]) == ["Days": "12", "Today": "Kept"])
 
-        let words = values(content.sections[4])
+        let words = values(content.sections[5])
         #expect(words["In memory now"] == (412.37).formatted(.number.precision(.fractionLength(2))))
         #expect(words["At the start of the day"] == (411.53).formatted(.number.precision(.fractionLength(2))))
         #expect(words["Gain today"]?.hasPrefix("+") == true)
         #expect(words["Next milestone"] == "500")
 
         // The swipes: the gap misses of all that tried, and the sectors in compass degrees in the rule.
-        let swipes = content.sections[5]
+        let swipes = content.sections[6]
         #expect(swipes.rows == [.value(label: "Swipes that sprang back from a gap", value: "3 of 41 today")])
         // They are the constants of `GradeSwipe`, in compass degrees (90 - the code's angle, modulo 360).
         func bearing(_ math: Double) -> Int { Int((90 - math).truncatingRemainder(dividingBy: 360) + 360) % 360 }
@@ -125,7 +130,7 @@ struct HowTodayWorksTests {
             #expect(swipes.footer.contains(sector), "\(sector)")
         }
 
-        let fsrs = content.sections[6]
+        let fsrs = content.sections[7]
         #expect(values(fsrs)["Target recall"] == Format.percent(0.9))
         #expect(values(fsrs)["Parameters"] == "Default")
         #expect(values(fsrs)["Steps per card"] == "2")
@@ -145,12 +150,12 @@ struct HowTodayWorksTests {
         let content = HowTodayWorks(
             progress: progress, breakdown: Self.breakdown, memory: Self.memory, swipes: nil,
             decks: [HowTodayWorks.DeckInfo(name: nil, options: LearningOptions()), HowTodayWorks.DeckInfo(name: "Greek", options: fitted)])
-        #expect(values(content.sections[3]) == ["Days": "5", "Today": "Not yet", "Cards to repair yesterday": "7"])
+        #expect(values(content.sections[4]) == ["Days": "5", "Today": "Not yet", "Cards to repair yesterday": "7"])
         // Where nothing is swiped (the Mac) there is no section of swipes.
-        #expect(content.sections.map(\.title) == ["Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "FSRS · Deck 1", "FSRS · Greek"])
-        #expect(values(content.sections[5])["Parameters"] == "Default")
-        #expect(values(content.sections[6])["Parameters"] == "Fitted")
-        #expect(values(content.sections[6])["Last automatic fit"] == "None yet")
+        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "FSRS · Deck 1", "FSRS · Greek"])
+        #expect(values(content.sections[6])["Parameters"] == "Default")
+        #expect(values(content.sections[7])["Parameters"] == "Fitted")
+        #expect(values(content.sections[7])["Last automatic fit"] == "None yet")
     }
 
     /// A ring closed on a plan smaller than its time is told as "Plan under the time" in the days' table.
@@ -158,7 +163,7 @@ struct HowTodayWorksTests {
         var breakdown = Self.breakdown
         breakdown.days[1] = DayBreakdown.Day(start: Self.day.addingTimeInterval(-86400), time: 240, isClosed: true, worked: 200, reason: .smallPlan)
         let content = HowTodayWorks(progress: Self.progress, breakdown: breakdown, memory: Self.memory, swipes: nil, decks: [])
-        let table = try #require(content.sections[1].rows.compactMap { row -> [[String]]? in if case let .table(_, rows) = row { rows } else { nil } }.first)
+        let table = try #require(content.sections[2].rows.compactMap { row -> [[String]]? in if case let .table(_, rows) = row { rows } else { nil } }.first)
         #expect(table.map { $0.last } == ["Ring open", "Plan under the time", "Start"])
     }
 
@@ -174,10 +179,10 @@ struct HowTodayWorksTests {
         let alone = HowTodayWorks.make([taking], at: Self.day, calendar: StudyCalendar(), swipes: nil)
 
         let pausedRow = HowTodayWorks.Row.value(label: "Paused: Greek B2", value: "–")
-        #expect(content.sections[0].rows.contains(pausedRow))
-        #expect(values(content.sections[0])["Greek B2"] == nil)
-        #expect(content.sections[0].rows.filter { $0 != pausedRow } == alone.sections[0].rows)
-        #expect(content.sections[1...4] == alone.sections[1...4])
+        #expect(content.sections[1].rows.contains(pausedRow))
+        #expect(values(content.sections[1])["Greek B2"] == nil)
+        #expect(content.sections[1].rows.filter { $0 != pausedRow } == alone.sections[1].rows)
+        #expect(content.sections[2...5] == alone.sections[2...5])
         #expect(content.sections.suffix(2).map(\.title) == ["FSRS · Greek B1", "FSRS · Greek B2"])
     }
 
@@ -187,7 +192,7 @@ struct HowTodayWorksTests {
         let content = Self.content()
         try await HomeSnapshotTests().shoot("how-today-works-1", HowTodayWorksSheet(content: content, done: {}), height: 1700)
         var rest = content
-        rest.sections.removeFirst(3)
+        rest.sections.removeFirst(4)
         try await HomeSnapshotTests().shoot("how-today-works-2", HowTodayWorksSheet(content: rest, done: {}), height: 1700)
     }
 }

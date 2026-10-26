@@ -422,11 +422,11 @@ extension LearningPhase {
 }
 
 extension CardKind {
-    /// Which way the card asks, as the browsers show it.
+    /// Which way the card asks, in every view: Word → Meaning, Meaning → Word.
     var title: String {
         switch self {
-        case .recognition: String(localized: "Greek → translation")
-        case .production: String(localized: "translation → Greek")
+        case .recognition: String(localized: "Word → Meaning")
+        case .production: String(localized: "Meaning → Word")
         }
     }
 }
@@ -471,6 +471,36 @@ struct MaturityLabel: View {
             Text(category.title)
         }
         .help(category.explanation)
+    }
+}
+
+/// Where a card stands, as one line in the colour of its step on the ladder of memory: "Young · next review in
+/// 3 days", "Shaky · due now", "New". The colour is a dot, as in the ladder's legend on Progress: the step's
+/// words stay in the text colour, since the palest steps are no colour for text. Card Detail and the Mac inspector
+/// show it; stability, difficulty and the other figures go under their Details.
+struct CardMemoryLine: View {
+    var card: Card
+    var now: Date
+
+    /// The line as words.
+    static func text(of card: Card, now: Date) -> String {
+        let step = MaturityCategory(card: card).cardTitle
+        guard let due = card.learningState?.due else { return step }
+        if due <= now { return String(localized: "\(step) · due now") }
+        return String(localized: "\(step) · next review \(Format.due(due, now: now))")
+    }
+
+    var body: some View {
+        let step = MaturityCategory(card: card)
+        HStack(spacing: Spacing.tight) {
+            Circle()
+                .fill(step.color)
+                .overlay { Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 0.5) }
+                .frame(width: 10, height: 10)
+                .accessibilityHidden(true)
+            Text(verbatim: Self.text(of: card, now: now))
+        }
+        .help(step.explanation)
     }
 }
 

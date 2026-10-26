@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// Details of the selected card, in the sections of the iPhone's Card Detail: the card with
-/// its kind, word key and sibling, its memory, and the history of its reviews.
+/// its direction and sibling, its memory as one line with the figures under Details, and the history of its reviews.
 ///
 /// The texts are only shown. "Edit…" opens the sheet that edits them, so the deck
 /// changes only once the learner saves the edit (#241).
@@ -58,6 +58,7 @@ private struct CardDetail: View {
     let onSelect: (Card.ID) -> Void
     /// The words of the other open decks, for the line that says the word is in another deck.
     let elsewhere: WordIndex
+    @State private var showsDetails = false
 
     var body: some View {
         Form {
@@ -68,10 +69,7 @@ private struct CardDetail: View {
                     LabeledContent("Hint") { Text(card.hint).textSelection(.enabled) }
                 }
                 if let kind = card.kind {
-                    LabeledContent("Kind", value: kind.title)
-                }
-                if let note = card.note {
-                    LabeledContent("Word Key") { Text(note).textSelection(.enabled) }
+                    LabeledContent("Direction", value: kind.title)
                 }
                 ForEach(document.deck.siblings(of: card)) { sibling in
                     LabeledContent("Sibling Card") {
@@ -88,6 +86,10 @@ private struct CardDetail: View {
             }
 
             Section("Memory") {
+                // The line and the figures under it change as time passes, so they are re-evaluated every minute.
+                TimelineView(.everyMinute) { _ in
+                    CardMemoryLine(card: card, now: document.clock.now)
+                }
                 if card.isSuspended {
                     Label("Suspended: no study session asks this card.", systemImage: "pause.circle")
                         .foregroundStyle(.secondary)
@@ -102,34 +104,10 @@ private struct CardDetail: View {
                     .foregroundStyle(.secondary)
                     .help("The card has been forgotten as often as the leech threshold in the learning options asks. A session suspends it; resume it to keep learning it.")
                 }
-                LabeledContent("State") {
-                    HStack(spacing: 8) {
-                        MaturityLabel(category: MaturityCategory(card: card))
-                        if let phase = card.learningState?.phase {
-                            Text(phase.title)
-                                .foregroundStyle(.secondary)
-                        }
+                if card.learningState != nil || card.note != nil {
+                    DisclosureGroup("Details", isExpanded: $showsDetails) {
+                        details
                     }
-                }
-                if let learningState = card.learningState {
-                    // Due date and recall probability change as time passes, so these rows
-                    // are re-evaluated every minute.
-                    TimelineView(.everyMinute) { _ in
-                        LabeledContent("Next Review", value: Format.due(learningState.due, now: document.clock.now))
-                    }
-                    LabeledContent("Stability", value: Format.days(learningState.stability))
-                    LabeledContent("Difficulty", value: learningState.difficulty.formatted(.number.precision(.fractionLength(1))) + " / 10")
-                    TimelineView(.everyMinute) { _ in
-                        if let probability = document.deck.recallProbability(of: card, at: document.clock.now, calendar: document.calendar) {
-                            LabeledContent("Recall Now", value: Format.percent(probability))
-                        }
-                    }
-                    LabeledContent("Reviews", value: learningState.reviews.formatted())
-                    LabeledContent("Lapses", value: learningState.lapses.formatted())
-                    LabeledContent("Last Review", value: learningState.lastReview.formatted(date: .abbreviated, time: .shortened))
-                } else {
-                    Text("This card has not been studied yet.")
-                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -164,5 +142,26 @@ private struct CardDetail: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    /// The figures the scheduler keeps, for the learner who wants them; the word key.
+    @ViewBuilder
+    private var details: some View {
+        if let learningState = card.learningState {
+            LabeledContent("State", value: learningState.phase.title)
+            LabeledContent("Stability", value: Format.days(learningState.stability))
+            LabeledContent("Difficulty", value: learningState.difficulty.formatted(.number.precision(.fractionLength(1))) + " / 10")
+            TimelineView(.everyMinute) { _ in
+                if let probability = document.deck.recallProbability(of: card, at: document.clock.now, calendar: document.calendar) {
+                    LabeledContent("Recall Now", value: Format.percent(probability))
+                }
+            }
+            LabeledContent("Reviews", value: learningState.reviews.formatted())
+            LabeledContent("Lapses", value: learningState.lapses.formatted())
+            LabeledContent("Last Review", value: learningState.lastReview.formatted(date: .abbreviated, time: .shortened))
+        }
+        if let note = card.note {
+            LabeledContent("Word Key") { Text(note).textSelection(.enabled) }
+        }
     }
 }

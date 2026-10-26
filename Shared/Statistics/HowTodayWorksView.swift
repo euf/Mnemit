@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// "How Today Works": the numbers under the ring and the rounds, in a grouped form with the rule of
-/// each section in its footer. Shows what `HowTodayWorks` holds, and a spinner until it is there.
+/// "How It Works": three plain sentences about the ring, Catch Up and Learn 10 New Words, then the numbers under
+/// the ring and the rounds, in a grouped form with the rule of each section in its footer. Shows what `HowTodayWorks` holds, and a spinner until it is there.
 /// No charts and no controls.
 struct HowTodayWorksView: View {
     var content: HowTodayWorks?
@@ -17,14 +17,16 @@ struct HowTodayWorksView: View {
                     } header: {
                         Text(verbatim: section.title)
                     } footer: {
-                        Text(verbatim: section.footer)
+                        if !section.footer.isEmpty {
+                            Text(verbatim: section.footer)
+                        }
                     }
                 }
             }
         }
         .formStyle(.grouped)
         .monospacedDigit()
-        .navigationTitle("How Today Works")
+        .navigationTitle("How It Works")
         .overlay {
             if content == nil {
                 ProgressView()
@@ -37,6 +39,8 @@ struct HowTodayWorksView: View {
 
         var body: some View {
             switch row {
+            case let .text(sentence):
+                Text(verbatim: sentence)
             case let .value(label, value, note):
                 LabeledContent {
                     Text(verbatim: value)

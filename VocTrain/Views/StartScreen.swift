@@ -274,7 +274,7 @@ struct StartScreen: View {
             PushedDeckView(pushed: pushed, slot: slot) { deck in
                 DeckScreen(
                     deck: deck, knownCounts: deckCounts.counts[deck.url], start: { studyDeck(deck, entry: $0) },
-                    rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) }, showAnkiWeb: showWeb,
+                    rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) },
                     didChangePause: { refreshRing(withOpen: deck) })
             }
         case let .card(slot, id):

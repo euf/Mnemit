@@ -1,17 +1,19 @@
 import Foundation
 import VocabCore
 
-/// The content of "How Today Works", the screen that shows a learner who knows Anki and FSRS what is under
-/// the ring and the rounds: the numbers and the rules, read from the same objects the Today screen
-/// shows (`DailyProgress`, `DayBreakdown`, `MemoryEstimate`, the decks' learning options) and nothing
+/// The content of "How It Works", the screen that tells a learner what the ring, Catch Up and Learn 10 New Words
+/// are in three plain sentences, and shows one who knows Anki and FSRS what is under the ring and the rounds: the
+/// numbers and the rules, read from the same objects the Today screen shows (`DailyProgress`, `DayBreakdown`, `MemoryEstimate`, the decks' learning options) and nothing
 /// else. Read-only, no knobs.
 ///
 /// Built into sections of rows that are already text, so a test can compare them and the view only lays
-/// them out. The sections come in the order of the screen: the plan, the day's time, the pace, the
+/// them out. The sections come in the order of the screen: the three sentences, the plan, the day's time, the pace, the
 /// streak, the words in memory, the swipes (where the screen has them: the iPhone), then the FSRS
 /// settings of each deck. A section's footer is its rule.
 struct HowTodayWorks: Equatable, Sendable {
     enum Row: Equatable, Sendable {
+        /// A sentence to read.
+        case text(String)
         /// A figure, with a line under it when it needs one.
         case value(label: String, value: String, note: String? = nil)
         /// Numbers to read as they are, in a monospaced font and wrapped.
@@ -23,7 +25,7 @@ struct HowTodayWorks: Equatable, Sendable {
     struct Section: Equatable, Sendable {
         var title: String
         var rows: [Row]
-        /// The rule, in a line or three.
+        /// The rule, in a line or three; empty for a section that is only sentences.
         var footer: String
     }
 
@@ -39,6 +41,7 @@ struct HowTodayWorks: Equatable, Sendable {
     init(progress: DailyProgress, breakdown: DayBreakdown, memory: MemoryEstimate, swipes: SwipeTally.Counts?, decks: [DeckInfo]) {
         sections =
             [
+                Self.today(),
                 Self.plan(progress, breakdown, decks),
                 Self.time(progress, breakdown),
                 Self.pace(progress, breakdown),
@@ -49,6 +52,16 @@ struct HowTodayWorks: Equatable, Sendable {
     }
 
     // MARK: Sections
+
+    /// What the ring is, what Catch Up is and what Learn 10 New Words does, in plain words.
+    private static func today() -> Section {
+        let rows: [Row] = [
+            .text(String(localized: "The ring is your goal for the day: it fills as you study and closes when you have done what today's plan asks.")),
+            .text(String(localized: "Catch Up studies the cards still left in today's plan once the ring is closed.")),
+            .text(String(localized: "Learn 10 New Words adds ten new words to study at once when nothing is left for today.")),
+        ]
+        return Section(title: String(localized: "Today"), rows: rows, footer: "")
+    }
 
     private static func plan(_ progress: DailyProgress, _ breakdown: DayBreakdown, _ decks: [DeckInfo]) -> Section {
         let plan = breakdown.plan

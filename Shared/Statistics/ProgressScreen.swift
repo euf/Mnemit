@@ -2,16 +2,16 @@ import SwiftUI
 import VocabCore
 
 /// Progress, pushed from the header of Today on the iPhone, a window of its own on the Mac (`ProgressWindow`), a summary of four blocks (`references/learning-flow.md`,
-/// "Milestones, achievements and the Progress screen"): the streak with the main totals, the latest medals and the
-/// way to all of them, the calendar of the last 13 weeks, and the ladder of memory. Everything is worked out from
-/// the review logs as the ring is, `DailyProgress.records`.
+/// "Milestones, achievements and the Progress screen"): the streak hero, as on Today but larger, with the four totals,
+/// the calendar of the last 13 weeks with the runs of kept days joined, the latest medals and the way to all of them,
+/// and the ladder of memory. Everything is worked out from the review logs as the ring is, `DailyProgress.records`.
 ///
 /// The true retention of the last 30 days is not here: no screen of the iPhone app reads the decks' review logs
 /// into it across decks, the deck statistics do it for one deck.
 struct ProgressScreen<Trailing: View>: View {
     var progress: DailyProgress
     var calendar = StudyCalendar()
-    /// The last section: How Today Works, which each app opens its own way.
+    /// The last section: How It Works, which each app opens its own way.
     @ViewBuilder var trailing: Trailing
 
     private var records: [DayRecord] { progress.records }
@@ -19,6 +19,11 @@ struct ProgressScreen<Trailing: View>: View {
     var body: some View {
         List {
             Section { streak }
+            Section {
+                WeeksGrid(records: records)
+            } header: {
+                WeeksGrid(records: records).title
+            }
             Section("Medals") {
                 latestMedals
                 NavigationLink {
@@ -26,11 +31,6 @@ struct ProgressScreen<Trailing: View>: View {
                 } label: {
                     Text("All Medals")
                 }
-            }
-            Section {
-                WeeksGrid(records: records)
-            } header: {
-                WeeksGrid(records: records).title
             }
             if progress.ladder.reduce(0, +) > 0 {
                 Section("Memory") { ladder }
@@ -57,20 +57,19 @@ struct ProgressScreen<Trailing: View>: View {
         records.filter { $0.closed && $0.done > 0 }.count
     }
 
-    /// The streak large, and under it the main totals, two by two.
+    /// The streak hero of Today, the ring with the flame and the days in it, larger and with the words in memory under
+    /// it; and the main totals, two by two.
     private var streak: some View {
-        VStack(alignment: .leading, spacing: Spacing.gap) {
-            HStack(spacing: Spacing.tight) {
-                StreakFlame(state: progress.streakState)
-                    .accessibilityHidden(true)
-                Text("\(progress.streak.days)-day streak")
+        VStack(alignment: .leading, spacing: Spacing.section) {
+            VStack(spacing: Spacing.gap) {
+                StreakHeroRing(fraction: progress.ring.fraction, days: progress.streak.days, state: progress.streakState, diameter: 220)
+                MemoryLine(memory: progress.memory)
+                    .font(.subheadline)
                     .monospacedDigit()
+                    .multilineTextAlignment(.center)
             }
-            .font(.largeTitle.weight(.bold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("\(progress.streak.days)-day streak"))
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: 2), alignment: .leading, spacing: Spacing.tight) {
                 total("Longest streak") { Text("\(longest) days") }
                 total("Rings closed") { Text(ringsClosed, format: .number) }
@@ -78,7 +77,7 @@ struct ProgressScreen<Trailing: View>: View {
                 total("Cards done") { Text(records.reduce(0) { $0 + $1.done }, format: .number) }
             }
         }
-        .padding(.vertical, Spacing.hairline)
+        .padding(.vertical, Spacing.tight)
     }
 
     /// A figure of the totals: its title in footnote over the number.
@@ -191,6 +190,22 @@ struct WeeksGrid: View {
         return (0..<count).map { week in (0..<7).map { start + 7 * week + $0 } }
     }
 
+    /// The runs of kept days within one week, as the columns they span: two days or more in a row. A single kept day
+    /// is its ring; a run does not go on into the next week's row.
+    static func runs(ofKept kept: [Bool]) -> [ClosedRange<Int>] {
+        var runs: [ClosedRange<Int>] = []
+        var start: Int?
+        for (column, isKept) in (kept + [false]).enumerated() {
+            if isKept {
+                start = start ?? column
+            } else if let first = start {
+                if column - first >= 2 { runs.append(first...(column - 1)) }
+                start = nil
+            }
+        }
+        return runs
+    }
+
     /// The initial of the weekday of `column`.
     private func initial(_ column: Int) -> String {
         Calendar.current.veryShortWeekdaySymbols[(column + 1) % 7]
@@ -200,8 +215,9 @@ struct WeeksGrid: View {
         let byDay = Dictionary(records.map { ($0.day, $0) }, uniquingKeysWith: { first, _ in first })
         let today = records.last?.day ?? 0
         let first = records.first?.day ?? 0
-        Grid(horizontalSpacing: 0, verticalSpacing: Spacing.tight) {
-            GridRow {
+        // Rows of seven equal cells, so a run's band can be laid over the columns it spans.
+        VStack(spacing: Spacing.tight) {
+            HStack(spacing: 0) {
                 ForEach(0..<7, id: \.self) { column in
                     Text(verbatim: initial(column))
                         .font(.caption2)
@@ -210,7 +226,7 @@ struct WeeksGrid: View {
                 }
             }
             ForEach(cells.indices, id: \.self) { row in
-                GridRow {
+                HStack(spacing: 0) {
                     ForEach(cells[row], id: \.self) { day in
                         Group {
                             if day > today {
@@ -224,12 +240,30 @@ struct WeeksGrid: View {
                         .frame(maxWidth: .infinity)
                     }
                 }
+                .background {
+                    bands(Self.runs(ofKept: cells[row].map { $0 >= first && $0 <= today && byDay[$0]?.kept == true }))
+                }
             }
         }
         .padding(.vertical, Spacing.tight)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
         .accessibilityValue(Text("\(records.suffix(Self.weeks * 7).filter { $0.closed && $0.done > 0 }.count) rings closed"))
+    }
+
+    /// A capsule in the streak's colour behind each run of a row, from the left of its first column to the right of
+    /// its last.
+    private func bands(_ runs: [ClosedRange<Int>]) -> some View {
+        GeometryReader { geometry in
+            let column = geometry.size.width / 7
+            ForEach(runs, id: \.lowerBound) { run in
+                Capsule()
+                    .fill(Color.streak.opacity(0.18))
+                    .frame(width: column * CGFloat(run.count) - 4, height: diameter + 8)
+                    .position(x: column * (CGFloat(run.lowerBound) + CGFloat(run.count) / 2), y: geometry.size.height / 2)
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     /// How full a day's ring is drawn. Today's ring, not kept yet, is not missed: it shows what is done.

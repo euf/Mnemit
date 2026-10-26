@@ -76,49 +76,6 @@ struct StatisticsView: View {
     }
 }
 
-// MARK: - Tiles
-
-private struct SummaryTiles: View {
-    var summary: DeckStatistics.Summary
-
-    var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-            Tile(title: "Cards", value: summary.total.formatted())
-            Tile(title: "Due", value: summary.due.formatted())
-            Tile(title: "New", value: summary.new.formatted())
-            if summary.suspended > 0 {
-                Tile(title: "Suspended", value: summary.suspended.formatted(), help: "Cards no study session asks until you resume them in the card list.")
-            }
-            Tile(
-                title: "Recall Probability",
-                value: summary.averageRecallProbability.map(Format.percent) ?? "–",
-                help: "Average recall probability of the cards in the review phase right now, except suspended ones."
-            )
-        }
-    }
-}
-
-private struct Tile: View {
-    var title: LocalizedStringKey
-    var value: String
-    var help: LocalizedStringKey?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.system(size: 28, weight: .semibold))
-                .monospacedDigit()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
-        .help(help ?? title)
-    }
-}
-
 // MARK: - Charts
 
 private struct ProgressChart: View {

@@ -3,7 +3,7 @@ import SwiftUI
 import VocabCore
 
 /// The window "Progress", the iPhone's Progress screen (`ProgressScreen`) over every deck of the Mnemit folder: the
-/// streak and the totals, the medals, the calendar, the ladder of memory, and How Today Works. From the Today
+/// streak and the totals, the medals, the calendar, the ladder of memory, and How It Works. From the Today
 /// window's day, the ring of a deck window's toolbar and Window ▸ Progress. One window; asking again brings it to
 /// the front.
 @MainActor
@@ -36,7 +36,7 @@ enum ProgressWindow {
             NavigationStack {
                 if let progress = ring.progress {
                     ProgressScreen(progress: progress) {
-                        Button("How Today Works", systemImage: "gauge.with.dots.needle.33percent") { HowTodayWorksWindow.show() }
+                        Button("How It Works", systemImage: "gauge.with.dots.needle.33percent") { HowTodayWorksWindow.show() }
                             .buttonStyle(.link)
                     }
                 } else {

@@ -1,9 +1,9 @@
 import SwiftUI
 import VocabCore
 
-/// A deck, pushed on Today by the tap on its row: what today's plan takes from it, its cards,
-/// the practices, the statistics and the options, with Study This Deck at the bottom. Rename and
-/// Delete are in the menu of the bar.
+/// A deck, pushed on Today by the tap on its row: one line on where it stands today, its cards, the
+/// statistics and the options, with Study This Deck at the bottom. Add Cards and Import Cards… are the
+/// plus of the bar; the practices, Rename, Pause, Export and Delete are in its menu.
 ///
 /// The deck is held open by `PushedDecks` for as long as the screen is on the stack, so the
 /// screens it pushes show the same document. A study stream started from here takes the deck
@@ -15,15 +15,13 @@ struct DeckScreen: View {
     var start: (StudyModel.Entry) -> Void
     var rename: (String) async throws -> Void
     var delete: () async throws -> Void
-    /// Opens the browser of the shared decks.
-    var showAnkiWeb: () -> Void = {}
     /// The deck was paused or resumed from its menu.
     var didChangePause: () -> Void = {}
 
     var body: some View {
         DeckContent(
             name: deck.name, knownCounts: knownCounts, document: deck.document, failure: deck.failure, merger: deck.merger,
-            canEdit: deck.isEditable, start: start, rename: rename, delete: delete, showAnkiWeb: showAnkiWeb, didChangePause: didChangePause
+            canEdit: deck.isEditable, start: start, rename: rename, delete: delete, didChangePause: didChangePause
         )
         .background {
             if let document = deck.document {
@@ -59,7 +57,6 @@ struct DeckContent: View {
     var start: (StudyModel.Entry) -> Void
     var rename: (String) async throws -> Void
     var delete: () async throws -> Void
-    var showAnkiWeb: () -> Void = {}
     var didChangePause: () -> Void = {}
 
     @State private var showsRename = false
@@ -83,15 +80,9 @@ struct DeckContent: View {
                 }
             }
             if let document, let merger {
-                LoadedSections(
-                    document: document, merger: merger, canEdit: canEdit, start: start, addCards: { showsAddCards = true },
-                    importCards: { isChoosingImport = true }, showAnkiWeb: showAnkiWeb)
-            } else if failure == nil, let knownCounts {
-                Section {
-                    CountsRow(counts: knownCounts)
-                } header: {
-                    Text("Today")
-                }
+                LoadedSections(document: document, merger: merger, canEdit: canEdit, addCards: { showsAddCards = true })
+            } else if failure == nil, let headline = DeckHeadline(counts: knownCounts, isPaused: false, hasCards: true, now: Date()) {
+                HeadlineRow(headline: headline)
             }
         }
         .listStyle(.insetGrouped)
@@ -104,8 +95,17 @@ struct DeckContent: View {
         .navigationTitle(name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            if let document {
+                ToolbarItem(placement: .primaryAction) {
+                    AddMenu(document: document, canEdit: canEdit, addCards: { showsAddCards = true }, importCards: { isChoosingImport = true })
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Menu("More", systemImage: "ellipsis") {
+                    if let document {
+                        PracticeButtons(document: document, canEdit: canEdit, start: start)
+                        Divider()
+                    }
                     Button("Rename…", systemImage: "pencil") { showsRename = true }
                     if let document {
                         PauseDeckButton(document: document, canEdit: canEdit, didChange: didChangePause)
@@ -192,22 +192,128 @@ private struct PauseDeckButton: View {
     }
 }
 
+/// The "+" of the bar: Add Cards and Import Cards…, which need the file to be ready to change.
+private struct AddMenu: View {
+    @ObservedObject var document: VocabularyDocument
+    var canEdit: Bool
+    var addCards: () -> Void
+    var importCards: () -> Void
+
+    var body: some View {
+        Menu("Add", systemImage: "plus") {
+            Button("Add Cards", systemImage: "plus", action: addCards)
+            Button("Import Cards…", systemImage: "square.and.arrow.down", action: importCards)
+        }
+        .disabled(!canEdit || !document.isReadyToEdit)
+    }
+}
+
+/// The two practices of a deck, which change no card, one tap away in the menu of the bar: the newest words and
+/// today's mistakes. An item with nothing to practice is grey.
+enum DeckPractice: CaseIterable {
+    case newest, mistakes
+
+    var entry: StudyModel.Entry {
+        switch self {
+        case .newest: .practiceNewest
+        case .mistakes: .practiceMistakes
+        }
+    }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .newest: "Practice Newest Words"
+        case .mistakes: "Practice Today's Mistakes"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .newest: "rectangle.stack.badge.play"
+        case .mistakes: "arrow.counterclockwise"
+        }
+    }
+}
+
+/// The practices as the items of the menu; they watch the document, so the counts are those of the moment the menu opens.
+private struct PracticeButtons: View {
+    @ObservedObject var document: VocabularyDocument
+    var canEdit: Bool
+    var start: (StudyModel.Entry) -> Void
+
+    private func cards(of practice: DeckPractice) -> Int {
+        switch practice {
+        case .newest: document.deck.newestBatchIDs.count
+        case .mistakes: document.deck.mistakes(onDayOf: document.clock.now, calendar: document.calendar).count
+        }
+    }
+
+    var body: some View {
+        ForEach(DeckPractice.allCases, id: \.self) { practice in
+            Button(practice.title, systemImage: practice.symbol) { start(practice.entry) }
+                .disabled(!canEdit || cards(of: practice) == 0)
+        }
+    }
+}
+
+/// The one line at the top of the screen: "14 cards today", "Done · next review tomorrow" with a check, "Paused".
+/// `nil` for a deck with no cards, whose screen has nothing to say yet.
+struct DeckHeadline: Equatable {
+    var text: String
+    var isDone: Bool
+
+    /// - Parameters:
+    ///   - counts: The deck's plan for today; `nil` before the list has read it.
+    ///   - hasCards: Whether the deck has any card.
+    init?(counts: StudyCounts?, isPaused: Bool, hasCards: Bool, now: Date) {
+        if isPaused {
+            self.init(text: String(localized: "Paused"), isDone: false)
+        } else if let counts, counts.total > 0 {
+            self.init(text: String(localized: "\(counts.total) cards today"), isDone: false)
+        } else if let counts, hasCards {
+            let next = counts.nextDue.map { String(localized: "Done · next review \(Format.due($0, now: now))") }
+            self.init(text: next ?? String(localized: "Done"), isDone: true)
+        } else {
+            return nil
+        }
+    }
+
+    init(text: String, isDone: Bool) {
+        self.text = text
+        self.isDone = isDone
+    }
+}
+
+/// `DeckHeadline` as the first row of the list, on the background of the screen: a header, not a row of a group.
+private struct HeadlineRow: View {
+    var headline: DeckHeadline
+
+    var body: some View {
+        Section {
+            HStack(spacing: Spacing.tight) {
+                if headline.isDone {
+                    Image(systemName: "checkmark")
+                        .accessibilityHidden(true)
+                }
+                Text(verbatim: headline.text)
+            }
+            .font(.title3.weight(.semibold))
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+        }
+    }
+}
+
 /// The sections that need the deck itself.
 private struct LoadedSections: View {
     @ObservedObject var document: VocabularyDocument
     var merger: VersionMerger
     var canEdit: Bool
-    var start: (StudyModel.Entry) -> Void
     var addCards: () -> Void
-    var importCards: () -> Void
-    var showAnkiWeb: () -> Void
 
     var body: some View {
         let counts = document.dueCards.counts
         let now = document.clock.now
-        let mistakes = document.deck.mistakes(onDayOf: now, calendar: document.calendar).count
-        let newest = document.deck.newestBatchIDs.count
-        let isEditable = canEdit && document.isReadyToEdit
 
         if let failure = merger.failure {
             Notice(title: "Another version of this deck could not be merged", message: Text(failure)) {
@@ -215,18 +321,8 @@ private struct LoadedSections: View {
             }
         }
 
-        Section {
-            CountsRow(counts: counts)
-        } header: {
-            Text("Today")
-        } footer: {
-            if document.deck.learningOptions.isPaused {
-                Text("Paused. Today's plan leaves this deck out.")
-            } else if counts.total == 0, let nextDue = counts.nextDue {
-                Text("Nothing due. Next review \(Format.due(nextDue, now: now))")
-            } else {
-                Text("What today's plan takes from this deck.")
-            }
+        if let headline = DeckHeadline(counts: counts, isPaused: document.deck.learningOptions.isPaused, hasCards: !document.deck.cards.isEmpty, now: now) {
+            HeadlineRow(headline: headline)
         }
 
         Section {
@@ -240,48 +336,6 @@ private struct LoadedSections: View {
                     RowLabel(title: "Cards", symbol: "rectangle.stack")
                 }
             }
-            Button(action: addCards) {
-                RowLabel(title: "Add Cards", symbol: "plus")
-            }
-            .tint(.primary)
-            .disabled(!isEditable)
-            Button(action: importCards) {
-                RowLabel(title: "Import Cards…", symbol: "square.and.arrow.down")
-            }
-            .tint(.primary)
-            .disabled(!isEditable)
-            Button(action: showAnkiWeb) {
-                RowLabel(title: "Shared Decks on AnkiWeb", symbol: "safari")
-            }
-            .tint(.primary)
-        }
-
-        if canEdit, mistakes > 0 || newest > 0 {
-            Section {
-                if newest > 0 {
-                    Button {
-                        start(.practiceNewest)
-                    } label: {
-                        RowLabel(title: "Practice Newest Words", symbol: "rectangle.stack.badge.play")
-                    }
-                    .tint(.primary)
-                }
-                if mistakes > 0 {
-                    Button {
-                        start(.practiceMistakes)
-                    } label: {
-                        RowLabel(title: "Practice Today's Mistakes", symbol: "arrow.counterclockwise")
-                    }
-                    .tint(.primary)
-                }
-            } header: {
-                Text("Practice")
-            } footer: {
-                Text("Practice doesn't change when cards come back")
-            }
-        }
-
-        Section {
             NavigationLink {
                 StatisticsScreen(document: document)
             } label: {

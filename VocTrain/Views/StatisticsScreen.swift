@@ -1,19 +1,27 @@
 import SwiftUI
 import VocabCore
 
-/// The statistics of an open deck: its retention tables, pushed from the deck's More menu.
-/// What today's session takes is on the deck screen.
+/// The statistics of an open deck, pushed from its screen: the tiles the Mac has (Cards, Due, New, Suspended,
+/// Recall Now) over the retention table. The Mac adds its charts.
 struct StatisticsScreen: View {
     var document: VocabularyDocument
-    @State private var retention: TrueRetention?
+    @State private var figures: Figures?
+
+    private struct Figures {
+        var summary: DeckStatistics.Summary
+        var retention: TrueRetention
+    }
 
     var body: some View {
         ScrollView {
-            if let retention {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Retention")
-                        .font(.title2.weight(.semibold))
-                    RetentionTables(retention: retention)
+            if let figures {
+                VStack(alignment: .leading, spacing: 28) {
+                    SummaryTiles(summary: figures.summary)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Retention")
+                            .font(.title2.weight(.semibold))
+                        RetentionTables(retention: figures.retention)
+                    }
                 }
                 .padding()
             } else {
@@ -24,7 +32,12 @@ struct StatisticsScreen: View {
         .navigationTitle("Statistics")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            retention = TrueRetention(of: document.deck, at: document.clock.now, calendar: document.calendar)
+            let deck = document.deck
+            let now = document.clock.now
+            let calendar = document.calendar
+            figures = Figures(
+                summary: DeckStatistics.summary(of: deck, at: now, calendar: calendar),
+                retention: TrueRetention(of: deck, at: now, calendar: calendar))
         }
     }
 }

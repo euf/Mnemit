@@ -1,7 +1,7 @@
 import SwiftUI
 import VocabCore
 
-/// The sheet "How Today Works": the figures under the ring and the rounds (`HowTodayWorksView`), with a
+/// The sheet "How It Works": the figures under the ring and the rounds (`HowTodayWorksView`), with a
 /// Done button; a spinner while `content` is `nil`.
 struct HowTodayWorksSheet: View {
     var content: HowTodayWorks?
@@ -29,7 +29,7 @@ struct HowTodayWorksButton: View {
     @State private var content: HowTodayWorks?
 
     var body: some View {
-        Button("How Today Works", systemImage: "gauge.with.dots.needle.33percent") {
+        Button("How It Works", systemImage: "gauge.with.dots.needle.33percent") {
             content = nil
             isShown = true
         }

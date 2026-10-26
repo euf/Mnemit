@@ -1142,7 +1142,7 @@ public struct DailyProgress: Hashable, Sendable {
     /// (`DailyGoal.nextTime(after:)`).
     public var time: Double
     /// The days that were sized: every study day from the first through today, today last and with its live
-    /// figures, which "How Today Works" tells the time from.
+    /// figures, which "How It Works" tells the time from.
     public var ringDays: [DailyGoal.RingDay]
     /// Today's cards cut into rounds, as the plan stood when the day began.
     public var roundPlan: DayRounds

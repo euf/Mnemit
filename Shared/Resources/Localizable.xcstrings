@@ -70,6 +70,50 @@
         }
       }
     },
+    "%@ · due now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · jetzt fällig"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · προς επανάληψη τώρα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · пора оценить"
+          }
+        }
+      }
+    },
+    "%@ · next review %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · nächste Abfrage %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · επόμενη επανάληψη %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · следующая оценка %@"
+          }
+        }
+      }
+    },
     "%@ → %@": {
       "shouldTranslate": false
     },
@@ -5524,6 +5568,28 @@
         }
       }
     },
+    "Catch Up studies the cards still left in today's plan once the ring is closed.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachholen übt die Karten, die im Plan für heute noch übrig sind, sobald der Ring geschlossen ist."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η «Αναπλήρωση» μελετά τις κάρτες που έμειναν στο πρόγραμμα της ημέρας, αφού κλείσει ο κύκλος."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Наверстать» разбирает карточки, которые ещё остались в плане дня, когда кольцо уже замкнуто."
+          }
+        }
+      }
+    },
     "Ceiling %lld (limits %@ new / %@ production)": {
       "localizations": {
         "de": {
@@ -7020,6 +7086,28 @@
         }
       }
     },
+    "Done · next review %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig · nächste Abfrage %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Τέλος · επόμενη επανάληψη %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово · следующая оценка %@"
+          }
+        }
+      }
+    },
     "Download Failed": {
       "localizations": {
         "de": {
@@ -8186,24 +8274,24 @@
         }
       }
     },
-    "How Today Works": {
+    "How It Works": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "So funktioniert Heute"
+            "value": "So funktioniert es"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Πώς λειτουργεί το «Σήμερα»"
+            "value": "Πώς λειτουργεί"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Как работает «Сегодня»"
+            "value": "Как это работает"
           }
         }
       }
@@ -8956,6 +9044,28 @@
         }
       }
     },
+    "Learn 10 New Words adds ten new words to study at once when nothing is left for today.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„10 neue Wörter lernen“ fügt zehn neue Wörter zum sofortigen Lernen hinzu, wenn für heute nichts mehr übrig ist."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το «Μάθε 10 νέες λέξεις» προσθέτει αμέσως δέκα νέες λέξεις, όταν δεν έχει μείνει τίποτα για σήμερα."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Выучить 10 новых слов» сразу добавляет десять новых слов, когда на сегодня ничего не осталось."
+          }
+        }
+      }
+    },
     "Learn from revealed reviews": {
       "localizations": {
         "de": {
@@ -9326,6 +9436,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зрелость"
+          }
+        }
+      }
+    },
+    "Meaning → Word": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bedeutung → Wort"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σημασία → λέξη"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Значение → слово"
           }
         }
       }
@@ -9832,28 +9964,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Далее"
-          }
-        }
-      }
-    },
-    "Next Review": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nächste Abfrage"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επόμενη επανάληψη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Следующая оценка"
           }
         }
       }
@@ -14434,6 +14544,28 @@
         }
       }
     },
+    "The ring is your goal for the day: it fills as you study and closes when you have done what today's plan asks.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Ring ist dein Ziel für den Tag: Er füllt sich beim Lernen und schließt sich, wenn du erledigt hast, was der Plan für heute verlangt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο κύκλος είναι ο στόχος σου για τη μέρα: γεμίζει όσο μελετάς και κλείνει όταν κάνεις ό,τι ζητά το πρόγραμμα της ημέρας."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кольцо — твоя цель на день: оно заполняется, пока ты учишь, и замыкается, когда ты сделал всё, что просит план дня."
+          }
+        }
+      }
+    },
     "The streak step of a day, the cards that fit the first two minutes of its plan, keeps the streak. One missed day is repaired when the next day closes its ring; two missed days in a row end it.": {
       "localizations": {
         "de": {
@@ -14540,28 +14672,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Этот пакет Anki создан в версии, которую Mnemit не может прочитать."
-          }
-        }
-      }
-    },
-    "This card has not been studied yet.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Karte wurde noch nicht gelernt."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αυτή η κάρτα δεν έχει μελετηθεί ακόμη."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Эта карточка ещё не изучалась."
           }
         }
       }
@@ -15710,6 +15820,28 @@
         }
       }
     },
+    "Word → Meaning": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wort → Bedeutung"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Λέξη → σημασία"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слово → значение"
+          }
+        }
+      }
+    },
     "Words climb from New to Mastered as they stick.": {
       "localizations": {
         "de": {
@@ -16578,28 +16710,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "завтра"
-          }
-        }
-      }
-    },
-    "translation → Greek": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Übersetzung → Griechisch"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "μετάφραση → ελληνικά"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "перевод → греческий"
           }
         }
       }

@@ -1,9 +1,10 @@
 import SwiftUI
 import VocabCore
 
-/// One card: both sides large with the speaker, its kind and the card of the same word the
-/// other way round, what the scheduler knows about it, and its history. Edit, Suspend or
-/// Resume, Reset Progress and Delete act on it.
+/// One card: both sides large with the speaker, its direction and the card of the same word the
+/// other way round, where it stands in memory as one line, and its history; stability, difficulty
+/// and the other figures are one tap away under Details. Edit, Suspend or Resume, Reset Progress
+/// and Delete act on it.
 ///
 /// Pushed from the card browser and from a search result on Today, and shown in a sheet by
 /// a long press on a card of the study stream (`CardInfoSheet`). It looks the card up by its
@@ -71,6 +72,7 @@ private struct CardDetailList: View {
     @Environment(\.knownDeckFiles) private var knownDeckFiles
     /// The words of the other decks, once they are read.
     @State private var elsewhere = WordIndex()
+    @State private var showsDetails = false
 
     /// The same word in another deck, if there is one: a separate card there, with its own progress.
     private var otherCopy: WordIndex.Match? {
@@ -90,8 +92,8 @@ private struct CardDetailList: View {
             Section {
                 CardTexts(card: card, media: document.deck.media)
             }
-            if card.kind != nil || card.note != nil || otherCopy != nil {
-                kindSection
+            if card.kind != nil || sibling != nil || otherCopy != nil {
+                directionSection
             }
             memorySection(now: now)
             if !card.log.isEmpty {
@@ -120,17 +122,17 @@ private struct CardDetailList: View {
         .task { elsewhere = await knownDeckFiles.wordIndex(excluding: document.packageURL) }
     }
 
-    private var kindSection: some View {
+    private var directionSection: some View {
         Section {
             if let kind = card.kind {
-                LabeledContent("Direction", value: kind.direction)
+                LabeledContent("Direction", value: kind.title)
             }
             if let sibling {
                 NavigationLink {
                     CardDetailScreen(document: document, cardID: sibling.id, canEdit: canEdit)
                 } label: {
                     VStack(alignment: .leading, spacing: Spacing.hairline) {
-                        Text(sibling.kind?.direction ?? String(localized: "Other direction"))
+                        Text(sibling.kind?.title ?? String(localized: "Other direction"))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         Text(sibling.question)
@@ -145,16 +147,13 @@ private struct CardDetailList: View {
                     Text(verbatim: "\(otherCopy.question) → \(otherCopy.answer)")
                 }
             }
-            if let note = card.note {
-                LabeledContent("Word Key", value: note)
-            }
         }
     }
 
     @ViewBuilder
     private func memorySection(now: Date) -> some View {
         Section("Memory") {
-            LabeledContent("State", value: card.stateTitle)
+            CardMemoryLine(card: card, now: now)
             if card.isSuspended {
                 Label("Suspended: no study session asks this card.", systemImage: "pause.circle")
                     .foregroundStyle(.secondary)
@@ -163,21 +162,31 @@ private struct CardDetailList: View {
                 Label("Difficult: you keep forgetting this card.", systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
             }
-            if let learningState = card.learningState {
-                LabeledContent("Next review", value: Format.due(learningState.due, now: now))
-                LabeledContent("Stability", value: Format.days(learningState.stability))
-                LabeledContent("Difficulty", value: learningState.difficulty.formatted(.number.precision(.fractionLength(1))) + " / 10")
-                if let probability = document.deck.recallProbability(of: card, at: now, calendar: document.calendar) {
-                    LabeledContent("Recall Now", value: Format.percent(probability))
+            if card.learningState != nil || card.note != nil {
+                DisclosureGroup("Details", isExpanded: $showsDetails) {
+                    details(now: now)
                 }
-                LabeledContent("Reviews", value: learningState.reviews.formatted())
-                LabeledContent("Lapses", value: learningState.lapses.formatted())
-            } else {
-                Text("This card has not been studied yet.")
-                    .foregroundStyle(.secondary)
             }
         }
         .monospacedDigit()
+    }
+
+    /// The figures the scheduler keeps, for the learner who wants them; the word key.
+    @ViewBuilder
+    private func details(now: Date) -> some View {
+        if let learningState = card.learningState {
+            LabeledContent("State", value: card.stateTitle)
+            LabeledContent("Stability", value: Format.days(learningState.stability))
+            LabeledContent("Difficulty", value: learningState.difficulty.formatted(.number.precision(.fractionLength(1))) + " / 10")
+            if let probability = document.deck.recallProbability(of: card, at: now, calendar: document.calendar) {
+                LabeledContent("Recall Now", value: Format.percent(probability))
+            }
+            LabeledContent("Reviews", value: learningState.reviews.formatted())
+            LabeledContent("Lapses", value: learningState.lapses.formatted())
+        }
+        if let note = card.note {
+            LabeledContent("Word Key", value: note)
+        }
     }
 }
 
@@ -272,16 +281,6 @@ extension Grade {
     /// The name on the grade's button: "Forgot", not the scheduler's "Again".
     var buttonTitle: String {
         self == .again ? String(localized: "Forgot") : title
-    }
-}
-
-extension CardKind {
-    /// Which way the card asks, for the learner of Greek.
-    var direction: String {
-        switch self {
-        case .recognition: String(localized: "Greek → translation")
-        case .production: String(localized: "Translation → Greek")
-        }
     }
 }
 

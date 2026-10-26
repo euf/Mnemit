@@ -98,7 +98,7 @@ struct AppCommands: Commands {
 
             Divider()
 
-            Button("How Today Works") { HowTodayWorksWindow.show() }
+            Button("How It Works") { HowTodayWorksWindow.show() }
                 .disabled(actions == nil)
         }
     }

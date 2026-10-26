@@ -6,7 +6,7 @@ import UIKit
 @testable import VocabCore
 
 /// The iPhone screens that the home, browser and study snapshots don't draw, as PNGs for a designer: Progress, all
-/// medals, the month's screen, How Today Works, Settings, a deck's statistics and options, the sheets of a deck's
+/// medals, the month's screen, How It Works, Settings, a deck's statistics and options, the sheets of a deck's
 /// name, where an Anki package goes, and a card's information. The frames are `gallery-<screen>[-state]-<light|dark>.png`
 /// at 375 x 812 pt (an iPhone 13 mini), made by `HomeSnapshotTests.shoot`, so they go to the same directory
 /// (`HOME_SHOTS_DIR`, passed as `TEST_RUNNER_HOME_SHOTS_DIR`). A tall list has a second frame, `-full`, in a window tall
@@ -108,7 +108,7 @@ struct ScreenGallerySnapshotTests {
         try await shoot("month-recap", MonthRecapSheet(recap: recap, seeAll: {}, done: {}), tall: 1400)
     }
 
-    // MARK: How Today Works
+    // MARK: How It Works
 
     @Test func howTodayWorks() async throws {
         let content = HowTodayWorksTests.content()

@@ -259,7 +259,7 @@ struct HomeSnapshotTests {
 
     @Test func deckScreenAtAccessibilitySize() async throws {
         let document = try sampleDocument()
-        try await shoot("deck", deckScreen(document: document), types: [.accessibility3])
+        try await shoot("deck", deckScreen(document: document), types: [.accessibility3, .accessibility5])
     }
 }
 
