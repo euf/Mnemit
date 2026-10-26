@@ -7,7 +7,8 @@ import VocabCore
 /// or an earlier line, is listed unchecked. Every addition is one undo step of the document.
 ///
 /// The sheet opens on the way used last. Done adds what is typed, if it can be added, and closes; Cancel
-/// closes without it and asks first if something is typed.
+/// closes without it and asks first if something is typed. Once cards are added, Study These Now adds what is typed
+/// too, closes, and hands the new cards to `studyNow`: the stream of the deck asks them first.
 struct AddCardsView: View {
     enum Mode: String {
         case oneCard, fromList
@@ -20,6 +21,8 @@ struct AddCardsView: View {
     @ObservedObject var document: VocabularyDocument
     /// Called with the number of cards added since the sheet opened, when it closes with some.
     var onAdded: (Int) -> Void = { _ in }
+    /// Called with the cards to study first, after the sheet has been asked to close.
+    var studyNow: ([Card.ID]) -> Void = { _ in }
     @Environment(\.dismiss) private var dismiss
     /// The words of the other open decks, once they are read.
     @State private var elsewhere = WordIndex()
@@ -37,6 +40,10 @@ struct AddCardsView: View {
     @State private var flipped: Set<String> = []
     /// The cards added since the sheet opened, for the confirmation.
     @State private var addedInSession = 0
+    /// Every card added since the sheet opened.
+    @State private var addedIDs: [Card.ID] = []
+    /// The cards of those that a stream would put first now, for Study These Now.
+    @State private var studyable: [Card.ID] = []
     /// Counts the additions, so each one restarts the time its confirmation shows.
     @State private var additions = 0
     @State private var showsConfirmation = false
@@ -49,9 +56,14 @@ struct AddCardsView: View {
 
     /// - Parameters: `mode` is the way to open on, the one used last by default; the rest is what the sheet
     ///   starts with, for a test or a snapshot.
-    init(document: VocabularyDocument, mode: Mode? = nil, question: String = "", answer: String = "", hint: String = "", list: String = "", added: Int = 0, onAdded: @escaping (Int) -> Void = { _ in }) {
+    init(
+        document: VocabularyDocument, mode: Mode? = nil, question: String = "", answer: String = "", hint: String = "", list: String = "", added: Int = 0, studyable: [Card.ID] = [],
+        onAdded: @escaping (Int) -> Void = { _ in }, studyNow: @escaping ([Card.ID]) -> Void = { _ in }
+    ) {
         self.document = document
         self.onAdded = onAdded
+        self.studyNow = studyNow
+        _studyable = State(initialValue: studyable)
         let last = UserDefaults.standard.string(forKey: Self.modeKey).flatMap(Mode.init(rawValue:))
         _mode = State(initialValue: mode ?? last ?? .oneCard)
         _question = State(initialValue: question)
@@ -281,6 +293,10 @@ struct AddCardsView: View {
             // Return belongs to the fields and the list; ⌘Return adds.
             .keyboardShortcut(.return, modifiers: .command)
             .disabled(!document.isReadyToEdit || (mode == .oneCard ? text == nil : cards == 0))
+            if !studyable.isEmpty {
+                Button("Study These Now", action: study)
+                    .disabled(!document.isReadyToEdit)
+            }
             Button("Done", action: done)
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
@@ -302,25 +318,30 @@ struct AddCardsView: View {
             focus = CardText.trimmed(question).isEmpty ? .question : .answer
             return
         }
+        let before = Set(document.deck.cards.map(\.id))
         let count = document.addCards(for: text, bothDirections: bothDirections)
         // Keeps the fields while the document can't be changed.
         guard count > 0 else { return }
+        let ids = document.deck.cards.map(\.id).filter { !before.contains($0) }
         question = ""
         answer = ""
         hint = ""
         focus = .question
-        didAdd(count)
+        didAdd(count, ids: ids)
     }
 
     private func addList() {
-        let count = document.addLessonCards(selectedCards(of: preview))
+        let cards = selectedCards(of: preview)
+        let count = document.addLessonCards(cards)
         guard count > 0 else { return }
         listText = ""
         flipped = []
-        didAdd(count)
+        didAdd(count, ids: cards.map(\.id))
     }
 
-    private func didAdd(_ count: Int) {
+    private func didAdd(_ count: Int, ids: [Card.ID]) {
+        addedIDs += ids
+        studyable = StudyStream.addableCards(addedIDs, in: document.deck, at: document.clock.now, calendar: document.calendar)
         addedInSession += count
         additions += 1
         showsConfirmation = true
@@ -336,11 +357,23 @@ struct AddCardsView: View {
     }
 
     private func done() {
+        addWhatIsTyped()
+        close()
+    }
+
+    /// Study These Now: what is typed goes in too, as with Done; the sheet closes and the stream follows.
+    private func study() {
+        addWhatIsTyped()
+        let ids = studyable
+        dismiss()
+        studyNow(ids)
+    }
+
+    private func addWhatIsTyped() {
         switch mode {
         case .oneCard: if text != nil { addOne() }
         case .fromList: if !selectedCards(of: preview).isEmpty { addList() }
         }
-        close()
     }
 
     private func close() {

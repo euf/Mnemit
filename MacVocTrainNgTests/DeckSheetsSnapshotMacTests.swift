@@ -53,5 +53,8 @@ struct DeckSheetsSnapshotMacTests {
         try write(
             AddCardsView(document: document, mode: .fromList, list: "κλέβω = to steal\nη κλοπή = theft\nο κλέφτης = thief\nbad line", added: 2),
             name: "add-list")
+        // Cards added: Study These Now sits beside Add.
+        let added = [Card(question: "κλέβω", answer: "to steal").id]
+        try write(AddCardsView(document: document, mode: .oneCard, added: 2, studyable: added), name: "add-study-now")
     }
 }

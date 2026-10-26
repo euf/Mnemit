@@ -45,6 +45,45 @@ struct SessionViewModelTests {
         #expect(SessionViewModel(document: document).session.totalCount == 6)
     }
 
+    /// Past the ring the stack goes on: the cards left in the plan, as on the iPhone, so Catch Up keeps its stack.
+    @Test func afterTheRingTheStackIsTheCardsLeftInThePlan() throws {
+        let document = try makeDocument(cards: 6)
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, rounds: RoundGuide(ends: [1, 2]))
+        func easy() throws {
+            model.reveal()
+            step(try #require(document.undoManager)) { model.grade(.easy) }
+        }
+        try easy()
+        model.continueRound()
+        try easy()
+        #expect(model.isResting && model.cardsBehind == 0, "nothing is asked at a rest")
+        model.continueRound()
+        // Four cards are left in the plan: the one asked and three behind it.
+        #expect(model.cardsBehind == 3)
+        try easy()
+        #expect(model.cardsBehind == 2)
+        withExtendedLifetime(undoManager) {}
+    }
+
+    /// Study These Now: the cards just added come first, then the plan.
+    @Test func theCardsJustAddedAreAskedFirst() throws {
+        let document = try makeDocument(cards: 6)
+        let undoManager = makeUndoManager(for: document)
+        let added = Array(document.deck.cards.suffix(2).map(\.id))
+        let model = SessionViewModel(document: document, entry: .studyNow(added))
+        let first = try #require(model.currentCard?.id)
+        #expect(added.contains(first), "an added card first")
+        model.reveal()
+        step(try #require(document.undoManager)) { model.grade(.easy) }
+        let second = try #require(model.currentCard?.id)
+        #expect(added.contains(second) && second != first, "then the other one")
+        model.reveal()
+        step(try #require(document.undoManager)) { model.grade(.easy) }
+        #expect(model.currentCard.map { !added.contains($0.id) } == true, "then the plan")
+        withExtendedLifetime(undoManager) {}
+    }
+
     @Test func aGradeMovesOnAndCanBeUndone() throws {
         let document = try makeDocument(cards: 2)
         let undoManager = makeUndoManager(for: document)

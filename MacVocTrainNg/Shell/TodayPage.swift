@@ -2,15 +2,12 @@ import AppKit
 import SwiftUI
 import VocabCore
 
-/// The Today page of the Mac's window, from what it is given so a test can draw it: the iPhone's hero at 200 pt, a
-/// button to Progress, with the day's one button under it (`DayAction`: Study, Catch Up or Learn 10 New Words). Without
-/// a deck, the empty ring and the ways to get one.
+/// The Today page of the Mac's window, from what it is given so a test can draw it: the iPhone's hero at 200 pt (the ring
+/// without a number, the sentence, the words learned, the week), a button to Progress, with the day's one button under it
+/// (`DayAction`: Study, Catch Up or Learn 10 New Words). Without a deck, the empty ring and the ways to get one.
 struct TodayPageContent: View {
     var hasDecks: Bool
-    /// The cards of the plan not done yet, over the decks of the day.
-    var due: Int
     var progress: DailyProgress?
-    var nextDue: Date?
     var now: Date
     /// `false` until the ring and the decks are read: the figures are placeholders then.
     var isLoaded: Bool
@@ -58,7 +55,7 @@ struct TodayPageContent: View {
         .disabled(!canStudy)
     }
 
-    /// No deck yet: the hero ring, empty, over the ways to get one.
+    /// No deck yet: the hero ring, empty, over the ways to get one: a new deck, shared decks, the iCloud folder as a link.
     @ViewBuilder
     private var empty: some View {
         HeroRing(progress: nil, diameter: 200)
@@ -72,12 +69,15 @@ struct TodayPageContent: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.appAccent)
-            Button(action: chooseFolder) {
-                Text("Use iCloud Drive Folder").frame(maxWidth: .infinity)
+            Button(action: sharedDecks) {
+                Text("Shared Decks on AnkiWeb…").frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
-            Button("Shared Decks on AnkiWeb…", action: sharedDecks)
+            Button("Use iCloud Drive Folder", action: chooseFolder)
                 .buttonStyle(.link)
+                .font(.footnote)
+                .controlSize(.regular)
+                .padding(.top, Spacing.hairline)
         }
         .controlSize(.large)
     }
@@ -97,7 +97,7 @@ struct TodayPage: View {
     var body: some View {
         let ring = shell.ring
         TodayPageContent(
-            hasDecks: !shell.known.isEmpty, due: shell.due, progress: ring.progress, nextDue: shell.nextDue, now: Date(), isLoaded: shell.isDayReady,
+            hasDecks: !shell.known.isEmpty, progress: ring.progress, now: Date(), isLoaded: shell.isDayReady,
             action: shell.dayAction, canStudy: shell.canStudyDay, study: { shell.study(.day) }, showProgress: { shell.select(.progress) },
             newDeck: newDeck, chooseFolder: chooseFolder, sharedDecks: { DeckWebWindow.show() }
         )

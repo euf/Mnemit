@@ -221,10 +221,6 @@ final class Shell {
         isDayReady ? DayAction(due: due, progress: ring.progress) : .study
     }
 
-    var nextDue: Date? {
-        known.compactMap { studyCounts($0)?.nextDue }.min()
-    }
-
     var hits: [AllCardsSearch.Hit] {
         search.hits(for: query)
     }

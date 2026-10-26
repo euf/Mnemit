@@ -66,7 +66,23 @@ struct SessionSnapshotMacTests {
         let model = SessionViewModel(document: document, rounds: RoundGuide(ends: [6, 12]))
         #expect(model.currentCard?.isNew == true)
         model.reveal()
-        try await write(model, name: "4-first-showing")
+        try await write(model, name: "4-first-showing", done: 3)
+        withExtendedLifetime(undoManager) {}
+    }
+
+    /// Catch Up after the ring: the header's ring is full and the stack goes on under the card, the cards left in the plan.
+    @Test func catchUpAfterTheRing() async throws {
+        let words = (1...6).map { ("λέξη \($0)", "word \($0)") }
+        let document = try VocabularyDocument(deck: Deck(cards: words.map { Card(question: $0.0, answer: $0.1) }))
+        let undoManager = makeUndoManager(for: document)
+        let model = SessionViewModel(document: document, rounds: RoundGuide(ends: [1, 2]))
+        for _ in 0..<2 {
+            model.reveal()
+            step(undoManager) { model.grade(.easy) }
+            model.continueRound()
+        }
+        #expect(model.cardsBehind == 3)
+        try await write(model, name: "5-catch-up", done: 30)
         withExtendedLifetime(undoManager) {}
     }
 

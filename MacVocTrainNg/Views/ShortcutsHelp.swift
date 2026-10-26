@@ -152,7 +152,7 @@ private struct ShortcutsOverlay: View {
                 // Twelve rows of the menus fit the window's least height at this spacing.
                 Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 18, verticalSpacing: inSession ? 12 : 6) {
                     if inSession {
-                        sessionRows
+                        sessionRows(isNew: menu().onNewCard)
                     } else {
                         let state = menu()
                         ForEach(MenuKey.allCases, id: \.self) { key in
@@ -181,13 +181,22 @@ private struct ShortcutsOverlay: View {
         }
     }
 
+    /// The first showing of a card has Don't know and Know where the later ones have Forgot and Good.
     @ViewBuilder
-    private var sessionRows: some View {
+    private func sessionRows(isNew: Bool) -> some View {
         row(keys: [String(localized: "Space")]) {
-            Text("Show the answer, then grade Good")
+            if isNew {
+                Text("Show the answer, then grade Know")
+            } else {
+                Text("Show the answer, then grade Good")
+            }
         }
         row(keys: ["←", "→", "↑", "↓"]) {
-            Text("Grade: ← Forgot, → Good, ↑ Easy, ↓ Hard")
+            if isNew {
+                Text("Grade: ← Don't know, → Know, ↑ Easy, ↓ Hard")
+            } else {
+                Text("Grade: ← Forgot, → Good, ↑ Easy, ↓ Hard")
+            }
         }
         row(keys: ["Z", "Esc"], areAlternatives: true) {
             Text("Undo the last grade")

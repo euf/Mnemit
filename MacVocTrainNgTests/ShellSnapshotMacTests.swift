@@ -32,7 +32,12 @@ extension DeckFileTests {
             try await f.waitFor("the deck is paused") { shell.sidebar.paused.count == 1 }
             #expect(shell.canStudyDay)
             #expect(shell.dayAction == .study)
-            #expect(shell.sidebar.today == shell.due)
+            // Today and the decks say how long the plan takes, not how many cards it has.
+            guard case .minutes? = shell.sidebar.today else {
+                Issue.record("Today has no minutes: \(String(describing: shell.sidebar.today))")
+                return
+            }
+            #expect(shell.sidebar.decks.allSatisfy { if case .minutes? = $0.badge { true } else { false } })
 
             for dark in [false, true] {
                 // A window of its own for each appearance, never shown: SwiftUI takes the colour scheme from the window it is first put in.

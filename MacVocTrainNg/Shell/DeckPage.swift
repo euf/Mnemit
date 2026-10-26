@@ -10,7 +10,7 @@ struct DeckPage: View {
         Group {
             if let document = deck.document {
                 DeckPageContent(
-                    document: document, isEditable: deck.isEditable, screen: Binding(get: { shell.screen }, set: { shell.showScreen($0) }),
+                    document: document, isEditable: deck.isEditable, pace: shell.ring.progress?.pace, screen: Binding(get: { shell.screen }, set: { shell.showScreen($0) }),
                     showsInspector: Binding(get: { shell.showsInspector }, set: { shell.showsInspector = $0 }),
                     shownCard: shell.shownCard, request: Binding(get: { shell.request }, set: { shell.request = $0 }),
                     start: { shell.study(.deck(deck.url), entry: $0) }
@@ -49,6 +49,8 @@ struct DeckPageContent: View {
     @ObservedObject var document: VocabularyDocument
     /// `false` while the deck can only be viewed: nothing then changes it or starts a stream.
     var isEditable: Bool
+    /// The day's pace, which prices the plan left as "≈ 4 min"; `nil` until the ring is worked out.
+    var pace: Pace?
     @Binding var screen: Shell.DeckScreen
     /// Whether the cards' inspector is open, for View ▸ Show Inspector.
     @Binding var showsInspector: Bool
@@ -66,6 +68,8 @@ struct DeckPageContent: View {
     @State private var toast: Toast?
     /// Whether Add Cards came up by itself for this page's empty deck, once, as on the iPhone.
     @State private var offeredAddCards = false
+    /// The cards a sheet asked to study first, which the stream takes up once the sheet has gone.
+    @State private var studyAfterSheet: [Card.ID]?
 
     private var canEdit: Bool { isEditable && document.isReadyToEdit }
 
@@ -105,13 +109,14 @@ struct DeckPageContent: View {
         .sheet(isPresented: $showingOptions) {
             DeckOptionsView(document: document)
         }
-        .sheet(item: $importPreview) { preview in
-            ImportPreviewView(document: document, preview: preview)
+        .sheet(item: $importPreview, onDismiss: studyAddedCards) { preview in
+            ImportPreviewView(document: document, preview: preview) { studyAfterSheet = $0 }
         }
-        .sheet(isPresented: $addingCards) {
-            AddCardsView(document: document) { count in
-                toast = Toast(String(localized: "Added \(count) cards. Meaning → Word cards open once a word is learned."))
-            }
+        .sheet(isPresented: $addingCards, onDismiss: studyAddedCards) {
+            AddCardsView(
+                document: document,
+                onAdded: { count in toast = Toast(String(localized: "Added \(count) cards. Meaning → Word cards open once a word is learned.")) },
+                studyNow: { studyAfterSheet = $0 })
         }
         .overlay {
             if isReadingImport {
@@ -148,7 +153,7 @@ struct DeckPageContent: View {
     private var strip: some View {
         let counts = document.dueCards.counts
         let hasCards = !document.deck.cards.isEmpty
-        let headline = DeckHeadline(counts: counts, isPaused: document.deck.learningOptions.isPaused, hasCards: hasCards, now: document.clock.now)
+        let headline = DeckHeadline(counts: counts, pace: pace, isPaused: document.deck.learningOptions.isPaused, hasCards: hasCards, now: document.clock.now)
         return HStack(spacing: Spacing.gap) {
             if let headline {
                 HStack(spacing: Spacing.tight) {
@@ -173,6 +178,13 @@ struct DeckPageContent: View {
         }
         .padding(.horizontal, Spacing.margin)
         .padding(.vertical, Spacing.tight)
+    }
+
+    /// Study These Now: the sheet has gone, the stream of this deck puts the cards it added first.
+    private func studyAddedCards() {
+        guard let ids = studyAfterSheet else { return }
+        studyAfterSheet = nil
+        start(.studyNow(ids))
     }
 
     /// Opens the sheet a menu or the strip asked for, once the deck can be changed.

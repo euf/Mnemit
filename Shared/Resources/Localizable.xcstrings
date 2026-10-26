@@ -7517,6 +7517,28 @@
         }
       }
     },
+    "Grade: ← Don't know, → Know, ↑ Easy, ↓ Hard": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewerten: ← Weiß ich nicht, → Weiß ich, ↑ Leicht, ↓ Schwer"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βαθμολογία: ← Δεν ξέρω, → Ξέρω, ↑ Εύκολο, ↓ Δύσκολο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оценка: ← Не знаю, → Знаю, ↑ Легко, ↓ Трудно"
+          }
+        }
+      }
+    },
     "Grade: ← Forgot, → Good, ↑ Easy, ↓ Hard": {
       "localizations": {
         "de": {
@@ -12155,6 +12177,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Показать ответ, затем оценка «Хорошо»"
+          }
+        }
+      }
+    },
+    "Show the answer, then grade Know": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antwort zeigen, danach „Weiß ich“"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εμφάνιση της απάντησης, μετά «Ξέρω»"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать ответ, затем оценка «Знаю»"
           }
         }
       }

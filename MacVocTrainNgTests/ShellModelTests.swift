@@ -46,30 +46,34 @@ extension DeckFileTests {
 
         // MARK: The badges
 
-        @Test func badgesAreTheCardsLeftOfTheDay() async throws {
+        @Test func badgesAreTheTimeLeftOfTheDay() async throws {
             let f = try ShellFixture(decks: [("Alpha", 5), ("Beta", 3), ("Gamma", 4)])
             let shell = f.shell
             try await f.waitUntilRead(decks: 3)
+            try await f.waitFor("the ring is worked out") { shell.isDayReady }
+            let pace = try #require(shell.ring.progress?.pace)
 
-            // What the files say, read on their own, over the new cards each deck may take today.
-            let left = try ["Alpha", "Beta", "Gamma"].map {
-                try #require(KnownDeckCounts.counts(at: f.url($0), allowance: NewCardAllowances.today[f.url($0)])).total
+            // Each deck says what its plan takes at the day's pace, over the new cards it may take today.
+            let counts = try ["Alpha", "Beta", "Gamma"].map {
+                try #require(KnownDeckCounts.counts(at: f.url($0), allowance: NewCardAllowances.today[f.url($0)]))
             }
-            #expect(left.allSatisfy { $0 > 0 })
+            #expect(counts.allSatisfy { $0.total > 0 })
+            let minutes = counts.map { DeckMinutes.minutes($0, pace: pace) }
             let rows = shell.sidebar
-            #expect(rows.decks.map(\.cardsLeft) == left)
-            #expect(rows.today == left.reduce(0, +))
-            // The number Today's page shows is the one on its badge.
-            #expect(rows.today == shell.due)
+            #expect(rows.decks.map(\.badge) == (try minutes.map { SidebarBadge.minutes(try #require($0)) }))
+            // Today prices the whole plan as one: the new cards of all decks at their price, the rest at theirs.
+            let newCards = counts.reduce(0) { $0 + $1.newAtDayStart }
+            let otherCards = counts.reduce(0) { $0 + $1.total - $1.newAtDayStart }
+            #expect(rows.today == .minutes(DailyGoal.minutesLeft(newCards: newCards, otherCards: otherCards, pace: pace) ?? 0))
             #expect(rows.paused.isEmpty && rows.others.isEmpty)
 
-            // An open deck counts with the reviews not saved yet: the badge follows at once.
-            let (deck, document) = try await f.open("Alpha")
-            try f.review(deck, document, grade: .easy)
+            // An open deck counts with the reviews not saved yet: the badge follows at once, down to the check.
+            let (deck, document) = try await f.open("Beta")
+            for _ in 0..<counts[1].total { try f.review(deck, document, grade: .easy) }
             let after = shell.sidebar
-            #expect(after.decks.map(\.cardsLeft) == [left[0] - 1, left[1], left[2]])
-            #expect(after.today == left.reduce(0, +) - 1)
-            #expect(after.today == shell.due)
+            #expect(try #require(shell.studyCounts(f.url("Beta"))).isDone)
+            #expect(after.decks.map(\.badge) == [rows.decks[0].badge, .done, rows.decks[2].badge])
+            #expect(after.today != rows.today)
             await f.finish()
         }
 
@@ -77,21 +81,22 @@ extension DeckFileTests {
             let f = try ShellFixture(decks: [("Alpha", 5), ("Beta", 3)])
             let shell = f.shell
             try await f.waitUntilRead(decks: 2)
-            let beta = try #require(shell.sidebar.decks.last?.cardsLeft)
+            try await f.waitFor("the ring is worked out") { shell.isDayReady }
+            let beta = try #require(shell.sidebar.decks.last?.badge)
 
             await shell.setPaused(f.url("Alpha"), true)
             #expect(shell.isPaused(f.url("Alpha")))
             var rows = shell.sidebar
             #expect(rows.decks.map(\.url) == [f.url("Beta")])
             #expect(rows.paused.map(\.url) == [f.url("Alpha")])
-            #expect(rows.paused.first?.cardsLeft == nil)
+            #expect(rows.paused.first?.badge == nil)
             #expect(rows.today == beta)
 
             await shell.setPaused(f.url("Alpha"), false)
             rows = shell.sidebar
             #expect(rows.paused.isEmpty)
             #expect(rows.decks.count == 2)
-            #expect(rows.today == shell.due)
+            #expect(rows.today != nil)
 
             // The pause is in the file once the decks are closed.
             await shell.setPaused(f.url("Beta"), true)
@@ -155,6 +160,44 @@ extension DeckFileTests {
             #expect(shell.columnVisibility == .all)
             shell.select(.today)
             #expect(shell.selection == .today)
+            await f.finish()
+        }
+
+        /// The cheat sheet names the keys of the card asked: a first showing has Don't know and Know.
+        @Test func theCheatSheetKnowsACardOnItsFirstShowing() async throws {
+            let f = try ShellFixture(decks: [("Alpha", 3)])
+            let shell = f.shell
+            try await f.waitUntilRead(decks: 1)
+            #expect(!shell.menu.onNewCard)
+
+            shell.study(.deck(f.url("Alpha")))
+            try await f.waitFor("the stream opens") { shell.session != nil }
+            #expect(shell.session?.currentCard?.isNew == true)
+            #expect(shell.menu.onNewCard)
+
+            shell.endStudy()
+            #expect(!shell.menu.onNewCard)
+            await f.finish()
+        }
+
+        /// Study These Now from a deck's page: the stream over that deck asks the cards just added first.
+        @Test func studyTheseNowOpensTheStreamWithTheAddedCardsFirst() async throws {
+            let f = try ShellFixture(decks: [("Alpha", 6)])
+            let shell = f.shell
+            try await f.waitUntilRead(decks: 1)
+            let (_, document) = try await f.open("Alpha")
+            let first = try #require(document.deck.cards.first?.id)
+            let added = Array(document.deck.cards.suffix(2).map(\.id))
+            #expect(StudyStream.addableCards(added, in: document.deck, at: document.clock.now, calendar: document.calendar) == added)
+
+            shell.study(.deck(f.url("Alpha")), entry: .studyNow(added))
+            try await f.waitFor("the stream opens") { shell.session != nil }
+            #expect(shell.run?.entry == .studyNow(added))
+            let asked = try #require(shell.session?.currentCard?.id)
+            #expect(added.contains(asked))
+            #expect(asked != first)
+
+            shell.endStudy()
             await f.finish()
         }
 

@@ -174,6 +174,33 @@ extension DeckFileTests {
             try? FileManager.default.removeItem(at: directory)
         }
 
+        /// Study's first item is the day's action by name, as Today's button: Study while the ring is open, Catch Up once it is
+        /// closed with cards left, Learn 10 New Words once the plan is done. The live menu has the first and the last of them
+        /// in `theMenusFollowTheWindow`; the middle one needs a closed ring, which is made by hand here.
+        @Test func theFirstItemOfStudyNamesTheDaysAction() {
+            let pace = Pace(newCard: 30, otherCard: 15)
+            let rounds = DayRounds(otherCards: 30, newCards: 0, pace: pace, seconds: 480)
+            func progress(done: Int) -> DailyProgress {
+                DailyProgress(
+                    ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: 12, repairCards: nil), cardsLeft: max(0, rounds.goal - done),
+                    pace: pace, roundPlan: rounds, streakKeptToday: done > 0)
+            }
+            let open = progress(done: 2)
+            let closed = progress(done: rounds.goal)
+            #expect(DayAction(due: 12, progress: open) == .study)
+            #expect(DayAction(due: 12, progress: nil) == .study)
+            #expect(DayAction(due: 12, progress: closed) == .catchUp)
+            #expect(DayAction(due: 0, progress: closed) == .pushOn)
+            #expect(DayAction(due: 0, progress: open) == .pushOn)
+
+            func title(_ action: DayAction) -> String? {
+                Mirror(reflecting: MenuKey.studyDay.title(MenuState(dayAction: action))).children.first { $0.label == "key" }?.value as? String
+            }
+            #expect(title(.study) == "Study")
+            #expect(title(.catchUp) == "Catch Up")
+            #expect(title(.pushOn) == "Learn 10 New Words")
+        }
+
         /// The cheat sheet lists the keys of the table, which are the menus' keys: the same twelve, each once, with the
         /// caps the menus print.
         @Test func theCheatSheetListsTheKeysOfTheMenus() {

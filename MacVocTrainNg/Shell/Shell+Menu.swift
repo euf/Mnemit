@@ -72,6 +72,8 @@ struct MenuState {
     /// The deck's cards are on the page, which the inspector is part of.
     var showsCards = false
     var showsInspector = false
+    /// The stream asks a card on its first showing, which the cheat sheet names by its two buttons.
+    var onNewCard = false
 }
 
 extension Shell {
@@ -95,7 +97,8 @@ extension Shell {
             canImport: !inRun && (selectedURL == nil || canChange),
             inRun: inRun,
             showsCards: selectedURL != nil && screen == .cards && !inRun && document != nil,
-            showsInspector: showsInspector)
+            showsInspector: showsInspector,
+            onNewCard: session.map { !$0.isResting && $0.currentCard?.isNew == true } ?? false)
     }
 
     /// File ▸ Import Cards…: into the selected deck, else into a new deck made for the file.
