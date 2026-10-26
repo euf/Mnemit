@@ -32,6 +32,8 @@ minutes, a goal sized to their usual day, and a gain they can see grow.
 6. **Words are the gain; everything else is effort.**
 7. **Anki-grade truth one tap away:** counts, FSRS figures and retention live in the deck, not on Today.
 8. **Nothing to configure to succeed.** Settings are ceilings and preferences, never a plan.
+9. **Progress never goes back.** A day, once over, keeps what it earned: its ring, its place in the streak, its medals and
+   the words it learned stay, whatever later happens to the decks and cards.
 
 ## 4. The entities
 
@@ -43,7 +45,7 @@ Seven, and only these appear on screen.
 | **Card** | one question and its answer; a word gives two (Word → Meaning, Meaning → Word) | the card on screen; numbers only inside a deck (Due, New, Learning, Suspended) |
 | **Stack** | the cards left before the next moment of the day | edges under the card, up to four, fewer at the end; never a number |
 | **Ring** | how far today is | an arc of the cards done against today's goal, laps past it; never a number |
-| **Streak** | the habit: days in a row | a flame and the days |
+| **Streak** | the habit: days in a row | a flame and the days, a line of its own under the ring |
 | **Words learned** | what they keep: words whose Word → Meaning card has left learning | "412 words learned · +12 today" |
 | **Medal** | a moment worth remembering | a toast when earned, a shelf in Progress |
 
@@ -75,18 +77,44 @@ Progress.
 added after a lesson, first in a stream over that deck, then the deck's plan; they take the place of the day's new
 cards, so tomorrow's load is the same as if the deck had chosen them). Both count toward the ring and its laps.
 
-**The sentence** is the day in words, one at a time: "≈ 2 min to keep your 12-day streak" → "12-day streak · ≈ 5 min to
-close the ring" → "Ring closed · ≈ 12 min of reviews left" → "All done for today". After a miss: "≈ 6 min to close the
-ring and save your 12-day streak". **The button** follows it: Study, then Catch Up, then Learn 10 New Words.
+**The streak line** stands under the ring: the flame and the days, "12-day streak", in the same place and form all day;
+the flame's shape is its state (an outline while today's step is open, filled once it is kept, an outline with "!" the day
+after a miss). **The sentence** under it is the next moment and its minutes, one at a time, with no days in it: "≈ 2 min to
+keep your streak" → "≈ 5 min to close the ring" → "Ring closed · ≈ 12 min of reviews left" → "All done for today". After a
+miss: "≈ 6 min to close the ring and save your streak"; without a streak: "≈ 2 min to start your streak", and no streak
+line. **The button** follows the sentence: Study, then Catch Up, then Learn 10 New Words.
 
 **A card** is asked; a tap shows the answer; the learner grades it: left no (Forgot; "Don't know" on its first showing,
 where two wide buttons, Don't know and Know, replace the four), right Good, up Easy, down Hard. A card leaves the stack
 and moves the ring when FSRS lets it go until another day; a Forgot slides it back under the stack and moves neither.
+The colour says how easily the word came: red for Forgot; three greens whose chroma rises from Hard, a dull sage, through
+Good to Easy, a vivid jade.
+
+**A word that keeps slipping** (a leech: as many lapses as the deck's threshold, 8 by default as in Anki, and again at
+every half threshold after it, 12, 16 …) is never taken away silently. On the Forgot that makes it one, its answer stays on
+screen under "Keeps slipping", with Edit (a hint, an example, a clearer question), Set Aside and Continue: the answer
+right after an error is what helps most (Pashler 2005: +494 % at a week; Rowland 2014: g 0.73 with feedback, 0.39
+without), and rewriting the card is Anki's and SuperMemo's first advice (`leech-research.md`). The deck's leech action decides what Continue
+leaves: **Keep** (the default) keeps the card in rotation, where FSRS goes on scheduling it (on the logs of 2,000 Anki
+users, cards past 8 lapses are 1 % of cards and 7.6 % of review time, and 72 % of their later answers are recalled, against
+85 % overall, `Tools/ring-sim/leeches.md`); **Suspend**, Anki's classic action, sets it aside, and the moment offers Keep It instead of Set Aside. A
+deck's Cards have a Leeches filter; the Mac's table adds the columns Lapses, Stability, Difficulty and Recall.
+
+**The past is written down.** When a study day is over, its record is kept: the cards done against its goal, whether it
+kept the streak and closed the ring, the words learned by its end. Past days are read from these records and today from
+the cards, so pausing, resuming or deleting a deck, or deleting or rewriting a card, never changes a past day. A record
+only rises, when answers of that day arrive late from the other device; both devices keep the same records beside the
+decks.
+
+**A deck that changes while it is open** (on the other device, or rebuilt from a table) changes in place: kept cards
+keep their progress, new cards come as new, a deleted card leaves the stack without a grade while its answers stay in
+the log, so today's ring keeps what it counted; an undo still takes back the last grade.
 
 ## 6. The loops
 
-- **The habit loop (daily):** the widget or the reminder says "≈ 2 min to keep your 12-day streak" → one tap to the first
-  card → two minutes → the flame fills, the rest offers Keep Going. Cost two minutes, reward immediate.
+- **The habit loop (daily):** the widget shows the flame and the days with "≈ 2 min to keep your streak", or the reminder
+  says "Keep your 12-day streak · ≈ 2 min" → one tap to the first card → two minutes → the flame fills, the rest offers
+  Keep Going. Cost two minutes, reward immediate.
 - **The learning loop (a sitting):** the card, the answer, the stack shrinking, the ring filling → the ring closes → Catch Up
   if due cards remain, Learn 10 New Words if not.
 - **The progress loop (weeks):** words learned and their milestones, the week of rings, the calendar with streak runs and
@@ -128,18 +156,37 @@ Every surface is the entities above and nothing else.
 
 | Surface | Shows |
 |---|---|
-| **Today** | the ring (no number), the sentence, "words learned · +today", the week of rings, deck rows (≈ min or ✓), the button; empty: New Deck, Shared Decks |
-| **The stream** | the card, the stack, the header: ring, flame, ≈ minutes to the next moment; the rests at the moments |
+| **Today** | the ring (no number), the streak line, the sentence, "words learned · +today", the week of rings, deck rows (≈ min or ✓), the button; empty: New Deck, Shared Decks |
+| **The stream** | the card, the stack, the header: ring, flame and days, ≈ minutes to the next moment; the rests at the moments |
 | **A deck** | its header "≈ 4 min · 14 due · 6 new · 2 learning", Cards (browser with filters), Statistics (Cards, Due, New, Suspended, Recall now; retention), Options |
 | **Progress** | the streak (days, best), days studied, rings closed, words learned, the ring's size, the calendar, medals, the memory ladder, How It Works |
-| **Widgets** | the ring and the sentence; lock screen: the ring with ≈ minutes, inline "🔥 12 · ≈ 2 min" |
+| **Widgets** | small: the ring, the streak line, the sentence; medium: the ring beside the streak line, the sentence and the week; lock screen: circular the ring with ≈ minutes, rectangular the streak line and the sentence beside a small ring, inline "🔥 12 · ≈ 2 min" |
 | **Reminders** | "Keep your 12-day streak · ≈ 2 min", and at 21:00 while the streak is at stake; the badge "1" while the ring is open |
 | **The Mac** | one window: the same Today, stream, decks and Progress, by keyboard |
 
+A medal's toast never covers the ring, the card or a button: on Today it stands below the button, in the stream above the
+answer's buttons where the card leaves room, never over the card.
+
+### Why the ring leads and the streak has a line of its own
+
+Every surface has one hero (`today-layout-research.md`): Fitness opens on the rings and keeps streaks among the awards;
+Duolingo's home is the path, with the flame and its count small and always in the same place; a widget elects one thing,
+the rings in Apple's, the streak and whether today is done in Duolingo's tested one. No app shows a daily ring and a
+streak side by side as equals, and beside the ring the flame reads as a second meter of the same day, the confusion of
+8.0's frames (`ring-streak-design.md` §2). Minutes to the next moment are words everywhere they appear (Workout Buddy's
+"18 minutes away from closing", Speak's "2 hours left"), never a label on the ring.
+
+So the order on Today, by size and place: **the ring** (how far today is), **the streak line** (the habit: the flame and the
+days, which Duolingo's split showed is a mechanic of its own, day-14 retention +3.3 %), **the sentence** (what is next and
+its ≈ minutes, which leads to the button), then words learned and the week. The sentence no longer carries the days: each
+entity is shown once, as itself. On a widget the ring stays the hero and the streak line comes first after it; the
+lock screen's circular widget is the ring alone with its minutes, the inline one the flame and the days.
+
 ## 10. The personas through it
 
-- **Newcomer, day 1:** no decks → New Deck or Shared Decks → the first card, "Don't know" or "Know" → two minutes: the flame
-  fills, "1-day streak", first medal at 10 words. Their ring is 2.5 minutes; the first moments come fast.
+- **Newcomer, day 1:** the introduction shows one new word, Don't know or Know, and the word coming back in the same
+  sitting, then the four swipes → no decks → New Deck or Shared Decks → the first card → two minutes: the flame fills,
+  "1-day streak", first medal at 10 words. Their ring is 2.5 minutes; the first moments come fast.
 - **Course learner, a lesson night:** the morning widget says "≈ 2 min to keep your 12-day streak"; the bus ride keeps it;
   the evening lesson's 20 words go in at the desk and Study These Now puts them first; the stack runs out at the ring;
   laps show the extra; tomorrow the words come back as reviews.
@@ -147,21 +194,19 @@ Every surface is the entities above and nothing else.
   2,000 overdue cards are "≈ 45 min of reviews left" after the ring, not a ring that can't close; the deck screen shows
   Anki's counts; FSRS is untouched.
 
-## 11. What changes from 7.2 to this model
+## 11. What changes from 8.0 to this model
 
-| Area | 7.2 | This model |
+| Area | 8.0 | This model |
 |---|---|---|
-| Ring's middle | cards left (7.2.x) | nothing; the ring is a picture |
-| Today's gain | words in memory (a sum of probabilities) | words learned (whole words), milestones as medals |
-| Big day medal | cards in a day | Double ring, Triple ring |
-| First showing of a new card | four buttons, Forgot reads Don't know | two buttons: Don't know, Know (swipes keep all four) |
-| After Add Cards | the cards wait for the plan | Study These Now |
-| The stack after the ring | gone | the stack of Catch Up and of Learn 10 New Words |
-| The sentence | streak chip and a lead line | one sentence, the next moment and its ≈ minutes |
-| Deck rows / sidebar | cards left today | ≈ minutes or ✓ |
-| Progress totals | rings, days, cards done | days studied, rings closed, words learned, the ring's size |
-| App icon badge | cards to the ring | "1" while the ring is open |
-| Empty Today | three equal paths | New Deck first, Shared Decks second, the iCloud folder a link |
+| Past days | worked out from the logs of the active decks at every look: pausing or deleting a deck, or deleting a card, rewrote them | written down when the day ends and read from the records; a record only rises |
+| A deleted card | gone with its answers; today's ring could drop | leaves the plan and the stack; its answers stay in the log; the ring keeps what it counted |
+| A deck changed while open | merged; the table tool wrote past the apps | merged in place; the tool writes like an app; the stream drops a card that is gone |
+| A word that keeps slipping | suspended at 8 lapses, marked Difficult | a leech stays on screen with Edit, Set Aside, Continue; the deck chooses Keep (default) or Suspend; warned again every half threshold; a Leeches filter; the Mac shows Lapses, Stability, Difficulty, Recall |
+| Grade colours | three greens by lightness, Hard the lightest | chroma rises from Hard to Easy: Hard a dull sage, Easy a vivid jade |
+| The introduction | the four swipes, the day in four lines | first a new word's first showing (Don't know, Know, it comes back), then the swipes |
+| Words on screen | sentences that explain | short and plain everywhere; no text that explains the interface |
+| Today's order | the ring, then one sentence led by the flame with the days in it | the ring, the streak line, the sentence of the next moment |
+| The Mac's medal toast | over the ring | below the button |
 
 ## 12. Details settled in the build
 
@@ -178,5 +223,8 @@ Every surface is the entities above and nothing else.
   two rows of the four buttons they replace; on the Mac their keys are ← or 1 (Don't know) and → or 3 (Know); ↓ ↑ 2 4 still give Hard and Easy.
 - **Progress totals** run Days studied, Rings closed, Words learned; the ring's size line reads "Your ring: 8 min a
   day · started at 2.5", or without the start while the ring has not moved; words in memory sit in the Memory section.
-- **The sentence** has no form without a streak beyond "Start your streak · ≈ 2 min" and the closed "All done for
-  today".
+- **The sentence** without a streak is "≈ 2 min to start your streak" and, once nothing is left, "All done for today".
+- **Text** on every screen is one short sentence in plain words, in en, de, ru and el: what is there or what comes next,
+  never how the interface works (no footers that explain a control, no "tap to …").
+- **The records of past days** live in the deck folder, one file per device, merged by day (`daily-ring.md`,
+  `deck-package.md`); a device writes a day when it first sees it over.
