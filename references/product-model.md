@@ -72,8 +72,8 @@ moments are one: only the closed ring keeps the streak ("!" on the flame). Two m
 Progress.
 
 **Beyond the day**, by choice: **Learn 10 New Words** (the next ten new cards) and **Study These Now** (the cards just
-added after a lesson, first in tonight's stream; they take the place of the day's new cards, so tomorrow's load is the
-same as if the deck had chosen them). Both count toward the ring and its laps.
+added after a lesson, first in a stream over that deck, then the deck's plan; they take the place of the day's new
+cards, so tomorrow's load is the same as if the deck had chosen them). Both count toward the ring and its laps.
 
 **The sentence** is the day in words, one at a time: "≈ 2 min to keep your 12-day streak" → "12-day streak · ≈ 5 min to
 close the ring" → "Ring closed · ≈ 12 min of reviews left" → "All done for today". After a miss: "≈ 6 min to close the
@@ -113,8 +113,14 @@ days and doesn't stall for a learner who stops at the ring. Its weakness: a lear
 the goal on each of his first five days) sees laps every day, which empties laps and the Double/Triple ring medals.
 
 Criteria for any change (measured in `Tools/ring-sim/` before it ships): closure 0.70–0.85 for learners who stop at the
-ring, open runs no longer, words kept no fewer, and Double ring on 10–20 % of days for learners who go on. The candidate
-under measurement: the staircase plus a sustained-overshoot step (`Tools/ring-sim/overshoot.md`).
+ring, open runs no longer, words kept no fewer, and fewer laps for learners who go on.
+
+**Decided (26.10, `Tools/ring-sim/overshoot.md`): the staircase plus a sustained-overshoot step.** From the 8th study
+day, when the work reached 1.5 × T on 3 of the last 4 study days, T becomes the larger of the staircase's T and the 25th
+percentile of those four days' minutes, at most × 1.5 per day, capped at 60 min. A learner who stops at the ring never
+triggers it (their closure and words are the baseline's exactly); for learners who go on every day Double ring falls from
+26 % to 16 % of days (synthetic) and from 50 % to 25 % (real Anki users) at a closure of 0.75 / 0.70, and their first week
+is unchanged. Learners who go on in stretches lose 0.05 closure. The constants are flags in `DailyGoal`.
 
 ## 9. Surfaces
 
