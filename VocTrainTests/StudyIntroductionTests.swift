@@ -92,10 +92,15 @@ struct StudyIntroductionTests {
     }
 
     @Test func undoAfterAnIntroductionGoesBackToTheLastGradedCard() throws {
-        let (document, undoManager) = try makeDocument(new: 1, review: true)
-        let model = StudyModel(document: document)
+        // The stream picks its first card at random from the front of the rotation; this test needs the review first.
+        var made: (VocabularyDocument, UndoManager, StudyModel)?
+        for _ in 0..<64 where made == nil {
+            let (document, undoManager) = try makeDocument(new: 1, review: true)
+            let model = StudyModel(document: document)
+            if model.currentCard?.question == "due" { made = (document, undoManager, model) }
+        }
+        let (document, undoManager, model) = try #require(made)
         let due = try #require(model.currentCard)
-        #expect(due.question == "due")
         #expect(!model.isIntroduction)
 
         model.reveal()
