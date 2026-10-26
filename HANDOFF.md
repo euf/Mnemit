@@ -5,8 +5,8 @@
 - Version 7.1.x on `main`: the Mac is one window (a sidebar of Today, Progress and the decks; the stream
   takes the window), new words are introduced, not graded, every review counts in full, neither app asks for
   a typed answer, and the widgets and reminders follow the day (the flame's three states, the week, the inline
-  accessory, a 21:00 streak reminder). The iPhone runs 7.0.11 (64d0f54), signed until 02.11; a newer build goes
-  on at the end of the release. The day's model (one ring that stays full at the goal, the streak as a flame, the
+  accessory, a 21:00 streak reminder). The iPhone and the Mac run 7.1.11 (32be5c5), the iPhone signed until
+  02.11. The day's model (one ring that stays full at the goal, the streak as a flame, the
   stack that ends with the plan, Study / Catch Up / Learn 10 New Words, partial credit, the streak step, two
   rests, medals, the Progress screen on both apps)
   and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
@@ -24,8 +24,9 @@
 - Decks in `iCloud Drive/Mnemit/`, both built by `Tools/deck-from-tsv` from the dictionary
   `~/Documents/greek-lessons/vocab/` (`merge.py` → `greek-vocab.tsv`, `cards.py` → `cards-*.tsv`):
   - `Greek A1–A2.mnemit`, review of the familiar: 1629 words, 3258 cards (recognition and translation
-    into Greek), 30 + 30 new per day, production not locked, deck order.
-  - `Greek B1.mnemit`, learning: 1118 words, 2236 cards, 20 new recognition + 7 production per day,
+    into Greek), 30 + 30 new per day, production not locked, deck order; Words I know.
+  - `Greek B1.mnemit`, learning, New words since 26.10 (a new card is introduced first): 2314 cards,
+    20 new recognition + 7 production per day,
     production unlocks after 21 days, new cards newest first. 78 old cards of the first deck are
     frozen (their words went to A1–A2), 131 adopted with their progress.
   A recognition question is the Greek form; the answer is Russian · English and an example. A
@@ -62,10 +63,11 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and reviews from
    the Mac arriving while Today stays open (it reads the decks every minute). Xcode's Apple ID was lost once
    (24.10): `ios-renew` then fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
-2. **The Mac's one window, to see live:** a cold launch with a deck from Finder, ⌘Q with a stream running, a Dock
-   click after ⌘W, the Open Deck… panel and the New Deck sheet, the menu bar and the cheat sheet in the real
-   window, ⌘1 to ⌘4 with real keys, Catch Up in the menu (it needs a closed ring), Edit ▸ Undo in the real
-   window, the selected sidebar row's colour and dark mode, Today's Study mixing the decks in one stream, the
+2. **The Mac's one window, to see live:** seen on 26.10 (vqa): one window on Today, the badges, ⌘1/⌘2/⌘4, a deck's
+   Cards and Statistics, Learning Options ⌘;, a deck opened from Finder under Other Decks, the stream by Space, →
+   and Z, Done ⌘. bringing the sidebar back. Still to see: a cold launch with a deck from Finder, ⌘Q with a stream
+   running, a Dock click after ⌘W, the Open Deck… panel and the New Deck sheet, the cheat sheet, Catch Up in the
+   menu (it needs a closed ring), Edit ▸ Undo on a deck's page, dark mode, Today's Study mixing the decks, the
    search over all decks and a hit selecting its card, a sidebar row's menu (Pause), the medal toasts and the
    month's sheet.
 3. **Progress must not depend on the decks in the list.** The ring, the streak and the medals are worked
