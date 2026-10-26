@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// The statistics of an open deck, pushed from its screen: the tiles the Mac has (Cards, Due, New, Suspended,
-/// Recall Now) over the retention table. The Mac adds its charts.
+/// Recall Now) over the retention table, which has a section of its own. The Mac adds its charts.
 struct StatisticsScreen: View {
     var document: VocabularyDocument
     @State private var figures: Figures?
@@ -13,17 +13,19 @@ struct StatisticsScreen: View {
     }
 
     var body: some View {
-        ScrollView {
+        Group {
             if let figures {
-                VStack(alignment: .leading, spacing: 28) {
-                    SummaryTiles(summary: figures.summary)
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Retention")
-                            .font(.title2.weight(.semibold))
+                List {
+                    Section {
+                        SummaryTiles(summary: figures.summary)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                    }
+                    Section("Retention") {
                         RetentionTables(retention: figures.retention)
                     }
                 }
-                .padding()
+                .groupedList()
             } else {
                 ProgressView()
                     .padding()

@@ -1,10 +1,10 @@
 import SwiftUI
 import VocabCore
 
-/// Progress, pushed from the header of Today on the iPhone, a page of the window on the Mac, a summary of four blocks (`references/learning-flow.md`,
-/// "Milestones, achievements and the Progress screen"): the streak as a statistic with the three totals,
-/// the calendar of the last 13 weeks with the runs of kept days joined, the latest medals and the way to all of them,
-/// and the ladder of memory. Everything is worked out from the review logs as the ring is, `DailyProgress.records`.
+/// Progress, pushed from the header of Today on the iPhone, a page of the window on the Mac, in the grammar of the screens
+/// (`references/product-model.md`, "The grammar of the screens"): the streak as a card, the totals as tiles two to a row on
+/// the page, the calendar of the last 13 weeks with the runs of kept days joined, the latest medals and the way to all of
+/// them, and the ladder of memory. Everything is worked out from the review logs as the ring is, `DailyProgress.records`.
 ///
 /// The true retention of the last 30 days is not here: no screen of the iPhone app reads the decks' review logs
 /// into it across decks, the deck statistics do it for one deck.
@@ -19,8 +19,15 @@ struct ProgressScreen<Trailing: View>: View {
     private var records: [DayRecord] { progress.records }
 
     var body: some View {
-        List {
-            Section { streak }
+        Form {
+            Section {
+                StreakCard(days: progress.streak.days, state: progress.streakState, best: longest)
+            }
+            Section {
+                tiles
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
             Section {
                 WeeksGrid(records: records)
             } header: {
@@ -31,7 +38,7 @@ struct ProgressScreen<Trailing: View>: View {
                 NavigationLink {
                     MedalsScreen(progress: progress, calendar: calendar)
                 } label: {
-                    Text("All Medals")
+                    Text("Show All")
                 }
             }
             if progress.ladder.reduce(0, +) > 0 {
@@ -52,11 +59,11 @@ struct ProgressScreen<Trailing: View>: View {
                 }
             }
         }
-        .groupedList()
+        .formStyle(.grouped)
         .navigationTitle("Progress")
     }
 
-    // MARK: The streak
+    // MARK: The streak and the totals
 
     private var longest: Int {
         max(progress.streak.days, records.map(\.streak).max() ?? 0)
@@ -66,44 +73,24 @@ struct ProgressScreen<Trailing: View>: View {
         records.filter { $0.closed && $0.done > 0 }.count
     }
 
-    /// The streak as a statistic, the flame with its days large and, where it differs, the best run; under it the main
-    /// totals, three in a row (days studied, rings closed, words learned) and the ring's size. There is no ring here: the
-    /// day's ring is on Today.
-    private var streak: some View {
-        VStack(alignment: .leading, spacing: Spacing.section) {
-            VStack(spacing: Spacing.gap) {
-                StreakStatistic(days: progress.streak.days, state: progress.streakState, best: longest)
-            }
-            .frame(maxWidth: .infinity)
-            .accessibilityElement(children: .combine)
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: dynamicTypeSize.isAccessibilitySize ? 1 : 3), alignment: .leading,
-                spacing: Spacing.tight
-            ) {
-                total("Days studied") { Text(records.filter { $0.done > 0 }.count, format: .number) }
-                total("Rings closed") { Text(ringsClosed, format: .number) }
-                total("Words learned") { Text(progress.learned.words, format: .number) }
-            }
-            Text(verbatim: RingSize(progress).line)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+    /// The totals as tiles, two to a row (one column at accessibility sizes) on the page, not inside a card: days studied,
+    /// rings closed of the days since the first, words learned and the ring's size. There is no ring here: the day's ring is
+    /// on Today.
+    private var tiles: some View {
+        let ring = RingSize(progress)
+        return LazyVGrid(
+            columns: dynamicTypeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: 150), spacing: Spacing.gap)],
+            spacing: Spacing.gap
+        ) {
+            FigureTile(label: Text("Days studied"), value: Text(records.filter { $0.done > 0 }.count, format: .number), footnote: Self.blank)
+            FigureTile(label: Text("Rings closed"), value: Text(ringsClosed, format: .number), footnote: Text("of \(records.count) days"))
+            FigureTile(label: Text("Words learned"), value: Text(progress.learned.words, format: .number), footnote: Self.blank)
+            FigureTile(label: Text("Your ring"), value: Text(verbatim: ring.value), unit: Text("min"), footnote: Text(verbatim: ring.footnote), tint: .appAccent)
         }
-        .padding(.vertical, Spacing.tight)
     }
 
-    /// A figure of the totals: its title in footnote over the number.
-    private func total(_ title: LocalizedStringKey, @ViewBuilder value: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(title)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            value()
-                .font(.subheadline)
-                .monospacedDigit()
-        }
-        .accessibilityElement(children: .combine)
-    }
+    /// The line under a value that has nothing to say, so the tiles of a row are of one height.
+    private static var blank: Text { Text(verbatim: " ") }
 
     // MARK: The medals
 
@@ -169,8 +156,8 @@ struct ProgressScreen<Trailing: View>: View {
     }
 }
 
-/// The size of the learner's ring, which grows with them: today's time in minutes and the time of the first day, "Your ring:
-/// 8 min a day · started at 2.5". The first day's alone, as it was, when the ring has not moved.
+/// The size of the learner's ring, which grows with them: today's time in minutes and the time of the first day, the tile
+/// "Your ring 8 min" over "a day · started at 2.5". The first day's alone, as it was, when the ring has not moved.
 struct RingSize: Equatable {
     /// Today's time and the first study day's, in minutes.
     var minutes: Double
@@ -181,10 +168,13 @@ struct RingSize: Equatable {
         started = (progress.ringDays.first?.time ?? progress.time) / 60
     }
 
-    var line: String {
-        let now = Self.format(minutes)
-        guard Self.format(started) != now else { return String(localized: "Your ring: \(now) min a day") }
-        return String(localized: "Your ring: \(now) min a day · started at \(Self.format(started))")
+    /// The minutes, "8" and "2.5".
+    var value: String { Self.format(minutes) }
+
+    /// "a day · started at 2.5", or "a day" while the ring has not moved.
+    var footnote: String {
+        let began = Self.format(started)
+        return began == value ? String(localized: "a day") : String(localized: "a day · started at \(began)")
     }
 
     /// One decimal at most, "8" and "2.5".
@@ -321,50 +311,48 @@ extension View {
     }
 }
 
-/// The streak at the top of Progress: its flame, the days large, "day streak" under them, and "Best: 21" when the best
-/// run is not the current one. At 0 days the outlined flame and "Start your streak".
-private struct StreakStatistic: View {
+/// The streak at the top of Progress, a card: "Day streak" over the flame and the days large in the streak's colour, and
+/// "Best: 21" after them when the best run is not the current one. At 0 days the outlined flame and "Start your streak".
+private struct StreakCard: View {
     var days: Int
     var state: StreakState
     /// The longest run, the current one included.
     var best: Int
+    @ScaledMetric(relativeTo: .largeTitle) private var size: CGFloat = 48
 
     var body: some View {
-        VStack(spacing: 2) {
-            StreakFlame(state: state)
-                .font(.system(size: 34, weight: .semibold))
+        VStack(alignment: .leading, spacing: 0) {
             if days == 0 {
-                Text("Start your streak")
-                    .font(.title3.weight(.semibold))
+                HStack(spacing: Spacing.tight) {
+                    StreakFlame(state: state)
+                        .font(.title2)
+                    Text("Start your streak")
+                        .font(.title3.weight(.semibold))
+                }
             } else {
-                Text(days, format: .number.grouping(.never))
-                    .font(.system(size: 56, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                Text(verbatim: Self.caption(days: days))
+                Text("Day streak")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                if best > days {
-                    Text("Best: \(best)")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 2)
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
+                    StreakFlame(state: state)
+                        .font(.system(size: size * 0.7, weight: .semibold))
+                    Text(days, format: .number.grouping(.never))
+                        .font(.system(size: size, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.streak)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                    if best > days {
+                        Text("Best: \(best)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, Spacing.hairline)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: days == 0 ? String(localized: "Start your streak") : String(localized: "\(days) day streak")))
         .accessibilityValue(best > days ? Text("Best: \(best)") : Text(verbatim: ""))
-    }
-
-    /// "day streak": the plural form of "12 day streak" without its number, which stands large above it. A language
-    /// that does not put the number first shows the whole phrase.
-    static func caption(days: Int) -> String {
-        let phrase = String(localized: "\(days) day streak")
-        let number = days.formatted()
-        guard phrase.hasPrefix(number) else { return phrase }
-        return String(phrase.dropFirst(number.count)).trimmingCharacters(in: .whitespaces)
     }
 }
