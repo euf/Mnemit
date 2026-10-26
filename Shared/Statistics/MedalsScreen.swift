@@ -1,7 +1,7 @@
 import SwiftUI
 import VocabCore
 
-/// All medals, pushed from Progress: the lines of one medal each together first, then the streak and the big day, each with the medals earned and the next one in grey.
+/// All medals, pushed from Progress: the lines of one medal each together first, then the streak and the laps, each with the medals earned and the next one in grey.
 struct MedalsScreen: View {
     var progress: DailyProgress
     var calendar = StudyCalendar()

@@ -49,8 +49,10 @@ public enum AchievementKind: Hashable, Sendable {
     case firstRing
     /// Seven closed rings in a row; earned again at every further run of seven.
     case perfectWeek
-    /// `done >= cards`, tiers `Achievements.bigDayTiers`.
-    case bigDay(cards: Int)
+    /// A day whose ring went twice round its goal (`DayRecord.ringShare` of 2 or more); earned once.
+    case doubleRing
+    /// A day whose ring went three times round its goal, the most a ring is drawn (`DayRecord.maxLaps`); earned once.
+    case tripleRing
     /// A day with `DayRecord.savedStreak`; earned every time.
     case comeback
 }
@@ -83,12 +85,11 @@ public struct MonthRecap: Hashable, Sendable {
 /// Milestones and achievements, worked out from the days of `DailyProgress.records` alone.
 public enum Achievements {
     public static let streakMilestones = [3, 7, 14, 30, 61, 91, 183, 365, 548, 730]
-    public static let bigDayTiers = [50, 100, 200, 500]
 
     /// Everything earned over `records` (oldest first, one per study day from the first study day to today,
     /// days without study included), oldest first. A tier of a line is earned once, on the first day it is
     /// reached (a day that reaches several tiers earns all of them); perfectWeek and comeback are earned each
-    /// time. Within a day: streak, first ring, perfect week, big day, comeback.
+    /// time. Within a day: streak, first ring, perfect week, double ring, triple ring, comeback.
     public static func earned(over records: [DayRecord]) -> [Achievement] {
         var earned: [Achievement] = []
         var tiers = Set<AchievementKind>()
@@ -105,7 +106,8 @@ public enum Achievements {
             previous = record.day
             run = worked ? run + 1 : 0
             if run > 0, run % 7 == 0 { earn(.perfectWeek) }
-            for cards in bigDayTiers where record.done >= cards { earnOnce(.bigDay(cards: cards)) }
+            if record.ringShare >= 2 { earnOnce(.doubleRing) }
+            if record.ringShare >= DayRecord.maxLaps { earnOnce(.tripleRing) }
             if record.savedStreak { earn(.comeback) }
         }
         return earned

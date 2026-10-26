@@ -67,7 +67,7 @@ extension StudyCounts {
 }
 
 extension AchievementKind {
-    /// "A week in a row", "First ring", "50 cards in a day": a streak is named in words, never in days.
+    /// "A week in a row", "First ring", "Double ring": a streak is named in words, never in days.
     var title: String {
         switch self {
         case let .streak(days):
@@ -85,7 +85,8 @@ extension AchievementKind {
             }
         case .firstRing: String(localized: "First ring")
         case .perfectWeek: String(localized: "Perfect week")
-        case let .bigDay(cards): String(localized: "\(cards) cards in a day")
+        case .doubleRing: String(localized: "Double ring")
+        case .tripleRing: String(localized: "Triple ring")
         case .comeback: String(localized: "Comeback")
         }
     }
@@ -93,7 +94,9 @@ extension AchievementKind {
     /// What it took, for the line under a medal; `nil` where the title says it.
     var detail: String? {
         switch self {
-        case .streak, .bigDay: nil
+        case .streak: nil
+        case .doubleRing: String(localized: "Two laps of the ring in a day")
+        case .tripleRing: String(localized: "Three laps of the ring in a day")
         case .firstRing: String(localized: "Closed the ring for the first time")
         case .perfectWeek: String(localized: "Seven rings in a row")
         case .comeback: String(localized: "Saved your streak after a missed day")
@@ -118,13 +121,8 @@ extension AchievementKind {
             }
         case .firstRing: "\u{1F3AF}"
         case .perfectWeek: "\u{1F308}"
-        case let .bigDay(cards):
-            switch cards {
-            case 50: "\u{1F4DA}"
-            case 100: "\u{1F9E0}"
-            case 200: "\u{1F989}"
-            default: "\u{1F418}"
-            }
+        case .doubleRing: "\u{1F4AB}"
+        case .tripleRing: "\u{1F300}"
         case .comeback: "\u{1F426}\u{200D}\u{1F525}"
         }
     }
@@ -135,18 +133,20 @@ extension AchievementKind {
         case let .streak(days): "streak-\(days)"
         case .firstRing: "firstRing"
         case .perfectWeek: "perfectWeek"
-        case let .bigDay(cards): "bigDay-\(cards)"
+        case .doubleRing: "doubleRing"
+        case .tripleRing: "tripleRing"
         case .comeback: "comeback"
         }
     }
 
-    /// How notable a medal is where there is room for one: a streak above the comeback, the big day, the
+    /// How notable a medal is where there is room for one: a streak above the comeback, the laps, the
     /// perfect week and the first ring; within a line the higher tier.
     var notability: Int {
         switch self {
         case let .streak(days): 6000 + days
         case .comeback: 5000
-        case let .bigDay(cards): 3000 + cards
+        case .doubleRing: 3000
+        case .tripleRing: 3001
         case .perfectWeek: 2000
         case .firstRing: 1000
         }
@@ -160,7 +160,7 @@ extension AchievementKind {
         case .streak: .streak
         case .firstRing: .firstRing
         case .perfectWeek: .perfectWeek
-        case .bigDay: .bigDay
+        case .doubleRing, .tripleRing: .laps
         case .comeback: .comeback
         }
     }
@@ -168,19 +168,19 @@ extension AchievementKind {
 
 /// The lines of achievements.
 enum AchievementLine: CaseIterable, Hashable {
-    case streak, firstRing, perfectWeek, bigDay, comeback
+    case streak, firstRing, perfectWeek, laps, comeback
 
     /// The lines of one medal each, which the Progress screen gathers in one row.
     static let single: [AchievementLine] = [.firstRing, .perfectWeek, .comeback]
     /// The lines of tiers, a row each.
-    static let tiered: [AchievementLine] = [.streak, .bigDay]
+    static let tiered: [AchievementLine] = [.streak, .laps]
 
     var symbol: String {
         switch self {
         case .streak: "flame"
         case .firstRing: "circle.circle"
         case .perfectWeek: "calendar"
-        case .bigDay: "rectangle.stack"
+        case .laps: "repeat"
         case .comeback: "arrow.uturn.up"
         }
     }
@@ -232,25 +232,24 @@ extension Array where Element == Achievement {
 /// The tier a line offers next and how far the learner is from it: the grey medal of the Progress screen.
 struct NextTier: Hashable {
     var kind: AchievementKind
-    /// Where the learner stands: the streak's days, the rings of the run or the cards of the best day.
+    /// Where the learner stands: the streak's days or the rings of the run.
     var value = 0
     /// What the tier asks; `nil` for a tier with no count to work toward.
     var goal: Int?
 
-    /// "12 of 14 days", "3 of 7 rings", "76 of 100 cards"; `nil` without a goal.
+    /// "12 of 14 days", "3 of 7 rings"; `nil` without a goal.
     var hint: String? {
         guard let goal else { return nil }
         switch kind {
         case .streak: return String(localized: "\(value) of \(goal) days")
         case .perfectWeek: return String(localized: "\(value) of \(goal) rings")
-        case .bigDay: return String(localized: "\(value) of \(goal) cards")
-        case .firstRing, .comeback: return nil
+        case .firstRing, .doubleRing, .tripleRing, .comeback: return nil
         }
     }
 
     /// The next unearned tier of `line`, `nil` once all are earned. A line that repeats always has one: the
-    /// comeback, which can't be worked toward, and the perfect week, whose run of rings counts. The big
-    /// day counts the best day on record, as a tier is reached in one day, never added up over days.
+    /// comeback, which can't be worked toward, and the perfect week, whose run of rings counts. The laps
+    /// have no count: a tier is reached in one day, by the ring going round again.
     static func of(_ line: AchievementLine, earned: [Achievement], records: [DayRecord], streak: Int) -> NextTier? {
         let kinds = Set(earned.map(\.kind))
         switch line {
@@ -261,9 +260,8 @@ struct NextTier: Hashable {
             return kinds.contains(.firstRing) ? nil : NextTier(kind: .firstRing)
         case .perfectWeek:
             return NextTier(kind: .perfectWeek, value: ringRun(records) % 7, goal: 7)
-        case .bigDay:
-            let best = records.map(\.done).max() ?? 0
-            return Achievements.bigDayTiers.first { !kinds.contains(.bigDay(cards: $0)) }.map { NextTier(kind: .bigDay(cards: $0), value: best, goal: $0) }
+        case .laps:
+            return [AchievementKind.doubleRing, .tripleRing].first { !kinds.contains($0) }.map { NextTier(kind: $0) }
         case .comeback:
             return NextTier(kind: .comeback)
         }
