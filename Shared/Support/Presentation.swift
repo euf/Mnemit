@@ -374,46 +374,36 @@ extension Grade {
     /// The grade's colour: red for Again, the only "no", and three greens for Hard, Good and
     /// Easy, the three kinds of "yes". It fills the grade buttons and the review history and, as `tint`,
     /// the card while it is swiped. Always shown together with the grade's title; `onColor` is the
-    /// text on it, picked by contrast: white on Again, a dark tint of the green's hue on the greens
-    /// (a dark green on Hard and Good, near black on Easy).
+    /// text on it, picked by contrast: white on Again, a dark tint of the green's hue on the greens.
     ///
-    /// The colours are built in OKLCH with a script, then written down as hex:
+    /// The greens say how easily the word came: chroma rises from Hard to Easy, so Hard is a dull sage, Good a
+    /// soft mint and Easy a vivid jade (the owner, 27.10.2026: "Hard dull, Easy vivid"). Lightness rises a little
+    /// with it, so a reader without colour tells them apart by lightness as well as by the title on every button.
+    /// The colours are built in OKLCH with a script (the comparison sheet of 27.10, palette E), then written down as hex:
     /// - Hue 166° for the greens, a jade green apart from the maturity ramp's blue at about 255°; 27° for the red.
-    /// - Lightness steps in light mode: Hard .92, Good .80, Easy .62, so Hard reads as the lightest
-    ///   "yes" and Easy as the deepest; Again .58.
-    /// - Chroma 90 % of the most the sRGB gamut has at that lightness and hue.
-    /// - Dark mode: every green .05 lower in lightness (.87, .75, .57) and its chroma 75 % of the
-    ///   gamut's maximum, as at 90 % Hard glows on black; Again .57, still at 90 %.
-    /// - The label is white where that holds 4.5:1 (Again; its lightness would drop in steps of .01 until
-    ///   it did), else the lightest dark tint of the hue (chroma .04) that reaches 7:1, near black if none does.
+    /// - Light mode: L .74 / .79 / .84 at 32 / 60 / 90 % of the most chroma the sRGB gamut has at that lightness and
+    ///   hue. Dark mode: L .62 / .69 / .76 at the same shares, so Easy glows on black and Hard doesn't.
+    /// - Again: L .58 (dark .57) at 90 %, white label at 4.5:1 or more.
+    /// - The label is the lightest dark tint of the hue (chroma .04) that reaches 7:1, near black if none does.
     ///
     /// Values (OKLCH L, C; WCAG contrast of the label on the fill), light mode / dark mode, as
     /// `GradeSwatch` holds them:
     /// - Again 0xDC292A / 0xD72828: L .58 / .57, C .213 / .209; white 4.8 / 5.0
-    /// - Hard  0x98FDD4 / 0x6FF0C0: L .92 / .87, C .112 / .134; 0x183429 11.1 / 9.5
-    /// - Good  0x3EDCA7 / 0x59C59D: L .80 / .75, C .150 / .116; 0x183429 7.7 / 0x0E2A1F 7.2
-    /// - Easy  0x299C76 / 0x3B886B: L .62 / .57, C .116 / .089; 0x000904 5.9 / 4.7
-    ///
-    /// Distance between neighbours (ΔE as 100 × the distance in OKLab; about 2 is a just
-    /// noticeable difference): Hard to Good 12.6 / 12.2, Good to Easy 18.4 / 18.1. Lightness tells the
-    /// three greens apart, which a red-green deficiency, taking chroma away, leaves; the title is on every
-    /// button all the same.
+    /// - Hard  0x8EB5A4 / 0x6F8E80: L .74 / .62, C .049 / .041; 0x09251B 7.2 / 0x000904 5.6
+    /// - Good  0x79CFAC / 0x64AD8F: L .79 / .69, C .098 / .087; 0x183429 7.3 / 0x00170D 7.0
+    /// - Easy  0x43EAB3 / 0x39CD9C: L .84 / .76, C .156 / .142; 0x183429 8.7 / 0x132F24 7.1
     ///
     /// The card takes `tint` while it is swiped (`CardFlight`, at most 70 % over the card face, with the
     /// text in its normal colour, which never changes with the swipe): `GradeContrastTests` holds the
     /// numbers, 5.5:1 or more for the primary text on all four tints in light mode and 7.1:1 or more in dark
     /// mode, 4.3:1 or more for the secondary text (75 % of the primary, `Color.cardSecondary`) in light
-    /// mode and 4.7:1 in dark mode. In light mode the tint is the fill. In dark mode the fills of the
-    /// greens are far too light for white text on the card, which needs a ground darker than about L .5,
-    /// so the three greens take one tint, 0x32745B (L .51, C .079, the same 75 % share), and Again 0xD22727,
-    /// a step lower than its fill.
+    /// mode and 4.7:1 in dark mode. In light mode the tint is the fill. In dark mode white text needs a ground
+    /// darker than about L .5, so each green takes its own darker tint at its own chroma share (Hard 0x566F64,
+    /// Good 0x40725E, Easy 0x1D7759, all L .51–.52), and Again 0xD22727, a step lower than its fill.
     ///
-    /// Why 166°: a ramp at 150° with the same steps was Microsoft Excel's (0x21A366, 0x107C41, 0x185C37 at
-    /// 152° to 157°), and the owner saw Office in it. The hues from 135° to 143° are Office's too (chart
-    /// green 0x70AD47 and 0x4EA72E, Fluent 0x107C10), so they are no way out. 166° is next to 170°, the
-    /// family the owner accepted. Easy, the deepest of the three, lies 3.6 ΔE from Excel's 0x21A366 in
-    /// light mode and 7.2 from 0x107C41 in dark mode; if it reads as Office again, move all three greens up
-    /// in hue.
+    /// Why 166°: a ramp at 150° was Microsoft Excel's (0x21A366, 0x107C41, 0x185C37 at 152° to 157°), and the owner
+    /// saw Office in it; the hues from 135° to 143° are Office's too. 166° is next to 170°, the family the owner
+    /// accepted.
     var color: Color { swatch.fill.color }
 
     /// Text and symbols on `color`.
@@ -423,8 +413,8 @@ extension Grade {
     var tint: Color { swatch.tint.color }
 
     /// A ring round the grade's button while a swipe is about to give it, clear of the fill, on the
-    /// screen's background: `color`, except Hard and Good in light mode, whose pale fills would not show; they take
-    /// Easy's, the lightest green that reaches 3:1 on the light grey.
+    /// screen's background: `color` in dark mode; in light mode the fills are too pale to show on the light grey, so
+    /// each green takes a deeper colour of its own hue and chroma share that reaches 3:1 there.
     var ring: Color { swatch.ring.color }
 
     /// The colours of the grade as hex values, `color`, `onColor`, `tint` and `ring` made of them.
@@ -434,16 +424,16 @@ extension Grade {
             GradeSwatch(fill: .init(light: 0xDC292A, dark: 0xD72828), tint: .init(light: 0xDC292A, dark: 0xD22727))
         case .hard:
             GradeSwatch(
-                fill: .init(light: 0x98FDD4, dark: 0x6FF0C0), label: .init(light: 0x183429, dark: 0x183429),
-                tint: .init(light: 0x98FDD4, dark: 0x32745B), ring: .init(light: 0x299C76, dark: 0x6FF0C0))
+                fill: .init(light: 0x8EB5A4, dark: 0x6F8E80), label: .init(light: 0x09251B, dark: 0x000904),
+                tint: .init(light: 0x8EB5A4, dark: 0x566F64), ring: .init(light: 0x729183, dark: 0x6F8E80))
         case .good:
             GradeSwatch(
-                fill: .init(light: 0x3EDCA7, dark: 0x59C59D), label: .init(light: 0x183429, dark: 0x0E2A1F),
-                tint: .init(light: 0x3EDCA7, dark: 0x32745B), ring: .init(light: 0x299C76, dark: 0x59C59D))
+                fill: .init(light: 0x79CFAC, dark: 0x64AD8F), label: .init(light: 0x183429, dark: 0x00170D),
+                tint: .init(light: 0x79CFAC, dark: 0x40725E), ring: .init(light: 0x56957B, dark: 0x64AD8F))
         case .easy:
             GradeSwatch(
-                fill: .init(light: 0x299C76, dark: 0x3B886B), label: .init(light: 0x000904, dark: 0x000904),
-                tint: .init(light: 0x299C76, dark: 0x32745B))
+                fill: .init(light: 0x43EAB3, dark: 0x39CD9C), label: .init(light: 0x183429, dark: 0x132F24),
+                tint: .init(light: 0x43EAB3, dark: 0x1D7759), ring: .init(light: 0x2A9C76, dark: 0x39CD9C))
         }
     }
 

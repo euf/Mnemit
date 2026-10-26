@@ -56,21 +56,35 @@ struct GradeContrastTests {
         }
     }
 
-    @Test func hardIsTheLightEndOfTheGreensAndStillGreen() {
+    /// OKLCH chroma of a hex colour (Björn Ottosson's Oklab).
+    private static func chroma(_ hex: UInt32) -> Double {
+        let linear = channels(hex).map { value -> Double in
+            let channel = value / 255
+            return channel <= 0.04045 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
+        }
+        let l = cbrt(0.4122214708 * linear[0] + 0.5363325363 * linear[1] + 0.0514459929 * linear[2])
+        let m = cbrt(0.2119034982 * linear[0] + 0.6806995451 * linear[1] + 0.1073969566 * linear[2])
+        let s = cbrt(0.0883024619 * linear[0] + 0.2817188376 * linear[1] + 0.6299787005 * linear[2])
+        let a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s
+        let b = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
+        return (a * a + b * b).squareRoot()
+    }
+
+    @Test func chromaRisesFromHardToEasyAndHardIsStillGreen() {
         for dark in [false, true] {
             func fill(_ grade: Grade) -> UInt32 { dark ? grade.swatch.fill.dark : grade.swatch.fill.light }
-            let hard = Self.luminance(Self.channels(fill(.hard)))
-            #expect(hard > Self.luminance(Self.channels(fill(.good))))
-            #expect(hard > Self.luminance(Self.channels(fill(.easy))))
+            #expect(Self.chroma(fill(.hard)) < Self.chroma(fill(.good)))
+            #expect(Self.chroma(fill(.good)) < Self.chroma(fill(.easy)))
             let rgb = Self.channels(fill(.hard))
             #expect(rgb[1] - rgb[0] >= 30, "green leads red clearly: not a grey")
         }
     }
 
-    @Test func hardsRingShowsOnTheScreenBehindTheButtons() {
-        let light = Self.ratio(Self.channels(Grade.hard.swatch.ring.light), Self.channels(0xF2F2F7))
-        let dark = Self.ratio(Self.channels(Grade.hard.swatch.ring.dark), Self.channels(0x1C1C1E))
-        #expect(light >= 3, "light: \(light)")
-        #expect(dark >= 3, "dark: \(dark)")
+    @Test(arguments: [Grade.hard, .good, .easy])
+    func theRingOfAGreenShowsOnTheScreenBehindTheButtons(grade: Grade) {
+        let light = Self.ratio(Self.channels(grade.swatch.ring.light), Self.channels(0xF2F2F7))
+        let dark = Self.ratio(Self.channels(grade.swatch.ring.dark), Self.channels(0x1C1C1E))
+        #expect(light >= 3, "\(grade) light: \(light)")
+        #expect(dark >= 3, "\(grade) dark: \(dark)")
     }
 }
