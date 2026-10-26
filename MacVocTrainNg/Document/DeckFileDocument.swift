@@ -112,6 +112,16 @@ final class DeckFileDocument: NSDocument {
         load(try Self.decode(at: url))
     }
 
+    /// NSDocument empties its undo manager as it reads the file again; it reads into one that is empty
+    /// anyway, so the steps of the session's reviews stay undoable. `OpenDeck` drops the steps that
+    /// must go once it merged what the file holds, see `VocabularyDocument.forgetEditUndoSteps()`.
+    override func revert(toContentsOf url: URL, ofType typeName: String) throws {
+        let undoManager = self.undoManager
+        self.undoManager = UndoManager()
+        defer { self.undoManager = undoManager }
+        try super.revert(toContentsOf: url, ofType: typeName)
+    }
+
     private func load(_ deck: Deck) {
         loadedDeck = deck
         NotificationCenter.default.post(name: Self.didLoad, object: self)
