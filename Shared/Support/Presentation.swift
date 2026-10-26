@@ -284,6 +284,29 @@ struct NextTier: Hashable {
     }
 }
 
+/// A colour in light and in dark mode, as sRGB hex.
+struct AppearanceColor: Equatable {
+    var light: UInt32
+    var dark: UInt32
+
+    var color: Color { Color(light: light, dark: dark) }
+}
+
+/// The colours of one grade, see `Grade.color`; `label`, `tint` and `ring` follow the fill unless given.
+struct GradeSwatch: Equatable {
+    var fill: AppearanceColor
+    var label: AppearanceColor
+    var tint: AppearanceColor
+    var ring: AppearanceColor
+
+    init(fill: AppearanceColor, label: AppearanceColor = .init(light: 0xFFFFFF, dark: 0xFFFFFF), tint: AppearanceColor? = nil, ring: AppearanceColor? = nil) {
+        self.fill = fill
+        self.label = label
+        self.tint = tint ?? fill
+        self.ring = ring ?? fill
+    }
+}
+
 extension Grade {
     var title: String {
         switch self {
@@ -320,57 +343,64 @@ extension Grade {
     }
 
     /// The grade's colour: red for Again, the only "no", and three greens for Hard, Good and
-    /// Easy, the three kinds of "yes". It fills the grade buttons, the card while it is swiped
-    /// and the review history. Always shown together with the grade's title; `onColor` is the
-    /// text on it, white on all four.
+    /// Easy, the three kinds of "yes". It fills the grade buttons and the review history and, as `tint`,
+    /// the card while it is swiped. Always shown together with the grade's title; `onColor` is the
+    /// text on it: white on Again, Good and Easy, a dark green on Hard.
     ///
-    /// Confidence is CHROMA, not lightness. One hue (OKLCH 170°, a jade green, apart from the
-    /// maturity ramp's blue at about 255°) and one lightness for all three greens: Hard is a
-    /// muted grey-green, Good a medium green, Easy the most vivid green the sRGB gamut has at
-    /// that lightness. The first ramp told them apart by lightness (Hard light, Easy dark), and
-    /// in dark mode that read backwards, with Hard the brightest button and Easy the darkest.
-    /// Equal lightness keeps the buttons equal in weight, and white text (17 pt semibold,
-    /// WCAG 4.5:1) works on all of them. The ramp has the same order in light and dark mode;
-    /// dark mode lowers the lightness from 0.54 to 0.52 so the fills glare less.
+    /// One hue (OKLCH 170°, a jade green, apart from the maturity ramp's blue at about 255°). Hard is
+    /// the light end of the ramp, a pale green with a dark green label, so it reads as the lightest
+    /// "yes" and not as a disabled button; Good is a medium green and Easy the most vivid green the sRGB
+    /// gamut has at that lightness, both with white text. Good and Easy are told apart by chroma.
     ///
-    /// Values (OKLCH L, C; WCAG contrast of white on the fill; computed with a script, hue 170
-    /// for the greens and 27 for the red), light mode / dark mode:
+    /// Values (OKLCH L, C; WCAG contrast of the label on the fill; computed with a script, hue 170 for
+    /// the greens and 27 for the red), light mode / dark mode, as `GradeSwatch` holds them:
     /// - Again 0xCE0E1A / 0xC4111A: L .54 / .52, C .215 / .205; white 5.7 / 6.1
-    /// - Hard  0x63736D / 0x5E6D67: L .54 / .52, C .021 / .020; white 5.0 / 5.4
+    /// - Hard  0xB1E5D1 / 0x91C4B1: L .88 / .78, C .060 / .060; 0x0F3B2C / 0x0B2A20 8.9 / 7.9
     /// - Good  0x467B69 / 0x437464: L .54 / .52, C .064 / .060; white 4.9 / 5.4
     /// - Easy  0x0D8265 / 0x0C7B60: L .54 / .52, C .105 / .100; white 4.8 / 5.2
     ///
     /// Distance between neighbours (ΔE as 100 × the distance in OKLab; about 2 is a just
-    /// noticeable difference): Hard to Good 4.3 / 3.9, Good to Easy 4.1 / 4.1, Hard to Easy
-    /// 8.3 / 8.0. Chroma steps are smaller than the lightness steps of the first ramp (14), so
-    /// the buttons also keep their order and their titles. Limit: under deuteranopia (Machado
-    /// 2009 simulation) the steps shrink to 0.3 to 0.5 and Hard to Easy to 1.0, so the three
-    /// greens read as one green there, and Forgot stays 10 apart from all of them.
-    /// Not chroma alone, because a red-green deficiency removes it; hence the title on every
-    /// button.
+    /// noticeable difference): Hard to Good 34.0 / 26.0, Good to Easy 4.1 / 4.1. Lightness tells Hard from
+    /// the two others, chroma tells Good from Easy; hence the title on every button, because a red-green
+    /// deficiency removes chroma.
     ///
-    /// The card takes the colour while it is swiped (`CardFlight`, at most 70 % over the card
-    /// face, with the text in its normal colour): primary text has 5.3 to 7.2:1 on all four at
-    /// that tint in light mode and 7.6 to 9.0:1 in dark mode; the secondary text (75 % of the
-    /// primary, `Color.cardSecondary`) 4.2 to 5.2:1 in light mode and 5.1 to 5.6:1 in dark mode.
+    /// The card takes `tint` while it is swiped (`CardFlight`, at most 70 % over the card face, with the
+    /// text in its normal colour, which never changes with the swipe): `GradeContrastTests` holds the
+    /// numbers, 5.5:1 or more for the primary text on all four tints in light mode and 7.1:1 or more in dark
+    /// mode, 4.3:1 or more for the secondary text (75 % of the primary, `Color.cardSecondary`) in light
+    /// mode and 4.7:1 in dark mode.
+    /// In dark mode Hard's tint is a mid green (0x527165), not its pale fill, which would leave white
+    /// text 3.2:1 on the Mac's raised card.
     ///
-    /// Why 170°: the first ramp, at 150° with the same lightness steps, was Microsoft Excel's
-    /// (0x21A366, 0x107C41, 0x185C37 at 152° to 157°), and the owner saw Office in it. The hues
-    /// from 135° to 143° are Office's too (chart green 0x70AD47 and 0x4EA72E, Fluent 0x107C10),
-    /// so they are no way out. 170° is the family the owner accepted. Easy, the most vivid of
-    /// the three, lies 4.9 ΔE from Excel's 0x107C41 (4.5 in dark mode; 4.0 at 165°; the old Good
-    /// the owner accepted, 6.2); if it reads as Office again, move all three greens up in hue.
-    var color: Color {
-        switch self {
-        case .again: Color(light: 0xCE0E1A, dark: 0xC4111A)
-        case .hard: Color(light: 0x63736D, dark: 0x5E6D67)
-        case .good: Color(light: 0x467B69, dark: 0x437464)
-        case .easy: Color(light: 0x0D8265, dark: 0x0C7B60)
-        }
-    }
+    /// Why 170°: a ramp at 150° with the same steps was Microsoft Excel's (0x21A366, 0x107C41, 0x185C37 at
+    /// 152° to 157°), and the owner saw Office in it. The hues from 135° to 143° are Office's too (chart
+    /// green 0x70AD47 and 0x4EA72E, Fluent 0x107C10), so they are no way out. 170° is the family the owner
+    /// accepted. Easy, the most vivid of the three, lies 4.9 ΔE from Excel's 0x107C41 (4.5 in dark mode;
+    /// 4.0 at 165°); if it reads as Office again, move all three greens up in hue.
+    var color: Color { swatch.fill.color }
 
     /// Text and symbols on `color`.
-    var onColor: Color { .white }
+    var onColor: Color { swatch.label.color }
+
+    /// The colour the swiped card takes (`FlightCard`): `color`, except Hard in dark mode.
+    var tint: Color { swatch.tint.color }
+
+    /// A ring round the grade's button while a swipe is about to give it, clear of the fill, on the
+    /// screen's background: `color`, except Hard in light mode, whose pale fill would not show.
+    var ring: Color { swatch.ring.color }
+
+    /// The colours of the grade as hex values, `color`, `onColor`, `tint` and `ring` made of them.
+    var swatch: GradeSwatch {
+        switch self {
+        case .again: GradeSwatch(fill: .init(light: 0xCE0E1A, dark: 0xC4111A))
+        case .hard:
+            GradeSwatch(
+                fill: .init(light: 0xB1E5D1, dark: 0x91C4B1), label: .init(light: 0x0F3B2C, dark: 0x0B2A20),
+                tint: .init(light: 0xB1E5D1, dark: 0x527165), ring: .init(light: 0x438A73, dark: 0x91C4B1))
+        case .good: GradeSwatch(fill: .init(light: 0x467B69, dark: 0x437464))
+        case .easy: GradeSwatch(fill: .init(light: 0x0D8265, dark: 0x0C7B60))
+        }
+    }
 
     /// The SF Symbol of the way a swipe gives the grade: ← Forgot, → Good, ↑ Easy, ↓ Hard.
     /// Beside the colour, it says which grade it was to a reader who tells the greens apart

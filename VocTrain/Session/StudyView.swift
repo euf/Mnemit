@@ -28,6 +28,11 @@ import VocabCore
 /// The card and the grade area keep their size from the question to the answer: the grade
 /// buttons are in the layout all the time and fade in, and Show Answer sits on top of them.
 ///
+/// In a deck that introduces new words, a card never seen comes first as a new word: its answer is open, the
+/// corner says "New word", and Next sits where the grade buttons would. A tap, Next or a swipe in any
+/// direction sends it off, with no tint and no grade (`GradeSwipe.movesOn`); the card comes back as a
+/// question a few cards later, see `Session.isIntroduction`.
+///
 /// A touch that starts on a speaker button belongs to the button: it neither shows the answer,
 /// nor swipes the card, nor opens the card's info (`SpeakerPlaces`).
 ///
@@ -41,7 +46,6 @@ struct StudyView: View {
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage(GreekSpeech.autoSpeakKey) private var autoSpeak = true
     @State private var flight: CardFlight
     /// What moves besides the card under the finger: the cards that leave, the ring, the stack.
     @State private var motion: StudyMotion
@@ -49,6 +53,10 @@ struct StudyView: View {
     @State private var toasts: MedalToasts
     /// The card whose info shows in a sheet.
     @State private var info: Card?
+    /// The card that is edited in a sheet.
+    @State private var editing: Card?
+    /// When the finger touched the card; a touch that lasts is the long press, which opens the info and moves nothing on.
+    @State private var touchBegan: Date?
     /// Whether a finger is down; a drag the system cancels still springs the card back.
     @GestureState private var isDragging = false
     /// Whether a finger is on the card; resets by itself when the touch ends or is cancelled.
@@ -118,18 +126,9 @@ struct StudyView: View {
                         // would change cards the stream doesn't show.
                         Button("Undo", systemImage: "arrow.uturn.backward", action: undo)
                             .disabled(!canUndo)
-                        if !model.isResting {
-                            Button("Card Info", systemImage: "info.circle") {
-                                info = model.currentCard
-                            }
-                            Button("Suspend Card", systemImage: "pause.circle") {
-                                suspend()
-                            }
-                        }
-                        if GreekSpeech.shared.voice != nil {
-                            Divider()
-                            Toggle("Pronounce Automatically", systemImage: "speaker.wave.2", isOn: $autoSpeak)
-                        }
+                        StreamMenuItems(
+                            hasCard: !model.isResting && model.currentCard != nil, onEdit: { editing = model.currentCard },
+                            onInfo: { info = model.currentCard }, onSuspend: suspend)
                     }
                 }
             }
@@ -145,6 +144,9 @@ struct StudyView: View {
         .sheet(item: $info) { card in
             CardInfoSheet(document: model.document, card: card)
         }
+        .sheet(item: $editing) { card in
+            EditCardSheet(document: model.document, card: card)
+        }
         // After the card has flown out: the question changes when the grade is given. The
         // speech waits until the new card has settled.
         .onChange(of: model.questionNumber, initial: true) {
@@ -152,7 +154,7 @@ struct StudyView: View {
             speakCurrentCard()
         }
         .onChange(of: model.stage) { _, stage in
-            if stage == .revealed, !model.returnedByUndo, let card = model.currentCard {
+            if stage == .revealed, !model.returnedByUndo, !model.isIntroduction, let card = model.currentCard {
                 GreekSpeech.shared.answerRevealed(of: card, media: model.document.deck.media)
             }
         }
@@ -233,7 +235,9 @@ struct StudyView: View {
         TopCard(flight: flight, arrival: motion.arrival, frozenRise: motion.frozen?.rise) {
             CardFace(
                 card: card, isRevealed: model.stage == .revealed, media: model.document.deck.media,
-                memory: CardMemory(card: card, in: model.document.deck, at: model.document.clock.now, calendar: model.document.calendar))
+                memory: CardMemory(
+                    card: card, in: model.document.deck, at: model.document.clock.now, calendar: model.document.calendar,
+                    isIntroduction: model.isIntroduction))
         }
         // A card of its own for each question: the one under rises into place from the stack.
         .id(model.questionNumber)
@@ -286,13 +290,25 @@ struct StudyView: View {
             }
             .onChanged { value in
                 guard !speakers.touchBeganOnSpeaker else { return }
+                if touchBegan == nil { touchBegan = .now }
                 model.reveal()
                 // Once the swipe has begun the card follows the finger, however near it comes back.
                 guard isDragging || hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance else { return }
-                flight.drag(value.translation, from: value.startLocation, isRevealed: model.stage == .revealed)
+                flight.drag(value.translation, from: value.startLocation, isRevealed: model.stage == .revealed, isIntroduction: model.isIntroduction)
             }
             .onEnded { value in
+                let held = touchBegan.map { Date.now.timeIntervalSince($0) } ?? 0
+                touchBegan = nil
                 guard !speakers.touchBeganOnSpeaker else { return }
+                if model.isIntroduction {
+                    let isTap = hypot(value.translation.width, value.translation.height) < Self.swipeStartDistance
+                    if isTap ? held < Self.longPress : GradeSwipe.movesOn(translation: value.translation, predictedEnd: value.predictedEndTranslation) {
+                        introduce(toward: value.translation, velocity: value.velocity)
+                    } else {
+                        flight.springBack()
+                    }
+                    return
+                }
                 guard model.stage == .revealed, let grade = SwipeTally.shared.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
                     flight.springBack()
                     return
@@ -324,6 +340,23 @@ struct StudyView: View {
         AccessibilityNotification.Announcement(receipt.announcement).post()
         if model.isResting {
             motion.restBegan(afterExit: receipt.destination == .ring, reduceMotion: reduceMotion)
+        }
+    }
+
+    /// Sends a card shown as a new word off, from where it was let go, and goes on. No grade: the card leaves
+    /// without a tint, the ring doesn't step and Undo stays with the step before. A tap, the button and VoiceOver
+    /// come here with no direction, which sends it to the right.
+    private func introduce(toward direction: CGSize = .zero, velocity: CGSize = .zero) {
+        guard model.isIntroduction, let card = model.currentCard else { return }
+        GreekSpeech.shared.stop()
+        let release = flight.release
+        let behind = model.cardsBehind
+        motion.arrival = .rises
+        model.introduce()
+        flight.didRelease(nil)
+        motion.departIntroduction(card, direction: direction, release: release, velocity: velocity, behind: behind, reduceMotion: reduceMotion)
+        if model.isResting {
+            motion.restBegan(afterExit: false, reduceMotion: reduceMotion)
         }
     }
 
@@ -365,6 +398,10 @@ struct StudyView: View {
     private func speakCurrentCard() {
         guard !motion.showsRest, !model.returnedByUndo else { return }
         GreekSpeech.shared.cardAppeared(model.currentCard, media: model.document.deck.media)
+        // A new word comes with its answer open, which nothing reveals: it is spoken with the question.
+        if model.isIntroduction, let card = model.currentCard {
+            GreekSpeech.shared.answerRevealed(of: card, media: model.document.deck.media)
+        }
     }
 
     // MARK: The rest
@@ -397,18 +434,24 @@ struct StudyView: View {
     /// The same space for Show Answer and for the grade buttons: both are in the layout, one
     /// of them invisible, so the card keeps its height at the reveal. Show Answer takes Forgot's
     /// place and height; the row of the other grades below it stays empty until the reveal.
+    ///
+    /// A card shown as a new word has its answer open and no grade to give: Next takes the place of Show Answer.
     private var gradeArea: some View {
         grades
-            .opacity(isRevealed ? 1 : 0)
-            .allowsHitTesting(isRevealed)
-            .accessibilityHidden(!isRevealed)
+            .opacity(showsGrades ? 1 : 0)
+            .allowsHitTesting(showsGrades)
+            .accessibilityHidden(!showsGrades)
             .overlay(alignment: .top) {
                 if !isRevealed {
-                    showAnswer
+                    wideButton("Show Answer") { model.reveal() }
+                } else if model.isIntroduction {
+                    wideButton("Next") { introduce() }
                 }
             }
             .frame(maxWidth: .infinity)
     }
+
+    private var showsGrades: Bool { isRevealed && !model.isIntroduction }
 
     @ViewBuilder
     private var grades: some View {
@@ -423,12 +466,10 @@ struct StudyView: View {
         }
     }
 
-    /// As wide and as high as Forgot, in the same corner radius.
-    private var showAnswer: some View {
-        Button {
-            model.reveal()
-        } label: {
-            Text("Show Answer")
+    /// Show Answer and Next: as wide and as high as Forgot, in the same corner radius.
+    private func wideButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: showAnswerHeight)
@@ -442,6 +483,8 @@ struct StudyView: View {
     @ScaledMetric(relativeTo: .body) private var showAnswerHeight: CGFloat = 50
 
     private static let forgotWidth: CGFloat = 170
+    /// How long a finger rests on the card before it is a long press, in seconds, as `onLongPressGesture` has it.
+    private static let longPress = 0.5
     /// How far a finger moves before it swipes the card, in points.
     private static let swipeStartDistance: CGFloat = 6
 }

@@ -208,19 +208,24 @@ extension View {
 struct CardMemory: Equatable {
     var step: MaturityCategory
     var recall: Double?
+    /// The card is shown as a new word, its first showing in a deck that introduces new words: the chip says so.
+    var isIntroduction = false
 
-    init(step: MaturityCategory, recall: Double?) {
+    init(step: MaturityCategory, recall: Double?, isIntroduction: Bool = false) {
         self.step = step
         self.recall = recall
+        self.isIntroduction = isIntroduction
     }
 
-    init(card: Card, in deck: Deck, at now: Date, calendar: StudyCalendar) {
-        self.init(step: MaturityCategory(card: card), recall: deck.recallProbability(of: card, at: now, calendar: calendar))
+    init(card: Card, in deck: Deck, at now: Date, calendar: StudyCalendar, isIntroduction: Bool = false) {
+        self.init(
+            step: MaturityCategory(card: card), recall: deck.recallProbability(of: card, at: now, calendar: calendar),
+            isIntroduction: isIntroduction)
     }
 }
 
 /// The corner of a card: its step as five small bars in the step's colour, rising like a signal, or "New" for a
-/// card never studied; once the answer shows, the chance of recall FSRS gave it, "82%".
+/// card never studied, "New word" while it is introduced; once the answer shows, the chance of recall FSRS gave it, "82%".
 struct MemoryBadge: View {
     var memory: CardMemory
     var showsRecall: Bool
@@ -228,7 +233,7 @@ struct MemoryBadge: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 6) {
             if memory.step == .new {
-                Text(verbatim: MaturityCategory.new.cardTitle)
+                Text(verbatim: memory.isIntroduction ? String(localized: "New word") : MaturityCategory.new.cardTitle)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 6)

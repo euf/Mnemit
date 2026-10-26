@@ -99,6 +99,16 @@ final class SessionDriver {
         return true
     }
 
+    /// Moves on from the card shown as a new word (`Session.isIntroduction`): an exposure, no review. It
+    /// changes no card and registers no undo; the stream notes how long the card was on screen, and asks it
+    /// as a question a few cards later. Undo afterwards still takes back the review before it.
+    func introduceCurrentCard() {
+        guard !isResting, session.isIntroduction else { return }
+        stream.introduce(duration: stopwatch.elapsed)
+        lastReceipt = nil
+        moveOn()
+    }
+
     /// The step the card with `id` stands on now, if it is Young or higher and higher than `before`.
     private func climb(of id: Card.ID?, from before: MaturityCategory?) -> MaturityCategory? {
         guard let id, let before, let card = document.card(withID: id) else { return nil }
