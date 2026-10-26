@@ -39,12 +39,12 @@ struct DeckSheetsSnapshotMacTests {
     }
 
     @Test func options() throws {
-        try write(DeckOptionsView(document: VocabularyDocument(deck: .new(introducesNewCards: true))), name: "options")
+        try write(DeckOptionsView(document: VocabularyDocument(deck: Deck())), name: "options")
     }
 
     @Test func newDeck() throws {
-        try write(NewDeckView(onCreate: { _, _ in }), name: "new-deck")
-        try write(NewDeckView(introducesNewCards: false, name: "Greek B1", onCreate: { _, _ in }), name: "new-deck-filled")
+        try write(NewDeckView(onCreate: { _ in }), name: "new-deck")
+        try write(NewDeckView(name: "Greek B1", onCreate: { _ in }), name: "new-deck-filled")
     }
 
     @Test func addCards() throws {

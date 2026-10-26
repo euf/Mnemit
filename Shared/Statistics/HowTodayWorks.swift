@@ -201,7 +201,7 @@ struct HowTodayWorks: Equatable, Sendable {
             .text(
                 String(
                     localized:
-                        "With New words, a new card shows its answer first. That introduction records nothing, and the card is asked a few cards later. With Words I know, a new card is asked at once."
+                        "A new card is asked the first time it comes up. If you have never seen the word, Don't know is the honest answer, and the card comes back in this session."
                 )),
             .text(
                 String(

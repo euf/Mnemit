@@ -125,7 +125,7 @@ final class StudyModel: Identifiable {
         }
         for lane in lanes { lane.driver.delegate = self }
         current = mostUrgentLane() ?? 0
-        stage = driver.isResting ? .resting : (driver.session.isIntroduction ? .revealed : .asking)
+        stage = driver.isResting ? .resting : .asking
         activateCurrentLane()
         if isPlan, let ring { follow(ring) }
     }
@@ -212,10 +212,6 @@ final class StudyModel: Identifiable {
 
     var isResting: Bool { stage == .resting }
 
-    /// The card is shown as a new word (`Session.isIntroduction`): its answer is open and nothing is graded;
-    /// `introduce()` moves on.
-    var isIntroduction: Bool { stage == .revealed && driver.session.isIntroduction }
-
     /// What the stream shows at rest.
     var rest: StreamRest { driver.rest }
 
@@ -246,13 +242,9 @@ final class StudyModel: Identifiable {
         let lane = current
         let graded = lanes[lane].driver
         // Counted before the grade: the grade's move on chooses the next deck by it.
-        // A card that was shown as a new word was counted then.
-        let asked = currentCard
-        let wasNew =
-            stage == .revealed && asked?.isNew == true && !graded.session.isIntroduction
-            && !(asked.map { graded.session.wasIntroduced($0.id) } ?? false)
+        let wasNew = stage == .revealed && currentCard?.isNew == true
         if wasNew { lanes[lane].newAsked += 1 }
-        guard stage == .revealed, !graded.session.isIntroduction, graded.grade(grade), let receipt = graded.lastReceipt else {
+        guard stage == .revealed, graded.grade(grade), let receipt = graded.lastReceipt else {
             if wasNew { lanes[lane].newAsked -= 1 }
             return nil
         }
@@ -260,14 +252,6 @@ final class StudyModel: Identifiable {
         receipts.append(receipt)
         stepLanes.append(lane)
         return receipt
-    }
-
-    /// Moves on from a card shown as a new word. Counts like a new card asked, for taking new cards from the
-    /// decks in turn, and is no step: nothing was graded, so Undo goes on taking back the step before.
-    func introduce() {
-        guard isIntroduction else { return }
-        lanes[current].newAsked += 1
-        lanes[current].driver.introduceCurrentCard()
     }
 
     /// Suspends the card being asked, so no session asks it until the learner resumes
@@ -393,7 +377,7 @@ extension StudyModel: SessionDriverDelegate {
         }
         activateCurrentLane()
         questionNumber += 1
-        stage = driver.isResting ? .resting : (returnedByUndo || driver.session.isIntroduction ? .revealed : .asking)
+        stage = driver.isResting ? .resting : (returnedByUndo ? .revealed : .asking)
     }
 
     /// Undo or redo of a step: the steps of the stream are as many as the stream says now. A card

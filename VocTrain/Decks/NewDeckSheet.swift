@@ -1,21 +1,13 @@
 import SwiftUI
 
-/// "New Deck": a name and the mark, New words or Words I know (`LearningOptions.introducesNewCards`,
-/// New words to begin with), then `onCreate` makes the deck, see `DeckFiles.create(named:introducesNewCards:in:)`.
+/// "New Deck": a name, then `onCreate` makes the deck, see `DeckFiles.create(named:in:)`.
 /// A failure it throws, a name that is taken, stays in the sheet under the field; the sheet
 /// closes once the deck exists.
 struct NewDeckSheet: View {
-    var onCreate: (_ name: String, _ introducesNewCards: Bool) async throws -> Void
-    @State private var introducesNewCards = true
-
-    init(onCreate: @escaping (String, Bool) async throws -> Void) {
-        self.onCreate = onCreate
-    }
+    var onCreate: (_ name: String) async throws -> Void
 
     var body: some View {
-        DeckNameSheet(
-            title: "New Deck", actionTitle: "Create", current: nil, mark: $introducesNewCards,
-            perform: { name in try await onCreate(name, introducesNewCards) })
+        DeckNameSheet(title: "New Deck", actionTitle: "Create", current: nil, perform: onCreate)
     }
 }
 
@@ -29,8 +21,6 @@ struct DeckNameSheet: View {
     /// and the action stays off while the name is still this one, as there is nothing to do.
     var current: String?
     var perform: (String) async throws -> Void
-    /// The mark of a new deck, asked under the name; `nil` for a deck that is renamed.
-    var mark: Binding<Bool>?
 
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
@@ -44,13 +34,12 @@ struct DeckNameSheet: View {
     ///     deck with a name.
     ///   - failure: What the sheet starts with under the field, for a snapshot.
     init(
-        title: LocalizedStringKey, actionTitle: LocalizedStringKey, current: String?, prefill: String? = nil, failure: String? = nil, mark: Binding<Bool>? = nil,
+        title: LocalizedStringKey, actionTitle: LocalizedStringKey, current: String?, prefill: String? = nil, failure: String? = nil,
         perform: @escaping (String) async throws -> Void
     ) {
         self.title = title
         self.actionTitle = actionTitle
         self.current = current
-        self.mark = mark
         self.perform = perform
         _name = State(initialValue: prefill ?? current ?? "")
         _failure = State(initialValue: failure)
@@ -85,10 +74,6 @@ struct DeckNameSheet: View {
                         Label(message, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(.red)
                     }
-                }
-                if let mark {
-                    WordsInDeckSection(introducesNewCards: mark)
-                        .disabled(isWorking)
                 }
             }
             .navigationTitle(title)

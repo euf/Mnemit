@@ -363,12 +363,12 @@ final class Shell {
 
     /// Makes the deck `name` in the folder and shows it. A learner who has no folder yet chooses one first.
     @discardableResult
-    func newDeck(named name: String, introducesNewCards: Bool) async throws -> URL {
+    func newDeck(named name: String) async throws -> URL {
         if folder.url == nil {
             folder.choose(requiringDecks: false)
         }
         guard let folderURL = folder.url else { throw CocoaError(.userCancelled) }
-        let url = try await DeckFiles.create(named: name, introducesNewCards: introducesNewCards, in: folderURL)
+        let url = try await DeckFiles.create(named: name, in: folderURL)
         folder.refresh()
         if let listed = listed(url) { select(.deck(listed)) }
         refresh(reload: false)

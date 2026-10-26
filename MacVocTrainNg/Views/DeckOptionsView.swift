@@ -16,8 +16,6 @@ struct DeckOptionsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Form {
-                WordsInDeckSection(introducesNewCards: $options.introducesNewCards)
-
                 Section {
                     LabeledContent("Target recall") {
                         HStack {
@@ -84,10 +82,7 @@ struct DeckOptionsView: View {
 
             HStack {
                 Button("Restore Defaults") {
-                    // The mark says what the words are, not how they are tuned: it stays.
-                    var defaults = LearningOptions()
-                    defaults.introducesNewCards = options.introducesNewCards
-                    options = defaults
+                    options = LearningOptions()
                 }
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }

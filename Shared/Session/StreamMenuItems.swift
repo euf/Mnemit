@@ -5,7 +5,7 @@ import SwiftUI
 /// there, disabled, at the rest too, so the menu never changes; the switch is there where the device has a
 /// Greek voice. The iPhone adds Undo above them.
 struct StreamMenuItems: View {
-    /// A card is being asked, or shown as a new word.
+    /// A card is being asked.
     var hasCard: Bool
     var onEdit: () -> Void
     var onInfo: () -> Void

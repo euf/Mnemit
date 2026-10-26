@@ -49,10 +49,10 @@ struct ShellView: View {
             }
         }
         .sheet(isPresented: $shell.isNamingDeck) {
-            NewDeckView { name, introducesNewCards in
+            NewDeckView { name in
                 Task {
                     do {
-                        try await shell.newDeck(named: name ?? String(localized: "Untitled"), introducesNewCards: introducesNewCards)
+                        try await shell.newDeck(named: name ?? String(localized: "Untitled"))
                     } catch {
                         if (error as? CocoaError)?.code != .userCancelled { shell.notice = error.localizedDescription }
                     }

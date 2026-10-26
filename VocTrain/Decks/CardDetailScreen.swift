@@ -98,8 +98,8 @@ private struct CardDetailList: View {
             memorySection(now: now)
             if !card.log.isEmpty {
                 Section("History") {
-                    ForEach(Array(card.log.suffix(50).reversed().enumerated()), id: \.offset) { _, entry in
-                        HistoryRow(entry: entry)
+                    ForEach(Array(card.log.suffix(50).reversed().enumerated()), id: \.offset) { offset, entry in
+                        HistoryRow(entry: entry, isFirst: offset == card.log.count - 1)
                     }
                 }
             }
@@ -251,6 +251,8 @@ private struct CardTexts: View {
 /// date, and "Typed" on a review made by typing, in an older version or an upstream deck.
 private struct HistoryRow: View {
     var entry: ReviewLogEntry
+    /// The card's first review: its Again is "Don't know".
+    var isFirst: Bool
 
     var body: some View {
         HStack(spacing: Spacing.gap) {
@@ -261,7 +263,7 @@ private struct HistoryRow: View {
                 .background(entry.grade.color, in: Circle())
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(entry.grade.buttonTitle)
+                Text(entry.grade.buttonTitle(isNew: isFirst))
                 Text(entry.date.formatted(date: .abbreviated, time: .shortened))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -274,13 +276,6 @@ private struct HistoryRow: View {
             }
         }
         .accessibilityElement(children: .combine)
-    }
-}
-
-extension Grade {
-    /// The name on the grade's button: "Forgot", not the scheduler's "Again".
-    var buttonTitle: String {
-        self == .again ? String(localized: "Forgot") : title
     }
 }
 

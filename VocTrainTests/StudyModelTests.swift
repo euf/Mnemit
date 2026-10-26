@@ -326,6 +326,38 @@ struct StudyModelTests {
         #expect(GradeReceipt(grade: .again, interval: .learning).announcement == "Forgot, again today")
     }
 
+    /// Again has one grade and two names: "Don't know" on a card's first showing, where there is nothing yet to
+    /// forget, "Forgot" on every showing after it; the other grades are named the same either way.
+    @Test func againIsDontKnowOnAFirstShowingAndForgotAfterwards() throws {
+        #expect(Grade.again.buttonTitle(isNew: true) == "Don't know")
+        #expect(Grade.again.buttonTitle(isNew: false) == "Forgot")
+        for grade in [Grade.hard, .good, .easy] {
+            #expect(grade.buttonTitle(isNew: true) == grade.title)
+            #expect(grade.buttonTitle(isNew: false) == grade.title)
+        }
+        #expect(GradeReceipt(grade: .again, interval: .learning, isNew: true).announcement == "Don't know, again today")
+
+        let (document, undoManager) = try makeDocument(questions: ["dom"])
+        let model = StudyModel(document: document)
+        let id = try #require(model.currentCard?.id)
+        #expect(model.currentCard?.isNew == true)
+        model.reveal()
+        undoManager.beginUndoGrouping()
+        let first = try #require(model.grade(.again))
+        undoManager.endUndoGrouping()
+        #expect(first.title == "Don't know")
+        #expect(document.card(withID: id)?.log.map(\.grade) == [.again])
+
+        // The card comes back in the session, now with a learning state.
+        #expect(model.currentCard?.id == id)
+        #expect(model.currentCard?.isNew == false)
+        model.reveal()
+        undoManager.beginUndoGrouping()
+        let second = try #require(model.grade(.again))
+        undoManager.endUndoGrouping()
+        #expect(second.title == "Forgot")
+    }
+
     /// The Undo button and the one in the menu are enabled by the same thing.
     @Test func undoIsEnabledWhenThereIsAStepToTakeBack() throws {
         let (document, undoManager) = try makeDocument()

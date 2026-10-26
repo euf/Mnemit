@@ -15,8 +15,6 @@ struct DeckOptionsScreen: View {
     var body: some View {
         let options = document.deck.learningOptions
         Form {
-            WordsInDeckSection(introducesNewCards: document.option(\.introducesNewCards))
-
             Section {
                 LimitStepper(title: "New cards per day", value: document.option(\.newCardsPerSession), step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
                 Picker("New card order", selection: document.option(\.newCardOrder)) {

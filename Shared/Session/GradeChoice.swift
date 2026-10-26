@@ -25,6 +25,8 @@ struct GradeChoice: View {
     var acceptsArrows = false
     /// The iPhone in landscape, where the row of buttons has little height.
     var isCompact = false
+    /// The card is on its first showing (`Card.isNew`): its first button reads "Don't know", not "Forgot".
+    var isNew = false
     /// The grade a swipe is about to give, or a key has just given: its button stands out
     /// and the others step back (`CardFlight.highlighted`).
     var highlighted: Grade?
@@ -73,7 +75,7 @@ struct GradeChoice: View {
     }
 
     private var forgot: some View {
-        let title = String(localized: "Forgot")
+        let title = Grade.again.buttonTitle(isNew: isNew)
         return Button {
             onGrade(.again)
         } label: {

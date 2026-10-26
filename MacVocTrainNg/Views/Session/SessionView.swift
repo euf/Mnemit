@@ -17,10 +17,6 @@ import VocabCore
 ///
 /// The menu "More" is the iPhone's (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, which leaves out
 /// the card from now on, until the learner resumes it (#290), and Pronounce Automatically.
-///
-/// In a deck that introduces new words, a card never seen comes first as a new word: its answer is open, the corner
-/// says "New word" and Next takes the place of the grade buttons. Space, Return, the arrows and a click on the
-/// card send it off with no grade; it is asked as a question a few cards later (`Session.isIntroduction`).
 struct SessionView: View {
     @Bindable var model: SessionViewModel
     var ring: DailyRingModel
@@ -98,13 +94,9 @@ struct SessionView: View {
         // the card has flown out and with the next one; else a Greek answer once it shows.
         .onChange(of: model.questionNumber, initial: true) {
             GreekSpeech.shared.cardAppeared(model.currentCard, media: model.document.deck.media)
-            // A new word comes with its answer open, which nothing reveals: it is spoken with the question.
-            if model.isIntroduction, let card = model.currentCard {
-                GreekSpeech.shared.answerRevealed(of: card, media: model.document.deck.media)
-            }
         }
         .onChange(of: isAnswerShown) { _, isShown in
-            if isShown, !model.isIntroduction, let card = model.currentCard {
+            if isShown, let card = model.currentCard {
                 GreekSpeech.shared.answerRevealed(of: card, media: model.document.deck.media)
             }
         }
@@ -253,12 +245,9 @@ struct SessionView: View {
             Spacer()
 
             FlashcardView(
-                card: card, isRevealed: model.stage == .revealed, isIntroduction: model.isIntroduction, media: model.document.deck.media,
-                memory: CardMemory(
-                    card: card, in: model.document.deck, at: model.document.clock.now, calendar: model.document.calendar,
-                    isIntroduction: model.isIntroduction),
-                edges: min(model.cardsBehind, StackPose.maxEdges), onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) },
-                onIntroduce: { model.introduce() })
+                card: card, isRevealed: model.stage == .revealed, media: model.document.deck.media,
+                memory: CardMemory(card: card, in: model.document.deck, at: model.document.clock.now, calendar: model.document.calendar),
+                edges: min(model.cardsBehind, StackPose.maxEdges), onReveal: { model.reveal() }, onGrade: { grade in model.grade(grade) })
 
             Spacer()
         }
@@ -272,13 +261,10 @@ struct SessionView: View {
 /// that shows the answer or the grade buttons. The card flies out in the direction of its
 /// grade. The card and the area below it keep their size from the question to the answer: the
 /// grade buttons are in the layout all the time, invisible and disabled until the answer shows,
-/// and Show Answer sits on top of them. A card shown as a new word has its answer open and Next
-/// there instead: a click, Space, Return or an arrow key sends it off in that direction, with no grade.
+/// and Show Answer sits on top of them.
 private struct FlashcardView: View {
     var card: Card
     var isRevealed: Bool
-    /// The card is shown as a new word, see `Session.isIntroduction`.
-    var isIntroduction = false
     /// The deck's media, for the images and sounds of the card.
     var media: DeckMedia
     var memory: CardMemory?
@@ -286,7 +272,6 @@ private struct FlashcardView: View {
     var edges: Int
     var onReveal: () -> Void
     var onGrade: @MainActor (Grade) -> Void
-    var onIntroduce: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var flight = CardFlight()
@@ -299,9 +284,7 @@ private struct FlashcardView: View {
             .background { StackEdges(edges: edges) }
             .frame(maxWidth: 560, minHeight: 200, idealHeight: 300, maxHeight: 340)
             .contentShape(Rectangle())
-            .onTapGesture {
-                if isIntroduction { moveOn() } else { onReveal() }
-            }
+            .onTapGesture(perform: onReveal)
             // The room of the edges under the card, the same however many there are.
             .padding(.bottom, StackPose.reserve)
 
@@ -314,55 +297,22 @@ private struct FlashcardView: View {
         ZStack(alignment: .top) {
             // Space and Return showed the answer and now mean Good; the arrows grade as the
             // swipes do on the iPhone. Disabled before, so their keys belong to Show Answer.
-            GradeChoice(defaultGrade: .good, acceptsSpace: true, acceptsArrows: true, highlighted: flight.highlighted, onGrade: commit)
-                .opacity(showsGrades ? 1 : 0)
-                .disabled(!showsGrades)
-                .accessibilityHidden(!showsGrades)
+            GradeChoice(defaultGrade: .good, acceptsSpace: true, acceptsArrows: true, isNew: card.isNew, highlighted: flight.highlighted, onGrade: commit)
+                .opacity(isRevealed ? 1 : 0)
+                .disabled(!isRevealed)
+                .accessibilityHidden(!isRevealed)
             if !isRevealed {
                 showAnswer
-            } else if isIntroduction {
-                next
             }
         }
     }
 
-    private var showsGrades: Bool { isRevealed && !isIntroduction }
-
     /// The prominent button of the iPhone's stream, in the app's indigo, as wide as the grade buttons under it; it
     /// is the default button, and the keys are on it.
     private var showAnswer: some View {
-        prominent("Show Answer", action: onReveal)
-    }
-
-    /// Next, for a card shown as a new word: in the place and the style of Show Answer, and the arrow keys
-    /// send the card off the way they point, as a swipe does on the iPhone.
-    private var next: some View {
-        prominent("Next") { moveOn() }
-            .background {
-                ForEach(Self.arrows.indices, id: \.self) { index in
-                    let arrow = Self.arrows[index]
-                    Button {
-                        moveOn(toward: arrow.way)
-                    } label: {
-                        Text(verbatim: "")
-                    }
-                    .keyboardShortcut(arrow.key, modifiers: [])
-                    .opacity(0)
-                    .frame(width: 0, height: 0)
-                    .accessibilityHidden(true)
-                }
-            }
-    }
-
-    private static let arrows: [(key: KeyEquivalent, way: CGSize)] = [
-        (.leftArrow, CGSize(width: -100, height: 0)), (.rightArrow, CGSize(width: 100, height: 0)),
-        (.upArrow, CGSize(width: 0, height: -100)), (.downArrow, CGSize(width: 0, height: 100)),
-    ]
-
-    private func prominent(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button(action: onReveal) {
             HStack(spacing: 8) {
-                Text(title)
+                Text("Show Answer")
                 KeyCap(Text("Space or ↩"))
             }
             .frame(maxWidth: .infinity)
@@ -370,9 +320,9 @@ private struct FlashcardView: View {
         .keyboardShortcut(.defaultAction)
         .buttonStyle(.borderedProminent)
         .controlSize(.extraLarge)
-        // A button takes one shortcut; Space does the same.
+        // A button takes one shortcut; Space shows the answer too.
         .background {
-            Button(action: action) {
+            Button(action: onReveal) {
                 Text(verbatim: "")
             }
             .keyboardShortcut(.space, modifiers: [])
@@ -380,13 +330,6 @@ private struct FlashcardView: View {
             .frame(width: 0, height: 0)
             .accessibilityHidden(true)
         }
-    }
-
-    /// Flies a card shown as a new word out the way of `direction` (to the right without one), then moves on.
-    private func moveOn(toward direction: CGSize = .zero) {
-        guard isRevealed, isIntroduction, !flight.isFlying else { return }
-        GreekSpeech.shared.stop()
-        flight.flyOn(toward: direction, reduceMotion: reduceMotion) { onIntroduce() }
     }
 
     /// Flies the card out in the direction of `grade`, then grades. Keys, buttons and

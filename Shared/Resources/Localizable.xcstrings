@@ -3629,6 +3629,28 @@
         }
       }
     },
+    "A new card is asked the first time it comes up. If you have never seen the word, Don't know is the honest answer, and the card comes back in this session.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine neue Karte wird gefragt, sobald sie zum ersten Mal drankommt. Kennst du das Wort noch nicht, ist „Weiß ich nicht“ die ehrliche Antwort, und die Karte kommt in dieser Sitzung wieder."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μια νέα κάρτα ρωτιέται την πρώτη φορά που εμφανίζεται. Αν δεν έχεις ξαναδεί τη λέξη, το «Δεν ξέρω» είναι η τίμια απάντηση και η κάρτα επανέρχεται σε αυτή τη συνεδρία."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новая карточка спрашивается, когда доходит очередь в первый раз. Если слово тебе незнакомо, честный ответ — «Не знаю», и карточка вернётся в этой сессии."
+          }
+        }
+      }
+    },
     "A second line is shown smaller, as an example.": {
       "localizations": {
         "de": {
@@ -6778,6 +6800,28 @@
         }
       }
     },
+    "Don't know": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiß ich nicht"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δεν ξέρω"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не знаю"
+          }
+        }
+      }
+    },
     "Done": {
       "localizations": {
         "de": {
@@ -9722,72 +9766,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новых в день"
-          }
-        }
-      }
-    },
-    "New word": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neues Wort"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Νέα λέξη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новое слово"
-          }
-        }
-      }
-    },
-    "New words": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Wörter"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Νέες λέξεις"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые слова"
-          }
-        }
-      }
-    },
-    "New words are shown with their answer before you are asked; words you know are asked at once.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Wörter siehst du zuerst mit ihrer Antwort, bevor du gefragt wirst; bekannte Wörter werden sofort abgefragt."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι νέες λέξεις εμφανίζονται πρώτα με την απάντησή τους και μετά ρωτιούνται· οι λέξεις που ξέρεις ρωτιούνται αμέσως."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые слова сначала показываются с ответом, и только потом тебя спрашивают; знакомые слова спрашивают сразу."
           }
         }
       }
@@ -15336,28 +15314,6 @@
         }
       }
     },
-    "With New words, a new card shows its answer first. That introduction records nothing, and the card is asked a few cards later. With Words I know, a new card is asked at once.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bei „Neue Wörter“ zeigt eine neue Karte zuerst ihre Antwort. Diese Einführung wird nicht gewertet, und die Karte wird einige Karten später abgefragt. Bei „Wörter, die ich kenne“ wird eine neue Karte sofort abgefragt."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Με τις «Νέες λέξεις», μια νέα κάρτα δείχνει πρώτα την απάντησή της. Αυτή η γνωριμία δεν καταγράφει τίποτα και η κάρτα ρωτιέται μερικές κάρτες αργότερα. Με τις «Λέξεις που ξέρω», μια νέα κάρτα ρωτιέται αμέσως."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "При «Новые слова» новая карточка сначала показывает ответ. Это знакомство ничего не записывает, а саму карточку спросят через несколько карточек. При «Слова, которые я знаю» новую карточку спрашивают сразу."
-          }
-        }
-      }
-    },
     "Word Key": {
       "localizations": {
         "de": {
@@ -15446,28 +15402,6 @@
         }
       }
     },
-    "Words I know": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wörter, die ich kenne"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Λέξεις που ξέρω"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Слова, которые я знаю"
-          }
-        }
-      }
-    },
     "Words climb from New to Mastered as they stick.": {
       "localizations": {
         "de": {
@@ -15508,28 +15442,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Слов в памяти"
-          }
-        }
-      }
-    },
-    "Words in this deck": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wörter in diesem Stapel"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Λέξεις σε αυτή την τράπουλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Слова в этой колоде"
           }
         }
       }

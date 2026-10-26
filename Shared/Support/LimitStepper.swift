@@ -64,25 +64,3 @@ struct ValueLabel<Value: View>: View {
         }
     }
 }
-
-/// "Words in this deck": New words are shown once with their answer before the learner is asked, Words
-/// I know are asked at once (`LearningOptions.introducesNewCards`). The same choice is made in Options,
-/// when a deck is made, and when an Anki package makes one. A section of a form.
-struct WordsInDeckSection: View {
-    @Binding var introducesNewCards: Bool
-
-    var body: some View {
-        Section {
-            Picker("Words in this deck", selection: $introducesNewCards) {
-                Text("New words").tag(true)
-                Text("Words I know").tag(false)
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
-        } header: {
-            Text("Words in this deck")
-        } footer: {
-            Text("New words are shown with their answer before you are asked; words you know are asked at once.")
-        }
-    }
-}

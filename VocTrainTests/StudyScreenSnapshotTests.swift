@@ -50,11 +50,9 @@ struct StudyScreenSnapshotTests {
         try #require(GreekSpeech.isUnderTest, "a test run must not speak")
     }
 
-    private func makeDocument(texts: [Texts] = defaultTexts, introducing: Bool = false) throws -> (VocabularyDocument, UndoManager) {
+    private func makeDocument(texts: [Texts] = defaultTexts) throws -> (VocabularyDocument, UndoManager) {
         let cards = texts.map { Card(text: CardText(question: $0.question, answer: $0.answer, hint: $0.hint)!, created: created) }
-        var options = LearningOptions()
-        options.introducesNewCards = introducing
-        let document = try VocabularyDocument(deck: Deck(learningOptions: options, cards: cards), clock: StudyClock { [created] in created.addingTimeInterval(60) })
+        let document = try VocabularyDocument(deck: Deck(cards: cards), clock: StudyClock { [created] in created.addingTimeInterval(60) })
         let undoManager = UndoManager()
         undoManager.groupsByEvent = false
         document.attachUndoManager(undoManager)
@@ -153,23 +151,19 @@ struct StudyScreenSnapshotTests {
         window.isHidden = true
     }
 
-    /// A new word in a deck that introduces them: the answer open, "New word" in the corner, Next in the place of the
-    /// grade buttons; and the card carried by a finger in any direction, with no tint.
+    /// A card's first showing with its answer open: its first button reads "Don't know".
     @Test(arguments: [false, true])
-    func introduction(dark: Bool) async throws {
+    func firstShowing(dark: Bool) async throws {
         try beSilent()
-        let (document, _) = try makeDocument(introducing: true)
+        let (document, _) = try makeDocument()
         let model = StudyModel(document: document)
-        try #require(model.isIntroduction)
+        try #require(model.currentCard?.isNew == true)
+        model.reveal()
         let ring = DailyRingModel()
         await ring.refresh(documents: [document], delay: .zero).value
-        let flight = CardFlight()
-        let window = try await host(model, ring: ring, flight: flight, dark: dark)
-        try write(window, name: "7-introduction", dark: dark)
-        let start = CGPoint(x: 0.5 * flight.size.width, y: 0.3 * flight.size.height)
-        flight.drag(CGSize(width: -60, height: 100), from: start, isRevealed: true, isIntroduction: true)
+        let window = try await host(model, ring: ring, flight: CardFlight(), dark: dark)
         try await Task.sleep(for: .milliseconds(400))
-        try write(window, name: "7b-introduction-swipe", dark: dark)
+        try write(window, name: "7-first-showing", dark: dark)
         window.isHidden = true
     }
 

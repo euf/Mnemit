@@ -82,6 +82,7 @@ final class SessionDriver {
         let graded = session.currentCardID
         let creditBefore = graded.map(credit(of:)) ?? 0
         let stepBefore = graded.flatMap { document.card(withID: $0) }.map(MaturityCategory.init(card:))
+        let wasNew = graded.flatMap { document.card(withID: $0) }?.isNew ?? false
         let interval = gradeIntervals?[grade]
         let duration = stopwatch.elapsed
         guard let outcome = StallTrace.measure("stream.grade", { stream.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar, duration: duration) }) else { return false }
@@ -93,20 +94,10 @@ final class SessionDriver {
             registerPracticeUndo(restore)
         }
         lastReceipt = GradeReceipt(
-            grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count,
+            grade: grade, interval: interval, isLeech: stream.session.leechIDs.count > before.session.leechIDs.count, isNew: wasNew,
             gain: max(0, (graded.map(credit(of:)) ?? 0) - creditBefore), climb: climb(of: graded, from: stepBefore))
         moveOn()
         return true
-    }
-
-    /// Moves on from the card shown as a new word (`Session.isIntroduction`): an exposure, no review. It
-    /// changes no card and registers no undo; the stream notes how long the card was on screen, and asks it
-    /// as a question a few cards later. Undo afterwards still takes back the review before it.
-    func introduceCurrentCard() {
-        guard !isResting, session.isIntroduction else { return }
-        stream.introduce(duration: stopwatch.elapsed)
-        lastReceipt = nil
-        moveOn()
     }
 
     /// The step the card with `id` stands on now, if it is Young or higher and higher than `before`.

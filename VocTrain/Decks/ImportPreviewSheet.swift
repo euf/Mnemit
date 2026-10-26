@@ -140,7 +140,7 @@ struct ImportPreviewSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add \(preview?.selection.count ?? 0) Cards") {
                         if let preview {
-                            document.importCards(preview.selectedCards, learningOptions: preview.learningOptions(over: document.deck.learningOptions), media: preview.media)
+                            document.importCards(preview.selectedCards, learningOptions: preview.learningOptions, media: preview.media)
                         }
                         dismiss()
                     }
@@ -185,9 +185,6 @@ private struct PreviewList: View {
 
     var body: some View {
         List {
-            if preview.makesDeck {
-                WordsInDeckSection(introducesNewCards: $preview.introducesNewCards)
-            }
             Section {
                 ForEach(preview.candidates) { candidate in
                     row(candidate)

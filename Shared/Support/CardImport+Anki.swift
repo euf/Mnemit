@@ -176,7 +176,7 @@ extension CardImport {
         }.value
         return Preview(
             fileName: fileName, candidates: made.candidates, skippedRows: 0, anki: made.summary, learningOptions: made.learningOptions,
-            media: package.media, makesDeck: isNew)
+            media: package.media)
     }
 
     /// The name of the deck a package makes: the Anki deck's, with its levels apart by an en

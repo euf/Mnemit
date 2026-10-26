@@ -12,6 +12,8 @@ struct GradeReceipt: Equatable {
     var interval: ReviewInterval?
     /// The grade made the card a leech, which suspended it.
     var isLeech = false
+    /// The card was on its first showing: its Again is named "Don't know".
+    var isNew = false
     /// The part of a card the grade added to the ring, 0 to 1 (`Card.credit(onDayOf:calendar:steps:)`):
     /// what was left of it for a card the grade let go, a step's share for one in its steps, 0 for Forgot.
     var gain = 0.0
@@ -26,10 +28,8 @@ struct GradeReceipt: Equatable {
         return climb.map { "\(flightLabel) · \($0.cardTitle)" } ?? flightLabel
     }
 
-    /// The grade by the name its button has: "Forgot", not the scheduler's "Again".
-    var title: String {
-        grade == .again ? String(localized: "Forgot") : grade.title
-    }
+    /// The grade by the name its button had, see `Grade.buttonTitle(isNew:)`.
+    var title: String { grade.buttonTitle(isNew: isNew) }
 
     /// What came of the grade: "in 4 days", "again today", "leech, suspended"; `nil` in practice.
     var detail: String? {
@@ -37,7 +37,7 @@ struct GradeReceipt: Equatable {
         return interval.map { Format.interval($0) }
     }
 
-    /// "Good · in 4 days", "Forgot · again today", "Forgot · leech, suspended".
+    /// "Good · in 4 days", "Forgot · again today", "Don't know · again today", "Forgot · leech, suspended".
     var text: String {
         detail.map { "\(title) · \($0)" } ?? title
     }

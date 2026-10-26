@@ -128,13 +128,13 @@ private struct CardDetail: View {
 
             if !card.log.isEmpty {
                 Section("History") {
-                    ForEach(Array(card.log.suffix(50).reversed().enumerated()), id: \.offset) { _, entry in
+                    ForEach(Array(card.log.suffix(50).reversed().enumerated()), id: \.offset) { offset, entry in
                         LabeledContent(entry.date.formatted(date: .abbreviated, time: .shortened)) {
                             HStack(spacing: 6) {
                                 Text(entry.grade.arrow)
                                     .foregroundStyle(.secondary)
                                 GradeDot(grade: entry.grade)
-                                Text(entry.grade.title)
+                                Text(entry.grade.buttonTitle(isNew: offset == card.log.count - 1))
                             }
                         }
                     }

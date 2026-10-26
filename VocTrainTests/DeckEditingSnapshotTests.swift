@@ -158,11 +158,11 @@ struct DeckEditingSnapshotTests {
 
     @Test(arguments: [false, true])
     func nameSheets(dark: Bool) async throws {
-        let empty = try await host(NewDeckSheet(onCreate: { _, _ in }), dark: dark)
+        let empty = try await host(NewDeckSheet(onCreate: { _ in }), dark: dark)
         try write(empty, name: "deck-1-new-empty", dark: dark)
         empty.isHidden = true
 
-        let filled = try await host(DeckNameSheet(title: "New Deck", actionTitle: "Create", current: nil, prefill: "Greek B1", mark: .constant(false), perform: { _ in }), dark: dark)
+        let filled = try await host(DeckNameSheet(title: "New Deck", actionTitle: "Create", current: nil, prefill: "Greek B1", perform: { _ in }), dark: dark)
         try write(filled, name: "deck-2-new-filled", dark: dark)
         filled.isHidden = true
 
@@ -174,7 +174,7 @@ struct DeckEditingSnapshotTests {
         try write(rename, name: "deck-5-rename", dark: dark)
         rename.isHidden = true
 
-        let large = try await host(DeckNameSheet(title: "New Deck", actionTitle: "Create", current: nil, prefill: "Greek B1", mark: .constant(false), perform: { _ in }), dark: dark, textSize: .accessibility3)
+        let large = try await host(DeckNameSheet(title: "New Deck", actionTitle: "Create", current: nil, prefill: "Greek B1", perform: { _ in }), dark: dark, textSize: .accessibility3)
         try write(large, name: "deck-6-new-ax3", dark: dark)
         large.isHidden = true
     }
@@ -209,7 +209,6 @@ struct DeckEditingSnapshotTests {
         main.isHidden = true
 
         let custom = try options {
-            $0.introducesNewCards = true
             $0.newCardsPerSession = nil
             $0.newCardOrder = .newestFirst
             $0.targetRecall = 0.95

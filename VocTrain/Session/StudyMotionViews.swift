@@ -134,7 +134,7 @@ struct DepartingCard: View {
 
     private func begin() {
         guard frozen == nil else { return }
-        if let grade = departure.grade { flight.tintFully(grade) }
+        flight.tintFully(departure.grade)
         x = 1
         y = 1
         q = 1

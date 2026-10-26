@@ -1,22 +1,18 @@
 import SwiftUI
 
-/// "New Deck": what a new untitled deck asks first, its name and the mark, New words or Words I know
-/// (`LearningOptions.introducesNewCards`), as the iPhone's New Deck sheet does. `onCreate` names the
-/// deck, which has no file until it is saved, and sets the mark; Add Cards opens after it. Cancel
-/// closes the question: the deck stays untitled with the mark it started with, New words.
+/// "New Deck": what a new deck asks first, its name, as the iPhone's New Deck sheet does. `onCreate` makes
+/// the deck; Add Cards opens after it.
 struct NewDeckView: View {
-    /// Called with the name, `nil` while the field is empty, and the mark.
-    var onCreate: (_ name: String?, _ introducesNewCards: Bool) -> Void
+    /// Called with the name, `nil` while the field is empty.
+    var onCreate: (_ name: String?) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
-    @State private var introducesNewCards: Bool
     @FocusState private var isFocused: Bool
 
     /// - Parameters: The rest is what the sheet starts with, for a test or a snapshot.
-    init(introducesNewCards: Bool = true, name: String = "", onCreate: @escaping (String?, Bool) -> Void) {
+    init(name: String = "", onCreate: @escaping (String?) -> Void) {
         self.onCreate = onCreate
         _name = State(initialValue: name)
-        _introducesNewCards = State(initialValue: introducesNewCards)
     }
 
     /// The name as a file name, `nil` if the field is empty or can't name a file.
@@ -42,7 +38,6 @@ struct NewDeckView: View {
                             .foregroundStyle(.red)
                     }
                 }
-                WordsInDeckSection(introducesNewCards: $introducesNewCards)
             }
             .formStyle(.grouped)
             .scrollDisabled(true)
@@ -64,7 +59,7 @@ struct NewDeckView: View {
 
     private func create() {
         guard !isInvalid else { return }
-        onCreate(fileName, introducesNewCards)
+        onCreate(fileName)
         dismiss()
     }
 }

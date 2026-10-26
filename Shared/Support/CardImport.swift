@@ -30,16 +30,10 @@ enum CardImport {
         var selection: Set<Card.ID>
         /// What the other decks hold of the file, one line per deck: see `[Candidate].otherDeckSummary`.
         let otherDeckLines: [String]
-        /// Whether the cards make the deck they go to: an Anki package imported into a new deck. The preview then
-        /// asks the mark of the deck, "Words in this deck".
-        let makesDeck: Bool
-        /// The mark the deck gets when `makesDeck`: Words I know when the package has review history, New words
-        /// otherwise, until the learner chooses.
-        var introducesNewCards: Bool
 
         init(
             fileName: String, candidates: [CardImporter.Candidate], skippedRows: Int, anki: AnkiSummary? = nil, learningOptions: LearningOptions? = nil,
-            media: DeckMedia = DeckMedia(), makesDeck: Bool = false
+            media: DeckMedia = DeckMedia()
         ) {
             self.fileName = fileName
             self.candidates = candidates
@@ -47,23 +41,12 @@ enum CardImport {
             self.anki = anki
             self.learningOptions = learningOptions
             self.media = media
-            self.makesDeck = makesDeck
-            introducesNewCards = (anki?.withHistory ?? 0) == 0
             selection = Set(candidates.filter { $0.duplicate == nil }.map(\.id))
             otherDeckLines = candidates.otherDeckSummary
         }
 
         convenience init(fileName: String, result: CardImporter.Result) {
             self.init(fileName: fileName, candidates: result.candidates, skippedRows: result.skippedRows)
-        }
-
-        /// The options the import sets on the deck, whose own are `existing`: the preset of Anki's, if the deck takes
-        /// them, and the mark the learner chose when the cards make the deck. `nil` leaves the deck's options as they are.
-        func learningOptions(over existing: LearningOptions) -> LearningOptions? {
-            guard makesDeck else { return learningOptions }
-            var options = learningOptions ?? existing
-            options.introducesNewCards = introducesNewCards
-            return options
         }
 
         /// The selected cards in file order.

@@ -47,7 +47,7 @@ extension Shell {
             var number = 1
             while true {
                 do {
-                    try await newDeck(named: number == 1 ? name : "\(name) \(number)", introducesNewCards: true)
+                    try await newDeck(named: number == 1 ? name : "\(name) \(number)")
                     break
                 } catch DeckFiles.Failure.nameTaken where number < 100 {
                     number += 1
