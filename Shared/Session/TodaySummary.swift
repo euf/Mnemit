@@ -165,7 +165,7 @@ struct TodayHero: View {
 
     private var week: some View {
         let loaded = isLoaded ? progress : nil
-        return WeekRings(week: loaded?.week.count == 7 ? loaded!.week : Array(repeating: nil, count: 7), today: loaded?.ring.fraction ?? 0, now: now)
+        return WeekRings(week: loaded?.week.count == 7 ? loaded!.week : Array(repeating: nil, count: 7), rings: loaded?.weekRings, today: loaded?.ring.fraction ?? 0, now: now)
             .frame(maxWidth: .infinity)
             .overlay(alignment: .trailing) {
                 if showsChevron {

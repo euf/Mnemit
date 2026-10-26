@@ -171,6 +171,18 @@ struct AchievementPresentationTests {
         #expect(WeeksGrid.weekCount([]) == 0)
     }
 
+    @Test func theWeekRingsDrawAPartialPastDayPartial() {
+        // Before the first day, a closed day, a day with 5 of 15, an idle day, a missed day, a closed day, today as it stands.
+        let week: [Bool?] = [nil, true, false, true, false, true, false]
+        let rings: [Double?] = [nil, 1, 5.0 / 15, 0, 0, 1, 0]
+        func fraction(_ index: Int, rings: [Double?]?) -> Double { WeekRings.fraction(index, week: week, rings: rings, today: 0.4) }
+        #expect((0..<7).map { fraction($0, rings: rings) } == [0, 1, 5.0 / 15, 0, 0, 1, 0.4])
+        // Without the shares (the widget's week) a past day is full or empty.
+        #expect((0..<7).map { fraction($0, rings: nil) } == [0, 1, 0, 1, 0, 1, 0.4])
+        // Today's ring is never the past day's share, and never above 1.
+        #expect(WeekRings.fraction(6, week: week, rings: rings, today: 1.3) == 1)
+    }
+
     // MARK: The month's screen
 
     /// October 2026 with study on 20 days, today the second of November.

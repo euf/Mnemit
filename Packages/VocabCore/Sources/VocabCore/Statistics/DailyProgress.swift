@@ -1157,6 +1157,13 @@ public struct DailyProgress: Hashable, Sendable {
     /// The rings of the last seven study days, today last: closed or not, `nil` before the first study day.
     /// Today's is closed once its ring is.
     public var week: [Bool?]
+    /// The rings of the last seven study days as they are drawn, today last: each day's own share of its goal
+    /// (`DayRecord.ringShare`), `nil` before the first study day. Without `records` it is `week`, closed or not.
+    public var weekRings: [Double?] {
+        guard let first = records.first?.day, let today = records.last?.day else { return week.map { $0.map { $0 ? 1 : 0 } } }
+        let byDay = Dictionary(records.map { ($0.day, $0) }, uniquingKeysWith: { first, _ in first })
+        return (today - 6...today).map { $0 < first ? nil : byDay[$0]?.ringShare ?? 0 }
+    }
     /// The cards of the decks by step of `MaturityCategory`, in the order of `allCases`: the ladder of memory.
     public var ladder: [Int]
     /// The cards today's reviews lifted a step up the ladder (`DeckActivity.climbs(onDayOf:calendar:)`).
