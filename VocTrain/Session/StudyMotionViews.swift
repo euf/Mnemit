@@ -134,7 +134,7 @@ struct DepartingCard: View {
 
     private func begin() {
         guard frozen == nil else { return }
-        flight.tintFully(departure.grade)
+        if let grade = departure.grade { flight.tintFully(grade) }
         x = 1
         y = 1
         q = 1
@@ -297,7 +297,7 @@ private struct SheetOnItsWay: View {
         CardStack.page(
             width: size.width + (StackPose.width(sheet.level, cardWidth: size.width) - size.width) * along, height: size.height,
             faintness: 1 - (1 - StackPose.faintness(sheet.level)) * along, shade: StackPose.shade(Double(sheet.level) * along),
-            tint: sheet.grade.color.opacity(0.45 * (1 - along))
+            tint: sheet.grade.tint.opacity(0.45 * (1 - along))
         )
         .offset(x: sheet.from.width * (1 - along), y: sheet.from.height * (1 - along) + StackPose.drop(sheet.level) * along)
         .animation(.spring(duration: StudyMotion.Timing.sheet, bounce: 0.1), value: along)

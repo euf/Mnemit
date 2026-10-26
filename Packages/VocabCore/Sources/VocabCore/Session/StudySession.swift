@@ -30,16 +30,18 @@ public struct StudySession: Sendable {
         newCardAllowance: Int? = nil
     ) {
         var random = random
-        let ids = Self.selectCards(from: deck, at: now, calendar: calendar, extraNew: extraNew, newCardAllowance: newCardAllowance, using: &random)
-        self.init(cardIDs: ids, at: now, random: random, reviewMode: reviewMode)
+        let selected = Self.selection(from: deck, at: now, calendar: calendar, extraNew: extraNew, newCardAllowance: newCardAllowance, using: &random)
+        // In a deck that introduces new cards, the first showing of each is an introduction, not a question.
+        let introducing = deck.learningOptions.introducesNewCards ? Set(selected.filter { $0.urgency == .new }.map(\.card.id)) : []
+        self.init(cardIDs: selected.map(\.card.id), at: now, random: random, reviewMode: reviewMode, introducing: introducing)
     }
 
     /// A session over `cardIDs` in their order of urgency, see `SessionQueue`.
-    init(cardIDs: [Card.ID], at now: Date, random: SeededRandom, reviewMode: ReviewMode) {
+    init(cardIDs: [Card.ID], at now: Date, random: SeededRandom, reviewMode: ReviewMode, introducing: Set<Card.ID> = []) {
         var random = random
         self.reviewMode = reviewMode
         fuzzing = SeededRandom(seed: random.next())
-        session = Session(cardIDs: cardIDs, startedAt: now, random: random)
+        session = Session(cardIDs: cardIDs, startedAt: now, random: random, introducing: introducing)
     }
 
     /// Reviews `card`, the current card, and moves on to the next one.
@@ -52,12 +54,15 @@ public struct StudySession: Sendable {
     ///   differ from the one the session started with, e.g. after the machine's time
     ///   zone changed (#186).
     /// - Parameter duration: How long the card was on screen; it goes into the review log
-    ///   and has no say in the schedule.
+    ///   and has no say in the schedule. The time of the card's introduction is added to it.
     /// - Returns: `card` after the review, to be stored in the deck; `nil` if `card`
-    ///   isn't the current card, e.g. because the session is finished.
+    ///   isn't the current card, e.g. because the session is finished, or if it is shown as an
+    ///   introduction, which is no question to grade.
     mutating func review(_ grade: Grade, of card: Card, with learningOptions: LearningOptions, at now: Date, calendar: StudyCalendar, duration: Duration? = nil) -> Card? {
-        guard card.id == session.currentCardID else { return nil }
+        guard card.id == session.currentCardID, !session.isIntroduction else { return nil }
         let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
+        // The card was on screen before, as an introduction: the pace counts that time, too.
+        let duration = session.introductionTime(of: card.id).map { (duration ?? .zero) + $0 } ?? duration
         var scheduled = scheduler.review(card, grade: grade, at: now, mode: reviewMode, duration: duration, using: &fuzzing)
         let becameLeech = Self.isNewLeech(scheduled, after: card, threshold: learningOptions.leechThreshold)
         if becameLeech { scheduled.suspend(at: now) }
@@ -74,6 +79,11 @@ public struct StudySession: Sendable {
 
     mutating func perform(_ command: SessionCommand) {
         session.perform(command)
+    }
+
+    /// Ends the introduction of the current card, see `Session.introduce(duration:)`.
+    mutating func introduce(duration: Duration) {
+        session.introduce(duration: duration)
     }
 
     /// How soon `selectCards` introduces a due card; the smallest comes first.

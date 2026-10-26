@@ -105,6 +105,15 @@ final class SessionViewModel {
         stream.reveal()
     }
 
+    /// The card is shown as a new word, with its answer open and nothing to grade; `introduce()` moves on.
+    var isIntroduction: Bool { stream.isIntroduction }
+
+    /// Moves on from a card shown as a new word: no grade, the card is asked a few cards later.
+    func introduce() {
+        guard isIntroduction else { return }
+        stream.introduce()
+    }
+
     /// Only once the answer is shown.
     func grade(_ grade: Grade) {
         guard stage == .revealed else { return }

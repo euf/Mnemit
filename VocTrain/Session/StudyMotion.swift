@@ -14,6 +14,11 @@ struct CardPath: Equatable {
     static func exit(of grade: Grade) -> CardPath {
         CardPath(end: GradeSwipe.exit(of: grade), endScale: 1, fades: false)
     }
+
+    /// Off the screen, along the direction of a swipe that gave no grade, see `GradeSwipe.exit(toward:)`.
+    static func exit(toward translation: CGSize) -> CardPath {
+        CardPath(end: GradeSwipe.exit(toward: translation), endScale: 1, fades: false)
+    }
 }
 
 /// How the card on top comes to its place.
@@ -31,7 +36,8 @@ enum CardArrival: Equatable {
 struct Departure: Identifiable {
     let id = UUID()
     var card: Card
-    var grade: Grade
+    /// The grade it was given, which tints it as it leaves; `nil` for a card shown as a new word.
+    var grade: Grade?
     var release: CardFlight.Release
     var destination: GradeReceipt.Destination
     /// The way it takes; `nil` for a card that fades out where it is (Reduce Motion).
@@ -187,6 +193,21 @@ final class StudyMotion {
             if !reduceMotion { barBurstAt = .now }
             showInterval(receipt.caption)
         }
+        send(card, grade: receipt.grade, path: .exit(of: receipt.grade), destination: destination, release: release, velocity: velocity, behind: behind, reduceMotion: reduceMotion)
+    }
+
+    /// Sends a card that was shown as a new word past the edge, the way the swipe went (`direction`, the way of
+    /// Good for a tap or a button). No grade, so no tint, no step of the ring and no interval.
+    func departIntroduction(
+        _ card: Card, direction: CGSize, release: CardFlight.Release, velocity: CGSize, behind: Int, reduceMotion: Bool
+    ) {
+        send(card, grade: nil, path: .exit(toward: direction), destination: .away, release: release, velocity: velocity, behind: behind, reduceMotion: reduceMotion)
+    }
+
+    private func send(
+        _ card: Card, grade: Grade?, path exit: CardPath, destination: GradeReceipt.Destination, release: CardFlight.Release,
+        velocity: CGSize, behind: Int, reduceMotion: Bool
+    ) {
         let slot = cardSlot
         guard slot.width > 0 else { return }
         var release = release
@@ -198,14 +219,14 @@ final class StudyMotion {
             release.pivot = .center
             lifetime = Timing.fade
         } else {
-            path = .exit(of: receipt.grade)
+            path = exit
         }
         let departure = Departure(
-            card: card, grade: receipt.grade, release: release, destination: destination, path: path, velocity: velocity, lifetime: lifetime,
+            card: card, grade: grade, release: release, destination: destination, path: path, velocity: velocity, lifetime: lifetime,
             slot: slot)
         departures.append(departure)
         // A card that went back today comes in again by the edge it left by, once it is past it.
-        let sheet = destination == .stack && !reduceMotion ? path.map { Sheet(from: $0.end, level: max(1, min(behind, StackPose.maxEdges)), grade: receipt.grade) } : nil
+        let sheet = destination == .stack && !reduceMotion ? path.map { Sheet(from: $0.end, level: max(1, min(behind, StackPose.maxEdges)), grade: grade ?? .good) } : nil
         if let sheet {
             sheetsAway += 1
             if frozen?.sheet != nil { sheets.append(sheet) }

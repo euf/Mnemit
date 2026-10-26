@@ -7394,28 +7394,6 @@
         }
       }
     },
-    "Edit Card…": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karte bearbeiten …"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επεξεργασία κάρτας…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Изменить карточку…"
-          }
-        }
-      }
-    },
     "Edit…": {
       "localizations": {
         "de": {
@@ -9924,6 +9902,28 @@
         }
       }
     },
+    "New word": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neues Wort"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Νέα λέξη"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новое слово"
+          }
+        }
+      }
+    },
     "Newest first": {
       "localizations": {
         "de": {
@@ -11614,28 +11614,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вспомнили карточку — кольцо сдвигается. Новое слово возвращается под стопку, пока вы не вспомните его дважды."
-          }
-        }
-      }
-    },
-    "Recalled": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gewusst"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Θυμήθηκα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вспомнил"
           }
         }
       }

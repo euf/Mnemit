@@ -11,9 +11,9 @@ final class CardFlight {
     /// How long a grade shows before the next card comes, in seconds: the card flies out,
     /// or with Reduce Motion the tint only flashes.
     static let duration = 0.25
-    /// The tint never covers the card completely: at 70 % the card's text keeps 5.3:1 or more
-    /// in light mode and 7.6:1 in dark mode on all four grades, so the text never has to change
-    /// colour (`Grade.color` has the numbers).
+    /// The tint never covers the card completely: at 70 % the card's text keeps 5.5:1 or more
+    /// in light mode and 7.1:1 in dark mode on all four grades, so the text never has to change
+    /// colour (`Grade.color` has the numbers, `GradeContrastTests` checks them).
     static let fullTint = 0.7
     /// The tint grows with the distance of the finger and reaches `fullTint` here.
     private static let tintDistance: CGFloat = 160
@@ -88,8 +88,8 @@ final class CardFlight {
 
     /// The card has been sent off as a card of its own: the haptic of the grade, and this one is back
     /// in its place at once, ready for the next card, which takes input while the old one still flies.
-    func didRelease(_ grade: Grade) {
-        if committing != grade { gradeFeedback += 1 }
+    func didRelease(_ grade: Grade?) {
+        if let grade, committing != grade { gradeFeedback += 1 }
         committing = nil
         zone = nil
         isInGap = false
@@ -144,18 +144,20 @@ final class CardFlight {
     /// stands for (`GradeSwipe.cardOffset`), and turns about the point grabbed at `start`, in the
     /// card's own coordinates. In a gap between two zones it takes no grade and goes half way.
     /// Before the answer is shown it only gives way a little, without tint. When the finger
-    /// crosses into another zone or a gap the card eases to its new way with `glide`.
-    func drag(_ translation: CGSize, from start: CGPoint? = nil, isRevealed: Bool, glide: Animation = CardFlight.glide) {
+    /// crosses into another zone or a gap the card eases to its new way with `glide`. A card shown as a
+    /// new word (`isIntroduction`) has no grades: it goes with the finger as it is, without zones, gaps or tint.
+    func drag(_ translation: CGSize, from start: CGPoint? = nil, isRevealed: Bool, isIntroduction: Bool = false, glide: Animation = CardFlight.glide) {
         guard !isFlying else { return }
         let distance = hypot(translation.width, translation.height)
-        let grade = isRevealed ? GradeSwipe.zone(translation) : nil
-        let gap = isRevealed && GradeSwipe.isInGap(translation)
+        let asksGrade = isRevealed && !isIntroduction
+        let grade = asksGrade ? GradeSwipe.zone(translation) : nil
+        let gap = asksGrade && GradeSwipe.isInGap(translation)
         let region: Region = grade.map { .zone($0) } ?? (gap ? .gap : .none)
         if region != self.region {
             self.region = region
             glideUntil = .now + Self.glideDuration
         }
-        let moved = isRevealed ? GradeSwipe.cardOffset(for: translation) : CGSize(width: translation.width * 0.25, height: translation.height * 0.25)
+        let moved = asksGrade ? GradeSwipe.cardOffset(for: translation) : (isIntroduction ? translation : CGSize(width: translation.width * 0.25, height: translation.height * 0.25))
         if let start, size.width > 0, size.height > 0 {
             pivot = UnitPoint(x: start.x / size.width, y: start.y / size.height)
         }
@@ -196,28 +198,38 @@ final class CardFlight {
     /// where it is, then runs `finish`, which shows the next card, and puts the card back
     /// in place. With Reduce Motion the card stays and the tint flashes.
     func fly(_ grade: Grade, reduceMotion: Bool, then finish: @escaping @MainActor () -> Void) {
+        fly(grade, exit: GradeSwipe.exit(of: grade), reduceMotion: reduceMotion, then: finish)
+    }
+
+    /// Sends a card shown as a new word on, without a grade, so without tint: it flies out along the
+    /// swipe's direction (`GradeSwipe.exit(toward:)`, to the right for a key or a button) and then runs `finish`.
+    func flyOn(toward translation: CGSize = .zero, reduceMotion: Bool, then finish: @escaping @MainActor () -> Void) {
+        fly(nil, exit: GradeSwipe.exit(toward: translation), reduceMotion: reduceMotion, then: finish)
+    }
+
+    private func fly(_ grade: Grade?, exit: CGSize, reduceMotion: Bool, then finish: @escaping @MainActor () -> Void) {
         guard !isFlying else { return }
         isFlying = true
-        if committing != grade { gradeFeedback += 1 }
+        if let grade, committing != grade { gradeFeedback += 1 }
         committing = nil
         zone = nil
         isInGap = false
         region = .none
         tint = grade
+        let strength = grade == nil ? 0 : Self.fullTint
         if reduceMotion {
             withAnimation(.easeOut(duration: 0.1)) {
                 offset = .zero
                 rotation = .zero
-                tintStrength = Self.fullTint
+                tintStrength = strength
             }
         } else {
-            let exit = GradeSwipe.exit(of: grade)
             // Turns on the way the swipe began; a card sent by key or button turns the way it goes.
             let direction = rotation.degrees != 0 ? (rotation.degrees > 0 ? 1.0 : -1.0) : (exit.width >= 0 ? 1.0 : -1.0)
             withAnimation(.interactiveSpring(response: 0.38, dampingFraction: 0.8)) {
                 offset = exit
                 rotation = .degrees(direction * Self.maxRotation)
-                tintStrength = Self.fullTint
+                tintStrength = strength
                 #if os(macOS)
                 // The window is wider than a phone: the card is gone before it reaches the edge.
                 opacity = 0
@@ -273,7 +285,7 @@ struct FlightCard<Content: View>: View {
         ZStack {
             shape.fill(Color.cardSurface)
             shape
-                .fill((flight.tint ?? .good).color)
+                .fill((flight.tint ?? .good).tint)
                 .opacity(max(0, flight.tintStrength))
                 .animation(.easeOut(duration: 0.12), value: flight.tint)
             text

@@ -2,8 +2,8 @@ import SwiftUI
 import VocabCore
 
 /// The grades of a card whose answer is shown, laid out by what they mean: Forgot is
-/// the only "no"; Hard, Good and Easy are three kinds of "yes" and share a row under their
-/// own caption, Good in the middle and wider. Four equal buttons hid that, and Hard after
+/// the only "no" and has a row of its own; Hard, Good and Easy are three kinds of "yes" and
+/// share the row under it, Good in the middle and wider. Four equal buttons hid that, and Hard after
 /// forgetting is the worst mistake for FSRS. The buttons carry the grade's name and nothing
 /// else: when the card comes back shows only once the grade is given, see `UndoChip`.
 ///
@@ -59,11 +59,6 @@ struct GradeChoice: View {
                 VStack(spacing: 0) {
                     forgot
                         .padding(.bottom, Spacing.gap)
-                    Text("Recalled")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding(.bottom, Spacing.hairline)
-                        .accessibilityHidden(true)
                     recalled
                 }
             case .forgot:
@@ -120,8 +115,6 @@ struct GradeChoice: View {
                 }
             }
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text("Recalled"))
     }
 
     private func segment(_ grade: Grade) -> some View {
@@ -163,7 +156,7 @@ struct GradeChoice: View {
     /// colour and clear of the fill so it shows against the screen.
     private func outline(of grade: Grade) -> some View {
         shape.inset(by: -3.5)
-            .stroke(grade.color, lineWidth: 2)
+            .stroke(grade.ring, lineWidth: 2)
             .opacity(highlighted == grade ? 1 : 0)
     }
 

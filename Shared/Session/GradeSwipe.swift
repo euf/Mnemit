@@ -89,6 +89,14 @@ enum GradeSwipe {
         return nil
     }
 
+    /// Whether letting go of a drag moves on from a card shown as a new word, which gives no grade and
+    /// so has no sectors: a drag that went `commitDistance` in any direction, or a flick.
+    static func movesOn(translation: CGSize, predictedEnd: CGSize) -> Bool {
+        let moved = hypot(translation.width, translation.height)
+        if moved >= commitDistance { return true }
+        return moved >= flickMinimum && hypot(predictedEnd.width, predictedEnd.height) >= flickReach
+    }
+
     /// Whether a drag is past the dead zone but points into a gap, where no grade is given.
     static func isInGap(_ translation: CGSize) -> Bool {
         hypot(translation.width, translation.height) >= deadZone && zone(translation) == nil
@@ -148,6 +156,14 @@ enum GradeSwipe {
             return CGSize(width: translation.width * gapTravel, height: translation.height * gapTravel)
         }
         return pull(translation, toward: grade)
+    }
+
+    /// Where a card shown as a new word ends when it has flown out: `exitDistance` along the swipe's
+    /// direction; a tap, a key or a button, with no direction yet, send it the way of Good, to the right.
+    static func exit(toward translation: CGSize) -> CGSize {
+        let distance = hypot(translation.width, translation.height)
+        guard distance >= deadZone else { return exit(of: .good) }
+        return CGSize(width: exitDistance * translation.width / distance, height: exitDistance * translation.height / distance)
     }
 
     /// Where a card ends when it has flown out, from where it started: `exitDistance` along the
