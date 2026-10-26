@@ -126,7 +126,7 @@ struct TodayScreen: View {
         ScrollView {
             VStack(spacing: Spacing.section) {
                 HeroRing(progress: nil)
-                Text("Make a deck for the words you are learning, or use the Mnemit folder in iCloud Drive to find the decks you have.")
+                Text("Add the words you are learning.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

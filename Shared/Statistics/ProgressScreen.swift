@@ -48,7 +48,7 @@ struct ProgressScreen<Trailing: View>: View {
                 Section {
                     trailing
                 } footer: {
-                    Text("The plan, the day's time and the FSRS parameters behind the ring.")
+                    Text("What's behind the ring.")
                 }
             }
         }

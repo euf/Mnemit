@@ -2,8 +2,8 @@ import SwiftUI
 import VocabCore
 
 /// The introduction: shown once at the first launch, and again from Settings. It starts with
-/// the app, lets the learner try the four swipes on sample cards, says in four lines how a day
-/// works, asks where the cards are kept, and offers the daily reminder.
+/// the app, shows a new word's first showing, lets the learner try the four swipes on sample cards,
+/// says in four lines how a day works, asks where the cards are kept, and offers the daily reminder.
 struct OnboardingView: View {
     /// Where the decks are chosen; the start screen lists what it finds.
     var knownDecks: KnownDecks
@@ -29,6 +29,8 @@ struct OnboardingView: View {
                 switch step {
                 case .welcome:
                     WelcomeStep(next: advance)
+                case .firstShowing:
+                    FirstShowingView(done: advance)
                 case .swipe:
                     // Skipping the practice goes where finishing it goes.
                     GesturePracticeView(done: advance)
@@ -87,51 +89,59 @@ private struct WelcomeStep: View {
     }
 }
 
-/// The third step: how a day works, in the words of the screens: the stack, the ring, the streak, the ladder
+/// The fourth step: how a day works, in the words of the screens: the stack, the ring, the streak, the ladder
 /// (`references/learning-flow.md`). The ring fills as it shows.
 private struct DayStep: View {
     var next: () -> Void
     @State private var fill = 0.0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Spacer()
-            HStack(spacing: 20) {
-                ZStack {
-                    ForEach((1...3).reversed(), id: \.self) { level in
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.cardSurface)
-                            .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.035 * Double(level))) }
-                            .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(.opaqueSeparator)) }
-                            .frame(width: 56 - 6 * CGFloat(level), height: 72)
-                            .offset(y: 5 * CGFloat(level))
+        VStack(spacing: 0) {
+            // Scrolls at the largest text sizes, so Continue stays in reach; short, it sits in the middle.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 20) {
+                        ZStack {
+                            ForEach((1...3).reversed(), id: \.self) { level in
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color.cardSurface)
+                                    .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.035 * Double(level))) }
+                                    .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(.opaqueSeparator)) }
+                                    .frame(width: 56 - 6 * CGFloat(level), height: 72)
+                                    .offset(y: 5 * CGFloat(level))
+                            }
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color.cardSurface)
+                                .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(.opaqueSeparator)) }
+                                .frame(width: 56, height: 72)
+                        }
+                        ProgressRing(fraction: fill, diameter: 72, filling: .smooth(duration: 1.6))
                     }
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.cardSurface)
-                        .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color(.opaqueSeparator)) }
-                        .frame(width: 56, height: 72)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+                    .padding(.bottom, 32)
+                    Text("One stack a day")
+                        .font(.title.bold())
+                        .padding(.bottom, 16)
+                    VStack(alignment: .leading, spacing: 14) {
+                        row("rectangle.stack", Text("Mnemit lays out a few minutes' worth of cards every day."))
+                        row("circle.circle", Text("Recall a card and the ring moves."))
+                        row("flame.fill", Text("Two minutes keep your streak. Close the ring and the day is done."))
+                        row("chart.bar.fill", Text("Words climb from New to Mastered as they stick."))
+                    }
                 }
-                ProgressRing(fraction: fill, diameter: 72, filling: .smooth(duration: 1.6))
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity)
-            .accessibilityHidden(true)
-            .padding(.bottom, 32)
-            Text("One stack a day")
-                .font(.title.bold())
-                .padding(.bottom, 16)
-            VStack(alignment: .leading, spacing: 14) {
-                row("rectangle.stack", Text("Every day Mnemit lays out the cards due today: a few minutes' worth."))
-                row("circle.circle", Text("Recall a card and the ring moves. A new word comes back under the stack until you know it twice."))
-                row("flame.fill", Text("The first two minutes keep your streak. Close the ring, and the day is done."))
-                row("chart.bar.fill", Text("Words climb from New to Mastered as they stick."))
-            }
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.hidden)
+            .defaultScrollAnchor(.center, for: .alignment)
             Button(action: next) {
                 Text("Continue")
                     .frame(maxWidth: .infinity, minHeight: 36)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .padding(.top, 16)
         }
         .padding(20)
         .task {
@@ -153,7 +163,7 @@ private struct DayStep: View {
     }
 }
 
-/// The fourth step: where the cards are kept. iCloud Drive, in a folder named Mnemit that the
+/// The fifth step: where the cards are kept. iCloud Drive, in a folder named Mnemit that the
 /// Mac fills with decks, or the app's own storage on the iPhone.
 private struct SyncStep: View {
     var knownDecks: KnownDecks

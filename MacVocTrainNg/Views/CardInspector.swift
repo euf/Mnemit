@@ -91,7 +91,7 @@ private struct CardDetail: View {
                     CardMemoryLine(card: card, now: document.clock.now)
                 }
                 if card.isSuspended {
-                    Label("Suspended: no study session asks this card.", systemImage: "pause.circle")
+                    Label("Suspended: no session asks it.", systemImage: "pause.circle")
                         .foregroundStyle(.secondary)
                 }
                 if document.deck.isLeech(card) {

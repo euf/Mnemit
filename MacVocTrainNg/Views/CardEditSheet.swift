@@ -57,7 +57,7 @@ struct CardEditSheet: View {
                     TextField("Hint", text: $hint, prompt: Text("Hint (optional)"))
                     if !hidesAnswer {
                         TextField("Word Key", text: $note, prompt: Text("Word key (optional)"))
-                            .help("Cards of one word share its key: a study session asks only one of them a day")
+                            .help("Cards of one word share a key; a day asks only one of them")
                     }
                 } footer: {
                     // As in the form for new cards, but the edited card doesn't count.

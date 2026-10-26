@@ -57,9 +57,9 @@ struct HowTodayWorks: Equatable, Sendable {
     /// The three moments of the day in plain words: the streak kept, the ring closed, all done.
     private static func today() -> Section {
         let rows: [Row] = [
-            .text(String(localized: "The first minutes of your plan keep your streak: the flame fills and today counts, and you can stop there or go on.")),
-            .text(String(localized: "The ring is your goal for the day, the cards you usually have time for. Close it and the day's learning is done; Catch Up studies the reviews still waiting.")),
-            .text(String(localized: "When nothing is due, the day is all done. Learn 10 New Words adds ten new words if you want more.")),
+            .text(String(localized: "The first two minutes keep your streak. Stop there or go on.")),
+            .text(String(localized: "The ring is today's goal: the cards you usually have time for. Close it and the day is done; Catch Up takes the reviews still waiting.")),
+            .text(String(localized: "Nothing due: the day is done. Learn 10 New Words if you want more.")),
         ]
         return Section(title: String(localized: "Today"), rows: rows, footer: "")
     }
@@ -91,7 +91,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "The plan is what FSRS sets for the day: the reviews due, overdue ones included, and the cards in learning. New cards fill what the day's time leaves after reviews, up to each deck's ceiling."
+                "Each day FSRS sets the reviews due, overdue ones included, and the cards in learning. New cards fill the time left, up to each deck's limit."
         )
         return Section(title: String(localized: "Today's Plan"), rows: rows, footer: footer)
     }
@@ -118,7 +118,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "The time follows your days: rings you close make it grow, a ring left open makes it smaller, and a ring closed on a plan smaller than the time or a day without study leaves it as it was. Going well past the ring on most days lifts it to what you do. Between two minutes and an hour, and two and a half minutes before any study. The streak step is the cards that fit the first two minutes of the plan."
+                "Your ring grows after closed rings and shrinks after an open one. Go well past it most days, and it grows to what you do. It starts at 2½ minutes and stays between 2 minutes and an hour."
         )
         return Section(title: String(localized: "Today's time"), rows: rows, footer: footer)
     }
@@ -152,7 +152,7 @@ struct HowTodayWorks: Equatable, Sendable {
             + kindRows(String(localized: "Other card"), seconds: progress.pace.otherCard, breakdown.otherCards, reviewsLabel: String(localized: "Reviews per other card"))
         let footer = String(
             localized:
-                "Seconds a done card takes: the typical seconds of a review, from its logged durations or else the gaps between reviews, times the reviews each done card took, over the last \(DailyGoal.paceDays) study days and today. With fewer than \(DailyGoal.paceMinimumGaps) timed reviews or \(DailyGoal.paceMinimumCards) done cards a kind keeps the default, \(Int(DailyGoal.fallbackNewCardSeconds)) s for new and \(Int(DailyGoal.fallbackOtherCardSeconds)) s for other."
+                "Your pace: how long a card takes you, over your last \(DailyGoal.paceDays) study days and today. Until you have \(DailyGoal.paceMinimumGaps) timed reviews and \(DailyGoal.paceMinimumCards) done cards, a new card counts as \(Int(DailyGoal.fallbackNewCardSeconds)) s and any other as \(Int(DailyGoal.fallbackOtherCardSeconds)) s."
         )
         return Section(title: String(localized: "Pace"), rows: rows, footer: footer)
     }
@@ -166,7 +166,7 @@ struct HowTodayWorks: Equatable, Sendable {
             rows.append(.value(label: String(localized: "Cards to repair yesterday"), value: repair.formatted()))
         }
         let footer = String(
-            localized: "The streak step of a day, the cards that fit the first two minutes of its plan, keeps the streak. One missed day is repaired when the next day closes its ring; two missed days in a row end it.")
+            localized: "The first two minutes of a day keep your streak. After one missed day, closing the next day's ring saves it; two missed days end it.")
         return Section(title: String(localized: "Streak"), rows: rows, footer: footer)
     }
 
@@ -179,7 +179,7 @@ struct HowTodayWorks: Equatable, Sendable {
             .value(label: String(localized: "Gain today"), value: gain.formatted(.number.precision(.fractionLength(2)).sign(strategy: .always(includingZero: false)))),
             .value(label: String(localized: "Next milestone"), value: memory.nextMilestone.map { $0.formatted() } ?? "–"),
         ]
-        let footer = String(localized: "The sum of the FSRS recall probabilities of the learned recognition cards, as of now.")
+        let footer = String(localized: "The sum of the recall chances of your learned Word → Meaning cards, now.")
         return Section(title: String(localized: "Words in Memory"), rows: rows, footer: footer)
     }
 
@@ -191,7 +191,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "A swipe that goes \(Int(GradeSwipe.commitDistance)) points or flicks gives the grade of its direction, unless it points into a gap: 210° to 240° or 300° to 330°, where the card springs back. Clockwise from the top: Easy 330° to 45°, Good 45° to 135°, Hard 135° to 210°, Forgot 240° to 300°. Counted from when the app started, per study day."
+                "A swipe of \(Int(GradeSwipe.commitDistance)) points or a flick grades by direction, clockwise from the top: Easy 330°–45°, Good 45°–135°, Hard 135°–210°, Forgot 240°–300°. In the gaps, 210°–240° and 300°–330°, the card springs back. Counted per study day since the app started."
         )
         return Section(title: String(localized: "Swipes"), rows: rows, footer: footer)
     }
@@ -202,17 +202,17 @@ struct HowTodayWorks: Equatable, Sendable {
             .text(
                 String(
                     localized:
-                        "A new card is asked the first time it comes up. If you have never seen the word, Don't know is the honest answer, and the card comes back in this session."
+                        "If a word is new to you, answer Don't know: it comes back in this session."
                 )),
             .text(
                 String(
                     localized:
-                        "Target recall is the chance that you still remember a card when it comes back. Higher means better recall and more reviews; \(Format.percent(0.9)) is a good balance."
+                        "Target recall: the chance you still remember a card when it comes back. Higher means more reviews; \(Format.percent(0.9)) is a good balance."
                 )),
             .text(
                 String(
                     localized:
-                        "A Meaning → Word card stays locked until the Word → Meaning card of its word has reached the interval set in Unlock after. A word is asked in one direction per day."
+                        "Meaning → Word waits until Word → Meaning reaches the interval in Unlock after. A word is asked one way a day."
                 )),
             .text(
                 String(
@@ -222,17 +222,17 @@ struct HowTodayWorks: Equatable, Sendable {
             .text(
                 String(
                     localized:
-                        "New cards and cards you forgot come back in the session until you have graded them Good as many times as Steps per card sets. Good moves a card one step on, Hard keeps its step, Forgot resets it, and Easy graduates it at once."
+                        "A new or forgotten card comes back in the session until you grade it Good as many times as Steps per card says. Hard keeps its step, Forgot starts it over, Easy finishes it at once."
                 )),
             .text(
                 String(
                     localized:
-                        "FSRS starts with parameters averaged over many learners. Fitted to the deck's review log, they follow your memory, so a card needs fewer reviews for the same target recall. Cards keep their due dates; new intervals apply from their next review."
+                        "FSRS starts with parameters averaged over many learners. Fitted to your reviews, they need fewer reviews for the same recall. Due dates stay; new intervals start at each card's next review."
                 )),
             .text(
                 String(
                     localized:
-                        "The parameters are fitted first at \(ParameterRefit.minimumReviewCount.formatted()) reviews, again at \(ParameterRefit.secondFitReviewCount.formatted()), then every \(Format.days(Double(ParameterRefit.intervalDays))) or after \(ParameterRefit.reviewStep.formatted()) more reviews. A fit replaces the current parameters only if it predicts your newest reviews better."
+                        "Parameters are fitted first at \(ParameterRefit.minimumReviewCount.formatted()) reviews, again at \(ParameterRefit.secondFitReviewCount.formatted()), then every \(Format.days(Double(ParameterRefit.intervalDays))) or after \(ParameterRefit.reviewStep.formatted()) more reviews. A new fit is kept only if it predicts your latest reviews better."
                 )),
         ]
         return Section(title: String(localized: "Options"), rows: rows, footer: "")
@@ -251,7 +251,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "A card is due again when its chance of recall falls to the target. The 21 FSRS-6 parameters model your memory; the app fits them to the deck's review log and keeps a fit only if it predicts your newest reviews better."
+                "A card comes back when your chance of recalling it falls to the target. FSRS models your memory with 21 parameters, fitted to your reviews; a new fit is kept only if it predicts your latest reviews better."
         )
         // FSRS is a name, not a word to translate.
         let title = count > 1 ? "FSRS · " + name(of: deck, at: position, of: count) : "FSRS"

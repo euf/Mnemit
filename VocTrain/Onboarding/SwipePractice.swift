@@ -76,10 +76,49 @@ struct SwipePractice: Equatable {
     }
 }
 
+/// The first step after the welcome: one new word on its first showing, answered with Don't know or Know, the two
+/// buttons of a new card. Nothing is graded or recorded. What it says comes true in the stream: a new card graded
+/// Again or Good is in learning and due at once, so the session asks it again (`Scheduler.review`); Good is one of the
+/// `LearningOptions.steps` it needs, 2 unless the deck says otherwise, so a Know brings it back once more. The session
+/// asks a card back after a few others (`SessionQueue`).
+struct FirstShowing: Equatable {
+    /// A fifth language next to the four of the swipe practice.
+    static let sample = PracticeSample(question: "a janela", answer: String(localized: "the window"))
+
+    /// The button pressed: `nil` while the card waits.
+    private(set) var answer: Grade?
+
+    init(answer: Grade? = nil) {
+        self.answer = answer.flatMap(Self.isOffered)
+    }
+
+    var isAnswered: Bool { answer != nil }
+
+    /// Takes the answer of Don't know (`.again`) or Know (`.good`), once; returns whether it counted.
+    mutating func give(_ grade: Grade) -> Bool {
+        guard answer == nil, Self.isOffered(grade) != nil else { return false }
+        answer = grade
+        return true
+    }
+
+    /// What really happens to the word after `grade`, in a line.
+    static func line(after grade: Grade) -> String? {
+        switch grade {
+        case .again: String(localized: "It comes back after a few cards.")
+        case .good: String(localized: "It comes back once more before you're done.")
+        case .hard, .easy: nil
+        }
+    }
+
+    private static func isOffered(_ grade: Grade) -> Grade? {
+        grade == .again || grade == .good ? grade : nil
+    }
+}
+
 /// The steps of the introduction, in the order they come. Skipping the practice goes on to
 /// the next step: the storage choice and the reminder are not for skipping.
 enum OnboardingStep: CaseIterable {
-    case welcome, swipe, day, sync, reminder
+    case welcome, firstShowing, swipe, day, sync, reminder
 
     /// The step after this one; `nil` after the last, where the introduction ends.
     var next: OnboardingStep? {

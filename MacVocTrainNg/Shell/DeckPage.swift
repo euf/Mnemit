@@ -115,7 +115,7 @@ struct DeckPageContent: View {
         .sheet(isPresented: $addingCards, onDismiss: studyAddedCards) {
             AddCardsView(
                 document: document,
-                onAdded: { count in toast = Toast(String(localized: "Added \(count) cards. Meaning → Word cards open once a word is learned.")) },
+                onAdded: { count in toast = Toast(String(localized: "Added \(count) cards. Meaning → Word comes once a word is learned.")) },
                 studyNow: { studyAfterSheet = $0 })
         }
         .overlay {

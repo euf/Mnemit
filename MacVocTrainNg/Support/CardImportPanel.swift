@@ -8,7 +8,7 @@ extension CardImport {
         let openPanel = NSOpenPanel()
         openPanel.allowedContentTypes = [.delimitedText, .plainText] + UTType.ankiPackages
         openPanel.allowsMultipleSelection = false
-        openPanel.message = String(localized: "Choose an Anki package, or a CSV or TSV file with a question, an answer and an optional hint per row.")
+        openPanel.message = String(localized: "An Anki package, or a CSV or TSV file with a question, an answer and an optional hint per row.")
         openPanel.prompt = String(localized: "Import")
         return openPanel.runModal() == .OK ? openPanel.url : nil
     }

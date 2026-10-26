@@ -58,6 +58,12 @@ struct GradeChoice: View {
     var body: some View {
         Group {
             switch part {
+            case .both where isNew && dynamicTypeSize.isAccessibilitySize:
+                // The titles no longer fit side by side, as with the three grades: one above the other, in the same room.
+                VStack(spacing: Spacing.gap) {
+                    forgot(minHeight: height)
+                    know(minHeight: height)
+                }
             case .both where isNew:
                 HStack(spacing: Spacing.gap) {
                     forgot(minHeight: 2 * height + Spacing.gap)
