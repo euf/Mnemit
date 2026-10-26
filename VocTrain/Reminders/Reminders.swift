@@ -25,6 +25,34 @@ enum ReminderPlan {
         return (String(localized: "Keep your \(streak)-day streak"), String(localized: "≈ 2 min is enough."))
     }
 
+    /// 21:00, in minutes after midnight: the evening reminder for a day the streak is still at stake.
+    static let streakMinutes = 21 * 60
+
+    /// The moments of the evening reminder, the next `count` 21:00s. None when the daily reminder is at or after 21:00:
+    /// the evening one would only repeat it.
+    static func streakFireDates(after now: Date, firstMinutes: Int, count: Int = days, calendar: Calendar = .current) -> [Date] {
+        guard firstMinutes < streakMinutes else { return [] }
+        return fireDates(after: now, minutes: streakMinutes, count: count, calendar: calendar)
+    }
+
+    /// The evening reminders worth scheduling, in the first reminder's words: one for each of `fires` on which the
+    /// streak is still at stake and the day has cards (`days[i]`, the cards of the deck at `fires[i]`).
+    ///
+    /// The streak is at stake today until its step is done (`isKeptToday`). A streak holds through one missed day: so
+    /// it is still there for tomorrow and, if today is kept, the day after; whatever the learner does on those days, the
+    /// app plans again when it next runs.
+    static func streakReminders(
+        at fires: [Date], days: [[(name: String, total: Int)]], now: Date, streak: Int, isKeptToday: Bool, studyCalendar: StudyCalendar = StudyCalendar()
+    ) -> [(index: Int, fire: Date, title: String, body: String)] {
+        guard streak > 0 else { return [] }
+        return fires.enumerated().compactMap { index, fire in
+            let daysAhead = studyCalendar.dayNumber(for: fire) - studyCalendar.dayNumber(for: now)
+            let isAtStake = daysAhead == 0 ? !isKeptToday : daysAhead <= (isKeptToday ? 2 : 1)
+            guard isAtStake, days.indices.contains(index), let text = content(days[index], streak: streak) else { return nil }
+            return (index, fire, text.title, text.body)
+        }
+    }
+
     /// The number on the icon: the cards left to close today's ring, as Today's headline counts them, never the whole
     /// plan; 0 once the ring is closed. Without the ring's figures, the cards due.
     static func badge(due: Int, progress: DailyProgress?) -> Int {
@@ -34,7 +62,8 @@ enum ReminderPlan {
 }
 
 /// The daily reminder to study: a local notification at the learner's time with the streak it keeps, and the number
-/// on the app icon, the cards left to close today's ring (`ReminderPlan`).
+/// on the app icon, the cards left to close today's ring (`ReminderPlan`). A second one at 21:00, in the same words,
+/// on a day the streak is at stake and its step not done; the setting that turns the first off turns it off too.
 /// Local notifications only; the app has no push entitlement.
 ///
 /// The reminders of the next few days are scheduled at once, each with the counts of its
@@ -130,9 +159,10 @@ final class Reminders {
     }
 
     private static let identifiers = (0..<ReminderPlan.days).map { "daily-reminder-\($0)" }
+    private static let streakIdentifiers = (0..<ReminderPlan.days).map { "streak-reminder-\($0)" }
 
     private func schedule(decks: [KnownDeck], open: OpenDeck?, progress: DailyProgress?, now: Date) async {
-        center.removePendingNotificationRequests(withIdentifiers: Self.identifiers)
+        center.removePendingNotificationRequests(withIdentifiers: Self.identifiers + Self.streakIdentifiers)
         await refreshStatus()
         guard isEnabled, isAllowed else {
             nextFire = nil
@@ -142,7 +172,8 @@ final class Reminders {
 
         // Now, for the number on the icon, then the moment of each reminder.
         let fires = ReminderPlan.fireDates(after: now, minutes: minutes)
-        let dates = [now] + fires
+        let streakFires = ReminderPlan.streakFireDates(after: now, firstMinutes: minutes)
+        let dates = [now] + fires + streakFires
         var days = Array(repeating: [(name: String, total: Int)](), count: dates.count)
         for deck in decks {
             guard let counts = await counts(of: deck, on: dates, open: open) else { continue }
@@ -151,6 +182,9 @@ final class Reminders {
             }
         }
         await setBadge(ReminderPlan.badge(due: days[0].reduce(0) { $0 + $1.total }, progress: progress))
+
+        // That day's ring is about the size of today's.
+        func badge(due: Int) -> NSNumber { NSNumber(value: progress.map { $0.ring.goal > 0 ? min(due, $0.ring.goal) : due } ?? due) }
 
         var first: Date?
         for (index, fire) in fires.enumerated() {
@@ -163,14 +197,28 @@ final class Reminders {
             content.title = text.title
             content.body = text.body
             content.sound = .default
-            // That day's ring is about the size of today's.
-            let due = day.reduce(0) { $0 + $1.total }
-            content.badge = NSNumber(value: progress.map { $0.ring.goal > 0 ? min(due, $0.ring.goal) : due } ?? due)
-            let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-            try? await center.add(UNNotificationRequest(identifier: Self.identifiers[index], content: content, trigger: trigger))
+            content.badge = badge(due: day.reduce(0) { $0 + $1.total })
+            await add(content, id: Self.identifiers[index], at: fire)
         }
         nextFire = first
+
+        let streakDays = Array(days.dropFirst(1 + fires.count))
+        let evenings = ReminderPlan.streakReminders(
+            at: streakFires, days: streakDays, now: now, streak: progress?.streak.days ?? 0, isKeptToday: progress?.streakKeptToday ?? false)
+        for evening in evenings {
+            let content = UNMutableNotificationContent()
+            content.title = evening.title
+            content.body = evening.body
+            content.sound = .default
+            content.badge = badge(due: streakDays[evening.index].reduce(0) { $0 + $1.total })
+            await add(content, id: Self.streakIdentifiers[evening.index], at: evening.fire)
+        }
+    }
+
+    private func add(_ content: UNNotificationContent, id: String, at fire: Date) async {
+        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
     }
 
     private func counts(of deck: KnownDeck, on dates: [Date], open: OpenDeck?) async -> [StudyCounts]? {

@@ -41,7 +41,7 @@ struct MnemitProvider: TimelineProvider {
             date: now,
             state: WidgetState(
                 date: now, done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 42, nextReminder: nil, secondsPerCard: 10, rounds: 4, roundsDone: 1,
-                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15))
+                minutesToNextRound: 2, wordsInMemory: 28, wordsToday: 15, week: [true, true, false, true, true, true, false]))
     }
 }
 
@@ -55,7 +55,7 @@ struct MnemitWidget: Widget {
         }
         .configurationDisplayName("Daily Goal")
         .description("Cards due and your progress toward today's goal.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
 

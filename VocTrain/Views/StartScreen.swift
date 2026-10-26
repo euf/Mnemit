@@ -206,6 +206,10 @@ struct StartScreen: View {
         .onChange(of: widgetTrigger) { syncWidget() }
         .onChange(of: reminders.isEnabled) { Task { await rescheduleReminders() } }
         .onChange(of: reminders.minutes) { Task { await rescheduleReminders() } }
+        // The streak step done takes the evening reminder back (`ReminderPlan.streakReminders`), at the grade that did it.
+        .onChange(of: ring.progress?.streakKeptToday) { _, isKept in
+            if isKept == true { Task { await rescheduleReminders() } }
+        }
         // At launch and whenever the app comes back to the front. A deck that is open shows
         // its own figures, and Today reads again once it is closed.
         .task(id: scenePhase) {

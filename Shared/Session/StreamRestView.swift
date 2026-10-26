@@ -349,12 +349,15 @@ struct WeekRings: View {
     /// Today's ring, 1 when closed.
     var today: Double
     var now: Date
+    /// 22 pt on the screens; the widget's week is smaller.
+    var diameter: CGFloat = 22
+    var spacing: CGFloat = 10
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: spacing) {
             ForEach(week.indices, id: \.self) { index in
                 VStack(spacing: 4) {
-                    ProgressRing(fraction: fraction(index), diameter: 22)
+                    ProgressRing(fraction: fraction(index), diameter: diameter)
                         .opacity(week[index] == nil ? 0.35 : 1)
                     Text(verbatim: letter(index))
                         .font(.caption2.weight(index == week.count - 1 ? .bold : .regular))

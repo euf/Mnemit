@@ -9,18 +9,27 @@ enum TodayHeadline {
     ///   - due: The cards of today's plan not done yet, "N cards left": not the cards that are due in all.
     ///   - nextDue: When something comes back that today's plans leave out.
     static func text(due: Int, progress: DailyProgress, nextDue: Date?, now: Date) -> String {
-        let ring = progress.ring
-        if progress.isStreakAtRisk {
-            return String(localized: "Close the ring to save your \(progress.streak.days)-day streak")
+        text(
+            due: due, ring: progress.ring, isStreakAtRisk: progress.isStreakAtRisk, streakDays: progress.streak.days, round: RoundStatus(progress),
+            secondsPerCard: progress.secondsPerCardLeft, nextDue: nextDue, now: now)
+    }
+
+    /// The same line from the figures alone, which the widget's snapshot holds: `round` and `secondsPerCard` are `nil`
+    /// where it has none, and the line then has no time.
+    static func text(
+        due: Int, ring: DailyRing, isStreakAtRisk: Bool, streakDays: Int, round: RoundStatus?, secondsPerCard: Double?, nextDue: Date?, now: Date
+    ) -> String {
+        if isStreakAtRisk {
+            return String(localized: "Close the ring to save your \(streakDays)-day streak")
         }
         if due > 0 {
             if ring.isGoalMet {
                 return [String(localized: "Ring closed"), String(localized: "\(due) left")].joined(separator: " · ")
             }
-            if let title = RoundStatus(progress).line { return title }
+            if let title = round?.line { return title }
             // The cards to close the ring: the plan may hold more after a break, and those come after the ring.
             let cards = ring.goal > 0 ? min(due, ring.goal - ring.done) : due
-            let time = DailyGoal.minutesLeft(cards: cards, secondsPerCard: progress.secondsPerCardLeft).map(Format.timeLeft(minutes:))
+            let time = secondsPerCard.flatMap { DailyGoal.minutesLeft(cards: cards, secondsPerCard: $0) }.map(Format.timeLeft(minutes:))
             return ([String(localized: "\(cards) cards left")] + [time].compactMap { $0 }).joined(separator: " · ")
         }
         if ring.done > 0 { return String(localized: "All done") }
