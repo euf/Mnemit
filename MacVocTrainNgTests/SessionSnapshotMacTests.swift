@@ -17,9 +17,20 @@ struct SessionSnapshotMacTests {
         return url
     }
 
-    private func write(_ model: SessionViewModel, name: String) async throws {
+    /// A day of 30 cards in rounds, `done` of them done, with a streak of 12: the header's ring, flame and text by hand,
+    /// as no deck of a test has a plan at the start of its day.
+    private func progress(done: Int) -> DailyProgress {
+        let pace = Pace(newCard: 30, otherCard: 15)
+        let rounds = DayRounds(otherCards: 30, newCards: 0, pace: pace, seconds: 480)
+        return DailyProgress(
+            ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: 12, repairCards: nil), cardsLeft: max(0, rounds.goal - done),
+            pace: pace, roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0)
+    }
+
+    private func write(_ model: SessionViewModel, name: String, done: Int? = nil) async throws {
         for dark in [false, true] {
-            let hosting = NSHostingView(rootView: SessionView(model: model, ring: DailyRingModel(), onClose: {}).frame(width: 800, height: 600).brandTint())
+            let ring = DailyRingModel(progress: done.map(progress(done:)))
+            let hosting = NSHostingView(rootView: SessionView(model: model, ring: ring, onClose: {}).frame(width: 800, height: 600).brandTint())
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.titled], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -41,9 +52,9 @@ struct SessionSnapshotMacTests {
         let undoManager = makeUndoManager(for: document)
         // A day of rounds, so the stack under the card shows its edges.
         let model = SessionViewModel(document: document, rounds: RoundGuide(ends: [6, 12]))
-        try await write(model, name: "1-asking")
+        try await write(model, name: "1-asking", done: 3)
         model.reveal()
-        try await write(model, name: "2-revealed")
+        try await write(model, name: "2-revealed", done: 30)
         withExtendedLifetime(undoManager) {}
     }
 

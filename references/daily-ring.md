@@ -120,20 +120,25 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (Hard, Good, Easy) over those plus the learning steps it still needs, at its best moment of the day
   (`Card.credit(onDayOf:calendar:steps:)`). Every answer recalled moves the ring; Forgot moves nothing
   and takes nothing back. The counts ("M of K cards", "N left") stay in whole cards.
-- **Ring**: done cards against the day's goal. The ring is full at the goal and stays full
-  (`DailyRing.fraction` is capped at 1). Done cards beyond the goal (Catch Up, Learn 10 New Words) count as cards
-  done: "31 cards today".
-- **Middle of the ring**: `RingCenter` is `.none`, `.streak(days:state:)` (the flame over the days) or
-  `.flame(days:state:)` (the flame alone, for a ring too small for the days). The `StreakState` of the day
+- **Ring**: done cards against the day's goal. The ring is full at the goal and goes on over itself past it, a second
+  lap and a third, as the Fitness rings do: the drawn value is done over goal, at most 3 (`DailyRingFigure.fraction`,
+  `ProgressRing.maxLaps`; `DailyRing.fraction` itself stays capped at 1 and says whether the goal is met). Done cards
+  beyond the goal (Catch Up, Learn 10 New Words) count as cards done: "31 cards today". A past day's ring is drawn
+  the same way from `DayRecord.ringShare`: its share of its goal, a closed day at least full and up to 3 laps.
+- **Middle of the ring**: the ring's own quantity. `RingCenter` is `.cardsLeft(n)` (`DailyProgress.cardsToClose`: the
+  plan's cards left, at most the goal less the done), `.done` (a `checkmark`, once the ring is closed) or `.none`;
+  `RingCenter.shown(at:)` drops it below 56 pt and adds the caption "cards left" from 88 pt, so the bars' and the
+  week's rings are empty inside. The streak is never in a ring. The `StreakState` of the day
   (`DailyProgress.streakState`) has three values: `open` (today's streak step not done), `kept` (done) and
   `atRisk` (the day after a missed one, ring open: `DailyProgress.isStreakAtRisk`). `StreakFlame(state:)` draws
-  them, an outline in grey, `flame.fill` in `Color.streak`, an outline in `Color.streak`, on Today, in the
-  rests, in the study bar (the flame alone, `StreamRing`), in the widget, on Progress and in the Mac's chip.
-  The hero of Today (`StreakHeroRing`, `TodayHero` in `Shared/Session/TodaySummary.swift`) writes the days
-  large under the flame with "day streak" in caption; at 0 days the outlined flame and "Start your
-  streak". VoiceOver reads the state: "12-day streak, kept today" / "not kept yet" / "at risk".
-  `DailyRingView(progress:, showsStreak:)` has no popover and is no button. Sizes, colours and VoiceOver:
-  `design-spec.md` §5.7.
+  them, an outline in grey, `flame.fill` in `Color.streak`, an outline in `Color.streak` with an `exclamationmark`
+  after it. `StreakChip` (`Shared/Support/StreakChip.swift`) puts the flame and one sentence under the hero ring
+  of Today (`HeroRing`, `TodayHero` in `Shared/Session/TodaySummary.swift`) and on the rests: kept "12-day
+  streak", open "≈ 2 min to keep your 12-day streak" (`RoundStatus.minutesToKeep`), at risk "Close the ring to save
+  your 12-day streak", no streak "Start your streak · ≈ 2 min". The gain line under it leads with the time that
+  closes the ring (`TodayLead`) and goes on with the words in memory. VoiceOver reads "12 cards left" or "Ring
+  closed" for the ring and the chip's sentence with its state. `DailyRingView(progress:, showsCenter:)` has no
+  popover and is no button. Sizes, colours and VoiceOver: `design-spec.md` §5.7.
 - **Cards left**: the plan's cards not done yet: `StudySession.counts(...).total` now, the line "N
   cards left". Done + left = plan, which is the goal or more (review cards beyond the day's time are
   left too).

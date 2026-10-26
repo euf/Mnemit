@@ -33,6 +33,12 @@ import VocabCore
 final class DailyRingModel {
     /// `nil` until the first evaluation is done.
     private(set) var progress: DailyProgress?
+
+    /// `progress` is for a screen shown with figures that no deck produces: the previews and the frames of the tests.
+    init(progress: DailyProgress? = nil) {
+        self.progress = progress
+    }
+
     @ObservationIgnored private var fileActivities: [URL: DeckActivity] = [:]
     /// The days before today of each open document, kept from one change to the next (`DeckHistoryCache`), so
     /// that a grade replays only today. A cache that outlives its document, or meets another with the same

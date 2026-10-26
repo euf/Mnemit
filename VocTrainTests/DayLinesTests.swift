@@ -16,6 +16,13 @@ struct DayLinesTests {
         #expect(line(RoundStatus(rounds: 4, roundsDone: 0, minutesToNext: 0).title) == "< 1 min to keep your streak")
     }
 
+    @Test func theStreakCostsTheFirstRoundUntilItIsDone() {
+        #expect(RoundStatus(rounds: 4, roundsDone: 0, minutesToNext: 2).minutesToKeep == 2)
+        #expect(RoundStatus(rounds: 4, roundsDone: 1, minutesToNext: 3).minutesToKeep == nil, "kept")
+        #expect(RoundStatus(rounds: 4, roundsDone: 4, minutesToNext: nil).minutesToKeep == nil)
+        #expect(RoundStatus(rounds: 0, roundsDone: 0, minutesToNext: nil).minutesToKeep == nil, "no plan, nothing to keep")
+    }
+
     @Test func betweenTheStreakAndTheRingThereIsNoLine() {
         let status = RoundStatus(rounds: 4, roundsDone: 1, minutesToNext: 2)
         #expect(status.title == nil && status.line == nil)

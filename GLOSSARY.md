@@ -287,25 +287,29 @@ Overdue cards, part of the plan, worked off as the day's time allows.
 Done cards against the daily goal, with the **cards underway**: a card reviewed today and still due
 today counts as the part of a card its answers recalled made, recalled answers over those plus the
 steps it still needs (`Card.credit`), so every answer recalled moves the ring and Forgot moves
-nothing. The ring is full at done ≥ goal, in whole cards, and stays full: done cards beyond the goal
-(Catch Up, Learn 10 New Words) count as cards done ("31 cards today"). `DailyRing.fraction` is capped
-at 1.
+nothing. The ring is full at done ≥ goal, in whole cards, and goes on over itself past it, as the Fitness rings do,
+to three laps: done cards beyond the goal (Catch Up, Learn 10 New Words) count as cards done ("31 cards today") and
+draw the second lap. `DailyRing.fraction` is capped at 1 and says whether the goal is met; the drawing takes
+`DailyRingFigure.fraction`. Past days draw their own laps (`DayRecord.ringShare`). Its middle holds the cards left, large, with "cards left" as a caption where the ring is big enough
+(from 88 pt; the figure alone from 56 pt), and a `checkmark` once it is closed (`RingCenter`); the small rings
+of the bars and the week are empty inside. No flame and no days in any ring.
 
 **Streak** (RU «стрик»):
 Study days in a row that kept it. A day keeps it with its streak step done (done ≥ the first end of
 `DayRounds.ends`); an empty plan counts. One missed day is repaired when the next day closes its ring
 (done ≥ goal): the streak step of that day is not enough, and then the streak starts anew with
 it. Two missed days in a row end the streak. Days before `DailyGoal.planRuleStart` (23.10.2026)
-count with one review. The streak is the flame in the middle of every ring (**Flame**).
+count with one review. The streak is a chip outside the ring, the flame and one sentence (`StreakChip`: "12-day streak",
+"≈ 2 min to keep your 12-day streak", "Close the ring to save your 12-day streak"; **Flame**).
 
 **Flame** (the streak's sign on every screen; RU «пламя»):
 The streak's symbol, drawn by `StreakFlame(state:)` from the `StreakState` of the day
 (`DailyProgress.streakState`), with three states in shape and colour: **open**, a grey outline, while today's
 streak step is not done; **kept**, `flame.fill` in `Color.streak`, once it is done; **at risk**, an outline in
-`Color.streak`, on the day after a missed one until the ring closes (`DailyProgress.isStreakAtRisk`). It stands
-in the middle of the rings on Today, in the study bar, on the rests, in the widget and on the Mac, and beside
-the days on the Progress screen. VoiceOver says the state: "12-day streak, kept today", "not kept yet",
-"at risk".
+`Color.streak` followed by an `exclamationmark`, on the day after a missed one until the ring closes
+(`DailyProgress.isStreakAtRisk`). It stands outside every ring: in the streak chip on Today and the rests and in
+the widget, beside the ring in the study bar and the Mac's header, and above the days on the Progress screen.
+VoiceOver says the state: "12-day streak, kept today", "not kept yet"; at risk it reads the chip's sentence.
 _Avoid_: lit and unlit flame, streak icon
 
 **Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):

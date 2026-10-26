@@ -16,13 +16,20 @@ public struct DayRecord: Hashable, Sendable {
     /// This day closed its ring after a single missed day, and so kept the streak alive.
     public var savedStreak: Bool
 
-    /// How full the day's ring is drawn: a closed day on which cards were done is full, any other day has the
-    /// share of its goal that was done, so a partial day is partial, and a missed day, or an idle one that had
-    /// nothing due, is an empty track.
+    /// How the day's ring is drawn, in laps of its goal: a closed day on which cards were done is full at least, and
+    /// goes on over itself as far as it was worked past the goal (at most `maxLaps`, 3); any other day has the share of
+    /// its goal that was done, so a partial day is partial, and a missed day, or an idle one that had nothing due, is an
+    /// empty track.
     public var ringShare: Double {
-        if closed { return done > 0 ? 1 : 0 }
+        if closed {
+            guard done > 0 else { return 0 }
+            return goal > 0 ? max(1, min(Self.maxLaps, Double(done) / Double(goal))) : 1
+        }
         return min(1, Double(done) / Double(max(1, goal)))
     }
+
+    /// The most laps of its goal a ring is drawn with.
+    public static let maxLaps = 3.0
 
     public init(day: Int, done: Int, goal: Int, kept: Bool, closed: Bool, streak: Int, savedStreak: Bool = false) {
         self.day = day

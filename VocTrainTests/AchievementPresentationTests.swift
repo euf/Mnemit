@@ -179,8 +179,10 @@ struct AchievementPresentationTests {
         #expect((0..<7).map { fraction($0, rings: rings) } == [0, 1, 5.0 / 15, 0, 0, 1, 0.4])
         // Without the shares (the widget's week) a past day is full or empty.
         #expect((0..<7).map { fraction($0, rings: nil) } == [0, 1, 0, 1, 0, 1, 0.4])
-        // Today's ring is never the past day's share, and never above 1.
-        #expect(WeekRings.fraction(6, week: week, rings: rings, today: 1.3) == 1)
+        // Worked past the goal a ring goes on over itself, a past day by its share and today as it stands, to three laps.
+        let laps: [Double?] = [nil, 1.4, 5.0 / 15, 0, 0, 3, 0]
+        #expect((0..<7).map { WeekRings.fraction($0, week: week, rings: laps, today: 1.3) } == [0, 1.4, 5.0 / 15, 0, 0, 3, 1.3])
+        #expect(WeekRings.fraction(6, week: week, rings: rings, today: 4.2) == 3, "never above three laps")
     }
 
     // MARK: The month's screen

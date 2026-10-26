@@ -157,12 +157,16 @@ struct SessionView: View {
         }
     }
 
-    /// Today's ring and beside it what the iPhone's bar says: the time left, "≈ 4 min", while the goal is open, and
-    /// "36 cards today" once it is met.
+    /// Today's ring, empty inside, the streak's flame by its state and what the iPhone's bar says: the time left, "≈ 4 min",
+    /// while the goal is open, and "36 cards today" once it is met. The ring comes first, so it does not move when the
+    /// text changes its width.
     private var ringAndFigures: some View {
         HStack(spacing: 8) {
-            ProgressRing(fraction: DailyRingFigure.fraction(ring.progress, shown: nil), diameter: 28, center: .flame(ring.progress), speaksCenter: true)
+            ProgressRing(fraction: DailyRingFigure.fraction(ring.progress, shown: nil), diameter: 28)
             if let progress = ring.progress {
+                StreakFlame(state: progress.streakState)
+                    .font(.body.weight(.semibold))
+                    .accessibilityLabel(Text(verbatim: StreakChip.spoken(days: progress.streak.days, state: progress.streakState, minutesToKeep: nil)))
                 Group {
                     if progress.ring.isGoalMet {
                         Text("\(progress.ring.done) cards today")
@@ -177,7 +181,7 @@ struct SessionView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// The bar of the iPhone's stream: Done leading; in the middle today's ring with its figures, or the name of a
+    /// The bar of the iPhone's stream: Done leading and right after it today's ring with its figures, or the name of a
     /// practice; Undo and the menu (`StreamMenuItems`) trailing. The same controls in every state, question,
     /// answer and rest, so the bar never changes and nothing below it moves; what doesn't apply is disabled.
     private var header: some View {
@@ -185,7 +189,6 @@ struct SessionView: View {
             // Esc takes back a review, see `keys`; Done is ⌘., the Mac's key for stopping.
             Button("Done", action: onClose)
                 .keyboardShortcut(".", modifiers: .command)
-                .frame(maxWidth: .infinity, alignment: .leading)
             Group {
                 switch model.streamStage {
                 case .practiceMistakes, .practiceNewest:
@@ -195,6 +198,7 @@ struct SessionView: View {
                 }
             }
             .layoutPriority(1)
+            Spacer(minLength: 12)
             HStack(spacing: 8) {
                 Button("Undo", systemImage: "arrow.uturn.backward", action: model.undoLast)
                     .labelStyle(.iconOnly)
@@ -210,7 +214,6 @@ struct SessionView: View {
                 .fixedSize()
                 .help("More")
             }
-            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         // ⌘E edits the card from anywhere in the stream; the menu item shows no key of its own.
         .background {
