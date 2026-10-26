@@ -391,20 +391,20 @@ struct DeckChangeTests {
         let scheduled = Card(question: "dom", answer: "Haus", learningState: LearningState(phase: .review, stability: 1, difficulty: 5, lastReview: start, due: start))
         let new = Card(question: "kot", answer: "Katze")
         var deck = try Deck(cards: [scheduled, new])
-        #expect(deck.dueCount(at: start) == 2)
+        #expect(deck.cards.filter { $0.isDue(at: start) }.count == 2)
 
         _ = deck.apply(try #require(DeckChange.settingSuspended(true, of: [scheduled.id, new.id], in: deck, at: start)), day: 100)
         #expect(!deck.cards[0].isDue(at: start.addingTimeInterval(365 * 86400)))
         #expect(!deck.cards[1].isDue(at: start))
-        #expect(deck.dueCount(at: start) == 0)
+        #expect(deck.cards.filter { $0.isDue(at: start) }.count == 0)
     }
 
     @Test func dueCardsAreCountedAtTheGivenTime() throws {
         let due = start.addingTimeInterval(3600)
         let scheduled = Card(question: "dom", answer: "Haus", learningState: LearningState(phase: .review, stability: 1, difficulty: 5, lastReview: start, due: due))
         let deck = try Deck(cards: [scheduled, Card(question: "kot", answer: "Katze")])
-        #expect(deck.dueCount(at: start) == 1)
-        #expect(deck.dueCount(at: due) == 2)
+        #expect(deck.cards.filter { $0.isDue(at: start) }.count == 1)
+        #expect(deck.cards.filter { $0.isDue(at: due) }.count == 2)
     }
 
     @Test func recallProbabilityFollowsTheLearningOptions() throws {

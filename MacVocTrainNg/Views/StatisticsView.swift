@@ -84,7 +84,7 @@ private struct SummaryTiles: View {
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
             Tile(title: "Cards", value: summary.total.formatted())
-            Tile(title: "Due Now", value: summary.dueNow.formatted())
+            Tile(title: "Due", value: summary.due.formatted())
             Tile(title: "New", value: summary.new.formatted())
             if summary.suspended > 0 {
                 Tile(title: "Suspended", value: summary.suspended.formatted(), help: "Cards no study session asks until you resume them in the card list.")
@@ -94,13 +94,6 @@ private struct SummaryTiles: View {
                 value: summary.averageRecallProbability.map(Format.percent) ?? "–",
                 help: "Average recall probability of the cards in the review phase right now, except suspended ones."
             )
-            Tile(
-                title: "Reviewed Today",
-                value: summary.reviewsToday.formatted(),
-                detail: summary.reviewsToday > 0
-                    ? String(localized: "\(Format.percent(Double(summary.recalledToday) / Double(summary.reviewsToday))) recalled")
-                    : nil
-            )
         }
     }
 }
@@ -108,7 +101,6 @@ private struct SummaryTiles: View {
 private struct Tile: View {
     var title: LocalizedStringKey
     var value: String
-    var detail: String?
     var help: LocalizedStringKey?
 
     var body: some View {
@@ -119,9 +111,6 @@ private struct Tile: View {
             Text(value)
                 .font(.system(size: 28, weight: .semibold))
                 .monospacedDigit()
-            Text(detail ?? " ")
-                .font(.callout)
-                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)

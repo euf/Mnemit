@@ -224,11 +224,6 @@ public struct Deck: Hashable, Sendable {
         index(of: id).map { cards[$0] }
     }
 
-    /// The number of cards due at `date`.
-    public func dueCount(at date: Date) -> Int {
-        cards.reduce(0) { $0 + ($1.isDue(at: date) ? 1 : 0) }
-    }
-
     /// The number of suspended cards, see `Card.isSuspended`.
     public var suspendedCount: Int {
         cards.reduce(0) { $0 + ($1.isSuspended ? 1 : 0) }

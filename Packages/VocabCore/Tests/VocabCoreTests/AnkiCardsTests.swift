@@ -122,7 +122,7 @@ struct AnkiCardsTests {
         _ = deck.apply(change, at: time(day: 11), calendar: calendar)
         #expect(deck.cards == made)
         #expect(deck.cards[0].learningState?.reviews == 5)
-        #expect(deck.dueCount(at: .distantFuture) == 2)
+        #expect(deck.cards.filter { $0.isDue(at: .distantFuture) }.count == 2)
 
         // Written and read again, as `deck.json` and `reviews.jsonl`.
         #expect(try DeckFile.decode(DeckFile.fileWrapper(for: deck)) == deck)

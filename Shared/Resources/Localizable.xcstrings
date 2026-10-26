@@ -1692,12 +1692,6 @@
         "ru": {
           "variations": {
             "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld новая"
-                }
-              },
               "few": {
                 "stringUnit": {
                   "state": "translated",
@@ -1708,6 +1702,12 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld новых"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld новая"
                 }
               },
               "other": {
@@ -7196,28 +7196,6 @@
         }
       }
     },
-    "Due Now": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jetzt fällig"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Προς επανάληψη τώρα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "К повторению сейчас"
-          }
-        }
-      }
-    },
     "Due today, overdue included": {
       "localizations": {
         "de": {
@@ -8905,12 +8883,6 @@
         "ru": {
           "variations": {
             "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Сохрани стрик: %lld день"
-                }
-              },
               "few": {
                 "stringUnit": {
                   "state": "translated",
@@ -8921,6 +8893,12 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Сохрани стрик: %lld дней"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Сохрани стрик: %lld день"
                 }
               },
               "other": {
@@ -12828,28 +12806,6 @@
         }
       }
     },
-    "Reviewed Today": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heute abgefragt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Επαναλήψεις σήμερα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оценки за сегодня"
-          }
-        }
-      }
-    },
     "Reviews": {
       "localizations": {
         "de": {
@@ -14295,12 +14251,6 @@
         "ru": {
           "variations": {
             "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Учить %1$@ · %2$lld карточка"
-                }
-              },
               "few": {
                 "stringUnit": {
                   "state": "translated",
@@ -14311,6 +14261,12 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Учить %1$@ · %2$lld карточек"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Учить %1$@ · %2$lld карточка"
                 }
               },
               "other": {
@@ -16803,12 +16759,6 @@
         "ru": {
           "variations": {
             "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Вчера кольцо закрыто · %lld карточка"
-                }
-              },
               "few": {
                 "stringUnit": {
                   "state": "translated",
@@ -16819,6 +16769,12 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Вчера кольцо закрыто · %lld карточек"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Вчера кольцо закрыто · %lld карточка"
                 }
               },
               "other": {

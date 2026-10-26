@@ -75,37 +75,31 @@ public enum DeckStatistics {
 
     public struct Summary: Hashable, Sendable {
         public var total = 0
+        /// The three counts are the ones of the card filters (`Deck.filterCounts(at:)`): `.new` and `.due`
+        /// leave suspended cards out, and `.due` leaves new cards out.
         public var new = 0
-        public var dueNow = 0
-        /// Cards the learner suspended; they are never due.
+        public var due = 0
         public var suspended = 0
         /// Mean recall probability of the cards in the review phase right now, except
         /// suspended ones: no review would follow their dropping recall.
         public var averageRecallProbability: Double?
-        public var reviewsToday = 0
-        public var recalledToday = 0
     }
 
     public static func summary(of deck: Deck, at now: Date, calendar: StudyCalendar) -> Summary {
         let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
-        let today = calendar.dayNumber(for: now)
         var summary = Summary()
-        summary.dueNow = deck.dueCount(at: now)
+        let counts = deck.filterCounts(at: now)
+        summary.new = counts[.new] ?? 0
+        summary.due = counts[.due] ?? 0
+        summary.suspended = counts[.suspended] ?? 0
         var recallProbabilitySum = 0.0
         var reviewCards = 0
 
         for card in deck.cards {
             summary.total += 1
-            if card.isNew { summary.new += 1 }
-            if card.isSuspended { summary.suspended += 1 }
             if let learningState = card.learningState, learningState.phase == .review, !card.isSuspended {
                 recallProbabilitySum += scheduler.recallProbability(of: learningState, at: now)
                 reviewCards += 1
-            }
-            for entry in card.log.reversed() {
-                guard calendar.dayNumber(for: entry.date) == today else { break }
-                summary.reviewsToday += 1
-                if entry.grade.isRecall { summary.recalledToday += 1 }
             }
         }
         if reviewCards > 0 {

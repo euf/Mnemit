@@ -80,7 +80,7 @@ struct StatisticsTests {
         #expect(DeckStatistics.forecast(cards: cards, calendar: calendar, today: today, days: 5) == [1, 0, 1, 0, 0])
     }
 
-    @Test func summaryCountsTodaysReviews() throws {
+    @Test func summaryCountsCardsAndRecall() throws {
         var card = reviewCard(stability: 10, due: now.addingTimeInterval(86400))
         card.log = [
             ReviewLogEntry(date: now.addingTimeInterval(-3 * 86400), grade: .good),
@@ -91,10 +91,27 @@ struct StatisticsTests {
         let summary = DeckStatistics.summary(of: deck, at: now, calendar: calendar)
         #expect(summary.total == 2)
         #expect(summary.new == 1)
-        #expect(summary.dueNow == 1)
-        #expect(summary.reviewsToday == 2)
-        #expect(summary.recalledToday == 1)
+        #expect(summary.due == 0)
         #expect(summary.averageRecallProbability == 1)
+    }
+
+    /// Statistics and the Cards filters count with one definition (`Deck.filterCounts(at:)`).
+    @Test func summaryCountsAreTheFilterCounts() throws {
+        let overdue = reviewCard(stability: 3, due: now.addingTimeInterval(-3 * 86400))
+        let later = reviewCard(stability: 3, due: now.addingTimeInterval(5 * 86400))
+        var learning = Card(question: "q", answer: "a")
+        learning.learningState = LearningState(phase: .learning, stability: 1, difficulty: 5, lastReview: now, due: now.addingTimeInterval(-60))
+        var suspendedDue = reviewCard(stability: 3, due: now.addingTimeInterval(-86400))
+        suspendedDue.isSuspended = true
+        var suspendedNew = Card(question: "q", answer: "a")
+        suspendedNew.isSuspended = true
+        let deck = try Deck(cards: [overdue, later, learning, suspendedDue, suspendedNew, Card(question: "n", answer: "n"), Card(question: "m", answer: "m")])
+
+        let summary = DeckStatistics.summary(of: deck, at: now, calendar: calendar)
+        let counts = deck.filterCounts(at: now)
+        #expect(summary.due == counts[.due] && summary.due == 2)
+        #expect(summary.new == counts[.new] && summary.new == 2)
+        #expect(summary.suspended == counts[.suspended] && summary.suspended == 2)
     }
 
     @Test func summaryCountsRecallProbabilityInStudyDays() throws {
@@ -120,9 +137,9 @@ struct StatisticsTests {
         #expect(DeckStatistics.forecast(cards: cards, calendar: calendar, today: today, days: 3) == [0, 1, 0])
         let summary = try DeckStatistics.summary(of: Deck(cards: cards), at: now, calendar: calendar)
         #expect(summary.total == 3)
-        #expect(summary.new == 1)
+        #expect(summary.new == 0)
         #expect(summary.suspended == 2)
-        #expect(summary.dueNow == 0)
+        #expect(summary.due == 0)
         #expect(summary.averageRecallProbability == 1)
     }
 
