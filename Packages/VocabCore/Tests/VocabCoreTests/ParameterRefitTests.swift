@@ -113,7 +113,7 @@ struct ParameterRefitTests {
         let options = LearningOptions()
         let optimizer = FSRSOptimizer(cards: cards(), learningOptions: options, calendar: calendar)
         let newestCount = Int((Double(optimizer.items.count) * ParameterRefit.holdoutShare).rounded())
-        let newest = FSRSOptimizer(items: Array(optimizer.items.suffix(newestCount)), relearningSteps: options.steps, revealedRecallWeight: options.revealedRecallWeight)
+        let newest = FSRSOptimizer(items: Array(optimizer.items.suffix(newestCount)), relearningSteps: options.steps)
 
         let comparison = try optimizer.compareOnNewest(share: ParameterRefit.holdoutShare, with: .default)
         // By log loss: the RMSE sums over a dictionary, in an order that differs between instances.
@@ -127,7 +127,7 @@ struct ParameterRefitTests {
     }
 
     @Test func aLogTooShortToSplitIsNoFit() {
-        let optimizer = FSRSOptimizer(items: [], relearningSteps: 2, revealedRecallWeight: 1)
+        let optimizer = FSRSOptimizer(items: [], relearningSteps: 2)
         #expect(throws: FSRSOptimizer.Error.notEnoughData) {
             try optimizer.compareOnNewest(share: 0.2, with: .default)
         }

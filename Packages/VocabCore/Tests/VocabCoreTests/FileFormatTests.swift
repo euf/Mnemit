@@ -115,7 +115,6 @@ struct DeckFileTests {
         #expect(deck.learningOptions.newProductionPerSession == nil)
         #expect(deck.learningOptions.productionUnlockDays == 14)
         #expect(deck.learningOptions.newCardOrder == .newestFirst)
-        #expect(deck.learningOptions.revealedRecallWeight == 0.5)
         #expect(!deck.learningOptions.optimizeFromRevealed)
         #expect(deck.learningOptions.leechThreshold == 6)
 
@@ -123,7 +122,13 @@ struct DeckFileTests {
         #expect(deck.cards[1].media == CardMedia(answerImage: "e3b0c44298fc1c14.png"))
         #expect(deck.cards[2].media.isEmpty)
 
-        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == String(decoding: data, as: UTF8.self))
+        // The fixture still has the option `revealedRecallWeight` of ADR 0005, which the app no longer writes.
+        #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == withoutRevealedRecallWeight(data))
+    }
+
+    /// A deck written while the option `revealedRecallWeight` existed reads, and its next save leaves the key out.
+    func withoutRevealedRecallWeight(_ data: Data) -> String {
+        String(decoding: data, as: UTF8.self).replacingOccurrences(of: "    \"revealedRecallWeight\" : 0.5,\n", with: "")
     }
 
     /// Version 4 has no media; it is written back as version 5 and is otherwise the same.
@@ -134,39 +139,42 @@ struct DeckFileTests {
         expectFixedDeck(deck)
         #expect(deck.cards.allSatisfy { $0.media.isEmpty })
         #expect(deck.media.isEmpty)
-        let written = String(decoding: data, as: UTF8.self).replacingOccurrences(of: "\"version\" : 4", with: "\"version\" : \(DeckFile.currentVersion)")
+        let written = withoutRevealedRecallWeight(data).replacingOccurrences(of: "\"version\" : 4", with: "\"version\" : \(DeckFile.currentVersion)")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 
     /// The options for revealed reviews (ADR 0005) are new: an older deck lacks them and
-    /// reads with the defaults of the fork, and a weight out of range is clamped.
+    /// reads with the defaults of the fork.
     @Test func revealedReviewAndLeechOptionsRoundTripAndDefault() throws {
         var deck = try sampleDeck()
-        #expect(deck.learningOptions.revealedRecallWeight == 1)
         #expect(deck.learningOptions.optimizeFromRevealed)
         #expect(deck.learningOptions.leechThreshold == 8)
         var options = deck.learningOptions
-        options.revealedRecallWeight = 0.4
         options.optimizeFromRevealed = false
         options.leechThreshold = 0
         _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), day: 100)
         let read = try DeckFile.decode(DeckFile.fileWrapper(for: deck))
-        #expect(read.learningOptions.revealedRecallWeight == 0.4)
         #expect(!read.learningOptions.optimizeFromRevealed)
         #expect(read.learningOptions.leechThreshold == 0)
 
         let old = try DeckFile.decode(deckJSON()).learningOptions
-        #expect(old.revealedRecallWeight == 1)
         #expect(old.optimizeFromRevealed)
         #expect(old.leechThreshold == 8)
+    }
 
-        for (stored, expected) in [("0.05", 1.0 / 3), ("7", 1.0), ("0.33", 1.0 / 3)] {
-            let odd = Data(
+    /// The option `revealedRecallWeight` (ADR 0004, ADR 0005) is gone: a deck with it, whatever the value, reads with
+    /// the other options as they are, and saving leaves the key out.
+    @Test func theRevealedRecallWeightOfOlderDecksIsIgnored() throws {
+        for stored in ["0.05", "0.33", "1", "7", "\"nonsense\""] {
+            let older = Data(
                 """
                 {"format": "de.fluch-it-consulting.voctrain.deck", "version": 4, "progress": [],
-                 "learningOptions": {"revealedRecallWeight": \(stored)}, "cards": []}
+                 "learningOptions": {"revealedRecallWeight": \(stored), "optimizeFromRevealed": false, "leechThreshold": 5}, "cards": []}
                 """.utf8)
-            #expect(try DeckFile.decode(odd).learningOptions.revealedRecallWeight == expected)
+            let deck = try DeckFile.decode(older)
+            #expect(!deck.learningOptions.optimizeFromRevealed)
+            #expect(deck.learningOptions.leechThreshold == 5)
+            #expect(!String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self).contains("revealedRecallWeight"))
         }
     }
 
@@ -288,7 +296,7 @@ struct DeckFileTests {
             .replacingOccurrences(of: "com.mfluch.voctrain.deck", with: DeckFile.format)
             // The options added since take their defaults.
             .replacingOccurrences(of: "\"newCardsPerSession\" : 15,", with: "\"newCardOrder\" : \"deckOrder\",\n    \"newCardsPerSession\" : 15,\n    \"newProductionPerSession\" : 7,")
-            .replacingOccurrences(of: "    \"steps\" : 2,", with: "    \"productionUnlockDays\" : 7,\n    \"revealedRecallWeight\" : 1,\n    \"steps\" : 2,")
+            .replacingOccurrences(of: "    \"steps\" : 2,", with: "    \"productionUnlockDays\" : 7,\n    \"steps\" : 2,")
             .replacingOccurrences(of: "    \"parameters\" : [", with: "    \"optimizeFromRevealed\" : true,\n    \"parameters\" : [")
             .replacingOccurrences(of: "    \"maximumInterval\" :", with: "    \"leechThreshold\" : 8,\n    \"maximumInterval\" :")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
@@ -321,9 +329,8 @@ struct DeckFileTests {
         for key in ["learningOptions", "targetRecall", "steps", "learningState", "learningStateReset", "reviews", "hint", "progress", "contentModified", "suspended", "suspensionChanged", "note", "kind", "newProductionPerSession", "productionUnlockDays", "newCardOrder"] {
             #expect(deckJSON.contains("\"\(key)\" :"), "missing key \(key)")
         }
-        for key in ["revealedRecallWeight", "optimizeFromRevealed"] {
-            #expect(deckJSON.contains("\"\(key)\" :"), "missing key \(key)")
-        }
+        #expect(deckJSON.contains("\"optimizeFromRevealed\" :"))
+        #expect(!deckJSON.contains("revealedRecallWeight"))
         #expect(!deckJSON.contains("\"log\""))
         #expect(!deckJSON.contains("\"hint\" : \"\""))
 
@@ -645,365 +652,4 @@ struct ReviewLogEncoderTests {
     @Test func cardsWithoutReviewsWriteNothing() {
         #expect(ReviewLogEncoder().encode([Card(question: "q", answer: "a")]).isEmpty)
     }
-}
-
-struct LegacyImporterTests {
-    let calendar = StudyCalendar.testing
-    let now = Date(timeIntervalSince1970: 1_791_216_000)
-
-    /// Builds an archive with the class names of MacVocTrain 1, or with older ones for the box
-    /// and its cards. Keys and value types come from the stand-ins, so only the fixed file in
-    /// `importsFixedDocument` checks them against the format.
-    func legacyArchive(
-        cards: [LegacyIndexCard],
-        progress: [LegacyDailyStatus],
-        boxClassName: String = "IndexCardBoxHelper",
-        cardClassName: String = "IndexCard"
-    ) throws -> Data {
-        let box = LegacyBox()
-        box.indexCards = cards
-        let monitor = LegacyProgressMonitor()
-        monitor.progressData = progress
-        box.progressMonitor = monitor
-
-        let archiver = NSKeyedArchiver(requiringSecureCoding: false)
-        archiver.setClassName(boxClassName, for: LegacyBox.self)
-        archiver.setClassName(cardClassName, for: LegacyIndexCard.self)
-        archiver.setClassName("ProgressMonitor", for: LegacyProgressMonitor.self)
-        archiver.setClassName("DailyStatus", for: LegacyDailyStatus.self)
-        archiver.setClassName("Counter", for: LegacyCounter.self)
-        archiver.encode(box, forKey: NSKeyedArchiveRootObjectKey)
-        archiver.finishEncoding()
-        return archiver.encodedData
-    }
-
-    func legacyCard(_ question: String, level: Int, lastAnswered: Date?, adjustment: Float = 0) -> LegacyIndexCard {
-        let card = LegacyIndexCard()
-        card.question = question
-        card.answer = "answer of \(question)"
-        card.remarkQuestion = level == 3 ? "hint" : nil
-        card.level = level
-        card.lastAnswered = lastAnswered
-        card.levelDurationAdjustment = adjustment
-        return card
-    }
-
-    func legacyStatus(_ date: Int, counters: [Int]) -> LegacyDailyStatus {
-        let status = LegacyDailyStatus()
-        status.date = date
-        status.counters = counters.map { LegacyCounter(value: $0) }
-        return status
-    }
-
-    @Test func levelDurationsMatchMacVocTrain1() {
-        #expect(LegacyImporter.levelDuration(1) == 0.7)
-        #expect(LegacyImporter.levelDuration(12) == 22)
-        #expect(abs(LegacyImporter.levelDuration(14) - 29.04) < 1e-9)
-    }
-
-    /// A document in the format of MacVocTrain 1, archived once without the stand-ins of
-    /// the importer and never generated again: lists as `NSMutableArray`, `level` as integer,
-    /// `levelDurationAdjustment` as float, dates of the progress as `yyyymmdd`.
-    @Test func importsFixedDocument() throws {
-        let url = try #require(Bundle.module.url(forResource: "Resources/macvoctrain1", withExtension: "plist"))
-        let deck = try LegacyImporter.importDeck(from: Data(contentsOf: url), now: now, calendar: calendar)
-
-        #expect(deck.cards.map(\.question) == ["blim", "frax", "glim", "snirk"])
-        #expect(deck.cards.map(\.answer) == ["blom", "frox", "glom", "snork"])
-        #expect(deck.cards.map(\.hint) == ["", "", "Verb", ""])
-
-        // Never asked
-        #expect(deck.cards[0].isNew)
-
-        // Level 0, last answered two days and eight hours ago
-        let frax = try #require(deck.cards[1].learningState)
-        let fraxAnswered = now.addingTimeInterval(-2 * 86400 - 8 * 3600)
-        #expect(frax.phase == .relearning)
-        #expect(frax.stability == FSRS().initialStability(.again))
-        #expect(frax.lastReview == fraxAnswered)
-        #expect(frax.due == fraxAnswered)
-        #expect(frax.reviews == 1)
-
-        // Level 4 (2.5 days) with +8 %
-        let glim = try #require(deck.cards[2].learningState)
-        let glimAnswered = now.addingTimeInterval(-86400 - 6.5 * 3600)
-        #expect(glim.phase == .review)
-        #expect(abs(glim.stability - 2.7) < 1e-6)
-        #expect(glim.difficulty == LegacyImporter.neutralDifficulty)
-        #expect(glim.lastReview == glimAnswered)
-        #expect(abs(glim.due.timeIntervalSince(glimAnswered) - 2.7 * 86400) < 1)
-        #expect(glim.reviews == 4)
-
-        // Level 14 (29.04 days) with -6 %
-        let snirk = try #require(deck.cards[3].learningState)
-        let snirkAnswered = now.addingTimeInterval(-15 * 86400 - 4 * 3600)
-        #expect(snirk.phase == .review)
-        #expect(abs(snirk.stability - 27.2976) < 1e-6)
-        #expect(snirk.lastReview == snirkAnswered)
-        #expect(abs(snirk.due.timeIntervalSince(snirkAnswered) - 27.2976 * 86400) < 1)
-        #expect(snirk.reviews == 14)
-
-        let padding = { (bins: [Int]) in bins + Array(repeating: 0, count: StabilityBins.count - bins.count) }
-        #expect(deck.progress.count == 4)
-        #expect(deck.progress.map { CivilDate(dayNumber: $0.day).isoString } == ["2026-09-18", "2026-09-20", "2026-10-04", "2026-10-05"])
-        // Three cards at level 0, one of them never asked
-        #expect(deck.progress[0].bins == padding([1, 2]))
-        // Level 4 in [2, 4) days
-        #expect(deck.progress[1].bins == padding([1, 1, 0, 1]))
-        // Level 14 in [16, 32) days
-        #expect(deck.progress[2].bins == padding([1, 1, 0, 1, 0, 0, 1]))
-    }
-
-    @Test func importsOlderClassNames() throws {
-        let data = try legacyArchive(
-            cards: [legacyCard("known", level: 3, lastAnswered: now.addingTimeInterval(-86400))],
-            progress: [legacyStatus(20_260_920, counters: [0, 0, 0, 1])],
-            boxClassName: "MVTIndexCardBox",
-            cardClassName: "MVTIndexCard"
-        )
-        let deck = try LegacyImporter.importDeck(from: data, now: now, calendar: calendar)
-        #expect(deck.cards.map(\.question) == ["known"])
-        #expect(deck.cards[0].learningState?.reviews == 3)
-        #expect(deck.progress.count == 2)
-    }
-
-    /// MacVocTrain 1 spread intervals by ±10 %. A damaged spread counts as at most ±50 %,
-    /// one that isn't finite as none.
-    @Test(arguments: [
-        (adjustment: Float(0.5), applied: 0.5),
-        (adjustment: 0.8, applied: 0.5),
-        (adjustment: -0.9, applied: -0.5),
-        (adjustment: 1e30, applied: 0.5),
-        (adjustment: .infinity, applied: 0),
-        (adjustment: -.infinity, applied: 0),
-        (adjustment: .nan, applied: 0),
-    ])
-    func clampsLevelDurationAdjustment(values: (adjustment: Float, applied: Double)) throws {
-        let lastAnswered = now.addingTimeInterval(-86400)
-        let data = try legacyArchive(
-            // Level 4 is 2.5 days.
-            cards: [legacyCard("known", level: 4, lastAnswered: lastAnswered, adjustment: values.adjustment)],
-            progress: []
-        )
-        let learningState = try #require(LegacyImporter.importDeck(from: data, now: now, calendar: calendar).cards[0].learningState)
-        let days = 2.5 * (1 + values.applied)
-        #expect(abs(learningState.stability - days) < 1e-9)
-        #expect(abs(learningState.due.timeIntervalSince(lastAnswered) - days * 86400) < 1)
-    }
-
-    @Test func skipsDailyStatusesWithInvalidDates() throws {
-        let dates = [20_260_920, 20_261_320, 20_260_020, 20_260_900, 20_260_932]
-        let data = try legacyArchive(
-            cards: [legacyCard("x", level: 0, lastAnswered: nil)],
-            progress: dates.map { legacyStatus($0, counters: [1]) }
-        )
-        let deck = try LegacyImporter.importDeck(from: data, now: now, calendar: calendar)
-        #expect(deck.progress.map { CivilDate(dayNumber: $0.day).isoString } == ["2026-09-20", "2026-10-05"])
-    }
-
-    @Test func importsCardsAndConvertsLevels() throws {
-        let lastAnswered = now.addingTimeInterval(-86400)
-        let data = try legacyArchive(
-            cards: [
-                legacyCard("new", level: 0, lastAnswered: nil),
-                legacyCard("relearning", level: 0, lastAnswered: lastAnswered),
-                legacyCard("known", level: 3, lastAnswered: lastAnswered, adjustment: 0.1),
-            ],
-            progress: []
-        )
-        let deck = try LegacyImporter.importDeck(from: data, now: now, calendar: calendar)
-        #expect(deck.cards.map(\.question) == ["new", "relearning", "known"])
-        #expect(deck.cards[0].isNew)
-
-        let relearning = try #require(deck.cards[1].learningState)
-        #expect(relearning.phase == .relearning)
-        #expect(deck.cards[1].isDue(at: now))
-        #expect(relearning.reviews == 1)
-
-        let known = try #require(deck.cards[2].learningState)
-        #expect(known.phase == .review)
-        #expect(abs(known.stability - 1.8 * 1.1) < 1e-6)
-        #expect(abs(known.due.timeIntervalSince(lastAnswered) - 1.8 * 1.1 * 86400) < 1)
-        #expect(deck.cards[2].hint == "hint")
-        #expect(deck.cards[2].answer == "answer of known")
-        // Reviews before the import are missing from the log, also after the next one.
-        let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
-        var random = SeededRandom(seed: 1)
-        for card in deck.cards.dropFirst() {
-            #expect(!scheduler.review(card, grade: .good, at: now, using: &random).hasCompleteLog)
-        }
-    }
-
-    @Test func importsProgress() throws {
-        let data = try legacyArchive(
-            cards: [legacyCard("x", level: 0, lastAnswered: nil)],
-            progress: [legacyStatus(20_141_108, counters: [5, 2, 0, 1])]
-        )
-
-        let deck = try LegacyImporter.importDeck(from: data, now: now, calendar: calendar)
-        #expect(deck.progress.count == 2)
-        let first = deck.progress[0]
-        #expect(CivilDate(dayNumber: first.day).isoString == "2014-11-08")
-        #expect(first.bins[0] == 1)  // level 0, up to the cards never asked
-        #expect(first.bins[1] == 6)  // the rest of level 0 and level 1 (0.7 days)
-        #expect(first.bins[2] == 1)  // level 3 (1.8 days)
-        #expect(deck.progress[1].day == calendar.dayNumber(for: now))
-    }
-
-    @Test func importedProgressContinuesOnImportDay() throws {
-        let lastAnswered = now.addingTimeInterval(-86400)
-        let data = try legacyArchive(
-            cards: [
-                legacyCard("new", level: 0, lastAnswered: nil),
-                legacyCard("also new", level: 0, lastAnswered: nil),
-                legacyCard("relearning", level: 0, lastAnswered: lastAnswered),
-                legacyCard("known", level: 3, lastAnswered: lastAnswered),
-            ],
-            progress: [
-                legacyStatus(20_141_107, counters: [1]),
-                legacyStatus(20_141_108, counters: [3, 0, 0, 1]),
-            ]
-        )
-
-        let deck = try LegacyImporter.importDeck(from: data, now: now, calendar: calendar)
-        #expect(deck.progress.count == 3)
-        // Before the other cards were added: fewer cards at level 0 than never asked.
-        #expect(deck.progress[0].bins[0] == 1)
-        #expect(deck.progress[0].bins[1] == 0)
-        // Saved together with the cards, the last old day matches import day.
-        let lastOld = deck.progress[1]
-        let importDay = deck.progress[2]
-        #expect(importDay.day == calendar.dayNumber(for: now))
-        #expect(lastOld.bins[0] == 2)
-        #expect(lastOld.bins == importDay.bins)
-    }
-
-    /// Old snapshots count a level without spread, import day counts the card with it.
-    @Test func spreadMovesImportedCardToMaturingOnImportDay() throws {
-        let data = try legacyArchive(
-            // Level 10 is 15.5 days, +5 % makes 16.3 days.
-            cards: [legacyCard("known", level: 10, lastAnswered: now.addingTimeInterval(-86400), adjustment: 0.05)],
-            progress: [legacyStatus(20_141_108, counters: Array(repeating: 0, count: 10) + [1])]
-        )
-
-        let deck = try LegacyImporter.importDeck(from: data, now: now, calendar: calendar)
-        #expect(deck.progress.count == 2)
-        let lastOld = MaturityCategory.counts(fromBins: deck.progress[0].bins)
-        let importDay = MaturityCategory.counts(fromBins: deck.progress[1].bins)
-        #expect(lastOld[.young] == 1)
-        #expect(lastOld[.maturing] == 0)
-        #expect(importDay[.young] == 0)
-        #expect(importDay[.maturing] == 1)
-    }
-
-    @Test func rejectsGarbage() {
-        #expect(throws: LegacyImporter.Error.unreadableArchive) {
-            try LegacyImporter.importDeck(from: Data("nope".utf8))
-        }
-    }
-
-    /// Builds an archive like `legacyArchive` whose `indexCards` hold `elements`, or lack the key if `nil`.
-    func damagedLegacyArchive(indexCards elements: [NSObject]?) -> Data {
-        let archiver = NSKeyedArchiver(requiringSecureCoding: false)
-        archiver.setClassName("IndexCardBoxHelper", for: DamagedLegacyBox.self)
-        archiver.setClassName("IndexCard", for: LegacyIndexCard.self)
-        archiver.setClassName("MVTFlashcard", for: UnknownLegacyElement.self)
-        archiver.encode(DamagedLegacyBox(indexCards: elements.map { $0 as NSArray }), forKey: NSKeyedArchiveRootObjectKey)
-        archiver.finishEncoding()
-        return archiver.encodedData
-    }
-
-    @Test func rejectsMissingCards() {
-        #expect(throws: LegacyImporter.Error.unreadableArchive) {
-            try LegacyImporter.importDeck(from: damagedLegacyArchive(indexCards: nil), now: now, calendar: calendar)
-        }
-    }
-
-    @Test func rejectsForeignElementAmongCards() {
-        let cards = [legacyCard("a", level: 0, lastAnswered: nil), legacyCard("b", level: 0, lastAnswered: nil)]
-        #expect(throws: LegacyImporter.Error.unreadableArchive) {
-            try LegacyImporter.importDeck(from: damagedLegacyArchive(indexCards: cards + ["stray" as NSString]), now: now, calendar: calendar)
-        }
-    }
-
-    @Test func rejectsUnknownClassAmongCards() {
-        let cards = [legacyCard("a", level: 0, lastAnswered: nil), legacyCard("b", level: 0, lastAnswered: nil)]
-        #expect(throws: LegacyImporter.Error.unreadableArchive) {
-            try LegacyImporter.importDeck(from: damagedLegacyArchive(indexCards: cards + [UnknownLegacyElement()]), now: now, calendar: calendar)
-        }
-    }
-
-    /// Damaged levels and dates still give a deck that saves, opens and studies.
-    @Test func clampsImplausibleLevelsAndDates() throws {
-        let yesterday = now.addingTimeInterval(-86400)
-        let data = try legacyArchive(
-            cards: [
-                legacyCard("huge level", level: 100_000_000, lastAnswered: yesterday),
-                legacyCard("maximum level", level: .max, lastAnswered: yesterday),
-                // Years 200 000 and -27; level 12 is 22 days, so due falls on whole seconds.
-                legacyCard("far future", level: 12, lastAnswered: Date(timeIntervalSinceReferenceDate: 6_248_300_000_000)),
-                legacyCard("before year 1", level: 12, lastAnswered: Date(timeIntervalSinceReferenceDate: -64_000_000_000)),
-            ],
-            progress: []
-        )
-        let deck = try LegacyImporter.importDeck(from: data, now: now, calendar: calendar)
-        let maximumInterval = Double(deck.learningOptions.maximumInterval)
-
-        for card in deck.cards {
-            let learningState = try #require(card.learningState)
-            try #require(learningState.stability <= maximumInterval, "\(card.question)")
-            try #require(learningState.due.timeIntervalSince(learningState.lastReview) <= maximumInterval * 86400, "\(card.question)")
-            try #require(learningState.lastReview <= now, "\(card.question)")
-        }
-        let maximumLevel = LegacyImporter.lowestLevel(reaching: maximumInterval)
-        #expect(LegacyImporter.levelDuration(maximumLevel) >= maximumInterval)
-        #expect(LegacyImporter.levelDuration(maximumLevel - 1) < maximumInterval)
-        #expect(deck.cards[1].learningState?.reviews == maximumLevel)
-        #expect(deck.cards[0].learningState?.lastReview == yesterday)
-        #expect(deck.cards[2].learningState?.lastReview == now)
-        #expect(deck.cards[3].learningState?.lastReview == now)
-        // Saved and opened again, the dates stay as imported.
-        #expect(try DeckFile.decode(DeckFile.fileWrapper(for: deck)) == deck)
-
-        let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
-        var random = SeededRandom(seed: 1)
-        for card in deck.cards {
-            #expect(scheduler.review(card, grade: .good, at: now, using: &random).learningState?.phase == .review)
-        }
-    }
-
-    /// Set MVT_SAMPLE to the path of a real MacVocTrain 1 document to check it imports.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["MVT_SAMPLE"] != nil))
-    func importsRealDocument() throws {
-        let url = URL(fileURLWithPath: ProcessInfo.processInfo.environment["MVT_SAMPLE"]!)
-        let deck = try LegacyImporter.importDeck(from: Data(contentsOf: url))
-        print("Imported \(deck.cards.count) cards, \(deck.progress.count) history entries")
-        print("New: \(deck.cards.filter(\.isNew).count), due now: \(deck.cards.filter { $0.isDue(at: Date()) }.count)")
-        #expect(!deck.cards.isEmpty)
-        #expect(deck.cards.allSatisfy { !$0.question.isEmpty })
-    }
-}
-
-/// The root of a damaged MacVocTrain 1 document: any `indexCards`, or none.
-final class DamagedLegacyBox: NSObject, NSCoding {
-    let indexCards: NSArray?
-
-    init(indexCards: NSArray?) {
-        self.indexCards = indexCards
-    }
-
-    required init?(coder: NSCoder) { nil }
-
-    func encode(with coder: NSCoder) {
-        if let indexCards { coder.encode(indexCards, forKey: "indexCards") }
-    }
-}
-
-/// An archived element whose class name MacVocTrain 1 never wrote.
-final class UnknownLegacyElement: NSObject, NSCoding {
-    override init() {}
-
-    required init?(coder: NSCoder) { nil }
-
-    func encode(with coder: NSCoder) {}
 }

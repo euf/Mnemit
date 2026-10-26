@@ -29,7 +29,7 @@ extension DeckChange {
     ///   a version that hasn't seen the reset counts as a new card with only the
     ///   reviews since, replayed from scratch (#273).
     /// - The learning state of a card comes from the version that holds all its
-    ///   reviews, replayed with the parameters and the `revealedRecallWeight` of the
+    ///   reviews, replayed with the parameters of the
     ///   learning options if they differ there (`Scheduler.replayingMemory(of:)`). If each version has reviews the other
     ///   lacks, the joined log is replayed from scratch (`Scheduler.replaying(_:of:)`);
     ///   if it doesn't reach back to the first review, see `continuing`.
@@ -66,7 +66,7 @@ extension DeckChange {
             case let (mine?, theirs?):
                 merged = merging(
                     mine, and: theirs,
-                    mineModel: deck.learningOptions.memoryModel, theirsModel: other.learningOptions.memoryModel,
+                    mineModel: deck.learningOptions.parameters, theirsModel: other.learningOptions.parameters,
                     otherHasContent: otherHasContent, scheduler: scheduler
                 )
             case let (only?, nil), let (nil, only?):
@@ -123,7 +123,7 @@ extension DeckChange {
     /// its learning state and suspension joined.
     private static func merging(
         _ mine: Card, and theirs: Card,
-        mineModel: LearningOptions.MemoryModel, theirsModel: LearningOptions.MemoryModel,
+        mineModel: FSRSParameters, theirsModel: FSRSParameters,
         otherHasContent: Bool, scheduler: Scheduler
     ) -> Card {
         let changedMine = mine.contentChanged ?? .distantPast
@@ -146,8 +146,8 @@ extension DeckChange {
     /// One version of a card in a merge.
     private struct Version {
         var card: Card
-        /// The parameters and weights its learning state was computed with.
-        var model: LearningOptions.MemoryModel
+        /// The parameters its learning state was computed with.
+        var model: FSRSParameters
         /// Whether its deck is the one the merge takes the content from.
         var hasContent: Bool
     }
@@ -226,7 +226,7 @@ extension DeckChange {
             } else {
                 complete = onlyTheirs.isEmpty ? mine : theirs
             }
-            guard complete.model != scheduler.learningOptions.memoryModel else { return complete.card }
+            guard complete.model != scheduler.learningOptions.parameters else { return complete.card }
             return scheduler.replayingMemory(of: complete.card) ?? complete.card
         }
 
@@ -244,7 +244,7 @@ extension DeckChange {
         guard let reset = other.learningStateReset, reset > version.card.learningStateReset ?? .distantPast else { return version }
         var card = scheduler.replaying(version.card.log.filter { $0.date >= reset }, of: version.card)
         card.learningStateReset = reset
-        return Version(card: card, model: scheduler.learningOptions.memoryModel, hasContent: version.hasContent)
+        return Version(card: card, model: scheduler.learningOptions.parameters, hasContent: version.hasContent)
     }
 
     /// For logs that don't reach back to the first review, as after an import from

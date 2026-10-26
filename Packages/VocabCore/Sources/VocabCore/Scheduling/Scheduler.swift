@@ -17,10 +17,7 @@ public enum ReviewInterval: Sendable, Hashable {
 ///   resets it, `.easy` moves the card to the review phase at once). While
 ///   (re)learning they remain due.
 /// - Cards in the review phase get an interval in whole study days from FSRS.
-/// - A revealed review a card recalls gains `LearningOptions.revealedRecallWeight` of the
-///   stability FSRS adds, a typed one all of it. The weight is 1 by default, as in Anki;
-///   below 1 it allows for self-grading after seeing the answer being optimistic and
-///   fixing the answer less than typing it (ADR 0004, ADR 0005). A lapse counts in full.
+/// - Every review counts in full, typed or revealed, as in Anki (ADR 0005).
 public struct Scheduler: Sendable {
     public var learningOptions: LearningOptions
     public var calendar: StudyCalendar
@@ -33,8 +30,8 @@ public struct Scheduler: Sendable {
     public var fsrs: FSRS { FSRS(parameters: learningOptions.parameters) }
 
     /// The card after a review with `grade`, asked in `mode`; `random` fuzzes its
-    /// interval if enabled. `duration` goes into the log entry and nowhere else: it
-    /// doesn't change the schedule.
+    /// interval if enabled. `mode` and `duration` go into the log entry and nowhere else:
+    /// they don't change the schedule.
     public func review<R: RandomNumberGenerator>(
         _ card: Card,
         grade: Grade,
@@ -45,11 +42,10 @@ public struct Scheduler: Sendable {
     ) -> Card {
         let previous = card.learningState
         let elapsedDays = previous.map { self.elapsedDays(since: $0, at: now) } ?? 0
-        let memory = self.memory(
-            after: previous.map { FSRS.Memory(stability: $0.stability, difficulty: $0.difficulty) },
+        let memory = fsrs.review(
+            previous.map { FSRS.Memory(stability: $0.stability, difficulty: $0.difficulty) },
             elapsedDays: elapsedDays,
-            grade: grade,
-            mode: mode
+            grade: grade
         )
 
         var phase = previous?.phase ?? .learning
@@ -97,17 +93,17 @@ public struct Scheduler: Sendable {
         return updated
     }
 
-    /// When `card` would be asked next after each grade given at `now` in `mode`: what
-    /// `review` would schedule, without applying any grade and without fuzz, which moves
-    /// an interval by a few percent only.
-    public func previewIntervals(of card: Card, at now: Date, mode: ReviewMode = .typed) -> [Grade: ReviewInterval] {
+    /// When `card` would be asked next after each grade given at `now`: what `review`
+    /// would schedule, without applying any grade and without fuzz, which moves an
+    /// interval by a few percent only.
+    public func previewIntervals(of card: Card, at now: Date) -> [Grade: ReviewInterval] {
         var exact = self
         exact.learningOptions.fuzzing = false
         // Never drawn from without fuzz.
         var random = SeededRandom(seed: 0)
         return Dictionary(
             uniqueKeysWithValues: Grade.allCases.map { grade in
-                let learningState = exact.review(card, grade: grade, at: now, mode: mode, using: &random).learningState
+                let learningState = exact.review(card, grade: grade, at: now, using: &random).learningState
                 guard let learningState, learningState.phase == .review else { return (grade, .learning) }
                 return (grade, .days(calendar.days(from: now, to: learningState.due)))
             })
@@ -149,7 +145,7 @@ public struct Scheduler: Sendable {
         var previous: Date?
         for entry in card.log {
             let elapsedDays = previous.map { max(0, calendar.days(from: $0, to: entry.date)) } ?? 0
-            memory = self.memory(after: memory, elapsedDays: elapsedDays, grade: entry.grade, mode: entry.mode)
+            memory = fsrs.review(memory, elapsedDays: elapsedDays, grade: entry.grade)
             previous = entry.date
         }
         guard let memory else { return nil }
@@ -158,17 +154,6 @@ public struct Scheduler: Sendable {
         var updated = card
         updated.learningState = learningState
         return updated
-    }
-
-    /// The memory after a review with `grade` in `mode`: FSRS's, with the stability gain
-    /// of a recalled revealed review scaled by `LearningOptions.revealedRecallWeight`.
-    func memory(after previous: FSRS.Memory?, elapsedDays: Int, grade: Grade, mode: ReviewMode) -> FSRS.Memory {
-        var memory = fsrs.review(previous, elapsedDays: elapsedDays, grade: grade)
-        if grade.isRecall, let previous, memory.stability > previous.stability {
-            let share = mode.stabilityGainShare(revealedRecallWeight: learningOptions.revealedRecallWeight)
-            memory.stability = previous.stability + (memory.stability - previous.stability) * share
-        }
-        return memory
     }
 
     /// Recall probability at `now`, counting whole study days since the last review

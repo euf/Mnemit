@@ -20,14 +20,13 @@ public struct StudySession: Sendable {
     ///     calendar of its own, see `review(_:of:with:at:calendar:)`.
     ///   - random: Decides the selection and order of the cards and the fuzz of the
     ///     intervals; the same seed gives the same session.
-    ///   - reviewMode: How the cards are asked: typed on the Mac, revealed on the
-    ///     iPhone (#258).
+    ///   - reviewMode: How the cards are asked; every review the app records is revealed (#258).
     ///   - extraNew: How many new cards beyond the daily limits the session adds, see
     ///     `selectCards(from:at:calendar:extraNew:newCardAllowance:using:)`.
     ///   - newCardAllowance: How many new cards the deck may introduce on the study day, see
     ///     `selectCards(from:at:calendar:extraNew:newCardAllowance:using:)`.
     public init(
-        deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed, extraNew: Int = 0,
+        deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .revealed, extraNew: Int = 0,
         newCardAllowance: Int? = nil
     ) {
         var random = random

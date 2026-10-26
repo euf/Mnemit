@@ -88,7 +88,7 @@ public struct StudyStream: Sendable {
     /// - Parameter newCardAllowance: The deck's share of the new cards of the day, see
     ///   `DailyProgress.newCardAllowances`.
     public init(
-        deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .typed,
+        deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom(), reviewMode: ReviewMode = .revealed,
         newCardAllowance: Int? = nil
     ) {
         var random = random
@@ -115,7 +115,7 @@ public struct StudyStream: Sendable {
     private init(practicing cardIDs: [Card.ID], as stage: Stage, at now: Date, random: SeededRandom) {
         var random = random
         let practice = Practice(practicing: cardIDs, at: now, random: SeededRandom(seed: random.next()))
-        reviewMode = .typed
+        reviewMode = .revealed
         isPracticeOnly = true
         newCardAllowance = nil
         self.stage = practice.session.isFinished ? .rest : stage

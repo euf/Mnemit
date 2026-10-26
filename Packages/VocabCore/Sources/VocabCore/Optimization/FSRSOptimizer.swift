@@ -46,23 +46,18 @@ public struct FSRSOptimizer: Sendable {
 
     let items: [TrainingItem]
     let relearningSteps: Int
-    /// What the model scales the stability gain of a recalled revealed review by,
-    /// `LearningOptions.revealedRecallWeight`.
-    let revealedRecallWeight: Double
     var configuration = Configuration()
 
     public init(cards: [Card], learningOptions: LearningOptions, calendar: StudyCalendar) {
         self.init(
             items: TrainingItem.items(from: cards, calendar: calendar, revealedAreTargets: learningOptions.optimizeFromRevealed),
-            relearningSteps: learningOptions.steps,
-            revealedRecallWeight: learningOptions.revealedRecallWeight
+            relearningSteps: learningOptions.steps
         )
     }
 
-    init(items: [TrainingItem], relearningSteps: Int, revealedRecallWeight: Double) {
+    init(items: [TrainingItem], relearningSteps: Int) {
         self.items = items
         self.relearningSteps = relearningSteps
-        self.revealedRecallWeight = revealedRecallWeight
     }
 
     /// Reviews the optimizer learns from: those on a later study day than the previous
@@ -128,7 +123,7 @@ public struct FSRSOptimizer: Sendable {
         let newestCount = max(1, Int((Double(items.count) * share).rounded()))
         guard items.count > newestCount else { throw Error.notEnoughData }
         func part(_ items: ArraySlice<TrainingItem>) -> FSRSOptimizer {
-            var optimizer = FSRSOptimizer(items: Array(items), relearningSteps: relearningSteps, revealedRecallWeight: revealedRecallWeight)
+            var optimizer = FSRSOptimizer(items: Array(items), relearningSteps: relearningSteps)
             optimizer.configuration = configuration
             return optimizer
         }
@@ -173,7 +168,7 @@ public struct FSRSOptimizer: Sendable {
                 let batch = batches[index]
                 let learningRate = schedule.step()
                 var gradient = [Double](repeating: 0, count: FSRSParameters.count)
-                _ = FSRSGradient(weights: weights, revealedRecallWeight: revealedRecallWeight).lossAndGradient(of: batch, into: &gradient)
+                _ = FSRSGradient(weights: weights).lossAndGradient(of: batch, into: &gradient)
 
                 let scale = configuration.gamma * Double(batch.count) / Double(total)
                 for i in gradient.indices {
@@ -262,7 +257,7 @@ public struct FSRSOptimizer: Sendable {
     /// How well `parameters` predict all reviews; `nil` without reviews.
     public func evaluate(_ parameters: FSRSParameters) -> Evaluation? {
         guard !items.isEmpty else { return nil }
-        let model = FSRSGradient(weights: parameters.weights, revealedRecallWeight: revealedRecallWeight)
+        let model = FSRSGradient(weights: parameters.weights)
         let fsrs = FSRS(parameters: parameters)
         let range = FSRSGradient.minimumProbability...(1 - FSRSGradient.minimumProbability)
 
