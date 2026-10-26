@@ -97,17 +97,14 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
      sort-order simulator with EF's fitted parameters, at the first backlog over 100 cards.
    - Production cards: the Forgot share of the first two production reviews; over 25 % lifts the
      7-day gate to 14, at or below 10 % under a gate of 14 or more lowers it; wait for 100 reviews.
-7. **The Mac suite** ran on 26.10: 231 tests, one failure, `CardListViewTests.firstClickIntoTableSelectsRow`, which
-   fails whenever the test app isn't in front (so may `focusedTableHandsFocusToNewTableWhenSorted`, by turns). Run
-   it once on the unlocked screen.
-8. **Known behaviour, decide on complaint:** pace starts from defaults until 20 timed reviews; a deck with
+7. **Known behaviour, decide on complaint:** pace starts from defaults until 20 timed reviews; a deck with
    nothing in today's plan doesn't open with Study, so the plan-end rest's Learn 10 New Words can't take its new cards (Learn 10 New Words
    from Today opens every active deck); xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
    arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. At 375 pt with "30 cards today" the stream's header has no room for the Undo button, which then lives in the "More" menu only. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
-9. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
+8. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
    duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
-10. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
+9. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
    (store the chosen date in the log first); hiding siblings across decks once pairs exceed 1 %
    (`references/cross-deck-overlap.md`); a listening mode.
 

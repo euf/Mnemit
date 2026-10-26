@@ -5,9 +5,9 @@ import Testing
 @testable import MacVocTrain
 @testable import VocabCore
 
-/// A window that handles clicks like the key window. A test host that isn't active,
-/// such as one started from a terminal, can't activate itself, so no window of it
-/// becomes key, and the first click into a window that isn't key only makes it key.
+/// A window that reports itself as key. A test host that isn't active, such as one
+/// started from a terminal, can't activate itself, so no window of it becomes key for real;
+/// the tests' `init` then calls `becomeKey()`.
 private final class KeyWindow: NSWindow {
     override var isKeyWindow: Bool { true }
 }
@@ -47,6 +47,10 @@ extension WindowTests {
             // Key for real where the test host is active, as in CI. Another window, such
             // as the open panel of the document app, may be key there.
             window.makeKeyAndOrderFront(nil)
+            // In a host that isn't active no window becomes key, and AppKit takes the first click
+            // into a window that isn't key only to make it key, whatever `isKeyWindow` says. Tell
+            // the window that it is, as AppKit does when the app activates: the app stays inactive.
+            if NSApp.keyWindow !== window { window.becomeKey() }
         }
 
         /// The table of the list; a new sort order replaces it with a new one.
@@ -166,6 +170,11 @@ extension WindowTests {
             defer { window.close() }
             let table = try await showList()
             #expect(window.makeFirstResponder(table))
+            // SwiftUI copies the first responder into `tableIsFocused` on its next update, and the
+            // sort reads it to know that the table has the focus. A host that isn't active
+            // updates 20 to 60 ms late, and a sort 15 ms after the focus beats it: the sort then
+            // hands over no focus. Update now.
+            window.contentView?.layoutSubtreeIfNeeded()
             try await updateList(table)
 
             try sortByQuestion(table)
