@@ -25,7 +25,8 @@ struct GradeChoice: View {
     var acceptsArrows = false
     /// The iPhone in landscape, where the row of buttons has little height.
     var isCompact = false
-    /// The card is on its first showing (`Card.isNew`): its first button reads "Don't know", not "Forgot".
+    /// The card is on its first showing (`Card.isNew`): two wide buttons, Don't know (Again) and Know (Good), take the place of
+    /// the four. A swipe still gives every grade; from the second showing on the four buttons are back.
     var isNew = false
     /// The grade a swipe is about to give, or a key has just given: its button stands out
     /// and the others step back (`CardFlight.highlighted`).
@@ -57,14 +58,21 @@ struct GradeChoice: View {
     var body: some View {
         Group {
             switch part {
+            case .both where isNew:
+                HStack(spacing: Spacing.gap) {
+                    forgot(minHeight: 2 * height + Spacing.gap)
+                    know(minHeight: 2 * height + Spacing.gap)
+                }
             case .both:
                 VStack(spacing: 0) {
-                    forgot
+                    forgot(minHeight: height)
                         .padding(.bottom, Spacing.gap)
                     recalled
                 }
             case .forgot:
-                forgot
+                forgot(minHeight: height)
+            case .recalled where isNew:
+                know(minHeight: height)
             case .recalled:
                 recalled
             }
@@ -74,7 +82,7 @@ struct GradeChoice: View {
         #endif
     }
 
-    private var forgot: some View {
+    private func forgot(minHeight: CGFloat) -> some View {
         let title = Grade.again.buttonTitle(isNew: isNew)
         return Button {
             onGrade(.again)
@@ -83,7 +91,7 @@ struct GradeChoice: View {
                 .font(.body.weight(.semibold))
                 .lineLimit(1)
                 .foregroundStyle(Grade.again.onColor)
-                .frame(maxWidth: .infinity, minHeight: height)
+                .frame(maxWidth: .infinity, minHeight: minHeight)
                 .background(Grade.again.color, in: shape)
                 .overlay { marker(of: .again) }
                 .overlay { outline(of: .again) }
@@ -94,6 +102,29 @@ struct GradeChoice: View {
         #if os(macOS)
         .keyboardShortcut(Grade.again.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(Grade.again.rawValue)"))
+        #endif
+    }
+
+    /// Know, the first showing's one "yes": Good, in the green of yes, as wide as its share of the row.
+    private func know(minHeight: CGFloat) -> some View {
+        Button {
+            onGrade(.good)
+        } label: {
+            labelled(.good) { Label(Grade.good.buttonTitle(isNew: true), systemImage: "checkmark") }
+                .font(.body.weight(.semibold))
+                .lineLimit(1)
+                .foregroundStyle(Grade.good.onColor)
+                .frame(maxWidth: .infinity, minHeight: minHeight)
+                .background(Grade.good.color, in: shape)
+                .overlay { marker(of: .good) }
+                .overlay { outline(of: .good) }
+                .contentShape(shape)
+        }
+        .buttonStyle(Pressable())
+        .modifier(Emphasis(grade: .good, highlighted: highlighted, scale: 1.06))
+        #if os(macOS)
+        .keyboardShortcut(Grade.good.shortcutKey, modifiers: [])
+        .help(Text(verbatim: "\(Grade.good.rawValue)"))
         #endif
     }
 
@@ -186,6 +217,11 @@ struct GradeChoice: View {
             }
             if acceptsArrows {
                 ForEach(Grade.allCases, id: \.self) { key($0.arrowKey, grade: $0) }
+            }
+            // The keys of the two grades a first showing has no button for.
+            if isNew {
+                key(Grade.hard.shortcutKey, grade: .hard)
+                key(Grade.easy.shortcutKey, grade: .easy)
             }
         }
         .opacity(0)

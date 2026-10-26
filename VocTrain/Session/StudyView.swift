@@ -410,7 +410,7 @@ struct StudyView: View {
             HStack(spacing: 12) {
                 GradeChoice(part: .forgot, isCompact: true, isNew: model.currentCard?.isNew == true, highlighted: flight.highlighted, onGrade: { commit($0) })
                     .frame(maxWidth: Self.forgotWidth)
-                GradeChoice(part: .recalled, isCompact: true, highlighted: flight.highlighted, onGrade: { commit($0) })
+                GradeChoice(part: .recalled, isCompact: true, isNew: model.currentCard?.isNew == true, highlighted: flight.highlighted, onGrade: { commit($0) })
             }
         } else {
             GradeChoice(isNew: model.currentCard?.isNew == true, highlighted: flight.highlighted, onGrade: { commit($0) })

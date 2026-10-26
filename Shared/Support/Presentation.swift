@@ -336,11 +336,14 @@ extension Grade {
     }
 
     /// The name on the grade's button, never the scheduler's "Again": "Forgot" for a card the learner has learned,
-    /// "Don't know" on a card's first showing (`Card.isNew`), where there is nothing yet to forget. The grade
-    /// underneath is the same, and so is the button's place, key, swipe and colour.
+    /// "Don't know" on a card's first showing (`Card.isNew`), where there is nothing yet to forget, and "Know" for Good
+    /// there: the two buttons of a first showing. The grade underneath is the same, and so is the key, swipe and colour.
     func buttonTitle(isNew: Bool) -> String {
-        guard self == .again else { return title }
-        return isNew ? String(localized: "Don't know") : String(localized: "Forgot")
+        switch self {
+        case .again: isNew ? String(localized: "Don't know") : String(localized: "Forgot")
+        case .good where isNew: String(localized: "Know")
+        default: title
+        }
     }
 
     var shortcutKey: KeyEquivalent {

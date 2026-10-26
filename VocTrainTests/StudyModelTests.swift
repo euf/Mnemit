@@ -331,7 +331,10 @@ struct StudyModelTests {
     @Test func againIsDontKnowOnAFirstShowingAndForgotAfterwards() throws {
         #expect(Grade.again.buttonTitle(isNew: true) == "Don't know")
         #expect(Grade.again.buttonTitle(isNew: false) == "Forgot")
-        for grade in [Grade.hard, .good, .easy] {
+        // The first showing's other button: Good reads Know. Hard and Easy have no button there, and keep their names.
+        #expect(Grade.good.buttonTitle(isNew: true) == "Know")
+        #expect(Grade.good.buttonTitle(isNew: false) == Grade.good.title)
+        for grade in [Grade.hard, .easy] {
             #expect(grade.buttonTitle(isNew: true) == grade.title)
             #expect(grade.buttonTitle(isNew: false) == grade.title)
         }
