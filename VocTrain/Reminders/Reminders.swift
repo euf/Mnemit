@@ -16,13 +16,14 @@ enum ReminderPlan {
         return (0..<count).compactMap { calendar.date(byAdding: .day, value: $0, to: first) }
     }
 
-    /// What a reminder says, in the words of Today: the streak it keeps, "Keep your 12-day streak", and the streak
-    /// step, "≈ 2 min is enough."; without a streak, a start. `nil` when no deck has cards, and then no reminder is
+    /// What a reminder says, in the words of Today: the streak it keeps, "Keep your 12-day streak", and the price of the streak
+    /// step, "≈ 2 min"; without a streak, "Start your streak". `nil` when no deck has cards, and then no reminder is
     /// due either. A count of the cards due, which after a break can be hundreds, is never in it.
     static func content(_ decks: [(name: String, total: Int)], streak: Int) -> (title: String, body: String)? {
         guard decks.contains(where: { $0.total > 0 }) else { return nil }
-        guard streak > 0 else { return (String(localized: "Time to study"), String(localized: "≈ 2 min is enough to start.")) }
-        return (String(localized: "Keep your \(streak)-day streak"), String(localized: "≈ 2 min is enough."))
+        let time = Format.timeLeft(minutes: 2)
+        guard streak > 0 else { return (String(localized: "Start your streak"), time) }
+        return (String(localized: "Keep your \(streak)-day streak"), time)
     }
 
     /// 21:00, in minutes after midnight: the evening reminder for a day the streak is still at stake.
@@ -53,16 +54,15 @@ enum ReminderPlan {
         }
     }
 
-    /// The number on the icon: the cards left to close today's ring, as Today's headline counts them, never the whole
-    /// plan; 0 once the ring is closed. Without the ring's figures, the cards due.
+    /// The number on the icon: 1 while today's ring is open, 0 once it is closed. Without the ring's figures, 1 while cards are due.
     static func badge(due: Int, progress: DailyProgress?) -> Int {
-        guard let ring = progress?.ring, ring.goal > 0 else { return due }
-        return min(due, max(0, ring.goal - ring.done))
+        guard let progress else { return due > 0 ? 1 : 0 }
+        return progress.cardsToClose > 0 ? 1 : 0
     }
 }
 
-/// The daily reminder to study: a local notification at the learner's time with the streak it keeps, and the number
-/// on the app icon, the cards left to close today's ring (`ReminderPlan`). A second one at 21:00, in the same words,
+/// The daily reminder to study: a local notification at the learner's time with the streak it keeps, and the "1" on the app
+/// icon while today's ring is open (`ReminderPlan`). A second one at 21:00, in the same words,
 /// on a day the streak is at stake and its step not done; the setting that turns the first off turns it off too.
 /// Local notifications only; the app has no push entitlement.
 ///
@@ -183,8 +183,8 @@ final class Reminders {
         }
         await setBadge(ReminderPlan.badge(due: days[0].reduce(0) { $0 + $1.total }, progress: progress))
 
-        // That day's ring is about the size of today's.
-        func badge(due: Int) -> NSNumber { NSNumber(value: progress.map { $0.ring.goal > 0 ? min(due, $0.ring.goal) : due } ?? due) }
+        // A later day opens its ring when it has cards.
+        func badge(due: Int) -> NSNumber { NSNumber(value: due > 0 ? 1 : 0) }
 
         var first: Date?
         for (index, fire) in fires.enumerated() {

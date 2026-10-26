@@ -226,15 +226,4 @@ struct StudyMotionTests {
         #expect(RingBurstFrame<EmptyView>.scale(at: RingBurstTiming.swell) == 1)
         #expect(RingBurstFrame<EmptyView>.scale(at: RingBurstTiming.duration) == 1)
     }
-
-    /// The milestone's burst is once for each milestone.
-    @Test func aMilestoneBurstsOnce() throws {
-        let suite = "MilestoneCelebrationTests"
-        let defaults = try #require(UserDefaults(suiteName: suite))
-        defaults.removePersistentDomain(forName: suite)
-        defer { defaults.removePersistentDomain(forName: suite) }
-        #expect(MilestoneCelebration.claim(50, defaults: defaults))
-        #expect(!MilestoneCelebration.claim(50, defaults: defaults))
-        #expect(MilestoneCelebration.claim(100, defaults: defaults))
-    }
 }

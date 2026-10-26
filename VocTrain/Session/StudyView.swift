@@ -440,7 +440,7 @@ struct StudyView: View {
     private static let swipeStartDistance: CGFloat = 6
 }
 
-/// The left of the bar, after the close button: today's ring, the streak's flame and the figures, and the stage before it when the
+/// The left of the bar, after the close button: today's ring, the streak's flame and the minutes to the next moment, and the stage before it when the
 /// learner is not at today's plan: practice changes neither the plan nor the schedule, so it
 /// shows no ring.
 ///
@@ -468,12 +468,12 @@ private struct StudyHeader: View {
         .animation(.easeOut(duration: 0.2), value: motion.showsRest && motion.travel >= 1)
     }
 
-    /// A small ring, empty inside, then the flame by the state of the streak, and the time left, "≈ 4 min", while the goal
-    /// is open, or "36 cards today" once it is met. For a moment after a done card the interval it was given, "in 8 days",
-    /// takes the place of the text. The ring is first, so it does not move when the text changes its width.
+    /// A small ring, empty inside, then the flame by the state of the streak and the minutes to the next moment of the day
+    /// ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done). For a moment after a done card
+    /// the interval it was given, "in 8 days", takes the place of the text. The ring is first, so it does not move when the
+    /// text changes its width.
     @ViewBuilder
     private var ringAndFigures: some View {
-        let daily = ring.progress?.ring
         HStack(spacing: 8) {
             StreamRing(progress: ring.progress, shown: motion.shown, burstAt: reduceMotion ? nil : motion.barBurstAt)
                 .ringBump(motion.landings, reduceMotion: reduceMotion)
@@ -484,16 +484,12 @@ private struct StudyHeader: View {
                     motion.ringHome = $0
                 }
             if let progress = ring.progress {
+                let step = NextStep(progress)
                 StreakFlame(state: progress.streakState)
                     .font(.body.weight(.semibold))
-                    .accessibilityLabel(Text(verbatim: StreakChip.spoken(days: progress.streak.days, state: progress.streakState, minutesToKeep: nil)))
-            }
-            if let daily {
+                    .accessibilityLabel(Text(verbatim: step.spoken))
                 ZStack(alignment: .leading) {
-                    if daily.isGoalMet {
-                        Text("\(daily.done) cards today")
-                            .opacity(motion.interval == nil ? 1 : 0)
-                    } else if let minutes = ring.progress?.minutesLeft {
+                    if let minutes = step.minutes {
                         Text(verbatim: Format.timeLeft(minutes: minutes))
                             .opacity(motion.interval == nil ? 1 : 0)
                     }

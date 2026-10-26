@@ -41,7 +41,7 @@ struct TodayPageContent: View {
     @ViewBuilder
     private var day: some View {
         Button(action: showProgress) {
-            TodayHero(due: due, progress: isLoaded ? progress : nil, nextDue: nextDue, now: now, isLoaded: isLoaded, ringSize: 200, showsWeek: true)
+            TodayHero(progress: isLoaded ? progress : nil, now: now, isLoaded: isLoaded, ringSize: 200, showsWeek: true)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

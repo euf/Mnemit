@@ -36,8 +36,8 @@ struct ReminderPlanTests {
     @Test func theReminderNamesTheStreakItKeeps() {
         let text = ReminderPlan.content([("B1", 23), ("A1–A2", 60), ("C1", 0)], streak: 12)
         #expect(text?.title == "Keep your 12-day streak")
-        #expect(text?.body == "≈ 2 min is enough.")
-        #expect(ReminderPlan.content([("B1", 23)], streak: 0)?.title == "Time to study")
+        #expect(text?.body == "≈ 2 min")
+        #expect(ReminderPlan.content([("B1", 23)], streak: 0)?.title == "Start your streak")
     }
 
     @Test func noReminderWhenNothingIsDue() {
@@ -74,7 +74,7 @@ struct ReminderPlanTests {
             at: fires, days: [[(name: "B1", total: 23)]], now: now, streak: 12, isKeptToday: false, studyCalendar: studyCalendar)
         #expect(reminders.map(\.fire) == [date(21, 21)])
         #expect(reminders.first?.title == "Keep your 12-day streak")
-        #expect(reminders.first?.body == "≈ 2 min is enough.")
+        #expect(reminders.first?.body == "≈ 2 min")
     }
 
     @Test func aStreakAtStakeGetsTheEveningReminder() {
@@ -96,13 +96,13 @@ struct ReminderPlanTests {
         #expect(evenings(now: date(21, 12), streak: 12, isKept: false, cards: 0).isEmpty)
     }
 
-    /// The icon counts what is left to close the ring, never a backlog of hundreds.
-    @Test func theBadgeCountsTheCardsLeftToTheRing() {
-        let open = DailyProgress(ring: DailyRing(done: 10, goal: 30), streak: Streak(days: 3, repairCards: nil))
-        #expect(ReminderPlan.badge(due: 480, progress: open) == 20)
-        let closed = DailyProgress(ring: DailyRing(done: 30, goal: 30), streak: Streak(days: 3, repairCards: nil))
-        #expect(ReminderPlan.badge(due: 450, progress: closed) == 0)
-        #expect(ReminderPlan.badge(due: 7, progress: open) == 7)
-        #expect(ReminderPlan.badge(due: 12, progress: nil) == 12)
+    /// The icon says "1" while the ring is open, never a count of cards.
+    @Test func theBadgeIsOneWhileTheRingIsOpen() {
+        let open = DailyProgress(ring: DailyRing(done: 10, goal: 30), streak: Streak(days: 3, repairCards: nil), cardsLeft: 480)
+        #expect(ReminderPlan.badge(due: 480, progress: open) == 1)
+        let closed = DailyProgress(ring: DailyRing(done: 30, goal: 30), streak: Streak(days: 3, repairCards: nil), cardsLeft: 450)
+        #expect(ReminderPlan.badge(due: 450, progress: closed) == 0, "a backlog after the ring is no reason for the icon")
+        #expect(ReminderPlan.badge(due: 12, progress: nil) == 1)
+        #expect(ReminderPlan.badge(due: 0, progress: nil) == 0)
     }
 }

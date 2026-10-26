@@ -11,37 +11,8 @@ private func progress(done: Int, goal: Int = 20, streak: Int = 0, left: Int? = n
     DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil), cardsLeft: left ?? max(0, goal - done))
 }
 
-/// What stands in the middle of the ring: the cards left or a check, by the size of the ring, and never the streak.
-struct RingCenterTests {
-    @Test func theMiddleHoldsTheCardsLeft() {
-        #expect(RingCenter(nil) == .none, "nothing before the first evaluation")
-        #expect(RingCenter(progress(done: 5)) == .cardsLeft(15))
-        #expect(RingCenter(progress(done: 5, streak: 12)) == .cardsLeft(15), "the streak is not in the ring")
-        #expect(RingCenter(progress(done: 5, goal: 20, left: 40)) == .cardsLeft(15), "the plan may hold more than the ring: the cards to close it")
-        #expect(RingCenter(progress(done: 5, goal: 20, left: 3)) == .cardsLeft(3))
-    }
-
-    @Test func aClosedRingHoldsACheck() {
-        #expect(RingCenter(progress(done: 20)) == .done)
-        #expect(RingCenter(progress(done: 70, left: 4)) == .done, "work beyond the goal shows no lap, and the plan's rest is no ring's")
-        #expect(RingCenter(progress(done: 5, left: 0)) == .done, "nothing left")
-        #expect(RingCenter(progress(done: 0, goal: 0, left: 0)) == .done, "a day without a plan is met")
-    }
-
-    @Test func theSizeDecidesHowMuchShows() {
-        let cards = RingCenter.cardsLeft(8)
-        for small: CGFloat in [22, 28, 30, 55] {
-            #expect(cards.shown(at: small) == .none, "no middle in a ring of \(small) pt")
-            #expect(RingCenter.done.shown(at: small) == .none)
-        }
-        #expect(cards.shown(at: 56) == cards, "the figure from 56 pt")
-        #expect(!cards.showsCaption(at: 56) && !cards.showsCaption(at: 87), "alone")
-        #expect(cards.showsCaption(at: 88) && cards.showsCaption(at: 168) && cards.showsCaption(at: 200), "with its caption")
-        #expect(RingCenter.done.shown(at: 96) == .done)
-        #expect(!RingCenter.done.showsCaption(at: 168), "the check has no caption")
-        #expect(RingCenter.none.shown(at: 168) == .none)
-    }
-
+/// The flame beside the ring: its state by the streak step, the day after a missed one, and the closed ring.
+struct StreakFlameStateTests {
     @Test func theFlameHasThreeStates() {
         var day = progress(done: 5, streak: 12)
         #expect(day.streakState == .open, "outlined, grey, until the streak step is done")
@@ -59,54 +30,6 @@ struct RingCenterTests {
         var none = progress(done: 0, streak: 0)
         none.streakKeptToday = true
         #expect(none.streakState == .open, "a day with an empty plan is kept, but with no days there is no flame to fill")
-    }
-
-    @Test func texts() {
-        #expect(RingCenter.none.text == nil && RingCenter.done.text == nil)
-        #expect(RingCenter.cardsLeft(5).text == "5")
-        #expect(RingCenter.cardsLeft(1234).text == "1234", "no grouping separator in a ring")
-        #expect(RingCenter.cardsLeft(5).caption == "cards left")
-        #expect(RingCenter.cardsLeft(1).caption == "card left", "the caption takes the plural form of the count")
-        #expect(RingCenter.done.caption == nil)
-    }
-
-    @Test func spokenLabelsSayTheCards() {
-        #expect(RingCenter.none.spokenLabel == nil)
-        #expect(RingCenter.cardsLeft(12).spokenLabel == "12 cards left")
-        #expect(RingCenter.cardsLeft(1).spokenLabel == "1 card left")
-        #expect(RingCenter.done.spokenLabel == "Ring closed")
-    }
-}
-
-/// The streak chip's sentence by state: kept, open with the time to keep it, at risk, and no streak yet.
-struct StreakChipTests {
-    @Test func keptSaysTheDays() {
-        #expect(StreakChip.text(days: 12, state: .kept, minutesToKeep: nil) == "12-day streak")
-        #expect(StreakChip.text(days: 1, state: .kept, minutesToKeep: nil) == "1-day streak")
-    }
-
-    @Test func openSaysTheTimeToKeepIt() {
-        #expect(StreakChip.text(days: 12, state: .open, minutesToKeep: 2) == "≈ 2 min to keep your 12-day streak")
-        #expect(StreakChip.text(days: 12, state: .open, minutesToKeep: 0) == "< 1 min to keep your 12-day streak")
-        #expect(StreakChip.text(days: 12, state: .open, minutesToKeep: nil) == "12-day streak", "no time known: the days alone")
-    }
-
-    @Test func atRiskAsksForTheRing() {
-        #expect(StreakChip.text(days: 12, state: .atRisk, minutesToKeep: nil) == "Close the ring to save your 12-day streak")
-        #expect(StreakChip.text(days: 12, state: .atRisk, minutesToKeep: 2) == "Close the ring to save your 12-day streak", "the whole ring, not the step")
-    }
-
-    @Test func noStreakStartsOne() {
-        #expect(StreakChip.text(days: 0, state: .open, minutesToKeep: 2) == "Start your streak · ≈ 2 min")
-        #expect(StreakChip.text(days: 0, state: .open, minutesToKeep: nil) == "Start your streak")
-        #expect(StreakChip.text(days: 0, state: .kept, minutesToKeep: nil) == "Start your streak")
-    }
-
-    @Test func spokenAddsTheStateWhereTheSentenceLacksIt() {
-        #expect(StreakChip.spoken(days: 12, state: .kept, minutesToKeep: nil) == "12-day streak, kept today")
-        #expect(StreakChip.spoken(days: 12, state: .open, minutesToKeep: nil) == "12-day streak, not kept yet")
-        #expect(StreakChip.spoken(days: 12, state: .open, minutesToKeep: 2) == "≈ 2 min to keep your 12-day streak")
-        #expect(StreakChip.spoken(days: 12, state: .atRisk, minutesToKeep: nil) == "Close the ring to save your 12-day streak")
     }
 }
 
@@ -177,7 +100,7 @@ struct RingSnapshotTests {
     @Test(arguments: [false, true])
     func today(dark: Bool) async throws {
         let view = row(spacing: 20) { progress in
-            ProgressRing(fraction: progress.ring.fraction, diameter: 72, center: RingCenter(progress))
+            ProgressRing(fraction: progress.ring.fraction, diameter: 72)
         }
         .padding(16)
         .background(Color(.systemGroupedBackground))
@@ -206,7 +129,7 @@ struct RingSnapshotTests {
     func chip(dark: Bool) async throws {
         let view = row(spacing: 16) { progress in
             HStack(spacing: 6) {
-                ProgressRing(fraction: progress.ring.fraction, diameter: 24, center: RingCenter(progress))
+                ProgressRing(fraction: progress.ring.fraction, diameter: 24)
                 Text(verbatim: "\(progress.ring.done)/\(progress.ring.goal)")
                     .monospacedDigit()
             }
@@ -256,7 +179,7 @@ struct RingSnapshotTests {
     func edges(dark: Bool) async throws {
         let fractions: [Double] = [0.05, 0.95, 1.0, 1.05, 1.5, 2.0, 3.0]
         let view = row(fractions, spacing: 20) { progress in
-            ProgressRing(fraction: progress.ring.fraction, diameter: 72, center: RingCenter(progress))
+            ProgressRing(fraction: progress.ring.fraction, diameter: 72)
         }
         .padding(16)
         .background(Color(.systemBackground))
@@ -309,7 +232,7 @@ private struct RingHost: View {
     var box: FractionBox
 
     var body: some View {
-        ProgressRing(fraction: box.value, diameter: 72, center: .none)
+        ProgressRing(fraction: box.value, diameter: 72)
             .padding(12)
     }
 }

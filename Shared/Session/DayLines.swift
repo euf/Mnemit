@@ -48,9 +48,14 @@ extension MemoryEstimate {
         guard let wordsLine else { return nil }
         return [String(localized: wordsLine), gainLine.map { String(localized: $0) }].compactMap { $0 }.joined(separator: " · ")
     }
+}
 
-    /// "50 words in memory!" on the day the number passed a milestone.
-    var milestoneLine: LocalizedStringResource? {
-        milestoneReachedToday.map { LocalizedStringResource("\($0) words in memory!") }
+extension WordsLearned {
+    /// "412 words learned · +12 today", the gain the app headlines: the gain is left out on a day that has none, and the whole
+    /// line while there are no words.
+    var line: String? {
+        guard words > 0 else { return nil }
+        let words = String(localized: "\(words) words learned")
+        return [words, shownGain.map { String(localized: "+\($0) today") }].compactMap { $0 }.joined(separator: " · ")
     }
 }

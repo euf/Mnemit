@@ -135,11 +135,12 @@ struct TodayScreen: View {
                         Text("New Deck").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.glassProminent)
-                    Button(action: chooseFolder) {
-                        Text("Use iCloud Drive Folder").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.glass)
                     AnkiWebLink(action: showAnkiWeb)
+                        .frame(maxWidth: .infinity)
+                        .buttonStyle(.glass)
+                    Button("Use iCloud Drive Folder", action: chooseFolder)
+                        .font(.footnote)
+                        .controlSize(.regular)
                         .padding(.top, Spacing.hairline)
                 }
                 .controlSize(.large)
@@ -161,10 +162,7 @@ struct TodayScreen: View {
             Section {
                 // The whole hero is a button to Progress; its week row ends in the chevron the deck rows draw too.
                 Button(action: showProgress) {
-                    TodayHero(
-                        due: due, progress: isDayReady ? progress : nil, nextDue: counts.values.compactMap(\.nextDue).min(), now: now,
-                        isLoaded: isDayReady, showsChevron: true
-                    )
+                    TodayHero(progress: isDayReady ? progress : nil, now: now, isLoaded: isDayReady, showsChevron: true)
                     .padding(.vertical, 8)
                     .contentShape(Rectangle())
                 }
@@ -177,7 +175,7 @@ struct TodayScreen: View {
             if !sections.active.isEmpty {
                 Section("Decks") {
                     ForEach(sections.active) { deck in
-                        DeckRow(name: deck.name, counts: counts[deck.url]) { showDeck(deck) }
+                        DeckRow(name: deck.name, counts: counts[deck.url], pace: progress?.pace) { showDeck(deck) }
                             .swipeActions(allowsFullSwipe: !canForget(deck)) {
                                 pauseButton(deck, pausing: true)
                                 removeButton(deck)
@@ -317,7 +315,7 @@ struct StudyButton: View {
     }
 }
 
-/// A deck: its name and the cards of today's plan left in it, a ✓ when none; a tap opens its screen.
+/// A deck: its name and what is left of today's plan in it, "≈ 4 min", a ✓ when nothing is; a tap opens its screen.
 /// The chevron is drawn by hand, as the row is a button, not a `NavigationLink`: the deck has
 /// to be opened before the push, see `PushedDecks`.
 ///
@@ -325,6 +323,8 @@ struct StudyButton: View {
 struct DeckRow: View {
     var name: String
     var counts: StudyCounts?
+    /// The day's pace, which prices the cards; `nil` until the ring is evaluated.
+    var pace: Pace?
     var isPaused = false
     var open: () -> Void
 
@@ -335,17 +335,20 @@ struct DeckRow: View {
                     .foregroundStyle(isPaused ? .secondary : .primary)
                 Spacer(minLength: 0)
                 if let counts {
-                    if counts.total > 0 {
-                        Text(counts.total, format: .number)
-                            .monospacedDigit()
-                    } else {
+                    if counts.isDone {
                         Image(systemName: "checkmark")
                             .foregroundStyle(.secondary)
+                    } else if let minutes = DeckMinutes.minutes(counts, pace: pace) {
+                        Text(verbatim: Format.timeLeft(minutes: minutes))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(verbatim: Format.timeLeft(minutes: 2))
+                            .redacted(reason: .placeholder)
                     }
                 } else if !isPaused {
-                    // Until the deck is read: the number it will have.
-                    Text(0, format: .number)
-                        .monospacedDigit()
+                    // Until the deck is read: the time it will have.
+                    Text(verbatim: Format.timeLeft(minutes: 2))
                         .redacted(reason: .placeholder)
                 }
                 Image(systemName: "chevron.forward")

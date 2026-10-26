@@ -1,8 +1,8 @@
 import Foundation
 import VocabCore
 
-/// The content of "How It Works", the screen that tells a learner what the ring, Catch Up and Learn 10 New Words
-/// are in three plain sentences, and shows one who knows Anki and FSRS what is under the ring and the rounds: the
+/// The content of "How It Works", the screen that tells a learner the three moments of the day (the streak kept, the ring
+/// closed, all done) in three plain sentences, and shows one who knows Anki and FSRS what is under the ring and the rounds: the
 /// numbers and the rules, read from the same objects the Today screen shows (`DailyProgress`, `DayBreakdown`, `MemoryEstimate`, the decks' learning options) and nothing
 /// else. Read-only, no knobs.
 ///
@@ -54,12 +54,12 @@ struct HowTodayWorks: Equatable, Sendable {
 
     // MARK: Sections
 
-    /// What the ring is, what Catch Up is and what Learn 10 New Words does, in plain words.
+    /// The three moments of the day in plain words: the streak kept, the ring closed, all done.
     private static func today() -> Section {
         let rows: [Row] = [
-            .text(String(localized: "The ring is your goal for the day: it fills as you study and closes when you have done what today's plan asks.")),
-            .text(String(localized: "Catch Up studies the cards still left in today's plan once the ring is closed.")),
-            .text(String(localized: "Learn 10 New Words adds ten new words to study at once when nothing is left for today.")),
+            .text(String(localized: "The first minutes of your plan keep your streak: the flame fills and today counts, and you can stop there or go on.")),
+            .text(String(localized: "The ring is your goal for the day, the cards you usually have time for. Close it and the day's learning is done; Catch Up studies the reviews still waiting.")),
+            .text(String(localized: "When nothing is due, the day is all done. Learn 10 New Words adds ten new words if you want more.")),
         ]
         return Section(title: String(localized: "Today"), rows: rows, footer: "")
     }

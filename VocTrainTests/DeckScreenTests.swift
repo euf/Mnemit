@@ -12,12 +12,20 @@ struct DeckScreenTests {
 
     // MARK: The header
 
-    @Test func theHeaderSaysCardsTodayDonePausedOrNothing() {
+    @Test func theHeaderSaysTheTimeAndAnkisCountsDonePausedOrNothing() {
         let tomorrow = now.addingTimeInterval(86_400)
         let some = HomeSnapshotTests.counts(new: 4, learning: 3, review: 7)
         let none = HomeSnapshotTests.counts(new: 0, learning: 0, review: 0, nextDue: tomorrow)
 
-        #expect(DeckHeadline(counts: some, isPaused: false, hasCards: true, now: now) == DeckHeadline(text: "14 cards today", isDone: false))
+        // Anki's counts after the time; a count of 0 is left out. `due` is the studied cards due now.
+        var counts = some
+        counts.due = 5
+        let pace = Pace(newCard: 30, otherCard: 15)
+        #expect(DeckHeadline(counts: counts, pace: pace, isPaused: false, hasCards: true, now: now)?.text == "≈ 5 min · 5 due · 4 new · 3 learning")
+        #expect(DeckHeadline(counts: counts, isPaused: false, hasCards: true, now: now)?.text == "5 due · 4 new · 3 learning", "no pace, no time")
+        var quiet = HomeSnapshotTests.counts(new: 6, learning: 0, review: 0)
+        quiet.due = 0
+        #expect(DeckHeadline(counts: quiet, pace: pace, isPaused: false, hasCards: true, now: now)?.text == "≈ 3 min · 6 new")
         let done = DeckHeadline(counts: none, isPaused: false, hasCards: true, now: now)
         #expect(done?.text == "Done · next review \(Format.due(tomorrow, now: now))")
         #expect(done?.text.hasPrefix("Done · next review ") == true)

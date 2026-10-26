@@ -42,7 +42,7 @@ extension WidgetState {
     fileprivate var ringFraction: Double { DailyRingFigure.fraction(progress, shown: nil) }
 
     /// The flame and the one sentence of the widget.
-    var nextStep: NextStep { NextStep(progress, minutesToKeep: roundStatus?.minutesToKeep, minutesToClose: minutesLeft) }
+    var nextStep: NextStep { NextStep(progress, minutesToKeep: roundStatus?.minutesToKeep, minutesToClose: minutesLeft, minutesOfReviews: minutesLeft) }
 }
 
 /// The day's ring as a picture, with nothing in its middle: the arc and its laps.
@@ -51,16 +51,17 @@ private struct WidgetRing: View {
     var diameter: CGFloat
 
     var body: some View {
-        DailyRingView(progress: state.progress, diameter: diameter, showsCenter: false)
+        DailyRingView(progress: state.progress, diameter: diameter)
             .widgetAccentable()
     }
 }
 
-/// The one sentence (`WidgetState.sentence`), led by the flame; the second and third lines start under the flame. The flame
-/// is filled once today keeps the streak and carries an exclamation mark the day after a missed one. The size, the weight
-/// and the number of lines are the caller's.
-private struct StreakSentence: View {
+/// The one sentence (`NextStep`), led by the flame: the second line starts under the first, not under the flame. The flame is
+/// filled once today keeps the streak and carries an exclamation mark the day after a missed one. The size, the weight, the
+/// alignment and the number of lines are the caller's.
+private struct WidgetSentence: View {
     var step: NextStep
+    var alignment: HorizontalAlignment = .center
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -68,10 +69,7 @@ private struct StreakSentence: View {
                 StreakFlame(state: flame)
                     .widgetAccentable(flame != .open)
             }
-            // Non-breaking: the hyphen, as in the chip ("7-day" never splits), and the spaces of the time ("≈ 2 min" stays whole).
-            Text(
-                verbatim: step.sentence.replacingOccurrences(of: "-", with: "\u{2011}")
-                    .replacingOccurrences(of: "([≈<]) (\\d+) (\\S+)", with: "$1\u{00A0}$2\u{00A0}$3", options: .regularExpression))
+            NextStepText(step: step, alignment: alignment)
         }
     }
 }
@@ -83,7 +81,7 @@ private struct SmallWidget: View {
     var body: some View {
         VStack(spacing: 6) {
             WidgetRing(state: state, diameter: 72)
-            StreakSentence(step: state.nextStep)
+            WidgetSentence(step: state.nextStep)
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
@@ -91,7 +89,7 @@ private struct SmallWidget: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: state.nextStep.sentence))
+        .accessibilityLabel(Text(verbatim: state.nextStep.spoken))
     }
 }
 
@@ -107,8 +105,9 @@ private struct MediumWidget: View {
             WidgetRing(state: state, diameter: Self.ring)
             // As tall as the ring: the sentence at its top, the week at its bottom.
             VStack(alignment: .leading, spacing: 8) {
-                StreakSentence(step: state.nextStep)
+                WidgetSentence(step: state.nextStep, alignment: .leading)
                     .font(.headline)
+                    .multilineTextAlignment(.leading)
                     .lineLimit(2)
                     .minimumScaleFactor(0.75)
                 Spacer(minLength: 0)
@@ -121,7 +120,7 @@ private struct MediumWidget: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: state.nextStep.sentence))
+        .accessibilityLabel(Text(verbatim: state.nextStep.spoken))
     }
 }
 
@@ -151,7 +150,7 @@ private struct CircularWidget: View {
         .tint(Color.dailyRing)
         .widgetAccentable()
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: state.nextStep.sentence))
+        .accessibilityLabel(Text(verbatim: state.nextStep.spoken))
     }
 }
 
@@ -162,15 +161,16 @@ private struct RectangularWidget: View {
     var body: some View {
         HStack(spacing: 8) {
             WidgetRing(state: state, diameter: 56)
-            StreakSentence(step: state.nextStep)
+            WidgetSentence(step: state.nextStep, alignment: .leading)
                 .font(.caption)
+                .multilineTextAlignment(.leading)
                 .lineLimit(3)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: state.nextStep.sentence))
+        .accessibilityLabel(Text(verbatim: state.nextStep.spoken))
     }
 }
 
@@ -193,7 +193,7 @@ private struct InlineWidget: View {
                 Text(verbatim: step.short)
             }
         }
-        .accessibilityLabel(Text(verbatim: step.sentence))
+        .accessibilityLabel(Text(verbatim: step.spoken))
     }
 }
 

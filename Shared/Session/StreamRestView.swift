@@ -32,6 +32,9 @@ struct StreamRest {
     var extraNew: ExtraNewCards?
     /// The rest is the end of a round, not the end of the plan: the plan goes on with Next Round.
     var roundEnd: RoundEnd?
+    /// The ring's moment is behind the stream: it began past the last round, or went on from its rest (Catch Up, Learn 10 New
+    /// Words). The end of its plan is then "All done for today", not another "Ring closed".
+    var ringIsBehind = false
 }
 
 /// Another deck with cards left in today's plan, which the Mac's stream, one deck to a window, goes on with at the
@@ -42,11 +45,14 @@ struct NextDeck {
     var study: () -> Void
 }
 
-/// The short stop in the stream, twice a day at most (`references/learning-flow.md`). The ring on top holds the cards
-/// left or a check, and under it the streak chip. After the first round the title is the streak, "12-day streak", with
-/// the filled flame large (the chip's moment, so no chip), and the time to the ring; Keep Going or Done for Now. "Ring closed" when today's cards are done: the medal, one gain line and the week's rings, then one
-/// way on, the most useful first: Catch Up when the plan has cards left, else Learn 10 New Words, new cards beyond
-/// the daily limit, whose reviews make the next days harder. A finished practice ends with its figures.
+/// The short stop in the stream, twice a day at most (`references/learning-flow.md`). The ring on top is a picture, with no
+/// number in it, and under it the streak, "12-day streak". After the first round the title is the streak, "12-day streak",
+/// with the filled flame large (the streak's moment, so nothing under the ring), and the time to the ring ("≈ 5 min to
+/// close the ring", the price line of the sentence, `NextStep`); Keep Going or Done for Now. "Ring closed" when the day's
+/// goal is done, with the minutes of the reviews left: the medal, the words learned and the week's rings, then one way
+/// on, the most useful first: Catch Up when the plan has cards left, else Learn 10 New Words, new cards beyond the daily
+/// limit, whose reviews make the next days harder. "All done for today" when the plan is. A finished practice ends with
+/// its figures.
 struct StreamRestView: View {
     var rest: StreamRest
     var progress: DailyProgress?
@@ -153,12 +159,22 @@ struct StreamRestView: View {
         }
     }
 
-    /// The streak under the ring, "12-day streak": not in a practice, which leaves it as it was, and not at the end of
-    /// the first round, whose title is the streak.
+    /// The streak under the ring, the flame and "12-day streak": not in a practice, which leaves it as it was, not without
+    /// a streak, and not at the end of the first round, whose title is the streak.
     @ViewBuilder
     private var chip: some View {
-        if let progress, !rest.isPracticeOnly, rest.roundEnd?.closesRing ?? true {
-            StreakChip(days: progress.streak.days, state: progress.streakState, minutesToKeep: nil)
+        if let progress, !rest.isPracticeOnly, rest.roundEnd?.closesRing ?? true, progress.streak.days > 0 {
+            HStack(spacing: 6) {
+                StreakFlame(state: progress.streakState)
+                    .imageScale(.large)
+                Text(verbatim: NextStep.unbroken(String(localized: "\(progress.streak.days)-day streak")))
+            }
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.streak.opacity(0.14), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: NextStep(progress).spoken))
         }
     }
 
@@ -168,14 +184,14 @@ struct StreamRestView: View {
                 Text("Practice complete")
             } else if let end = rest.roundEnd, !end.closesRing {
                 streakTitle
-            } else if progress?.ring.isGoalMet == true {
+            } else if progress?.ring.isGoalMet == true, !rest.ringIsBehind {
                 if progress?.records.last?.savedStreak == true {
                     Text("Streak saved")
                 } else {
                     Text("Ring closed")
                 }
             } else {
-                Text("Done for today")
+                Text("All done for today")
             }
         }
         .font(.title.weight(.semibold))
@@ -263,7 +279,7 @@ struct StreamRestView: View {
 
     private var lines: [Line] {
         if rest.isPracticeOnly { return practiceLines }
-        if let end = rest.roundEnd, !end.closesRing { return [medalLine, leftLine].compactMap { $0 } }
+        if let end = rest.roundEnd, !end.closesRing { return [medalLine, priceLine].compactMap { $0 } }
         return dayLines
     }
 
@@ -278,17 +294,13 @@ struct StreamRestView: View {
         return lines
     }
 
-    /// The day: its medal, one line (the words or their milestone, else the cards of today) and the week's rings.
+    /// The day: its medal, the price of the reviews left after the ring (Catch Up's), the words learned and the week's rings.
     private var dayLines: [Line] {
         var lines: [Line] = []
         if let medalLine { lines.append(medalLine) }
-        if let milestone = progress?.memory.milestoneLine {
-            lines.append(Line("milestone") { Text(milestone).foregroundStyle(Color.appAccent) })
-        } else if let gain = progress?.memory.line {
+        if rest.roundEnd != nil, let priceLine { lines.append(priceLine) }
+        if let gain = progress?.learned.line {
             lines.append(Line("gain") { Text(verbatim: gain) })
-        } else {
-            let cards = progress?.ring.done ?? rest.recap.cards
-            if cards > 0 { lines.append(Line("cards") { Text("\(cards) cards today") }) }
         }
         if let progress, progress.week.count == 7 {
             lines.append(Line("week") { WeekRings(week: progress.week, rings: progress.weekRings, today: DailyRingFigure.fraction(progress, shown: nil), now: rest.now).padding(.vertical, Spacing.tight) })
@@ -296,12 +308,11 @@ struct StreamRestView: View {
         return lines
     }
 
-    /// "≈ 4 min": the time to the end of the ring, whose cards left the ring above says.
-    private var leftLine: Line? {
-        guard let progress,
-            let minutes = DailyGoal.minutesLeft(cards: progress.cardsToClose, secondsPerCard: progress.secondsPerCardLeft)
-        else { return nil }
-        return Line("left") { Text(verbatim: Format.timeLeft(minutes: minutes)) }
+    /// The price line of the sentence (`NextStep`): "≈ 4 min to close the ring" at the streak's moment, "≈ 12 min of
+    /// reviews left" at the ring's. `nil` without a price.
+    private var priceLine: Line? {
+        guard let progress, let tail = NextStep(progress).lines.tail else { return nil }
+        return Line("price") { Text(verbatim: NextStep.unbroken(tail)) }
     }
 
     // MARK: The buttons

@@ -201,7 +201,8 @@ final class SessionDriver {
             nextDue: counts.nextDue,
             now: document.clock.now,
             extraNew: extraNew,
-            roundEnd: stream.roundRest.map { RoundEnd(round: $0, rounds: rounds?.rounds ?? $0 + 1) })
+            roundEnd: stream.roundRest.map { RoundEnd(round: $0, rounds: rounds?.rounds ?? $0 + 1) },
+            ringIsBehind: rounds.map { stream.roundsPassed >= $0.rounds } ?? false)
     }
 
     /// Moves to the current card, past cards deleted or suspended meanwhile and on to the

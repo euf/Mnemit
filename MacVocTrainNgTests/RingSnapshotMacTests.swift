@@ -53,7 +53,7 @@ struct RingSnapshotMacTests {
         let view = HStack(spacing: 24) {
             ForEach(Self.fractions, id: \.self) { fraction in
                 let progress = progress(fraction)
-                ProgressRing(fraction: progress.ring.fraction, diameter: 24, center: RingCenter(progress))
+                ProgressRing(fraction: progress.ring.fraction, diameter: 24)
             }
         }
         try write(view, name: "1-chip", dark: dark)
@@ -63,7 +63,7 @@ struct RingSnapshotMacTests {
     func sessionHeader(dark: Bool) throws {
         let view = HStack(spacing: 24) {
             ForEach(Self.fractions, id: \.self) { fraction in
-                DailyRingView(progress: progress(fraction), showsCenter: false)
+                DailyRingView(progress: progress(fraction))
             }
         }
         try write(view, name: "2-session", dark: dark)

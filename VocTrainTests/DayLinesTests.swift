@@ -30,7 +30,6 @@ struct DayLinesTests {
         #expect(line(memory.wordsLine) == "28 words in memory")
         #expect(line(memory.gainLine) == "+16 today")
         #expect(memory.line == "28 words in memory · +16 today")
-        #expect(memory.milestoneLine == nil)
         // One word is a word.
         #expect(line(MemoryEstimate(words: 1.5, wordsAtDayStart: 0).wordsLine) == "1 word in memory")
     }
@@ -44,8 +43,10 @@ struct DayLinesTests {
         #expect(MemoryEstimate(words: 0.4, wordsAtDayStart: 0).wordsLine == nil)
     }
 
-    @Test func aMilestonePassedTodayIsAnnounced() {
-        let memory = MemoryEstimate(words: 51.2, wordsAtDayStart: 47)
-        #expect(line(memory.milestoneLine) == "50 words in memory!")
+    @Test func theWordsLearnedAreWholeWordsWithTheDaysGain() {
+        #expect(WordsLearned(words: 412, wordsAtDayStart: 400).line == "412 words learned · +12 today")
+        #expect(WordsLearned(words: 412, wordsAtDayStart: 412).line == "412 words learned", "no gain, no second part")
+        #expect(WordsLearned(words: 1, wordsAtDayStart: 0).line == "1 word learned · +1 today")
+        #expect(WordsLearned(words: 0, wordsAtDayStart: 0).line == nil)
     }
 }

@@ -102,36 +102,3 @@ struct RingBurst<Content: View>: View {
         }
     }
 }
-
-/// The sparkles of the words-in-memory milestone, with the burst the first time the line shows
-/// for a milestone. `MilestoneCelebration` remembers which one has had it.
-struct MilestoneSparkles: View {
-    var milestone: Int?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var startedAt: Date?
-
-    var body: some View {
-        RingBurst(startedAt: startedAt, diameter: 20) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(Color.appAccent)
-        }
-        .task(id: milestone) {
-            guard let milestone, MilestoneCelebration.claim(milestone) else { return }
-            if !reduceMotion { startedAt = .now }
-        }
-    }
-}
-
-/// Which milestone has had its burst, so the line, which stays all day, bursts once.
-enum MilestoneCelebration {
-    static let key = "celebratedMilestone"
-
-    /// Whether `milestone` is new to the burst; it is not the next time. The day's milestone is the
-    /// highest the number passed, so a lower one never comes back.
-    @discardableResult
-    static func claim(_ milestone: Int, defaults: UserDefaults = .standard) -> Bool {
-        guard defaults.integer(forKey: key) != milestone else { return false }
-        defaults.set(milestone, forKey: key)
-        return true
-    }
-}

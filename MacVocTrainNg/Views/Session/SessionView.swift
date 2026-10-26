@@ -157,8 +157,8 @@ struct SessionView: View {
         }
     }
 
-    /// Today's ring, empty inside, the streak's flame by its state and what the iPhone's bar says: the time left, "≈ 4 min",
-    /// while the goal is open, and "36 cards today" once it is met. The ring comes first, so it does not move when the
+    /// Today's ring, empty inside, the streak's flame by its state and what the iPhone's bar says: the minutes to the next
+    /// moment of the day, "≈ 4 min". The ring comes first, so it does not move when the
     /// text changes its width.
     private var ringAndFigures: some View {
         HStack(spacing: 8) {
@@ -166,11 +166,9 @@ struct SessionView: View {
             if let progress = ring.progress {
                 StreakFlame(state: progress.streakState)
                     .font(.body.weight(.semibold))
-                    .accessibilityLabel(Text(verbatim: StreakChip.spoken(days: progress.streak.days, state: progress.streakState, minutesToKeep: nil)))
+                    .accessibilityLabel(Text(verbatim: NextStep(progress).spoken))
                 Group {
-                    if progress.ring.isGoalMet {
-                        Text("\(progress.ring.done) cards today")
-                    } else if let minutes = progress.minutesLeft {
+                    if let minutes = NextStep(progress).minutes {
                         Text(verbatim: Format.timeLeft(minutes: minutes))
                     }
                 }

@@ -12,6 +12,8 @@ struct DeckScreen: View {
     var deck: OpenDeck
     /// What the list read from the file, for the first frame.
     var knownCounts: StudyCounts?
+    /// The day's pace, which prices the plan in minutes; `nil` until the ring is evaluated.
+    var pace: Pace?
     var start: (StudyModel.Entry) -> Void
     var rename: (String) async throws -> Void
     var delete: () async throws -> Void
@@ -20,7 +22,7 @@ struct DeckScreen: View {
 
     var body: some View {
         DeckContent(
-            name: deck.name, knownCounts: knownCounts, document: deck.document, failure: deck.failure, merger: deck.merger,
+            name: deck.name, knownCounts: knownCounts, pace: pace, document: deck.document, failure: deck.failure, merger: deck.merger,
             canEdit: deck.isEditable, start: start, rename: rename, delete: delete, didChangePause: didChangePause
         )
         .background {
@@ -47,6 +49,7 @@ struct DeckContent: View {
     var name: String
     /// Today's counts as the list has them, until the document is read.
     var knownCounts: StudyCounts?
+    var pace: Pace?
     var document: VocabularyDocument?
     /// Why the deck could not be opened.
     var failure: String?
@@ -80,8 +83,8 @@ struct DeckContent: View {
                 }
             }
             if let document, let merger {
-                LoadedSections(document: document, merger: merger, canEdit: canEdit, addCards: { showsAddCards = true })
-            } else if failure == nil, let headline = DeckHeadline(counts: knownCounts, isPaused: false, hasCards: true, now: Date()) {
+                LoadedSections(document: document, merger: merger, pace: pace, canEdit: canEdit, addCards: { showsAddCards = true })
+            } else if failure == nil, let headline = DeckHeadline(counts: knownCounts, pace: pace, isPaused: false, hasCards: true, now: Date()) {
                 HeadlineRow(headline: headline)
             }
         }
@@ -280,6 +283,7 @@ private struct HeadlineRow: View {
 private struct LoadedSections: View {
     @ObservedObject var document: VocabularyDocument
     var merger: VersionMerger
+    var pace: Pace?
     var canEdit: Bool
     var addCards: () -> Void
 
@@ -293,7 +297,7 @@ private struct LoadedSections: View {
             }
         }
 
-        if let headline = DeckHeadline(counts: counts, isPaused: document.deck.learningOptions.isPaused, hasCards: !document.deck.cards.isEmpty, now: now) {
+        if let headline = DeckHeadline(counts: counts, pace: pace, isPaused: document.deck.learningOptions.isPaused, hasCards: !document.deck.cards.isEmpty, now: now) {
             HeadlineRow(headline: headline)
         }
 

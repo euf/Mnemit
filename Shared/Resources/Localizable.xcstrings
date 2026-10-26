@@ -48,6 +48,28 @@
         }
       }
     },
+    "%@ of reviews left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noch %@ Wiederholungen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ επαναλήψεις ακόμη"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "осталось повторений на %@"
+          }
+        }
+      }
+    },
     "%@ recalled": {
       "localizations": {
         "de": {
@@ -66,6 +88,116 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ вспомнил"
+          }
+        }
+      }
+    },
+    "%@ to close the ring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, um den Ring zu schließen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ για να κλείσεις τον κύκλο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, чтобы закрыть кольцо"
+          }
+        }
+      }
+    },
+    "%@ to close the ring and save your %lld-day streak": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, um den Ring zu schließen und deine Serie von %lld Tag zu retten"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, um den Ring zu schließen und deine Serie von %lld Tagen zu retten"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ για να κλείσεις τον κύκλο και να σώσεις το σερί σου: %lld ημέρα"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ για να κλείσεις τον κύκλο και να σώσεις το σερί σου: %lld ημέρες"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ to close the ring and save your %lld-day streak"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ to close the ring and save your %lld-day streak"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, чтобы закрыть кольцо и спасти стрик: %lld дня"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, чтобы закрыть кольцо и спасти стрик: %lld дней"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, чтобы закрыть кольцо и спасти стрик: %lld день"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@, чтобы закрыть кольцо и спасти стрик: %lld дня"
+                }
+              }
+            }
           }
         }
       }
@@ -4575,6 +4707,28 @@
         }
       }
     },
+    "All done for today": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles für heute erledigt"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όλα έτοιμα για σήμερα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё на сегодня сделано"
+          }
+        }
+      }
+    },
     "Already earlier in the file: %@ → %@": {
       "localizations": {
         "de": {
@@ -8776,6 +8930,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вид"
+          }
+        }
+      }
+    },
+    "Know": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiß ich"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ξέρω"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Знаю"
           }
         }
       }
@@ -14038,6 +14214,28 @@
         }
       }
     },
+    "The first minutes of your plan keep your streak: the flame fills and today counts, and you can stop there or go on.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die ersten Minuten deines Plans erhalten deine Serie: Die Flamme füllt sich, der Tag zählt, und du kannst hier aufhören oder weitermachen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Τα πρώτα λεπτά του προγράμματός σου κρατούν το σερί σου: η φλόγα γεμίζει, η μέρα μετράει και μπορείς να σταματήσεις ή να συνεχίσεις."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Первые минуты плана сохраняют стрик: огонь наполняется, день засчитан, можно остановиться или продолжить."
+          }
+        }
+      }
+    },
     "The first two minutes keep your streak. Close the ring, and the day is done.": {
       "localizations": {
         "de": {
@@ -14276,6 +14474,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Лог оценок этой колоды повреждён (строка %lld)."
+          }
+        }
+      }
+    },
+    "The ring is your goal for the day, the cards you usually have time for. Close it and the day's learning is done; Catch Up studies the reviews still waiting.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Ring ist dein Tagesziel: die Karten, für die du sonst Zeit hast. Ist er geschlossen, ist das Lernen des Tages getan; Nachholen wiederholt die Karten, die noch warten."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο κύκλος είναι ο στόχος της ημέρας: οι κάρτες για τις οποίες συνήθως έχεις χρόνο. Όταν κλείσει, η μάθηση της ημέρας έχει γίνει· η Αναπλήρωση μελετά τις επαναλήψεις που περιμένουν ακόμη."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кольцо — цель на день: столько карточек, на сколько у тебя обычно есть время. Закрыл его — учёба дня сделана; «Наверстать» проходит повторения, которые ещё ждут."
           }
         }
       }
@@ -15446,6 +15666,28 @@
         }
       }
     },
+    "When nothing is due, the day is all done. Learn 10 New Words adds ten new words if you want more.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ist nichts mehr fällig, ist der Tag ganz erledigt. Mit „10 neue Wörter lernen“ kommen zehn neue Wörter dazu, wenn du mehr willst."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όταν δεν υπάρχει τίποτα να γίνει, η μέρα έχει τελειώσει. Το «Μάθε 10 νέες λέξεις» προσθέτει δέκα νέες λέξεις αν θέλεις κι άλλες."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда ничего не осталось, день закончен. «Выучить 10 новых слов» добавляет десять новых слов, если хочется больше."
+          }
+        }
+      }
+    },
     "Where should the cards of “%@” go?": {
       "localizations": {
         "de": {
@@ -15622,6 +15864,28 @@
         }
       }
     },
+    "Words learned": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelernte Wörter"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Λέξεις που έμαθες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выучено слов"
+          }
+        }
+      }
+    },
     "Worked (min)": {
       "localizations": {
         "de": {
@@ -15750,6 +16014,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "У молодых карточек на момент вопроса интервал был меньше 21 дня, у зрелых — 21 день и больше. Шаги обучения, первые оценки и повторные оценки в тот же учебный день не учитываются."
+          }
+        }
+      }
+    },
+    "Your ring: %@ min a day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Ring: %@ Min. pro Tag"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο κύκλος σου: %@ λεπτά την ημέρα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Твоё кольцо: %@ мин в день"
+          }
+        }
+      }
+    },
+    "Your ring: %@ min a day · started at %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Ring: %@ Min. pro Tag · Start bei %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο κύκλος σου: %@ λεπτά την ημέρα · ξεκίνησε στα %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Твоё кольцо: %@ мин в день · начало: %@"
           }
         }
       }

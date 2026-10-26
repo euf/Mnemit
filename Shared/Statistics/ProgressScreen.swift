@@ -35,7 +35,14 @@ struct ProgressScreen<Trailing: View>: View {
                 }
             }
             if progress.ladder.reduce(0, +) > 0 {
-                Section("Memory") { ladder }
+                Section("Memory") {
+                    if let line = progress.memory.line {
+                        Text(verbatim: line)
+                            .font(.subheadline)
+                            .monospacedDigit()
+                    }
+                    ladder
+                }
             }
             if !(trailing is EmptyView) {
                 Section {
@@ -59,16 +66,13 @@ struct ProgressScreen<Trailing: View>: View {
         records.filter { $0.closed && $0.done > 0 }.count
     }
 
-    /// The streak as a statistic, the flame with its days large and, where it differs, the best run; under it the words
-    /// in memory and the main totals, three in a row. There is no ring here: the day's ring is on Today.
+    /// The streak as a statistic, the flame with its days large and, where it differs, the best run; under it the main
+    /// totals, three in a row (days studied, rings closed, words learned) and the ring's size. There is no ring here: the
+    /// day's ring is on Today.
     private var streak: some View {
         VStack(alignment: .leading, spacing: Spacing.section) {
             VStack(spacing: Spacing.gap) {
                 StreakStatistic(days: progress.streak.days, state: progress.streakState, best: longest)
-                MemoryLine(memory: progress.memory)
-                    .font(.subheadline)
-                    .monospacedDigit()
-                    .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
@@ -76,10 +80,14 @@ struct ProgressScreen<Trailing: View>: View {
                 columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: dynamicTypeSize.isAccessibilitySize ? 1 : 3), alignment: .leading,
                 spacing: Spacing.tight
             ) {
-                total("Rings closed") { Text(ringsClosed, format: .number) }
                 total("Days studied") { Text(records.filter { $0.done > 0 }.count, format: .number) }
-                total("Cards done") { Text(records.reduce(0) { $0 + $1.done }, format: .number) }
+                total("Rings closed") { Text(ringsClosed, format: .number) }
+                total("Words learned") { Text(progress.learned.words, format: .number) }
             }
+            Text(verbatim: RingSize(progress).line)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
         }
         .padding(.vertical, Spacing.tight)
     }
@@ -158,6 +166,30 @@ struct ProgressScreen<Trailing: View>: View {
             }
         }
         .padding(.vertical, Spacing.hairline)
+    }
+}
+
+/// The size of the learner's ring, which grows with them: today's time in minutes and the time of the first day, "Your ring:
+/// 8 min a day · started at 2.5". The first day's alone, as it was, when the ring has not moved.
+struct RingSize: Equatable {
+    /// Today's time and the first study day's, in minutes.
+    var minutes: Double
+    var started: Double
+
+    init(_ progress: DailyProgress) {
+        minutes = progress.time / 60
+        started = (progress.ringDays.first?.time ?? progress.time) / 60
+    }
+
+    var line: String {
+        let now = Self.format(minutes)
+        guard Self.format(started) != now else { return String(localized: "Your ring: \(now) min a day") }
+        return String(localized: "Your ring: \(now) min a day · started at \(Self.format(started))")
+    }
+
+    /// One decimal at most, "8" and "2.5".
+    private static func format(_ minutes: Double) -> String {
+        minutes.formatted(.number.precision(.fractionLength(0...1)).grouping(.never))
     }
 }
 
