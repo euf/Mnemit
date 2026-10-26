@@ -1,6 +1,7 @@
 # Screens of both apps: what each shows and does
 
-The contract of every screen of Mnemit on the iPhone and the Mac, with the code that holds it. The
+The contract of every screen of Mnemit on the iPhone and the Mac, with the code that holds it. What the screens show
+follows the entities of `references/product-model.md`; this file says where and how. The
 visual spec (spacing, colour, type, rings, accent): `references/design-spec.md`; the iPhone Study
 screen's layout, motion, speech window and swipe: `references/study-screen.md`; the paths through a
 day: `references/learning-flow.md`, "The journey"; the stream's mechanics: `references/scheduling.md`;
@@ -32,31 +33,33 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
 
 - The hero (`TodayHero`, `Shared/Session/TodaySummary.swift`), the whole of it a button that opens the
   Progress screen:
-  - The ring (`HeroRing`, 168 pt) with the cards left in the middle, large, and "cards left" under them; a
-    `checkmark` once the ring is closed. No flame and no days in the ring.
-  - The streak chip (`StreakChip`) under the ring, the flame and one sentence by state: kept "12-day streak",
-    open "≈ 2 min to keep your 12-day streak", at risk "Close the ring to save your 12-day streak", no streak
-    "Start your streak · ≈ 2 min". The flame has three states (`StreakState`): a grey outline until the streak
-    step is done, filled in `Color.streak` once it is, an orange outline with an `exclamationmark` at risk
-    (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open). VoiceOver says the state.
-  - One gain line (`MemoryLine`, led by `TodayLead`): "≈ 5 min · 412 words in memory · +15 today"; with the ring closed
-    "3 left" leads, on a day without cards "Nothing due · next tomorrow"; on the day a milestone is passed
-    "50 words in memory!". At large text sizes the single text wraps.
+  - The ring (`HeroRing`, 168 pt): a picture, with no number in it.
+  - The sentence (`NextStep`, drawn by `StreakSentence`), led by the flame: the next moment of the day and its minutes.
+    The streak step not done: "≈ 2 min to keep your 12-day streak" ("Start your streak · ≈ 2 min" without a streak); the
+    step done, the ring open: "12-day streak · ≈ 5 min to close the ring"; the ring closed with cards of the plan left:
+    "Ring closed · ≈ 12 min of reviews left"; nothing left: "All done for today"; at risk: "≈ 6 min to close the ring and
+    save your 12-day streak". Without a price the time is left out and the streak stays. The flame has three states
+    (`StreakState`): a grey outline until the streak step is done, `flame.fill` in `Color.streak` once it is, an orange
+    outline with an `exclamationmark` at risk (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open).
+    VoiceOver reads the sentence with the state. One line when it fits; else the streak line over the price line, each
+    wrapping by itself (`NextStepText`); "7-day" and "≈ 2 min" never break.
+  - One line of words learned (`WordsLearned.line`): "412 words learned · +12 today"; the gain is left out on a day that
+    has none, and the whole line while there are no words.
   - The week's seven rings (`WeekRings`, 22 pt), with a chevron at the end of the row.
   - The day turns at 04:00, and work done just before it, on either device, belongs to the day before.
-    The headline waits for every deck to be read and the ring to be evaluated (`isDayReady`); until then the
-    hero shows placeholders. The ring and its middle keep their size at every text size (the middle is drawn in
-    proportion to the ring); the chip's sentence and the gain line wrap and the list scrolls.
+    The hero waits for every deck to be read and the ring to be evaluated (`isDayReady`); until then it shows
+    placeholders. The ring keeps its size at every text size; the sentence and the line wrap and the list scrolls.
 - The bottom bar holds the day's one button beside Search All Cards, which is minimised to a button
   (`.searchToolbarBehavior(.minimize)`). The button is named by `DayAction`
   (`Shared/Session/TodaySummary.swift`): **Study** in the accent while the ring is open; **Catch Up** once the
-  ring is closed and the plan has cards left; **Learn 10 New Words** once the plan is done, with no footnote.
-  Study and Catch Up open the stream over the screen (`StudyRunView`) over every active deck. Learn 10 New
-  Words opens it with ten new cards at once over every active deck (`StudyModel.Entry.pushOn`), without the
-  plan-end rest first. With every deck paused the button is disabled.
-- Decks section: a row per deck with its name and the cards of today's plan left in it, a check when none
-  (`StudyCounts.total`); no subtitle. Ring and streak cover all decks; decks are rows. Tapping a row pushes
-  the deck screen. Swipe and context menu: **Pause Deck** (`pause.circle`); a swipe also offers Remove from
+  ring is closed and the plan has cards left; **Learn 10 New Words** once the plan is done, with no footnote. Its title is one
+  line and shrinks to 75 %. Study and Catch Up open the stream over the screen (`StudyRunView`) over every active
+  deck. Learn 10 New Words opens it with ten new cards at once over every active deck (`StudyModel.Entry.pushOn`),
+  without the rest first. With every deck paused the button is disabled.
+- Decks section: a row per deck with its name and what its plan leaves of today at the day's pace, "≈ 4 min", a check when
+  nothing is (`DeckRow`, `DeckMinutes`: the deck's new cards at the new-card price, the others at the other price, whole
+  minutes up, "< 1 min", backlog included); no subtitle. Ring and streak cover all decks; decks are rows. Tapping a
+  row pushes the deck screen. Swipe and context menu: **Pause Deck** (`pause.circle`); a swipe also offers Remove from
   List where the list may forget the deck.
 - **Paused** section at the bottom, only when a deck is paused (Pausing a deck).
 - Toolbar, trailing: the **+** menu: Add Cards (into the last used deck, `KnownDecks.last`: studied or added
@@ -68,8 +71,8 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
 - Undo of edits: `UndoWatch` (a bar button while there is something to undo) and shake (`StartScreen`,
   when no sheet is open).
 - **Empty state** (no decks): the empty hero ring (`HeroRing(progress: nil)`), a line of explanation, **New Deck**
-  (`.glassProminent`, large) and **Use iCloud Drive Folder** (`.glass`, large), at most 320 pt wide, with
-  Shared Decks on AnkiWeb as a link under them; Open Deck… is in the **…** menu. No mention of the Mac.
+  (`.glassProminent`, large), **Shared Decks on AnkiWeb** (`.glass`, large), at most 320 pt wide, and **Use iCloud Drive
+  Folder** as a small text button under them; Open Deck… is in the **…** menu. No mention of the Mac.
 - The month's screen (`MonthRecapSheet`) shows once on the first open of a month after a month with
   study; see Progress.
 - Frames: `VocTrainTests/HomeSnapshotTests` (directory `TEST_RUNNER_HOME_SHOTS_DIR`).
@@ -80,23 +83,24 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   `learning-flow.md` has the contract; everything comes from `DailyProgress.records` and `.achievements`.
 - Sections in an inset-grouped list, top to bottom:
   - The streak as a statistic (`StreakStatistic`): the flame, the days large, "day streak", and "Best: 21" only when
-    the best run is longer than the current one; the `MemoryLine` under it, one element for VoiceOver; the totals
-    Rings closed, Days studied, Cards done, three in a row (one column at the accessibility sizes). No ring: the
-    day's ring is on Today.
+    the best run is longer than the current one; under it the totals Days studied, Rings closed, Words learned, three in a
+    row (one column at the accessibility sizes), and the line "Your ring: 8 min a day · started at 2.5"
+    (`RingSize`; without the start while the ring has not moved). No ring: the day's ring is on Today.
   - The calendar, "Last 13 weeks" once there are 13 and "Calendar" before (`WeeksGrid`): rows of seven
     cells, a row per week, the oldest first, Monday to Sunday under the weekday initials; a day is a ring,
     each day its own share of its goal (`DayRecord.ringShare`): a closed day full, and laps past the goal up to
     three, any other day the share done, none done an empty track, before the first study day nothing; a capsule in `Color.streak` at 18 % lies behind each run of two or more kept days
     (`DayRecord.kept`) within a week row (`WeeksGrid.runs(ofKept:)`); a run does not cross rows.
   - Medals (the latest up to five, newest first, and All Medals).
-  - Memory (`LadderBar` and a row per step), once a card is started.
+  - Memory, once a card is started: the line of words in memory (`MemoryEstimate.line`) and the ladder (`LadderBar` and a row
+    per step).
   - **How It Works**, the last row, in a section with the footer "The plan, the day's time and the FSRS
     parameters behind the ring."
 - All Medals (`MedalsScreen`): one row for the lines of one medal (`AchievementLine.single`), then a row per
-  line of tiers (`AchievementLine.tiered`): its earned medals in order, then the next as a grey medal without a count of how far there is to go (`NextTier.of`, the best day on record
-  for the big day; `ring-design.md`, "Medals and the monthly recap"); a
-  line that repeats (perfect week, comeback) is one medal with "×3". The lines are Streak, First ring,
-  Perfect week, Big day and Comeback. `Medal` (`Shared/Session`) is
+  line of tiers (`AchievementLine.tiered`: Streak, Words learned, Double and Triple ring): its earned medals in order, then
+  the next as a grey medal without a count of how far there is to go (`NextTier.of`; `ring-design.md`, "Medals and the
+  monthly recap"); a line that repeats (perfect week, comeback) is one medal with "×3". The lines are Streak,
+  Words learned, Double ring and Triple ring, First ring, Perfect week and Comeback. `Medal` (`Shared/Session`) is
   44 pt, 36 on the rests. Names, faces and symbols are in `Presentation.swift`; no emoji anywhere
   else.
 - True retention of the last 30 days is not here: no model computes it across decks, the deck
@@ -121,41 +125,44 @@ sizes: `design-spec.md` §4.
   remembers each step's deck). Rounds count what was done in all lanes
   (`SessionDriver.setDoneElsewhere`); the stopwatch runs only in the lane whose card is on screen.
   Tests: `MultiDeckStudyTests`.
-- Header, left, right after the close button: the small ring (`StreamRing`, empty inside), the streak's flame by
-  its state (an outline until the streak step is done, filled from then on) and
-  "≈ 4 min" beside them while the goal is open (after a done card, for 1.5 s, its interval: "tomorrow", "in 8
-  days"), "36 cards today" once the goal is met, an Undo button, the menu "More". A practice names itself
-  and has no ring. Closing loses nothing: every grade is saved, and Today picks up the count.
+- Header, left, right after the close button: the small ring (`StreamRing`, empty inside), the flame by its state
+  and the minutes to the next moment of the day beside them ("≈ 2 min": to the streak, to the ring, of the reviews left;
+  none once all is done); after a done card, for 1.5 s, its interval ("tomorrow", "in 8 days") takes the text's
+  place. Then an Undo button and the menu "More". A practice names itself and has no ring. Closing loses nothing: every
+  grade is saved, and Today picks up the count.
 - The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, a
   divider, Pronounce Automatically (where the device has a Greek voice). The iPhone adds Undo above them,
   which is also its own button. The items are disabled at a rest, never hidden.
-- **A new card's first showing** is asked like any card. Its first grade button, ← and the left swipe, is red
-  as always and reads **Don't know** (the grade underneath is Again); on every later showing it reads
-  **Forgot**. The receipt chip and its VoiceOver announcement use the same name (`Grade.buttonTitle(isNew:)`).
-  The rules: `scheduling.md`, "A new card's first showing".
+- **A new card's first showing** is asked like any card, with two wide buttons side by side, as tall as the two rows
+  they replace: **Don't know** (the grade underneath is Again, red) and **Know** (Good, green); the swipes keep all four
+  grades, and on the Mac the keys are 2 and 4. On every later showing the four buttons read Forgot, Hard, Good, Easy. The
+  receipt chip and its VoiceOver announcement use the same names (`Grade.buttonTitle(isNew:)`). The rules: `scheduling.md`,
+  "A new card's first showing".
 - The card lies on a stack drawn as a book's page edges, 8 pt apart, each 7 pt narrower on a side and
-  darker than the one above; how cards leave it and come back: `learning-flow.md`, "The stack", and
-  `study-screen.md`, Motion.
+  darker than the one above; up to four, one fewer than the cards left before the next moment, after the ring too (the
+  cards of Catch Up, of Learn 10 New Words, of Study These Now). How cards leave it and come back:
+  `learning-flow.md`, "The stack in the stream", and `study-screen.md`, Motion.
 - Undo, from the button in the bar, the menu or a shake, takes back the review that ended the round
   and the rest with it; redo brings it back. Card Info (`CardInfoSheet`) shows the same
   `CardDetailScreen`.
-- The stream stops at four rests, one `StreamRestView`; the model is in `learning-flow.md`. Both rests of a
-  round show the most notable medal earned today at 56 pt, with its name under it and "+2 more" when there
+- **Study These Now** is a stream over the one deck the cards were added to (`StudyModel.Entry.studyNow`): the added cards
+  first, then that deck's plan; its stack, moments and rests are the day's.
+- The stream stops at the day's moments, one `StreamRestView`: the ring (96 pt, a picture) with the streak under it
+  (the flame and "12-day streak", left out at the streak rest, whose title is the streak, and in a practice), the title, the
+  lines, the buttons. The most notable medal earned today shows at 56 pt with its name under it and "+2 more" when there
   were others.
-  - *Streak kept* (once a day, after the streak step, inside the plan): the ring with the cards left in it, the
-    title "12-day streak" with the filled flame large beside it, which bursts as the title comes in (a
-    milestone's name replaces the title on a milestone day), the medal, the time to the ring. Its title is the
-    streak, so no chip. **Keep Going** (default, prominent) or **Done for
+  - *Streak kept* (once a day, after the streak step, inside the plan): the title "12-day streak" with the filled flame
+    large beside it, which bursts as the title comes in (a milestone's name replaces the title on a milestone day), the
+    medal, the price line of the sentence ("≈ 4 min to close the ring"). **Keep Going** (default, prominent) or **Done for
     Now**. The rest has no card on screen, so nothing is spoken and nothing is graded.
-  - *Ring closed* (the end of the last round while the plan has cards beyond it): the title "Ring closed"
-    ("Streak saved" when the ring saved the streak), the medal, one line (the words' milestone, else the
-    words gained, else "10 cards today"), the rings of the last seven days (`WeekRings`). **Done**
-    (prominent) and **Catch Up**.
-  - The end of the plan: "Ring closed", or "Done for today" when the plan ran out with the ring open; the
-    same lines. **Done** (prominent) and, while a deck has new cards, **Learn 10 New Words** (bordered).
-    It adds ten new cards beyond the limits and asks them at once, with no rest after; it is the only way
-    past the end of the plan, and Today's button of that name opens the stream with them directly. On the
-    Mac a rest taller than the window scrolls under the header (`SessionView`).
+  - *Ring closed* (the end of the stack that closes the goal): the title "Ring closed" ("Streak saved" when the ring saved
+    the streak), the medal, the price line "≈ 12 min of reviews left" while cards of the plan are left, the words learned
+    ("412 words learned · +12 today"), the rings of the last seven days (`WeekRings`). **Done** (prominent) and **Catch
+    Up** while the plan has cards left; with none, **Done** and **Learn 10 New Words**.
+  - *All done* (the end of the plan, and the end of any stream that began past the ring's moment, Catch Up, Learn 10 New
+    Words and Study These Now included): the title "All done for today"; the same lines. **Done** (prominent) and, while a
+    deck has new cards, **Learn 10 New Words** (bordered), ten new cards beyond the limits asked at once, with no rest
+    after. On the Mac a rest taller than the window scrolls under the header (`SessionView`).
   - *Practice complete*: its figures (cards, share recalled) and **Done**.
 - Frames: `VocTrainTests/StudyScreenSnapshotTests`.
 
@@ -184,14 +191,16 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 - For the learner who knows Anki and FSRS: after the three sentences, the numbers and rules under the ring
   and the rounds. Read-only: no controls, no charts. A grouped form; each section's footer holds its
   rule.
-- **Today**: three plain sentences, no figures and an empty footer: what the ring is, what Catch Up does,
-  what Learn 10 New Words does (`HowTodayWorks.Row.text`).
+- **Today**: the three moments in three plain sentences, no figures and an empty footer: the first minutes keep the
+  streak, the ring is the goal and Catch Up studies the reviews waiting, nothing due is all done and Learn 10 New Words
+  adds ten (`HowTodayWorks.Row.text`).
 - **Today's Plan**: due today, overdue included; cards in learning; new cards admitted; each deck's
   admitted cards with its ceiling and limits (new / production), a paused deck as "Paused: <name>" with
   no figures; cards done; cards left.
 - **Today's time**: the day's time in minutes (one decimal), the streak step and the daily goal in
   cards; the last 14 days, newest first, with the minutes asked, the minutes worked, the ring (Closed
-  or Open) and why the day had its size (Start, Ring closed, Ring open, Plan under the time).
+  or Open) and why the day had its size (Start, Ring closed, Ring open, Plan under the time, Past the ring); the footer adds
+  "Going well past the ring on most days lifts it to what you do."
 - **Pace**: seconds for a new card and for another card, each with its source (Durations (n), Gaps (n)
   or Default) and the reviews each done card took.
 - **Streak**: days, whether today is kept, the cards that would repair yesterday.
@@ -218,8 +227,8 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 ## Deck screen
 
 - A deck row pushes the deck screen onto Today's stack (`DeckScreen`/`DeckContent`; it replaces the
-  details sheet). The list opens with one headline (`DeckHeadline`): "14 cards today" (what today's plan
-  takes from the deck, `StudyCounts.total`), a check and "Done · next review tomorrow" ("Done" when no
+  details sheet). The list opens with one headline (`DeckHeadline`): "≈ 4 min · 14 due · 6 new · 2 learning" (the minutes of what today's
+  plan leaves in the deck, backlog included, then Anki's counts, a part of 0 left out), a check and "Done · next review tomorrow" ("Done" when no
   review is coming), or "Paused", which wins over the counts. A deck with no cards, or counts not read yet,
   has no headline.
 - Rows: Cards (count) → Card Browser; Statistics; Options. The bottom button is **Study This Deck** while
@@ -287,7 +296,13 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   for the next card and shows the badge "Added · N cards so far"; **Done** adds what is typed and closes;
   Cancel asks before discarding typed text. From a List: paste lines `word = translation`, a live preview of
   the cards, a row per word with a tick (duplicates, and words another deck holds, unchecked; a tap
-  switches), Add N Cards. An addition is one undo step ("Add Cards"). The sheet is the Mac's too
+  switches), Add N Cards. An addition is one undo step ("Add Cards"). Once cards are added the bottom bar holds Add and **Study These Now**
+  side by side (one under the other at large text sizes): while something is typed that can be added Add is the prominent
+  button, with nothing left to add Study These Now is; it adds what is typed too, closes the sheet and starts the stream
+  over the deck with the added cards first. It shows only while the added cards are addable now (`StudyStream.addableCards`:
+  new, unlocked, not buried; the second direction of a pair waits for its first). From Today (`AddCardsHost`) the stream starts
+  after the sheet has gone and the deck is saved and closed; from the deck screen the sheet's `onDismiss` starts it on the open
+  deck. The sheet is the Mac's too
   (`WordList.swift`, `LimitStepper.swift` in `Shared/Support` hold what the two share).
 - **New Deck**: a name field; creates `<name>.mnemit` in the deck folder (iCloud Drive or this iPhone)
   (`DeckFiles.create(named:in:)`) and pushes its screen, where Add Cards opens by
@@ -297,7 +312,8 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   Cards… on the deck screen, Import… in Today's + menu (into the deck used last). The preview of an
   Anki package heads with the Anki deck names, the number of cards, how many have review history and
   what was left out (cloze, media, empty); the history comes along, replayed into FSRS; text fields
-  have their HTML stripped. Mnemit registers `.apkg` and `.colpkg`, so **Open in Mnemit** (Files,
+  have their HTML stripped. The preview of a table of 1 to 50 cards into a deck that had no card (a new deck) also offers **Study
+  These Now**, which adds the checked cards and studies them; a package or a larger table goes to the plan. Mnemit registers `.apkg` and `.colpkg`, so **Open in Mnemit** (Files,
   Safari, Mail) opens a sheet that asks where the cards go: a New Deck named after the Anki deck, or
   one of the decks; then the same preview. Facts of the formats: `deck-formats-and-sources.md`.
 - "Shared Decks on AnkiWeb" (Today's + menu, Today's empty state, the deck screen) opens the deck
@@ -339,7 +355,7 @@ Cancel, and Restore Defaults, which keeps the mark.
   version: an old build drops the key and the deck is active again. The key travels with the options
   and merges by `learningOptionsChanged`, later wins.
 - A paused deck is in none of: plan, goal, rounds, time, allowance (the other decks share it), streak,
-  words in memory, widget, reminders, Study. `DailyProgress.evaluate` and `DayBreakdown` skip
+  words learned, widget, reminders, Study. `DailyProgress.evaluate` and `DayBreakdown` skip
   `DeckActivity.isPaused` (such a deck's place in `newCardAllowances` holds 0; `DailyRingModel` gives
   it no allowance, and its plan follows its own limits). `KnownDeckCounts` counts no cards for it and
   keeps it in `paused`; `TodayDecks` splits Today's sections and the Study queue (`studyQueue`); its
@@ -379,14 +395,13 @@ Cancel, and Restore Defaults, which keeps the mark.
   reviews saved on the Mac arrive without leaving the app; an empty folder is accepted only
   if named `Mnemit`). Mac: `DeckFolder` (a scoped bookmark, entitlement `bookmarks.app-scope`).
 - Reminders: `Reminders`, local notifications 7 days ahead on the days whose decks have cards
-  (`StudySession.counts(for:at:)`), in the words of Today (`ReminderPlan.content`): "Keep your 12-day
-  streak" and "≈ 2 min is enough." for the next two days, "Time to study" and "≈ 2 min is enough to start."
-  without a streak or further ahead; never a count of the cards due. The number on the icon is the cards
-  left to close today's ring, 0 once it is closed (`ReminderPlan.badge`); a later day's is that day's
-  cards up to today's goal. Recomputed on going to the background, after closing a deck and on a time
-  change.
+  (`StudySession.counts(for:at:)`), in the words of Today (`ReminderPlan.content`): the title "Keep your 12-day streak"
+  and the body "≈ 2 min" (the time to keep the streak, not the length of the day); "Start your streak" and "≈ 2 min"
+  without a streak; never a count of the cards due. The number on the icon is "1" while today's ring is open and 0 once it
+  is closed (`ReminderPlan.badge`; without the ring's figures, 1 while cards are due). Recomputed on going to the background,
+  after closing a deck and on a time change.
 - Streak reminder: a second notification at 21:00 (`ReminderPlan.streakMinutes`), ids `streak-reminder-0…6`, in
-  the first reminder's words (title "Keep your 12-day streak", body "≈ 2 min is enough."), scheduled in the same
+  the first reminder's words (title "Keep your 12-day streak", body "≈ 2 min"), scheduled in the same
   pass for the next seven 21:00s. A streak must be at stake: it is 1 or more and, for today, the streak step is
   not done; for tomorrow, either way (a streak holds through one missed day); for the day after tomorrow, only
   when today's step is done; and the day must have cards. None when the first reminder's time is at or after
@@ -400,32 +415,22 @@ Cancel, and Restore Defaults, which keeps the mark.
 - Target `MnemitWidget`, folder `MnemitWidget/`, bundle id `com.euf.mnemit.ios.widget`, embedded in the
   iPhone app. Home screen small and medium, lock screen circular, rectangular and inline; a tap goes through
   `mnemit://study` straight into the stream (`StartScreen.open`).
-- It says what Today says, with the streak as the flame in the middle of every ring. Every ring draws the flame by
-  `StreakState`: a grey outline until the day's streak step is done, filled in the streak's orange once it is, an
-  orange outline the day after a missed one while the ring is open (at risk).
-  - Small: the ring (64 pt; 56 pt with the time line under the headline; 48 pt at risk), the headline under it
-    (two lines where it doesn't fit) and the "N cards today" line once the ring is closed. At risk the headline
-    is the line Today shows, "Close the ring to save your 12-day streak" (`WidgetState.todayLine`), in the
-    subheadline font, up to three lines.
-  - Medium: the ring (60 pt, the streak in the middle), the headline Today shows (`TodayHeadline.text`, with no
-    "next due" part: "Nothing due" alone), the "N cards today" line once the ring is closed, the week as
-    `WeekRings` (20 pt rings, 8 pt apart), and a Study button at the right while the ring is open; once it is
-    closed the headline has the width. No words-in-memory line, no streak line, no reminder line.
-  - Circular: the ring (`DailyRingView`, 58 pt) with the streak in its middle: the flame over the days, by
-    state. The cards left are never in the middle (the headline stays the VoiceOver label); at 0 days the ring
-    is empty.
-  - Rectangular (lock screen): the headline, the "N cards today" line once the ring is closed, and the streak
-    line with the flame, in the streak's orange once the day keeps it. At risk the headline is the line Today
-    shows, up to three lines, and it names the streak, so the "N-day streak" line is left out.
-  - Inline (`accessoryInline`, over the lock screen's clock): the flame by state, then "12 · 20 cards left"
-    (the cards to close the ring); "12 · All done" when nothing is left; "12 · Ring closed" when the ring is
-    closed and the plan still has cards; "12 · Nothing due" before any study with nothing due; with no streak the
-    part after the dot alone ("20 cards left"). Before the first snapshot: "Open Mnemit to start".
-  On other days the small and rectangular widgets keep the short round title or "N cards left". Where the
-  rounds are not known (an older app's snapshot) "N cards left" carries "· ≈ 7 min" after it.
+- Every widget is two things: the day's ring as a picture (the arc and its laps, nothing in its middle) and the sentence
+  of Today (`NextStep`), led by the flame, whose shape is the streak's state. No widget has a button, a capsule or a card
+  count; the whole widget opens the stream. VoiceOver reads each widget as one element, the sentence with the state.
+  - Small: the ring (72 pt) and the sentence under it (caption, centred, up to three lines for the at-risk sentence).
+  - Medium: the ring (104 pt) at the left; at the right the sentence as the headline (up to three lines) at the ring's
+    top and the week's rings (18 pt, no initials) at its bottom.
+  - Circular: the system gauge, in its middle the minutes of the next step ("2" over a small "min", "<1"), a `checkmark`
+    once the ring is closed, nothing without a price.
+  - Rectangular (lock screen): the ring (56 pt) and the sentence (caption, up to three lines).
+  - Inline (`accessoryInline`, over the lock screen's clock): the flame and the short form of the sentence, "12 · ≈ 2 min",
+    "12 · Done" when nothing is left, the days alone without a price; with no streak the sentence, with no flame. Before the
+    first snapshot: "Open Mnemit to start".
 - Data travels as one snapshot `WidgetSnapshot` (`Shared/Widget`): date, done cards and the day's
   goal, streak and whether the ring is closed, whether the streak is at risk (`isStreakAtRisk`), the week
-  (`week`: seven entries, today last, true a closed ring, false an open one, null before the first study day),
+  (`week`: seven entries, today last, true a closed ring, false an open one, null before the first study day; `weekRings`: the
+  share of each day's goal, which the widget's week draws),
   rounds (`rounds`, `roundsDone`, `minutesToNextRound`), the price of a card left (`secondsPerCard`; the
   forecast holds only card counts per hour, so the snapshot keeps one price), a forecast of how many cards are
   in the plan for each hour 48 hours ahead across all decks, and the time of the next reminder
@@ -474,7 +479,7 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
 | Search over all decks | Today's search | the window's search field; a hit shows the card in its deck's table |
 | Medals | toasts in the stream, new medals of other days on Today, the month's sheet | the same |
 | Studying | question, Show Answer, grade; swipes | question, Show Answer, grade; keys and buttons; no typed answer on either |
-| A new card's first showing | asked like any card; its first Again reads Don't know | the same |
+| A new card's first showing | asked like any card; two wide buttons, Don't know and Know | the same, keys 2 and 4 |
 | Reminders, the icon's number | yes | no: one device reminds, the Mac would remind twice |
 | Widget | yes | no: a Mac widget needs an App Group, which the self-signed Mac app has no team for |
 
