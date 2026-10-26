@@ -1,5 +1,7 @@
 # Ring and streak: what other apps put inside a ring, and a model for Mnemit
 
+Built in 7.3 (26.10): option B, plus Fitness laps up to 3.
+
 Research of 26.10.2026 for the owner's three remarks: the middle of the widget ring (flame plus days) is overloaded;
 the Mac shows the big ring on Today and on Progress at different sizes; the entities of the ring and the streak may
 want a rethink. Facts first (§1), the user's model and where the design confuses it (§2), options (§3), verdict (§4).

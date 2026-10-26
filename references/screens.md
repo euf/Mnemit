@@ -45,8 +45,8 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   - The week's seven rings (`WeekRings`, 22 pt), with a chevron at the end of the row.
   - The day turns at 04:00, and work done just before it, on either device, belongs to the day before.
     The headline waits for every deck to be read and the ring to be evaluated (`isDayReady`); until then the
-    hero shows placeholders. The ring's middle stops growing at xxxLarge and scales down; at AX5 the headline
-    wraps and the list scrolls.
+    hero shows placeholders. The ring and its middle keep their size at every text size (the middle is drawn in
+    proportion to the ring); the chip's sentence and the gain line wrap and the list scrolls.
 - The bottom bar holds the day's one button beside Search All Cards, which is minimised to a button
   (`.searchToolbarBehavior(.minimize)`). The button is named by `DayAction`
   (`Shared/Session/TodaySummary.swift`): **Study** in the accent while the ring is open; **Catch Up** once the
@@ -85,8 +85,8 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
     day's ring is on Today.
   - The calendar, "Last 13 weeks" once there are 13 and "Calendar" before (`WeeksGrid`): rows of seven
     cells, a row per week, the oldest first, Monday to Sunday under the weekday initials; a day is a ring,
-    closed full, kept at its share of the goal, a missed day an empty track, before the first study day
-    nothing; a capsule in `Color.streak` at 18 % lies behind each run of two or more kept days
+    each day its own share of its goal (`DayRecord.ringShare`): a closed day full, and laps past the goal up to
+    three, any other day the share done, none done an empty track, before the first study day nothing; a capsule in `Color.streak` at 18 % lies behind each run of two or more kept days
     (`DayRecord.kept`) within a week row (`WeeksGrid.runs(ofKept:)`); a run does not cross rows.
   - Medals (the latest up to five, newest first, and All Medals).
   - Memory (`LadderBar` and a row per step), once a card is started.
@@ -133,7 +133,7 @@ sizes: `design-spec.md` §4.
   as always and reads **Don't know** (the grade underneath is Again); on every later showing it reads
   **Forgot**. The receipt chip and its VoiceOver announcement use the same name (`Grade.buttonTitle(isNew:)`).
   The rules: `scheduling.md`, "A new card's first showing".
-- The card lies on a stack drawn as a book's page edges, 10 pt apart, each 9 pt narrower on a side and
+- The card lies on a stack drawn as a book's page edges, 8 pt apart, each 7 pt narrower on a side and
   darker than the one above; how cards leave it and come back: `learning-flow.md`, "The stack", and
   `study-screen.md`, Motion.
 - Undo, from the button in the bar, the menu or a shake, takes back the review that ended the round
@@ -544,9 +544,9 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
   header, Today, Progress and How It Works all count them.
 - **The Mac's stream** (`SessionView`) looks as the iPhone's does: the card on the grouped backdrop
   (`Color.studyBackdrop`, the card `Color.cardSurface`) over the stack's edges (`StackEdges`, the cards of the
-  round behind it, at most four, `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done, the
-  day's ring and its figures in the middle ("≈ 4 min", then "36 cards today"; the ring has no centre here),
-  Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
+  round behind it, at most four, `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done and, right
+  after it, the day's ring (empty inside), the streak's flame and the figures ("≈ 4 min", then "36 cards today"),
+  then Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
   Automatically, disabled at a rest); Show Answer prominent in indigo with a keycap "Space or ↩". The bar of
   the last answer (`UndoChip`) stays under the header.
   - Keys: Space or Return show the answer; then ← Forgot, ↓ Hard, → Good, ↑ Easy (the iPhone's swipes;

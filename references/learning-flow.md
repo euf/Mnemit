@@ -147,8 +147,8 @@ reviews, so the ring is a size the learner has shown they finish. The size is le
 | Seconds | swipes one card | the card leaves past the edge; recalled, the ring steps by its share; done, the stack loses a sheet, the ring bumps and "in 8 days" shows beside it; back today, the card comes in again from the edge it left by and slides under the stack | done = FSRS sent the card to another day; partial credit by steps |
 | ≈ 2 min | the first cards of the day | the streak screen: "Streak kept", the streak in days | streak step of the day done (Duolingo: one lesson keeps the streak, apart from the goal) |
 | The day | today's cards | the ring closes: the ring screen with the day's figures and the week | done ≥ goal |
-| The week | closes rings on most days | seven rings in a row, Monday to Sunday, on the ring screen | ring per day from the log; the day's time follows the recent work |
-| Months | keeps the streak, learns | the flame with the streak's days in the ring's middle; words-in-memory milestones (50, 100, 250, 500, 1,000 …) | FSRS recall, the log |
+| The week | closes rings on most days | seven rings in a row, Monday to Sunday, on Today and on the ring screen; a day worked past its goal goes on over itself, up to three laps | each day's ring is its share of the goal, from the log; the day's time follows the recent work |
+| Months | keeps the streak, learns | the streak chip on Today and the streak statistic on Progress, the flame with the days; words-in-memory milestones (50, 100, 250, 500, 1,000 …) | FSRS recall, the log |
 
 A missed day is forgiven when the next day closes its ring (the streak survives; Duolingo's Freeze
 and Apple's paused rings are the same slack). Pausing a deck takes it out of the day.
@@ -161,30 +161,32 @@ Today ──Study──► card ─► card ─► … ─► Streak kept ──
   └──────────────────────────────────────┴─────────────────────────────────────┴─ Done
 ```
 
-**Today.** The hero (`TodayHero`): the ring with the flame over the streak's days in it (168 pt), one headline for the
-state of the day, one gain line "412 words in memory · +15 today", and the week's seven rings; the whole hero is a button
-to Progress. Under it the decks, a row each with its name and the cards left (a check when none), and at the bottom
+**Today.** The hero (`TodayHero`): the ring (168 pt) with the cards left in its middle and "cards left" under them, the
+streak chip under the ring (the flame and one sentence), one gain line "≈ 5 min · 412 words in memory · +15 today", and
+the week's seven rings; the whole hero is a button to Progress. Under it the decks, a row each with its name and the cards left (a check when none), and at the bottom
 the one button beside the search, named by what the day asks next (`DayAction`): **Study** while the ring is open;
 **Catch Up** once the ring is closed and the plan has cards left; **Learn 10 New Words** once the plan is done.
 
-| State | Headline |
-|---|---|
-| before the streak step | ≈ 2 min to keep your streak |
-| streak kept, ring open | 12 cards left · ≈ 4 min |
-| ring closed, cards left | Ring closed · 3 left |
-| plan done | All done |
-| nothing due | Nothing due · next tomorrow |
-| the day after a missed day, ring open | Close the ring to save your 12-day streak |
+| State | Ring | Chip | Gain line leads with |
+|---|---|---|---|
+| before the streak step | 12, cards left | ≈ 2 min to keep your 12-day streak | ≈ 5 min |
+| streak kept, ring open | 12, cards left | 12-day streak | ≈ 4 min |
+| ring closed, cards left | a check | 12-day streak | 3 left |
+| plan done | a check | 12-day streak | the words in memory alone |
+| nothing due | a check | 12-day streak | Nothing due · next tomorrow |
+| the day after a missed day, ring open | 12, cards left | Close the ring to save your 12-day streak | ≈ 5 min |
+| no streak | 12, cards left | Start your streak · ≈ 2 min | ≈ 5 min |
 
-The flame has three states (`StreakState`): a grey outline until the streak step is done, filled in the streak's orange
-once it is, an orange outline on the day after a missed one until the ring closes. At 0 days the hero shows the outlined
-flame and "Start your streak".
+The flame in the chip has three states (`StreakState`): a grey outline until the streak step is done, filled in the
+streak's orange once it is, an orange outline followed by an exclamation mark on the day after a missed one until the
+ring closes. At 0 days the chip shows the outlined flame. The flame is never in a ring: a ring holds the cards left.
 
-**Study.** The stack in the middle, the small ring in the bar with "≈ 4 min" (after a done card, for
-a moment, "in 8 days"), the close button. Closing loses nothing; Today picks up the count.
+**Study.** The stack in the middle; the bar, from the leading edge, holds the close button, the small ring (empty
+inside), the streak's flame and "≈ 4 min" (after a done card, for a moment, "in 8 days"). Closing loses nothing; Today
+picks up the count.
 
 **The stack.** The card on top lies on the sheets under it, drawn as the edges of a book's pages:
-under its bottom edge blank sheets with its corner radius, each 10 pt lower and 9 pt narrower
+under its bottom edge blank sheets with its corner radius, each 8 pt lower and 7 pt narrower
 on each side than the one above it, darker and fainter with depth; `min(cards left − 1, 4)` of them (`StackPose`), so
 a long day looks thick and the last five thin out one line at a time.
 - Graded, the card goes on with the finger and leaves past the edge of the screen. Nothing rides on
@@ -201,13 +203,14 @@ a long day looks thick and the last five thin out one line at a time.
 - Reduce Motion: the card fades in place, the ring steps without a bump, nothing travels.
 
 **Streak kept** (once a day, after the first ≈ 2 min; not when the day's cards end there too): the
-ring, the title "12-day streak" with the filled flame large beside it (a streak milestone's name replaces the
-title on its day), a medal when one was earned, "12 cards left · ≈ 4 min". **Keep Going** (default), **Done for Now**.
+ring with the cards left in it, the title "12-day streak" with the filled flame large beside it, which bursts as the
+title comes in (a streak milestone's name replaces the title on its day), a medal when one was earned,
+"12 cards left · ≈ 4 min". **Keep Going** (default), **Done for Now**.
 
 **Ring closed** (when today's cards are done, and when the plan has run out): the ring closes with its
 burst, then the day: the medal earned today, one line (the words' milestone when one was passed today, else
 "+15 words in memory today", else "10 cards today") and the week's seven rings. One way on, the most useful first:
-**Catch Up** when the plan has cards left beyond the ring; else **Learn 10 New Words**; and **Done**. The week is seven small rings, today last, with the weekday initials.
+**Catch Up** when the plan has cards left beyond the ring; else **Learn 10 New Words**; and **Done**. The week is seven small rings, today last, with the weekday initials; a past day's ring is its share of its goal, and a day worked past the goal draws laps, up to three.
 
 **How It Works**, the last row of the Progress screen, keeps everything for the learner who knows FSRS: three plain
 sentences on the ring, Catch Up and Learn 10 New Words, then the plan and its parts, the day's time and the streak
@@ -264,8 +267,9 @@ They are named in words, never as a count of days; the widget and Today only sho
 | Big day | 50, 100, 200, 500 cards | the cards done in a day (cards FSRS sent to another day) |
 | Comeback | one, then counted | a missed day made up by closing the next day's ring: the streak survived |
 
-**The comeback scenario.** The day after a missed day, Today's headline says "Close the ring to save
-your 12-day streak" instead of "≈ 2 min to keep your streak", and the flame in the ring is an orange outline. When that ring closes, the Ring closed screen's
+**The comeback scenario.** The day after a missed day, Today's streak chip says "Close the ring to save
+your 12-day streak" instead of "≈ 2 min to keep your 12-day streak", and its flame is an orange outline with an
+exclamation mark. When that ring closes, the Ring closed screen's
 title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
 
 **Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
@@ -288,10 +292,11 @@ records and figures, the lines of the rests. The faces:
 | Comeback | 🐦‍🔥 | `arrow.uturn.up` |
 
 **The Progress screen**, from Today (a tap on the hero, which has a chevron at the end of its week row), top to
-bottom: the hero (the ring at 220 pt with the flame and the days in it, and the words-in-memory line under it) with the
-totals Longest streak, Rings closed, Days studied, Cards done; the calendar, Monday to Sunday under the weekday
+bottom: the streak statistic (the flame, the days large and "day streak", "Best: 21" when the best run is longer than
+the current one, and the words-in-memory line under it) with the totals Rings closed, Days studied, Cards done, and
+no ring, the day's ring being on Today; the calendar, Monday to Sunday under the weekday
 initials, a row per week from the one of the first study day, at most 13 ("Last 13 weeks" once there are 13, else
-"Calendar"), with a band in the streak's orange behind each run of two or more kept days within a week; the medals (the
+"Calendar"), each day a ring of its share of its goal (laps past the goal, up to three), with a band in the streak's orange behind each run of two or more kept days within a week; the medals (the
 latest up to five, and All Medals: one row for the lines of one medal, then a row per line of tiers); the ladder of
 memory, a bar of the cards started with "N not started" under it and a legend of the five steps; and How It Works as
 the last row.

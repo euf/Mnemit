@@ -236,8 +236,8 @@ where the cost reaches 120 s, and the goal ends the day: `DayRounds.ends` has at
 when they coincide. Doing the step keeps the streak (`DailyProgress.streakKeptToday`) and Study rests
 there once; the goal is the ring's rest. `DailyProgress` holds `rounds` (the number of ends),
 `roundsDone`, `roundEnds`, `cardsToNextRound` and `minutesToNextRound`, at the pace the day began with.
-A day that began with an empty plan cuts the cards as they stand. Before the step the headline of Today says
-"≈ 2 min to keep your streak"; How It Works names the step (`references/learning-flow.md`).
+A day that began with an empty plan cuts the cards as they stand. Before the step the streak chip of Today says
+"≈ 2 min to keep your 12-day streak"; How It Works names the step (`references/learning-flow.md`).
 _Avoid_: round, session, lap, segment
 
 **Day's time** (RU «время дня»):

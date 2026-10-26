@@ -51,12 +51,10 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `minutesToNextRound` (at the pace the day started with), `minutes(ofRound:)` (for the rest screen),
   `memory` (`MemoryEstimate` over the decks), `streakKeptToday` (streak step done or the plan empty).
 - The step never shows by number (`learning-flow.md`). `RoundStatus` (`Shared/Session/DayLines.swift`)
-  gives the day's title: before the step "≈ 2 min to keep your streak", after the goal "Ring
-  closed", in between none, and the screens say the cards left. `TodayHeadline.text`
-  (`Shared/Session/TodaySummary.swift`, pure and tested) puts the headline together for both apps: the
-  title where there is one, else "20 cards left · ≈ 5 min", "All done", "Nothing due · next tomorrow", and
-  on the day after a missed one "Close the ring to save your 12-day streak". The widget and the Mac ring
-  chip's help take the title from `RoundStatus`.
+  gives the minutes to the step (`minutesToKeep`), which the streak chip says: before the step "≈ 2 min to keep your
+  12-day streak", after it "12-day streak". The screens say the cards left in the ring. `TodayLead.text`
+  (`Shared/Session/TodaySummary.swift`, pure and tested) puts the lead of Today's gain line together: "≈ 5 min" while
+  the ring is open, "3 left" once it is closed, "Nothing due · next tomorrow" on a day without cards.
 - In a day that started with an empty plan, the ends cut the cards as they are.
 
 ## Day's time
@@ -124,7 +122,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   lap and a third, as the Fitness rings do: the drawn value is done over goal, at most 3 (`DailyRingFigure.fraction`,
   `ProgressRing.maxLaps`; `DailyRing.fraction` itself stays capped at 1 and says whether the goal is met). Done cards
   beyond the goal (Catch Up, Learn 10 New Words) count as cards done: "31 cards today". A past day's ring is drawn
-  the same way from `DayRecord.ringShare`: its share of its goal, a closed day at least full and up to 3 laps.
+  the same way from `DayRecord.ringShare`: its share of its goal, a closed day at least full and up to 3 laps, a day
+  with none done an empty track. `DailyProgress.weekRings` (seven days, today last) feeds the week's rings on Today and
+  on the rests, and the Progress calendar draws the same share.
 - **Middle of the ring**: the ring's own quantity. `RingCenter` is `.cardsLeft(n)` (`DailyProgress.cardsToClose`: the
   plan's cards left, at most the goal less the done), `.done` (a `checkmark`, once the ring is closed) or `.none`;
   `RingCenter.shown(at:)` drops it below 56 pt and adds the caption "cards left" from 88 pt, so the bars' and the
@@ -157,7 +157,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   the app was active (`ReviewLogEntry.duration`, key `ms` in `reviews.jsonl`, in milliseconds).
   `SessionDriver` measures it with `ActiveStopwatch` on `SuspendingClock`: the iPhone reports a
   `scenePhase` other than `.active`, the Mac `NSApplication.didResignActive`. Background, lock and
-  another app don't count; there is no cap.- A category with fewer than 20 reviews with a duration (old logs, imports without time) takes instead
+  another app don't count; there is no cap.
+- A category with fewer than 20 reviews with a duration (old logs, imports without time) takes instead
   the gap between neighbouring reviews of the study day (across all decks together), of any length. The
   gap goes to the card of the later review, into the category the card had that day: a new card's steps
   to new, Again on a review card and its relearning to other.

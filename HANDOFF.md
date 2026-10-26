@@ -6,8 +6,8 @@
   takes the window), a new card is asked like any card and its first Forgot reads Don't know, every review counts in full, neither app asks for
   a typed answer, and the widgets and reminders follow the day (the flame's three states, the week, the inline
   accessory, a 21:00 streak reminder). The iPhone and the Mac run 7.2.0 (75ff961), the iPhone signed until
-  02.11. The day's model (one ring that stays full at the goal, the streak as a flame, the
-  stack that ends with the plan, Study / Catch Up / Learn 10 New Words, partial credit, the streak step, two
+  02.11. The day's model (one ring that holds the cards left and goes on over itself past the goal, up to three laps,
+  the streak as a chip outside the ring, the stack that ends with the plan, Study / Catch Up / Learn 10 New Words, partial credit, the streak step, two
   rests, medals, the Progress screen on both apps)
   and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
   ring's size (seconds, a staircase on closed and open rings) is `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
@@ -57,9 +57,15 @@ In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
 The plan of 7.0–7.1 is `references/quality-plan.md`.
 
-1. **7.2 on the iPhone, to verify live:** the search minimised beside Study, the Don't know label (a new
-   card's first showing), the 21:00 streak reminder, the stack of cards in the stream;
-   and from 6.1 the flame in Today's ring and in the widgets, Learn 10 New Words from Today, a reminder that
+1. **7.2 and 7.3 on the iPhone, to verify live:** the search minimised beside Study, the Don't know label (a new
+   card's first showing), the 21:00 streak reminder, the stack of cards in the stream (step 8, side 7);
+   the number in Today's ring (the cards left, a check once the ring is closed), the streak chip under it (its four
+   sentences, the flame's three states, the exclamation mark at risk), laps on the week's rings (a day worked past
+   its goal draws a second and a third lap, every past day its own share), the stream's header at the leading edge
+   (close, ring, flame and time, the ring not moving when the text changes), the new greens (Hard, Good and Easy told
+   apart by lightness, light and dark, and the card's tint in dark mode), the 30° flight (Easy and Hard fly toward
+   Good's side);
+   and from 6.1 the flame in the widgets, Learn 10 New Words from Today, a reminder that
    names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and reviews from
    the Mac arriving while Today stays open (it reads the decks every minute). Xcode's Apple ID was lost once
    (24.10): `ios-renew` then fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
@@ -98,7 +104,7 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    nothing in today's plan doesn't open with Study, so the plan-end rest's Learn 10 New Words can't take its new cards (Learn 10 New Words
    from Today opens every active deck); xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
-   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
+   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. At 375 pt with "30 cards today" the stream's header has no room for the Undo button, which then lives in the "More" menu only. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
 9. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
    duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
 10. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing

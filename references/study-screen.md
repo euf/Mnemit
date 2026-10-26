@@ -8,12 +8,13 @@ area and the card's type: `references/design-spec.md` §4.
 
 - All spacing comes from the `Spacing` scale in `Shared/Support/Presentation.swift` (4, 8, 12, 16,
   24 pt): 16 at the sides, 8 under the bar, 12 between the card and the buttons (plus the stack's room,
-  4 × 10 pt, always) and under the buttons, 24 inside the card.
+  4 × 8 pt, always) and under the buttons, 24 inside the card.
 - Show Answer lies as an overlay on the grade block and takes its rectangle, so the card keeps its
   height when the answer opens. The grade block is Forgot on a row of its own, then Hard, Good and Easy
-  in one row under it, Good wider; no caption stands between the rows. Hard is a pale green with a dark
-  green label, Good and Easy are mid greens with white labels (`Grade.swatch`, `GradeSwatch`; the
-  values and their contrast: `design-spec.md` §4.3, `GradeContrastTests`).
+  in one row under it, Good wider; no caption stands between the rows. Hard, Good and Easy are three greens
+  of one hue told apart by lightness, Hard the lightest and Easy the deepest, with dark green labels on Hard and
+  Good and a near-black label on Easy (`Grade.swatch`, `GradeSwatch`; the values and their contrast:
+  `design-spec.md` §5.2, `GradeContrastTests`).
 - A touch on the card reveals the answer (`touch`: `DragGesture(minimumDistance: 0)` through
   `simultaneousGesture`). A touch that starts on a speaker belongs to the button: speakers
   (`SpeakButton`) report their frames into `SpeakerPlaces`, and the card's gesture lets such touches
@@ -51,11 +52,13 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
   screen.
 - Each grade steps the ring in the bar at once by `GradeReceipt.gain` (the part of a card the grade
   added, 0 to 1), ahead of the figures, which wait for the card that speaks (`StudyMotion.shown`,
-  caught up when the figures change and no card is leaving). Gain 0 (Forgot) moves nothing. The ring has
-  the streak's flame alone in its middle (`StreamRing`, `RingCenter.flame`): an outline until today's
-  streak step is done, `flame.fill` in `Color.streak` from the moment it is. At that moment the ring
-  bumps and bursts as for a medal (`StudyMotion.celebrate()`, called when
-  `DailyProgress.streakKeptToday` goes from false to true). A done card
+  caught up when the figures change and no card is leaving). Gain 0 (Forgot) moves nothing. The ring is
+  empty inside (`StreamRing`) and goes on over itself past the goal, up to three laps
+  (`DailyRingFigure.fraction`). The streak's flame stands beside it (`StreakFlame`): an outline until
+  today's streak step is done, `flame.fill` in `Color.streak` from the moment it is. The ring does not bump
+  at the streak step: the burst is on the large flame in the title of the Streak kept rest, as the title
+  comes in (`StreamRestView`, `flameBurstAt`). A medal bumps and bursts the ring as a card landing in it does
+  (`StudyMotion.celebrate()`, called as the medal's toast shows). A done card
   also bumps the ring (scale 1.0 to 1.15 and back with a soft glow in the accent, `ringBump`, 0.12 s up
   and 0.18 s down) and plays a small `RingBurst` round it; a card back today steps it quietly, without
   bump or burst. No haptic accompanies the ring.
@@ -75,11 +78,11 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
   by `StudyModel.cardsBehind`: the cards the round still asks less the one on top, those that come back
   today included (`SessionDriver.cardsLeftInRound`, from `RoundGuide`); none when 0 are left, without
   rounds, and in practice. An edge is a blank page of the card's shape (corner radius 22) under the
-  card's bottom edge, its surface a shade darker than the card (0.06 × the level of the primary colour, so
+  card's bottom edge, its surface a shade darker than the card (0.035 × the level of the primary colour, so
   darker with depth; lighter in dark mode), a 1 pt hairline in the opaque separator colour, fainter with
-  depth (1 − 0.15 per level beyond the first) and a soft shadow (black at 14 %, radius 5, 3 pt down).
-  Each lies 10 pt lower and 9 pt narrower on each side than the one above (`StackPose.step`, `side`). The
-  room under the card, 4 × 10 pt (`StackPose.reserve`), is always reserved, so the card keeps its size.
+  depth (1 − 0.18 per level beyond the first) and a soft shadow (black at 10 %, radius 3, 2 pt down).
+  Each lies 8 pt lower and 7 pt narrower on each side than the one above (`StackPose.step`, `side`). The
+  room under the card, 4 × 8 pt (`StackPose.reserve`), is always reserved, so the card keeps its size.
   The Mac draws the same pose with `StackEdges`. When the card on top leaves, the next one rises into its place
   from the pose of the first edge (a spring of 0.3 s, bounce 0.15) while its words fade in over 0.15 s.
   An edge that is lost or gained fades over 0.25 s while the stack moves up; the returning sheet
@@ -178,9 +181,11 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
   its target, so the mean is always defined. Rotation and pivot are computed from the card's own offset.
   Tint, the lit button and the commit follow the recognized grade. Under the dead zone the card goes
   with the finger one to one.
-- The tint (`Grade.tint`) covers the card at most 70 % and never changes the text colour. Hard's tint
-  is its pale green fill in light mode and a mid green (0x527165) in dark mode, where white text on the
-  pale fill would drop to 3.2:1 on the Mac's raised card; the lit button's ring is `Grade.ring`. The grade
+- The tint (`Grade.tint`) covers the card at most 70 % and never changes the text colour. In light mode it
+  is the grade's fill. In dark mode the three greens share one tint, 0x32745B, and Again takes 0xD22727, a
+  step below its fill: white text needs a ground darker than about L .5 on both card faces. The lit
+  button's ring is `Grade.ring`: the grade's fill, except in light mode, where Hard, Good and Easy take Easy's
+  0x299C76, the lightest green that holds 3:1 on the light grey (Again's red holds 4.3:1). The grade
   buttons show no "Recalled" caption.
 - When the finger crosses into another zone or a gap, the card's way jumps; for 300 ms after a crossing
   a short interactive spring smooths it (`CardFlight.glide`: response 0.12 s, damping 0.85); the rest of

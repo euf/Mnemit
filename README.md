@@ -21,9 +21,9 @@ are in [`references/`](references/).
   240°…300°, and nothing in the two gaps between the "no" and the "yes" sectors (210°…240°,
   300°…330°): a swipe there springs back however far or fast it goes. The vertical sectors are
   wide, as a right-handed thumb is fastest up, down and on the diagonal. The card does not follow
-  the raw finger: it moves halfway between the finger and the grade's reference direction (Easy
-  15°, Good 90°, Hard 165°, Forgot 270°), so a finger straight up moves it a little to the right
-  of up and Forgot goes straight left. On the Mac the same arrows, Space to reveal, 1–4 as in Anki.
+  the raw finger: it moves halfway between the finger and the grade's target direction (Easy
+  60°, Good 90°, Hard 120°, Forgot 270°: Easy and Hard 30° above and below due east), so a finger straight up moves it 30° to the right
+  of up, a finger straight down 30° to the right of down, and Forgot goes straight left. On the Mac the same arrows, Space to reveal, 1–4 as in Anki.
 - **One gesture.** Touching the card shows the answer; the same swipe grades it.
 - **One haptic per grade.** A swipe is felt once, when letting go would grade; the card that
   flies off after it is silent, and so is its landing in the ring. A button, a key or a flick
@@ -54,9 +54,8 @@ are in [`references/`](references/).
   little, and more work is a new card.
 - **One ring a day, two rests at most.** The model, and what was dropped from 4.0, are in
   [`learning-flow.md`](references/learning-flow.md). Inside, the day has a time in minutes of work at your own pace,
-  and its first two minutes are the streak step; only How Today Works names them. Today shows the next small goal: "≈ 2
-  min to keep your streak" before the streak step, then the cards left and their time, then
-  "Ring closed". The button under it says the same: Study while the ring is open, Catch Up once it is
+  and its first two minutes are the streak step; only How Today Works names them. Today shows the ring with the cards left in it (a check once it is closed), the streak chip under it ("≈ 2
+  min to keep your 12-day streak" before the streak step, then "12-day streak") and the time the ring needs. The button under it names what comes next: Study while the ring is open, Catch Up once it is
   closed and the plan has cards left, Push On once the plan is done. The streak is kept once the streak
   step is done, and Study rests there once
   ("Streak kept": Keep Going or Done for Now); the next rest is the closed ring, with the rings of
@@ -85,8 +84,9 @@ are in [`references/`](references/).
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
   cards added later, Push On and Catch Up count as cards done beyond it ("31 cards today"). The ring is
-  full at the goal and stays full. The streak is the flame in the middle of every ring, over its days: lit
-  once the day keeps the streak, grey otherwise; the ring in the study bar is empty in the middle. A missed day is repaired when the next day closes its ring, the streak step
+  full at the goal and goes on over itself past it, up to three laps. The streak is the chip under Today's ring, the flame and
+  one sentence: the flame is lit once the day keeps the streak, grey otherwise; the rings themselves hold the cards left, or nothing
+  where they are small. A missed day is repaired when the next day closes its ring, the streak step
   is not enough then; two missed days in a row end the streak. Everything is computed
   from the review logs; nothing extra is stored. A study day starts at 4:00.
 - **Words in memory.** "≈ 28 words in memory · +15 today" is the number of words you would

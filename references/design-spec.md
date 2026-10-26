@@ -49,12 +49,11 @@ Rejected: auto-start of the stream at launch. The learner would not see what is 
 │                              ( + )( … )│ nav bar 44: plus and ellipsis menus (trailing)
 │ Today                                 │ large title 34 bold, system
 │             ╭─────────╮               │
-│             │   🔥    │               │ hero ring 168, line 18, round caps; flame 28 pt
-│             │   12    │               │ days: largeTitle bold, monospaced digits
-│             │day streak│              │ caption, secondary
+│             │   12    │               │ hero ring 168, line 18, round caps; the cards left, bold rounded
+│             │cards left│              │ caption, secondary
 │             ╰─────────╯               │
-│     ≈ 2 min to keep your streak       │ title3 semibold, centred
-│    412 words in memory · +15 today    │ subheadline, secondary
+│ 🔥 ≈ 2 min to keep your 12-day streak │ streak chip: flame and sentence, subheadline semibold, rounded plate
+│  ≈ 5 min · 412 words in memory …      │ gain line, subheadline secondary: ≈ 5 min · 412 words in memory · +15 today
 │       M  T  W  T  F  S  S         ›   │ the week's rings, 22 pt; chevron at the row's end
 │  DECKS                                │ system section header
 │ ┌───────────────────────────────────┐ │
@@ -80,32 +79,32 @@ Vertical budget on the 13 mini: 50 + 44 + about 52 (large title) + hero about 33
 | Hero | `TodayHero` in a `Button` (`.buttonStyle(.plain)`) | One element for VoiceOver (`.accessibilityElement(children: .combine)`); 24 pt between the parts: ring, the two text lines, the week; `.padding(.vertical, 8)`; a tap pushes Progress. |
 | Ring | `HeroRing` over `ProgressRing` | 168 pt, line 18 (a tenth of the size), the drawing and sources in §5.7. In the middle the cards left (`RingCenter.cardsLeft`): the figure at 0.32 of the diameter, bold rounded, and "cards left" under it in secondary (the plural phrase "%lld cards left (caption)" minus its number); a `checkmark` in the accent once the ring is closed. The middle scales with the ring, not with the text size. The owner asked for Fitness quality on 22.10.2026; [H:activity-rings] advises against imitating the Activity rings, the ring here follows the owner. |
 | Streak chip | `StreakChip` | Under the ring: the flame (`StreakFlame`, three states) and one sentence, `.subheadline.semibold`, on a rounded plate (`Color.streak` at 14 % when kept or at risk, secondary at 12 % when open). The sentence by state: kept "12-day streak", open "≈ 2 min to keep your 12-day streak", at risk "Close the ring to save your 12-day streak", 0 days "Start your streak · ≈ 2 min". One element for VoiceOver. |
-| Headline | `TodayHeadline.text` | `.title3.weight(.semibold)`, centred, wraps at large sizes (no line limit). The states are in §2.4. |
-| Gain line | `MemoryLine` | `.subheadline` secondary, `.monospacedDigit()`: "412 words in memory · +15 today"; a milestone passed today replaces it with "50 words in memory!", semibold, with a `sparkles` glyph in the accent. The same text on the rests. |
+| Gain line | `MemoryLine`, led by `TodayLead` | `.subheadline` secondary, `.monospacedDigit()`, centred, wraps at large sizes: "≈ 5 min · 412 words in memory · +15 today", the lead being the time that closes the ring while it is open, "3 left" once it is closed, "Nothing due · next tomorrow" on a day without cards; a milestone passed today replaces it with "50 words in memory!", semibold, with a `sparkles` glyph in the accent. The same text, without the lead, on the rests. The states are in §2.4. |
 | Week | `WeekRings` | Seven rings of 22 pt, weekday initials, today last; the chevron `chevron.forward` (footnote semibold, tertiary) at the trailing end of the row. |
 | Section header | `Section("Decks")` | System. |
 | Deck row | `Button` with an `HStack` | `.buttonStyle(.plain)`, `contentShape(Rectangle())`, pushes the deck screen. Name `.body`; the cards of today's plan left in the deck, `.body`, `.monospacedDigit()`, trailing, or a `checkmark` in secondary when none; then `chevron.forward`. No subtitle. Until the deck is read the number is a redacted placeholder. A paused deck sits in the section "Paused": name in secondary, no counts. |
 | Swipe | `.swipeActions`, `.contextMenu` | Pause Deck (Resume Deck in the Paused section); Remove from List for decks outside the folder. |
 | Bottom bar | `.searchable` + `.searchToolbarBehavior(.minimize)`, `ToolbarItem(.bottomBar)`, `DefaultToolbarItem(kind: .search)` | One bar holds the day's button and the minimised Search All Cards. The button is `.borderedProminent`, labelled by `DayAction`: `Study` in the accent while the ring is open, `Catch Up` once the ring is closed and the plan has cards left, `Learn 10 New Words` once the plan is done, the last two tinted `.secondary`. No footnote under it. Its width is the bar's less 140 pt, at least 120 (`containerRelativeFrame`). |
-| Accessibility | | Study button `accessibilityValue("\(due) cards left")`. Ring centre: "12-day streak, kept today" / "not kept yet" / "at risk". |
+| Accessibility | | Study button `accessibilityValue("\(due) cards left")`. The hero is one element: the ring reads "12 cards left" or "Ring closed", the chip "12-day streak, kept today" / "not kept yet" / its sentence at risk. |
 
 ### 2.4 States
 
-| State | Headline | Button |
+| State | Hero | Button |
 |---|---|---|
-| Before the streak step | `≈ 2 min to keep your streak` | `Study` |
-| After the streak step, ring open | `16 cards left · ≈ 4 min` | `Study` |
-| Ring closed, cards left | `Ring closed · 6 left` | `Catch Up` |
-| Plan done, cards done today | `All done` | `Learn 10 New Words`; opens the stream with ten new cards at once |
-| Nothing due, nothing done today | `Nothing due · next tomorrow` | `Learn 10 New Words` |
-| The day after a missed day, ring open | `Close the ring to save your 12-day streak`, the flame an orange outline | `Study` |
-| Rounds not known yet | `87 cards left · ≈ 7 min`, no figure until the ring is evaluated | `Study` |
+| Before the streak step | ring `16`, chip `≈ 2 min to keep your 12-day streak`, gain line leads `≈ 5 min` | `Study` |
+| After the streak step, ring open | ring `16`, chip `12-day streak`, lead `≈ 4 min` | `Study` |
+| Ring closed, cards left | ring a `checkmark`, chip `12-day streak`, lead `6 left` | `Catch Up` |
+| Plan done, cards done today | ring a `checkmark`, no lead | `Learn 10 New Words`; opens the stream with ten new cards at once |
+| Nothing due, nothing done today | ring a `checkmark`, lead `Nothing due · next tomorrow` | `Learn 10 New Words` |
+| The day after a missed day, ring open | chip `Close the ring to save your 12-day streak`, the flame an orange outline with an exclamation mark | `Study` |
+| No streak | chip `Start your streak · ≈ 2 min`, the flame an outline | `Study` |
+| Rounds not known yet | ring `87`, chip `12-day streak` without its time | `Study` |
 | Decks not read yet | placeholders, redacted, until every deck and the ring are in (`isDayReady`) | `Study` |
-| No decks | the empty hero ring ("Start your streak"), one line of explanation, `New Deck` (`.glassProminent`, large) and `Use iCloud Drive Folder` (`.glass`, large), at most 320 pt wide, the AnkiWeb link under them; Open Deck… is in the `…` menu | – |
+| No decks | the empty hero ring, one line of explanation, `New Deck` (`.glassProminent`, large) and `Use iCloud Drive Folder` (`.glass`, large), at most 320 pt wide, the AnkiWeb link under them; Open Deck… is in the `…` menu | – |
 | Deck unreadable (iCloud) | row without counts | row stays tappable; the stream cover shows the existing failure view |
-| Accessibility sizes (`isAccessibilitySize`) | the headline wraps and the list scrolls; at AX5 the hero keeps its order | unchanged |
+| Accessibility sizes (`isAccessibilitySize`) | the ring keeps its size, the chip's sentence and the gain line wrap and the list scrolls; at AX5 the hero keeps its order | unchanged |
 
-The ring and every line beside it count cards; reviews do not enter. The goal, the done cards, the cards left, the headline (`RoundStatus`), the minutes and the pace are defined in `daily-ring.md`; what the lines say is in `screens.md`, Today. In the small widget the headline sits under the ring (64 pt, 56 pt with a time line, 48 pt at risk) and takes two lines where it does not fit; at risk it is the line Today shows, up to three lines in the subheadline font.
+The ring and every line beside it count cards; reviews do not enter. The goal, the done cards, the cards left, the minutes to the streak step (`RoundStatus`), the minutes and the pace are defined in `daily-ring.md`; what the lines say is in `screens.md`, Today. In the small widget the headline sits under the ring (64 pt, 56 pt with a time line, 48 pt at risk) and takes two lines where it does not fit; at risk it is the line Today shows, up to three lines in the subheadline font.
 
 ### 2.5 Budget
 
@@ -149,7 +148,7 @@ Pushed onto Today's stack from a deck row; what it shows and does: `screens.md`,
 
 ```
 ┌───────────────────────────────────────┐
-│ ✕          ◔  ≈ 4 min         ↶  (…) │ nav 44: close | principal: ring 30 + subheadline | undo | ellipsis
+│ ✕  ◔ 🔥 ≈ 4 min               ↶  (…)  │ nav 44: close, ring 30, flame, subheadline from the leading edge | undo | ellipsis
 │ ┌───────────────────────────────────┐ │
 │ │                                   │ │ card: margin 16, inner padding 24, radius 22,
 │ │         ο Άγγλος    [spk]         │ │   secondarySystemBackground
@@ -158,14 +157,14 @@ Pushed onto Today's stack from a deck row; what it shows and does: `screens.md`,
 │ │       Ο Τζον είναι Άγγλος.        │ │ body, secondary
 │ │                                   │ │
 │ └───────────────────────────────────┘ │ card is about 500 high on the 13 mini
-│    ╰───────────────────────────────╯    │ the cards waiting in the round: up to 4 blank edges, 10 pt apart, 9 pt narrower a side
+│    ╰───────────────────────────────╯    │ the cards waiting in the round: up to 4 blank edges, 8 pt apart, 7 pt narrower a side
 │ ╭───────────────────────────────────╮ │
 │ │            ✕ Forgot               │ │ 50, Grade.again.color
 │ ╰───────────────────────────────────╯ │
 │ ╭────────╮ ╭──────────╮ ╭────────╮    │ 50 high; gaps 12; widths 98 / 123 / 98
 │ │  Hard  │ │   Good   │ │  Easy  │    │
 │ ╰────────╯ ╰──────────╯ ╰────────╯    │
-└───────────────────────────────────────┘ 12 bottom padding above the safe area; 8 under the bar; 12 + 40 for the edges between card and buttons
+└───────────────────────────────────────┘ 12 bottom padding above the safe area; 8 under the bar; 12 + 32 for the edges between card and buttons
 ```
 
 Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98, Good 123, Easy 98.
@@ -175,7 +174,7 @@ Width: 343 inside the 16 pt margins; (343 − 2 × 12) / 3.25 = 98.2, so Hard 98
 What the header shows: `screens.md`, Study.
 
 - Leading: `Button(role: .close)` (xmark). It replaces the `chevron.backward` End Session button; the stream has no session to end, every grade is saved. The HIG asks for the standard Close symbol and no text label [H:toolbars].
-- Leading, right after the close button (`.topBarLeading`, no shared background): `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + the figures, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)`. The ring is empty inside. Beside it the streak's flame by its state (`StreakFlame`, `.body.semibold`): an outline until today's streak step is done, filled in the streak's orange from then on. It stays full once the goal is reached. A practice shows the word `Practice` as the principal text, without the ring.
+- Leading, right after the close button (`.topBarLeading`, no shared background): `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44) + the figures, `.subheadline`, `.monospacedDigit()`, spacing 8, `.accessibilityElement(children: .combine)`. The ring is empty inside. Beside it the streak's flame by its state (`StreakFlame`, `.body.semibold`): an outline until today's streak step is done, filled in the streak's orange from then on. Past the goal it goes on over itself, up to three laps. A practice shows the word `Practice` as the principal text, without the ring.
 - Trailing: an icon button `arrow.uturn.backward` (Undo) left of `Menu("More", systemImage: "ellipsis")`; there is no chip under the bar: its room goes to the card.
 - The ring is where the cards go (`study-screen.md`, Motion): its frame is reported to `StudyMotion.ringHome` (global coordinates, nothing fixed), it steps and glows when a card is done, and the figures stand beside it.
 - The streak is the flame beside the ring and no figure of its own. The goal-met moment is the ring that closes as the last card leaves and bursts at the rest of the plan.
@@ -194,7 +193,7 @@ The motion into and out of a rest (`RingTraveler`, `SlotOutline`, the staggered 
 | Show Answer | `Button`, `.buttonStyle(.borderedProminent)`, `.controlSize(.large)`, full width, accent fill, the whole rectangle of the grade block (Forgot's top to the bottom of the row), corner radius 14 like the grade buttons. |
 | Forgot | Full width, height `@ScaledMetric(relativeTo: .body) var height = 50`, `Label("Forgot", systemImage: "xmark")`, `.font(.body.weight(.semibold))`, fill `Grade.again.color`, white label. |
 | Don't know | On a card's first showing (`Card.isNew`) the Forgot button reads "Don't know" (`GradeChoice.isNew`, `Grade.buttonTitle(isNew:)`): the same grade (Again), place, size, fill, key and swipe; only the label changes. |
-| Hard / Good / Easy | `WeightedRow(weights: [1, 1.25, 1], spacing: 12)`, same height as Forgot, fills `Grade.hard/good/easy.color`, labels `Grade.onColor`: white on Good and Easy, a dark green on Hard (`GradeSwatch`; §5.3). No caption stands over the row. `minimumScaleFactor(0.7)` goes away; at `isAccessibilitySize` the four buttons stack, full width, gap 12. |
+| Hard / Good / Easy | `WeightedRow(weights: [1, 1.25, 1], spacing: 12)`, same height as Forgot, fills `Grade.hard/good/easy.color`, labels `Grade.onColor`: white on Forgot, a dark green on Hard and Good, near black on Easy (`GradeSwatch`; §5.2). No caption stands over the row. `minimumScaleFactor(0.7)` goes away; at `isAccessibilitySize` the four buttons stack, full width, gap 12. |
 | Spacing | 12 between bezeled controls [H:accessibility]. Hard taken for Forgot is the costly slip for FSRS (comment in `GradeChoice`); the 12 between the rows keeps them apart, Forgot alone above the three "yes" grades. The scale of the study screens is `Spacing`: 4, 8, 12, 16, 24. |
 | Corner radius | 14. |
 | Press state | `Pressable` (opacity 0.6) stays; the HIG requires a press state on custom buttons [H:buttons]. |
@@ -340,9 +339,9 @@ In code the accent is `Color.appAccent`, and `Color.appAccentOnRaised` for a gra
 
 Hues and chroma are OKLCH; ΔE is 100 times the distance in OKLab; ratios are WCAG luminance ratios against the accent `#5856D6` (L 0.53, C 0.191, hue 278°). Neighbour colours are the ones in `Presentation.swift`.
 
-- **Forgot red** (`Grade.again`, `#CE0E1A` light, `#C4111A` dark) has a luminance ratio of 1.00 (light) and 1.08 (dark) against the accent and an OKLCH lightness within 0.01 of the accent's (0.54 and 0.52). The hues are 27° (red) and 278° (accent), 109° apart; chroma is 0.215 and 0.205 against 0.191; ΔE is 33.0 and 32.2. Hue is the separator. Forgot always carries `xmark` and its word, and the accent never means "wrong". On the stream screen the accent is a 30-pt ring (`StreamRing`, §5.7) and the Show Answer button, which the grade buttons replace.
-- **Greens** (`Grade.hard` `#B1E5D1` light and `#91C4B1` dark, `Grade.good` `#467B69` and `#437464`, `Grade.easy` `#0D8265` and `#0C7B60`) lie at OKLCH hue 170°, 107° to 109° from the accent. Hard is the light end of the ramp, L 0.88 and 0.78 at chroma 0.06, with a dark green label (`#0F3B2C` and `#0B2A20`, 8.9:1 and 7.9:1); Good and Easy are L 0.54 and 0.52 with white labels (4.8 to 5.4:1) and differ in chroma (0.064 and 0.105; 0.060 and 0.100 in dark). Hard to Good is ΔE 34.0 (26.0 in dark), Good to Easy 4.1. Lightness tells Hard from the other two and chroma tells Good from Easy, so the grade buttons are labelled, and the accent is never next to them as a peer. Forgot's label is white at 5.7:1 and 6.1:1. `GradeContrastTests` checks every pair by arithmetic on the hex values.
-- **Swipe tint** (`Grade.tint`, at most 70 % over the card; the text keeps its colour): Again, Good and Easy tint with their fill; Hard tints with its pale fill in light mode and with a mid green `#527165` in dark mode, since white text on the pale fill would fall to 3.2:1 on the Mac's raised card. Primary text on the four tints holds 5.5:1 or more in light and 7.1:1 or more in dark, the secondary text 4.3:1 and 4.7:1. The ring round a grade button (`Grade.ring`) is Hard's `#438A73` in light mode (3.67:1 on the screen's grey) and its fill in dark.
+- **Forgot red** (`Grade.again`, `#DC292A` light, `#D72828` dark) is OKLCH L 0.58 and 0.57 at chroma 0.213 and 0.209, hue 27°, 109° from the accent's 278°. Against the accent the luminance ratio is 1.18 (light) and 1.14 (dark), the lightness differs by 0.05 and 0.04, the chroma is 0.191 for the accent, ΔE is 33.2 and 32.8. Hue is the separator. Forgot always carries `xmark` and its word, and the accent never means "wrong". Its label is white at 4.8:1 and 5.0:1 (the lightness was lowered in steps of 0.01 until white held 4.5:1). On the stream screen the accent is a 30-pt ring (`StreamRing`, §5.7) and the Show Answer button, which the grade buttons replace.
+- **Greens** (`Grade.hard` `#98FDD4` light and `#6FF0C0` dark, `Grade.good` `#3EDCA7` and `#59C59D`, `Grade.easy` `#299C76` and `#3B886B`) lie at OKLCH hue 166°, 112° from the accent. Lightness tells them apart: in light mode Hard L 0.92, Good 0.80, Easy 0.62, in dark mode 0.87, 0.75, 0.57; the chroma is 90 % of the sRGB maximum at that lightness in light mode and 75 % in dark mode (at 90 % Hard glows on black). Labels: `#183429` on Hard and Good (11.1:1 and 7.7:1), `#000904` on Easy (5.9:1) in light mode; `#183429` on Hard (9.5:1), `#0E2A1F` on Good (7.2:1), `#000904` on Easy (4.7:1) in dark mode. Hard to Good is ΔE 12.6 (12.2 in dark), Good to Easy 18.4 (18.1): lightness carries the order, which a red-green deficiency leaves, and the title is on every button all the same. The accent is never next to the greens as a peer. Excel's greens lie at hue 152° to 157° and Office's at 135° to 143°; 166° sits next to the 170° the owner accepted. Easy in light mode is 3.6 ΔE from Excel's `#21A366` and in dark mode 7.2 from `#107C41`; if Easy reads as Office, all three greens move up in hue (the comment of `Grade.color` names the rule). `GradeContrastTests` checks every pair by arithmetic on the hex values.
+- **Swipe tint** (`Grade.tint`, at most 70 % over the card; the text keeps its colour): in light mode the tint is the grade's fill. In dark mode the greens' fills are too light for white text on the card, which needs a ground darker than about L 0.5 on both card faces (`#1C1C1E`, `#2C2C2E`): Hard, Good and Easy share `#32745B` (L 0.51, chroma 0.079, the 75 % share) and Again takes `#D22727`. Primary text on the four tints holds 5.5:1 or more in light and 7.1:1 or more in dark, the secondary text 4.3:1 and 4.7:1. The ring round a grade button (`Grade.ring`) is the grade's fill, except in light mode, where Hard, Good and Easy take `#299C76`, the lightest green that reaches 3:1 on the screen's grey (3.08:1; Again's red holds 4.3:1); in dark mode the fills hold 3.4:1 or more on `#1C1C1E`.
 - **Maturity ramp** is one hue, the accent's indigo (OKLCH 278°, `Presentation.swift`): memory reads in the colour of the ring, apart from the grades' red and greens. Lightness 0.86 → 0.40 in light mode and 0.42 → 0.85 in dark, adjacent steps 10–13.5 ΔE2000 apart; New stays grey. Evidence: `ring-design.md`, "The maturity ramp in one hue".
 - **Card face** stays `secondarySystemBackground`. The tint numbers above are measured on a neutral face; a tinted face would move all of them. The icon's cards (`#E4E3FA`, `#F8F7FF`) are not reused in the UI.
 
@@ -383,7 +382,7 @@ On macOS `AccentColor` applies only when the system accent is Multicolor, and se
 
 ### 5.7 Rings: drawing, middle, sources
 
-The owner asked on 22.10.2026 for rings in the manner of the Fitness rings, taken from open-source rings and without a dependency. The drawing is `Shared/Support/ActivityRing.swift`: [MKRingProgressView](https://github.com/maxkonovalov/MKRingProgressView) by Max Konovalov (MIT) transcribed line for line — `RingProgressLayer.drawContent(in:)` as `RingDrawing.draw`, `GradientGenerator` as it is — inside a SwiftUI `Canvas` (`withCGContext`), so the same drawing runs on iOS, macOS and in the widget. The order is MK's: a backdrop circle in the start colour at 15 %; for progress past one lap a solid arc in the start colour, then the context rotated so the gradient arc ends at the head; the end circle in the start colour with a shadow (`w/3` blur, offset `w/10` along the way the ring runs, opacity 1) clipped to the ring; the gradient arc on top, a conic gradient image clipped to the stroked arc. `ProgressRing` hands the drawing at most 1 (`DailyRing.fraction` is capped at 1 as well), so a ring is full at the goal and stays full. Options: MK's defaults, except `hidesRingForZeroProgress` on (an empty ring shows only the backdrop) and the gradient image at the display's scale. `UIBezierPath(arcCenter:…, clockwise: true)` became `CGMutablePath.addArc(…, clockwise: false)`; colours resolved from SwiftUI are converted to device RGB before the generator reads their components. The gradient image depends on size and colours only, so the last one is cached while a ring animates.
+The owner asked on 22.10.2026 for rings in the manner of the Fitness rings, taken from open-source rings and without a dependency. The drawing is `Shared/Support/ActivityRing.swift`: [MKRingProgressView](https://github.com/maxkonovalov/MKRingProgressView) by Max Konovalov (MIT) transcribed line for line — `RingProgressLayer.drawContent(in:)` as `RingDrawing.draw`, `GradientGenerator` as it is — inside a SwiftUI `Canvas` (`withCGContext`), so the same drawing runs on iOS, macOS and in the widget. The order is MK's: a backdrop circle in the start colour at 15 %; for progress past one lap a solid arc in the start colour, then the context rotated so the gradient arc ends at the head; the end circle in the start colour with a shadow (`w/3` blur, offset `w/10` along the way the ring runs, opacity 1) clipped to the ring; the gradient arc on top, a conic gradient image clipped to the stroked arc. `ProgressRing` hands the drawing at most 3 (`ProgressRing.maxLaps`; `DailyRing.fraction` itself stays capped at 1 and says whether the goal is met), so a ring is full at the goal and goes on over itself past it. Options: MK's defaults, except `hidesRingForZeroProgress` on (an empty ring shows only the backdrop) and the gradient image at the display's scale. `UIBezierPath(arcCenter:…, clockwise: true)` became `CGMutablePath.addArc(…, clockwise: false)`; colours resolved from SwiftUI are converted to device RGB before the generator reads their components. The gradient image depends on size and colours only, so the last one is cached while a ring animates.
 
 **Laps.** Every ring draws done over goal, and past 1 the second lap goes over the first with the head's shadow, as the Fitness rings do; the drawn value stops at 3 (`ProgressRing.maxLaps`). Today, the rests, the stream's rings and the week rings take it from `DailyRingFigure.fraction` and `DailyProgress.weekRings`, the Progress calendar from `DayRecord.ringShare`. The middle still counts the cards left until the goal, then it is the `checkmark`. The widget's week keeps closed or not.
 
