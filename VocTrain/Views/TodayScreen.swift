@@ -8,10 +8,10 @@ enum StudyScope: Hashable {
     case deck(URL)
 }
 
-/// Today: the root of the app. The hero (`TodayHero`: the daily ring with the streak in it, what the day asks next,
-/// the words in memory, the week), the decks with the cards left of today's plan in each, and Study. A tap on Study
-/// shows the first card at once; a tap on a deck opens its screen; the hero opens Progress. The search finds a card
-/// in any deck.
+/// Today: the root of the app. The Today card (`TodayCard`: the daily ring, its figures Day streak, the next moment and
+/// Words learned, and the week) as the first section of the list, the decks under it with the cards left of today's plan in
+/// each, and Study. The date of the study day is the navigation subtitle. A tap on Study shows the first card at once; a tap
+/// on a deck opens its screen; the card opens Progress. The search finds a card in any deck.
 ///
 /// A paused deck (`LearningOptions.isPaused`) is no part of the day: it sits in a section of its own at the
 /// bottom, without counts, and Study leaves it out.
@@ -101,6 +101,7 @@ struct TodayScreen: View {
             }
         }
         .navigationTitle("Today")
+        .todaySubtitle(now)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Menu("Add", systemImage: "plus") {
@@ -121,30 +122,27 @@ struct TodayScreen: View {
         }
     }
 
-    /// No deck yet: the hero ring, empty, over the ways to get one.
+    /// No deck yet: the card with the empty ring and what to do, over the ways to get one, buttons in the content, not glass.
     private var empty: some View {
         ScrollView {
             VStack(spacing: Spacing.section) {
-                HeroRing(progress: nil)
-                Text("Add the words you are learning.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                EmptyTodayCard()
+                    .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
                 VStack(spacing: Spacing.gap) {
                     Button(action: newDeck) {
                         Text("New Deck").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
-                    AnkiWebLink(action: showAnkiWeb)
-                        .frame(maxWidth: .infinity)
-                        .buttonStyle(.glass)
+                    .buttonStyle(.borderedProminent)
+                    Button(action: showAnkiWeb) {
+                        Text("Shared Decks").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
                     Button("Use iCloud Drive Folder", action: chooseFolder)
                         .font(.footnote)
                         .controlSize(.regular)
                         .padding(.top, Spacing.hairline)
                 }
                 .controlSize(.large)
-                .frame(maxWidth: 320)
             }
             .padding(Spacing.margin)
             .frame(maxWidth: .infinity)
@@ -160,16 +158,9 @@ struct TodayScreen: View {
     private var list: some View {
         List {
             Section {
-                // The whole hero is a button to Progress; its week row ends in the chevron the deck rows draw too.
-                Button(action: showProgress) {
-                    TodayHero(progress: isDayReady ? progress : nil, now: now, isLoaded: isDayReady, showsChevron: true)
-                        .padding(.vertical, 8)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(progress == nil)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
+                // The list's own card; the whole of it is a button to Progress, its week row ends in the chevron the deck rows draw too.
+                TodayCard(progress: isDayReady ? progress : nil, now: now, isLoaded: isDayReady, open: progress == nil ? nil : showProgress)
+                    .listRowInsets(EdgeInsets())
             }
             let sections = TodayDecks(decks, paused: paused)
             if !sections.active.isEmpty {

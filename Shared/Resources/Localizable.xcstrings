@@ -4236,6 +4236,28 @@
         }
       }
     },
+    "All done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles erledigt"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όλα έτοιμα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё готово"
+          }
+        }
+      }
+    },
     "All done for today": {
       "localizations": {
         "de": {
@@ -11851,6 +11873,28 @@
         }
       }
     },
+    "Reviews left": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederholungen übrig"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Υπόλοιπες επαναλήψεις"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Осталось повторений"
+          }
+        }
+      }
+    },
     "Reviews per new card": {
       "localizations": {
         "de": {
@@ -14205,6 +14249,94 @@
         }
       }
     },
+    "To close the ring": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um den Ring zu schließen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να κλείσεις τον κύκλο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы закрыть кольцо"
+          }
+        }
+      }
+    },
+    "To keep your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um die Serie zu halten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να κρατήσεις το σερί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы сохранить стрик"
+          }
+        }
+      }
+    },
+    "To save your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um die Serie zu retten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να σώσεις το σερί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы спасти стрик"
+          }
+        }
+      }
+    },
+    "To start your streak": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um die Serie zu starten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να ξεκινήσεις το σερί"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы начать стрик"
+          }
+        }
+      }
+    },
     "Today": {
       "localizations": {
         "de": {
@@ -15371,28 +15503,6 @@
         }
       }
     },
-    "Your ring grows after closed rings and shrinks after an open one. Go well past it most days, and it grows to what you do. It starts at 2½ minutes and stays between 2 minutes and an hour.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dein Ring wächst nach geschlossenen Ringen und schrumpft nach einem offenen. Gehst du an den meisten Tagen weit darüber hinaus, wächst er auf das, was du schaffst. Er beginnt bei 2½ Minuten und bleibt zwischen 2 Minuten und einer Stunde."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ο κύκλος σου μεγαλώνει μετά από κλειστούς κύκλους και μικραίνει μετά από έναν ανοιχτό. Αν τις περισσότερες μέρες πας πολύ πιο πέρα, μεγαλώνει ώσπου να φτάσει όσα κάνεις. Ξεκινά στα 2½ λεπτά και μένει ανάμεσα σε 2 λεπτά και μία ώρα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Твоё кольцо растёт после закрытых колец и уменьшается после открытого. Если большинство дней ты заходишь далеко за него, оно вырастает до того, что ты делаешь. Начинается с 2½ минут и остаётся между 2 минутами и часом."
-          }
-        }
-      }
-    },
     "Your ring": {
       "localizations": {
         "de": {
@@ -15411,6 +15521,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Твоё кольцо"
+          }
+        }
+      }
+    },
+    "Your ring grows after closed rings and shrinks after an open one. Go well past it most days, and it grows to what you do. It starts at 2½ minutes and stays between 2 minutes and an hour.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Ring wächst nach geschlossenen Ringen und schrumpft nach einem offenen. Gehst du an den meisten Tagen weit darüber hinaus, wächst er auf das, was du schaffst. Er beginnt bei 2½ Minuten und bleibt zwischen 2 Minuten und einer Stunde."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο κύκλος σου μεγαλώνει μετά από κλειστούς κύκλους και μικραίνει μετά από έναν ανοιχτό. Αν τις περισσότερες μέρες πας πολύ πιο πέρα, μεγαλώνει ώσπου να φτάσει όσα κάνεις. Ξεκινά στα 2½ λεπτά και μένει ανάμεσα σε 2 λεπτά και μία ώρα."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Твоё кольцо растёт после закрытых колец и уменьшается после открытого. Если большинство дней ты заходишь далеко за него, оно вырастает до того, что ты делаешь. Начинается с 2½ минут и остаётся между 2 минутами и часом."
           }
         }
       }

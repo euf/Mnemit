@@ -179,18 +179,24 @@ struct HomeSnapshotTests {
         try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)), types: [.xxxLarge, .accessibility3, .accessibility5])
     }
 
-    /// The four states of the day at the largest text size (the same four at the standard one are the tests above): the ring, the
-    /// streak line, the sentence, the words learned and the week keep their order and wrap, and the list scrolls.
-    @Test func todayInFourStatesAtTheLargestTextSize() async throws {
+    /// The states of the day at the largest text size (the same at the standard one are the tests above): the card's ring stands
+    /// over its figures, which keep their order and wrap, and the list scrolls.
+    @Test func todayInEveryStateAtTheLargestTextSize() async throws {
         let states: [(name: String, counts: [URL: StudyCounts], progress: DailyProgress)] = [
             ("open", leftCounts(done: 3), Self.roundsProgress(done: 3, streak: 12)),
             ("kept", leftCounts(done: 10), Self.roundsProgress(done: 10, streak: 12)),
             ("closed", leftCounts(done: 28), Self.roundsProgress(done: 31, streak: 13, cardsLeft: 48)),
             ("risk", leftCounts(done: 3), Self.roundsProgress(done: 3, streak: 12, repairCards: 15)),
+            ("done", doneCounts, Self.roundsProgress(done: 31, streak: 13)),
+            (
+                "first-day", leftCounts(done: 0),
+                Self.roundsProgress(done: 0, streak: 0, memory: MemoryEstimate(words: 0, wordsAtDayStart: 0), learned: WordsLearned(words: 0, wordsAtDayStart: 0))
+            ),
         ]
         for state in states {
             try await shoot("today-ax5-\(state.name)", today(counts: state.counts, progress: state.progress), height: 1400, types: [.accessibility5])
         }
+        try await shoot("today-ax5-empty", today(decks: [], counts: [:], progress: nil), height: 1000, types: [.accessibility5])
     }
 
     /// A medal's toast on Today stands over the large title, under the bar's buttons: over neither the ring nor a deck row.

@@ -61,6 +61,12 @@ enum DailyRingFigure {
         let cards = shown ?? Double(ring.done) + ring.underway
         return min(ProgressRing.maxLaps, cards / Double(max(1, ring.goal)))
     }
+
+    /// The lap a ring is on once it is past the goal, "2×": a tinted or clear widget draws every lap in one tone, so the number
+    /// says what the arc over itself cannot. `nil` up to the goal.
+    static func laps(_ fraction: Double) -> Int? {
+        fraction > 1 ? Int(fraction.rounded(.up)) : nil
+    }
 }
 
 /// Today's cards done against the goal as an `ActivityRing` from a lighter tint of the accent to the accent: a picture, with
@@ -77,6 +83,8 @@ struct ProgressRing: View {
     var filling: Animation = .smooth
     /// The stroke's thickness; `nil` takes `lineWidth(diameter:)`.
     var lineWidth: CGFloat?
+    /// One flat tone with a stronger track, for a tinted or clear widget (`ActivityRing.isFlat`).
+    var isFlat = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.self) private var environment
@@ -92,8 +100,9 @@ struct ProgressRing: View {
     var body: some View {
         let head = Color.dailyRing.resolve(in: environment)
         ActivityRing(
-            progress: min(Self.maxLaps, max(0, fraction)), color: Color(head), tipColor: .dailyRingTail(of: head, scheme: colorScheme),
-            lineWidth: lineWidth ?? Self.lineWidth(diameter: diameter)
+            progress: min(Self.maxLaps, max(0, fraction)), color: Color(head),
+            tipColor: isFlat ? Color(head) : .dailyRingTail(of: head, scheme: colorScheme),
+            lineWidth: lineWidth ?? Self.lineWidth(diameter: diameter), isFlat: isFlat
         )
         .animation(reduceMotion ? nil : filling, value: fraction)
         .frame(width: diameter, height: diameter)

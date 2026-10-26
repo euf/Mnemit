@@ -45,6 +45,9 @@ struct ActivityRing: View, Animatable {
     /// MK's `endColor`: the head.
     var tipColor: Color
     var lineWidth: CGFloat
+    /// For a tinted or clear widget, which draws every colour in one tone and keeps only the opacity: the track is stronger (0.25) so
+    /// it shows, and the head has no shadow, which would turn to a light halo. `color` and `tipColor` are one colour then.
+    var isFlat = false
 
     @Environment(\.displayScale) private var displayScale
 
@@ -61,7 +64,7 @@ struct ActivityRing: View, Animatable {
             let lineWidth = lineWidth
             let scale = displayScale
             context.withCGContext { cg in
-                RingDrawing.draw(in: cg, bounds: CGRect(origin: .zero, size: size), progress: progress, startColor: start, endColor: end, ringWidth: lineWidth, gradientImageScale: scale)
+                RingDrawing.draw(in: cg, bounds: CGRect(origin: .zero, size: size), progress: progress, startColor: start, endColor: end, ringWidth: lineWidth, gradientImageScale: scale, trackAlpha: isFlat ? 0.25 : 0.15, shadowOpacity: isFlat ? 0 : RingDrawing.endShadowOpacity)
             }
         }
     }
@@ -73,7 +76,7 @@ enum RingDrawing {
     static let endShadowOpacity: CGFloat = 1.0
     static let hidesRingForZeroProgress = true
 
-    static func draw(in context: CGContext, bounds: CGRect, progress: CGFloat, startColor: CGColor, endColor: CGColor, ringWidth: CGFloat, gradientImageScale: CGFloat) {
+    static func draw(in context: CGContext, bounds: CGRect, progress: CGFloat, startColor: CGColor, endColor: CGColor, ringWidth: CGFloat, gradientImageScale: CGFloat, trackAlpha: CGFloat = 0.15, shadowOpacity: CGFloat = endShadowOpacity) {
         context.setShouldAntialias(true)
         context.setAllowsAntialiasing(true)
 
@@ -108,7 +111,7 @@ enum RingDrawing {
         // Draw backdrop circle
 
         context.addPath(circlePath)
-        let bgColor = startColor.copy(alpha: 0.15)!
+        let bgColor = startColor.copy(alpha: trackAlpha)!
         context.setStrokeColor(bgColor)
         context.strokePath()
 
@@ -133,7 +136,7 @@ enum RingDrawing {
         if p > 0.0 || !hidesRingForZeroProgress {
             context.saveGState()
 
-            if endShadowOpacity > 0.0 {
+            if shadowOpacity > 0.0 {
                 context.addPath(
                     CGPath(
                         __byStroking: circlePath,
@@ -153,7 +156,7 @@ enum RingDrawing {
                 context.setShadow(
                     offset: shadowOffset,
                     blur: w / 3,
-                    color: CGColor(gray: 0.0, alpha: endShadowOpacity)
+                    color: CGColor(gray: 0.0, alpha: shadowOpacity)
                 )
             }
 

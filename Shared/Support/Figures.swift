@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 /// The parts of the screens' grammar (`references/product-model.md`, "The grammar of the screens"), taken from Apple's
 /// Fitness Summary: a card's title inside it, a figure as a label over a large value in its entity's colour, and tiles.
@@ -24,38 +25,56 @@ struct CardTitle: View {
     }
 }
 
+/// How large a figure is drawn: the screens' (`regular`), or a widget's, which has the room of a few lines (`compact`).
+enum FigureSize {
+    case regular, compact
+
+    var labelFont: Font { self == .regular ? .subheadline : .caption }
+    var valueFont: Font { .system(self == .regular ? .title2 : .headline, design: .rounded, weight: .semibold) }
+    var unitFont: Font { .system(self == .regular ? .callout : .caption, design: .rounded, weight: .semibold) }
+    var captionFont: Font { self == .regular ? .footnote : .caption2 }
+}
+
 /// A figure: a label over a large value, "Day streak / 12", "To keep your streak / ≈ 2 min". The value is rounded and in its
 /// entity's colour (`Color.appAccent` for the ring's minutes, `Color.streak` for the days), else the primary colour; a
 /// `unit` follows it smaller, in small capitals ("12 days" reads "12 DAYS"); a `caption` sits after it in secondary
-/// ("412 +12 today"). `leading` goes before the value, a flame say.
+/// ("412 +12 today"). `leading` goes before the value, a flame say. In a widget `accentable` marks the value for the tinted
+/// rendering (`widgetAccentable`), where the label stays in the primary group.
 struct Figure<Leading: View>: View {
     var label: Text
     var value: Text
     var unit: Text?
     var caption: Text?
     var tint: Color = .primary
+    var size: FigureSize = .regular
+    var accentable = false
     @ViewBuilder var leading: Leading
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             label
-                .font(.subheadline)
+                .font(size.labelFont)
                 .foregroundStyle(.primary)
+                // A widget has the room of one line, and a label that wraps there costs the figure its height.
+                .lineLimit(size == .compact ? 1 : nil)
+                .minimumScaleFactor(size == .compact ? 0.75 : 1)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 leading
                 value
-                    .font(.system(.title2, design: .rounded, weight: .semibold))
+                    .font(size.valueFont)
                     .monospacedDigit()
                     .foregroundStyle(tint)
+                    .widgetAccentable(accentable)
                 if let unit {
                     unit
-                        .font(.system(.callout, design: .rounded, weight: .semibold))
+                        .font(size.unitFont)
                         .textCase(.uppercase)
                         .foregroundStyle(tint)
+                        .widgetAccentable(accentable)
                 }
                 if let caption {
                     caption
-                        .font(.footnote)
+                        .font(size.captionFont)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -66,8 +85,8 @@ struct Figure<Leading: View>: View {
 }
 
 extension Figure where Leading == EmptyView {
-    init(label: Text, value: Text, unit: Text? = nil, caption: Text? = nil, tint: Color = .primary) {
-        self.init(label: label, value: value, unit: unit, caption: caption, tint: tint) { EmptyView() }
+    init(label: Text, value: Text, unit: Text? = nil, caption: Text? = nil, tint: Color = .primary, size: FigureSize = .regular, accentable: Bool = false) {
+        self.init(label: label, value: value, unit: unit, caption: caption, tint: tint, size: size, accentable: accentable) { EmptyView() }
     }
 }
 

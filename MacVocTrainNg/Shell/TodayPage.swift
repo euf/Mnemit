@@ -2,9 +2,10 @@ import AppKit
 import SwiftUI
 import VocabCore
 
-/// The Today page of the Mac's window, from what it is given so a test can draw it: the iPhone's hero at 200 pt (the ring
-/// without a number, the sentence, the words learned, the week), a button to Progress, with the day's one button under it
-/// (`DayAction`: Study, Catch Up or Learn 10 New Words). Without a deck, the empty ring and the ways to get one.
+/// The Today page of the Mac's window, from what it is given so a test can draw it: the iPhone's Today card (`TodayCard`: the
+/// ring, Day streak, the next moment, Words learned, the week; a button to Progress) on a ground of its own, centred at a
+/// readable width, with the day's one button under it (`DayAction`: Study, Catch Up or Learn 10 New Words). No large title: the
+/// window's title bar has "Today" and the date. Without a deck, the empty card and the ways to get one.
 struct TodayPageContent: View {
     var hasDecks: Bool
     var progress: DailyProgress?
@@ -28,22 +29,18 @@ struct TodayPageContent: View {
                     empty
                 }
             }
-            .frame(maxWidth: 360)
+            .frame(maxWidth: 560)
             .padding(Spacing.section)
             .frame(maxWidth: .infinity)
         }
     }
 
-    /// The hero is a button, as on the iPhone: it opens Progress.
+    /// The card is a button, as on the iPhone: it opens Progress.
     @ViewBuilder
     private var day: some View {
-        Button(action: showProgress) {
-            TodayHero(progress: isLoaded ? progress : nil, now: now, isLoaded: isLoaded, ringSize: 200, showsWeek: true)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help("Progress")
-        .disabled(progress == nil)
+        TodayCard(progress: isLoaded ? progress : nil, now: now, isLoaded: isLoaded, open: progress == nil ? nil : showProgress)
+            .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .help("Progress")
         Button(action: study) {
             Text(action.title)
                 .frame(maxWidth: .infinity)
@@ -55,14 +52,11 @@ struct TodayPageContent: View {
         .disabled(!canStudy)
     }
 
-    /// No deck yet: the hero ring, empty, over the ways to get one: a new deck, shared decks, the iCloud folder as a link.
+    /// No deck yet: the card with the empty ring over the ways to get one: a new deck, shared decks, the iCloud folder as a link.
     @ViewBuilder
     private var empty: some View {
-        HeroRing(progress: nil, diameter: 200)
-        Text("Add the words you are learning.")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
+        EmptyTodayCard()
+            .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         VStack(spacing: Spacing.gap) {
             Button(action: newDeck) {
                 Text("New Deck").frame(maxWidth: .infinity)
@@ -70,7 +64,7 @@ struct TodayPageContent: View {
             .buttonStyle(.borderedProminent)
             .tint(Color.appAccent)
             Button(action: sharedDecks) {
-                Text("Shared Decks on AnkiWeb…").frame(maxWidth: .infinity)
+                Text("Shared Decks").frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             Button("Use iCloud Drive Folder", action: chooseFolder)

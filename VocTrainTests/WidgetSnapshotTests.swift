@@ -130,7 +130,7 @@ struct WidgetSnapshotTests {
         let json = #"{"date":1792663200,"reviews":12,"goal":20,"streakDays":7,"isGoalMet":true,"secondsPerCard":9.5,"due":[{"date":1792663200,"count":42}]}"#
         let snapshot = try #require(WidgetSnapshot.decoded(from: Data(json.utf8)))
         #expect(snapshot.rounds == nil && snapshot.roundsDone == nil && snapshot.minutesToNextRound == nil)
-        #expect(snapshot.wordsInMemory == nil && snapshot.wordsToday == nil)
+        #expect(snapshot.wordsInMemory == nil && snapshot.wordsToday == nil && snapshot.wordsLearned == nil && snapshot.wordsLearnedToday == nil)
         let state = snapshot.state(at: Date(timeIntervalSince1970: 1_792_663_200))
         #expect(state.roundStatus == nil)
         #expect(state.isStreakKept)
@@ -145,21 +145,25 @@ struct WidgetSnapshotTests {
         #expect(rounds.ends == [8, 20])
         let progress = DailyProgress(
             ring: DailyRing(done: 12, goal: 20), streak: Streak(days: 7, repairCards: nil), roundPlan: rounds, streakKeptToday: true,
-            memory: MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2))
+            memory: MemoryEstimate(words: 28.4, wordsAtDayStart: 13.2), learned: WordsLearned(words: 412, wordsAtDayStart: 400))
         let now = Fixtures.date(22, 10, 20)
         let snapshot = WidgetSnapshot(now: now, progress: progress, dates: [now], dueByDeck: [[8]], nextReminder: nil)
         #expect(snapshot.rounds == 2 && snapshot.roundsDone == 1)
         // From 12 done to the goal at 20: eight cards at 15 s, two minutes.
         #expect(snapshot.minutesToNextRound == 2)
         #expect(snapshot.wordsInMemory == 28 && snapshot.wordsToday == 15)
+        #expect(snapshot.wordsLearned == 412 && snapshot.wordsLearnedToday == 12)
         #expect(WidgetSnapshot.decoded(from: try snapshot.encoded()) == snapshot)
 
         let state = snapshot.state(at: now, calendar: Fixtures.studyCalendar)
         #expect(state.roundStatus == RoundStatus(rounds: 2, roundsDone: 1, minutesToNext: 2))
         #expect(state.wordsInMemory == 28 && state.wordsToday == 15)
+        #expect(state.wordsLearned == 412 && state.wordsLearnedToday == 12)
         // The next study day only has a forecast: no rounds, and the words are not the same after a night.
         let tomorrow = snapshot.state(at: Fixtures.date(23, 10), calendar: Fixtures.studyCalendar)
         #expect(tomorrow.roundStatus == nil && tomorrow.wordsInMemory == nil && tomorrow.wordsToday == nil)
+        // The words learned stay, the day's gain does not.
+        #expect(tomorrow.wordsLearned == 412 && tomorrow.wordsLearnedToday == nil)
     }
 
     @Test func theStreakIsKeptOnceTheFirstRoundIsDone() {
