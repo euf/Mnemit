@@ -172,7 +172,7 @@ Every surface is the entities above and nothing else.
 - **A rest "All done for today"** stands where the ring's moment lies behind the stream: the stream began past the ring,
   or went on from its rest.
 - **Deck rows and headers** price the deck's whole plan left, backlog included: "≈ 5 min", and on the deck "≈ 5 min ·
-  5 due · 4 new · 3 learning", zero parts left out. The Mac's deck page shows the counts without the time.
+  5 due · 4 new · 3 learning", zero parts left out. The Mac's deck strip and sidebar badges use the same rule.
 - **Reminders** say "≈ 2 min" always: the time to keep the streak, not the length of the day.
 - **The first showing** of a new card has two wide buttons side by side, Don't know and Know, as tall as the
   two rows of the four buttons they replace; their keys are 2 and 4 on the Mac.
