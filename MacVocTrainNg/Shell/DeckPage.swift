@@ -170,16 +170,20 @@ struct DeckPageContent: View {
         case .options: showingOptions = true
         case .addCards: addingCards = true
         case .importCards: importCards()
+        case let .importFile(file):
+            // The deck was made for these cards: its own first sheet is their preview, not Add Cards.
+            offeredAddCards = true
+            importCards(from: file)
         }
     }
 
-    /// Asks for a file and shows its cards to choose from.
-    private func importCards() {
-        guard !isReadingImport, let url = CardImport.chooseFile() else { return }
+    /// Asks for a file, or takes `file`, the one this empty deck was made for, and shows its cards to choose from.
+    private func importCards(from file: ImportFile? = nil) {
+        guard !isReadingImport, let url = file?.url ?? CardImport.chooseFile() else { return }
         isReadingImport = true
         Task {
             defer { isReadingImport = false }
-            guard let preview = await CardImport.preview(ofFileAt: url, for: document) else { return }
+            guard let preview = await CardImport.preview(ofFileAt: url, for: document, isNewDeck: file != nil, package: file?.package) else { return }
             importPreview = preview
         }
     }

@@ -65,14 +65,26 @@ final class ShellFixture {
 
     /// A review of the first card due in one undo group of its own, which NSDocument counts as one edit, as an event of
     /// the app would: the tests have no event loop that closes the group. Easy takes a new card out of the day.
-    func review(_ deck: OpenDeck, _ document: VocabularyDocument, grade: Grade = .good) throws {
+    /// `closesGroup: false` leaves the group open for a tenth of a second, as the app's run loop leaves the group of an
+    /// event open until its turn is over: a quit right behind the grade meets the group open.
+    func review(_ deck: OpenDeck, _ document: VocabularyDocument, grade: Grade = .good, closesGroup: Bool = true) throws {
         deck.undoManager.groupsByEvent = false
         var mode = SessionMode.study(StudySession(deck: document.deck, at: document.clock.now, calendar: document.calendar))
         guard case let .rescheduled(change) = mode.grade(grade, in: document.deck, at: document.clock.now, calendar: document.calendar) else {
             Issue.record("The study session didn't reschedule the card.")
             return
         }
-        step(deck.undoManager) { document.applyReview(change, alongside: UndoCompanion(undo: {}, redo: {})) }
+        let manager = deck.undoManager
+        if closesGroup {
+            step(manager) { document.applyReview(change, alongside: UndoCompanion(undo: {}, redo: {})) }
+        } else {
+            manager.beginUndoGrouping()
+            document.applyReview(change, alongside: UndoCompanion(undo: {}, redo: {}))
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(100))
+                manager.endUndoGrouping()
+            }
+        }
     }
 
     /// Saves and closes the decks and removes the files.

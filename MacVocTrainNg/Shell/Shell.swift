@@ -28,6 +28,8 @@ final class Shell {
     /// What the menus and the strip ask a deck's page for: a sheet.
     enum DeckRequest: Hashable {
         case options, addCards, importCards
+        /// The cards of a file that made this deck, as the learner chose it before the deck existed.
+        case importFile(ImportFile)
     }
 
     /// What Study runs over.
@@ -53,6 +55,10 @@ final class Shell {
     /// A card Search All Cards asked the table to show.
     var shownCard: Card.ID?
     var request: DeckRequest?
+    /// Whether the sheet that names a new deck is up.
+    var isNamingDeck = false
+    /// Brings the window forward, opening it again after ⌘W; the window sets it once it is there.
+    @ObservationIgnored var showWindow: () -> Void = { NSApp.activate() }
     /// What the search field holds; the cards it finds are in `hits`.
     var query = "" {
         didSet {

@@ -13,14 +13,14 @@ struct DeckTarget: Identifiable {
 /// window whole, the sidebar away, until Done.
 struct ShellView: View {
     @Bindable var shell: Shell
-    @State private var isNamingDeck = false
+    @Environment(\.openWindow) private var openWindow
     @State private var renaming: DeckTarget?
     @State private var deleting: DeckTarget?
     @State private var deleteFailure: String?
 
     var body: some View {
         NavigationSplitView(columnVisibility: Binding(get: { shell.columnVisibility }, set: { shell.setVisibility($0) })) {
-            Sidebar(shell: shell, newDeck: { isNamingDeck = true }, rename: { renaming = DeckTarget(url: $0) }, delete: { deleting = DeckTarget(url: $0) })
+            Sidebar(shell: shell, newDeck: { shell.isNamingDeck = true }, rename: { renaming = DeckTarget(url: $0) }, delete: { deleting = DeckTarget(url: $0) })
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 320)
         } detail: {
             detail
@@ -33,7 +33,13 @@ struct ShellView: View {
         }
         .focusedSceneValue(\.deckActions, shell.deckActions)
         .background(WindowUndoRouting(shell: shell))
-        .onAppear { shell.refresh() }
+        .onAppear {
+            shell.refresh()
+            shell.showWindow = {
+                NSApp.activate()
+                openWindow(id: MacVocTrainApp.shellID)
+            }
+        }
         // The decks may have changed while the window was behind others.
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in shell.refresh() }
         // The plan and the study day change as time passes.
@@ -43,7 +49,7 @@ struct ShellView: View {
                 shell.refresh()
             }
         }
-        .sheet(isPresented: $isNamingDeck) {
+        .sheet(isPresented: $shell.isNamingDeck) {
             NewDeckView { name, introducesNewCards in
                 Task {
                     do {
@@ -112,7 +118,7 @@ struct ShellView: View {
     private var page: some View {
         switch shell.selection {
         case .today:
-            TodayPage(shell: shell, newDeck: { isNamingDeck = true })
+            TodayPage(shell: shell, newDeck: { shell.isNamingDeck = true })
                 .navigationTitle("Today")
         case .progress:
             ProgressPage(shell: shell)

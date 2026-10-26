@@ -2,9 +2,8 @@ import AppKit
 import SwiftUI
 
 /// The window of the deck browser (`DeckWebBrowserView`), from the welcome window and the File
-/// menu: the learner browses the shared decks, and the file they download goes to the welcome
-/// window's "Import Cards…", the way of a package that Finder opens: a new deck whose window
-/// starts the import. One window; asking again brings it to the front.
+/// menu: the learner browses the shared decks, and the file they download fills a new deck of the
+/// shell, the way of a package that Finder opens. One window; asking again brings it to the front.
 @MainActor
 enum DeckWebWindow {
     private static var window: NSWindow?
@@ -17,7 +16,7 @@ enum DeckWebWindow {
         let browser = DeckWebBrowser()
         browser.onFile = { file in
             close()
-            WelcomeRequest.importIntoNewDeck(from: file)
+            Task { await Shell.shared.importIntoNewDeck(from: file) }
         }
         let window = NSWindow(contentViewController: NSHostingController(rootView: DeckWebBrowserView(browser: browser, done: nil).brandTint()))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]

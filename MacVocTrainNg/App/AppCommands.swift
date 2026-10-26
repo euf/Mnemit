@@ -39,11 +39,22 @@ extension FocusedValues {
 
 struct AppCommands: Commands {
     @FocusedValue(\.deckActions) private var actions
-    #if DEBUG
     @Environment(\.openWindow) private var openWindow
-    #endif
 
     var body: some Commands {
+        CommandGroup(replacing: .newItem) {
+            Button("New Deck…") {
+                openWindow(id: MacVocTrainApp.shellID)
+                Shell.shared.isNamingDeck = true
+            }
+            .keyboardShortcut("n")
+            Button("Open Deck…") {
+                openWindow(id: MacVocTrainApp.shellID)
+                Shell.shared.chooseDecks()
+            }
+            .keyboardShortcut("o")
+        }
+
         CommandGroup(after: .importExport) {
             Button("Import Cards…") { actions?.importCards() }
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
@@ -53,19 +64,6 @@ struct AppCommands: Commands {
             Button("Add Cards…") { actions?.addCards() }
                 .keyboardShortcut("l", modifiers: [.command, .shift])
                 .disabled(actions?.isEditable != true || actions?.isInSession == true)
-        }
-
-        CommandGroup(after: .windowList) {
-            Button("Today") { WelcomeWindow.show() }
-                .keyboardShortcut("0")
-            Button("Progress") { ProgressWindow.show() }
-            #if DEBUG
-            Button {
-                openWindow(id: MacVocTrainApp.shellID)
-            } label: {
-                Text(verbatim: "Open Shell (Debug)")
-            }
-            #endif
         }
 
         CommandGroup(after: .help) {
@@ -106,11 +104,6 @@ struct AppCommands: Commands {
                 Button("Pause Deck") { actions?.setPaused(true) }
                     .disabled(actions?.isEditable != true || actions?.isInSession == true)
             }
-
-            Divider()
-
-            Button("How It Works") { HowTodayWorksWindow.show() }
-                .disabled(actions == nil)
         }
     }
 }

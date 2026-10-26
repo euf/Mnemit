@@ -1,6 +1,5 @@
 import AppKit
 import SwiftUI
-import UniformTypeIdentifiers
 import VocabCore
 
 /// A deck of the sidebar: its file and what today's plan has left of it.
@@ -139,19 +138,8 @@ struct Sidebar: View {
                 study: { shell.study(.deck($0)) },
                 setPaused: { url, isPaused in Task { await shell.setPaused(url, isPaused) } },
                 showInFinder: { NSWorkspace.shared.activateFileViewerSelecting([$0]) },
-                rename: rename, delete: delete, newDeck: newDeck, openDeck: openDeck,
+                rename: rename, delete: delete, newDeck: newDeck, openDeck: shell.chooseDecks,
                 sharedDecks: { DeckWebWindow.show() }, chooseFolder: chooseFolder))
-    }
-
-    /// File ▸ Open Deck…: the learner chooses decks, which are selected, outside the folder too.
-    private func openDeck() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.allowedContentTypes = DeckFile.fileExtensions.compactMap { UTType(filenameExtension: $0) }
-        panel.prompt = String(localized: "Open")
-        guard panel.runModal() == .OK else { return }
-        shell.open(panel.urls)
     }
 
     private func chooseFolder() {

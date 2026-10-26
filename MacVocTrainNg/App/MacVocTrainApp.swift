@@ -10,19 +10,14 @@ struct MacVocTrainApp: App {
     }
 
     var body: some Scene {
-        DocumentGroup(newDocument: { NewDecks.newDocument() }) { file in
-            DocumentWindow(file: file)
-        }
-        .commands {
-            AppCommands()
-        }
-
-        // The one window of the new design, beside the document windows until it takes over their place.
+        // The one window: Today, Progress and the decks.
         Window(String("Mnemit"), id: Self.shellID) {
             ShellView(shell: .shared)
                 .brandTint()
         }
-        .defaultLaunchBehavior(.suppressed)
+        .commands {
+            AppCommands()
+        }
 
         Settings {
             PreferencesView()
