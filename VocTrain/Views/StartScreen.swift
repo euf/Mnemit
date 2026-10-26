@@ -33,6 +33,8 @@ struct StartScreen: View {
     /// The file the + menu's Import… picked, which the sheet of `addingCards` shows the cards of;
     /// `nil` for Add Cards.
     @State private var fileToImport: ImportedFile?
+    /// The cards the sheet of `addingCards` asked to study first, which the stream takes up once the sheet has gone.
+    @State private var studyAfterSheet: [Card.ID]?
     @State private var isChoosingImport = false
     /// The Anki package that "Open in Mnemit" brought, copied, while a sheet or the introduction
     /// still covers Today.
@@ -106,7 +108,7 @@ struct StartScreen: View {
             NewDeckSheet(onCreate: createDeck)
         }
         .sheet(item: $addingCards) { deck in
-            AddCardsHost(deck: deck, file: fileToImport)
+            AddCardsHost(deck: deck, file: fileToImport) { studyAfterSheet = $0 }
         }
         .sheet(item: $incomingAnki, onDismiss: importChosenAnki) { package in
             AnkiDestinationSheet(url: package.url, decks: knownDecks.byName) { file, destination in
@@ -181,6 +183,11 @@ struct StartScreen: View {
                     await previous.close()
                     search.invalidate()
                     await refreshAll()
+                    // Study These Now: the deck is saved and closed, the stream opens it again.
+                    if let ids = studyAfterSheet {
+                        studyAfterSheet = nil
+                        study(.deck(previous.url), entry: .studyNow(ids))
+                    }
                     await searchAgain()
                 }
             }

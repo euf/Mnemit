@@ -68,6 +68,8 @@ struct DeckContent: View {
     @State private var isChoosingImport = false
     /// The file of "Import Cards…", for its preview sheet.
     @State private var importedFile: ImportedFile?
+    /// The cards a sheet asked to study first, which the stream takes up once the sheet has gone.
+    @State private var studyAfterSheet: [Card.ID]?
     @State private var deleteFailure: String?
     /// Whether Add Cards came up by itself for this screen's empty deck, once.
     @State private var offeredAddCards = false
@@ -128,15 +130,15 @@ struct DeckContent: View {
                 showsRename = false
             }
         }
-        .sheet(isPresented: $showsAddCards) {
+        .sheet(isPresented: $showsAddCards, onDismiss: studyAddedCards) {
             if let document {
-                AddCardsSheet(document: document)
+                AddCardsSheet(document: document) { studyAfterSheet = $0 }
             }
         }
         .cardFileImporter(isPresented: $isChoosingImport) { importedFile = $0 }
-        .sheet(item: $importedFile) { file in
+        .sheet(item: $importedFile, onDismiss: studyAddedCards) { file in
             if let document {
-                ImportPreviewSheet(document: document, file: file)
+                ImportPreviewSheet(document: document, file: file) { studyAfterSheet = $0 }
             }
         }
         .confirmationDialog("Delete “\(name)”?", isPresented: $confirmsDelete, titleVisibility: .visible) {
@@ -157,6 +159,13 @@ struct DeckContent: View {
         } message: {
             Text(deleteFailure ?? "")
         }
+    }
+
+    /// Study These Now: the sheet has gone, the stream of this deck puts the cards it added first.
+    private func studyAddedCards() {
+        guard let ids = studyAfterSheet else { return }
+        studyAfterSheet = nil
+        start(.studyNow(ids))
     }
 
     /// Today's counts of the deck, from the document once it is read.

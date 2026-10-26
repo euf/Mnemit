@@ -117,9 +117,20 @@ struct DeckEditingSnapshotTests {
     @Test(arguments: [false, true])
     func theConfirmationAfterACard(dark: Bool) async throws {
         let (document, _) = try makeDocument()
-        let window = try await host(AddCardsSheet(document: document, added: 2), dark: dark)
+        let ids = Array(document.deck.cards.prefix(2).map(\.id))
+        let window = try await host(AddCardsSheet(document: document, added: 2, studyable: ids), dark: dark)
         try write(window, name: "add-3-added", dark: dark)
         window.isHidden = true
+
+        // Something typed again: Add is the prominent button and Study These Now stands beside it.
+        let typing = try await host(AddCardsSheet(document: document, question: "ο ταχυδρόμος", answer: "the postman", added: 2, studyable: ids), dark: dark)
+        try write(typing, name: "add-3b-added-typing", dark: dark)
+        typing.isHidden = true
+
+        // The two don't fit in a row at the largest text size: one under the other.
+        let large = try await host(AddCardsSheet(document: document, added: 2, studyable: ids), dark: dark, textSize: .accessibility3)
+        try write(large, name: "add-3c-added-ax3", dark: dark)
+        large.isHidden = true
     }
 
     @Test(arguments: [false, true])

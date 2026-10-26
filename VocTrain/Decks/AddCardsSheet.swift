@@ -9,6 +9,9 @@ import VocabCore
 /// Done adds what is typed, if it can be added, and closes; Cancel closes without it and
 /// asks first if something is typed. The fields of the two ways keep their text while the
 /// other one is shown.
+///
+/// Once cards are added, Study These Now adds what is typed too, closes, and hands the new cards
+/// to `studyNow`: the stream of the deck asks them first.
 struct AddCardsSheet: View {
     private enum Mode: String {
         case oneCard, fromList
@@ -38,6 +41,12 @@ struct AddCardsSheet: View {
     @State private var flipped: Set<String> = []
     /// The cards added since the sheet opened, for the confirmation.
     @State private var addedInSession = 0
+    /// Every card added since the sheet opened.
+    @State private var addedIDs: [Card.ID] = []
+    /// The cards of those that a stream would put first now, for Study These Now.
+    @State private var studyable: [Card.ID] = []
+    /// Called with the cards to study first, after the sheet has been asked to close.
+    private var studyNow: ([Card.ID]) -> Void
     /// Counts the additions, so each one restarts the time its confirmation shows.
     @State private var additions = 0
     @State private var showsConfirmation = false
@@ -48,8 +57,13 @@ struct AddCardsSheet: View {
 
     /// - Parameters: The rest is what the sheet starts with; the snapshot tests show it
     ///   with the fields filled, or just after an addition of `added` cards.
-    init(document: VocabularyDocument, showsList: Bool = false, question: String = "", answer: String = "", hint: String = "", list: String = "", added: Int = 0) {
+    init(
+        document: VocabularyDocument, showsList: Bool = false, question: String = "", answer: String = "", hint: String = "", list: String = "",
+        added: Int = 0, studyable: [Card.ID] = [], studyNow: @escaping ([Card.ID]) -> Void = { _ in }
+    ) {
         self.document = document
+        self.studyNow = studyNow
+        _studyable = State(initialValue: studyable)
         let last = GreekSpeech.isUnderTest ? nil : UserDefaults.standard.string(forKey: Self.modeKey).flatMap(Mode.init(rawValue:))
         _mode = State(initialValue: showsList ? .fromList : last ?? .oneCard)
         _question = State(initialValue: question)
@@ -129,7 +143,7 @@ struct AddCardsSheet: View {
                     }
                 }
             }
-            .safeAreaBar(edge: .bottom) { addButton }
+            .safeAreaBar(edge: .bottom) { bottomButtons }
             .overlay(alignment: .top) {
                 if showsConfirmation {
                     ConfirmationBadge(count: addedInSession)
@@ -282,10 +296,14 @@ struct AddCardsSheet: View {
 
     // MARK: Adding
 
+    /// Add, and once cards are added Study These Now beside it, or under it when the two don't fit in a row.
+    /// The one the learner is most likely to want is the prominent one: Add while something is typed, Study
+    /// These Now when there is nothing left to add.
     @ViewBuilder
-    private var addButton: some View {
+    private var bottomButtons: some View {
         let cards = mode == .fromList ? selectedCards(of: preview).count : 0
-        Button(action: add) {
+        let canAdd = document.isReadyToEdit && (mode == .oneCard ? text != nil : cards > 0)
+        let add = Button(action: add) {
             Group {
                 if mode == .oneCard {
                     Text("Add")
@@ -293,13 +311,48 @@ struct AddCardsSheet: View {
                     Text("Add \(cards) Cards")
                 }
             }
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glassProminent)
-        .controlSize(.large)
-        .padding(.horizontal, Spacing.margin)
-        .padding(.bottom, Spacing.tight)
-        .disabled(!document.isReadyToEdit || (mode == .oneCard ? text == nil : cards == 0))
+        .disabled(!canAdd)
+        if studyable.isEmpty {
+            add
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .padding(.horizontal, Spacing.margin)
+                .padding(.bottom, Spacing.tight)
+        } else {
+            let study = Button(action: study) {
+                Text("Study These Now")
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .frame(maxWidth: .infinity)
+            }
+            .disabled(!document.isReadyToEdit)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Spacing.tight) {
+                    pair(add: add, study: study, canAdd: canAdd)
+                }
+                VStack(spacing: Spacing.tight) {
+                    pair(add: add, study: study, canAdd: canAdd)
+                }
+            }
+            .controlSize(.large)
+            .padding(.horizontal, Spacing.margin)
+            .padding(.bottom, Spacing.tight)
+        }
+    }
+
+    @ViewBuilder
+    private func pair(add: some View, study: some View, canAdd: Bool) -> some View {
+        if canAdd {
+            add.buttonStyle(.glassProminent)
+            study.buttonStyle(.glass)
+        } else {
+            add.buttonStyle(.glass)
+            study.buttonStyle(.glassProminent)
+        }
     }
 
     private func add() {
@@ -316,25 +369,30 @@ struct AddCardsSheet: View {
             focus = CardText.trimmed(question).isEmpty ? .question : .answer
             return
         }
+        let before = Set(document.deck.cards.map(\.id))
         let count = document.addCards(for: text, bothDirections: bothDirections)
         // Keeps the fields while the document can't be changed.
         guard count > 0 else { return }
+        let ids = document.deck.cards.map(\.id).filter { !before.contains($0) }
         question = ""
         answer = ""
         hint = ""
         focus = .question
-        didAdd(count)
+        didAdd(count, ids: ids)
     }
 
     private func addList() {
-        let count = document.addLessonCards(selectedCards(of: preview))
+        let cards = selectedCards(of: preview)
+        let count = document.addLessonCards(cards)
         guard count > 0 else { return }
         listText = ""
         flipped = []
-        didAdd(count)
+        didAdd(count, ids: cards.map(\.id))
     }
 
-    private func didAdd(_ count: Int) {
+    private func didAdd(_ count: Int, ids: [Card.ID]) {
+        addedIDs += ids
+        studyable = StudyStream.addableCards(addedIDs, in: document.deck, at: document.clock.now, calendar: document.calendar)
         addedInSession += count
         additions += 1
         showsConfirmation = true
@@ -352,10 +410,22 @@ struct AddCardsSheet: View {
     }
 
     private func done() {
+        addWhatIsTyped()
+        dismiss()
+    }
+
+    /// Study These Now: what is typed goes in too, as with Done; the sheet closes and the stream follows.
+    private func study() {
+        addWhatIsTyped()
+        let ids = studyable
+        dismiss()
+        studyNow(ids)
+    }
+
+    private func addWhatIsTyped() {
         switch mode {
         case .oneCard: if text != nil { addOne() }
         case .fromList: if !selectedCards(of: preview).isEmpty { addList() }
         }
-        dismiss()
     }
 }

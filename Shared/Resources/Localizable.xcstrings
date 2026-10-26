@@ -13686,6 +13686,28 @@
         }
       }
     },
+    "Study These Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese jetzt lernen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μελέτη τώρα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Учить их сейчас"
+          }
+        }
+      }
+    },
     "Study This Deck": {
       "localizations": {
         "de": {

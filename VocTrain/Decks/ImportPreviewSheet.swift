@@ -89,18 +89,26 @@ private struct CardFileImporter: ViewModifier {
 /// out unchecked and says so. "Add N Cards" adds the checked ones as one change, one Undo; the
 /// cards of an Anki package come with their review history. A package is read while a spinner
 /// shows.
+///
+/// A deck that had no card yet, a new one, also offers Study These Now: it adds the checked cards, closes and
+/// hands the new ones to `studyNow`, so the first cards of the deck are studied at once.
 struct ImportPreviewSheet: View {
     var document: VocabularyDocument
     var file: ImportedFile
+    private var studyNow: (([Card.ID]) -> Void)?
+    /// Whether the deck had no card when the sheet opened.
+    @State private var isNewDeck: Bool
     @State private var preview: CardImport.Preview?
     /// Why the file could not be read.
     @State private var failure: String?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.knownDeckFiles) private var knownDeckFiles
 
-    init(document: VocabularyDocument, file: ImportedFile, preview: CardImport.Preview? = nil) {
+    init(document: VocabularyDocument, file: ImportedFile, preview: CardImport.Preview? = nil, studyNow: (([Card.ID]) -> Void)? = nil) {
         self.document = document
         self.file = file
+        self.studyNow = studyNow
+        _isNewDeck = State(initialValue: document.deck.cards.isEmpty)
         _preview = State(initialValue: preview)
     }
 
@@ -139,9 +147,7 @@ struct ImportPreviewSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add \(preview?.selection.count ?? 0) Cards") {
-                        if let preview {
-                            document.importCards(preview.selectedCards, learningOptions: preview.learningOptions, media: preview.media)
-                        }
+                        if let preview { add(preview) }
                         dismiss()
                     }
                     .disabled(preview?.selection.isEmpty ?? true)
@@ -155,7 +161,40 @@ struct ImportPreviewSheet: View {
                 }
             }
         }
+        .safeAreaBar(edge: .bottom) {
+            if isNewDeck, let studyNow, let preview, offersStudyNow(preview) {
+                Button {
+                    let ids = add(preview)
+                    dismiss()
+                    studyNow(ids)
+                } label: {
+                    Text("Study These Now")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .padding(.horizontal, Spacing.margin)
+                .padding(.bottom, Spacing.tight)
+            }
+        }
         .task { await load() }
+    }
+
+    /// A lesson's worth of new cards from a table: a package brings its own history and a library of cards is
+    /// no lesson, the plan paces both.
+    private func offersStudyNow(_ preview: CardImport.Preview) -> Bool {
+        let cards = preview.selectedCards
+        return preview.anki == nil && (1...Self.studyNowLimit).contains(cards.count) && cards.contains(where: \.isNew)
+    }
+
+    private static let studyNowLimit = 50
+
+    /// Imports the checked cards as one change; returns their ids.
+    @discardableResult
+    private func add(_ preview: CardImport.Preview) -> [Card.ID] {
+        let cards = preview.selectedCards
+        document.importCards(cards, learningOptions: preview.learningOptions, media: preview.media)
+        return cards.map(\.id)
     }
 
     private func load() async {
