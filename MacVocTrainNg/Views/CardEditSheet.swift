@@ -18,14 +18,17 @@ struct CardEditSheet: View {
     @ObservedObject var document: VocabularyDocument
     let cardID: Card.ID
     let hidesAnswer: Bool
+    /// Runs after a save, once the card is changed: the study stream's leech moment goes on with it.
+    var onSave: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
     @State private var question: String
     @State private var answer: String
     @State private var hint: String
     @State private var note: String
 
-    init(document: VocabularyDocument, card: Card, hidesAnswer: Bool = false) {
+    init(document: VocabularyDocument, card: Card, hidesAnswer: Bool = false, onSave: @escaping () -> Void = {}) {
         self.document = document
+        self.onSave = onSave
         cardID = card.id
         self.hidesAnswer = hidesAnswer
         _question = State(initialValue: card.question)
@@ -107,6 +110,7 @@ struct CardEditSheet: View {
         if !hidesAnswer {
             document.setNote(note, of: cardID)
         }
+        onSave()
         dismiss()
     }
 }

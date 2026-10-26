@@ -5031,28 +5031,6 @@
         }
       }
     },
-    "Cards you keep forgetting show up here.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten, die du immer wieder vergisst, erscheinen hier."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι κάρτες που ξεχνάς συνεχώς εμφανίζονται εδώ."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки, которые ты постоянно забываешь, появятся здесь."
-          }
-        }
-      }
-    },
     "Catch Up": {
       "localizations": {
         "de": {
@@ -6237,28 +6215,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Подробности"
-          }
-        }
-      }
-    },
-    "Difficult": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schwierig"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Δύσκολη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сложная"
           }
         }
       }
@@ -8155,6 +8111,28 @@
         }
       }
     },
+    "Keep It": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behalten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Διατήρηση"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оставить"
+          }
+        }
+      }
+    },
     "Keep your %lld-day streak": {
       "localizations": {
         "de": {
@@ -8239,6 +8217,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Keeps slipping": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entgleitet immer wieder"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Συνεχώς ξεφεύγει"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всё время ускользает"
           }
         }
       }
@@ -8573,6 +8573,28 @@
         }
       }
     },
+    "Leech": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremse"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βδέλλα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пиявка"
+          }
+        }
+      }
+    },
     "Leech threshold": {
       "localizations": {
         "de": {
@@ -8591,6 +8613,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Порог для пиявок"
+          }
+        }
+      }
+    },
+    "Leeches": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lernbremsen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βδέλλες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пиявки"
           }
         }
       }
@@ -11873,6 +11917,28 @@
         }
       }
     },
+    "Set Aside": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beiseitelegen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Στην άκρη"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отложить"
+          }
+        }
+      }
+    },
     "Settings": {
       "localizations": {
         "de": {
@@ -14821,6 +14887,28 @@
         }
       }
     },
+    "Words you keep forgetting appear here.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wörter, die du immer wieder vergisst, erscheinen hier."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι λέξεις που ξεχνάς συνεχώς εμφανίζονται εδώ."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слова, которые ты постоянно забываешь, появятся здесь."
+          }
+        }
+      }
+    },
     "Worked (min)": {
       "localizations": {
         "de": {
@@ -15473,28 +15561,6 @@
         }
       }
     },
-    "leech, suspended": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lernbremse, ausgesetzt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "βδέλλα, σε αναστολή"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "пиявка, приостановлена"
-          }
-        }
-      }
-    },
     "less than a day": {
       "localizations": {
         "de": {
@@ -15557,28 +15623,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "или"
-          }
-        }
-      }
-    },
-    "suspended · leech": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ausgesetzt · Lernbremse"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "σε αναστολή · βδέλλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "приостановлена · пиявка"
           }
         }
       }

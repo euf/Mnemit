@@ -498,7 +498,7 @@ extension CardKind {
 
 extension CardFilter {
     /// The filter's name, the same in every browser: All, Due, New, Learning, Suspended,
-    /// Difficult.
+    /// Leeches.
     var title: String {
         switch self {
         case .all: String(localized: "All")
@@ -506,7 +506,7 @@ extension CardFilter {
         case .new: String(localized: "New")
         case .learning: String(localized: "Learning")
         case .suspended: String(localized: "Suspended")
-        case .difficult: String(localized: "Difficult")
+        case .leeches: String(localized: "Leeches")
         }
     }
 
@@ -519,7 +519,7 @@ extension CardFilter {
         case .new: String(localized: "Every card has been studied.")
         case .learning: String(localized: "No card is being learned or relearned.")
         case .suspended: String(localized: "No card is suspended.")
-        case .difficult: String(localized: "Cards you keep forgetting show up here.")
+        case .leeches: String(localized: "Words you keep forgetting appear here.")
         }
     }
 }

@@ -50,6 +50,8 @@ struct StudyView: View {
     @State private var info: Card?
     /// The card that is edited in a sheet.
     @State private var editing: Card?
+    /// The card of the leech moment that is edited in a sheet: the stream goes on once it is saved.
+    @State private var editingLeech: Card?
     /// Whether a finger is down; a drag the system cancels still springs the card back.
     @GestureState private var isDragging = false
     /// Whether a finger is on the card; resets by itself when the touch ends or is cancelled.
@@ -87,6 +89,8 @@ struct StudyView: View {
             Group {
                 if motion.showsRest {
                     restLayer
+                } else if let moment = model.leechMoment {
+                    leechLayer(moment.card, document: moment.document)
                 } else if let card = model.currentCard {
                     cardArea(card)
                 }
@@ -123,7 +127,7 @@ struct StudyView: View {
                         Button("Undo", systemImage: "arrow.uturn.backward", action: undo)
                             .disabled(!canUndo)
                         StreamMenuItems(
-                            hasCard: !model.isResting && model.currentCard != nil, onEdit: { editing = model.currentCard },
+                            hasCard: !model.isResting && model.currentCard != nil && model.leechMoment == nil, onEdit: { editing = model.currentCard },
                             onInfo: { info = model.currentCard }, onSuspend: suspend)
                     }
                 }
@@ -142,6 +146,9 @@ struct StudyView: View {
         }
         .sheet(item: $editing) { card in
             EditCardSheet(document: model.document, card: card)
+        }
+        .sheet(item: $editingLeech) { card in
+            EditCardSheet(document: model.leechMoment?.document ?? model.document, card: card, onSave: continueLeech)
         }
         // After the card has flown out: the question changes when the grade is given. The
         // speech waits until the new card has settled.
@@ -200,6 +207,31 @@ struct StudyView: View {
             .allowsHitTesting(false)
             RingTraveler(motion: motion, progress: ring.progress, reduceMotion: reduceMotion)
         }
+    }
+
+    // MARK: The leech moment
+
+    /// The stop after a Forgot that made `card` a leech: the card's faces and three ways on. The card that was graded has
+    /// flown out; the stream's next card waits.
+    private func leechLayer(_ card: Card, document: VocabularyDocument) -> some View {
+        LeechMomentView(
+            card: card, media: document.deck.media, onEdit: { editingLeech = card }, onToggleAside: toggleLeechAside,
+            onContinue: continueLeech
+        )
+        .onAppear { AccessibilityNotification.ScreenChanged(nil).post() }
+    }
+
+    /// Goes on to the next card, or to the rest when the leech was the round's last card.
+    private func continueLeech() {
+        motion.arrival = .rises
+        model.continueLeech()
+        if model.isResting { motion.restBegan(afterExit: false, reduceMotion: reduceMotion) }
+    }
+
+    private func toggleLeechAside() {
+        motion.arrival = .rises
+        model.toggleLeechAside()
+        if model.isResting { motion.restBegan(afterExit: false, reduceMotion: reduceMotion) }
     }
 
     // MARK: The cards

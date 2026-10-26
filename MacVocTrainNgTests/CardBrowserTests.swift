@@ -64,7 +64,7 @@ extension WindowTests {
             // The names come in the language the test runs in.
             let counts = [6, 2, 1, 1, 1, 1]
             #expect(labels == zip(CardFilter.allCases, counts).map { "\($0.title) \($1)" })
-            #expect(CardFilter.allCases.map(\.rawValue) == ["all", "due", "new", "learning", "suspended", "difficult"])
+            #expect(CardFilter.allCases.map(\.rawValue) == ["all", "due", "new", "learning", "suspended", "leeches"])
             #expect(bar.selectedSegment == 0)
         }
 

@@ -49,7 +49,7 @@ struct StudyMotionTests {
             (GradeReceipt(grade: .good, interval: .days(8)), .ring),
             (GradeReceipt(grade: .again, interval: .learning), .stack),
             (GradeReceipt(grade: .easy, interval: nil), .away),
-            (GradeReceipt(grade: .again, interval: .days(3), isLeech: true), .away),
+            (GradeReceipt(grade: .again, interval: .days(3), isSuspended: true), .away),
         ]
         for (receipt, destination) in receipts {
             motion.depart(card(), receipt: receipt, release: release(), velocity: .zero, behind: 2, reduceMotion: false)

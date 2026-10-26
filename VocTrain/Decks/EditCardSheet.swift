@@ -7,6 +7,8 @@ import VocabCore
 struct EditCardSheet: View {
     var document: VocabularyDocument
     var card: Card
+    /// Runs after a save, once the card is changed: the study stream's leech moment goes on with it.
+    var onSave: () -> Void = {}
     @State private var question: String
     @State private var answer: String
     @State private var hint: String
@@ -14,9 +16,10 @@ struct EditCardSheet: View {
     @State private var showsAdvanced: Bool
     @Environment(\.dismiss) private var dismiss
 
-    init(document: VocabularyDocument, card: Card, showsAdvanced: Bool = false) {
+    init(document: VocabularyDocument, card: Card, showsAdvanced: Bool = false, onSave: @escaping () -> Void = {}) {
         self.document = document
         self.card = card
+        self.onSave = onSave
         _question = State(initialValue: card.question)
         _answer = State(initialValue: card.answer)
         _hint = State(initialValue: card.hint)
@@ -78,6 +81,7 @@ struct EditCardSheet: View {
                     Button("Save") {
                         if let text {
                             document.editCard(card.id, text: text, note: key)
+                            onSave()
                         }
                         dismiss()
                     }

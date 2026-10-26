@@ -10,8 +10,8 @@ struct GradeReceipt: Equatable {
     /// As `Scheduler.previewIntervals` told before the grade; `nil` in practice, which
     /// schedules nothing.
     var interval: ReviewInterval?
-    /// The grade made the card a leech, which suspended it.
-    var isLeech = false
+    /// The grade suspended the card: a leech under the deck's action Suspend.
+    var isSuspended = false
     /// The card was on its first showing: its Again is named "Don't know".
     var isNew = false
     /// The part of a card the grade added to the ring, 0 to 1 (`Card.credit(onDayOf:calendar:steps:)`):
@@ -31,13 +31,12 @@ struct GradeReceipt: Equatable {
     /// The grade by the name its button had, see `Grade.buttonTitle(isNew:)`.
     var title: String { grade.buttonTitle(isNew: isNew) }
 
-    /// What came of the grade: "in 4 days", "again today", "leech, suspended"; `nil` in practice.
+    /// What came of the grade: "in 4 days", "again today"; `nil` in practice and for a card the grade suspended.
     var detail: String? {
-        if isLeech { return String(localized: "leech, suspended") }
-        return interval.map { Format.interval($0) }
+        isSuspended ? nil : interval.map { Format.interval($0) }
     }
 
-    /// "Good · in 4 days", "Forgot · again today", "Don't know · again today", "Forgot · leech, suspended".
+    /// "Good · in 4 days", "Forgot · again today", "Don't know · again today".
     var text: String {
         detail.map { "\(title) · \($0)" } ?? title
     }
@@ -48,13 +47,13 @@ struct GradeReceipt: Equatable {
         case ring
         /// Back today, in a learning step or after a lapse: it leaves and comes back in as a sheet under the stack.
         case stack
-        /// Nowhere the screen shows: a practice, which schedules nothing, or a leech, which
-        /// is suspended. The card leaves and that is all.
+        /// Nowhere the screen shows: a practice, which schedules nothing, or a card the grade suspended.
+        /// The card leaves and that is all.
         case away
     }
 
     var destination: Destination {
-        if isLeech { return .away }
+        if isSuspended { return .away }
         switch interval {
         case .days: return .ring
         case .learning: return .stack
@@ -63,9 +62,9 @@ struct GradeReceipt: Equatable {
     }
 
     /// What the bar says beside the ring for a moment after a done card: "tomorrow", "in 8 days", "in 3 months";
-    /// "again today" and "suspended · leech" for the others; `nil` in practice.
+    /// "again today" for the others; `nil` in practice and for a card the grade suspended.
     var flightLabel: String? {
-        if isLeech { return String(localized: "suspended · leech") }
+        if isSuspended { return nil }
         if case .days(1) = interval { return String(localized: "tomorrow") }
         return interval.map { Format.interval($0) }
     }

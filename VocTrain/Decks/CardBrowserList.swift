@@ -54,18 +54,18 @@ enum BrowserSort: String, CaseIterable, Identifiable {
 /// doesn't, or that it is new.
 enum BrowserState: Equatable {
     case suspended
-    case difficult
+    case leech
     case new
     case due(Date)
 
     /// A suspended card says so even if it is a leech: the learner suspended it, or a
     /// session did when it became one, and either way no session asks it. A leech that is
-    /// back in the cycle says Difficult in place of its date.
+    /// back in the cycle says Leech in place of its date.
     init(_ card: Card, leechThreshold: Int) {
         if card.isSuspended {
             self = .suspended
         } else if card.isLeech(threshold: leechThreshold) {
-            self = .difficult
+            self = .leech
         } else if let learningState = card.learningState {
             self = .due(learningState.due)
         } else {
@@ -76,7 +76,7 @@ enum BrowserState: Equatable {
     func text(now: Date) -> String {
         switch self {
         case .suspended: String(localized: "Suspended")
-        case .difficult: String(localized: "Difficult")
+        case .leech: String(localized: "Leech")
         case .new: String(localized: "New")
         case let .due(date): Format.due(date, now: now)
         }
@@ -85,7 +85,7 @@ enum BrowserState: Equatable {
     var symbol: String? {
         switch self {
         case .suspended: "pause.circle"
-        case .difficult: "exclamationmark.triangle"
+        case .leech: "exclamationmark.triangle"
         case .new, .due: nil
         }
     }
