@@ -65,7 +65,7 @@ struct HeroRing: View {
 
     var body: some View {
         ProgressRing(
-            fraction: progress?.ring.fraction ?? 0, diameter: diameter, center: RingCenter(progress), speaksCenter: true,
+            fraction: DailyRingFigure.fraction(progress, shown: nil), diameter: diameter, center: RingCenter(progress), speaksCenter: true,
             filling: .smooth(duration: 1.4), lineWidth: diameter * 18 / 168)
     }
 }
@@ -120,7 +120,7 @@ struct TodayHero: View {
 
     private var week: some View {
         let loaded = isLoaded ? progress : nil
-        return WeekRings(week: loaded?.week.count == 7 ? loaded!.week : Array(repeating: nil, count: 7), rings: loaded?.weekRings, today: loaded?.ring.fraction ?? 0, now: now)
+        return WeekRings(week: loaded?.week.count == 7 ? loaded!.week : Array(repeating: nil, count: 7), rings: loaded?.weekRings, today: DailyRingFigure.fraction(loaded, shown: nil), now: now)
             .frame(maxWidth: .infinity)
             .overlay(alignment: .trailing) {
                 if showsChevron {

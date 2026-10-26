@@ -911,8 +911,10 @@ struct DailyProgressTests {
             DayRecord(day: 1, done: done, goal: goal, kept: kept, closed: closed, streak: 0)
         }
         #expect(record(done: 15, goal: 15, kept: true, closed: true).ringShare == 1)
-        #expect(record(done: 52, goal: 15, kept: true, closed: true).ringShare == 1)
-        #expect(record(done: 3, goal: 0, kept: true, closed: true).ringShare == 1)
+        #expect(record(done: 14, goal: 10, kept: true, closed: true).ringShare == 1.4, "worked past the goal: a second lap")
+        #expect(record(done: 52, goal: 15, kept: true, closed: true).ringShare == 3, "as far as three laps")
+        #expect(record(done: 25, goal: 8, kept: true, closed: true).ringShare == 3)
+        #expect(record(done: 3, goal: 0, kept: true, closed: true).ringShare == 1, "an empty plan has no laps")
         #expect(record(done: 0, goal: 0, kept: true, closed: true).ringShare == 0)
         #expect(record(done: 10, goal: 15, kept: true, closed: false).ringShare == 10.0 / 15)
         #expect(record(done: 5, goal: 15, kept: false, closed: false).ringShare == 5.0 / 15)

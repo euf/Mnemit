@@ -114,11 +114,13 @@ extension DailyProgress {
 }
 
 enum DailyRingFigure {
-    /// The ring's fraction: the figures', or `shown` cards (done and the parts of those underway) of the
-    /// goal while the ring is ahead of them.
+    /// The ring's fraction, in laps of the goal: the figures' (done and the parts of the cards underway), or `shown`
+    /// cards of them while the ring is ahead of the figures. Past 1 the ring goes on over itself, as the Fitness
+    /// rings do, up to `ProgressRing.maxLaps`.
     static func fraction(_ progress: DailyProgress?, shown: Double?) -> Double {
         guard let ring = progress?.ring else { return 0 }
-        return shown.map { $0 / Double(max(1, ring.goal)) } ?? ring.fraction
+        let cards = shown ?? Double(ring.done) + ring.underway
+        return min(ProgressRing.maxLaps, cards / Double(max(1, ring.goal)))
     }
 }
 
@@ -128,7 +130,8 @@ enum DailyRingFigure {
 /// One ring for every surface. Without `speaksCenter` it is decoration, the text beside it says the figures; the caller
 /// combines them for VoiceOver. `fraction` animates, except under Reduce Motion.
 struct ProgressRing: View {
-    /// 0.4 is two fifths of the goal; 1 and more is a closed ring.
+    /// 0.4 is two fifths of the goal; 1 is a closed ring, and past 1 the ring goes on over itself, a second lap and a
+    /// third, which is as far as it is drawn (`maxLaps`).
     var fraction: Double
     var diameter: CGFloat
     var center: RingCenter = .none
@@ -141,6 +144,9 @@ struct ProgressRing: View {
     var lineWidth: CGFloat?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// The laps drawn at most: three times the goal.
+    static let maxLaps = DayRecord.maxLaps
+
     /// The thickness of the stroke: as much as the Fitness rings take, at least 3 pt.
     static func lineWidth(diameter: CGFloat) -> CGFloat {
         max(3, diameter * 0.15)
@@ -149,7 +155,7 @@ struct ProgressRing: View {
     var body: some View {
         let lineWidth = lineWidth ?? Self.lineWidth(diameter: diameter)
         let ring = ZStack {
-            ActivityRing(progress: min(1, max(0, fraction)), color: .dailyRing, tipColor: .dailyRingTail, lineWidth: lineWidth)
+            ActivityRing(progress: min(Self.maxLaps, max(0, fraction)), color: .dailyRing, tipColor: .dailyRingTail, lineWidth: lineWidth)
                 .animation(reduceMotion ? nil : filling, value: fraction)
             RingCenterLabel(center: center, diameter: diameter, lineWidth: lineWidth)
         }

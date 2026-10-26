@@ -120,9 +120,11 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (Hard, Good, Easy) over those plus the learning steps it still needs, at its best moment of the day
   (`Card.credit(onDayOf:calendar:steps:)`). Every answer recalled moves the ring; Forgot moves nothing
   and takes nothing back. The counts ("M of K cards", "N left") stay in whole cards.
-- **Ring**: done cards against the day's goal. The ring is full at the goal and stays full
-  (`DailyRing.fraction` is capped at 1). Done cards beyond the goal (Catch Up, Learn 10 New Words) count as cards
-  done: "31 cards today".
+- **Ring**: done cards against the day's goal. The ring is full at the goal and goes on over itself past it, a second
+  lap and a third, as the Fitness rings do: the drawn value is done over goal, at most 3 (`DailyRingFigure.fraction`,
+  `ProgressRing.maxLaps`; `DailyRing.fraction` itself stays capped at 1 and says whether the goal is met). Done cards
+  beyond the goal (Catch Up, Learn 10 New Words) count as cards done: "31 cards today". A past day's ring is drawn
+  the same way from `DayRecord.ringShare`: its share of its goal, a closed day at least full and up to 3 laps.
 - **Middle of the ring**: the ring's own quantity. `RingCenter` is `.cardsLeft(n)` (`DailyProgress.cardsToClose`: the
   plan's cards left, at most the goal less the done), `.done` (a `checkmark`, once the ring is closed) or `.none`;
   `RingCenter.shown(at:)` drops it below 56 pt and adds the caption "cards left" from 88 pt, so the bars' and the

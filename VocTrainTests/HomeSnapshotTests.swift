@@ -26,7 +26,7 @@ struct HomeSnapshotTests {
     }
 
     static func progress(done: Int, goal: Int, streak: Int) -> DailyProgress {
-        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil))
+        DailyProgress(ring: DailyRing(done: done, goal: goal), streak: Streak(days: streak, repairCards: nil), cardsLeft: max(0, goal - done))
     }
 
     /// The day cut into four rounds, which end at 8, 16, 24 and 30 cards, with `done` of them done, and the words in memory.
@@ -35,7 +35,8 @@ struct HomeSnapshotTests {
     ) -> DailyProgress {
         let rounds = DayRounds(otherCards: 30, newCards: 0, pace: Pace(newCard: 30, otherCard: 15), seconds: 480)
         return DailyProgress(
-            ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: streak, repairCards: repairCards), pace: Pace(newCard: 30, otherCard: 15),
+            ring: DailyRing(done: done, goal: rounds.goal), streak: Streak(days: streak, repairCards: repairCards),
+            cardsLeft: max(0, rounds.goal - done), pace: Pace(newCard: 30, otherCard: 15),
             roundPlan: rounds, streakKeptToday: rounds.roundsDone(cardsDone: done) > 0, memory: memory,
             week: streak > 0 ? [true, true, false, true, true, true, false] : [nil, nil, nil, nil, nil, nil, false])
     }

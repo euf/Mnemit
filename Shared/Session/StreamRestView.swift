@@ -291,7 +291,7 @@ struct StreamRestView: View {
             if cards > 0 { lines.append(Line("cards") { Text("\(cards) cards today") }) }
         }
         if let progress, progress.week.count == 7 {
-            lines.append(Line("week") { WeekRings(week: progress.week, rings: progress.weekRings, today: progress.ring.fraction, now: rest.now).padding(.vertical, Spacing.tight) })
+            lines.append(Line("week") { WeekRings(week: progress.week, rings: progress.weekRings, today: DailyRingFigure.fraction(progress, shown: nil), now: rest.now).padding(.vertical, Spacing.tight) })
         }
         return lines
     }
@@ -376,7 +376,7 @@ struct WeekRings: View {
     /// The past days' shares of their goals (`DailyProgress.weekRings`). Without it a past day is full when it
     /// closed and empty otherwise, which is all the widget's week keeps.
     var rings: [Double?]? = nil
-    /// Today's ring, 1 when closed.
+    /// Today's ring in laps of the goal, 1 when closed (`DailyRingFigure.fraction`).
     var today: Double
     var now: Date
     /// 22 pt on the screens; the widget's week is smaller.
@@ -402,7 +402,7 @@ struct WeekRings: View {
     /// How full the ring of day `index` is drawn: today's as it stands, a past day's by its own share, else by
     /// whether it closed.
     static func fraction(_ index: Int, week: [Bool?], rings: [Double?]?, today: Double) -> Double {
-        if index == week.count - 1 { return min(1, today) }
+        if index == week.count - 1 { return min(ProgressRing.maxLaps, today) }
         if let rings, rings.indices.contains(index), let share = rings[index] { return share }
         return week[index] == true ? 1 : 0
     }

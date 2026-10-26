@@ -225,6 +225,28 @@ struct RingSnapshotTests {
         try write(try await image(view, size: CGSize(width: 5 * 96 + 4 * 16 + 32, height: 96 + 30 + 32), dark: dark), name: "4-rest", dark: dark)
     }
 
+    /// The laps: rings at 0.5, 1.0, 1.6 and 3.4 of the goal at the week's 22 pt, at 72 pt and at the rest's 96 pt. Past 1 the
+    /// ring goes on over itself; 3.4 is drawn as 3.
+    @Test(arguments: [false, true])
+    func laps(dark: Bool) async throws {
+        let fractions: [Double] = [0.5, 1.0, 1.6, 3.4]
+        func rings(_ diameter: CGFloat, spacing: CGFloat) -> some View {
+            HStack(spacing: spacing) {
+                ForEach(fractions, id: \.self) { fraction in
+                    ProgressRing(fraction: fraction, diameter: diameter)
+                }
+            }
+        }
+        let view = VStack(spacing: 24) {
+            rings(22, spacing: 10)
+            rings(72, spacing: 20)
+            rings(96, spacing: 20)
+        }
+        .padding(16)
+        .background(Color(.systemGroupedBackground))
+        try write(try await image(view, size: CGSize(width: 4 * 96 + 3 * 20 + 32, height: 22 + 72 + 96 + 48 + 32), dark: dark), name: "7-laps", dark: dark)
+    }
+
     /// The places where the drawing changes kind: a sliver, almost closed, closed, and beyond the goal,
     /// which stays closed.
     @Test(arguments: [false, true])

@@ -301,6 +301,22 @@ struct StudyScreenSnapshotTests {
         after.isHidden = true
     }
 
+    /// The bar's ring is left, right after the close button, so it is where it was whatever the text beside it says: the
+    /// time left, "≈ 1 min", while the goal is open and "5 cards today" once it is met.
+    @Test func theBarsRingStaysWhereItIsWhateverTheTextSays() async throws {
+        var places: [CGFloat] = []
+        for done in [3, 5] {
+            let (model, ring, _, _) = try await prepareRound(done: done)
+            let motion = StudyMotion(ring: ring)
+            let window = try await host(model, ring: ring, flight: CardFlight(), motion: motion, dark: false)
+            try await until { motion.ringHome.width > 0 }
+            places.append(motion.ringHome.minX)
+            window.isHidden = true
+        }
+        #expect(places.count == 2 && places[0] > 0, "the ring has a place")
+        #expect(abs(places[0] - places[1]) < 0.5, "the ring moved with the text: \(places)")
+    }
+
     /// A word that wraps to two lines, as the question and as the head of the answer, with an
     /// example sentence.
     @Test(arguments: [false, true])

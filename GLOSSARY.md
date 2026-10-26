@@ -287,9 +287,10 @@ Overdue cards, part of the plan, worked off as the day's time allows.
 Done cards against the daily goal, with the **cards underway**: a card reviewed today and still due
 today counts as the part of a card its answers recalled made, recalled answers over those plus the
 steps it still needs (`Card.credit`), so every answer recalled moves the ring and Forgot moves
-nothing. The ring is full at done ≥ goal, in whole cards, and stays full: done cards beyond the goal
-(Catch Up, Learn 10 New Words) count as cards done ("31 cards today"). `DailyRing.fraction` is capped
-at 1. Its middle holds the cards left, large, with "cards left" as a caption where the ring is big enough
+nothing. The ring is full at done ≥ goal, in whole cards, and goes on over itself past it, as the Fitness rings do,
+to three laps: done cards beyond the goal (Catch Up, Learn 10 New Words) count as cards done ("31 cards today") and
+draw the second lap. `DailyRing.fraction` is capped at 1 and says whether the goal is met; the drawing takes
+`DailyRingFigure.fraction`. Past days draw their own laps (`DayRecord.ringShare`). Its middle holds the cards left, large, with "cards left" as a caption where the ring is big enough
 (from 88 pt; the figure alone from 56 pt), and a `checkmark` once it is closed (`RingCenter`); the small rings
 of the bars and the week are empty inside. No flame and no days in any ring.
 
