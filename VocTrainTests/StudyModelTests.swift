@@ -462,6 +462,23 @@ struct StudyModelTests {
         #expect(StudyModel(document: plain).cardsBehind == 0)
     }
 
+    /// Study These Now: the cards just added are asked first, then the plan; the stack counts them.
+    @Test func studyTheseNowAsksTheAddedCardsFirst() throws {
+        let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d", "e"])
+        let added = Array(document.deck.cards.suffix(2).map(\.id))
+        let model = StudyModel(document: document, entry: .studyNow(added), rounds: RoundGuide(ends: [5]))
+        let first = try #require(model.currentCard?.id)
+        #expect(added.contains(first), "an added card first")
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        let second = try #require(model.currentCard?.id)
+        #expect(added.contains(second) && second != first, "then the other one")
+        #expect(model.cardsBehind == 3, "four cards are left to the ring: the asked one and three behind it")
+        model.reveal()
+        grade(model, .easy, undoManager: undoManager)
+        #expect(!added.contains(try #require(model.currentCard?.id)), "then the plan")
+    }
+
     /// Past the ring the stack goes on: Catch Up's cards left in the plan, not nothing.
     @Test func afterTheRingTheStackIsTheCardsLeftInThePlan() throws {
         let (document, undoManager) = try makeDocument(questions: ["a", "b", "c", "d", "e", "f"])

@@ -184,6 +184,13 @@ final class SessionDriver {
         moveOn()
     }
 
+    /// Study These Now: puts the cards just added (`ids`) first in the stream, ahead of the plan.
+    func addCards(_ ids: [Card.ID]) {
+        guard stream.addCards(ids, in: document.deck, at: document.clock.now, calendar: document.calendar) else { return }
+        lastReceipt = nil
+        moveOn()
+    }
+
     /// The new cards `addNewCards()` would add now; `nil` if there are none, and for a practice.
     var extraNew: ExtraNewCards? {
         guard !stream.isPracticeOnly else { return nil }

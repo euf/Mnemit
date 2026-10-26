@@ -28,9 +28,12 @@ final class StudyModel: Identifiable {
     }
 
     /// What the stream starts with.
-    enum Entry {
+    enum Entry: Equatable {
         /// Today's stack: the plan, which ends; past it only Push On.
         case study
+        /// Study These Now: the cards just added (Add Cards, an import into a new deck) first, then the plan, over the deck
+        /// they went to (`StudyStream.addCards(_:in:at:calendar:)`).
+        case studyNow([Card.ID])
         /// Today's stack once it is done: Push On from Today, ten new cards at once, without the rest at the end
         /// of the plan first.
         case pushOn
@@ -91,7 +94,11 @@ final class StudyModel: Identifiable {
         // driver too: its stopwatch starts with the first card, and opening the voice isn't on
         // the card's account.
         GreekSpeech.shared.open()
-        let isPlan = entry == .study || entry == .pushOn
+        let isPlan: Bool
+        switch entry {
+        case .study, .studyNow, .pushOn: isPlan = true
+        case .practiceMistakes, .practiceNewest: isPlan = false
+        }
         let decks = isPlan ? documents : [documents[0]]
         let progress = ring?.progress
         let doneHere = decks.map { $0.deck.doneCards(onDayOf: $0.clock.now, calendar: $0.calendar) }
@@ -101,7 +108,7 @@ final class StudyModel: Identifiable {
             let now = document.clock.now
             let stream: StudyStream
             switch entry {
-            case .study, .pushOn:
+            case .study, .studyNow, .pushOn:
                 stream = StudyStream(
                     deck: document.deck, at: now, calendar: document.calendar, newCardAllowance: document.newCardAllowance)
             case .practiceMistakes:
@@ -122,6 +129,10 @@ final class StudyModel: Identifiable {
         stage = .asking
         if entry == .pushOn {
             for (index, count) in pushOnCounts.enumerated() where count > 0 { lanes[index].driver.addNewCards(count) }
+        }
+        if case let .studyNow(ids) = entry {
+            // The deck that holds the cards puts them first; a deck that holds none of them is left as it was.
+            for lane in lanes { lane.driver.addCards(ids) }
         }
         for lane in lanes { lane.driver.delegate = self }
         current = mostUrgentLane() ?? 0
