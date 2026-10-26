@@ -2,18 +2,19 @@
 
 ## State
 
-- Version 7.2.x on `main`: the Mac is one window (a sidebar of Today, Progress and the decks; the stream
-  takes the window), a new card is asked like any card and its first Forgot reads Don't know, every review counts in full, neither app asks for
-  a typed answer, and the widgets and reminders follow the day (the flame's three states, the week, the inline
-  accessory, a 21:00 streak reminder). The iPhone and the Mac run 7.2.0 (75ff961), the iPhone signed until
-  02.11. The day's model (one ring that holds the cards left and goes on over itself past the goal, up to three laps,
-  the streak as a chip outside the ring, the stack that ends with the plan, Study / Catch Up / Learn 10 New Words, partial credit, the streak step, two
-  rests, medals, the Progress screen on both apps)
-  and the user's paths through a day, a newcomer's first week included, are `references/learning-flow.md`; the
-  ring's size (seconds, a staircase on closed and open rings) is `references/daily-ring.md`; why the ring is what it is, every alternative measured on synthetic learners
-  and the logs of 2,000 Anki users, and the other decisions of the day with their evidence: `references/ring-design.md`;
-  sources: `references/day-model-research.md`, `speech-stutter-research.md`. Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review).
-  Screens: `references/screens.md`. Brief sub-agents by `references/agent-briefs.md`.
+- Version 8.0.x on `main` (`VERSION`): the product model of `references/product-model.md`. The ring is a picture with laps up to
+  three and no number in it; one sentence led by the flame says the next moment of the day and its minutes ("≈ 2 min to keep
+  your 12-day streak"); Today shows "412 words learned · +12 today" and a deck row shows its minutes or a check; the day has up
+  to three moments (Streak kept, Ring closed, All done) and the stack goes on after the ring (Catch Up, Learn 10 New Words);
+  Study These Now studies the cards just added; a new card's first showing has two buttons, Don't know and Know; the medals
+  are streak milestones, First ring, Perfect week, Comeback, Double ring, Triple ring and Words learned; the day's time follows
+  sustained overshoot (rule D); the Mac is one window. The iPhone and the Mac in `~/Applications` run 7.2.0 (75ff961), the
+  iPhone signed until 02.11: nothing of 8.0 has been seen on a device. The code's
+  rules are `references/daily-ring.md`; the learner's paths through a day, a newcomer's first week included,
+  are `references/learning-flow.md`; why the ring is what it is, every alternative measured on synthetic learners and the logs
+  of 2,000 Anki users: `references/ring-design.md`; sources: `references/day-model-research.md`, `speech-stutter-research.md`.
+  Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review). Screens: `references/screens.md`. Brief sub-agents by
+  `references/agent-briefs.md`.
 - Speech: words are rendered ahead and played from memory (`GreekSpeech`, `SpeechLog` writes
   `Library/Caches/speech.log`, read off the iPhone with `devicectl device copy from`); EF heard no stutter.
 - Strings in en, de, ru, el; `Tools/check-localizations.swift` requires all four.
@@ -57,18 +58,20 @@ In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
 The plan of 7.0–7.1 is `references/quality-plan.md`.
 
-1. **7.2 and 7.3 on the iPhone, to verify live:** the search minimised beside Study, the Don't know label (a new
-   card's first showing), the 21:00 streak reminder, the stack of cards in the stream (step 8, side 7);
-   the number in Today's ring (the cards left, a check once the ring is closed), the streak chip under it (its four
-   sentences, the flame's three states, the exclamation mark at risk), laps on the week's rings (a day worked past
-   its goal draws a second and a third lap, every past day its own share), the stream's header at the leading edge
-   (close, ring, flame and time, the ring not moving when the text changes), the new greens (Hard, Good and Easy told
-   apart by lightness, light and dark, and the card's tint in dark mode), the 30° flight (Easy and Hard fly toward
-   Good's side);
-   and from 6.1 the flame in the widgets, Learn 10 New Words from Today, a reminder that
-   names the streak, the icon's number, "Yesterday's ring closed" before the day's first card, and reviews from
-   the Mac arriving while Today stays open (it reads the decks every minute). Xcode's Apple ID was lost once
-   (24.10): `ios-renew` then fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
+1. **8.0 on the iPhone, to verify live** (install by `ios-renew --force`): the new Today (the ring without a number, the
+   sentence at 375 pt on the 13 mini and at AX5, the flame's three states and the exclamation mark at risk, "412 words
+   learned · +12 today", the deck rows' minutes, the empty Today's New Deck and Shared Decks); the stream (the header's close,
+   ring, flame, minutes and Undo at 375 pt, the ring not moving when the text changes, the stack of up to four edges after the
+   ring, the three moments and their rests: Streak kept with Keep Going, Ring closed with "≈ 12 min of reviews left" and Catch
+   Up, All done with Learn 10 New Words); Study These Now (in Add Cards beside Add, prominent once nothing is left to type,
+   and in the import of a new deck, the stream starting after the sheet has gone); the two buttons of a card's first showing
+   (Don't know and Know, as tall as the four they replace, the swipes still grading four ways); the deck header
+   ("≈ 4 min · 14 due · 6 new · 2 learning"); Progress (totals Days studied, Rings closed, Words learned, "Your ring: 8 min a
+   day · started at 2.5", the Double ring and Triple ring medals); the widgets' sentence in all five families; the reminder
+   "Keep your 12-day streak · ≈ 2 min", the 21:00 one and the icon's "1" while the ring is open; the new greens and the 30°
+   flight; and from 6.1 Learn 10 New Words from Today and reviews from the Mac arriving while Today stays open (it reads the
+   decks every minute). Xcode's Apple ID was lost once (24.10): `ios-renew` then fails with "No Accounts" until EF signs in
+   again in Xcode ▸ Settings ▸ Apple Accounts.
 2. **The Mac's one window, to see live:** seen on 26.10 (vqa): one window on Today, the badges, ⌘1/⌘2/⌘4, a deck's
    Cards and Statistics, Learning Options ⌘;, a deck opened from Finder under Other Decks, the stream by Space, →
    and Z, Done ⌘. bringing the sidebar back. Still to see: a cold launch with a deck from Finder, ⌘Q with a stream
@@ -101,7 +104,7 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    nothing in today's plan doesn't open with Study, so the plan-end rest's Learn 10 New Words can't take its new cards (Learn 10 New Words
    from Today opens every active deck); xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
-   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. At 375 pt with "30 cards today" the stream's header has no room for the Undo button, which then lives in the "More" menu only. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
+   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
 8. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
    duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
 9. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
@@ -112,14 +115,11 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
 
 Drafts from 23.10, not approved by EF; the decisions and everything measured are in `references/ring-design.md`.
 
-1. **Plain-language texts** (EF asked for them "по-человечески"): the ring is "the cards due so you don't forget them, as
-   many as fit your usual time; if time is left, new words fill it"; two modes of Catch Up: a rare day (7-10 % of study
-   days, 5-30 cards: "more than usual is due today: 12 more cards wait in Catch Up") and a lasting backlog (veterans,
-   hundreds of cards: "480 cards have piled up; the ring takes the most forgotten first; at this pace about 3 weeks").
-2. **The ring's size as progress** on the Progress screen ("Your ring: 12 min a day. You started at 2.5"): any adaptive
-   rule fixes the closure share, the size is what differs between people.
-3. **Forecast** in How It Works: what the current intake of new words costs in a month and a year (as Anki's simulator
+1. **A lasting backlog in plain words** (EF asked for plain-language texts "по-человечески"): veterans with hundreds of due cards
+   see "≈ 45 min of reviews left" after the ring; the longer text ("480 cards have piled up; the ring takes the most forgotten
+   first; at this pace about 3 weeks") is not built.
+2. **Forecast** in How It Works: what the current intake of new words costs in a month and a year (as Anki's simulator
    and Noos do).
-4. **Rings without new words**: a learner who runs Learn 10 New Words one day in three has no new word in the ring
+3. **Rings without new words**: a learner who runs Learn 10 New Words one day in three has no new word in the ring
    on 46 % of study days (the reviews of earlier Learn 10 New Words cards fill the time); new words then come only
    through Learn 10 New Words. Watch it in Mnemit's own log before changing anything.

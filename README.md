@@ -16,8 +16,7 @@ are in [`references/`](references/).
   free choices, and its costliest input is Hard on a forgotten card, which still grows the
   interval ([`fsrs-research.md`](references/fsrs-research.md) §1).
 - **A new card's first showing is asked.** A word never seen is asked like any card: question,
-  Show Answer, the four grades. Its red button reads Don't know in place of Forgot, the grade underneath
-  is the same, and later showings read Forgot ([`docs/adr/0007-first-showing-is-asked-as-dont-know.md`](docs/adr/0007-first-showing-is-asked-as-dont-know.md)).
+  Show Answer, then two wide buttons, Don't know and Know (Again and Good underneath; the swipes keep all four grades), and later showings have the four buttons ([`docs/adr/0007-first-showing-is-asked-as-dont-know.md`](docs/adr/0007-first-showing-is-asked-as-dont-know.md)).
 - **Swipes with dead zones.** ← Forgot, → Good, ↑ Easy, ↓ Hard. The recognised sectors follow a
   clock face, 0 at the top, clockwise: Easy 330°…45°, Good 45°…135°, Hard 135°…210°, Forgot
   240°…300°, and nothing in the two gaps between the "no" and the "yes" sectors (210°…240°,
@@ -35,7 +34,7 @@ are in [`references/`](references/).
   "in 8 days" shows beside it; a card that comes back today returns as a blank sheet under the
   stack. The card under it rises into place and can be swiped at once, while the first still
   leaves. At the end of a round the ring comes down into the empty place of the card, bursts, and
-  the lines of the rest come in under it; the milestone of words in memory bursts once. With
+  the lines of the rest come in under it; a medal arrives as a toast. With
   Reduce Motion the card fades in place and nothing travels or bursts.
 - **No intervals on the buttons.** "4 d" under a button reads as a promise and pulls the
   choice; the interval shows beside the ring after grading.
@@ -54,17 +53,17 @@ are in [`references/`](references/).
   left; once the plan is done it offers Learn 10 New Words, ten new cards from the decks, mixed, whose
   reviews make the next days harder. A card is never reviewed before it is due: an early review gains FSRS
   little, and more work is a new card.
-- **One ring a day, two rests at most.** The model, and what was dropped from 4.0, are in
-  [`learning-flow.md`](references/learning-flow.md). Inside, the day has a time in minutes of work at your own pace,
-  and its first two minutes are the streak step; only How It Works names them. Today shows the ring with the cards left in it (a check once it is closed), the streak chip under it ("≈ 2
-  min to keep your 12-day streak" before the streak step, then "12-day streak") and the time the ring needs. The button under it names what comes next: Study while the ring is open, Catch Up once it is
-  closed and the plan has cards left, Learn 10 New Words once the plan is done. The streak is kept once the streak
-  step is done, and Study rests there once
-  ("Streak kept": Keep Going or Done for Now); the next rest is the closed ring, with the rings of
-  the last seven days. The time of a day comes from
-  your review logs: two and a half minutes on the first day, then more after rings you close (15 % after every
-  second in a row) and 22.5 % less after one left open, between two minutes and an hour; a day without study
-  changes nothing. New cards are admitted up to the time it leaves after the day's reviews, so a
+- **One ring a day, up to three moments.** The product model, the one description of what Mnemit is for and what every screen
+  shows, is [`product-model.md`](references/product-model.md); the learner's paths through a day are in
+  [`learning-flow.md`](references/learning-flow.md). Today shows the ring, a picture with no number in it, and one sentence
+  led by the flame that says the next moment and its minutes ("≈ 2 min to keep your 12-day streak"). The button under it names
+  what comes next: Study while the ring is open, Catch Up once it is closed and the plan has cards left, Learn 10 New Words
+  once the plan is done. The streak is kept after the first ≈ 2 minutes, where Study rests once ("Streak kept": Keep Going or
+  Done for Now); the next rest is the closed ring ("Ring closed"), then, after Catch Up, "All done". Study These Now, in Add
+  Cards, studies the cards just added first. Inside, the day has a time in minutes of work at your own pace, learned from your
+  review logs (`daily-ring.md`): two and a half minutes on the first day, then more after rings you close, less after one
+  left open, and, for a learner who goes well past the ring on most days, what they really do; between two minutes and an
+  hour; a day without study changes nothing. New cards are admitted up to the time it leaves after the day's reviews, so a
   break does not turn into a wall of work.
 - **The ring counts cards, and every answer recalled moves it.** A ring in the manner of Apple
   Fitness fills to the daily goal: the
@@ -72,9 +71,7 @@ are in [`references/`](references/).
   review cards due, overdue ones included, and the new cards the day's time admits. A card is done
   once its last review of the day left it due on a later day, so a review card graded Hard,
   Good or Easy is done at once, a new card after its learning steps, and a card graded Forgot
-  when it is through relearning. A card counts once, however many reviews it took. Today
-  counts the cards left in the ring ("12 cards left") and, once the ring is closed, the line says "3 left"
-  while the stream's header says "24 cards today"; done and left add up to the plan. The ring also shows the cards on their way: an
+  when it is through relearning. A card counts once, however many reviews it took. Done and left add up to the plan. The ring also shows the cards on their way: an
   answer recalled moves its card by the answers recalled today over those plus the steps still
   needed, so a new word is half a card after its first Good; Forgot moves nothing, and nothing
   is taken back (`Card.credit`). Each review records how long its
@@ -85,17 +82,14 @@ are in [`references/`](references/).
   in neither count. Older logs without times are priced from the pauses between reviews, by their
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
-  cards added later, Learn 10 New Words and Catch Up count as cards done beyond it ("31 cards today"). The ring is
-  full at the goal and goes on over itself past it, up to three laps. The streak is the chip under Today's ring, the flame and
-  one sentence: the flame is lit once the day keeps the streak, an orange outline with an exclamation mark the day after a missed one, a grey outline otherwise; the rings themselves hold the cards left, or nothing
-  where they are small. A missed day is repaired when the next day closes its ring, the streak step
+  cards added later, Study These Now, Learn 10 New Words and Catch Up count as cards done beyond it. The ring is
+  full at the goal and goes on over itself past it, up to three laps. The flame leads the sentence: filled once the day keeps the streak, an orange outline with an exclamation mark the day after a missed one, a grey outline otherwise; no ring holds a number. A missed day is repaired when the next day closes its ring, the streak step
   is not enough then; two missed days in a row end the streak. Everything is computed
   from the review logs; nothing extra is stored. A study day starts at 4:00.
-- **Words in memory.** "≈ 28 words in memory · +15 today" is the number of words you would
-  recall right now: FSRS's probability of recall added up over the recognition cards you have
-  studied, one card a word. It grows when you learn, falls over days without reviews, and
-  cannot be inflated by counting more cards. The number is rounded down, and the day's gain is
-  against the number at 4:00. A milestone (50, 100, 250, 500, 1,000 and on) is announced on the day it is passed.
+- **Words learned.** "412 words learned · +12 today" counts whole words whose Word → Meaning card has left learning: it
+  grows when you learn, loses a word on a lapse until it is relearned, and cannot be inflated by counting more cards (a word
+  held twice counts once). Medals mark 10, 50, 100, 250, 500, 1,000 and every 1,000. The sum of FSRS's recall probabilities over
+  the recognition cards, "words in memory", is in Progress and How It Works for those who look.
 - **The day's time paces a backlog.** After an import or a break, every card due is in today's
   plan, overdue ones included, the most forgotten first. The goal is the cards of the plan that
   fit the day's time: 1,500 overdue cards with a six-minute day give a goal of about 36 at 10
@@ -116,7 +110,7 @@ are in [`references/`](references/).
 - **Pause a deck.** A deck can be paused, from its row on Today (swipe or long press), from the menu of
   its screen, or on the Mac in Study ▸ Pause Deck. A paused deck takes no part in the day: not in the
   plan, the goal, the rounds, the new cards the day admits (they go to the other decks), the streak,
-  the words in memory, the widget, the reminders or Study. Today lists it
+  the words learned, the widget, the reminders or Study. Today lists it
   under "Paused", with no counts. It stays open: you can browse it, add cards and study it with Study
   This Deck, and what you review there fills the ring only through the cards of the other decks.
   When you resume it, its overdue reviews are due like any other and come back into the plan.
@@ -206,7 +200,7 @@ are in [`references/`](references/).
   πως are two words. Adding or importing a word another deck holds leaves it unticked and names
   the deck; a match that differs only in accents (άπλος, απλός) stays ticked with a notice.
   Glosses are shown and never compared. Each copy keeps its own FSRS state, as in Anki, and one
-  review does not move the other copy. Suspend parks the extra copy, and "words in memory"
+  review does not move the other copy. Suspend parks the extra copy, and "words learned"
   counts a word once. Burying across decks waits until the overlap is measured; the sources, the
   measurement on the Greek decks and the build rules are in
   [`cross-deck-overlap.md`](references/cross-deck-overlap.md).
@@ -234,7 +228,7 @@ are in [`references/`](references/).
 
 - **iPhone** (iOS 26): study, browse and edit cards, add words after a lesson (one card or
   a pasted `word = translation` list), decks, options, import and export, reminders, and a widget
-  (a ring with the cards left and the streak).
+  (the ring and the sentence).
 - **Mac** (macOS 26): one window. Its sidebar lists Today (the cards left as its badge), Progress and the
   decks of the Mnemit folder; Today holds the day's ring over all of them with the same button as the
   iPhone (Study, Catch Up or Learn 10 New Words); a deck's page has its strip with Study This Deck and
@@ -267,7 +261,8 @@ xcodebuild test -project MacVocTrainNg.xcodeproj -scheme VocTrain -destination '
 
 ## Documentation
 
-- [`references/learning-flow.md`](references/learning-flow.md): the learner's day, its rules and paths;
+- [`references/product-model.md`](references/product-model.md): what Mnemit is for and what every screen shows;
+  [`references/learning-flow.md`](references/learning-flow.md): the learner's paths through a day;
   [`references/ring-design.md`](references/ring-design.md): why, with every alternative measured;
   [`references/daily-ring.md`](references/daily-ring.md): how the code computes it.
 - [`references/screens.md`](references/screens.md): every screen on both platforms.
