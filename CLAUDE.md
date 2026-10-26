@@ -34,12 +34,12 @@ Read the file for the area you work on.
 
 - `references/deck-package.md`: the `.mnemit` package and legacy `.voctrain`, editing and merging on
   two devices, deck file operations, card media files.
-- `references/scheduling.md`: today's counts and daily limits, revealed reviews, leeches, the
-  automatic FSRS refit, the day's stack (Study) and Push On, practices, the newest batch.
-- `references/learning-flow.md`: the learner's day: its rules, the journey (one day's paths, Push On, a
+- `references/scheduling.md`: today's counts and daily limits, introductions of new words, reviews, leeches,
+  the automatic FSRS refit, the day's stack (Study) and Learn 10 New Words, practices, the newest batch.
+- `references/learning-flow.md`: the learner's day: its rules, the journey (one day's paths, Learn 10 New Words, a
   newcomer's first days, a return, an Anki user, several decks), the model, horizons, medals.
 - `references/daily-ring.md`: how the code computes the day: plan, goal, rounds, day's time, new-card
-  allowance, done cards, ring, pace, backlog, streak, caches, words in memory, "How Today Works".
+  allowance, done cards, ring, pace, backlog, streak, caches, words in memory, "How It Works".
 - `references/ring-design.md`: why the day is what it is: the rule, every alternative measured, the
   other decisions of the day with their evidence. Sources: `references/day-model-research.md`;
   measurements: `Tools/ring-sim/` (`cards.py`, `minutes.md`, `real-stats.md`).
