@@ -172,17 +172,29 @@ line in the gap above the answer's buttons.
 
 ### The grammar of the screens
 
-The owner's references of 27.10 are Apple's Fitness Summary and the Activity app: a large title with the date under it,
-over cards; the Activity Rings card with the ring on the left and its figures on the right, each a label over a large
-value in its ring's colour ("Move 450/800 CAL"); tiles two to a row (Step Count, Step Distance); a row of small rings for
-the week; a calendar of rings for the month. Mnemit's screens take that grammar:
+The owner's references of 27.10 are Apple's Fitness Summary and the Activity app: the Activity Rings card with the ring
+on the left and its figures on the right, each a label over a large value in its ring's colour; tiles two to a row; a
+row of small rings for the week; a calendar of rings. Mnemit takes that grammar through the iOS 26 and macOS 26 rules
+(`hig-ios26.md`), not Fitness's look:
 
-- **A screen** is a large title over cards. A card has its title inside, top left, and a chevron where it opens more.
-- **A hero card** holds a picture on the left and its figures on the right: each figure a label over a value, the value
-  large, rounded and in its entity's colour (the ring's indigo for the minutes, the streak's orange for the days), the
-  others in the primary colour. A figure needs no unit where its label says it ("Day streak 12", "Words learned 412").
-- **Tiles**, two to a row: a label, a large value, at most one small line under it.
+- **Content is solid, controls are glass.** Cards, rows, tiles, the ring and the figures sit on the grouped fills
+  (secondary on the grouped background); Liquid Glass is only for the bars and the controls that float over content:
+  Study and search in the iPhone's bottom toolbar, the toolbar groups. Buttons inside content are bordered, not glass.
+- **A screen** is a large title (on the iPhone) over grouped sections; Today's date is the navigation subtitle. A section
+  is one card: its title inside, top left, in title case, a chevron where it opens more; never a box inside a box, and
+  corners concentric with their container.
+- **A hero card** holds the ring on the left and its figures on the right: each figure a label over a value, the value
+  in a text style with rounded numerals and in its entity's colour (the ring's indigo for the minutes, the streak's
+  orange for the days), the others in the primary colour; each value carries its unit or its label says it ("Day streak
+  12", "≈ 2 min", "Words learned 412"). At accessibility text sizes the ring stands over the figures.
+- **Tiles**, two to a row in an adaptive grid, one column at accessibility sizes: a label, a large value, at most one
+  small line under it.
 - **Days** are small rings with their letters (the week on Today) and a calendar of rings (Progress).
+- **The ring** is one indigo ring with laps, never Apple's three colours or three rings; colour never says anything alone
+  (the flame's shape, a check, numbers). In a tinted or clear widget the track and the arc differ by opacity, and laps
+  past the goal show as a number.
+- **The Mac** has no large title: the title and the date sit in the window's title bar, Study is in the toolbar and in the
+  page, and nothing the learner needs stands at the window's bottom edge.
 
 The ring still leads by size, and the figures beside it are the day in words: the streak first (the habit, a mechanic of its
 own: Duolingo's split, day-14 retention +3.3 %, `today-layout-research.md`), the next moment with its ≈ minutes (what the
