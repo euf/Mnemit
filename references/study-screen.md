@@ -8,9 +8,12 @@ area and the card's type: `references/design-spec.md` §4.
 
 - All spacing comes from the `Spacing` scale in `Shared/Support/Presentation.swift` (4, 8, 12, 16,
   24 pt): 16 at the sides, 8 under the bar, 12 between the card and the buttons (plus the stack's room,
-  4 × 6 pt, always) and under the buttons, 24 inside the card.
+  4 × 10 pt, always) and under the buttons, 24 inside the card.
 - Show Answer lies as an overlay on the grade block and takes its rectangle, so the card keeps its
-  height when the answer opens.
+  height when the answer opens. The grade block is Forgot on a row of its own, then Hard, Good and Easy
+  in one row under it, Good wider; no caption stands between the rows. Hard is a pale green with a dark
+  green label, Good and Easy are mid greens with white labels (`Grade.swatch`, `GradeSwatch`; the
+  values and their contrast: `design-spec.md` §4.3, `GradeContrastTests`).
 - A touch on the card reveals the answer (`touch`: `DragGesture(minimumDistance: 0)` through
   `simultaneousGesture`). A touch that starts on a speaker belongs to the button: speakers
   (`SpeakButton`) report their frames into `SpeakerPlaces`, and the card's gesture lets such touches
@@ -19,6 +22,28 @@ area and the card's type: `references/design-spec.md` §4.
 - No undo chip on the iPhone: Undo is the `arrow.uturn.backward` button left of the ⋯ menu
   (`StudyModel.canUndo`, the same condition as the menu item) and shake; the chip's room went to the
   card. `UndoChip` remains only on the Mac.
+
+## A new word
+
+In a deck marked New words the first showing of a card never seen is an introduction, not a question
+(`Session.isIntroduction`, `scheduling.md`, "Introductions").
+
+- The card arrives with its answer open and the chip in its corner says "New word" in place of "New". No
+  grade buttons: Next takes the place of Show Answer, as wide and as high as Forgot, in the same corner
+  radius and the accent fill (`StudyView.gradeArea`).
+- Moving on takes a tap on the card shorter than 0.5 s (a longer touch is the long press that opens Card
+  Info), Next, or a swipe in any direction: a drag past `GradeSwipe.commitDistance` (100 pt) or a flick
+  (`flickMinimum`, `flickReach`), `GradeSwipe.movesOn`. There are no sectors and no gaps.
+- The card follows the finger one to one: no zone, no gap, no tint, no commit haptic, no highlighted
+  button (`CardFlight.drag(isIntroduction:)`). A release short of the distance springs back.
+- The card leaves along the swipe, to the right for a tap, for Next and for VoiceOver
+  (`GradeSwipe.exit(toward:)`). No grade was given: the ring does not step, no interval shows, and the
+  bar's figures stay (`StudyMotion.departIntroduction`, `Departure.grade == nil`). Its destination is
+  `away`, as for a card of a practice: nothing flies into the ring or under the stack.
+- Undo stays with the last graded card; an introduction is no step.
+- Speech: a new word speaks its Greek question once it has settled and, since its answer is open, the
+  answer too when the question is not Greek (`cardAppeared`, `answerRevealed`, `speakCurrentCard`).
+- The card comes back as an ordinary question three cards later and is graded as any card.
 
 ## Motion
 
@@ -40,7 +65,11 @@ area and the card's type: `references/design-spec.md` §4.
   screen.
 - Each grade steps the ring in the bar at once by `GradeReceipt.gain` (the part of a card the grade
   added, 0 to 1), ahead of the figures, which wait for the card that speaks (`StudyMotion.shown`,
-  caught up when the figures change and no card is leaving). Gain 0 (Forgot) moves nothing. A done card
+  caught up when the figures change and no card is leaving). Gain 0 (Forgot) moves nothing. The ring has
+  the streak's flame alone in its middle (`StreamRing`, `RingCenter.flame`): an outline until today's
+  streak step is done, `flame.fill` in `Color.streak` from the moment it is. At that moment the ring
+  bumps and bursts as for a medal (`StudyMotion.celebrate()`, called when
+  `DailyProgress.streakKeptToday` goes from false to true). A done card
   also bumps the ring (scale 1.0 to 1.15 and back with a soft glow in the accent, `ringBump`, 0.12 s up
   and 0.18 s down) and plays a small `RingBurst` round it; a card back today steps it quietly, without
   bump or burst. No haptic accompanies the ring.
@@ -56,15 +85,16 @@ area and the card's type: `references/design-spec.md` §4.
   A button or a key has none: x eases in and out, y eases in, 0.45 s. The card keeps turning the way it
   went. The flight is four numbers (across, down, smaller, faded), each by its own curve, so Undo can
   play it backwards and a test can freeze any instant.
-- The stack (`CardStack`, `StackPose`): the edges of a book's pages, up to four (`StackPose.maxEdges`)
+- The stack (`CardStack`, `StackPose`, `Shared/Session/CardStackEdges.swift`): the edges of a book's pages, up to four (`StackPose.maxEdges`)
   by `StudyModel.cardsBehind`: the cards the round still asks less the one on top, those that come back
   today included (`SessionDriver.cardsLeftInRound`, from `RoundGuide`); none when 0 are left, without
   rounds, and in practice. An edge is a blank page of the card's shape (corner radius 22) under the
-  card's bottom edge, its surface a shade darker than the card (0.035 × the level of the primary colour;
-  lighter in dark mode), a 1 pt hairline in the opaque separator colour, fainter with depth (1 − 0.2 per
-  level beyond the first) and a soft shadow (black at 8 %, radius 2, 1 pt down). Each lies 6 pt lower
-  and 6 pt narrower on each side than the one above. The room under the card, 4 × 6 pt, is always
-  reserved, so the card keeps its size. When the card on top leaves, the next one rises into its place
+  card's bottom edge, its surface a shade darker than the card (0.06 × the level of the primary colour, so
+  darker with depth; lighter in dark mode), a 1 pt hairline in the opaque separator colour, fainter with
+  depth (1 − 0.15 per level beyond the first) and a soft shadow (black at 14 %, radius 5, 3 pt down).
+  Each lies 10 pt lower and 9 pt narrower on each side than the one above (`StackPose.step`, `side`). The
+  room under the card, 4 × 10 pt (`StackPose.reserve`), is always reserved, so the card keeps its size.
+  The Mac draws the same pose with `StackEdges`. When the card on top leaves, the next one rises into its place
   from the pose of the first edge (a spring of 0.3 s, bounce 0.15) while its words fade in over 0.15 s.
   An edge that is lost or gained fades over 0.25 s while the stack moves up; the returning sheet
   becomes the edge it gains. When a round begins the edges spread out from under the top card, each
@@ -158,6 +188,10 @@ area and the card's type: `references/design-spec.md` §4.
   reference, so the mean is always defined. Rotation and pivot are computed from the card's own offset.
   Tint, the lit button and the commit follow the recognized grade. Under the dead zone the card goes
   with the finger one to one.
+- The tint (`Grade.tint`) covers the card at most 70 % and never changes the text colour. Hard's tint
+  is its pale green fill in light mode and a mid green (0x527165) in dark mode, where white text on the
+  pale fill would drop to 3.2:1 on the Mac's raised card; the lit button's ring is `Grade.ring`. The grade
+  buttons show no "Recalled" caption.
 - When the finger crosses into another zone or a gap, the card's way jumps; for 300 ms after a crossing
   a short interactive spring smooths it (`CardFlight.glide`: response 0.12 s, damping 0.85); the rest of
   the swipe is one to one.
