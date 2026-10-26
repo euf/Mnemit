@@ -357,6 +357,13 @@ public struct DayRounds: Hashable, Sendable {
         return DailyGoal.minutes(seconds: seconds(ofFirst: end) - seconds(ofFirst: done))
     }
 
+    /// The minutes from `done` cards to the goal, the closing of the ring, in whole minutes up and 0 for under
+    /// one, as `minutesToNextRound(cardsDone:)`; `nil` once the goal is done.
+    public func minutesToGoal(cardsDone done: Int) -> Int? {
+        guard let end = ends.last, end > done else { return nil }
+        return DailyGoal.minutes(seconds: seconds(ofFirst: end) - seconds(ofFirst: done))
+    }
+
     /// The minutes round `number` (counting from 1) takes at the day's pace, whole minutes up and 0 for under
     /// one, as `minutesToNextRound(cardsDone:)`; `nil` for a round the day doesn't have.
     public func minutes(ofRound number: Int) -> Int? {
@@ -1218,6 +1225,22 @@ public struct DailyProgress: Hashable, Sendable {
 
     /// The one price of a card left, for the widget, whose forecast counts cards and not their kinds.
     public var secondsPerCardLeft: Double { pace.secondsPerCard(newCards: newCardsLeft, otherCards: otherCardsLeft) }
+
+    /// The minutes to the streak mark, the end of the first round, at the pace of the day: an estimate, so the
+    /// screen says "≈"; whole minutes up, 0 for under one. `nil` once the streak is kept today, or if the plan is empty.
+    public var minutesToStreak: Int? { streakKeptToday || roundsDone > 0 ? nil : roundPlan.minutesToNextRound(cardsDone: ring.done) }
+
+    /// The minutes to the ring's closing, the end of the goal, at the pace of the day, as `minutesToStreak`; `nil` once
+    /// the ring is closed.
+    public var minutesToRing: Int? { ring.isGoalMet ? nil : roundPlan.minutesToGoal(cardsDone: ring.done) }
+
+    /// The minutes of the due cards that stay in the plan after the ring is closed (the goal is the cards that fit the
+    /// day's time, due ones first), at the price of a card that was not new when the day began: what Catch Up asks.
+    /// An estimate, as `minutesToStreak`; `nil` when no due card is left after the ring.
+    public var minutesOfDueAfterRing: Int? {
+        let toRing = ring.isGoalMet ? 0 : max(0, ring.goal - ring.done)
+        return DailyGoal.minutesLeft(cards: max(0, otherCardsLeft - toRing), secondsPerCard: pace.otherCard)
+    }
 
     /// How many rounds today holds.
     public var rounds: Int { roundPlan.rounds }
