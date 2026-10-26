@@ -1,7 +1,8 @@
 import Foundation
 
-/// The daily goal behind the rings, the rounds and the streak, derived from review logs alone:
-/// nothing is stored, so every device that reads the deck files shows the same.
+/// The daily goal behind the rings, the rounds and the streak, derived from review logs and, for the days that
+/// are over, the progress ledger (`DayLedger`), which keeps what those days stood at: the logs of the decks give
+/// today and fill the ledger, so every device that reads the deck files and the ledger shows the same.
 ///
 /// The unit is the card, and the time of a day is in seconds of work at the learner's own pace (`Pace`).
 /// The time of the day, which the logs teach, follows whether the rings closed (`nextTime(after:)`);

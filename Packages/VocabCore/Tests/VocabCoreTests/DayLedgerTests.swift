@@ -211,6 +211,24 @@ extension DailyProgressTests {
         #expect(first.ringDays.map(\.time) == [150, 150, 172.5, 133.6875, 120, 120, 120, 120, 120, 120])
     }
 
+    @Test func daysTheLedgerLacksAreFilledFromTheLogsAndTheRestStaysFrozen() throws {
+        let (a, b, early, first, ledger) = try fixture()
+        // The oldest two days and one in the middle are missing: the logs give them back as they were.
+        var lacking = ledger
+        let missing = [today - 9, today - 8, today - 5]
+        for day in missing { lacking.days[day] = nil }
+        let filled = evaluate([a, b], at: early, ledger: lacking)
+        #expect(filled.ledgerUpdates.map(\.day) == missing)
+        #expect(DayLedger().updating(filled.ledgerUpdates).days == ledger.days.filter { missing.contains($0.key) })
+        var same = filled
+        same.ledgerUpdates = first.ledgerUpdates
+        #expect(same == first)
+        // Only the oldest days gone and the decks too: the ledger's first day is the first day of the progress.
+        var later = ledger
+        for day in missing where day != today - 5 { later.days[day] = nil }
+        #expect(evaluate([], at: early, ledger: later).records.first?.day == today - 7)
+    }
+
     @Test func pausingADeckDeletingADeckOrACardTakesNothingFromThePast() throws {
         let (a, b, early, first, ledger) = try fixture()
         let frozen = past(first)
