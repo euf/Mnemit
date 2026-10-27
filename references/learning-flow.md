@@ -2,7 +2,7 @@
 
 What the learner does from opening the app to the last stack of the day, and how a newcomer, a course learner after a
 lesson, a returner and an Anki veteran pass through it. The model (the promise, the entities, the day, its three moments,
-the sentence, the goal and its size) is `product-model.md`. How the code computes it: `daily-ring.md`. Why each rule won:
+the figures and the sentence, the goal and its size) is `product-model.md`. How the code computes it: `daily-ring.md`. Why each rule won:
 `ring-design.md`, `day-model-research.md`, `first-exposure-research.md`. What each screen shows: `screens.md`. Terms:
 `GLOSSARY.md`, section "Mnemit".
 
@@ -22,8 +22,8 @@ The ordinary days:
 1. A usual day: Study, the first ≈ 2 minutes fill the flame (Streak kept), Keep Going, the ring closes with the plan done:
    Done or Learn 10 New Words. The third moment does not exist.
 2. After a lesson: Add Cards, Study These Now, the stream over that deck (the next journey), then the day as above.
-3. After a break: Study, Streak kept, Ring closed with reviews left ("Ring closed · ≈ 12 min of reviews left"), Catch Up, All
-   done: Done or Learn 10 New Words.
+3. After a break: Study, Streak kept, Ring closed with reviews left (Today's figure reads "Reviews left ≈ 12 min"), Catch Up,
+   All done: Done or Learn 10 New Words.
 4. After a missed day: the flame carries "!" and the first two moments are one: Study until the ring closes, "Streak saved",
    the Comeback medal; then as above.
 
@@ -63,12 +63,20 @@ closes; two in a row end the streak, and the best run stays in Progress.
 
 ### A newcomer's first days with a new deck
 
+The first launch plays the introduction, six steps (`screens.md`, "First launch"): a welcome; **a new word's first
+showing**; the four swipes; "One stack a day"; sync; the reminder. The first showing is a practice with one sample card
+("a janela", "the window"): question, Show Answer, then the two wide buttons of a new card, Don't know and Know. Don't know
+slides the card under a small stack with "It comes back after a few cards."; Know slides it right with "It comes back once
+more before you're done." Both lines are true of the scheduler's first steps (`scheduling.md`, "A new card's first
+showing"); nothing is graded, recorded or scheduled. The swipe practice then teaches the four grades, and "One stack a
+day" says in four lines what the stack, the ring, the streak and the ladder of words are.
+
 Today with no deck offers New Deck first and Shared Decks second, the iCloud folder as a link under them. A new deck opens
 Add Cards by itself, and Study These Now studies what was just added. A new word is asked the first time it comes up, like any
-card, with two wide buttons, Don't know and Know (Don't know is Again, Know is Good; the swipes keep all four grades), and the
-card comes back in the session (`scheduling.md`, "A new card's first showing"). The first grade is the first review: it
-moves the ring when the card is done and writes a log entry. Two minutes fill the flame ("1-day streak"), and the first medal
-comes at 10 words learned.
+card, with the same two buttons (Don't know is Again, Know is Good; the swipes keep all four grades), and the card comes
+back in the session (`scheduling.md`, "A new card's first showing"). The first grade is the first review: it moves the ring
+when the card is done and writes a log entry. Two minutes fill the flame (the Streak kept rest reads "1-day streak"), and the
+first medal comes at 10 words learned.
 
 Day 1 asks 2.5 minutes. At 30 s a new card, the price until the learner's own pace is measured, that is five new words;
 the first four keep the streak. A new word is done after two right answers. A learner of about ten minutes a day who
@@ -89,14 +97,14 @@ until then their extra words come through Learn 10 New Words.
 ### A return after a break
 
 Days without study leave the time as it was. The plan holds every overdue card; the ring is the most forgotten that fit
-the time, with no new word while reviews fill it; the rest waits behind Catch Up once the ring is closed, where the sentence prices it ("Ring closed · ≈ 12 min of reviews left"). A learner who
+the time, with no new word while reviews fill it; the rest waits behind Catch Up once the ring is closed, where the next moment's figure prices it ("Reviews left ≈ 12 min"). A learner who
 stops at the ring meets Catch Up on 6.9 % of a newcomer's study days and 10.4 % of a real user's.
 
 ### An Anki user
 
 The imported collection brings its history, and the replay of the history runs the day's-time rule (`daily-ring.md`), so the time arrives near the
-learner's usual day. The ring holds the whole queue up to an hour, and what is due beyond it is "≈ 45 min of reviews left" after the ring, not a
-ring that cannot close. The deck screen shows Anki's counts ("≈ 4 min · 14 due · 6 new · 2 learning"); How It Works shows the plan,
+learner's usual day. The ring holds the whole queue up to an hour, and what is due beyond it is "Reviews left ≈ 45 min" after the ring, not a
+ring that cannot close. A deck's Today card shows "≈ 4 min" beside Anki's counts, Due 14, New 6 and Learning 2; How It Works shows the plan,
 the time and the FSRS parameters. A deck's new cards are asked at once, whether the deck is made in the app or by an Anki package.
 
 ### Several decks
@@ -121,10 +129,13 @@ of Learn 10 New Words or of Study These Now.
 - Back today (a step to go, or Forgot): the card comes in again from the edge it left by, already
   a sheet, and slides under the stack, where it becomes the deepest line: the stack is as thick as
   before, which is why the card comes back.
+- A word that keeps slipping: after the Forgot that makes a card a leech (`scheduling.md`, "Leech") the stream stops before
+  the next card on "Keeps slipping", the card's question and answer, and Continue, Edit and Set Aside (Keep It when the
+  deck's action Suspend already suspended it). Undo takes back the grade and the moment together.
 - The last card of a stack has no lines. When it leaves, what lay under it shows: the ring comes down from the
   bar into its place, and the rest's lines come in.
 - Undo plays the grade backwards: the card comes in from the edge it left by to the top, out from
-  under the stack if it went there; the ring takes its step back.
+  under the stack if it went there; the ring takes its step back; a leech's moment goes with the grade.
 - Reduce Motion: the card fades in place, the ring steps without a bump, nothing travels.
 
 ## Progression: the ladder of memory
@@ -179,8 +190,8 @@ They are named in words, never as a count of days; the widget and Today only sho
 | Double ring, Triple ring | one each, on every day that reaches it | a day whose ring went round 2 or 3 times (`DayRecord.ringShare`); a 3-lap day earns both |
 | Comeback | one, then counted | a missed day made up by closing the next day's ring: the streak survived |
 
-**The comeback scenario.** The day after a missed day, Today's sentence reads "≈ 6 min to close the ring and save
-your 12-day streak" instead of "≈ 2 min to keep your 12-day streak", and its flame is an orange outline with an
+**The comeback scenario.** The day after a missed day, Today's next moment reads "To save your streak ≈ 6 min" instead of
+"To keep your streak ≈ 2 min", and the Day streak figure beside it, still 12 days, carries an orange outline of a flame with an
 exclamation mark. When that ring closes, the rest's title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
 
 **Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
@@ -191,7 +202,7 @@ never in the title.
 
 **Emoji or SF Symbols.** An earned medal's face is an emoji, for colour and the moment of joy; it is
 seen only once earned, so the next tier, a grey medal, shows the line's SF Symbol and keeps its emoji a
-surprise. Everything else is SF Symbols: the streak's flame in the sentence and in the widget, the rows of
+surprise. Everything else is SF Symbols: the streak's flame on the Today card, in the stream's header and in the widget, the rows of
 records and figures, the lines of the rests. The faces:
 
 | Line | Faces, tier by tier | Next tier's symbol |
@@ -203,18 +214,18 @@ records and figures, the lines of the rests. The faces:
 | Double ring, Triple ring | 💫 · 🌀 | `repeat` |
 | Comeback | 🐦‍🔥 | `arrow.uturn.up` |
 
-**The Progress screen**, from Today (a tap on the hero, which has a chevron at the end of its week row), top to
-bottom: the streak statistic (the flame, the days large and "day streak", "Best: 21" when the best run is longer than
-the current one) with the totals Days studied, Rings closed, Words learned, the line "Your ring: 8 min a day · started at 2.5"
-and no ring, the day's ring being on Today; the calendar, Monday to Sunday under the weekday
+**The Progress screen**, from Today (a tap on the Today card, which has a chevron at the end of its week row), top to
+bottom: the streak card (the flame, the days large and "Day streak", "Best: 21" when the best run is longer than
+the current one); the totals as tiles, Days studied, Rings closed, Words learned and Your ring ("8 min", "a day · started
+at 2.5"), with no ring, the day's ring being on Today; the calendar, Monday to Sunday under the weekday
 initials, a row per week from the one of the first study day, at most 13 ("Last 13 weeks" once there are 13, else
 "Calendar"), each day a ring of its share of its goal (laps past the goal, up to three), with a band in the streak's orange behind each run of two or more kept days within a week; the medals (the
-latest up to five, and All Medals: one row for the lines of one medal, then a row per line of tiers); the memory section (the words in memory, and the ladder of
+latest up to five, and Show All: one row for the lines of one medal, then a row per line of tiers); the memory section (the words in memory, and the ladder of
 memory, a bar of the cards started with "N not started" under it and a legend of the five steps); and How It Works as
 the last row.
 
-**Celebrations.** A medal is celebrated the moment it is earned: in the stack a toast slides down under the
-bar for 2.5 s (one after another), the ring in the bar bumps and bursts, and a success haptic plays; a rest
+**Celebrations.** A medal is celebrated the moment it is earned: in the stack a compact toast stands in the gap
+between the card and the buttons (on the Mac in the header's row) for 2.5 s (one after another), the ring in the bar bumps and bursts, and a success haptic plays; a rest
 shows the most notable medal of today under its title, with "+2 more" when there were others, and Today lists the medals of earlier days that this
 device never celebrated (earned on the Mac) once as "New medals". The device keeps what it has celebrated in
 `UserDefaults` (`CelebratedMedals`, `"<kind key>@<day>"`), and its first read marks everything from before
@@ -227,7 +238,7 @@ cards done, the best streak of the month, the achievements of the month, and See
 | Not in the day | Instead | Why |
 |---|---|---|
 | A rest after every round | one rest, at the streak; the next at the ring | a stop every 2 min breaks the flow; the ring already shows progress; the one stop that pays is the streak (Duolingo: the streak screen raised day-7 retention by 1.7 %) |
-| "Round 2 of 4 · ≈ 2 min" on Today, in the bar, in the widget, on the Mac | one sentence with the minutes to the next moment | two progress measures beside one ring; rounds are an internal unit of time |
+| "Round 2 of 4 · ≈ 2 min" on Today, in the bar, in the widget, on the Mac | one figure with the minutes to the next moment | two progress measures beside one ring; rounds are an internal unit of time |
 | The day's time, "Next round ≈ 2 min" | How It Works only | the size of the day is learned, not chosen |
 | Review ahead after catch-up | gone from Keep Going | reviewing before due gains FSRS little, and fills the ring with low-value work; more work is a new card |
 | Keep Going running catch-up, then review ahead, then practice | Catch Up when the plan has cards left; Learn 10 New Words once the stack is done | one named way on; practice stays on the deck screen |

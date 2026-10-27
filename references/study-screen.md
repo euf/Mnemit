@@ -10,11 +10,13 @@ area and the card's type: `references/design-spec.md` §4.
   24 pt): 16 at the sides, 8 under the bar, 12 between the card and the buttons (plus the stack's room,
   4 × 8 pt, always) and under the buttons, 24 inside the card.
 - Show Answer lies as an overlay on the grade block and takes its rectangle, so the card keeps its
-  height when the answer opens. The grade block is Forgot on a row of its own, then Hard, Good and Easy
-  in one row under it, Good wider; no caption stands between the rows. Hard, Good and Easy are three greens
-  of one hue told apart by lightness, Hard the lightest and Easy the deepest, with dark green labels on Hard and
-  Good and a near-black label on Easy (`Grade.swatch`, `GradeSwatch`; the values and their contrast:
-  `design-spec.md` §5.2, `GradeContrastTests`).
+  height when the answer opens. The block is two wide buttons side by side, Forgot (red) and Good (green), each as
+  tall as two rows of buttons (2 × 50 pt and a 12 pt gap, scaled with the text); the setting "Hard and Easy Buttons"
+  lays a later showing out as Forgot on a row of its own and Hard, Good and Easy in one row under it, Good wider
+  (see "The answer buttons"). No caption stands between the rows. The three greens are one hue whose chroma rises
+  from Hard (a dull sage) through Good (a soft mint) to Easy (a vivid jade), their lightness rising a little with
+  it; each label is the lightest dark tint of the hue that reaches 7:1 (`Grade.swatch`, `GradeSwatch`; the values and
+  their contrast: `design-spec.md` §5.2, `GradeContrastTests`).
 - A touch on the card reveals the answer (`touch`: `DragGesture(minimumDistance: 0)` through
   `simultaneousGesture`). A touch that starts on a speaker belongs to the button: speakers
   (`SpeakButton`) report their frames into `SpeakerPlaces`, and the card's gesture lets such touches
@@ -24,13 +26,39 @@ area and the card's type: `references/design-spec.md` §4.
   (`StudyModel.canUndo`, the same condition as the menu item) and shake; the chip's room went to the
   card. `UndoChip` remains only on the Mac.
 
-## A new card's first showing
+## The answer buttons
 
-A new card (`Card.isNew`) is asked like any card, in every deck: question, Show Answer, grades, the same swipes and
-the same motion. Only the name of its first grade button, ← and the left swipe, differs: **Don't know** in place of
-Forgot (`GradeChoice.isNew`, `Grade.buttonTitle(isNew:)`), in the same position and red. The receipt chip and its
-VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later showings read Forgot
-(`scheduling.md`, "A new card's first showing").
+- Every showing has two buttons, **Forgot** (←, red) and **Good** (→, green); on a first showing (`Card.isNew`) they
+  are named **Don't know** and **Know** (`Grade.buttonTitle(isNew:)`), in the same place and colours. The grades
+  underneath are Again and Good. The receipt chip and its VoiceOver announcement use the same names
+  (`GradeReceipt.isNew`). A first showing is asked like any card: question, Show Answer, the buttons, the same swipes
+  and the same motion; a later showing reads Forgot (`scheduling.md`, "A new card's first showing").
+- `GradeChoice.buttonGrades(isNew:showsFourButtons:)` is the one rule: `[again, good]`, or all four when the setting
+  Hard and Easy Buttons is on (`@AppStorage("ShowsFourAnswerButtons")`, `GradeChoice.showsFourButtonsKey`, off by
+  default, Settings) and the card is not new. A first showing stays two with the setting on.
+- With the four: Forgot full width, under it Hard, Good and Easy in a `WeightedRow(weights: [1, 1.25, 1])`, Good
+  wider. At the accessibility text sizes the buttons stack: Forgot over Good, or Forgot over Hard, Good and Easy, one under the other.
+- iPhone landscape (`isCompact`, 44 pt): `GradeChoice(part: .forgot)` and `part: .recalled` stand in one row, Forgot
+  beside Good (or beside Hard, Good and Easy).
+- Swipes give all four grades whatever the buttons are: ← Forgot, → Good, ↑ Easy, ↓ Hard. A swipe toward a grade with
+  no button lights nothing: `GradeChoice.lit` drops a `CardFlight.highlighted` grade that has no button, so the
+  buttons stay as they are; the card's tint, the haptic and the receipt say the grade.
+
+## The leech moment
+
+- After the Forgot that brings a card to a leech moment (`scheduling.md`, "Leech") the stream stops before the next
+  card (`SessionDriver.leechMoment`, `StudyModel.leechMoment`). `LeechMomentView` takes the card area's place
+  (`StudyView.leechLayer`): the title "Keeps slipping", the card's question and answer revealed on `Color.cardSurface`
+  (radius 22, 12 % hairline, 200 to 340 pt tall, full width), then **Continue** (`.borderedProminent`, large) over
+  **Edit** and **Set Aside** (`.bordered`). When the review already suspended the card (the deck's leech action
+  Suspend), the last button is **Keep It**, which resumes it. The Mac has the same view with the keys Return, E and S
+  (`screens.md`).
+- Continue goes on to the next card, or to the rest when the leech was the round's last card. Edit opens the edit
+  sheet and goes on once it is saved. Set Aside and Keep It are one undoable step each, and go on.
+- The bar stays; in its menu Undo works and the card's Edit, Info and Suspend are disabled while the moment shows.
+  Undo takes back the grade, the moment and any suspension in one step. VoiceOver reads the title, the question, the
+  answer, then the three actions, and is told the screen changed.
+- No receipt says "leech, suspended"; the moment replaces it.
 
 ## Motion
 
@@ -45,7 +73,7 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
   |---|---|---|
   | interval `.days(n)`, not a leech | ring | the deepest edge of the stack fades and the stack moves up a step; the ring in the bar steps, bumps (`ringBump`) and bursts (`RingBurst`, `StudyMotion.barBurstAt`); the interval shows beside it |
   | interval `.learning` (Forgot, a learning step) | stack | a blank sheet (`Sheet`) comes in by the edge the card left by and slides under the stack to its deepest edge, which it becomes; until then the stack lacks that edge (`StudyMotion.edges(cardsBehind:)`) |
-  | no interval (practice) or a leech | away | nothing |
+  | no interval (practice), or a card the review suspended (the deck's leech action Suspend) | away | nothing |
 
   The ring's frame comes from the header (`onGeometryChange` in global coordinates,
   `StudyMotion.ringHome`), the card's place from the card (`cardSlot`); nothing is a constant of the
@@ -54,8 +82,9 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
   added, 0 to 1), ahead of the figures, which wait for the card that speaks (`StudyMotion.shown`,
   caught up when the figures change and no card is leaving). Gain 0 (Forgot) moves nothing. The ring is
   empty inside (`StreamRing`) and goes on over itself past the goal, up to three laps
-  (`DailyRingFigure.fraction`). The streak's flame stands beside it (`StreakFlame`): an outline until
-  today's streak step is done, `flame.fill` in `Color.streak` from the moment it is. The ring does not bump
+  (`DailyRingFigure.fraction`). The streak stands beside it (`StreakCount`: "🔥 12", the flame alone at 0 days; the
+  flame is an outline until today's streak step is done, `flame.fill` in `Color.streak` from the moment it is),
+  then the minutes to the next moment ("≈ 2 min"). The ring does not bump
   at the streak step: the burst is on the large flame in the title of the Streak kept rest, as the title
   comes in (`StreamRestView`, `flameBurstAt`). A medal bumps and bursts the ring as a card landing in it does
   (`StudyMotion.celebrate()`, called as the medal's toast shows). A done card
@@ -148,8 +177,8 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
 ## Swipe
 
 - A card is swiped once its answer shows (`GradeSwipe`, `CardFlight`, `StudyView.touch`). Four
-  directions, one per grade, the same as the arrows on the Mac: ← Forgot, → Good, ↑ Easy, ↓ Hard
-  (`Grade.arrow`, `Grade.arrowSymbol`).
+  directions, one per grade, whether the buttons are two or four, the same as the arrows on the Mac: ← Forgot,
+  → Good, ↑ Easy, ↓ Hard (`Grade.arrow`, `Grade.arrowSymbol`).
 - Sectors: a dial of 15° sectors with zero at the top, clockwise (EF's diagram), compass degrees: Easy
   330°…45°, Good 45°…135°, Hard 135°…210°, gap 210°…240°, Forgot 240°…300°, gap 300°…330°.
 - The vertical sectors are wider and reach toward the NE–SW diagonal: for a right-handed one-thumb user
@@ -179,14 +208,14 @@ VoiceOver announcement say the same (`GradeReceipt.isNew`). The card's later sho
   it due west. An Easy card moves between 15° right of up (the far edge of the sector) and 52.5° right
   of up (the near edge), Hard the same downward, Good to the right. No sector lies more than 90° from
   its target, so the mean is always defined. Rotation and pivot are computed from the card's own offset.
-  Tint, the lit button and the commit follow the recognized grade. Under the dead zone the card goes
+  Tint, the lit button (when the grade has one) and the commit follow the recognized grade. Under the dead zone the card goes
   with the finger one to one.
 - The tint (`Grade.tint`) covers the card at most 70 % and never changes the text colour. In light mode it
-  is the grade's fill. In dark mode the three greens share one tint, 0x32745B, and Again takes 0xD22727, a
-  step below its fill: white text needs a ground darker than about L .5 on both card faces. The lit
-  button's ring is `Grade.ring`: the grade's fill, except in light mode, where Hard, Good and Easy take Easy's
-  0x299C76, the lightest green that holds 3:1 on the light grey (Again's red holds 4.3:1). The grade
-  buttons show no "Recalled" caption.
+  is the grade's fill. In dark mode each green has its own darker tint (Hard 0x566F64, Good 0x40725E, Easy 0x1D7759,
+  all L .51 to .52) and Again takes 0xD22727, a step below its fill: white text needs a ground darker than about
+  L .5 on both card faces. The lit button's ring is `Grade.ring`: the grade's fill, except in light mode, where each
+  green takes a deeper colour of its own hue that holds 3:1 on the light grey (Hard 0x729183, Good 0x56957B, Easy
+  0x2A9C76; Again's red holds 4.3:1). The grade buttons show no "Recalled" caption.
 - When the finger crosses into another zone or a gap, the card's way jumps; for 300 ms after a crossing
   a short interactive spring smooths it (`CardFlight.glide`: response 0.12 s, damping 0.85); the rest of
   the swipe is one to one.
