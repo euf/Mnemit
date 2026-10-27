@@ -94,10 +94,9 @@ struct HowTodayWorksTests {
                 [one(199.95 / 60), one(2.5), "Open", "Ring open"], [one(258.0 / 60), one(5), "Open", "Ring closed"], [one(4), one(6), "Closed", "Start"],
             ])
         // The footer names the direction of the time, never the rule's factors.
-        #expect(time.footer.hasPrefix("The time follows your days"))
-        #expect(time.footer.contains("a ring closed on a plan smaller than the time or a day without study leaves it as it was"))
+        #expect(time.footer.hasPrefix("Your ring grows after closed rings"))
         #expect(!time.footer.contains("%"))
-        #expect(time.footer.contains("two and a half minutes before any study"))
+        #expect(time.footer.contains("It starts at 2½ minutes"))
 
         let pace = content.sections[3].rows
         #expect(pace[0] == .value(label: "New card", value: "31 s", note: "Durations (214)"))
@@ -120,12 +119,12 @@ struct HowTodayWorksTests {
         // They are the constants of `GradeSwipe`, in compass degrees (90 - the code's angle, modulo 360).
         func bearing(_ math: Double) -> Int { Int((90 - math).truncatingRemainder(dividingBy: 360) + 360) % 360 }
         let sectors = [
-            "Easy \(bearing(GradeSwipe.easyEnd))° to \(bearing(GradeSwipe.goodReach))°",
-            "Good \(bearing(GradeSwipe.goodReach))° to \(bearing(-GradeSwipe.goodReach))°",
-            "Hard \(bearing(-GradeSwipe.goodReach))° to \(bearing(GradeSwipe.hardStart))°",
-            "Forgot \(bearing(GradeSwipe.forgotEnd))° to \(bearing(GradeSwipe.forgotStart))°",
-            "\(bearing(GradeSwipe.hardStart))° to \(bearing(GradeSwipe.forgotEnd))° or "
-                + "\(bearing(GradeSwipe.forgotStart))° to \(bearing(GradeSwipe.easyEnd))°",
+            "Easy \(bearing(GradeSwipe.easyEnd))°–\(bearing(GradeSwipe.goodReach))°",
+            "Good \(bearing(GradeSwipe.goodReach))°–\(bearing(-GradeSwipe.goodReach))°",
+            "Hard \(bearing(-GradeSwipe.goodReach))°–\(bearing(GradeSwipe.hardStart))°",
+            "Forgot \(bearing(GradeSwipe.forgotEnd))°–\(bearing(GradeSwipe.forgotStart))°",
+            "\(bearing(GradeSwipe.hardStart))°–\(bearing(GradeSwipe.forgotEnd))° and "
+                + "\(bearing(GradeSwipe.forgotStart))°–\(bearing(GradeSwipe.easyEnd))°",
         ]
         for sector in sectors {
             #expect(swipes.footer.contains(sector), "\(sector)")
