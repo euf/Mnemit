@@ -57,18 +57,34 @@ struct FirstShowingView: View {
 
     private var stack: some View {
         ZStack {
-            ForEach(0..<Self.sheets, id: \.self) { index in
-                // The sheets move up a line when the card goes under them.
-                let level = index + (isOnTop ? 1 : 0)
-                placed(surface(level: level), level: level)
-                    .zIndex(Double(-level))
+            // The sheets under the card, and one more for the card itself once it lies under them. From the first answer on only
+            // their edges show: the place of the card stays empty, never a blank card face.
+            ZStack {
+                ForEach(1...Self.sheets + 1, id: \.self) { level in
+                    placed(surface(level: level), level: level)
+                        .opacity(level > Self.sheets && isOnTop ? 0 : 1)
+                        .zIndex(Double(-level))
+                }
             }
-            let level = isOnTop ? 0 : Self.sheets
+            .mask { edges }
+            let level = isOnTop ? 0 : Self.sheets + 1
             placed(card(level: level), level: level)
                 .offset(x: side * 480)
-                .zIndex(Double(-level))
+                .opacity(isOnTop ? 1 : 0)
         }
         .accessibilityElement(children: .contain)
+    }
+
+    /// Everything but, once the card is answered, the card's own place: what is left of the sheets is their edges.
+    private var edges: some View {
+        ZStack {
+            Rectangle().padding(-Self.lineDrop * CGFloat(Self.sheets + 2))
+            if showing.isAnswered {
+                placed(RoundedRectangle(cornerRadius: 22, style: .continuous), level: 0)
+                    .blendMode(.destinationOut)
+            }
+        }
+        .compositingGroup()
     }
 
     private func placed(_ content: some View, level: Int) -> some View {
