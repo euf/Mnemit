@@ -100,24 +100,30 @@ struct NextStep: Equatable, Sendable {
     }
 
     /// The next moment as a figure (`Figure`): the label names the moment, the value is its minutes, "To keep your streak" over
-    /// "≈ 2 min". `value` is `nil` without a price; once nothing is left the label is "Today" and the value "All done".
+    /// "≈ 2 min". Without a price the label is "Next" and the value the moment in words, "Keep your streak"; once nothing is left
+    /// the label is "Today" and the value "All done".
     struct Moment: Equatable, Sendable {
         var label: String
-        var value: String?
+        var value: String
     }
 
     /// The next moment as a figure: "To keep your streak", "To close the ring", "To save your streak" (the day after a miss), "Reviews
-    /// left" (the ring closed, cards left), "To start your streak" (no days), each over its `minutes`.
+    /// left" (the ring closed, cards left), "To start your streak" (no days), each over its `minutes`; without them "Next" over
+    /// "Keep your streak", "Close the ring", "Save your streak", "Catch Up", "Start your streak".
     var moment: Moment {
-        let value = minutes.map { Format.timeLeft(minutes: $0) }
-        if isClosed {
-            return reviewsLeft ? Moment(label: String(localized: "Reviews left"), value: value) : Moment(label: String(localized: "Today"), value: String(localized: "All done"))
+        let price = minutes.map { Format.timeLeft(minutes: $0) }
+        func figure(_ label: String, or words: String) -> Moment {
+            price.map { Moment(label: label, value: $0) } ?? Moment(label: String(localized: "Next"), value: words)
         }
-        guard days > 0 else { return Moment(label: String(localized: "To start your streak"), value: value) }
+        if isClosed {
+            guard reviewsLeft else { return Moment(label: String(localized: "Today"), value: String(localized: "All done")) }
+            return figure(String(localized: "Reviews left"), or: String(localized: "Catch Up"))
+        }
+        guard days > 0 else { return figure(String(localized: "To start your streak"), or: String(localized: "Start your streak")) }
         switch state {
-        case .atRisk: return Moment(label: String(localized: "To save your streak"), value: value)
-        case .open: return Moment(label: String(localized: "To keep your streak"), value: value)
-        case .kept: return Moment(label: String(localized: "To close the ring"), value: value)
+        case .atRisk: return figure(String(localized: "To save your streak"), or: String(localized: "Save your streak"))
+        case .open: return figure(String(localized: "To keep your streak"), or: String(localized: "Keep your streak"))
+        case .kept: return figure(String(localized: "To close the ring"), or: String(localized: "Close the ring"))
         }
     }
 

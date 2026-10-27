@@ -99,9 +99,12 @@ struct NextStepTests {
         #expect(step(.kept, closed: true).moment == Moment(label: "Today", value: "All done"))
         // A closed ring with cards left is the moment even without a streak.
         #expect(step(days: 0, .open, closed: true, reviews: true, left: 4).moment == Moment(label: "Reviews left", value: "≈ 4 min"))
-        // Without a price the label stands and the value is missing.
-        #expect(step(.kept).moment == Moment(label: "To close the ring", value: nil))
-        #expect(step(.kept, closed: true, reviews: true).moment == Moment(label: "Reviews left", value: nil))
+        // Without a price the label is "Next" and the value the moment in words, never a dash.
+        #expect(step(.open).moment == Moment(label: "Next", value: "Keep your streak"))
+        #expect(step(.kept).moment == Moment(label: "Next", value: "Close the ring"))
+        #expect(step(.atRisk).moment == Moment(label: "Next", value: "Save your streak"))
+        #expect(step(days: 0, .open).moment == Moment(label: "Next", value: "Start your streak"))
+        #expect(step(.kept, closed: true, reviews: true).moment == Moment(label: "Next", value: "Catch Up"))
     }
 
     /// A tinted widget draws every lap in one tone: past the goal the ring says its lap as a number.

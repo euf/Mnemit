@@ -23,8 +23,8 @@ struct HeroRing: View {
 
 /// Today's ring and figures in the screens' grammar (`references/product-model.md`, "The grammar of the screens"): three
 /// figures, each a label over a value in its entity's colour. **Day streak**: the flame by its state and the days in the
-/// streak's orange; **the next moment** (`NextStep.moment`): "To keep your streak" over "≈ 2 min" in the ring's indigo, "Today"
-/// over "All done" once nothing is left; **Words learned**: the words, "+12 today" after them on a day that added some. The
+/// streak's orange (secondary at 0); **the next moment** (`NextStep.moment`): "To keep your streak" over "≈ 2 min" in the ring's
+/// indigo ("Next" over "Keep your streak" without a price), "Today" over "All done" once nothing is left; **Words learned**: the words, "+12 today" after them on a day that added some. The
 /// card on the screens puts them beside the ring and the widgets draw their own ring, so the figures are a view of their own.
 struct TodayFigures: View {
     var step: NextStep
@@ -43,10 +43,10 @@ struct TodayFigures: View {
         }
     }
 
-    /// The next moment, its minutes unbroken; a dash while it has no price.
+    /// The next moment, its minutes unbroken; without a price its words.
     private var moment: some View {
         let moment = step.moment
-        return Figure(label: Text(verbatim: moment.label), value: Text(verbatim: NextStep.unbroken(moment.value ?? "–")), tint: .appAccent, size: size, accentable: accentable)
+        return Figure(label: Text(verbatim: moment.label), value: Text(verbatim: NextStep.unbroken(moment.value)), tint: .appAccent, size: size, accentable: accentable)
     }
 
     private func learned(_ words: Int) -> some View {
@@ -62,7 +62,7 @@ struct StreakFigure: View {
     var accentable = false
 
     var body: some View {
-        Figure(label: Text("Day streak"), value: Text(verbatim: step.days.formatted(.number.grouping(.never))), tint: .streak, size: size, accentable: accentable) {
+        Figure(label: Text("Day streak"), value: Text(verbatim: step.days.formatted(.number.grouping(.never))), tint: step.days > 0 ? .streak : .secondary, size: size, accentable: accentable) {
             StreakFlame(state: step.state)
                 .font(size.valueFont)
                 .widgetAccentable(accentable && step.state != .open)
@@ -91,10 +91,12 @@ struct TodayCard: View {
     var body: some View {
         VStack(spacing: 16) {
             ViewThatFits(in: .horizontal) {
+                // At its own width, so a wide card (the Mac's) centres the pair instead of leaving its right half empty.
                 HStack(spacing: 20) {
                     ring
                     figures
                 }
+                .fixedSize(horizontal: true, vertical: false)
                 VStack(spacing: 16) {
                     ring
                     figures

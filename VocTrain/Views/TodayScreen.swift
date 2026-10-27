@@ -276,39 +276,6 @@ struct TodayScreen: View {
     }
 }
 
-/// The one button of the screen, named after what it does next, with the words of the rests: **Study** while the
-/// ring is open, the one prominent button; **Catch Up** once the ring is closed and the plan has cards left;
-/// **Learn 10 New Words** once the day's stack is done, ten new cards at once.
-struct StudyButton: View {
-    var stage: DayAction
-    var due: Int
-    /// What the button says while the ring is open.
-    var studyTitle: LocalizedStringKey = "Study"
-    var action: (DayAction) -> Void
-
-    private var title: LocalizedStringKey { stage == .study ? studyTitle : stage.title }
-
-    var body: some View {
-        let label = Button {
-            action(stage)
-        } label: {
-            Text(title)
-                .frame(maxWidth: .infinity)
-        }
-        Group {
-            if stage == .study {
-                label.buttonStyle(.glassProminent)
-            } else {
-                label.buttonStyle(.glass)
-            }
-        }
-        .controlSize(.large)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
-        .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
-    }
-}
-
 /// A deck: its name and what is left of today's plan in it, "≈ 4 min", a ✓ when nothing is; a tap opens its screen.
 /// The chevron is drawn by hand, as the row is a button, not a `NavigationLink`: the deck has
 /// to be opened before the push, see `PushedDecks`.
