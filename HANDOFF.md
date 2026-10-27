@@ -2,19 +2,29 @@
 
 ## State
 
-- Version 8.0.x on `main` (`VERSION`): the product model of `references/product-model.md`. The ring is a picture with laps up to
-  three and no number in it; one sentence led by the flame says the next moment of the day and its minutes ("≈ 2 min to keep
-  your 12-day streak"); Today shows "412 words learned · +12 today" and a deck row shows its minutes or a check; the day has up
-  to three moments (Streak kept, Ring closed, All done) and the stack goes on after the ring (Catch Up, Learn 10 New Words);
-  Study These Now studies the cards just added; a new card's first showing has two buttons, Don't know and Know; the medals
-  are streak milestones, First ring, Perfect week, Comeback, Double ring, Triple ring and Words learned; the day's time follows
-  sustained overshoot (rule D); the Mac is one window. The iPhone and the Mac in `~/Applications` run 8.0.24 (f565ebe), the
-  iPhone signed until 02.11; the Mac's Today was seen live on EF's decks on 26.10 (ring, sentence, words learned, sidebar minutes), the iPhone not yet. The code's
-  rules are `references/daily-ring.md`; the learner's paths through a day, a newcomer's first week included,
-  are `references/learning-flow.md`; why the ring is what it is, every alternative measured on synthetic learners and the logs
-  of 2,000 Anki users: `references/ring-design.md`; sources: `references/day-model-research.md`, `speech-stutter-research.md`.
-  Terms: `GLOSSARY.md`, section "Mnemit" (a card is never a review). Screens: `references/screens.md`. Brief sub-agents by
-  `references/agent-briefs.md`.
+- Version 9.0.x on `main` (`VERSION`): the product model of `references/product-model.md` (9.0). Past days are written down
+  when they end (the progress ledger, `<deck folder>/.mnemit-progress/<device>.jsonl`, one record per day, merged by day,
+  raised only by late answers), so pausing or deleting a deck or a card never changes a past day. A deleted card keeps its
+  answers as a retired card (deck format version 6). A deck edited while open (the other device, `deck-from-tsv`, which now
+  writes through `NSFileCoordinator`) changes in place, and an undo of a grade survives the reread on both apps. A leech
+  (8 lapses, again every half threshold) stops on "Keeps slipping" with Edit, Set Aside or Keep It and Continue; the deck
+  chooses Keep (default) or Suspend; a Leeches filter; the Mac's card table has Lapses, Stability, Difficulty and Recall.
+  Every card has two answer buttons, Forgot and Good (Don't know and Know on a first showing); Hard and Easy stay as swipes
+  and the Mac keys 2 and 4; the setting "Hard and Easy Buttons" draws four. The greens rise in chroma from Hard (sage) to
+  Easy (vivid jade). Today is one card in the screens' grammar (Fitness Summary through the iOS 26 rules, `hig-ios26.md`):
+  the ring on the left, Day streak, the next moment with ≈ minutes and Words learned on the right, the week under them, the
+  date as the subtitle; Progress, a deck and Statistics use the same cards and tiles. The introduction teaches a new word's
+  first showing; the long texts are shorter in all four languages. Medal toasts stand where they cover nothing.
+- The Mac in `~/Applications` runs 9.0.28 (12ed71f), seen live on 27.10 (vqa): Today, Progress, a deck's page and its
+  columns, Preferences, a stream on a copy of Greek B1 (two buttons, key 2 for Hard, the receipt), `deck-from-tsv` run twice
+  on the open copy (no alert, 2314 → 2316 cards, the stream went on) and an undo after the reread; the ledger wrote
+  21–25.10. The iPhone runs 9.0.30 (378fa6d), signed until 03.11, not yet seen live. Both apps must stay on 9.0: a Mac or
+  iPhone 9.0 that saves a deck writes format 6, which an 8.x app rejects.
+- Decisions of 27.10 and their evidence: `references/product-model.md` §5, §9 ("The grammar of the screens"), §11;
+  `references/grades-research.md` and `Tools/grades/` (two buttons), `Tools/ring-sim/leeches.md` and
+  `references/leech-research.md` (leeches), `references/today-layout-research.md` and `references/hig-ios26.md` (Today).
+  The code's rules: `references/daily-ring.md`; the package and the ledger: `references/deck-package.md`; the learner's
+  paths: `references/learning-flow.md`; terms: `GLOSSARY.md`; screens: `references/screens.md`; look: `design-spec.md`.
 - Speech: words are rendered ahead and played from memory (`GreekSpeech`, `SpeechLog` writes
   `Library/Caches/speech.log`, read off the iPhone with `devicectl device copy from`); EF heard no stutter.
 - Strings in en, de, ru, el; `Tools/check-localizations.swift` requires all four.
@@ -58,33 +68,21 @@ In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
 The plan of 7.0–7.1 is `references/quality-plan.md`.
 
-1. **8.0 on the iPhone, to verify live** (install by `ios-renew --force`): the new Today (the ring without a number, the
-   sentence at 375 pt on the 13 mini and at AX5, the flame's three states and the exclamation mark at risk, "412 words
-   learned · +12 today", the deck rows' minutes, the empty Today's New Deck and Shared Decks); the stream (the header's close,
-   ring, flame, minutes and Undo at 375 pt, the ring not moving when the text changes, the stack of up to four edges after the
-   ring, the three moments and their rests: Streak kept with Keep Going, Ring closed with "≈ 12 min of reviews left" and Catch
-   Up, All done with Learn 10 New Words); Study These Now (in Add Cards beside Add, prominent once nothing is left to type,
-   and in the import of a new deck, the stream starting after the sheet has gone); the two buttons of a card's first showing
-   (Don't know and Know, as tall as the four they replace, the swipes still grading four ways); the deck header
-   ("≈ 4 min · 14 due · 6 new · 2 learning"); Progress (totals Days studied, Rings closed, Words learned, "Your ring: 8 min a
-   day · started at 2.5", the Double ring and Triple ring medals); the widgets' sentence in all five families; the reminder
-   "Keep your 12-day streak · ≈ 2 min", the 21:00 one and the icon's "1" while the ring is open; the new greens and the 30°
-   flight; and from 6.1 Learn 10 New Words from Today and reviews from the Mac arriving while Today stays open (it reads the
-   decks every minute). Xcode's Apple ID was lost once (24.10): `ios-renew` then fails with "No Accounts" until EF signs in
-   again in Xcode ▸ Settings ▸ Apple Accounts.
-2. **The Mac's one window, to see live:** seen on 26.10 (vqa): one window on Today, the badges, ⌘1/⌘2/⌘4, a deck's
-   Cards and Statistics, Learning Options ⌘;, a deck opened from Finder under Other Decks, the stream by Space, →
-   and Z, Done ⌘. bringing the sidebar back. Still to see: a cold launch with a deck from Finder, ⌘Q with a stream
-   running (an AppleScript quit was once answered "User cancelled" (-128) after a long QA session; a fresh
-   launch then quit cleanly), a Dock click after ⌘W, the Open Deck… panel and the New Deck sheet, the cheat sheet, Catch Up in the
-   menu (it needs a closed ring), Edit ▸ Undo on a deck's page, dark mode, Today's Study mixing the decks, the
-   search over all decks and a hit selecting its card, a sidebar row's menu (Pause), the medal toasts and the
-   month's sheet.
-3. **Progress must not depend on the decks in the list.** The ring, the streak and the medals are worked
-   out from the logs of the active decks: deleting or pausing a deck, or deleting a card, rewrites past
-   days. Plan: a progress ledger in the deck folder, one line per study day (done, goal, kept, closed),
-   frozen at the day's change, merged by day across devices, filled from the logs on first run; past days
-   read from it, today from the logs.
+1. **9.0 on the iPhone, to verify live:** the Today card at 375 pt on the 13 mini and at AX5 (ring and figures side by
+   side, the ring over them at large sizes, the date under the title), the medium and small widgets and the tinted and
+   clear Home Screen (only simulated so far: the ring's track by opacity, laps as "2×"), the two answer buttons and the
+   setting, the leech moment (it needs a card at 8 lapses), the introduction's first showing, Progress tiles, the deck's
+   Today card with Study This Deck in the bottom bar, the toast over the large title and in the gap above the buttons, and
+   a second device file in `.mnemit-progress` once the iPhone has seen a day end. From 8.0, still unseen on the iPhone:
+   Study These Now, the rests, the reminders and the icon's "1". Xcode's Apple ID was lost once (24.10): `ios-renew` then
+   fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
+2. **The Mac, still to see live:** a cold launch with a deck from Finder, ⌘Q with a stream running, a Dock click after ⌘W,
+   the New Deck sheet, the cheat sheet, Catch Up in the menu, the search over all decks, a sidebar row's Pause, the month's
+   sheet, a medal toast in the header. Seen on 27.10: at a 1000 pt window the card table's four new columns sit past the
+   right edge (the Kind column takes the room); once, right after a file merge, the Z key did nothing until a click (not
+   reproduced); Delete Deck of a deck in `/private/tmp` does nothing (no Trash there).
+3. **Answer buttons and leeches, to watch:** the share of Hard and Easy swipes in EF's log against the 9.9 % before 27.10;
+   whether familiar A1–A2 words get ↑ Easy; the first leech moments and whether Edit is used.
 4. **Share Deck**: a clean `.mnemit` copy (cards and media, no states, no log, no fitted parameters) from
    the deck's menu on both apps; sending the package today sends one's history.
 5. **From the reviews of three personas (23.10: Anki veteran, newcomer, no-decks learner)**: FSRS figures
@@ -104,7 +102,7 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    nothing in today's plan doesn't open with Study, so the plan-end rest's Learn 10 New Words can't take its new cards (Learn 10 New Words
    from Today opens every active deck); xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
-   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
+   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. `AnkiImportTests.leavesNoTemporaryDatabaseBehind` fails when another test run shares `/tmp` at the same time; alone it passes. In a Swift Testing `-only-testing` filter a test name needs its parentheses (`.../name()`), or xcodebuild runs nothing and still prints TEST SUCCEEDED. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
 8. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
    duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
 9. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
