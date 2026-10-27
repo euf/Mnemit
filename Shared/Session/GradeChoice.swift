@@ -1,15 +1,27 @@
 import SwiftUI
 import VocabCore
 
-/// The grades of a card whose answer is shown, laid out by what they mean: Forgot is
-/// the only "no" and has a row of its own; Hard, Good and Easy are three kinds of "yes" and
+/// The grades of a card whose answer is shown. Two wide buttons, Forgot and Good, ask the one thing a
+/// learner knows: did it come or not (`Grade.buttonTitle(isNew:)` names them Don't know and Know on a card's first
+/// showing). With the setting "Hard and Easy Buttons" (`showsFourButtonsKey`) a card on a later showing has four, laid out by
+/// what they mean: Forgot is the only "no" and has a row of its own; Hard, Good and Easy are three kinds of "yes" and
 /// share the row under it, Good in the middle and wider. Four equal buttons hid that, and Hard after
 /// forgetting is the worst mistake for FSRS. The buttons carry the grade's name and nothing
 /// else: when the card comes back shows only once the grade is given, see `UndoChip`.
 ///
-/// On the Mac the keys 1 to 4 choose a grade, Return accepts `defaultGrade`, and each button carries
-/// the arrow key that gives its grade, the direction of the iPhone's swipe (`Grade.arrowKey`).
+/// A grade with no button is still given, by a swipe up or down on the iPhone and the keys on the Mac. On the Mac the keys 1 to 4
+/// choose a grade, Return accepts `defaultGrade`, and each button carries the arrow key that gives its grade, the
+/// direction of the iPhone's swipe (`Grade.arrowKey`).
 struct GradeChoice: View {
+    /// The preference of both apps, in the user defaults: Hard and Easy get buttons of their own.
+    nonisolated static let showsFourButtonsKey = "ShowsFourAnswerButtons"
+
+    /// The grades that have a button: Forgot and Good, and with `showsFourButtons` Hard and Easy too, except on a
+    /// card's first showing, which stays two.
+    nonisolated static func buttonGrades(isNew: Bool, showsFourButtons: Bool) -> [Grade] {
+        isNew || !showsFourButtons ? [.again, .good] : [.again, .hard, .good, .easy]
+    }
+
     /// Which part to show: the iPhone in landscape puts them in one row, around the progress.
     enum Part {
         case both, forgot, recalled
@@ -25,11 +37,13 @@ struct GradeChoice: View {
     var acceptsArrows = false
     /// The iPhone in landscape, where the row of buttons has little height.
     var isCompact = false
-    /// The card is on its first showing (`Card.isNew`): two wide buttons, Don't know (Again) and Know (Good), take the place of
-    /// the four. A swipe still gives every grade; from the second showing on the four buttons are back.
+    /// The card is on its first showing (`Card.isNew`): the two buttons are named Don't know (Again) and Know (Good), and stay
+    /// two whatever `showsFourButtons` says.
     var isNew = false
+    /// The preference `showsFourButtonsKey`: Hard and Easy have buttons on a card's later showings.
+    var showsFourButtons = false
     /// The grade a swipe is about to give, or a key has just given: its button stands out
-    /// and the others step back (`CardFlight.highlighted`).
+    /// and the others step back (`CardFlight.highlighted`). A grade with no button lights nothing.
     var highlighted: Grade?
     var onGrade: @MainActor (Grade) -> Void
 
@@ -55,19 +69,26 @@ struct GradeChoice: View {
         #endif
     }
 
+    private var buttons: [Grade] { Self.buttonGrades(isNew: isNew, showsFourButtons: showsFourButtons) }
+
+    /// What a swipe or a key lights: the highlighted grade, if it has a button. Without one the buttons stay as they are.
+    private var lit: Grade? { highlighted.flatMap { buttons.contains($0) ? $0 : nil } }
+
     var body: some View {
         Group {
             switch part {
-            case .both where isNew && dynamicTypeSize.isAccessibilitySize:
-                // The titles no longer fit side by side, as with the three grades: one above the other, in the same room.
-                VStack(spacing: Spacing.gap) {
-                    forgot(minHeight: height)
-                    know(minHeight: height)
-                }
-            case .both where isNew:
-                HStack(spacing: Spacing.gap) {
-                    forgot(minHeight: 2 * height + Spacing.gap)
-                    know(minHeight: 2 * height + Spacing.gap)
+            case .both where buttons.count == 2:
+                // As tall as the two rows of the four. At accessibility sizes the titles no longer fit side by side.
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(spacing: Spacing.gap) {
+                        forgot(minHeight: height)
+                        good(minHeight: height)
+                    }
+                } else {
+                    HStack(spacing: Spacing.gap) {
+                        forgot(minHeight: 2 * height + Spacing.gap)
+                        good(minHeight: 2 * height + Spacing.gap)
+                    }
                 }
             case .both:
                 VStack(spacing: 0) {
@@ -77,8 +98,8 @@ struct GradeChoice: View {
                 }
             case .forgot:
                 forgot(minHeight: height)
-            case .recalled where isNew:
-                know(minHeight: height)
+            case .recalled where buttons.count == 2:
+                good(minHeight: height)
             case .recalled:
                 recalled
             }
@@ -104,19 +125,19 @@ struct GradeChoice: View {
                 .contentShape(shape)
         }
         .buttonStyle(Pressable())
-        .modifier(Emphasis(grade: .again, highlighted: highlighted, scale: 1.06))
+        .modifier(Emphasis(grade: .again, highlighted: lit, scale: 1.06))
         #if os(macOS)
         .keyboardShortcut(Grade.again.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(Grade.again.rawValue)"))
         #endif
     }
 
-    /// Know, the first showing's one "yes": Good, in the green of yes, as wide as its share of the row.
-    private func know(minHeight: CGFloat) -> some View {
+    /// Good (Know on a first showing), the one "yes" of two buttons, in the green of yes, as wide as its share of the row.
+    private func good(minHeight: CGFloat) -> some View {
         Button {
             onGrade(.good)
         } label: {
-            labelled(.good) { Label(Grade.good.buttonTitle(isNew: true), systemImage: "checkmark") }
+            labelled(.good) { Label(Grade.good.buttonTitle(isNew: isNew), systemImage: "checkmark") }
                 .font(.body.weight(.semibold))
                 .lineLimit(1)
                 .foregroundStyle(Grade.good.onColor)
@@ -127,7 +148,7 @@ struct GradeChoice: View {
                 .contentShape(shape)
         }
         .buttonStyle(Pressable())
-        .modifier(Emphasis(grade: .good, highlighted: highlighted, scale: 1.06))
+        .modifier(Emphasis(grade: .good, highlighted: lit, scale: 1.06))
         #if os(macOS)
         .keyboardShortcut(Grade.good.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(Grade.good.rawValue)"))
@@ -171,7 +192,7 @@ struct GradeChoice: View {
                 .contentShape(shape)
         }
         .buttonStyle(Pressable())
-        .modifier(Emphasis(grade: grade, highlighted: highlighted))
+        .modifier(Emphasis(grade: grade, highlighted: lit))
         #if os(macOS)
         .keyboardShortcut(grade.shortcutKey, modifiers: [])
         .help(Text(verbatim: "\(grade.rawValue)"))
@@ -196,7 +217,7 @@ struct GradeChoice: View {
     private func outline(of grade: Grade) -> some View {
         shape.inset(by: -3.5)
             .stroke(grade.ring, lineWidth: 2)
-            .opacity(highlighted == grade ? 1 : 0)
+            .opacity(lit == grade ? 1 : 0)
     }
 
     /// A ring in the button that Return accepts.
@@ -224,11 +245,8 @@ struct GradeChoice: View {
             if acceptsArrows {
                 ForEach(Grade.allCases, id: \.self) { key($0.arrowKey, grade: $0) }
             }
-            // The keys of the two grades a first showing has no button for.
-            if isNew {
-                key(Grade.hard.shortcutKey, grade: .hard)
-                key(Grade.easy.shortcutKey, grade: .easy)
-            }
+            // The keys of the grades that have no button.
+            ForEach(Grade.allCases.filter { !buttons.contains($0) }, id: \.self) { key($0.shortcutKey, grade: $0) }
         }
         .opacity(0)
         .frame(width: 0, height: 0)

@@ -3,12 +3,18 @@ import SwiftUI
 /// App-wide preferences (⌘,).
 struct PreferencesView: View {
     @AppStorage(GreekSpeech.autoSpeakKey) private var autoSpeak = true
+    @AppStorage(GradeChoice.showsFourButtonsKey) private var showsFourButtons = false
     private var folder = DeckFolder.shared
 
     var body: some View {
         Form {
             Section {
                 Toggle("Pronounce Automatically", isOn: $autoSpeak)
+            }
+            Section {
+                Toggle("Hard and Easy Buttons", isOn: $showsFourButtons)
+            } footer: {
+                Text("Keys 2 and 4 give Hard and Easy either way.")
             }
             Section {
                 LabeledContent {

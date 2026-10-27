@@ -167,6 +167,32 @@ struct StudyScreenSnapshotTests {
         window.isHidden = true
     }
 
+    /// A card on a later showing with its answer open: two buttons, Forgot and Good, and with the setting "Hard and Easy
+    /// Buttons" four, at the default text size and at the largest accessibility size.
+    @Test(arguments: [false, true])
+    func laterShowing(dark: Bool) async throws {
+        try beSilent()
+        let suite = "mnemit.tests.answer-buttons"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        for four in [false, true] {
+            for (size, label) in [(DynamicTypeSize.large, "large"), (.accessibility5, "ax5")] {
+                defaults.set(four, forKey: GradeChoice.showsFourButtonsKey)
+                let (document, undoManager) = try makeDocument(texts: [Self.defaultTexts[1]])
+                let model = StudyModel(document: document)
+                grade(model, .again, undoManager: undoManager)
+                try #require(model.currentCard?.isNew == false)
+                model.reveal()
+                let ring = DailyRingModel()
+                await ring.refresh(documents: [document], delay: .zero).value
+                let view = StudyView(model: model, ring: ring, flight: CardFlight(), motion: nil, onClose: {}).defaultAppStorage(defaults)
+                let window = try await host(view, dark: dark, textSize: size)
+                try write(window, name: "8-later-showing-\(four ? "four" : "two")-\(label)", dark: dark)
+                window.isHidden = true
+            }
+        }
+    }
+
     /// Mid-swipe in each zone: the card tinted, bent toward the grade's target, turned about where
     /// it was grabbed, and the button of the grade lit; and in a gap between two zones, where
     /// the card is neither tinted nor lit. The finger is at `grab` in the card (a share of its

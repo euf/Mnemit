@@ -311,6 +311,7 @@ private struct FlashcardView: View {
     var onGrade: @MainActor (Grade) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(GradeChoice.showsFourButtonsKey) private var showsFourButtons = false
     @State private var flight = CardFlight()
 
     var body: some View {
@@ -334,7 +335,7 @@ private struct FlashcardView: View {
         ZStack(alignment: .top) {
             // Space and Return showed the answer and now mean Good; the arrows grade as the
             // swipes do on the iPhone. Disabled before, so their keys belong to Show Answer.
-            GradeChoice(defaultGrade: .good, acceptsSpace: true, acceptsArrows: true, isNew: card.isNew, highlighted: flight.highlighted, onGrade: commit)
+            GradeChoice(defaultGrade: .good, acceptsSpace: true, acceptsArrows: true, isNew: card.isNew, showsFourButtons: showsFourButtons, highlighted: flight.highlighted, onGrade: commit)
                 .opacity(isRevealed ? 1 : 0)
                 .disabled(!isRevealed)
                 .accessibilityHidden(!isRevealed)

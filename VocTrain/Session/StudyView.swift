@@ -41,6 +41,7 @@ struct StudyView: View {
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(GradeChoice.showsFourButtonsKey) private var showsFourButtons = false
     @State private var flight: CardFlight
     /// What moves besides the card under the finger: the cards that leave, the ring, the stack.
     @State private var motion: StudyMotion
@@ -439,12 +440,12 @@ struct StudyView: View {
     private var grades: some View {
         if isCompact {
             HStack(spacing: 12) {
-                GradeChoice(part: .forgot, isCompact: true, isNew: model.currentCard?.isNew == true, highlighted: flight.highlighted, onGrade: { commit($0) })
+                GradeChoice(part: .forgot, isCompact: true, isNew: model.currentCard?.isNew == true, showsFourButtons: showsFourButtons, highlighted: flight.highlighted, onGrade: { commit($0) })
                     .frame(maxWidth: Self.forgotWidth)
-                GradeChoice(part: .recalled, isCompact: true, isNew: model.currentCard?.isNew == true, highlighted: flight.highlighted, onGrade: { commit($0) })
+                GradeChoice(part: .recalled, isCompact: true, isNew: model.currentCard?.isNew == true, showsFourButtons: showsFourButtons, highlighted: flight.highlighted, onGrade: { commit($0) })
             }
         } else {
-            GradeChoice(isNew: model.currentCard?.isNew == true, highlighted: flight.highlighted, onGrade: { commit($0) })
+            GradeChoice(isNew: model.currentCard?.isNew == true, showsFourButtons: showsFourButtons, highlighted: flight.highlighted, onGrade: { commit($0) })
         }
     }
 
