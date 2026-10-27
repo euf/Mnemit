@@ -16,10 +16,11 @@
   the ring on the left, Day streak, the next moment with ≈ minutes and Words learned on the right, the week under them, the
   date as the subtitle; Progress, a deck and Statistics use the same cards and tiles. The introduction teaches a new word's
   first showing; the long texts are shorter in all four languages. Medal toasts stand where they cover nothing.
-- The Mac in `~/Applications` runs 9.0.28 (12ed71f), seen live on 27.10 (vqa): Today, Progress, a deck's page and its
+- Both devices run 9.0.38 (c9c236a), the iPhone signed until 03.11. The Mac was seen live on 27.10 (vqa, on 9.0.28): Today, Progress, a deck's page and its
   columns, Preferences, a stream on a copy of Greek B1 (two buttons, key 2 for Hard, the receipt), `deck-from-tsv` run twice
   on the open copy (no alert, 2314 → 2316 cards, the stream went on) and an undo after the reread; the ledger wrote
-  21–25.10. The iPhone runs 9.0.30 (378fa6d), signed until 03.11, not yet seen live. Both apps must stay on 9.0: a Mac or
+  21–25.10. Since then only Forgot and Good can be given in two-button mode (tested in the Mac test host, not yet by hand);
+  the iPhone is not yet seen live. Both apps must stay on 9.0: a Mac or
   iPhone 9.0 that saves a deck writes format 6, which an 8.x app rejects.
 - Decisions of 27.10 and their evidence: `references/product-model.md` §5, §9 ("The grammar of the screens"), §11;
   `references/grades-research.md` and `Tools/grades/` (two buttons), `Tools/ring-sim/leeches.md` and
@@ -103,7 +104,7 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    nothing in today's plan doesn't open with Study, so the plan-end rest's Learn 10 New Words can't take its new cards (Learn 10 New Words
    from Today opens every active deck); xcodebuild 27.1 sometimes hangs
    after the iOS summary (the summary is right); the Mac Learning Options sheet overwrites a fit that
-   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. `AnkiImportTests.leavesNoTemporaryDatabaseBehind` fails when another test run shares `/tmp` at the same time; alone it passes. In a Swift Testing `-only-testing` filter a test name needs its parentheses (`.../name()`), or xcodebuild runs nothing and still prints TEST SUCCEEDED. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update, so watch for undo trouble there. A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
+   arrived while it was open; the iPhone 17 Pro simulator is often the FicTypeApp session's, use another. `AnkiImportTests.leavesNoTemporaryDatabaseBehind` fails when another test run shares `/tmp` at the same time; alone it passes. In a Swift Testing `-only-testing` filter a test name needs its parentheses (`.../name()`), or xcodebuild runs nothing and still prints TEST SUCCEEDED. The Mac's `UndoRouter` puts itself back in the window's responder chain after every window update; its observer is removed when it leaves (the test host crashed twice on 27.10 before that). A canvas crash of `ActivityRing` was seen once in a Mac window test during a card flight (phase 3a).
 8. **Dictionary**: `merge.py` now merges `ο/η` with `ο`/`η` like `WordKey`; the decks still hold the
    duplicate cards of 11 words, which `deck-from-tsv --suspend-missing` would park.
 9. Later: examples from Tatoeba; FSRS-7 once it ships in fsrs-rs; sibling spread and load balancing
