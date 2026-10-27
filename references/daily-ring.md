@@ -1,15 +1,51 @@
 # The day: plan, goal, rounds, ring, streak, pace
 
 How the day is measured, and the screen that explains it. Terms with their Russian equivalents:
-`GLOSSARY.md`, section "Mnemit". Code: `DailyProgress` in VocabCore, `DailyRingModel` and
-`DailyRingView` in `Shared/Session`.
+`GLOSSARY.md`, section "Mnemit". Code: `DailyProgress` and `DayLedger` in VocabCore, `DailyRingModel` and
+`DailyRingView` in `Shared/Session`, `ProgressLedgerStore` in `Shared/Document`.
 
 ## Principle
 
-- Ring and streak come only from the review log (`reviews.jsonl`); nothing is stored.
+- Today (the ring, the plan, the goal, the pace) comes from the review log (`reviews.jsonl`) of the active decks. The days
+  before today come from the progress ledger, one record per study day (next section). A deck stores no ring and no streak.
 - The day is measured in cards: the ring, the goal and the streak count cards; the screens translate
   cards into minutes ("≈ 2 min", an estimate at the learner's pace; `product-model.md` §3). A review (one grade of one card) counts toward neither the goal, the ring nor the
   streak; reviews are for the optimizer, statistics and pace.
+
+## The ledger: past days
+
+- A study day, once over, is a record (`LedgerDay`, `Packages/VocabCore/Sources/VocabCore/Statistics/DayLedger.swift`):
+  `day`, `reviews` (log entries of the day), `done` (cards done), `goal`, `keepAt` (the cards done that keep the streak:
+  the end of the first round, 0 for an empty plan), `kept`, `closed`, `time` (the day's seconds), `reason`
+  (`DailyGoal.SizeReason`), `worked` (seconds of the cards done at the day's prices), `filled`, `wordsLearned` (cumulative at
+  the day's end). A missed day has a record too, done 0, so a later pause cannot turn its empty plan into a kept day.
+  `DayLedger` holds one record per day.
+- **What reads from where** (`DailyProgress.evaluate(_:at:calendar:planRuleStart:ledger:cache:)`). From the ledger: the days
+  before today (the first study day through yesterday), their `records`, `week`, `weekRings`, `ringDays` (the size rule's
+  input), `achievements`, and the streak (`Streak.walk`: kept and closed from the records, the ledger's `reviews` for past
+  days and the logs' for today). From the logs: today's ring, plan, rounds, allowances, pace and `memory`. Words learned:
+  `learned.wordsAtDayStart` is the ledger's cumulative count of yesterday, `learned.words` that plus
+  `max(0, logs.words - logs.wordsAtDayStart)`; without a past day the logs' own. The first day is the earlier of the ledger's
+  first day with reviews and the logs' first.
+- **The raise rule** (`LedgerDay.raised(reviews:done:worked:wordsLearned:)`). Each day before today is its record raised by
+  the logs of the active decks. Reviews, done and words take the larger value. `worked` takes the logs' value only when `done`
+  rises: a price that changed since (a deck paused or deleted) says nothing of the day. `kept` is true once it was, or once
+  done reaches `keepAt`; `closed` likewise at `goal`. `goal`, `keepAt`, `time`, `reason` and `filled` never change. A day
+  that is over only rises, when real reviews of it arrive late (the other device's log, an Anki import).
+- **`ledgerUpdates`**: the days before today whose record is new or differs from the ledger `evaluate` was given, oldest first,
+  today never. A day the ledger lacks (the first run, a missed day) is worked out from the logs and the days before it, and
+  is listed there. The app merges the updates into its ledger and writes it (`DayLedger.updating(_:)`).
+- **Merge** (`DayLedger.merging`): per day the record with the larger `done`, then `reviews`, `wordsLearned` and `goal`, then
+  the smaller encoded line. Commutative and idempotent, so any device can read any file again.
+- **File**: JSON Lines, one record per day, oldest first (`DayLedger.encoded()`, `decode(_:)`); keys `day` (ISO date),
+  `reviews`, `done`, `goal`, `keep`, `kept`, `closed`, `time` and `worked` (to 0.1 s), `reason` (`start`, `ringClosed`,
+  `closedInARow`, `ringOpen`, `smallPlan`, `sustainedOvershoot`; an unknown one reads `ringOpen`), `filled`, `words`. `decode` never
+  throws: an unreadable line costs its day only. Where the files live: `deck-package.md`.
+- **The app side**: `DailyRingModel.refresh(documents:files:ledger:reloadFiles:delay:)` takes a `ProgressLedgerStore?` (`nil` in
+  previews and tests: no ledger, no write). It reads the ledger off the main actor, with the deck files, when `reloadFiles` is set
+  or the store changed, and otherwise keeps the last one. After an evaluation with `ledgerUpdates` it writes
+  `ledger.updating(updates)` to this device's file. Callers: the Mac's `DailyRingModel.refreshAllDecks`, the iPhone's
+  `StartScreen` and `StudyRunView` (the store is `KnownDecks.ledgerStore`).
 
 ## Plan
 
@@ -17,7 +53,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   new cards within the day's limits and the deck's allowance `newCardAllowance`; overdue cards are part
   of it (Backlog below). `nil` instead of an allowance means only the deck's limits: tests and tools count
   that way.
-- The plan at the start of the day comes from `DeckActivity.history(from:at:calendar:)`: the log is
+- The plan at the start of a day the logs work out (today, and a past day the ledger lacks) comes from
+  `DeckActivity.history(from:at:calendar:)`: the log is
   replayed forward once (`replayLog`, card states at the end of every day), a copy of the deck takes
   each card's state at the start of the day, and `StudySession.counts(... past:)` with
   `DayIndex(lockedNotes:)` gives the day's plan. `ProductionLocks` tracks the production cards' locks
@@ -51,15 +88,15 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `minutesToNextRound` (at the pace the day started with), `minutes(ofRound:)` (for the rest screen),
   `memory` (`MemoryEstimate` over the decks), `streakKeptToday` (streak step done or the plan empty).
 - The step never shows by number (`product-model.md` §3). `DailyProgress.minutesToStreak` gives its minutes while it is
-  open, which the sentence (`NextStep`) says: before the step "≈ 2 min to keep your 12-day streak", after it "12-day streak ·
-  ≈ 5 min to close the ring". `RoundStatus` (`Shared/Session/DayLines.swift`) carries the three round figures the widget
+  open, which the sentence (`NextStep`) says: before the step "≈ 2 min to keep your streak", after it "≈ 5 min to close the
+  ring". `RoundStatus` (`Shared/Session/DayLines.swift`) carries the three round figures the widget
   snapshot stores.
 - In a day that started with an empty plan, the ends cut the cards as they are.
 
 ## Day's time
 
-- **Day's time**: the seconds of work the day asks (`DailyProgress.time`), from the log, forward from the
-  first study day, the same on every device, never rounded. The goal is the cards of the plan that fit
+- **Day's time**: the seconds of work the day asks (`DailyProgress.time`), forward from the first study day
+  over the days before it (a past day's `LedgerDay.time`), the same on every device, never rounded. The goal is the cards of the plan that fit
   it, and new cards fill what the plan's other cards leave.
 - **The rule**, one pure step per study day, `DailyGoal.nextTime(after:)`, over the days before it as plain
   values (`DailyGoal.RingDay`): a staircase and, above it, the sustained-overshoot step (below). The staircase: the last study day (a day with work) asked T (its
@@ -93,7 +130,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   on study day d; one who works less than the ring asks falls to 2 minutes on day 2 (150 × 0.775 = 116.25 is under
   the floor) and holds there; a ring closed on a small plan keeps its time; a day without work changes nothing; one who
   works 600 s every day asks 150 … 228.1 s on days 1–8, then 342.2, 513.3 and 600 s (the jump limit, then the percentile).
-- `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring, filled) with today live, and
+- `DailyProgress.ringDays` holds every day's `RingDay` (time, reason, work, ring, filled), the days before today from the ledger and today live, and
   the reason is `start`, `ringClosed`, `closedInARow`, `smallPlan`, `ringOpen` or `sustainedOvershoot`; `DailyProgressCache.Before.days` keeps the
   days before today.
 
@@ -124,8 +161,11 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - **Done card** (`DeckActivity.done(onDayOf:calendar:)`): a card reviewed on this study day whose due
   date is after the end of the day, so FSRS let it go to another day. A Review graded Hard, Good or
   Easy is done at once; a new card after its last learning step; Forgot when the card leaves learning.
-  It counts once a day, however many reviews it took. Reviews per day (`reviewsByDay`) are needed only
-  for the start of the streak and for the days before `planRuleStart`.
+  It counts once a day, however many reviews it took. A card deleted after it was done stays done: a deleted card that has
+  reviews is a retired card (`Deck.retiredCards`), and `Deck.doneCards(onDayOf:)` and `Deck.cardsUnderway(onDayOf:)` count
+  cards and retired cards alike, so deleting a card never moves the ring back. A retired card is in no plan, count, browser,
+  search, export, words learned or statistics; it is in `reviewsByDay` and in the FSRS refit (`Deck.trainingCards`).
+  Reviews per day (`reviewsByDay`) are needed only for the start of the streak and for the days before `planRuleStart`.
 - A card is done in any mode, including Catch Up, the ring's rest.
 - **Partial credit**: the ring also shows the cards on their way (`DailyRing.underway`,
   `Deck.cardsUnderway`): each reviewed today and still due today counts the answers recalled today
@@ -143,12 +183,24 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (`DailyProgress.streakState`) has three values: `open` (today's streak step not done), `kept` (done) and `atRisk` (the day
   after a missed one, ring open: `DailyProgress.isStreakAtRisk`). `StreakFlame(state:)` draws them, an outline in grey,
   `flame.fill` in `Color.streak`, an outline in `Color.streak` with an `exclamationmark` after it. `NextStep`
-  (`Shared/Support/NextStep.swift`, pure) says the next moment of the day and its minutes, led by the flame: "≈ 2 min to keep
-  your 12-day streak", "12-day streak · ≈ 5 min to close the ring", "Ring closed · ≈ 12 min of reviews left", "All done for
-  today", at risk "≈ 6 min to close the ring and save your 12-day streak", without a streak "Start your streak · ≈ 2 min";
-  without a price (`nil` minutes) the time is left out. The same sentence stands on Today (`TodayHero`), the rests, the
-  stream's header (flame and minutes) and the widgets; the reminders take its streak and its "≈ 2 min". `DailyRingView` has
-  no popover and is no button. Sizes, colours and VoiceOver: `design-spec.md` §5.7.
+  (`Shared/Support/NextStep.swift`, pure) says the next moment of the day and its minutes, with no days in it. As a figure
+  (`NextStep.moment`) it is a label over a value: "To keep your streak" · "≈ 2 min", "To close the ring" · "≈ 5 min", "To save
+  your streak" (the day after a miss), "Reviews left" · "≈ 12 min" (ring closed, cards left), "To start your streak" (no
+  streak), "Today" · "All done"; without a price the label is "Next" over the moment in words ("Keep your streak", "Close the
+  ring", "Save your streak", "Catch Up", "Start your streak"). As a sentence, where one line is all there is room for: "≈ 2
+  min to keep your streak", "≈ 5 min to close the ring", at risk "≈ 6 min to close the ring and save your streak", without a
+  streak "≈ 2 min to start your streak", "Ring closed · ≈ 12 min of reviews left" (two parts, `NextStep.lines`), "All done for
+  today". Without a price (`nil` minutes) the time is left out: "Keep your streak", "Close the ring", "Close the ring to save
+  your streak", "Start your streak", "Ring closed". `priceLine` is what a rest says under its title ("≈ 5 min to close the
+  ring", "≈ 12 min of reviews left"); `short` is "12 · ≈ 2 min" for a line with room for little.
+- **The streak line** (`StreakLine`): `StreakFlame`, then "12-day streak" (`NextStep.streakText`), hidden at 0 days. VoiceOver
+  reads `streakSpoken`: "12-day streak, kept today", "not kept yet" or "at risk". `StreakCount` is the header form, "🔥 12",
+  the flame alone at 0 days.
+- **Where they stand.** Today draws the figures (`TodayCard`, `Shared/Session/TodaySummary.swift`: the ring, Day streak, the
+  moment, Words learned, the week). The rests carry the streak line in their chip and the price line under their title; the
+  stream's header is the ring, `StreakCount` and "≈ N min"; the small and rectangular widgets say the sentence, the medium
+  shows the figures, the inline one "🔥 12 · ≈ 2 min"; the reminders take its streak and its "≈ 2 min". `DailyRingView` has no
+  popover and is no button. Sizes, colours and VoiceOver: `design-spec.md` §5.7.
 - **The stack** is drawn as the cards left before the next moment, up to four edges, never as a number. Past the goal, after
   the ring, it counts the cards left in the plan's lanes (Catch Up), or the cards of Learn 10 New Words or Study These
   Now (`StudyModel.cardsBehind`).
@@ -214,9 +266,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 
 ## Streak
 
-- A day counts when its streak step is done (done ≥ the end of its streak step), an empty plan too.
-- A past day is judged by what was done on it (the log replay gives done cards per day) and by its plan
-  at the start: a day made up later stays missed.
+- A day counts when its streak step is done (done ≥ its `keepAt`, the end of the step), an empty plan too (`keepAt` 0).
+- A past day is judged by its record (`kept`, `closed`), which holds the day's own goal and `keepAt` and only rises, when
+  reviews of that day arrive late; a day made up on a later day stays missed.
 - Days before `DailyGoal.planRuleStart` (23.10.2026) count with one review, so as not to break a streak
   started under the old rule of a fixed number of reviews a day (a `ponytail:` marker; remove it with
   the condition in `Streak.evaluate`).
@@ -240,7 +292,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   incomplete log and a new study day mean a full recount (the first review of a never-reviewed card
   doesn't change the key).
 - `DailyProgressCache` keeps the same for the per-day steps of `evaluate` (time and why, work, closed
-  rings, streak) over the set of `Past` of all decks and the rule.
+  rings, streak) over the set of `Past` of all decks, the ledger and the rule.
 - The reference is the full recount: `DeckHistoryCacheTests` compares both paths on random reviews and
   edits of two decks.
 
@@ -251,21 +303,25 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   open ones as their documents have them (`DocumentView.refreshRing()`). The Mac's session
   header and Today page show the same ring and streak as the iPhone. `KnownDeckCounts`
   (`Shared/Document`, `refresh(_ urls: [URL])`) holds the counts per deck file for the iPhone's Today and
-  the Mac's Today window. Paused decks (`LearningOptions.isPaused`) enter none of these numbers.
+  the Mac's Today window. Paused decks (`LearningOptions.isPaused`) enter none of today's numbers; a day already in the
+  ledger keeps what it counted.
 - The widget snapshot (`WidgetSnapshot.done`, `.goal`) holds the done cards and the goal; its JSON key
-  stays `reviews` through `CodingKeys` so a saved snapshot still reads.
+  stays `reviews` through `CodingKeys` so a saved snapshot still reads. The snapshot also holds `wordsLearned` and
+  `wordsLearnedToday` (optional: a snapshot without them leaves the third figure out; the gain is nil after the snapshot's day).
 
 ## Words learned
 
-- `WordsLearned` (VocabCore/Statistics), the gain Today headlines ("412 words learned · +12 today"): the words whose Word →
+- `WordsLearned` (VocabCore/Statistics), the gain Today shows as its figure ("Words learned" 412, "+12 today"): the words whose Word →
   Meaning card (kind not production; a card without a kind is a word) is in the review phase, not suspended, in active decks.
   A word held twice (the same `WordKey`) counts once, a card without a word key is a word of its own. A lapse takes the word
   out until it is relearned; a suspended card is in neither number. `wordsAtDayStart` is the same from the card states before
   today's reviews (`Scheduler.standing(_:atStartOf:now:)`, shared with `MemoryEstimate`); `shownGain` is "+N today" and is nil
-  unless above 0. `DailyProgress.learned` holds it; `WordsLearned.line` is the text.
+  unless above 0. `DailyProgress.learned` holds it; `WordsLearned.line` is the text. With a past day in the ledger,
+  `learned.wordsAtDayStart` is the ledger's count of the day before and `learned.words` that plus today's gain from the
+  logs, so a word that lapsed stays counted, as in the medals.
 - Words-learned medals: `DayRecord.wordsLearned` is the count of words that had left learning by the end of that day
-  (`WordsLearned.cumulative`; the first day by the Steps rule over the log; a lapse takes none back; a card without a full log
-  counts from the first study day). `AchievementKind.wordsLearned(count:)` for `WordsLearned.milestones(upTo:)`: 10, 50, 100,
+  (`WordsLearned.cumulative`, kept in the ledger as `wordsLearned`; the first day by the Steps rule over the log; a lapse takes
+  none back; a card without a full log counts from the first study day). `AchievementKind.wordsLearned(count:)` for `WordsLearned.milestones(upTo:)`: 10, 50, 100,
   250, 500, 1000, then every 1000; earned once, on the first day the count reaches it.
 - Lap medals: `Double ring` and `Triple ring` are days whose `DayRecord.ringShare` reached 2 or 3 laps, earned once each (the
   first such day), derived from the records so history earns them; a 3-lap day earns both. Order within a day: streak, first
@@ -278,7 +334,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   cards don't count. A word held by several decks or by two cards of one deck counts once, at the highest probability among
   cards with the same word key (`MemoryEstimate.total`).
 - Taken at the start of the study day (04:00), from the card states before today's reviews. Nothing is stored. Words show
-  rounded down, the day's gain to a whole number; milestones 50…5000 (`MemoryEstimate.milestones`). Today headlines words
+  rounded down, the day's gain to a whole number; milestones 50…5000 (`MemoryEstimate.milestones`). Today shows words
   learned, not this number.
 
 ## How It Works
@@ -305,7 +361,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   7. FSRS per deck: retention, 21 parameters, fit, steps, maximum interval.
 - Numbers come from `DailyProgress`, `MemoryEstimate`, the deck settings and `DayBreakdown` (VocabCore,
   `Statistics/DayBreakdown.swift`). Its days are `DailyProgress.ringDays`; only the pace window repeats
-  `DailyGoal.pace`, and `DayBreakdownTests` keeps them together.
+  `DailyGoal.pace`, and `DayBreakdownTests` keeps them together. The sheet reads the ledger and writes nothing
+  (`HowTodayWorks.make(..., ledger:)`, `HowTodayWorks.read(..., ledger:)`; loaders: Mac `HowTodayWorksLoader`, iPhone
+  `HowTodayWorksButton(ledger:)`), so it shows what Today shows.
 - iPhone: the last row of the Progress screen, "How It Works", in a section with the footer "The plan, the
   day's time and the FSRS parameters behind the ring." (`HowTodayWorksButton` and the sheet `HowTodayWorksSheet`,
   `VocTrain/Views/HowTodayWorksSheet.swift`); decks are read from files when the sheet opens. Mac: Study ▸ How It Works (`HowTodayWorksWindow`), the decks of open documents, without
