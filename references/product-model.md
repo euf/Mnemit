@@ -245,8 +245,9 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
 - **Deck rows and headers** price the deck's whole plan left, backlog included: "≈ 5 min", and on the deck "≈ 5 min ·
   5 due · 4 new · 3 learning", zero parts left out. The Mac's deck strip and sidebar badges use the same rule.
 - **Reminders** say "≈ 2 min" always: the time to keep the streak, not the length of the day.
-- **The first showing** of a new card has two wide buttons side by side, Don't know and Know, as tall as the
-  two rows of the four buttons they replace; on the Mac their keys are ← or 1 (Don't know) and → or 3 (Know); ↓ ↑ 2 4 still give Hard and Easy.
+- **The answer buttons** are two wide buttons side by side, Forgot and Good (Don't know and Know on a first showing),
+  stacked at accessibility sizes; on the Mac their keys are ← or 1 and → or 3, and ↓ ↑ 2 4 give Hard and Easy; the setting
+  "Hard and Easy Buttons" draws four on later showings.
 - **Progress totals** are tiles: Days studied, Rings closed ("of 110 days"), Words learned, Your ring ("8 MIN", "a day ·
   started at 2.5", or "a day" while the ring has not moved); words in memory sit in the Memory section.
 - **The sentence**, where a figure has no room, without a streak is "≈ 2 min to start your streak" and, once nothing is
