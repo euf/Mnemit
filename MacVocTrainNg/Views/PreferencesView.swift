@@ -14,7 +14,7 @@ struct PreferencesView: View {
             Section {
                 Toggle("Hard and Easy Buttons", isOn: $showsFourButtons)
             } footer: {
-                Text("Keys 2 and 4 give Hard and Easy either way.")
+                Text("Adds Hard and Easy: buttons, and keys 2 and 4.")
             }
             Section {
                 LabeledContent {

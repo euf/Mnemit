@@ -109,6 +109,33 @@ extension WindowTests {
             #expect(model.stage == .revealed)
         }
 
+        /// What can be given is what the screen shows: a first showing has two buttons whatever the setting says, and the
+        /// keys 2 and 4 and the arrows up and down belong to no button there (pressing 1 or 3, which grade, would play the
+        /// card's flight out, see above).
+        @Test func onAFirstShowingTheKeysOfHardAndEasyDoNothing() async throws {
+            defer { close() }
+            let setting = GradeChoice.showsFourButtonsKey
+            let before = UserDefaults.standard.object(forKey: setting)
+            defer { UserDefaults.standard.set(before, forKey: setting) }
+            let card = try #require(model.currentCard)
+            #expect(card.isNew)
+            try await pressWhenReady(" ", keyCode: 49)
+            #expect(model.stage == .revealed)
+            let up = try #require(UnicodeScalar(NSUpArrowFunctionKey))
+            let down = try #require(UnicodeScalar(NSDownArrowFunctionKey))
+            let keys = [("2", 19), ("4", 21), (String(up), 126), (String(down), 125)] as [(String, UInt16)]
+            for showsFour in [false, true] {
+                UserDefaults.standard.set(showsFour, forKey: setting)
+                // The grade buttons are enabled once the answer has drawn; no key of theirs may be pressed to find out.
+                try await Task.sleep(for: .milliseconds(600))
+                for (characters, keyCode) in keys {
+                    #expect(try press(characters, keyCode: keyCode) == false, "key \(keyCode), four buttons \(showsFour)")
+                }
+                #expect(model.stage == .revealed)
+                #expect(model.currentCard?.id == card.id)
+            }
+        }
+
         /// ⌘Z takes back the review: the stream's own key goes ahead of Edit ▸ Undo.
         @Test func commandZAfterAGradeTakesBackTheReview() async throws {
             defer { close() }

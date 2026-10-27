@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import VocabCore
 
 /// The cheat sheet of the keys: in a flash card session those of the session, anywhere else those
 /// of the menus (`MenuKey`). It comes up by itself in the first session, with "?" in a session and
@@ -137,6 +138,7 @@ private struct ShortcutsOverlay: View {
     var inSession: Bool
     var menu: () -> MenuState
     var close: () -> Void
+    @AppStorage(GradeChoice.showsFourButtonsKey) private var showsFourButtons = false
 
     var body: some View {
         ZStack {
@@ -152,7 +154,7 @@ private struct ShortcutsOverlay: View {
                 // Twelve rows of the menus fit the window's least height at this spacing.
                 Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 18, verticalSpacing: inSession ? 12 : 6) {
                     if inSession {
-                        sessionRows(isNew: menu().onNewCard)
+                        sessionRows(grades: GradeChoice.buttonGrades(isNew: menu().onNewCard, showsFourButtons: showsFourButtons), isNew: menu().onNewCard)
                     } else {
                         let state = menu()
                         ForEach(MenuKey.allCases, id: \.self) { key in
@@ -181,9 +183,10 @@ private struct ShortcutsOverlay: View {
         }
     }
 
-    /// The first showing of a card has Don't know and Know where the later ones have Forgot and Good.
+    /// The first showing of a card has Don't know and Know where the later ones have Forgot and Good. The grade row
+    /// lists the arrows of the grades that have a button (`grades`), as many as there are keys that give a grade.
     @ViewBuilder
-    private func sessionRows(isNew: Bool) -> some View {
+    private func sessionRows(grades: [Grade], isNew: Bool) -> some View {
         row(keys: [String(localized: "Space")]) {
             if isNew {
                 Text("Show the answer, then grade Know")
@@ -191,9 +194,11 @@ private struct ShortcutsOverlay: View {
                 Text("Show the answer, then grade Good")
             }
         }
-        row(keys: ["←", "→", "↑", "↓"]) {
+        row(keys: grades.map(\.arrow)) {
             if isNew {
-                Text("Grade: ← Don't know, → Know, ↑ Easy, ↓ Hard")
+                Text("Grade: ← Don't know, → Know")
+            } else if grades.count == 2 {
+                Text("Grade: ← Forgot, → Good")
             } else {
                 Text("Grade: ← Forgot, → Good, ↑ Easy, ↓ Hard")
             }

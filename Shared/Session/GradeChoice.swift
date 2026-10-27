@@ -9,9 +9,9 @@ import VocabCore
 /// forgetting is the worst mistake for FSRS. The buttons carry the grade's name and nothing
 /// else: when the card comes back shows only once the grade is given, see `UndoChip`.
 ///
-/// A grade with no button is still given, by a swipe up or down on the iPhone and the keys on the Mac. On the Mac the keys 1 to 4
-/// choose a grade, Return accepts `defaultGrade`, and each button carries the arrow key that gives its grade, the
-/// direction of the iPhone's swipe (`Grade.arrowKey`).
+/// What can be given is what the screen shows: a grade with no button has no swipe and no key either
+/// (`GradeSwipe.grade(atAngle:among:)`, `extraKeys`). On the Mac each button carries the digit key of its grade (1 and 3, or 1 to 4),
+/// Return accepts `defaultGrade`, and the arrow key of each button's grade is the direction of the iPhone's swipe (`Grade.arrowKey`).
 struct GradeChoice: View {
     /// The preference of both apps, in the user defaults: Hard and Easy get buttons of their own.
     nonisolated static let showsFourButtonsKey = "ShowsFourAnswerButtons"
@@ -32,8 +32,8 @@ struct GradeChoice: View {
     var defaultGrade: Grade?
     /// Lets Space accept `defaultGrade` too, as Space showed the answer.
     var acceptsSpace = false
-    /// Lets the arrow keys grade on the Mac, the way a swipe does on the iPhone: ← Forgot,
-    /// ↓ Hard, → Good, ↑ Easy.
+    /// Lets the arrow keys grade on the Mac, the way a swipe does on the iPhone: ← Forgot, → Good, and with four buttons
+    /// ↓ Hard, ↑ Easy.
     var acceptsArrows = false
     /// The iPhone in landscape, where the row of buttons has little height.
     var isCompact = false
@@ -242,11 +242,11 @@ struct GradeChoice: View {
                     key(.space, grade: defaultGrade)
                 }
             }
+            // The arrows of the grades that have a button: the digits are on the buttons, and 2 and 4, ↑ and ↓
+            // do nothing with two buttons.
             if acceptsArrows {
-                ForEach(Grade.allCases, id: \.self) { key($0.arrowKey, grade: $0) }
+                ForEach(buttons, id: \.self) { key($0.arrowKey, grade: $0) }
             }
-            // The keys of the grades that have no button.
-            ForEach(Grade.allCases.filter { !buttons.contains($0) }, id: \.self) { key($0.shortcutKey, grade: $0) }
         }
         .opacity(0)
         .frame(width: 0, height: 0)
