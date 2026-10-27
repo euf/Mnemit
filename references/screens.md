@@ -145,9 +145,9 @@ sizes: `design-spec.md` §4.
   for both apps: `GradeChoice.showsFourButtonsKey`) lays out four on a later showing: Forgot full width, Hard, Good and Easy
   under it, Good wider; a first showing stays two. `GradeChoice.buttonGrades(isNew:showsFourButtons:)` is the one rule. At
   the accessibility sizes the two stack, Forgot over Good; the iPhone in landscape puts Forgot beside Good, or beside the
-  three. The swipes give all four grades either way (up Easy, down Hard, left Forgot, right Good); a swipe toward a grade
-  with no button lights no button, and the card's tint and the receipt say the grade (`GradeChoice.lit`). On the Mac ← or 1
-  and → or 3 grade the two buttons, and ↓ ↑ and 2 4 give Hard and Easy always. The rules: `scheduling.md`, "A new card's
+  three. The swipes give the grades of the buttons and no others (`GradeSwipe.grade(atAngle:among:)`): with two buttons left
+  Forgot and right Good, up and down spring back; with four, up Easy and down Hard too. On the Mac ← or 1 and → or 3 grade
+  the two buttons; ↓ ↑ and 2 4 give Hard and Easy only with the setting on. The rules: `scheduling.md`, "A new card's
   first showing".
 - **The leech moment** (`LeechMomentView`, `SessionDriver.leechMoment`): right after the Forgot that makes a card a leech,
   before the next card, the stream stops on "Keeps slipping" with the card's question and answer as the stream shows them,
@@ -419,10 +419,10 @@ the footer's sentence as the threshold's tooltip.
   neither naming the Mac) → reminder.
 - **Settings** (a sheet from the **…** menu of Today, `SettingsView`): Reminder (the Daily Reminder toggle
   and, while it is on, the time; its footer appears only when notifications are off in iOS Settings, with
-  Open Settings), Hard and Easy Buttons (a toggle in a section of its own, footer "Swipe up for Easy and down for Hard
-  either way.") and Show Introduction, which plays the onboarding again, with "Version 1.2.3 (hash)" under it. The Mac's
-  Settings (⌘,, `PreferencesView`): Pronounce Automatically, Hard and Easy Buttons (the same toggle, footer "Keys 2 and 4 give
-  Hard and Easy either way."), Mnemit Folder (its path and
+  Open Settings), Hard and Easy Buttons (a toggle in a section of its own, footer "Adds Hard and Easy: buttons, and
+  swipes down and up.") and Show Introduction, which plays the onboarding again, with "Version 1.2.3 (hash)" under it. The Mac's
+  Settings (⌘,, `PreferencesView`): Pronounce Automatically, Hard and Easy Buttons (the same toggle, footer "Adds Hard and Easy: buttons, and keys 2
+  and 4."), Mnemit Folder (its path and
   Change…, which opens the folder chooser) and the same version line. The iPhone's "Pronounce
   Automatically" is in the stream's menu.
 - A single deck opens through "Open Deck…" in Today's … menu.

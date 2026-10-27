@@ -19,7 +19,7 @@ are in [`references/`](references/).
   Easy Buttons" gives them buttons: Forgot on a row of its own, Hard, Good and Easy under it, three greens whose chroma rises
   from a dull sage to a vivid jade.
 - **A new card's first showing is asked.** A word never seen is asked like any card: question,
-  Show Answer, then two wide buttons, Don't know and Know (Again and Good underneath; the swipes keep all four grades); later showings have the same two, named Forgot and Good ([`docs/adr/0007-first-showing-is-asked-as-dont-know.md`](docs/adr/0007-first-showing-is-asked-as-dont-know.md)).
+  Show Answer, then two wide buttons, Don't know and Know (Again and Good underneath; the swipes left and right give only these two); later showings have the same two, named Forgot and Good ([`docs/adr/0007-first-showing-is-asked-as-dont-know.md`](docs/adr/0007-first-showing-is-asked-as-dont-know.md)).
 - **Swipes with dead zones.** ← Forgot, → Good, ↑ Easy, ↓ Hard. The recognised sectors follow a
   clock face, 0 at the top, clockwise: Easy 330°…45°, Good 45°…135°, Hard 135°…210°, Forgot
   240°…300°, and nothing in the two gaps between the "no" and the "yes" sectors (210°…240°,

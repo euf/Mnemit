@@ -9,8 +9,9 @@
   writes through `NSFileCoordinator`) changes in place, and an undo of a grade survives the reread on both apps. A leech
   (8 lapses, again every half threshold) stops on "Keeps slipping" with Edit, Set Aside or Keep It and Continue; the deck
   chooses Keep (default) or Suspend; a Leeches filter; the Mac's card table has Lapses, Stability, Difficulty and Recall.
-  Every card has two answer buttons, Forgot and Good (Don't know and Know on a first showing); Hard and Easy stay as swipes
-  and the Mac keys 2 and 4; the setting "Hard and Easy Buttons" draws four. The greens rise in chroma from Hard (sage) to
+  Every card has two answer buttons, Forgot and Good (Don't know and Know on a first showing); what can be given is what the
+  screen shows (a swipe up or down springs back, 2 and 4 do nothing); the setting "Hard and Easy Buttons" adds Hard and
+  Easy as buttons, swipes and keys together. The greens rise in chroma from Hard (sage) to
   Easy (vivid jade). Today is one card in the screens' grammar (Fitness Summary through the iOS 26 rules, `hig-ios26.md`):
   the ring on the left, Day streak, the next moment with ≈ minutes and Words learned on the right, the week under them, the
   date as the subtitle; Progress, a deck and Statistics use the same cards and tiles. The introduction teaches a new word's
@@ -81,8 +82,8 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    sheet, a medal toast in the header. Seen on 27.10: at a 1000 pt window the card table's four new columns sit past the
    right edge (the Kind column takes the room); once, right after a file merge, the Z key did nothing until a click (not
    reproduced); Delete Deck of a deck in `/private/tmp` does nothing (no Trash there).
-3. **Answer buttons and leeches, to watch:** the share of Hard and Easy swipes in EF's log against the 9.9 % before 27.10;
-   whether familiar A1–A2 words get ↑ Easy; the first leech moments and whether Edit is used.
+3. **Answer buttons and leeches, to watch:** whether EF turns "Hard and Easy Buttons" on (Easy's shorter path for the
+   familiar A1–A2 words is only there); the first leech moments and whether Edit is used.
 4. **Share Deck**: a clean `.mnemit` copy (cards and media, no states, no log, no fitted parameters) from
    the deck's menu on both apps; sending the package today sends one's history.
 5. **From the reviews of three personas (23.10: Anki veteran, newcomer, no-decks learner)**: FSRS figures

@@ -179,8 +179,10 @@ area and the card's type: `references/design-spec.md` §4.
 - A card is swiped once its answer shows (`GradeSwipe`, `CardFlight`, `StudyView.touch`). Four
   directions, one per grade, whether the buttons are two or four, the same as the arrows on the Mac: ← Forgot,
   → Good, ↑ Easy, ↓ Hard (`Grade.arrow`, `Grade.arrowSymbol`).
-- Sectors: a dial of 15° sectors with zero at the top, clockwise (EF's diagram), compass degrees: Easy
-  330°…45°, Good 45°…135°, Hard 135°…210°, gap 210°…240°, Forgot 240°…300°, gap 300°…330°.
+- Sectors (compass degrees, zero at the top, clockwise) follow the buttons (`GradeSwipe.grade(atAngle:among:)`). Two
+  buttons, and every first showing: Good 30°…150°, Forgot 210°…330°; up (330°…30°) and down (150°…210°) are gaps. With
+  "Hard and Easy Buttons" on, later showings: Easy 330°…45°, Good 45°…135°, Hard 135°…210°, gap 210°…240°, Forgot
+  240°…300°, gap 300°…330° (EF's diagram, a dial of 15° sectors); what follows describes these four.
 - The vertical sectors are wider and reach toward the NE–SW diagonal: for a right-handed one-thumb user
   the vertical and the diagonal are fastest, the horizontal slowest and most precise (Trudeau et al.,
   Human Factors, 2012). Forgot stays 60°, Good an even 90°.

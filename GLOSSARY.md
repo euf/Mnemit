@@ -497,7 +497,7 @@ _Avoid_: introduction, new word (as a card state), unknown
 **Hard and Easy Buttons** (the setting of Preferences, `ShowsFourAnswerButtons`; DE „Tasten für Schwer und Leicht“; RU «Кнопки „Трудно“ и „Легко“»; EL «Κουμπιά Δύσκολο και Εύκολο»):
 Every showing has two wide buttons, Forgot and Good. With the setting on, a card's later showings have four: Forgot on a row
 of its own, Hard, Good and Easy under it, Good the widest (`GradeChoice.buttonGrades`). A first showing stays two. Hard and
-Easy are given without buttons either way: the swipe down and up on the iPhone, the keys 2 and 4 on the Mac.
+Easy come with their buttons and only then: the swipe down and up on the iPhone, the keys 2 and 4 on the Mac.
 _Avoid_: four-button mode
 
 **Words in memory** ("In memory now" in How It Works, the Memory section of Progress; DE „Wörter im Gedächtnis“; RU «слов в памяти»):

@@ -211,7 +211,7 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
 ## 10. The personas through it
 
 - **Newcomer, day 1:** the introduction shows one new word, Don't know or Know, and the word coming back in the same
-  sitting, then the four swipes → no decks → New Deck or Shared Decks → the first card → two minutes: the flame fills,
+  sitting, then the two swipes, left and right → no decks → New Deck or Shared Decks → the first card → two minutes: the flame fills,
   "1-day streak", first medal at 10 words. Their ring is 2.5 minutes; the first moments come fast.
 - **Course learner, a lesson night:** the morning widget shows "Day streak 12" and "To keep your streak ≈ 2 min"; the bus ride keeps it;
   the evening lesson's 20 words go in at the desk and Study These Now puts them first; the stack runs out at the ring;
@@ -229,7 +229,7 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
 | A deck changed while open | merged; the table tool wrote past the apps | merged in place; the tool writes like an app; the stream drops a card that is gone |
 | A word that keeps slipping | suspended at 8 lapses, marked Difficult | a leech stays on screen with Edit, Set Aside, Continue; the deck chooses Keep (default) or Suspend; warned again every half threshold; a Leeches filter; the Mac shows Lapses, Stability, Difficulty, Recall |
 | Grade colours | three greens by lightness, Hard the lightest | chroma rises from Hard to Easy: Hard a dull sage, Easy a vivid jade |
-| The introduction | the four swipes, the day in four lines | first a new word's first showing (Don't know, Know, it comes back), then the swipes |
+| The introduction | the four swipes, the day in four lines | first a new word's first showing (Don't know, Know, it comes back), then the two swipes |
 | Words on screen | sentences that explain | short and plain everywhere; no text that explains the interface |
 | Today | the ring, then one sentence led by the flame with the days in it | the date under the title; one card: the ring left, Day streak, the next moment with ≈ minutes and Words learned right, the week under them |
 | Progress, a deck, Statistics | a streak block with small totals; a bold header line; grey boxes | cards with their titles inside, tiles with large values, the deck's Today card |

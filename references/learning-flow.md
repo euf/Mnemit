@@ -64,7 +64,7 @@ closes; two in a row end the streak, and the best run stays in Progress.
 ### A newcomer's first days with a new deck
 
 The first launch plays the introduction, six steps (`screens.md`, "First launch"): a welcome; **a new word's first
-showing**; the four swipes; "One stack a day"; sync; the reminder. The first showing is a practice with one sample card
+showing**; the two swipes (left Forgot, right Good); "One stack a day"; sync; the reminder. The first showing is a practice with one sample card
 ("a janela", "the window"): question, Show Answer, then the two wide buttons of a new card, Don't know and Know. Don't know
 slides the card under a small stack with "It comes back after a few cards."; Know slides it right with "It comes back once
 more before you're done." Both lines are true of the scheduler's first steps (`scheduling.md`, "A new card's first
@@ -73,7 +73,7 @@ day" says in four lines what the stack, the ring, the streak and the ladder of w
 
 Today with no deck offers New Deck first and Shared Decks second, the iCloud folder as a link under them. A new deck opens
 Add Cards by itself, and Study These Now studies what was just added. A new word is asked the first time it comes up, like any
-card, with the same two buttons (Don't know is Again, Know is Good; the swipes keep all four grades), and the card comes
+card, with the same two buttons (Don't know is Again, Know is Good; the swipes give only these two), and the card comes
 back in the session (`scheduling.md`, "A new card's first showing"). The first grade is the first review: it moves the ring
 when the card is done and writes a log entry. Two minutes fill the flame (the Streak kept rest reads "1-day streak"), and the
 first medal comes at 10 words learned.
