@@ -87,13 +87,15 @@ sentence: "≈ 2 min to keep your streak", "≈ 5 min to close the ring", "Ring 
 for today". **The button** follows the moment: Study, then Catch Up, then Learn 10 New Words.
 
 **A card** is asked; a tap shows the answer; the learner answers with two buttons, Forgot and Good ("Don't know" and
-"Know" on its first showing), or swipes: left Forgot, right Good, and two more for those who want them, up Easy, down
-Hard (on the Mac the keys 1 to 4, as in Anki). A setting shows all four as buttons. Two answers are enough for FSRS,
-which predicts as well or better from Again and Good alone (`fsrs-research.md` §1), and 17 % of 2,000 Anki users answer
-that way with the same recall; Easy is kept as a swipe because a familiar word marked Easy comes back 3 to 4 times in a
-year instead of 6, and the median Anki user still presses Hard or Easy on a quarter of reviews (`grades-research.md`). A card
-leaves the stack and moves the ring when FSRS lets it go until another day; a Forgot slides it back under the stack and
-moves neither.
+"Know" on its first showing), or swipes left and right (on the Mac ← or 1, → or 3). What can be given is what the screen
+shows: a swipe up or down springs back, and the keys 2 and 4 do nothing, so no answer lands that the learner did not see
+as a choice and FSRS never gets one that was not meant. The setting "Hard and Easy Buttons" adds Hard and Easy everywhere
+at once: their buttons on every later showing, the swipes down and up, the keys 2 and 4. Two answers are enough for FSRS,
+which predicts as well or better from Again and Good alone (`fsrs-research.md` §1), and 17 % of 2,000 Anki users answer that
+way with the same recall; the setting is for those who want Easy's shorter path for familiar words (3 to 4 showings a year
+instead of 6) and for the Anki veteran who presses Hard or Easy on a quarter of reviews (`grades-research.md`). A first
+showing has two buttons and two directions in both modes. A card leaves the stack and moves the ring when FSRS lets it go
+until another day; a Forgot slides it back under the stack and moves neither.
 The colour says how easily the word came: red for Forgot; three greens whose chroma rises from Hard, a dull sage, through
 Good to Easy, a vivid jade.
 
@@ -231,7 +233,7 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
 | Words on screen | sentences that explain | short and plain everywhere; no text that explains the interface |
 | Today | the ring, then one sentence led by the flame with the days in it | the date under the title; one card: the ring left, Day streak, the next moment with ≈ minutes and Words learned right, the week under them |
 | Progress, a deck, Statistics | a streak block with small totals; a bold header line; grey boxes | cards with their titles inside, tiles with large values, the deck's Today card |
-| Answer buttons | four (Forgot, Hard, Good, Easy); two only on a first showing | two everywhere (Forgot, Good); Hard and Easy as swipes and keys; a setting shows four |
+| Answer buttons | four (Forgot, Hard, Good, Easy); two only on a first showing | two (Forgot, Good) and only those two by swipe and key; the setting adds Hard and Easy as buttons, swipes and keys together |
 | Medal toasts | over the ring (Mac), over the card or a deck row | where they cover nothing |
 
 ## 12. Details settled in the build
@@ -246,8 +248,9 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
   5 due · 4 new · 3 learning", zero parts left out. The Mac's deck strip and sidebar badges use the same rule.
 - **Reminders** say "≈ 2 min" always: the time to keep the streak, not the length of the day.
 - **The answer buttons** are two wide buttons side by side, Forgot and Good (Don't know and Know on a first showing),
-  stacked at accessibility sizes; on the Mac their keys are ← or 1 and → or 3, and ↓ ↑ 2 4 give Hard and Easy; the setting
-  "Hard and Easy Buttons" draws four on later showings.
+  stacked at accessibility sizes; on the Mac their keys are ← or 1 and → or 3. In two-button mode a swipe counts only
+  left or right (Forgot 210°–330°, Good 30°–150°, the rest springs back) and 2, 4, ↑ and ↓ do nothing; with "Hard and Easy
+  Buttons" on, later showings draw four and the four directions and keys 1 to 4 give their grades.
 - **Progress totals** are tiles: Days studied, Rings closed ("of 110 days"), Words learned, Your ring ("8 MIN", "a day ·
   started at 2.5", or "a day" while the ring has not moved); words in memory sit in the Memory section.
 - **The sentence**, where a figure has no room, without a streak is "≈ 2 min to start your streak" and, once nothing is
