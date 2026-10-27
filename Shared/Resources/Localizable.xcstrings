@@ -3554,24 +3554,46 @@
         }
       }
     },
-    "A swipe of %lld points or a flick grades by direction, clockwise from the top: Easy 330°–45°, Good 45°–135°, Hard 135°–210°, Forgot 240°–300°. In the gaps, 210°–240° and 300°–330°, the card springs back. Counted per study day since the app started.": {
+    "A swipe of %lld points or a flick grades by direction, clockwise from the top: Easy 330°–45°, Good 45°–135°, Hard 135°–210°, Forgot 240°–300°. In the gaps, 210°–240° and 300°–330°, the card springs back. On a card's first showing only Good 30°–150° and Forgot 210°–330° count. Counted per study day since the app started.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eine Wischgeste von %lld Punkten oder ein Flick bewertet nach Richtung, im Uhrzeigersinn von oben: Leicht 330°–45°, Gut 45°–135°, Schwer 135°–210°, Vergessen 240°–300°. In den Lücken, 210°–240° und 300°–330°, springt die Karte zurück. Gezählt je Lerntag seit dem Start der App."
+            "value": "Eine Wischgeste von %lld Punkten oder ein Flick bewertet nach Richtung, im Uhrzeigersinn von oben: Leicht 330°–45°, Gut 45°–135°, Schwer 135°–210°, Vergessen 240°–300°. In den Lücken, 210°–240° und 300°–330°, springt die Karte zurück. Beim ersten Zeigen einer Karte gelten nur Gut 30°–150° und Vergessen 210°–330°. Gezählt je Lerntag seit dem Start der App."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ένα σύρσιμο %lld σημείων ή μια γρήγορη κίνηση βαθμολογεί ανά κατεύθυνση, δεξιόστροφα από την κορυφή: Εύκολο 330°–45°, Καλά 45°–135°, Δύσκολο 135°–210°, Ξέχασα 240°–300°. Στα κενά, 210°–240° και 300°–330°, η κάρτα επιστρέφει. Μετράται ανά ημέρα μελέτης από την εκκίνηση της εφαρμογής."
+            "value": "Ένα σύρσιμο %lld σημείων ή μια γρήγορη κίνηση βαθμολογεί ανά κατεύθυνση, δεξιόστροφα από την κορυφή: Εύκολο 330°–45°, Καλά 45°–135°, Δύσκολο 135°–210°, Ξέχασα 240°–300°. Στα κενά, 210°–240° και 300°–330°, η κάρτα επιστρέφει. Στην πρώτη εμφάνιση μιας κάρτας ισχύουν μόνο Καλά 30°–150° και Ξέχασα 210°–330°. Μετράται ανά ημέρα μελέτης από την εκκίνηση της εφαρμογής."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Свайп на %lld пунктов или резкий взмах ставит оценку по направлению, по часовой стрелке от верха: «Легко» 330°–45°, «Хорошо» 45°–135°, «Трудно» 135°–210°, «Не вспомнил» 240°–300°. В промежутках, 210°–240° и 300°–330°, карточка возвращается назад. Считается за каждый учебный день с запуска приложения."
+            "value": "Свайп на %lld пунктов или резкий взмах ставит оценку по направлению, по часовой стрелке от верха: «Легко» 330°–45°, «Хорошо» 45°–135°, «Трудно» 135°–210°, «Не вспомнил» 240°–300°. В промежутках, 210°–240° и 300°–330°, карточка возвращается назад. На первом показе карточки действуют только «Хорошо» 30°–150° и «Не вспомнил» 210°–330°. Считается за каждый учебный день с запуска приложения."
+          }
+        }
+      }
+    },
+    "A swipe of %lld points or a flick grades by direction, clockwise from the top: Good 30°–150°, Forgot 210°–330°. Up and down, 330°–30° and 150°–210°, spring the card back. Counted per study day since the app started.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Wischgeste von %lld Punkten oder ein Flick bewertet nach Richtung, im Uhrzeigersinn von oben: Gut 30°–150°, Vergessen 210°–330°. Nach oben und unten, 330°–30° und 150°–210°, springt die Karte zurück. Gezählt je Lerntag seit dem Start der App."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ένα σύρσιμο %lld σημείων ή μια γρήγορη κίνηση βαθμολογεί ανά κατεύθυνση, δεξιόστροφα από την κορυφή: Καλά 30°–150°, Ξέχασα 210°–330°. Προς τα πάνω και προς τα κάτω, 330°–30° και 150°–210°, η κάρτα επιστρέφει. Μετράται ανά ημέρα μελέτης από την εκκίνηση της εφαρμογής."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свайп на %lld пунктов или резкий взмах ставит оценку по направлению, по часовой стрелке от верха: «Хорошо» 30°–150°, «Не вспомнил» 210°–330°. Вверх и вниз, 330°–30° и 150°–210°, карточка возвращается назад. Считается за каждый учебный день с запуска приложения."
           }
         }
       }
@@ -4100,6 +4122,50 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Adds Hard and Easy: buttons, and keys 2 and 4.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fügt Schwer und Leicht hinzu: Schaltflächen und die Tasten 2 und 4."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Προσθέτει Δύσκολο και Εύκολο: κουμπιά και πλήκτρα 2 και 4."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавляет «Трудно» и «Легко»: кнопки и клавиши 2 и 4."
+          }
+        }
+      }
+    },
+    "Adds Hard and Easy: buttons, and swipes down and up.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fügt Schwer und Leicht hinzu: Schaltflächen und Wischen nach unten und oben."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Προσθέτει Δύσκολο και Εύκολο: κουμπιά και σύρσιμο προς τα κάτω και προς τα πάνω."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавляет «Трудно» и «Легко»: кнопки и свайпы вниз и вверх."
           }
         }
       }
@@ -7473,24 +7539,46 @@
         }
       }
     },
-    "Grade: ← Don't know, → Know, ↑ Easy, ↓ Hard": {
+    "Grade: ← Don't know, → Know": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bewerten: ← Weiß ich nicht, → Weiß ich, ↑ Leicht, ↓ Schwer"
+            "value": "Bewerten: ← Weiß ich nicht, → Weiß ich"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Βαθμολογία: ← Δεν ξέρω, → Ξέρω, ↑ Εύκολο, ↓ Δύσκολο"
+            "value": "Βαθμολογία: ← Δεν ξέρω, → Ξέρω"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оценка: ← Не знаю, → Знаю, ↑ Легко, ↓ Трудно"
+            "value": "Оценка: ← Не знаю, → Знаю"
+          }
+        }
+      }
+    },
+    "Grade: ← Forgot, → Good": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewerten: ← Vergessen, → Gut"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βαθμολογία: ← Ξέχασα, → Καλά"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оценка: ← Не вспомнил, → Хорошо"
           }
         }
       }
@@ -8415,28 +8503,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Горячие клавиши"
-          }
-        }
-      }
-    },
-    "Keys 2 and 4 give Hard and Easy either way.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Tasten 2 und 4 geben Schwer und Leicht, so oder so."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τα πλήκτρα 2 και 4 δίνουν Δύσκολο και Εύκολο σε κάθε περίπτωση."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Клавиши 2 и 4 дают «Трудно» и «Легко» в любом случае."
           }
         }
       }
@@ -11455,50 +11521,6 @@
         }
       }
     },
-    "Remembered instantly": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sofort gewusst"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Θυμήθηκα αμέσως"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вспомнил сразу"
-          }
-        }
-      }
-    },
-    "Remembered with effort": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit Mühe gewusst"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Θυμήθηκα με προσπάθεια"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вспомнил с усилием"
-          }
-        }
-      }
-    },
     "Remind Me": {
       "localizations": {
         "de": {
@@ -13541,28 +13563,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Смахни чуть дальше в сторону стрелки."
-          }
-        }
-      }
-    },
-    "Swipe up for Easy and down for Hard either way.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nach oben wischen gibt Leicht, nach unten Schwer, so oder so."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σύρσιμο προς τα πάνω για Εύκολο, προς τα κάτω για Δύσκολο, σε κάθε περίπτωση."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Свайп вверх даёт «Легко», вниз — «Трудно» в любом случае."
           }
         }
       }
@@ -16371,50 +16371,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "библиотека"
-          }
-        }
-      }
-    },
-    "the police": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "die Polizei"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "η αστυνομία"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "полиция"
-          }
-        }
-      }
-    },
-    "the train": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "der Zug"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "το τρένο"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "поезд"
           }
         }
       }

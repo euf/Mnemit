@@ -116,18 +116,34 @@ struct HowTodayWorksTests {
         // The swipes: the gap misses of all that tried, and the sectors in compass degrees in the rule.
         let swipes = content.sections[6]
         #expect(swipes.rows == [.value(label: "Swipes that sprang back from a gap", value: "3 of 41 today")])
-        // They are the constants of `GradeSwipe`, in compass degrees (90 - the code's angle, modulo 360).
+        // They are the constants of `GradeSwipe`, in compass degrees (90 - the code's angle, modulo 360). The setting
+        // is off: two sectors and the gaps up and down.
         func bearing(_ math: Double) -> Int { Int((90 - math).truncatingRemainder(dividingBy: 360) + 360) % 360 }
-        let sectors = [
+        let twoWay = [
+            "Good \(bearing(GradeSwipe.twoWayReach))°–\(bearing(-GradeSwipe.twoWayReach))°",
+            "Forgot \(bearing(180 + GradeSwipe.twoWayReach))°–\(bearing(180 - GradeSwipe.twoWayReach))°",
+            "\(bearing(180 - GradeSwipe.twoWayReach))°–\(bearing(GradeSwipe.twoWayReach))° and "
+                + "\(bearing(-GradeSwipe.twoWayReach))°–\(bearing(180 + GradeSwipe.twoWayReach))°",
+        ]
+        for sector in twoWay {
+            #expect(swipes.footer.contains(sector), "\(sector)")
+        }
+        #expect(!swipes.footer.contains("Easy") && !swipes.footer.contains("Hard"))
+
+        // With "Hard and Easy Buttons" on: the four sectors, and the two of a first showing.
+        let four = HowTodayWorks(progress: Self.progress, breakdown: Self.breakdown, memory: Self.memory, swipes: Self.swipes, showsFourButtons: true, decks: []).sections[6]
+        let fourWay = [
             "Easy \(bearing(GradeSwipe.easyEnd))°–\(bearing(GradeSwipe.goodReach))°",
             "Good \(bearing(GradeSwipe.goodReach))°–\(bearing(-GradeSwipe.goodReach))°",
             "Hard \(bearing(-GradeSwipe.goodReach))°–\(bearing(GradeSwipe.hardStart))°",
             "Forgot \(bearing(GradeSwipe.forgotEnd))°–\(bearing(GradeSwipe.forgotStart))°",
             "\(bearing(GradeSwipe.hardStart))°–\(bearing(GradeSwipe.forgotEnd))° and "
                 + "\(bearing(GradeSwipe.forgotStart))°–\(bearing(GradeSwipe.easyEnd))°",
+            "only Good \(bearing(GradeSwipe.twoWayReach))°–\(bearing(-GradeSwipe.twoWayReach))° and "
+                + "Forgot \(bearing(180 + GradeSwipe.twoWayReach))°–\(bearing(180 - GradeSwipe.twoWayReach))°",
         ]
-        for sector in sectors {
-            #expect(swipes.footer.contains(sector), "\(sector)")
+        for sector in fourWay {
+            #expect(four.footer.contains(sector), "\(sector)")
         }
 
         let fsrs = content.sections[8]

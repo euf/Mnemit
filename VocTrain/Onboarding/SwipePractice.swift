@@ -2,15 +2,9 @@ import Foundation
 import VocabCore
 
 extension Grade {
-    /// What the grade means, in the words of the practice: the four meanings are the rules
-    /// of the app.
+    /// What the grade means, in the words of the practice.
     var meaning: String {
-        switch self {
-        case .again: String(localized: "Forgot")
-        case .hard: String(localized: "Remembered with effort")
-        case .good: String(localized: "Remembered")
-        case .easy: String(localized: "Remembered instantly")
-        }
+        self == .again ? String(localized: "Forgot") : String(localized: "Remembered")
     }
 }
 
@@ -20,12 +14,13 @@ struct PracticeSample: Equatable {
     var answer: String
 }
 
-/// The practice of the swipes, the second step of the introduction: four cards in a fixed
-/// order, each asking for one direction. Nothing is graded; only the order and the progress
-/// are kept here, so the view stays a drawing of it.
+/// The practice of the swipes, the second step of the introduction: two cards in a fixed
+/// order, each asking for one direction, the two that can be given with the two buttons. Nothing is
+/// graded; only the order and the progress are kept here, so the view stays a drawing of it.
 struct SwipePractice: Equatable {
-    /// The directions, in the order they are asked: left, up, down, right.
-    static let order: [Grade] = [.again, .easy, .hard, .good]
+    /// The directions, in the order they are asked: left, right. They are also the grades the practice's
+    /// swipe takes: Forgot and Good, the buttons of a first showing (`GradeChoice.buttonGrades`).
+    static let order: [Grade] = [.again, .good]
 
     /// How many cards are done.
     private(set) var index = 0
@@ -64,15 +59,12 @@ struct SwipePractice: Equatable {
         return CGSize(width: nudgeTravel * cos(radians), height: -nudgeTravel * sin(radians))
     }
 
-    /// The card that asks for `grade`. The four come from four languages, so the app doesn't
+    /// The card that asks for `grade`, Forgot's or Good's. The two come from two languages, so the app doesn't
     /// look as if it were for one of them.
     static func sample(for grade: Grade) -> PracticeSample {
-        switch grade {
-        case .good: PracticeSample(question: "la mariposa", answer: String(localized: "the butterfly"))
-        case .again: PracticeSample(question: "la bibliothèque", answer: String(localized: "the library"))
-        case .easy: PracticeSample(question: "il treno", answer: String(localized: "the train"))
-        case .hard: PracticeSample(question: "η αστυνομία", answer: String(localized: "the police"))
-        }
+        grade == .again
+            ? PracticeSample(question: "la bibliothèque", answer: String(localized: "the library"))
+            : PracticeSample(question: "la mariposa", answer: String(localized: "the butterfly"))
     }
 }
 

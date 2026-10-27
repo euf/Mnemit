@@ -389,6 +389,86 @@ struct GradeSwipeTests {
         _ = tally.released(translation: compass(315, length: 120), predictedEnd: compass(315, length: 120), at: morning, calendar: calendar)
         #expect(tally.counts(at: morning, calendar: calendar) == SwipeTally.Counts(graded: 0, gapMisses: 1))
     }
+
+    // MARK: Two buttons
+
+    /// The grades with a button on a first showing and with "Hard and Easy Buttons" off.
+    private let two = GradeChoice.buttonGrades(isNew: false, showsFourButtons: false)
+
+    /// With two buttons Good takes compass 30° to 150° and Forgot 210° to 330°; up (330° to 30°) and down
+    /// (150° to 210°) give nothing. In the code's degrees: Good within 60° of east, Forgot within 60° of west.
+    @Test func withTwoButtonsOnlyGoodAndForgotAreGiven() {
+        let cases: [(math: Double, grade: Grade?)] = [
+            (0, .good), (59.99, .good), (60, .good), (60.01, nil), (90, nil), (119.99, nil),
+            (120, .again), (120.01, .again), (180, .again), (239.99, .again), (240, .again), (240.01, nil),
+            (270, nil), (299.99, nil), (300, .good), (300.01, .good), (359.99, .good),
+        ]
+        for (degrees, grade) in cases {
+            #expect(GradeSwipe.grade(atAngle: degrees, among: two) == grade, "at \(degrees)°")
+        }
+        #expect(GradeSwipe.twoWayReach == 60)
+        #expect(bearing(ofMath: GradeSwipe.twoWayReach) == 30)
+        #expect(bearing(ofMath: -GradeSwipe.twoWayReach) == 150)
+        #expect(bearing(ofMath: 180 - GradeSwipe.twoWayReach) == 330)
+        #expect(bearing(ofMath: 180 + GradeSwipe.twoWayReach) == 210)
+    }
+
+    /// The four-way sectors are what they were, and ask the same of the same grades.
+    @Test func withFourButtonsTheSectorsAreTheOldOnes() {
+        for tenth in 0..<3600 {
+            let degrees = Double(tenth) / 10
+            let old: Grade? =
+                if degrees <= 45 || degrees >= 315 { .good } else if degrees <= 120 { .easy } else if (150...210).contains(degrees) { .again } else if degrees >= 240 { .hard } else { nil }
+            #expect(GradeSwipe.grade(atAngle: degrees, among: GradeSwipe.fourWay) == old, "at \(degrees)°")
+        }
+    }
+
+    /// Up and down spring back with two buttons: no grade, no tint, a gap, and the tally counts a miss.
+    @MainActor @Test func withTwoButtonsUpAndDownAreGaps() {
+        for degrees in [90.0, 270] {
+            let finger = swipe(degrees, length: 140)
+            #expect(GradeSwipe.zone(finger, grades: two) == nil)
+            #expect(GradeSwipe.isInGap(finger, grades: two))
+            #expect(GradeSwipe.released(translation: finger, predictedEnd: finger, grades: two) == nil)
+            #expect(GradeSwipe.endedInGap(translation: finger, predictedEnd: finger, grades: two))
+            // The four-way rule gives them a grade.
+            #expect(GradeSwipe.released(translation: finger, predictedEnd: finger, grades: GradeSwipe.fourWay) != nil)
+            let flight = CardFlight()
+            flight.drag(finger, isRevealed: true, grades: two)
+            #expect(flight.zone == nil && flight.isInGap && flight.tintStrength == 0)
+        }
+        // Up and to the right (a 45° finger) is Good, down and to the left (225°) is Forgot.
+        #expect(GradeSwipe.zone(swipe(45), grades: two) == .good)
+        #expect(GradeSwipe.zone(swipe(225), grades: two) == .again)
+        let tally = SwipeTally()
+        let up = swipe(90, length: 140)
+        let calendar = StudyCalendar()
+        #expect(tally.released(translation: up, predictedEnd: up, grades: two, calendar: calendar) == nil)
+        #expect(tally.counts(calendar: calendar) == SwipeTally.Counts(graded: 0, gapMisses: 1))
+    }
+
+    /// The grades given by button, by swipe and by key are one set, in every mode of the card and the setting: what can
+    /// be given is what the screen shows. The keys are the digits on the buttons and the arrows of the same grades
+    /// (`GradeChoice`), the swipes are every direction of `GradeSwipe.grade(atAngle:among:)`.
+    @Test func buttonSwipeAndKeyGiveTheSameGrades() {
+        for isNew in [false, true] {
+            for showsFour in [false, true] {
+                let buttons = GradeChoice.buttonGrades(isNew: isNew, showsFourButtons: showsFour)
+                var swiped = Set<Grade>()
+                for tenth in 0..<3600 {
+                    if let grade = GradeSwipe.grade(atAngle: Double(tenth) / 10, among: buttons) { swiped.insert(grade) }
+                }
+                #expect(swiped == Set(buttons), "isNew \(isNew), four \(showsFour)")
+                // The reference direction of a grade with a button gives it; with no button it gives that grade nothing.
+                for grade in buttons {
+                    #expect(GradeSwipe.grade(atAngle: GradeSwipe.reference(of: grade), among: buttons) == grade)
+                }
+                for grade in Grade.allCases where !buttons.contains(grade) {
+                    #expect(GradeSwipe.grade(atAngle: GradeSwipe.reference(of: grade), among: buttons) != grade)
+                }
+            }
+        }
+    }
 }
 
 /// What `CardFlight` does with a drag: the card's way, the tint, the lit button and the tick.

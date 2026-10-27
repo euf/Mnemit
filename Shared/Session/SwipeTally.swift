@@ -29,9 +29,10 @@ final class SwipeTally {
 
     /// What `GradeSwipe.released` says for this release, counted at `now`.
     func released(
-        translation: CGSize, predictedEnd: CGSize, at now: Date = .now, calendar: StudyCalendar = StudyCalendar()
+        translation: CGSize, predictedEnd: CGSize, grades: [Grade] = GradeSwipe.fourWay, at now: Date = .now,
+        calendar: StudyCalendar = StudyCalendar()
     ) -> Grade? {
-        let grade = GradeSwipe.released(translation: translation, predictedEnd: predictedEnd)
+        let grade = GradeSwipe.released(translation: translation, predictedEnd: predictedEnd, grades: grades)
         let today = calendar.dayNumber(for: now)
         if day != today {
             day = today
@@ -39,7 +40,7 @@ final class SwipeTally {
         }
         if grade != nil {
             counted.graded += 1
-        } else if GradeSwipe.endedInGap(translation: translation, predictedEnd: predictedEnd) {
+        } else if GradeSwipe.endedInGap(translation: translation, predictedEnd: predictedEnd, grades: grades) {
             counted.gapMisses += 1
         }
         return grade

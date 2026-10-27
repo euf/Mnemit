@@ -1,9 +1,9 @@
 import SwiftUI
 import VocabCore
 
-/// The third step of the introduction: four sample cards, not those of a deck, each asking for
-/// one swipe: left, up, down, right. The prompt above the card names what the direction means,
-/// so the four meanings are the rules of the app. The card is the study screen's own,
+/// The third step of the introduction: two sample cards, not those of a deck, each asking for
+/// one swipe: left (Forgot), right (Good), the two a card's first showing and the default two buttons give.
+/// The prompt above the card names what the direction means. The card is the study screen's own,
 /// `FlightCard` driven by `CardFlight` and `GradeSwipe`, and it goes the way of the study
 /// screen: the word first, the answer when the finger lands (`StudyView.touch`), then the
 /// swipe, which tints, flies and gives way as it will there; only nothing is graded.
@@ -132,7 +132,7 @@ struct GesturePracticeView: View {
             withAnimation(.easeOut(duration: 0.3)) { stillHint = 0 }
         } else {
             // Revealed or not: the nudge shows direction and colour, the answer is for the touch.
-            flight.drag(SwipePractice.nudge(for: grade), isRevealed: true, glide: .easeOut(duration: 0.25))
+            flight.drag(SwipePractice.nudge(for: grade), isRevealed: true, grades: SwipePractice.order, glide: .easeOut(duration: 0.25))
             try? await Task.sleep(for: .seconds(0.4))
             flight.springBack()
         }
@@ -261,10 +261,10 @@ struct GesturePracticeView: View {
                 isRevealed = true
                 // Once the swipe has begun the card follows the finger, however near it comes back.
                 guard isDragging || hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance else { return }
-                flight.drag(value.translation, from: value.startLocation, isRevealed: isRevealed)
+                flight.drag(value.translation, from: value.startLocation, isRevealed: isRevealed, grades: SwipePractice.order)
             }
             .onEnded { value in
-                guard isRevealed, let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
+                guard isRevealed, let grade = GradeSwipe.released(translation: value.translation, predictedEnd: value.predictedEndTranslation, grades: SwipePractice.order) else {
                     flight.springBack()
                     if hypot(value.translation.width, value.translation.height) >= GradeSwipe.deadZone {
                         wasShort = true

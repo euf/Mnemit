@@ -142,20 +142,21 @@ final class CardFlight {
 
     /// The card goes with the finger, bent toward the target direction of the grade the finger's direction
     /// stands for (`GradeSwipe.cardOffset`), and turns about the point grabbed at `start`, in the
-    /// card's own coordinates. In a gap between two zones it takes no grade and goes half way.
+    /// card's own coordinates. In a gap between two zones it takes no grade and goes half way. `grades` are those
+    /// with a button (`GradeChoice.buttonGrades`): the card takes only their directions.
     /// Before the answer is shown it only gives way a little, without tint. When the finger
     /// crosses into another zone or a gap the card eases to its new way with `glide`.
-    func drag(_ translation: CGSize, from start: CGPoint? = nil, isRevealed: Bool, glide: Animation = CardFlight.glide) {
+    func drag(_ translation: CGSize, from start: CGPoint? = nil, isRevealed: Bool, grades: [Grade] = GradeSwipe.fourWay, glide: Animation = CardFlight.glide) {
         guard !isFlying else { return }
         let distance = hypot(translation.width, translation.height)
-        let grade = isRevealed ? GradeSwipe.zone(translation) : nil
-        let gap = isRevealed && GradeSwipe.isInGap(translation)
+        let grade = isRevealed ? GradeSwipe.zone(translation, grades: grades) : nil
+        let gap = isRevealed && GradeSwipe.isInGap(translation, grades: grades)
         let region: Region = grade.map { .zone($0) } ?? (gap ? .gap : .none)
         if region != self.region {
             self.region = region
             glideUntil = .now + Self.glideDuration
         }
-        let moved = isRevealed ? GradeSwipe.cardOffset(for: translation) : CGSize(width: translation.width * 0.25, height: translation.height * 0.25)
+        let moved = isRevealed ? GradeSwipe.cardOffset(for: translation, grades: grades) : CGSize(width: translation.width * 0.25, height: translation.height * 0.25)
         if let start, size.width > 0, size.height > 0 {
             pivot = UnitPoint(x: start.x / size.width, y: start.y / size.height)
         }

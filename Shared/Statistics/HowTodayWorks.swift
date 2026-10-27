@@ -38,7 +38,11 @@ struct HowTodayWorks: Equatable, Sendable {
     var sections: [Section]
 
     /// `swipes` is what `SwipeTally` counted today; `nil` where nothing is swiped (the Mac), so there is no section.
-    init(progress: DailyProgress, breakdown: DayBreakdown, memory: MemoryEstimate, swipes: SwipeTally.Counts?, decks: [DeckInfo]) {
+    /// `showsFourButtons` is the setting "Hard and Easy Buttons": the rule of the swipes states the sectors of that mode.
+    init(
+        progress: DailyProgress, breakdown: DayBreakdown, memory: MemoryEstimate, swipes: SwipeTally.Counts?,
+        showsFourButtons: Bool = false, decks: [DeckInfo]
+    ) {
         sections =
             [
                 Self.today(),
@@ -47,7 +51,7 @@ struct HowTodayWorks: Equatable, Sendable {
                 Self.pace(progress, breakdown),
                 Self.streak(progress),
                 Self.wordsInMemory(memory),
-            ] + (swipes.map { [Self.swipes($0)] } ?? [])
+            ] + (swipes.map { [Self.swipes($0, showsFourButtons: showsFourButtons)] } ?? [])
             + [Self.options()]
             + decks.indices.map { Self.fsrs(decks[$0], position: $0, of: decks.count) }
     }
@@ -183,16 +187,23 @@ struct HowTodayWorks: Equatable, Sendable {
         return Section(title: String(localized: "Words in Memory"), rows: rows, footer: footer)
     }
 
-    private static func swipes(_ counts: SwipeTally.Counts) -> Section {
+    private static func swipes(_ counts: SwipeTally.Counts, showsFourButtons: Bool) -> Section {
         let rows: [Row] = [
             .value(
                 label: String(localized: "Swipes that sprang back from a gap"),
                 value: String(localized: "\(counts.gapMisses) of \(counts.total) today"))
         ]
-        let footer = String(
-            localized:
-                "A swipe of \(Int(GradeSwipe.commitDistance)) points or a flick grades by direction, clockwise from the top: Easy 330°–45°, Good 45°–135°, Hard 135°–210°, Forgot 240°–300°. In the gaps, 210°–240° and 300°–330°, the card springs back. Counted per study day since the app started."
-        )
+        // The sectors are those of `GradeSwipe`, in compass degrees (`HowTodayWorksTests` checks them).
+        let footer =
+            showsFourButtons
+            ? String(
+                localized:
+                    "A swipe of \(Int(GradeSwipe.commitDistance)) points or a flick grades by direction, clockwise from the top: Easy 330°–45°, Good 45°–135°, Hard 135°–210°, Forgot 240°–300°. In the gaps, 210°–240° and 300°–330°, the card springs back. On a card's first showing only Good 30°–150° and Forgot 210°–330° count. Counted per study day since the app started."
+            )
+            : String(
+                localized:
+                    "A swipe of \(Int(GradeSwipe.commitDistance)) points or a flick grades by direction, clockwise from the top: Good 30°–150°, Forgot 210°–330°. Up and down, 330°–30° and 150°–210°, spring the card back. Counted per study day since the app started."
+            )
         return Section(title: String(localized: "Swipes"), rows: rows, footer: footer)
     }
 
@@ -286,7 +297,7 @@ extension HowTodayWorks {
     /// Works the screen out of `decks` at `now`, the way the daily ring does: from the decks and their logs and the
     /// progress `ledger` the app read (`ProgressLedgerStore`; writes nothing), so it shows what Today shows; a paused
     /// deck is left out of the figures and named in the plan. Replays the logs: call it off the main actor.
-    nonisolated static func make(_ decks: [Source], at now: Date, calendar: StudyCalendar, swipes: SwipeTally.Counts?, ledger: DayLedger = DayLedger()) -> HowTodayWorks {
+    nonisolated static func make(_ decks: [Source], at now: Date, calendar: StudyCalendar, swipes: SwipeTally.Counts?, showsFourButtons: Bool = false, ledger: DayLedger = DayLedger()) -> HowTodayWorks {
         let activities = decks.map { DeckActivity(deck: $0.deck, calendar: calendar) }
         let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar, ledger: ledger)
         return HowTodayWorks(
@@ -294,14 +305,15 @@ extension HowTodayWorks {
             breakdown: DayBreakdown(activities, progress: progress, at: now, calendar: calendar),
             memory: progress.memory,
             swipes: swipes,
+            showsFourButtons: showsFourButtons,
             decks: decks.map { DeckInfo(name: $0.name, options: $0.deck.learningOptions) })
     }
 
     /// The decks at `files`, which are read here: those that can't be are left out. The ledger is read from `store`.
-    nonisolated static func read(_ files: [URL], at now: Date, calendar: StudyCalendar = StudyCalendar(), swipes: SwipeTally.Counts?, ledger store: ProgressLedgerStore? = nil) -> HowTodayWorks {
+    nonisolated static func read(_ files: [URL], at now: Date, calendar: StudyCalendar = StudyCalendar(), swipes: SwipeTally.Counts?, showsFourButtons: Bool = false, ledger store: ProgressLedgerStore? = nil) -> HowTodayWorks {
         let sources = files.compactMap { url in
             DeckFileReader.deck(at: url).map { Source(name: url.deletingPathExtension().lastPathComponent, deck: $0) }
         }
-        return make(sources, at: now, calendar: calendar, swipes: swipes, ledger: store?.read() ?? DayLedger())
+        return make(sources, at: now, calendar: calendar, swipes: swipes, showsFourButtons: showsFourButtons, ledger: store?.read() ?? DayLedger())
     }
 }

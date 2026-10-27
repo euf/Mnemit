@@ -5,6 +5,11 @@ import VocabCore
 /// right for Good, up for Easy, down for Hard. "No" is only leftwards and every "yes" lies on
 /// the other three sides.
 ///
+/// What can be swiped is what the screen shows (`GradeChoice.buttonGrades`): with two buttons, on a
+/// card's first showing and with "Hard and Easy Buttons" off, only Forgot and Good can be given and
+/// up and down are gaps, like the ones below. Good takes compass 30° to 150° there (`twoWayReach`
+/// = 60° each side of east) and Forgot 210° to 330°. The rest of this describes the four-way sectors.
+///
 /// The sectors are drawn on a clock face, 0 at the top, clockwise (compass degrees). The code
 /// measures the finger's direction the other way round, as an angle counter-clockwise from east
 /// with the screen's y turned up (math degrees, math = 90 - compass):
@@ -59,6 +64,15 @@ enum GradeSwipe {
     /// here lies the gap (compass 210° to 240°) that keeps Forgot and Hard apart.
     static let hardStart = 240.0
 
+    /// With two buttons Good takes this many degrees to either side of east (compass 30° to 150°) and
+    /// Forgot as many to either side of west (compass 210° to 330°); up and down are gaps.
+    static let twoWayReach = 60.0
+
+    /// The grades with a button on a later showing with "Hard and Easy Buttons" on: the four-way sectors
+    /// above. What the swipe functions take as `grades` when they are not told, and what the tests of
+    /// the four-way sectors rely on; the screens pass the grades of the card's buttons.
+    static let fourWay = GradeChoice.buttonGrades(isNew: false, showsFourButtons: true)
+
     /// The middle of each grade's sector, in degrees as `angle(of:)`: compass 15° for Easy (right
     /// of up), 90° for Good, 165° for Hard (right of down) and 270° for Forgot. It is where a
     /// finger goes that means the grade (the onboarding hint plays it), inside the sector.
@@ -89,39 +103,61 @@ enum GradeSwipe {
         return degrees < 0 ? degrees + 360 : degrees
     }
 
+    /// The grade a direction (degrees as `angle(of:)`) stands for when `grades` have buttons, the one
+    /// rule of the swipe: with four, the four-way sectors; with two, Good and Forgot only. `nil` in a gap.
+    /// A grade comes out only if it is among `grades`.
+    static func grade(atAngle degrees: Double, among grades: [Grade]) -> Grade? {
+        let grade: Grade?
+        if grades.count > 2 {
+            if degrees <= goodReach || degrees >= 360 - goodReach {
+                grade = .good
+            } else if degrees <= easyEnd {
+                grade = .easy
+            } else if degrees >= forgotStart, degrees <= forgotEnd {
+                grade = .again
+            } else if degrees >= hardStart {
+                grade = .hard
+            } else {
+                grade = nil
+            }
+        } else if degrees <= twoWayReach || degrees >= 360 - twoWayReach {
+            grade = .good
+        } else if abs(degrees - 180) <= twoWayReach {
+            grade = .again
+        } else {
+            grade = nil
+        }
+        return grade.flatMap { grades.contains($0) ? $0 : nil }
+    }
+
     /// The grade the direction of a drag stands for; `nil` in the dead zone and in the gaps.
-    static func zone(_ translation: CGSize) -> Grade? {
+    static func zone(_ translation: CGSize, grades: [Grade] = fourWay) -> Grade? {
         guard hypot(translation.width, translation.height) >= deadZone else { return nil }
-        let degrees = angle(of: translation)
-        if degrees <= goodReach || degrees >= 360 - goodReach { return .good }
-        if degrees <= easyEnd { return .easy }
-        if degrees >= forgotStart, degrees <= forgotEnd { return .again }
-        if degrees >= hardStart { return .hard }
-        return nil
+        return grade(atAngle: angle(of: translation), among: grades)
     }
 
     /// Whether a drag is past the dead zone but points into a gap, where no grade is given.
-    static func isInGap(_ translation: CGSize) -> Bool {
-        hypot(translation.width, translation.height) >= deadZone && zone(translation) == nil
+    static func isInGap(_ translation: CGSize, grades: [Grade] = fourWay) -> Bool {
+        hypot(translation.width, translation.height) >= deadZone && zone(translation, grades: grades) == nil
     }
 
     /// The grade that letting go of a drag gives, if any: a drag that went `commitDistance`
     /// goes by where it is, a flick by where it would end. A drag that points into a gap gives
     /// nothing, far or fast, and a flick has to start in a zone and end in one.
-    static func released(translation: CGSize, predictedEnd: CGSize) -> Grade? {
-        guard let grade = zone(translation) else { return nil }
+    static func released(translation: CGSize, predictedEnd: CGSize, grades: [Grade] = fourWay) -> Grade? {
+        guard let grade = zone(translation, grades: grades) else { return nil }
         if hypot(translation.width, translation.height) >= commitDistance { return grade }
         guard hypot(translation.width, translation.height) >= flickMinimum,
             hypot(predictedEnd.width, predictedEnd.height) >= flickReach
         else { return nil }
-        return zone(predictedEnd)
+        return zone(predictedEnd, grades: grades)
     }
 
     /// Whether letting go of a drag was a swipe that a gap sprang back: it went `commitDistance`
     /// or was a flick, and `released` gave no grade. Past the dead zone that is only so when the
     /// drag, or for a flick its predicted end, points into a gap.
-    static func endedInGap(translation: CGSize, predictedEnd: CGSize) -> Bool {
-        guard released(translation: translation, predictedEnd: predictedEnd) == nil else { return false }
+    static func endedInGap(translation: CGSize, predictedEnd: CGSize, grades: [Grade] = fourWay) -> Bool {
+        guard released(translation: translation, predictedEnd: predictedEnd, grades: grades) == nil else { return false }
         let moved = hypot(translation.width, translation.height)
         return moved >= commitDistance || (moved >= flickMinimum && hypot(predictedEnd.width, predictedEnd.height) >= flickReach)
     }
@@ -163,9 +199,9 @@ enum GradeSwipe {
 
     /// Where the card is for a finger at `translation`: under the dead zone, with the finger;
     /// in a zone, pulled toward the grade's reference; in a gap, a share of the finger's way.
-    static func cardOffset(for translation: CGSize) -> CGSize {
+    static func cardOffset(for translation: CGSize, grades: [Grade] = fourWay) -> CGSize {
         guard hypot(translation.width, translation.height) >= deadZone else { return translation }
-        guard let grade = zone(translation) else {
+        guard let grade = zone(translation, grades: grades) else {
             return CGSize(width: translation.width * gapTravel, height: translation.height * gapTravel)
         }
         return pull(translation, toward: grade)

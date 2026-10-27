@@ -315,16 +315,21 @@ struct StudyView: View {
                 model.reveal()
                 // Once the swipe has begun the card follows the finger, however near it comes back.
                 guard isDragging || hypot(value.translation.width, value.translation.height) >= Self.swipeStartDistance else { return }
-                flight.drag(value.translation, from: value.startLocation, isRevealed: model.stage == .revealed)
+                flight.drag(value.translation, from: value.startLocation, isRevealed: model.stage == .revealed, grades: swipeGrades)
             }
             .onEnded { value in
                 guard !speakers.touchBeganOnSpeaker else { return }
-                guard model.stage == .revealed, let grade = SwipeTally.shared.released(translation: value.translation, predictedEnd: value.predictedEndTranslation) else {
+                guard model.stage == .revealed, let grade = SwipeTally.shared.released(translation: value.translation, predictedEnd: value.predictedEndTranslation, grades: swipeGrades) else {
                     flight.springBack()
                     return
                 }
                 commit(grade, velocity: value.velocity)
             }
+    }
+
+    /// The grades with a button on this card; a swipe gives these and no others, so what can be given is what the screen shows.
+    private var swipeGrades: [Grade] {
+        GradeChoice.buttonGrades(isNew: model.currentCard?.isNew == true, showsFourButtons: showsFourButtons)
     }
 
     // MARK: Grading and Undo

@@ -41,7 +41,8 @@ struct HowTodayWorksButton: View {
                     let (files, ledger) = (decks.map(\.url), ledger)
                     let now = now
                     let swipes = SwipeTally.shared.counts(at: now)
-                    content = await Task.detached(priority: .utility) { HowTodayWorks.read(files, at: now, swipes: swipes, ledger: ledger) }.value
+                    let fourButtons = UserDefaults.standard.bool(forKey: GradeChoice.showsFourButtonsKey)
+                    content = await Task.detached(priority: .utility) { HowTodayWorks.read(files, at: now, swipes: swipes, showsFourButtons: fourButtons, ledger: ledger) }.value
                 }
         }
     }
