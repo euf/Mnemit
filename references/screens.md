@@ -21,7 +21,7 @@ the day's numbers: `references/daily-ring.md`.
 3. A card can be found, read, edited, suspended, reset and deleted on both platforms. The Mac adds
    multi-select, keyboard and the table; nothing about a card is Mac-only.
 4. The same filters with the same names everywhere:
-   **All · Due · New · Learning · Suspended · Difficult** (Difficult = leech).
+   **All · Due · New · Learning · Suspended · Leeches**.
 5. Every change goes through the document's undo. Deleting one card needs no confirmation (undo covers
    it); deleting several, or a deck, asks once.
 6. Search matches question, answer, hint and the word key (`note`), ignoring case and accents.
@@ -31,24 +31,26 @@ the day's numbers: `references/daily-ring.md`.
 The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds the state,
 `TodayScreen` draws). State by state: `design-spec.md` §2.4.
 
-- The hero (`TodayHero`, `Shared/Session/TodaySummary.swift`), the whole of it a button that opens the
-  Progress screen:
-  - The ring (`HeroRing`, 168 pt): a picture, with no number in it.
-  - The sentence (`NextStep`, drawn by `StreakSentence`), led by the flame: the next moment of the day and its minutes.
-    The streak step not done: "≈ 2 min to keep your 12-day streak" ("Start your streak · ≈ 2 min" without a streak); the
-    step done, the ring open: "12-day streak · ≈ 5 min to close the ring"; the ring closed with cards of the plan left:
-    "Ring closed · ≈ 12 min of reviews left"; nothing left: "All done for today"; at risk: "≈ 6 min to close the ring and
-    save your 12-day streak". Without a price the time is left out and the streak stays. The flame has three states
-    (`StreakState`): a grey outline until the streak step is done, `flame.fill` in `Color.streak` once it is, an orange
-    outline with an `exclamationmark` at risk (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open).
-    VoiceOver reads the sentence with the state. One line when it fits; else the streak line over the price line, each
-    wrapping by itself (`NextStepText`); "7-day" and "≈ 2 min" never break.
-  - One line of words learned (`WordsLearned.line`): "412 words learned · +12 today"; the gain is left out on a day that
-    has none, and the whole line while there are no words.
-  - The week's seven rings (`WeekRings`, 22 pt), with a chevron at the end of the row.
-  - The day turns at 04:00, and work done just before it, on either device, belongs to the day before.
-    The hero waits for every deck to be read and the ring to be evaluated (`isDayReady`); until then it shows
-    placeholders. The ring keeps its size at every text size; the sentence and the line wrap and the list scrolls.
+- The Today card (`TodayCard`, `Shared/Session/TodaySummary.swift`) is the list's first section, in the screens' grammar
+  (`design-spec.md` §2.4), the whole of it a button that opens the Progress screen. The date of the study day ("Tuesday,
+  October 27") stands under the large title (`todaySubtitle`).
+  - The ring (`HeroRing`, 112 pt, scaled with the text): a picture, with no number in it.
+  - Three figures right of the ring (`TodayFigures`), each a label over a value:
+    - **Day streak**: the flame by its state and the days in `Color.streak`. The flame has three states (`StreakState`): an
+      outline until the streak step is done, `flame.fill` once it is, an outline with an `exclamationmark` at risk
+      (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open). At 0 days the outline and "0" in the secondary
+      colour. VoiceOver reads "12-day streak, kept today" (`NextStep.streakSpoken`).
+    - **The next moment** (`NextStep.moment`), its value the minutes in the ring's indigo. The label names the moment: "To
+      keep your streak" over "≈ 2 min"; the step done, "To close the ring"; the day after a missed day, "To save your
+      streak"; without a streak, "To start your streak"; the ring closed with cards of the plan left, "Reviews left"; nothing
+      left, "Today" over "All done". Without a price the label is "Next" and the value is the moment's name ("Keep your
+      streak", "Close the ring", "Save your streak", "Start your streak", "Catch Up").
+    - **Words learned**: the words, with "+12 today" after them on a day that added some; shown from 0 words too.
+  - Under a divider, the week's seven rings with their weekday letters (`WeekRings`), a chevron at the end of the row.
+  - Where the figures do not fit beside the ring (the larger text sizes, `ViewThatFits`) the ring stands over them.
+  - The day turns at 04:00, and work done just before it, on either device, belongs to the day before. The card waits for
+    every deck to be read and the ring to be evaluated (`isDayReady`); until then it shows placeholders. The ring keeps its
+    size with the text; the figures wrap and the list scrolls.
 - The bottom bar holds the day's one button beside Search All Cards, which is minimised to a button
   (`.searchToolbarBehavior(.minimize)`). The button is named by `DayAction`
   (`Shared/Session/TodaySummary.swift`): **Study** in the accent while the ring is open; **Catch Up** once the
@@ -70,33 +72,36 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   the deck opened by slot.
 - Undo of edits: `UndoWatch` (a bar button while there is something to undo) and shake (`StartScreen`,
   when no sheet is open).
-- **Empty state** (no decks): the empty hero ring (`HeroRing(progress: nil)`), a line of explanation, **New Deck**
-  (`.glassProminent`, large), **Shared Decks on AnkiWeb** (`.glass`, large), at most 320 pt wide, and **Use iCloud Drive
-  Folder** as a small text button under them; Open Deck… is in the **…** menu. No mention of the Mac.
+- **Empty state** (no decks): the card of an empty day (`EmptyTodayCard`: the empty ring and "Add the words you are
+  learning.", on `Color.tileGround`), **New Deck** (`.borderedProminent`, large), **Shared Decks** (`.bordered`, large) and
+  **Use iCloud Drive Folder** as a small text button under them; Open Deck… is in the **…** menu. No mention of the Mac.
 - The month's screen (`MonthRecapSheet`) shows once on the first open of a month after a month with
   study; see Progress.
 - Frames: `VocTrainTests/HomeSnapshotTests` (directory `TEST_RUNNER_HOME_SHOTS_DIR`).
 
 ## Progress (iPhone)
 
-- The hero of Today is a button with a chevron; it pushes `ProgressScreen` (`DeckRoute.progress`, no deck).
+- The Today card is a button with a chevron; it pushes `ProgressScreen` (`DeckRoute.progress`, no deck).
   `learning-flow.md` has the contract; everything comes from `DailyProgress.records` and `.achievements`.
-- Sections in an inset-grouped list, top to bottom:
-  - The streak as a statistic (`StreakStatistic`): the flame, the days large, "day streak", and "Best: 21" only when
-    the best run is longer than the current one; under it the totals Days studied, Rings closed, Words learned, three in a
-    row (one column at the accessibility sizes), and the line "Your ring: 8 min a day · started at 2.5"
-    (`RingSize`; without the start while the ring has not moved). No ring: the day's ring is on Today.
+- A grouped form (`.formStyle(.grouped)`), top to bottom; each section stands under its list header:
+  - The streak card (`StreakCard`): "Day streak" over the flame and the days large in `Color.streak`, "Best: 21" after them only
+    when the best run is longer than the current one; at 0 days the outlined flame and "Start your streak".
+  - The totals as `FigureTile`s on the page, not in a card, two to a row in an adaptive grid (at least 150 pt wide; one
+    column at the accessibility sizes): Days studied, Rings closed (footnote "of 110 days": the days from the first study day
+    to today), Words learned, Your ring ("8 MIN" in the ring's indigo, footnote "a day · started at 2.5", or "a day" while the
+    ring has not moved; `RingSize.value` and `.footnote`). A tile with nothing under its value carries a blank line, so a row
+    is of one height. On the Mac the grouped form keeps a card behind the row: the four figures share it, without tile
+    grounds. No ring here: the day's ring is on Today.
   - The calendar, "Last 13 weeks" once there are 13 and "Calendar" before (`WeeksGrid`): rows of seven
     cells, a row per week, the oldest first, Monday to Sunday under the weekday initials; a day is a ring,
     each day its own share of its goal (`DayRecord.ringShare`): a closed day full, and laps past the goal up to
     three, any other day the share done, none done an empty track, before the first study day nothing; a capsule in `Color.streak` at 18 % lies behind each run of two or more kept days
     (`DayRecord.kept`) within a week row (`WeeksGrid.runs(ofKept:)`); a run does not cross rows.
-  - Medals (the latest up to five, newest first, and All Medals).
+  - Medals (the latest up to five, newest first, and Show All).
   - Memory, once a card is started: the line of words in memory (`MemoryEstimate.line`) and the ladder (`LadderBar` and a row
     per step).
-  - **How It Works**, the last row, in a section with the footer "The plan, the day's time and the FSRS
-    parameters behind the ring."
-- All Medals (`MedalsScreen`): one row for the lines of one medal (`AchievementLine.single`), then a row per
+  - **How It Works**, the last row, in a section with the footer "What's behind the ring."
+- The medals screen (`MedalsScreen`, from Show All): one row for the lines of one medal (`AchievementLine.single`), then a row per
   line of tiers (`AchievementLine.tiered`: Streak, Words learned, Double and Triple ring): its earned medals in order, then
   the next as a grey medal without a count of how far there is to go (`NextTier.of`; `ring-design.md`, "Medals and the
   monthly recap"); a line that repeats (perfect week, comeback) is one medal with "×3". The lines are Streak,
@@ -125,20 +130,33 @@ sizes: `design-spec.md` §4.
   remembers each step's deck). Rounds count what was done in all lanes
   (`SessionDriver.setDoneElsewhere`); the stopwatch runs only in the lane whose card is on screen.
   Tests: `MultiDeckStudyTests`.
-- Header, left, right after the close button: the small ring (`StreamRing`, empty inside), the flame by its state
-  and the minutes to the next moment of the day beside them ("≈ 2 min": to the streak, to the ring, of the reviews left;
-  none once all is done); after a done card, for 1.5 s, its interval ("tomorrow", "in 8 days") takes the text's
-  place. Then an Undo button and the menu "More". A practice names itself and has no ring. Closing loses nothing: every
-  grade is saved, and Today picks up the count.
+- Header, left, right after the close button: the small ring (`StreamRing`, empty inside), the streak as the flame by its
+  state and its days ("🔥 12", `StreakCount`; the flame alone at 0 days) and the minutes to the next moment of the day beside
+  them ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done); after a done card, for 1.5 s, its
+  interval ("tomorrow", "in 8 days") takes the text's place. Then an Undo button and the menu "More". A practice names itself
+  and has no ring. Closing loses nothing: every grade is saved, and Today picks up the count.
 - The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, a
   divider, Pronounce Automatically (where the device has a Greek voice). The iPhone adds Undo above them,
   which is also its own button. The items are disabled at a rest, never hidden.
-- **A new card's first showing** is asked like any card, with two wide buttons side by side, as tall as the two rows
-  they replace: **Don't know** (the grade underneath is Again, red) and **Know** (Good, green); the swipes keep all four
-  grades; on the Mac ← and → or the keys 1 and 3 grade the two buttons, and ↓ and ↑ or the keys 2 and 4 still
-  give Hard and Easy. On every later showing the four buttons read Forgot, Hard, Good, Easy. The
-  receipt chip and its VoiceOver announcement use the same names (`Grade.buttonTitle(isNew:)`). The rules: `scheduling.md`,
-  "A new card's first showing".
+- **The answer buttons** appear with the answer: two wide buttons side by side, as tall as the two rows the four once took,
+  **Forgot** (red, ←, key 1) and **Good** (green, →, key 3). On a new card's first showing they read **Don't know** (the grade
+  underneath is Again) and **Know** (Good); the receipt chip and its VoiceOver announcement use the same names
+  (`Grade.buttonTitle(isNew:)`). The setting **Hard and Easy Buttons** (`@AppStorage("ShowsFourAnswerButtons")`, off, one key
+  for both apps: `GradeChoice.showsFourButtonsKey`) lays out four on a later showing: Forgot full width, Hard, Good and Easy
+  under it, Good wider; a first showing stays two. `GradeChoice.buttonGrades(isNew:showsFourButtons:)` is the one rule. At
+  the accessibility sizes the two stack, Forgot over Good; the iPhone in landscape puts Forgot beside Good, or beside the
+  three. The swipes give all four grades either way (up Easy, down Hard, left Forgot, right Good); a swipe toward a grade
+  with no button lights no button, and the card's tint and the receipt say the grade (`GradeChoice.lit`). On the Mac ← or 1
+  and → or 3 grade the two buttons, and ↓ ↑ and 2 4 give Hard and Easy always. The rules: `scheduling.md`, "A new card's
+  first showing".
+- **The leech moment** (`LeechMomentView`, `SessionDriver.leechMoment`): right after the Forgot that makes a card a leech,
+  before the next card, the stream stops on "Keeps slipping" with the card's question and answer as the stream shows them,
+  media included, and three ways on: **Continue** (prominent), **Edit** (the card's edit sheet; the stream goes on once it is
+  saved) and **Set Aside**, which suspends the card; when the review already suspended it (the deck's action is Suspend)
+  the button reads **Keep It** and resumes it. On the Mac Return continues, E edits, S sets aside or keeps. VoiceOver reads
+  the title, the question, the answer, then the actions. A moment is the lapse that brings the card's lapses to the
+  threshold or to each half of it after that (`scheduling.md`, "Leech"); undoing the grade takes back the moment and any
+  suspension. A leech resumed under Suspend is asked again in the stream.
 - The card lies on a stack drawn as a book's page edges, 8 pt apart, each 7 pt narrower on a side and
   darker than the one above; up to four, one fewer than the cards left before the next moment, after the ring too (the
   cards of Catch Up, of Learn 10 New Words, of Study These Now). How cards leave it and come back:
@@ -192,16 +210,17 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 - For the learner who knows Anki and FSRS: after the three sentences, the numbers and rules under the ring
   and the rounds. Read-only: no controls, no charts. A grouped form; each section's footer holds its
   rule.
-- **Today**: the three moments in three plain sentences, no figures and an empty footer: the first minutes keep the
-  streak, the ring is the goal and Catch Up studies the reviews waiting, nothing due is all done and Learn 10 New Words
-  adds ten (`HowTodayWorks.Row.text`).
+- **Today**: the three moments in three plain sentences, no figures and an empty footer: the first two minutes keep the
+  streak; the ring is today's goal and Catch Up takes the reviews still waiting; nothing due is a done day, and Learn 10 New
+  Words gives more (`HowTodayWorks.Row.text`).
 - **Today's Plan**: due today, overdue included; cards in learning; new cards admitted; each deck's
   admitted cards with its ceiling and limits (new / production), a paused deck as "Paused: <name>" with
   no figures; cards done; cards left.
 - **Today's time**: the day's time in minutes (one decimal), the streak step and the daily goal in
   cards; the last 14 days, newest first, with the minutes asked, the minutes worked, the ring (Closed
-  or Open) and why the day had its size (Start, Ring closed, Ring open, Plan under the time, Past the ring); the footer adds
-  "Going well past the ring on most days lifts it to what you do."
+  or Open) and why the day had its size (Start, Ring closed, Ring open, Plan under the time, Past the ring); the footer
+  says how the ring grows after closed rings and shrinks after an open one, grows to what you do when you go well past it
+  most days, starts at 2½ minutes and stays between 2 minutes and an hour.
 - **Pace**: seconds for a new card and for another card, each with its source (Durations (n), Gaps (n)
   or Default) and the reviews each done card took.
 - **Streak**: days, whether today is kept, the cards that would repair yesterday.
@@ -209,16 +228,14 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   milestone.
 - **Swipes** (iPhone only): "Swipes that sprang back from a gap: N of M today" (`SwipeTally`,
   `study-screen.md`), with the sectors in compass degrees in the footer.
-- **Options**: seven sentences and no footer, one for each option with a rule behind it. A new
-  card is asked the first time it comes up (Don't know is the honest answer for a word never seen, and the
-  card comes back in the session). Target recall (higher means better recall and more reviews; 90 % is the balance). The
-  Meaning → Word unlock rule and one direction of a word per day. The leech rule (a card is suspended after N
-  lapses and every further multiple, marked Difficult and resumed from the card list; Off never suspends).
-  Learning steps (Good moves a step, Hard keeps it, Forgot resets it, Easy graduates at once). The FSRS
-  parameters (they start from averages, are fitted to the deck's log, give fewer reviews for the same recall,
-  and keep the due dates). The refit schedule, read from `ParameterRefit`: the first fit at 400 reviews, again at
-  1,500, then every 30 days or after 1,000 more; a fit replaces the parameters only if it predicts the newest
-  reviews better.
+- **Options**: seven sentences and no footer, one for each option with a rule behind it. A new word is answered Don't know
+  and comes back in the session. Target recall (higher means more reviews; 90 % is a good balance). The Meaning → Word unlock
+  rule and one direction of a word per day. The leech: a card forgotten as often as the deck's threshold says, and again
+  after every half of it; its answer stays on screen so the card can be edited or set aside. Learning steps (Hard keeps the
+  step, Forgot starts it over, Easy finishes at once). The FSRS parameters (they start from averages, are fitted to the
+  learner's reviews, give fewer reviews for the same recall, and keep the due dates). The refit schedule, read from
+  `ParameterRefit`: the first fit at 400 reviews, again at 1,500, then every 30 days or after 1,000 more; a new fit is kept
+  only if it predicts the latest reviews better.
 - **FSRS**, one section per deck: target recall, default or fitted parameters with the 21 values
   (monospaced, four decimals, wrapped), the last automatic fit, steps per card, longest interval.
 - Code: `HowTodayWorks` (the rows) and `HowTodayWorksView` in `Shared/Statistics`; `DayBreakdown` in
@@ -227,13 +244,17 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 
 ## Deck screen
 
-- A deck row pushes the deck screen onto Today's stack (`DeckScreen`/`DeckContent`; it replaces the
-  details sheet). The list opens with one headline (`DeckHeadline`): "≈ 4 min · 14 due · 6 new · 2 learning" (the minutes of what today's
-  plan leaves in the deck, backlog included, then Anki's counts, a part of 0 left out), a check and "Done · next review tomorrow" ("Done" when no
-  review is coming), or "Paused", which wins over the counts. A deck with no cards, or counts not read yet,
-  has no headline.
-- Rows: Cards (count) → Card Browser; Statistics; Options. The bottom button is **Study This Deck** while
-  the deck has cards in today's plan, else **Learn 10 New Words**: ten new cards of this deck at once.
+- A deck row pushes the deck screen onto Today's stack (`DeckScreen`/`DeckContent`; it replaces the details sheet). Its first
+  section is the deck's Today card (`DeckTodayCard`, `Shared/Session/`): the label "Today" over "≈ 4 min" in the ring's indigo
+  (the minutes of what today's plan leaves in the deck, backlog included; a placeholder until the ring is worked out) and
+  beside it Due, New and Learning as figures in the primary colour, a part of 0 left out. The counts go under the time when
+  the card is narrow, all in one column at the accessibility sizes. A deck with nothing left: "Today" over a check and "Done",
+  "Next review tomorrow" under it (none when no review is coming); a paused deck: "Today" over "Paused", which wins over the
+  counts. A deck with no cards, or counts not read yet, has no card. VoiceOver reads `DeckHeadline.text`, the one line
+  "≈ 4 min · 14 due · 6 new · 2 learning".
+- Rows under it, at the body size: Cards (count) → Card Browser; Statistics; Options. **Study This Deck** is the bottom bar's
+  button (`.borderedProminent`) while the deck has cards in today's plan, else **Learn 10 New Words** (grey): ten new cards of
+  this deck at once; it is disabled for a deck without cards or one that cannot be edited.
 - Toolbar: **+** (`AddMenu`: Add Cards, Import Cards…; both wait for `isReadyToEdit`) and **…**: Practice
   Newest Words and Practice Today's Mistakes (`DeckPractice`, grey with nothing to practise; practice
   doesn't change when cards come back), a divider, Rename…, **Pause Deck** / **Resume Deck**
@@ -251,20 +272,20 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 
 ## Card browser
 
-- Pushed from the deck screen. Filters **All · Due · New · Learning · Suspended · Difficult**, the same
+- Pushed from the deck screen. Filters **All · Due · New · Learning · Suspended · Leeches**, the same
   names in both apps. Rules in `CardFilter` (VocabCore: `matches`, `Deck.filterCounts(at:)`): Due, New
-  and Learning exclude suspended cards, Difficult includes them; a suspended card is only in All,
-  Suspended and, if a leech, Difficult. Titles: `CardFilter.title` in
+  and Learning exclude suspended cards, Leeches includes them; a suspended card is only in All,
+  Suspended and, if a leech, Leeches. The empty Leeches list says "Words you keep forgetting appear here." Titles: `CardFilter.title` in
   `Shared/Support/Presentation.swift`.
 - Search (`CardSearchIndex`) looks into `note` too.
 - iPhone: a `List` with `.searchable` and the filter row; sort menu `BrowserSort`: Due, Added, A–Z,
-  Difficulty; the logic is in `CardBrowserList`, without a screen and with tests. Row: question
-  (primary), answer (secondary), trailing state (relative due date / New / Suspended / Difficult).
+  Difficulty, Lapses (most first, new cards last); the logic is in `CardBrowserList`, without a screen and with tests. Row: question
+  (primary), answer (secondary), trailing state (relative due date / New / Suspended / Leech: a suspended leech says
+  Suspended, a leech back in rotation says Leech in place of its date).
   Swipe: trailing Delete, Suspend/Resume; context menu: Edit, Speak, Suspend/Resume, Reset Progress,
   Delete. Edit mode: multi-select, then Suspend, Resume, Reset or Delete. Tap pushes Card Detail.
-- Mac: a segmented control `ScopeBar` above the table with a count in each segment (it replaces the
-  Leeches toggle; `searchScopes` on the Mac live only during a search, and the filters must always be
-  visible). Table columns as before plus Kind (Word → Meaning / Meaning → Word, `CardKind.title`); the Kind column sorts by `CardRow.kindRank`. There is no add form above the table: cards come from Add Cards…, and the empty table offers a button for it. The status line under the table says only "N cards", or "M of N cards" while filtered; the counts of the day are in the filter strip above. The
+- Mac: a segmented control `ScopeBar` above the table with a count in each segment (`searchScopes` on the Mac live only during a search, and the filters must always be
+  visible). Table columns: Question, Answer, Hint, Kind (Word → Meaning / Meaning → Word, `CardKind.title`; sorts by `CardRow.kindRank`), Maturity, Due, and the card's memory: Lapses, Stability (`Format.days`), Difficulty ("5.2 / 10", `Format.difficulty`) and Recall (the FSRS recall of the study day, as a percent). The memory columns sort, can be hidden (`customizationID`; the order stays fixed) and are empty for a new card, which sorts first; `RecallBasis` (the deck's options, the calendar and the study day) rebuilds the rows when the day turns. There is no add form above the table: cards come from Add Cards…, and the empty table offers a button for it. The status line under the table says only "N cards", or "M of N cards" while filtered; the counts of the day are in the filter strip above. The
   inspector (View ▸ Show Inspector, ⌥⌘I, or the toolbar's Details button) shows the iPhone's Card Detail sections, kind and word key included, and links to the
   sibling (`Deck.siblings(of:)`).
   The edit sheet (Question, Answer, Hint, Word key) changes the word key through
@@ -284,7 +305,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   with the card of the same word the other way round as a link, and "Also in <deck>" when another deck holds
   the word. Memory: one line (`CardMemoryLine`), a dot in the step's colour and the step with when the card
   returns, "Young · next review in 3 days", "Shaky · due now", "New" (the steps: `MaturityCategory.cardTitle`);
-  then notes for a suspended or difficult card; then a collapsed **Details**: State, Stability, Difficulty,
+  then notes for a suspended card or a leech ("Leech: you keep forgetting this card."; the Mac inspector says it too); then a collapsed **Details**: State, Stability, Difficulty,
   Recall Now, Reviews, Lapses and the Word Key (the Mac also Last Review). History: each review with date and
   the grade's colour and arrow, "Typed" on a typed review of an upstream deck. Toolbar **Edit**; actions:
   Suspend/Resume, Reset Progress, Delete.
@@ -338,22 +359,25 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 
 `SummaryTiles` (`Shared/Statistics`): Cards, Due, New, Suspended (only when above 0) and Recall Now, each the
 figure of the card filters (`Deck.filterCounts(at:)`; `DeckStatistics.Summary`); the figures scale with Dynamic
-Type. The iPhone screen (`StatisticsScreen`, pushed from the deck screen) shows the tiles over the Retention
-table: one table, Young / Mature / Total over Today … last 365 days (`TrueRetention.all`). The Mac's deck page
+Type. The tiles are `FigureTile`s in an adaptive grid (at least 150 pt wide), one column at the accessibility sizes; their help texts stay as
+tooltips on the Mac. The iPhone screen (`StatisticsScreen`, pushed from the deck screen) is a grouped list: the tiles on the
+page, then the section Retention with one table, Young / Mature / Total over Today … last 365 days (`TrueRetention.all`). The Mac's deck page
 shows its charts beside the tiles under Statistics (⌘4).
 
 ## Options
 
 The iPhone's form (`DeckOptionsScreen`) saves every change at once, one undo step each. Top to bottom:
 **New Cards** (New cards per day, New card order);
-**Scheduling** (Target recall, 70–97 %); **Meaning → Word cards** (New per day, Unlock after N days); Difficult
-after N lapses; **Advanced** (Longest interval, Spread out intervals, Steps per card, FSRS parameters with
+**Scheduling** (Target recall, 70–97 %); **Meaning → Word cards** (New per day, Unlock after N days); a section for the
+leech: **Leech after** N lapses (0 is Off) and **When a card becomes a leech**, Keep or Suspend (`LearningOptions.leechAction`),
+its footer "A card you forget this many times becomes a leech, and again after every half of that."; **Advanced** (Longest interval, Spread out intervals, Steps per card, FSRS parameters with
 "Compute from Review Log"). New cards per day, Meaning → Word per day and, on the Mac, Cards per session are
 one stepper each (`LimitStepper`): plus past the ceiling (100, 30, 300) shows "Unlimited", minus from it comes
 back to the ceiling. Every footer is one sentence.
 
 The Mac's sheet (`DeckOptionsView`) has the same content in one form, plus Cards per session, with Save and
-Cancel, and Restore Defaults, which keeps the mark.
+Cancel, and Restore Defaults, which keeps the mark. The leech threshold ("Leech threshold") and the picker sit in Advanced,
+the footer's sentence as the threshold's tooltip.
 
 ## Pausing a deck
 
@@ -380,7 +404,12 @@ Cancel, and Restore Defaults, which keeps the mark.
 
 ## First launch, deck folder, reminders
 
-- First launch on the iPhone (`OnboardingView`, steps `OnboardingStep`): a welcome with one button → swipe
+- First launch on the iPhone (`OnboardingView`, steps `OnboardingStep`): six steps, welcome, first showing, swipe, day, sync and
+  reminder: a welcome with one button → a new word's first showing ("A New Word", `FirstShowingView`: a sample card, "a janela" /
+  "the window"; Show Answer or a touch shows the answer, then the two wide buttons of a new card; Don't know slides the card left
+  under a small stack with "It comes back after a few cards.", Know slides it right with "It comes back once more before
+  you're done."; nothing is graded, recorded or scheduled, and Reduce Motion only fades the card into the stack; the lines are
+  true of the scheduler, `whatTheFirstShowingSaysIsWhatTheSchedulerDoes`) → swipe
   practice (`GesturePracticeView`; order and sample cards in `SwipePractice`: ← Forgot, ↑ Remembered
   instantly, ↓ Remembered with effort, → Remembered; the four meanings are the rules, there is no separate
   rules screen; "Skip" leads on) → "One stack a day" (four lines: the stack, the ring, the streak, the
@@ -390,8 +419,10 @@ Cancel, and Restore Defaults, which keeps the mark.
   neither naming the Mac) → reminder.
 - **Settings** (a sheet from the **…** menu of Today, `SettingsView`): Reminder (the Daily Reminder toggle
   and, while it is on, the time; its footer appears only when notifications are off in iOS Settings, with
-  Open Settings) and Show Introduction, which plays the onboarding again, with "Version 1.2.3 (hash)" under
-  it. The Mac's Settings (⌘,, `PreferencesView`): Pronounce Automatically, Mnemit Folder (its path and
+  Open Settings), Hard and Easy Buttons (a toggle in a section of its own, footer "Swipe up for Easy and down for Hard
+  either way.") and Show Introduction, which plays the onboarding again, with "Version 1.2.3 (hash)" under it. The Mac's
+  Settings (⌘,, `PreferencesView`): Pronounce Automatically, Hard and Easy Buttons (the same toggle, footer "Keys 2 and 4 give
+  Hard and Easy either way."), Mnemit Folder (its path and
   Change…, which opens the folder chooser) and the same version line. The iPhone's "Pronounce
   Automatically" is in the stream's menu.
 - A single deck opens through "Open Deck…" in Today's … menu.
@@ -421,18 +452,24 @@ Cancel, and Restore Defaults, which keeps the mark.
 - Target `MnemitWidget`, folder `MnemitWidget/`, bundle id `com.euf.mnemit.ios.widget`, embedded in the
   iPhone app. Home screen small and medium, lock screen circular, rectangular and inline; a tap goes through
   `mnemit://study` straight into the stream (`StartScreen.open`).
-- Every widget is two things: the day's ring as a picture (the arc and its laps, nothing in its middle) and the sentence
-  of Today (`NextStep`), led by the flame, whose shape is the streak's state. No widget has a button, a capsule or a card
-  count; the whole widget opens the stream. VoiceOver reads each widget as one element, the sentence with the state.
-  - Small: the ring (72 pt) and the sentence under it (caption, centred, up to three lines for the at-risk sentence).
-  - Medium: the ring (104 pt) at the left; at the right the sentence as the headline (up to three lines) at the ring's
-    top and the week's rings (18 pt, no initials) at its bottom.
+- Every widget shows the day's ring as a picture (the arc and its laps, nothing in its middle) and the day in words, from
+  the same figures as Today (`TodayFigures`, `NextStep`): the flame in the streak figure and the sentence, whose shape is the
+  streak's state. No widget has a button, a capsule or a card count; the whole widget opens the stream. VoiceOver reads each
+  widget as one element, the sentence with the state.
+  - Small: the ring (56 pt) with the Day streak figure beside it, the sentence under them (caption2, up to two lines).
+  - Medium: the ring (96 pt) at the left; at the right Day streak, the next moment and Words learned
+    (`TodayFigures(size: .compact)`: label caption, value headline rounded), without the week.
   - Circular: the system gauge, in its middle the minutes of the next step ("2" over a small "min", "<1"), a `checkmark`
     once the ring is closed, nothing without a price.
-  - Rectangular (lock screen): the ring (56 pt) and the sentence (caption, up to three lines).
+  - Rectangular (lock screen): the ring (44 pt), beside it the streak line (caption semibold) and the sentence (caption2, up
+    to two lines).
   - Inline (`accessoryInline`, over the lock screen's clock): the flame and the short form of the sentence, "12 · ≈ 2 min",
     "12 · Done" when nothing is left, the days alone without a price; with no streak the sentence, with no flame. Before the
     first snapshot: "Open Mnemit to start".
+  - Tinted, clear and vibrant renderings (`widgetRenderingMode` not `.fullColor`): the ring is flat, one tone with its track at
+    0.25 against the arc at 1.0 (`ProgressRing.isFlat`); a ring past its goal shows its lap as a number, "2×", in its middle
+    (`DailyRingFigure.laps`); the ring, the values and a flame that is not an outline are `widgetAccentable`. Not verified on a
+    device or in the real system tint.
 - Data travels as one snapshot `WidgetSnapshot` (`Shared/Widget`): date, done cards and the day's
   goal, streak and whether the ring is closed, whether the streak is at risk (`isStreakAtRisk`), the week
   (`week`: seven entries, today last, true a closed ring, false an open one, null before the first study day; `weekRings`: the
@@ -442,7 +479,9 @@ Cancel, and Restore Defaults, which keeps the mark.
   in the plan for each hour 48 hours ahead across all decks, and the time of the next reminder
   (`Reminders.nextFire`). `isStreakAtRisk` and `week` are optional and left out of the JSON when nil: an older
   snapshot decodes as not at risk with no week, and an older widget ignores the keys. `wordsInMemory` and
-  `wordsToday` are still in the snapshot; the widget shows neither.
+  `wordsToday` are still in the snapshot; the widget shows neither. `wordsLearned` and `wordsLearnedToday` (optional) feed the
+  medium widget's third figure: a snapshot without them leaves it out, and the gain is nil after the snapshot's day while the
+  words stay.
 - The app writes its JSON into a keychain item of the shared group
   `$(AppIdentifierPrefix)com.euf.mnemit.shared` (`KeychainSnapshotStore`, `AfterFirstUnlock`). There
   are no App Groups: the free Personal Team gives only keychain sharing. One
@@ -485,7 +524,7 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
 | Search over all decks | Today's search | the window's search field; a hit shows the card in its deck's table |
 | Medals | toasts in the stream, new medals of other days on Today, the month's sheet | the same |
 | Studying | question, Show Answer, grade; swipes | question, Show Answer, grade; keys and buttons; no typed answer on either |
-| A new card's first showing | asked like any card; two wide buttons, Don't know and Know | the same, each with its arrow as a keycap (← and →); keys 1 and 3; 2 and 4 and ↓ ↑ grade Hard and Easy |
+| The answer buttons | two wide buttons, Forgot and Good (Don't know and Know on a first showing); Hard and Easy by swipe, or as buttons with the setting Hard and Easy Buttons | the same, each with its arrow as a keycap (← and →); keys 1 and 3; 2 4 ↓ ↑ grade Hard and Easy; the same setting in Preferences |
 | Study These Now | Add Cards; the import of a table of 1 to 50 cards into an empty deck | the same two places; File ▸ Import Cards… into an empty deck and the import into a new deck both reach it |
 | Deck rows, deck header | "≈ 4 min" or a check; header "≈ 4 min · 14 due · 6 new · 2 learning" | the sidebar's badges and the deck page's strip say the same |
 | Reminders, the icon's number | yes | no: one device reminds, the Mac would remind twice |
@@ -515,22 +554,22 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
 - **Search All Cards** (`AllCardsSearch`) is the toolbar's search field, over every deck, on Today, Progress and
   a deck's Statistics (a deck's Cards has its own field). Hits list the card with its deck; a click shows the
   card selected in its deck's table (`Shell.showCard`).
-- **Today page** (`TodayPageContent`): the iPhone's hero (`TodayHero` at 200 pt: the ring without a number, the
-  sentence, "412 words learned · +12 today", the week of rings) as a button to Progress, and the day's one button under
-  it, `DayAction` (Study in the accent, Catch Up or Learn 10 New Words grey; extra large, the default action; also in
-  the toolbar). Without a deck: the empty ring, one line, **New Deck** (prominent), **Shared Decks on AnkiWeb…**
-  (bordered) and **Use iCloud Drive Folder** as a footnote-size link under them. The medals of earlier days this Mac never
-  celebrated come once as toasts, and the month's sheet (`MonthRecapSheet`) shows on the first open of a month,
-  its See All Progress opening Progress. The window reads the folder again when it becomes key and every minute.
-- **Progress page** (`ProgressPage`): the iPhone's `ProgressScreen` over every deck (the totals Days studied, Rings
-  closed, Words learned; "Your ring: 8 min a day · started at 2.5"; the words in memory in the Memory section), with How It Works as a
+- **Today page** (`TodayPageContent`): no large title; the window's title bar holds "Today" and the date (`todaySubtitle`).
+  The iPhone's Today card (`TodayCard`) on `Color.tileGround` (radius 16, at most 560 pt wide) as a button to Progress, and the
+  day's one button under it, `DayAction` (Study in the accent, Catch Up or Learn 10 New Words grey; extra large, the default
+  action; also in the toolbar). Without a deck: `EmptyTodayCard`, **New Deck** (prominent), **Shared Decks** (bordered) and
+  **Use iCloud Drive Folder** as a footnote-size link under them. The medals of earlier days this Mac never celebrated come once
+  as toasts, and the month's sheet (`MonthRecapSheet`) shows on the first open of a month, its See All Progress opening
+  Progress. The window reads the folder again when it becomes key and every minute.
+- **Progress page** (`ProgressPage`): the iPhone's `ProgressScreen` over every deck (the streak card, the totals Days studied, Rings
+  closed, Words learned and Your ring sharing one card, the calendar, Medals, the words in memory in the Memory section), with How It Works as a
   sheet (`HowItWorksSheet`, 520 x 640, Done).
-- **A deck's page** (`DeckPage`, `DeckPageContent`): the strip, then the Cards table or the Statistics. The
-  strip holds the deck's headline (`DeckHeadline`, priced at the day's pace as the iPhone's deck screen is: "≈ 4 min ·
-  14 due · 6 new · 2 learning" with zero parts left out and the time left out until the ring is worked out; or a check and
-  "Done · next review tomorrow"; or "Paused") and its one button, **Study This Deck** while the plan has cards left in it, else **Learn 10 New
-  Words** (grey). Toolbar: the segmented Cards | Statistics in the middle, Add Cards and Learning Options, and on
-  Cards the Details button. Sheets: Learning Options, Add Cards and the
+- **A deck's page** (`DeckPage`, `DeckPageContent`): the strip, then the Cards table or the Statistics. The strip holds the
+  deck's Today card (`DeckTodayCard`, as the iPhone's deck screen: "≈ 4 min" with Due, New and Learning beside it, the time left
+  out until the ring is worked out; or a check and "Done" with "Next review tomorrow"; or "Paused") and **Study This Deck**
+  (prominent, large) while the plan has cards left in the deck, else **Learn 10 New Words** (grey); the same button is the last
+  toolbar item, after Add Cards and Learning Options, behind a fixed spacer. Toolbar: the segmented Cards | Statistics in the
+  middle, Add Cards and Learning Options, and on Cards the Details button. Sheets: Learning Options, Add Cards and the
   preview of an import, the two that offer Study These Now (a stream over the deck once the sheet has gone); an empty deck opens Add Cards by itself, once. A deck still being read shows a spinner,
   one that cannot be opened says why. An error of a deck (autosave, read) is a sheet of the window, never
   app-modal. Cards, filters, inspector and edit sheet: Card browser.
@@ -566,17 +605,20 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
   (`Color.studyBackdrop`, the card `Color.cardSurface`) over the stack's edges (`StackEdges`, the cards left before the
   next moment, at most four, after the ring too: the cards of Catch Up, of Learn 10 New Words and of Study These Now;
   `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done and, right
-  after it, the day's ring (empty inside), the streak's flame and the minutes to the next moment of the day as the iPhone's
+  after it, the day's ring (empty inside), the streak ("🔥 12", `StreakCount`) and the minutes to the next moment of the day as the iPhone's
   bar says them (`NextStep`: "≈ 4 min"; none once all is done), then Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
   Automatically, disabled at a rest); Show Answer prominent in indigo with a keycap "Space or ↩". The bar of
   the last answer (`UndoChip`) stays under the header. The rests are the iPhone's `StreamRestView`, titles included
   ("Ring closed", "All done for today").
   - Keys: Space or Return show the answer; then ← Forgot, ↓ Hard, → Good, ↑ Easy (the iPhone's swipes;
     `Grade.arrowKey`), 1–4 also grade, Return and Space mean Good, Esc, Z and ⌘Z undo, S pronounces, ⌘E edits
-    the card. Every grade button shows its arrow as a keycap (`KeyCap`); the ring on Good marks Return. Done
+    the card. Each answer button shows its arrow as a keycap (`KeyCap`); the ring on Good marks Return. Done
     has no shortcut.
-  - A card on its first showing has the iPhone's two wide buttons, **Don't know** (←, key 1) and **Know** (→, key 3),
-    each with its arrow keycap; Return and Space mean Know; ↓ and 2 give Hard, ↑ and 4 give Easy.
+  - The answer buttons are the iPhone's two wide buttons, **Forgot** (←, key 1) and **Good** (→, key 3), **Don't know** and
+    **Know** on a first showing, each with its arrow keycap; with Hard and Easy Buttons on in Preferences a later showing has
+    the four. Return and Space mean Good (Know); ↓ and 2 give Hard, ↑ and 4 give Easy, with a button or without.
+  - The leech moment (`LeechMomentView`) stops the stream after the Forgot that makes a leech: Return continues, E edits, S
+    sets aside or keeps.
   - Edit Card opens `CardEditSheet`; Card Info a sheet with the card list's inspector
     (`MacVocTrainNg/Views/Session/CardInfoSheet.swift`), whose Edit swaps it for the edit sheet.
   - At the end of a deck's plan, while another deck of the day has cards left, the rest's first button is
