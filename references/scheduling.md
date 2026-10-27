@@ -42,7 +42,8 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 ## A new card's first showing
 
 - A new card (`Card.isNew`, no learning state) is asked on its first showing like any card: question, Show
-  Answer, four grades. Nothing is shown first and nothing is held back (ADR 0007).
+  Answer, then the answer buttons (Don't know and Know; Hard and Easy stay open as swipes and keys). Nothing is shown first and
+  nothing is held back (ADR 0007).
 - Its first grade sets the FSRS initial state S0 and D0 and is no lapse (`Scheduler` counts a lapse only in the
   review phase). A first Again puts the card into its learning step; it comes back in the session and is no
   longer new. `references/first-exposure-research.md` has the numbers.
@@ -55,11 +56,24 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 
 ## Leech
 
-- `LearningOptions.leechThreshold` (8 lapses, 0 = off). A lapse that brings `lapses` to the threshold
-  or any later multiple of it is turned into a suspend by `StudySession.review` at once (both apps, one
-  undoable `DeckChange`); the card leaves the session and `GradeReceipt` says "leech, suspended".
-- There is no flag in the file: `Card.isLeech(threshold:)` derives from `lapses`, so the Difficult
-  filter shows resumed cards too, and merges need no new rule.
+- **The moments.** `LearningOptions.leechThreshold` is T (8 lapses, as in Anki; 0 = off). A lapse is a Forgot on a card in
+  the review phase. The lapse that brings `lapses` to T is a leech moment, and so is every lapse that brings it to
+  T + k × ceil(T / 2) for k ≥ 1: T = 8 gives 8, 12, 16, 20; T = 5 gives 5, 8, 11 (`StudySession.isLeechMoment(lapses:threshold:)`).
+  `Session.leechIDs` holds every moment, whatever the action. In the stream a moment is a stop that keeps the answer on
+  screen (`study-screen.md`).
+- **Keep or Suspend.** `LearningOptions.leechAction`: `.keep` (the default) leaves the card in rotation and FSRS goes on
+  scheduling it; `.suspend`, Anki's classic action, makes the review suspend the card (`StudySession.review`), which leaves the
+  session. The deck options offer the two as a picker. `deck.json` key `leechAction` is `"suspend"` and left out while keep
+  (`deck-package.md`).
+- **The moment's actions.** Edit, Set Aside and Continue. Set Aside suspends the card (`SessionCommand.setAside(id)`, an
+  undoable step like `.suspend`: the session counts the card as suspended, not done). Where the review already suspended the
+  card (Suspend), Set Aside is Keep It (`SessionCommand.keep(id)`): it resumes the card and the session asks it again. Undo of
+  the grade takes back the moment and any suspension.
+- **No flag in the file.** `Card.isLeech(threshold:)` derives from `lapses` (`lapses >= T`), so the Leeches filter
+  (`CardFilter.leeches`, the title "Leeches") shows resumed cards too, and merges need no rule.
+- **Anki import.** `AnkiPreset.leech` carries the preset's threshold and action: Anki's `leech_threshold` (proto field 22) and
+  `leech_action` (field 21: 0 suspend, 1 tag only, which is Keep); an older collection has `dconf.lapse.leechFails` and
+  `leechAction`. Anki's stock preset is tag only, so a stock import gives threshold 8 and Keep.
 
 ## Automatic FSRS refit
 
