@@ -16,6 +16,13 @@ The deck file, how both apps edit and merge it, and the media files of cards.
   Mac's way to find a file's type from its extension (`DeckFileDocument`); File ▸ Open Deck… offers
   `DeckFile.fileExtensions`. Inside `deck.json` both extensions have the same `format` key and the same
   content.
+- Format version 6 (`DeckFile.currentVersion`): `deck.json` has the key `retired`, the cards deleted that had reviews
+  (`Deck.retiredCards`), as card records without logs, left out while there are none. Their lines in `reviews.jsonl` come
+  after those of the cards. An older app would drop the key and reject the lines of a card it doesn't know, so it rejects the
+  deck. A deck without the key reads with no retired cards.
+- The options `leechThreshold` and `leechAction` came without a version bump. `leechAction` is `"suspend"` or left out
+  (`keep`, the default); a missing or unknown value reads `keep`. An older app drops both on save, and the deck reads as keep
+  again.
 - Key rules for `deck.json` and `reviews.jsonl` and when to bump `DeckFile.currentVersion`: CLAUDE.md,
   Conventions.
 
@@ -53,13 +60,57 @@ The deck file, how both apps edit and merge it, and the media files of cards.
 - Merging versions edited on both devices: cards are joined; text, note and kind come from the version
   with the later `Card.contentChanged` (undo stamps it again); options from the later
   `Deck.learningOptionsChanged`. A deletion is remembered in `Deck.deletedCards` and wins only if it is
-  later than everything done to the card (edit, reset, pause, review); on a tie the card stays.
+  later than everything done to the card (edit, reset, pause, review); on a tie the card stays. The retired cards of both
+  versions are joined by id, their logs like a card's: a card the deletion rule drops is retired with its log joined to the
+  other side's retired one, and a card that stays (changed after the deletion) takes the retired log.
+- A deck that changes while it is open changes in place. Kept cards keep their progress, new cards come as new, and a deleted
+  card leaves the plan and the stream with its reviews kept (retired), so today's ring keeps what it counted. Edited texts
+  follow the later `contentChanged`; the stream shows `document.card(withID:)`, so the card on screen and those to come show
+  the new text. The file keeps times to the second.
+- A review's change is `learningOnly`: it and its inverse replace only the learning state, log, reset stamp and suspension of
+  a card the deck holds. Undoing a review keeps a text a merge brought in and brings no deleted card back; if a merge deleted
+  the graded card, undo does nothing to it. Ceiling: if the other device graded the same card meanwhile, undo restores this
+  device's state of it.
+- Undo survives a reread. UIDocument and NSDocument empty their undo manager inside `revert(toContentsOf:…)`, which is how a
+  file is read again after another device changed it. Both `DeckFileDocument`s (iPhone and Mac) override the revert: they swap
+  in a scratch `UndoManager` and put the real one back when the read ends (the iPhone in the completion handler, the Mac in a
+  `defer`). Reviews register their undo action with the document, edits, suspensions and merges with `editsUndoTarget`.
+  `OpenDeck.forgetUndoSteps` → `VocabularyDocument.forgetEditUndoSteps()` drops only the second kind after a merge of a deck
+  read again, so undo takes back the last grade and brings its card back into the stream, never the merge or an earlier
+  edit. Practice undo stays on the document too.
+- A running stream holds card ids. When its card goes (deleted or suspended, in the file or in the app),
+  `SessionDriver.deckDidChange` moves on to the next card without a grade, and `skipUnaskableCards` skips such cards at every
+  move. Cards added in the file wait for the next stream; the due counts (`DueCardCounter`) take them in within the day's
+  allowance.
+- `Tools/deck-from-tsv` (`SyncRun`) writes like an app: it reads the deck, plans, backs up and writes inside one
+  `NSFileCoordinator` write (`.forMerging`), so iCloud Drive and open apps are told and nothing changes between the read and
+  the write. A dry run reads coordinated.
 - The keys `contentChanged`, `learningOptionsChanged` and `deletedCards` in `deck.json` came without a
   format version bump.
 - Deck file operations on the iPhone (create `<name>.mnemit`, rename, move to trash) are `DeckFiles` in
   `Shared/Document`: through `NSFileCoordinator`, `async`, off the main thread. Where the volume has no
   trash (the app's folder on the iPhone), the deck moves to a sibling folder `Deleted Decks` and is never
   deleted for good.
+
+## Progress ledger
+
+The records of past study days (`DayLedger`, `daily-ring.md`) are not part of a package. They live in the deck folder, beside
+the decks.
+
+- `<deck folder>/.mnemit-progress/<device id>.jsonl`: one file per device, JSON Lines, a record per study day, oldest first. Keys
+  of a record: `day` (ISO date), `reviews`, `done`, `goal`, `keep`, `kept`, `closed`, `time`, `worked`, `reason`, `filled`,
+  `words`. The deck folder is the Mac's `DeckFolder.shared.url` and the iPhone's `KnownDecks.folder` (the local Documents folder
+  counts). With no folder chosen the files are in the app's `Application Support/Mnemit/.mnemit-progress/`, read by this device
+  only.
+- The device id is a UUID string in `UserDefaults` (`ProgressLedgerDevice`), made on first use, one per app install.
+- A device writes only its own file, and that file is the merge of every file it read and its own updates, so each file grows
+  to the whole ledger. Two devices never write one file, so iCloud Drive makes no conflict copy of it, and the per-day merge
+  makes a reread of any file idempotent.
+- Reading takes every `*.jsonl` of the folder, merged. A hidden placeholder `.<name>.jsonl.icloud` is skipped and its download
+  started (`startDownloadingUbiquitousItem`). Each read and write goes through `NSFileCoordinator` inside the folder's
+  security-scoped access; a write is atomic and makes the folder if it is missing. An unreadable line costs its day only.
+- The deck listings skip the folder: `DeckFolder.decks(in:)` skips hidden files, `KnownDecks.decks(in:)` takes only deck names.
+- `ProgressLedgerStore` (`Shared/Document`) does all of it.
 
 ## Media
 
@@ -71,8 +122,8 @@ The deck file, how both apps edit and merge it, and the media files of cards.
   changes under its name, identical files are stored once, and iCloud Drive syncs each file on its own.
 - A name of any other shape in `deck.json` (`DeckMedia.isValidName`) reads as "no file" and never reaches
   a path.
-- Format version 5 (`DeckFile.currentVersion`): an older app would save the deck without `media/` and
-  lose the files, so it rejects the deck. Versions 3 and 4 are read.
+- Format version 5 added the media keys: an older app would save the deck without `media/` and
+  lose the files, so it rejects the deck. Versions 3 and 4 are read, as decks without media.
 - Media are card content: they change through `DeckChange.settingMedia` (undo, `contentChanged` stamp)
   and merge together with the texts, while the files of both versions are joined: `DeckChange.merging`
   takes from the other version the files this one lacks and a card of the merged deck names.
