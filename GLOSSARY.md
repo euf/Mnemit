@@ -33,9 +33,18 @@ A Card never yet asked in a Study session.
 _Avoid_: unlearned, unseen
 
 **Suspended card** (DE Ausgesetzte Karte; RU «приостановленная карточка»):
-A Card the learner suspended, on the Mac or the iPhone: it is never Due and no Session asks it
-until they resume it (Resume). Its Learning state stays as it was meanwhile.
+A Card the learner suspended, on the Mac or the iPhone, or that a Leech moment set aside: it is never Due and no
+Session asks it until they resume it (Resume; Keep It at the moment). Its Learning state stays as it was meanwhile.
 _Avoid_: ignored, disabled, deferred, buried
+
+**Leech** (DE Lernbremse; RU «приставучая»; EL βδέλλα):
+A Card forgotten as often as its Deck's threshold says: its lapses have reached `LearningOptions.leechThreshold` (8 by
+default, 0 is off; `Card.isLeech(threshold:)`). The file holds no flag: the state follows the lapses, so a card put back in
+rotation is still a leech. The learner meets it at the **Leech moment**.
+_Avoid_: Difficult, hard card, hard word, «пиявка»
+
+**Leeches** (the filter of a deck's Cards; DE Lernbremsen; RU «приставучие»; EL βδέλλες):
+Every card that is a Leech, suspended or not (`CardFilter.leeches`). Empty it says "Words you keep forgetting appear here."
 
 ### Reviewing and grading
 
@@ -56,7 +65,7 @@ _Avoid_: rating, mark, score
 
 **Again** (on the button: Forgot; DE Nochmal; RU «забыл»):
 The Grade for a Card the learner didn't know. The scheduler calls it Again; its button and swipe
-say Forgot.
+say Forgot, and Don't know on a card's first showing.
 _Avoid_: failed, wrong
 
 **Recalled** (DE Gewusst; RU «вспомнил»):
@@ -68,8 +77,30 @@ A Card that got Again at least once in a Session.
 _Avoid_: failed card, "answered wrong"
 
 **Lapse** (DE Vergessen; RU «провал»):
-Again for a Card in the Review phase; it falls into Relearning.
+Again for a Card in the Review phase; it falls into Relearning. The Card counts its lapses (`lapses`); enough of them make
+it a Leech.
 _Avoid_: forgotten, "forgotten card" as a term
+
+**Leech moment** (on screen "Keeps slipping"; DE „Entgleitet immer wieder“; RU «момент приставучей карточки»):
+The stop in the stack right after the Forgot that makes a Card a Leech, before the next card (`LeechMomentView`,
+`SessionDriver.leechMoment`). The question and the answer stay on screen, with **Continue**, **Edit** and **Set Aside**. A
+moment is the lapse that brings the lapses to the threshold T and every ceil(T / 2) lapses after that: 8, 12, 16, 20 for
+T = 8 (`StudySession.isLeechMoment`). Undoing the grade takes the moment back.
+_Avoid_: leech alert, leech warning
+
+**Keep** (the Deck's leech action, the default; DE Behalten; RU «оставить»):
+A Leech stays in rotation and FSRS goes on scheduling it (`LeechAction.keep`). An Anki import maps Anki's "tag only" action
+to it.
+
+**Suspend** (the Deck's other leech action; DE Aussetzen; RU «приостановить»):
+The review that makes a Card a Leech suspends it, and the card leaves the stack (`LeechAction.suspend`). Learning options
+offer Keep and Suspend as "When a card becomes a leech".
+
+**Set Aside** / **Keep It** (the actions of a Leech moment; DE Beiseitelegen / Behalten; RU «отложить» / «оставить»):
+Set Aside suspends the card from the moment and the stack goes on without it (`SessionCommand.setAside`). When the Deck's
+action is Suspend the review has done that already, and the button reads Keep It: it resumes the card and the stack asks it
+again (`SessionCommand.keep`). Both are undoable.
+_Avoid_: bury, skip
 
 ### Learning state
 
@@ -239,8 +270,8 @@ where the cost reaches 120 s, and the goal ends the day: `DayRounds.ends` has at
 when they coincide. Doing the step keeps the streak (`DailyProgress.streakKeptToday`) and Study rests
 there once; the goal is the ring's rest. `DailyProgress` holds `rounds` (the number of ends),
 `roundsDone`, `roundEnds`, `cardsToNextRound` and `minutesToNextRound`, at the pace the day began with.
-A day that began with an empty plan cuts the cards as they stand. Before the step the sentence of Today says
-"≈ 2 min to keep your 12-day streak"; How It Works names the step (`references/learning-flow.md`).
+A day that began with an empty plan cuts the cards as they stand. Before the step the next-moment figure of Today says
+"To keep your streak" over "≈ 2 min"; How It Works names the step (`references/learning-flow.md`).
 _Avoid_: round, session, lap, segment
 
 **Day's time** (RU «время дня»):
@@ -278,8 +309,24 @@ _Avoid_: reviews goal, target, quota
 A card whose last review of the study day left it due on a later day: FSRS let it go. A review
 card answered Hard, Good or Easy is done at once; a new card after its last learning step; a
 card answered Again once it leaves relearning. It counts once a day, however many reviews it
-took (`DeckActivity.done`).
+took (`DeckActivity.done`). A card deleted afterwards stays done (**Retired card**).
 _Avoid_: reviewed card, answered card, «повторённая карточка»
+
+**Retired card** (RU «списанная карточка»):
+A card deleted after it had reviews (`Deck.retiredCards`, the key `retired` in `deck.json` from format version 6). Its answers
+stay in the Review log and in the done count of the days it was done, so deleting a card never moves the ring back. It is in
+no plan, count, browser, search, export, Words learned or statistics, and it still feeds the FSRS refit. A deleted card
+without reviews is simply gone.
+_Avoid_: deleted card, archived card
+
+**Progress record** (code `LedgerDay`, all of them `DayLedger`, "the ledger"; RU «запись дня», «журнал дней»):
+What the app keeps of a study day once it is over: reviews, done cards, the goal, the cards that keep the streak, kept,
+closed, the day's time and its reason, the seconds worked, the words learned by its end. The past days of the ring, the
+streak, the week, the medals and Words learned read these records; today is always worked out live from the logs. A record
+only rises, when late reviews of that day arrive (another device's log, an Anki import). `DailyProgress.ledgerUpdates` lists
+the days to write. Each device writes its own file, `.mnemit-progress/<device id>.jsonl` in the deck folder, holding the merge
+of every file it has read (`references/daily-ring.md`, `references/deck-package.md`).
+_Avoid_: history (that is the Review log), Daily snapshot (a Deck's cards by stability), statistics
 
 **Backlog** (RU «хвост»):
 Overdue cards, part of the plan, worked off as the day's time allows: after the ring they are the cards of Catch Up, priced
@@ -293,7 +340,7 @@ nothing. The ring is full at done ≥ goal, in whole cards, and goes on over its
 to three laps: done cards beyond the goal (Catch Up, Learn 10 New Words, Study These Now) draw the second and third lap.
 `DailyRing.fraction` is capped at 1 and says whether the goal is met; the drawing takes
 `DailyRingFigure.fraction`. Past days draw their own share of their goal (`DayRecord.ringShare`). The ring is a picture: it holds
-no number and no flame at any size, and the minutes and the streak are in the sentence beside it.
+no number and no flame at any size, and the streak and the minutes are figures beside it (**Today card**).
 _Avoid_: progress bar, goal ring, «счётчик»
 
 **Streak** (RU «стрик»):
@@ -301,8 +348,9 @@ Study days in a row that kept it. A day keeps it with its streak step done (done
 `DayRounds.ends`); an empty plan counts. One missed day is repaired when the next day closes its ring
 (done ≥ goal): the streak step of that day is not enough, and then the streak starts anew with
 it. Two missed days in a row end the streak; the best run stays in Progress. Days before `DailyGoal.planRuleStart` (23.10.2026)
-count with one review. On screen the streak is a flame and its days in the sentence (`NextStep`): "12-day streak",
-"≈ 2 min to keep your 12-day streak", "≈ 6 min to close the ring and save your 12-day streak" (**Flame**).
+count with one review. On screen the streak is the figure **Day streak**, the **Streak line** and "🔥 12" in the stream's
+header; the sentences say no days: "≈ 2 min to keep your streak", "≈ 6 min to close the ring and save your streak"
+(**Flame**).
 _Avoid_: streak chip, series, «серия»
 
 **Flame** (the streak's sign on every screen; RU «пламя»):
@@ -310,10 +358,26 @@ The streak's symbol, drawn by `StreakFlame(state:)` from the `StreakState` of th
 (`DailyProgress.streakState`), with three states in shape and colour: **open**, a grey outline, while today's
 streak step is not done; **kept**, `flame.fill` in `Color.streak`, once it is done; **at risk**, an outline in
 `Color.streak` followed by an `exclamationmark`, on the day after a missed one until the ring closes
-(`DailyProgress.isStreakAtRisk`). It leads the sentence on Today, the rests and the widgets, stands beside the ring in the
-stream's header, and is above the days on the Progress screen; it is never inside a ring.
-VoiceOver says the state: "12-day streak, kept today", "not kept yet"; at risk it reads the sentence.
+(`DailyProgress.isStreakAtRisk`). It stands in the Day streak figure on Today and in the small widget, in the Streak line of
+the rests and the rectangular widget, as "🔥 12" beside the ring in the stream's header (the flame alone at 0), and on the
+streak card at the top of Progress; it is never inside a ring.
+VoiceOver says the state: "12-day streak, kept today", "not kept yet" or "at risk".
 _Avoid_: lit and unlit flame, streak icon
+
+**Day streak** (the figure; DE „Tage in Folge“; RU «дней подряд»):
+The streak as a figure (`StreakFigure`): the label "Day streak" over the flame and the days in `Color.streak`, in
+secondary at 0 days. It is the first figure of the **Today card** and the small widget's.
+
+**Streak line** (`StreakLine`; RU «строка стрика»):
+The flame and "12-day streak" (`NextStep.streakText`) in one line, in the same form all day: on the rests, in the rectangular
+widget. Hidden at 0 days. The stream's header has the short form `StreakCount`, "🔥 12".
+
+**Today card** (on screen the first card of Today; DE „Heute“; RU «карточка дня»):
+The picture of the day (`TodayCard`): the ring on the left, its three figures on the right (the **Day streak**, the next
+moment of the day with its "≈ 2 min", **Words learned** with "+N today"), the week of small rings under a divider; the whole
+card opens Progress. The Mac's Today page draws the same card, and an empty Mnemit an empty one (`EmptyTodayCard`). A deck's
+screen opens with its own, `DeckTodayCard`: "≈ 4 min" and the figures Due, New, Learning.
+_Avoid_: hero, summary, header
 
 **Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):
 Seconds per done card, in two prices (`Pace`): one for cards that were new when their study day
@@ -423,12 +487,18 @@ each deck. The last row of the Progress screen; on the Mac a sheet of the Progre
 `HowTodayWorks`, `HowTodayWorksView`.
 _Avoid_: How Today Works, statistics (those are of a deck)
 
-**Don't know** (the name of Again's button on a card's first showing; DE „Weiß ich nicht“; RU «Не знаю»; EL «Δεν ξέρω»):
-The name of the grade Again while the card has no learning state (`Card.isNew`), in the grade button, the receipt
-chip, VoiceOver and the history of Card Detail. On every later showing the same grade reads **Forgot**. The grade,
-the position, the ← key, the left swipe and the red are the same, and FSRS records Again as it does for any card
+**Don't know / Know** (the names of the two buttons on a card's first showing; DE „Weiß ich nicht“ / „Weiß ich“; RU «Не знаю» / «Знаю»; EL «Δεν ξέρω» / «Ξέρω»):
+The names of the grades Again and Good while the card has no learning state (`Card.isNew`), in the buttons, the receipt chip,
+VoiceOver and the history of Card Detail. On every later showing the same buttons read **Forgot** and **Good**. The grades,
+the positions, the keys, the swipes and the colours are the same, and FSRS records Again and Good as it does for any card
 (`Grade.buttonTitle(isNew:)`, `docs/adr/0007-first-showing-is-asked-as-dont-know.md`).
 _Avoid_: introduction, new word (as a card state), unknown
+
+**Hard and Easy Buttons** (the setting of Preferences, `ShowsFourAnswerButtons`; DE „Tasten für Schwer und Leicht“; RU «Кнопки „Трудно“ и „Легко“»; EL «Κουμπιά Δύσκολο και Εύκολο»):
+Every showing has two wide buttons, Forgot and Good. With the setting on, a card's later showings have four: Forgot on a row
+of its own, Hard, Good and Easy under it, Good the widest (`GradeChoice.buttonGrades`). A first showing stays two. Hard and
+Easy are given without buttons either way: the swipe down and up on the iPhone, the keys 2 and 4 on the Mac.
+_Avoid_: four-button mode
 
 **Words in memory** ("In memory now" in How It Works, the Memory section of Progress; DE „Wörter im Gedächtnis“; RU «слов в памяти»):
 The number of words the learner would recall right now, from FSRS alone: the sum, over the

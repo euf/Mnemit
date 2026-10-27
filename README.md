@@ -12,11 +12,14 @@ are in [`references/`](references/).
 
 ### Grading
 
-- **One "no", three "yes".** Forgot is red and set apart; Hard, Good and Easy are three greens. FSRS works as well or better with consistent grading as with four
-  free choices, and its costliest input is Hard on a forgotten card, which still grows the
-  interval ([`fsrs-research.md`](references/fsrs-research.md) §1).
+- **One "no", one "yes", and two more on request.** Two wide buttons, Forgot (red) and Good (green), ask what a learner can
+  tell: did the word come. FSRS works as well or better with consistent grading as with four free choices, and its costliest
+  input is Hard on a forgotten card, which still grows the interval
+  ([`fsrs-research.md`](references/fsrs-research.md) §1). Hard and Easy are a swipe or a key away, and the setting "Hard and
+  Easy Buttons" gives them buttons: Forgot on a row of its own, Hard, Good and Easy under it, three greens whose chroma rises
+  from a dull sage to a vivid jade.
 - **A new card's first showing is asked.** A word never seen is asked like any card: question,
-  Show Answer, then two wide buttons, Don't know and Know (Again and Good underneath; the swipes keep all four grades), and later showings have the four buttons ([`docs/adr/0007-first-showing-is-asked-as-dont-know.md`](docs/adr/0007-first-showing-is-asked-as-dont-know.md)).
+  Show Answer, then two wide buttons, Don't know and Know (Again and Good underneath; the swipes keep all four grades); later showings have the same two, named Forgot and Good ([`docs/adr/0007-first-showing-is-asked-as-dont-know.md`](docs/adr/0007-first-showing-is-asked-as-dont-know.md)).
 - **Swipes with dead zones.** ← Forgot, → Good, ↑ Easy, ↓ Hard. The recognised sectors follow a
   clock face, 0 at the top, clockwise: Easy 330°…45°, Good 45°…135°, Hard 135°…210°, Forgot
   240°…300°, and nothing in the two gaps between the "no" and the "yes" sectors (210°…240°,
@@ -55,8 +58,9 @@ are in [`references/`](references/).
   little, and more work is a new card.
 - **One ring a day, up to three moments.** The product model, the one description of what Mnemit is for and what every screen
   shows, is [`product-model.md`](references/product-model.md); the learner's paths through a day are in
-  [`learning-flow.md`](references/learning-flow.md). Today shows the ring, a picture with no number in it, and one sentence
-  led by the flame that says the next moment and its minutes ("≈ 2 min to keep your 12-day streak"). The button under it names
+  [`learning-flow.md`](references/learning-flow.md). Today is one card: the ring, a picture with no number in it, and beside it
+  three figures, the Day streak, the next moment with its minutes ("To keep your streak", "≈ 2 min") and the words learned, with
+  the week of rings under them. The button under it names
   what comes next: Study while the ring is open, Catch Up once it is closed and the plan has cards left, Learn 10 New Words
   once the plan is done. The streak is kept after the first ≈ 2 minutes, where Study rests once ("Streak kept": Keep Going or
   Done for Now); the next rest is the closed ring ("Ring closed"), then, after Catch Up, "All done". Study These Now, in Add
@@ -83,9 +87,10 @@ are in [`references/`](references/).
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
   cards added later, Study These Now, Learn 10 New Words and Catch Up count as cards done beyond it. The ring is
-  full at the goal and goes on over itself past it, up to three laps. The flame leads the sentence: filled once the day keeps the streak, an orange outline with an exclamation mark the day after a missed one, a grey outline otherwise; no ring holds a number. A missed day is repaired when the next day closes its ring, the streak step
-  is not enough then; two missed days in a row end the streak. Everything is computed
-  from the review logs; nothing extra is stored. A study day starts at 4:00.
+  full at the goal and goes on over itself past it, up to three laps. The flame stands in the Day streak figure: filled once the day keeps the streak, an orange outline with an exclamation mark the day after a missed one, a grey outline otherwise; no ring holds a number. A missed day is repaired when the next day closes its ring, the streak step
+  is not enough then; two missed days in a row end the streak. Today is computed from the review
+  logs; a day that is over is kept as a progress record, one file per device in the deck folder (`.mnemit-progress/`), and a
+  record only rises, so deleting a card or a deck cannot take a past day's ring back. A study day starts at 4:00.
 - **Words learned.** "412 words learned · +12 today" counts whole words whose Word → Meaning card has left learning: it
   grows when you learn, loses a word on a lapse until it is relearned, and cannot be inflated by counting more cards (a word
   held twice counts once). Medals mark 10, 50, 100, 250, 500, 1,000 and every 1,000. The sum of FSRS's recall probabilities over
@@ -114,7 +119,10 @@ are in [`references/`](references/).
   under "Paused", with no counts. It stays open: you can browse it, add cards and study it with Study
   This Deck, and what you review there fills the ring only through the cards of the other decks.
   When you resume it, its overdue reviews are due like any other and come back into the plan.
-- **Difficult cards** (leeches) after 8 lapses, as a filter in the browser.
+- **A word that keeps slipping.** A card forgotten 8 times (a deck option, 0 turns it off), and again at every half of that,
+  stops the stack right after the Forgot: "Keeps slipping" keeps the answer on screen with Edit, Set Aside and Continue. The
+  deck's action decides what Continue leaves: Keep, the default, leaves the card in rotation; Suspend suspends it, and the
+  moment offers Keep It instead of Set Aside. A Leeches filter in the card browser lists these cards.
 - **Greek spoken from memory.** A card's Greek word is rendered into a buffer as the card comes up
   and played from memory, so the voice never stutters on a busy phone; where the deck has a
   recording for the side, the recording plays instead
@@ -213,9 +221,13 @@ are in [`references/`](references/).
 - **Rings drawn as Fitness draws them.** The drawing is MKRingProgressView's Core Graphics
   code transcribed into a SwiftUI `Canvas`: gradient to the head, the head's shadow clipped to
   the ring, a dim track.
-- **An introduction that teaches the swipes.** Four practice cards in four languages, one
-  per direction, before anything about folders; then where to keep the decks (iCloud Drive
-  or this iPhone only).
+- **An introduction that teaches the day.** A new word is asked as any card is: Don't know or Know, and it comes back in
+  the same sitting. Four practice cards in four languages, one per direction, teach the swipes; four lines say what a day is;
+  then where to keep the decks (iCloud Drive or this iPhone only) and the reminder.
+- **One grammar for the screens.** Content is solid and controls are glass: cards, rows, tiles and the ring sit on the grouped
+  fills, and Liquid Glass is only the bars and the buttons that float over them. Today's card holds the ring on the left and its
+  figures on the right, each a label over a rounded value in the colour of what it counts
+  ([`design-spec.md`](references/design-spec.md)).
 
 ### Constraints that shaped the above
 
@@ -228,14 +240,15 @@ are in [`references/`](references/).
 
 - **iPhone** (iOS 26): study, browse and edit cards, add words after a lesson (one card or
   a pasted `word = translation` list), decks, options, import and export, reminders, and a widget
-  (the ring and the sentence).
+  (the ring, the streak and the next moment, on the home screen and the lock screen).
 - **Mac** (macOS 26): one window. Its sidebar lists Today, Progress and the decks of the Mnemit folder, each
-  deck with "≈ 4 min" or a check (the minutes left of its plan); Today holds the day's ring
-  and sentence over all of them with the same button as the iPhone (Study, Catch Up or Learn 10 New Words);
-  a deck's page has its strip ("≈ 2 min · 4 new", Anki's counts after the time) with Study This Deck and
-  either the card table (filters, inspector, multi-select, keyboard) or its statistics. Study is by keys and
-  buttons, and neither app has a typed answer: a new card's first showing has ← Don't know and → Know, the
-  grades of later showings are Forgot, Hard, Good and Easy (←, ↓, →, ↑ or 1 to 4), and the cheat sheet (?) names
+  deck with "≈ 4 min" or a check (the minutes left of its plan); Today holds the Today card
+  (the ring with the Day streak, the next moment, the words learned and the week) over all of them with the same button as the
+  iPhone (Study, Catch Up or Learn 10 New Words); a deck's page opens with the deck's own card ("≈ 4 min" with Due, New and
+  Learning) and Study This Deck, then either the card table (filters, inspector, multi-select, keyboard) or its statistics.
+  Study is by keys and buttons, and neither app has a typed answer: the two buttons are Forgot and Good (← or 1, → or 3),
+  named Don't know and Know on a card's first showing, Hard and Easy are ↓ ↑ or 2 4 (and buttons with "Hard and Easy Buttons"
+  in Preferences), and the cheat sheet (?) names
   the keys of the card on screen. Study These Now sits in the Add Cards sheet, and after importing a table into
   an empty deck, and studies the added cards first. The Mac has no reminders and no widget.
 - **How It Works** (the last row of the Progress screen, a sheet on both apps): the numbers
