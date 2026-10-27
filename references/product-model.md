@@ -211,7 +211,7 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
 - **Newcomer, day 1:** the introduction shows one new word, Don't know or Know, and the word coming back in the same
   sitting, then the four swipes → no decks → New Deck or Shared Decks → the first card → two minutes: the flame fills,
   "1-day streak", first medal at 10 words. Their ring is 2.5 minutes; the first moments come fast.
-- **Course learner, a lesson night:** the morning widget says "≈ 2 min to keep your 12-day streak"; the bus ride keeps it;
+- **Course learner, a lesson night:** the morning widget shows "Day streak 12" and "To keep your streak ≈ 2 min"; the bus ride keeps it;
   the evening lesson's 20 words go in at the desk and Study These Now puts them first; the stack runs out at the ring;
   laps show the extra; tomorrow the words come back as reviews.
 - **Anki veteran, the first week:** the import brings cards, history and review times; the goal starts at their usual day;

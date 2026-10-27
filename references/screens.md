@@ -32,7 +32,7 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
 `TodayScreen` draws). State by state: `design-spec.md` §2.4.
 
 - The Today card (`TodayCard`, `Shared/Session/TodaySummary.swift`) is the list's first section, in the screens' grammar
-  (`design-spec.md` §2.4), the whole of it a button that opens the Progress screen. The date of the study day ("Tuesday,
+  (`design-spec.md` §2.6), the whole of it a button that opens the Progress screen. The date of the study day ("Tuesday,
   October 27") stands under the large title (`todaySubtitle`).
   - The ring (`HeroRing`, 112 pt, scaled with the text): a picture, with no number in it.
   - Three figures right of the ring (`TodayFigures`), each a label over a value:
