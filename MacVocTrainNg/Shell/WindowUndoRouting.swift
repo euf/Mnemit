@@ -61,9 +61,12 @@ final class UndoRouter: NSResponder, NSMenuItemValidation {
         guard let window, let content = window.contentView else { return }
         DeckFileDocument.sheetWindow = window
         if self.window !== window {
+            stopObserving()
             self.window = window
-            observation = NotificationCenter.default.addObserver(forName: NSWindow.didUpdateNotification, object: window, queue: .main) { [weak self, weak window] _ in
-                MainActor.assumeIsolated { self?.install(in: window) }
+            // AppKit posts the update on the main thread; the block hops by the main queue instead of asserting the
+            // executor, which crashed a test host on 27.10 (`swift_task_isMainExecutor` on a dangling executor).
+            observation = NotificationCenter.default.addObserver(forName: NSWindow.didUpdateNotification, object: window, queue: nil) { [weak self, weak window] _ in
+                DispatchQueue.main.async { self?.install(in: window) }
             }
         }
         var last: NSResponder = content
@@ -82,8 +85,14 @@ final class UndoRouter: NSResponder, NSMenuItemValidation {
             before.nextResponder = window
         }
         before = nil
-        observation = nil
+        stopObserving()
         window = nil
+    }
+
+    /// Unregisters the block of `install(in:)`: dropping its token alone leaves it registered with the notification centre.
+    private func stopObserving() {
+        if let observation { NotificationCenter.default.removeObserver(observation) }
+        observation = nil
     }
 }
 
