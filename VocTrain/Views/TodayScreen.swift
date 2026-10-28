@@ -13,8 +13,8 @@ enum StudyScope: Hashable {
 /// each, and Study. The date of the study day is the navigation subtitle. A tap on Study shows the first card at once; a tap
 /// on a deck opens its screen; the card opens Progress. The search finds a card in any deck.
 ///
-/// A paused deck (`LearningOptions.isPaused`) is no part of the day: it sits in a section of its own at the
-/// bottom, without counts, and Study leaves it out.
+/// A paused deck (`LearningOptions.isPaused`) is no part of the day's plan: it sits in a section of its own at the
+/// bottom, without counts, Study leaves it out, and the ring doesn't wait for it.
 ///
 /// Shows what it is given and holds no state but the search text it is bound to, so the
 /// snapshot test can render it, see `StartScreen` for where the figures come from.
@@ -68,7 +68,7 @@ struct TodayScreen: View {
     /// own, so until both are there the header holds its placeholders, and it changes once instead of
     /// going from a closed ring to an open one as each figure arrives.
     private var isDayReady: Bool {
-        progress != nil && decks.allSatisfy { counts[$0.url] != nil } && (!decks.isEmpty || !paused.isEmpty)
+        progress != nil && TodayDecks(decks, paused: paused).isRead(counts) && (!decks.isEmpty || !paused.isEmpty)
     }
 
     /// The cards left of today's plan, all decks: every card due, overdue ones included.

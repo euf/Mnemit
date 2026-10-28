@@ -4,7 +4,7 @@ import Testing
 @testable import VocTrain
 @testable import VocabCore
 
-/// A paused deck (`LearningOptions.isPaused`) is no part of the day: Today lists it apart, Study, the ring, the
+/// A paused deck (`LearningOptions.isPaused`) is no part of the day's plan: Today lists it apart, Study, the goal, the
 /// new cards, the reminders and the widget leave it out.
 @MainActor
 struct PausedDecksTests {
@@ -68,6 +68,14 @@ struct PausedDecksTests {
         // The paused deck has cards left of its own and still is not asked for.
         let paused = done.merging([Self.greek.url: Self.counts(9)]) { _, new in new }
         #expect(today.studyQueue(counts: paused, isRead: true, last: Self.greek.url) == [Self.polish.url])
+    }
+
+    /// Today's ring waits for the counts of the decks of the day: a paused deck has none, so it is not waited for.
+    @Test func thePausedDeckIsNotWaitedForToTellTheDay() {
+        let today = TodayDecks(Self.decks, paused: [Self.greek.url])
+        #expect(today.isRead([Self.polish.url: Self.counts(3), Self.czech.url: Self.counts(0)]))
+        #expect(!today.isRead([Self.polish.url: Self.counts(3)]))
+        #expect(TodayDecks(Self.decks, paused: Set(Self.decks.map(\.url))).isRead([:]))
     }
 
     @Test func whenEveryDeckIsPausedStudyHasNothingToRun() {

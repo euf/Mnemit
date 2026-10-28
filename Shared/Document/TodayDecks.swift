@@ -16,6 +16,11 @@ struct TodayDecks: Equatable {
         paused = decks.filter { pausedURLs.contains($0.url) }
     }
 
+    /// Whether every deck of the day has its `counts`: a paused deck has none to wait for.
+    func isRead(_ counts: [URL: StudyCounts]) -> Bool {
+        active.allSatisfy { counts[$0.url] != nil }
+    }
+
     /// The decks Study runs one after the other: those of the day with cards left, the one `last` studied
     /// first and the others in the order of the list. With nothing left, the deck studied last alone, or
     /// the first of the day: its stream rests at once and offers to go on. Before the decks are read
