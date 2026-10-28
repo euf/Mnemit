@@ -111,7 +111,8 @@ deck's Cards have a Leeches filter; the Mac's table adds the columns Lapses, Sta
 
 **The past is written down.** When a study day is over, its record is kept: the cards done against its goal, whether it
 kept the streak and closed the ring, the words learned by its end. Past days are read from these records and today from
-the cards, so pausing, resuming or deleting a deck, or deleting or rewriting a card, never changes a past day. A record
+the cards, so pausing, resuming or deleting a deck, or deleting or rewriting a card, never changes a past day. A pause
+takes nothing from today either: a paused deck asks nothing of the day, and what was done in it stays done. A record
 only rises, when answers of that day arrive late from the other device; both devices keep the same records beside the
 decks.
 

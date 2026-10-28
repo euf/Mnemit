@@ -526,11 +526,12 @@ _Avoid_: duplicate (a duplicate is an equal question in one deck), merge, «ду
 **Paused deck** (on screen: "Pause Deck", "Resume Deck", "Paused" / „Stapel pausieren“, „Stapel fortsetzen“,
 „Pausiert“; RU «колода на паузе»):
 A deck the learner paused (`LearningOptions.isPaused`, the key `paused` in `deck.json`, written only while
-true): it takes no part in the day. It is left out of the plan, the goal, the streak step, the day's time, the
-admission of new cards (the allowance is split over the other decks), the streak, the words in memory, the
-widget, the reminders, Study on Today and the "Next: …" after a stream (`DailyProgress.evaluate`,
-`DeckActivity.isPaused`). It stays open: its screen, the card browser and "Study This Deck" work, and the
-reviews written there fill the ring only through the cards of the decks that take part. On resume its overdue
+true): it asks nothing of the day. It is left out of the plan, the goal, the streak step, the day's time, the
+admission of new cards (the allowance is split over the other decks), the widget's count, the reminders, Study on
+Today and the "Next: …" after a stream (`DailyProgress.evaluate`, `DeckActivity.isPaused`). What was done in it
+counts like any work: the cards done, the pace, the streak, the words in memory and the words learned, so a pause
+takes nothing from today, the ring closed with its cards stays closed. It stays open: its screen, the card browser
+and "Study This Deck" work, and what is studied there fills the ring like Learn 10 New Words. On resume its overdue
 reviews are due like any and come back into the plan. The pause travels with the options: a
 merge takes it from the version that changed them last, and an older app version drops the key, so the deck is
 no longer paused there.

@@ -112,7 +112,7 @@ the time and the FSRS parameters. A deck's new cards are asked at once, whether 
 One stack over every active deck with a plan for today. The next card comes from the deck whose next card is the most
 urgent: a card in learning, then the review with the lowest recall probability, then a new card from the deck that
 has given the fewest. The day's new-card allowance is split between the decks by their ceilings; Learn 10 New Words shares its ten
-cards the same way, one at a time. A paused deck is out of the day. A deck with nothing in today's plan does not open
+cards the same way, one at a time. A paused deck is out of the day's plan; what was done in it stays done. A deck with nothing in today's plan does not open
 with the stack, so Learn 10 New Words takes from the decks that did. Study These Now and Study This Deck are streams over one deck.
 
 ## The stack in the stream

@@ -50,9 +50,9 @@ struct DeckHistoryCacheTests {
         #expect(
             DailyProgress.evaluate(cached, at: now, calendar: calendar, cache: progress) == DailyProgress.evaluate(replayed, at: now, calendar: calendar),
             "progress \(comment)")
-        // The first study day of all the decks that take part, as `evaluate` asks for it.
-        let first = min(cached.filter { !$0.isPaused }.compactMap { $0.reviewsByDay.keys.min() }.min() ?? .max, calendar.dayNumber(for: now))
-        for (cached, replayed) in zip(cached, replayed) where !cached.isPaused {
+        // The first study day of all the decks, paused ones included, as `evaluate` asks for it.
+        let first = min(cached.compactMap { $0.reviewsByDay.keys.min() }.min() ?? .max, calendar.dayNumber(for: now))
+        for (cached, replayed) in zip(cached, replayed) {
             #expect(
                 Summary(cached.history(from: first, at: now, calendar: calendar)) == Summary(replayed.history(from: first, at: now, calendar: calendar)),
                 "history \(comment)")

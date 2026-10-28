@@ -90,15 +90,14 @@ extension DayBreakdown {
     /// Takes apart the `progress` of `decks` at `now`, which `DailyProgress.evaluate(_:at:calendar:)` gave for
     /// the same decks: `lastDays` study days of time and rings are kept.
     ///
-    /// A paused deck (`DeckActivity.isPaused`) is left out, as `evaluate` leaves it: its entry in `decks` is
-    /// all zeros.
+    /// A paused deck (`DeckActivity.isPaused`) is out of the plan, as `evaluate` leaves it: its entry in `decks` is
+    /// all zeros. Its work counts in the pace.
     public init(_ given: [DeckActivity], progress: DailyProgress, at now: Date, calendar: StudyCalendar, lastDays: Int = 14) {
-        let decks = given.filter { !$0.isPaused }
         let today = calendar.dayNumber(for: now)
         var reviews: [Int: Int] = [:]
-        for deck in decks { reviews.merge(deck.reviewsByDay, uniquingKeysWith: +) }
+        for deck in given { reviews.merge(deck.reviewsByDay, uniquingKeysWith: +) }
         let first = min(reviews.filter { $0.value > 0 }.keys.min() ?? today, today)
-        let histories = decks.map { $0.history(from: first, at: now, calendar: calendar) }
+        let histories = given.map { $0.history(from: first, at: now, calendar: calendar) }
         var paced: [Int: [DailyGoal.PacedReview]] = [:]
         var newDoneByDay: [Int: Int] = [:]
         var otherDoneByDay: [Int: Int] = [:]
@@ -117,14 +116,12 @@ extension DayBreakdown {
         // The plan at the day's start, by kind, and each deck's part of the new cards.
         var plan = Plan()
         var shares: [DeckNewCards] = []
-        var taking = 0
         for (index, deck) in given.enumerated() {
             guard !deck.isPaused else {
                 shares.append(DeckNewCards(allowance: 0, ceiling: 0, admitted: 0))
                 continue
             }
-            let history = histories[taking]
-            taking += 1
+            let history = histories[index]
             let atStart = deck.plan(onDayOf: now, calendar: calendar)
             plan.reviewsDue += atStart.review
             plan.learning += atStart.learning

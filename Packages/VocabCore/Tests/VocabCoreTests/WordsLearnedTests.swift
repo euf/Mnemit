@@ -147,8 +147,8 @@ struct WordsLearnedTests {
         paused.learningOptions = pausedOptions
         let progress = DailyProgress.evaluate(
             [DeckActivity(deck: known, calendar: calendar), DeckActivity(deck: paused, calendar: calendar)], at: noon(today), calendar: calendar)
-        // The paused deck takes no part; the words in memory stay as they were.
-        #expect(progress.learned == WordsLearned(words: 2, wordsAtDayStart: 1))
+        // The word of the paused deck stays learned.
+        #expect(progress.learned == WordsLearned(words: 3, wordsAtDayStart: 2))
         #expect(progress.learned.shownGain == 1)
         #expect(progress.memory.words > 2)
     }

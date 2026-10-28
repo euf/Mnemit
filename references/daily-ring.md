@@ -303,8 +303,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   open ones as their documents have them (`DocumentView.refreshRing()`). The Mac's session
   header and Today page show the same ring and streak as the iPhone. `KnownDeckCounts`
   (`Shared/Document`, `refresh(_ urls: [URL])`) holds the counts per deck file for the iPhone's Today and
-  the Mac's Today window. Paused decks (`LearningOptions.isPaused`) enter none of today's numbers; a day already in the
-  ledger keeps what it counted.
+  the Mac's Today window. Paused decks (`LearningOptions.isPaused`) are in no plan, goal or allowance, and their work
+  counts like any: done, pace, streak, words in memory and words learned take every deck, so a pause takes nothing from
+  today, and a day already in the ledger keeps what it counted.
 - The widget snapshot (`WidgetSnapshot.done`, `.goal`) holds the done cards and the goal; its JSON key
   stays `reviews` through `CodingKeys` so a saved snapshot still reads. The snapshot also holds `wordsLearned` and
   `wordsLearnedToday` (optional: a snapshot without them leaves the third figure out; the gain is nil after the snapshot's day).

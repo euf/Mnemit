@@ -597,7 +597,7 @@ public struct DeckActivity: Sendable {
     }
 
     /// Whether the learner paused the deck (`LearningOptions.isPaused`): `DailyProgress.evaluate` and
-    /// `DayBreakdown` leave it out of the day.
+    /// `DayBreakdown` leave it out of the day's plan and count its work.
     public var isPaused: Bool { deck.learningOptions.isPaused }
 
     /// Counts the entries of every card's log. A day is looked up once per quarter of an
@@ -1013,6 +1013,8 @@ public final class DailyProgressCache: @unchecked Sendable {
     struct Key: Equatable {
         /// The `DeckActivity.Past` each deck's days before today are from, in the order of the decks.
         var pasts: [UUID]
+        /// Which of the decks are paused: their plans are not the day's.
+        var paused: [Bool]
         var first: Int
         var today: Int
         var calendar: StudyCalendar
@@ -1325,9 +1327,9 @@ public struct DailyProgress: Hashable, Sendable {
     /// round keeps the streak. Today's new cards are shared among the decks, by their own limits, as
     /// `newCardAllowances`.
     ///
-    /// A paused deck (`DeckActivity.isPaused`) takes no part in any of it: not in the plan, the goal, the
-    /// rounds, the time, the admission of new cards, the streak, the words in memory, the words learned or the cards done.
-    /// What is reviewed in it counts for the day through the cards of the other decks only.
+    /// A paused deck (`DeckActivity.isPaused`) asks nothing of the day: it is in no plan, goal, rounds or admission of new
+    /// cards. What was done in it counts like any work: the cards done, the pace, the streak, the words in memory and the
+    /// words learned, so pausing a deck takes nothing from today either.
     ///
     /// The days before today come from the `ledger`: a day it holds is its record raised by what the logs say of it now
     /// (`LedgerDay.raised(reviews:done:worked:wordsLearned:)`), so pausing or deleting a deck, or deleting a card, takes
@@ -1343,16 +1345,18 @@ public struct DailyProgress: Hashable, Sendable {
         let decks = given.filter { !$0.isPaused }
         let today = calendar.dayNumber(for: now)
         var reviews: [Int: Int] = [:]
-        for deck in decks {
+        for deck in given {
             reviews.merge(deck.reviewsByDay, uniquingKeysWith: +)
         }
         let ledgerFirst = ledger.days.values.filter { $0.reviews > 0 && $0.day < today }.map(\.day).min() ?? today
         let first = min(reviews.filter { $0.value > 0 }.keys.min() ?? today, ledgerFirst, today)
-        let histories = decks.map { $0.history(from: first, at: now, calendar: calendar) }
+        // The work of every deck; the plans of the decks of the day.
+        let allHistories = given.map { $0.history(from: first, at: now, calendar: calendar) }
+        let histories = zip(given, allHistories).filter { !$0.0.isPaused }.map(\.1)
         var paced: [Int: [DailyGoal.PacedReview]] = [:]
         var newDoneByDay: [Int: Int] = [:]
         var otherDoneByDay: [Int: Int] = [:]
-        for history in histories {
+        for history in allHistories {
             paced.merge(history.paced.days, uniquingKeysWith: +)
             newDoneByDay.merge(history.paced.newDoneByDay, uniquingKeysWith: +)
             otherDoneByDay.merge(history.paced.otherDoneByDay, uniquingKeysWith: +)
@@ -1364,7 +1368,7 @@ public struct DailyProgress: Hashable, Sendable {
                 otherDone: days.reduce(0) { $0 + (otherDoneByDay[$1] ?? 0) })
         }
 
-        let wordsByDay = WordsLearned.cumulative(decks.flatMap { $0.leftLearning(calendar: calendar) }, from: first, through: today)
+        let wordsByDay = WordsLearned.cumulative(given.flatMap { $0.leftLearning(calendar: calendar) }, from: first, through: today)
 
         /// How each day before today was sized and stood, as the ledger holds it raised by the logs, or worked out from
         /// the logs and the days before it where the ledger lacks it.
@@ -1401,8 +1405,10 @@ public struct DailyProgress: Hashable, Sendable {
         }
         // The days before today are the same while the decks' own days before today are: each history says
         // which it comes from.
-        let pasts = histories.compactMap(\.pastID)
-        let key = pasts.count == histories.count ? DailyProgressCache.Key(pasts: pasts, first: first, today: today, calendar: calendar, ledger: ledger) : nil
+        let pasts = allHistories.compactMap(\.pastID)
+        let key =
+            pasts.count == allHistories.count
+            ? DailyProgressCache.Key(pasts: pasts, paused: given.map(\.isPaused), first: first, today: today, calendar: calendar, ledger: ledger) : nil
         let before: DailyProgressCache.Before
         if let key, let known = cache?.before(for: key) {
             before = known
@@ -1428,8 +1434,8 @@ public struct DailyProgress: Hashable, Sendable {
         let counts = decks.indices.map { decks[$0].owed(now: now, calendar: calendar, newCardAllowance: allowances[$0]) }
         let owed = counts.reduce(0) { $0 + $1.total }
         let owedNew = counts.reduce(0) { $0 + $1.newAtDayStart }
-        let done = decks.reduce(0) { $0 + $1.done(onDayOf: now, calendar: calendar) }
-        let underway = decks.reduce(0) { $0 + $1.underway(onDayOf: now, calendar: calendar) }
+        let done = given.reduce(0) { $0 + $1.done(onDayOf: now, calendar: calendar) }
+        let underway = given.reduce(0) { $0 + $1.underway(onDayOf: now, calendar: calendar) }
         let ring = DailyRing(done: done, goal: DailyGoal.goal(done: done, owed: owed, plan: startRounds.goal), underway: underway)
         // A day that began with an empty plan has the plan as it stands, which is new cards the learner
         // is doing: they are its rounds.
@@ -1448,7 +1454,7 @@ public struct DailyProgress: Hashable, Sendable {
             worked: startPace.seconds(newCards: newDoneByDay[today] ?? 0, otherCards: otherDoneByDay[today] ?? 0), closed: ring.isGoalMet, studied: ring.done > 0,
             filled: startRounds.filled)
         // The words learned: the ledger's count at the end of the last day before today, and today's gain from the logs.
-        var learned = WordsLearned.total(decks.map { $0.learned(at: now, calendar: calendar) })
+        var learned = WordsLearned.total(given.map { $0.learned(at: now, calendar: calendar) })
         var wordsToday = wordsByDay[today] ?? 0
         if let last = before.records[today - 1] {
             learned = WordsLearned(words: last.wordsLearned + max(0, learned.words - learned.wordsAtDayStart), wordsAtDayStart: last.wordsLearned)
@@ -1467,13 +1473,13 @@ public struct DailyProgress: Hashable, Sendable {
         return DailyProgress(
             ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: pace(over: (today - DailyGoal.paceDays)...today), time: time,
             roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: givenAllowances,
-            memory: MemoryEstimate.total(decks.map { $0.memory(at: now, calendar: calendar) }),
+            memory: MemoryEstimate.total(given.map { $0.memory(at: now, calendar: calendar) }),
             learned: learned,
             week: (today - 6...today).map { $0 < first ? nil : closed[$0] ?? false },
-            ladder: decks.map { $0.ladder() }.reduce(into: [Int](repeating: 0, count: MaturityCategory.allCases.count)) { sum, steps in
+            ladder: given.map { $0.ladder() }.reduce(into: [Int](repeating: 0, count: MaturityCategory.allCases.count)) { sum, steps in
                 for index in sum.indices { sum[index] += steps[index] }
             },
-            climbedToday: decks.reduce(0) { $0 + $1.climbs(onDayOf: now, calendar: calendar) }, records: records,
+            climbedToday: given.reduce(0) { $0 + $1.climbs(onDayOf: now, calendar: calendar) }, records: records,
             achievements: Achievements.earned(over: records), ringDays: before.days + [ringToday],
             ledgerUpdates: before.updates)
     }

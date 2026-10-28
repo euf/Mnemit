@@ -3,8 +3,8 @@ import Testing
 
 @testable import VocabCore
 
-/// A paused deck (`LearningOptions.isPaused`) takes no part in the day: `DailyProgress.evaluate` and
-/// `DayBreakdown` leave it out, whatever it holds.
+/// A paused deck (`LearningOptions.isPaused`) asks nothing of the day: `DailyProgress.evaluate` and
+/// `DayBreakdown` leave it out of the plan, whatever it holds. What was done in it stays done.
 extension DailyProgressTests {
     /// `cards` as a deck of the options the other tests use, paused or not.
     func deck(_ cards: [Card], isPaused: Bool = false) throws -> Deck {
@@ -13,21 +13,24 @@ extension DailyProgressTests {
         return try Deck(learningOptions: options, cards: cards)
     }
 
-    /// Everything a progress holds but the allowances, which have a place for each deck given.
+    /// The day a progress asks for: everything but the allowances, which have a place for each deck given, and the words
+    /// in memory, which a paused deck keeps.
     func figures(_ progress: DailyProgress) -> [AnyHashable] {
         [
             progress.ring, progress.streak, progress.cardsLeft, progress.newCardsLeft, progress.pace, progress.time, progress.roundPlan,
-            progress.streakKeptToday, progress.memory,
+            progress.streakKeptToday,
         ]
     }
 
-    @Test func aPausedDeckIsLeftOutOfTheWholeDay() throws {
+    @Test func aPausedDeckIsLeftOutOfTheDaysPlan() throws {
         let active = try deck((0..<20).map { waiting("a\($0)") } + (0..<10).map { fresh("n\($0)") })
         let paused = try deck((0..<30).map { waiting("b\($0)") } + (0..<40).map { fresh("m\($0)") }, isPaused: true)
         let with = evaluate([active, paused])
         let without = evaluate([active])
         #expect(figures(with) == figures(without))
         #expect(with.cardsLeft > 0)
+        // Its words are still in memory.
+        #expect(with.memory.words > without.memory.words)
         // The decks given keep their places: the paused deck has none of the day's new cards.
         #expect(with.newCardAllowances == without.newCardAllowances + [0])
         #expect(evaluate([paused, active]).newCardAllowances == [0] + without.newCardAllowances)
@@ -55,20 +58,36 @@ extension DailyProgressTests {
         #expect(progress.newCardAllowances == [0])
     }
 
-    @Test func whatIsReviewedInAPausedDeckDoesNotFillTheRingOrKeepTheStreak() throws {
+    /// "Study This Deck" on a paused deck is work like any: it fills the ring and keeps the streak, as the cards of Learn 10
+    /// New Words do, and leaves the plan of the other decks as it was.
+    @Test func whatIsReviewedInAPausedDeckFillsTheRingAndKeepsTheStreak() throws {
         let active = try deck((0..<10).map { waiting("a\($0)") })
         var paused = try deck((0..<10).map { waiting("b\($0)") }, isPaused: true)
         reviewPlan(of: &paused, at: now)
         let progress = evaluate([active, paused])
-        #expect(progress.ring == DailyRing(done: 0, goal: 10))
-        #expect(progress.streak == Streak(days: 0, repairCards: nil))
+        #expect(progress.ring == DailyRing(done: 10, goal: 10))
+        #expect(progress.streakKeptToday)
         #expect(progress.cardsLeft == 10)
-        // The same reviews in the deck once it is active.
-        var resumed = paused
-        var options = resumed.learningOptions
-        options.isPaused = false
-        _ = resumed.apply(try #require(DeckChange.changingLearningOptions(options, in: resumed, calendar: calendar)), at: now, calendar: calendar)
-        #expect(evaluate([active, resumed]).ring.done == 10)
+    }
+
+    /// The ring closed over two decks, then one of them paused: the ring stays closed, the streak kept, and the words in
+    /// memory stay what they were.
+    @Test func pausingADeckTakesNothingFromToday() throws {
+        var first = try deck((0..<10).map { waiting("a\($0)") })
+        var second = try deck((0..<10).map { waiting("b\($0)") })
+        reviewPlan(of: &first, at: now)
+        reviewPlan(of: &second, at: now)
+        let before = evaluate([first, second])
+        #expect(before.ring == DailyRing(done: 20, goal: 20))
+        var options = second.learningOptions
+        options.isPaused = true
+        _ = second.apply(try #require(DeckChange.changingLearningOptions(options, in: second, calendar: calendar)), at: now, calendar: calendar)
+        let after = evaluate([first, second])
+        #expect(after.ring.done == 20)
+        #expect(after.ring.isGoalMet)
+        #expect(after.streakKeptToday)
+        #expect(after.streak == before.streak)
+        #expect(after.memory == before.memory)
     }
 
     /// On resume the overdue cards of the days of the pause are due like any: the plan holds them all.

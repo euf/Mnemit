@@ -19,8 +19,8 @@ import VocabCore
 /// for a deck read from its file in `NewCardAllowances.today`, where whoever builds the plan of a
 /// deck from its file finds it.
 ///
-/// A paused deck (`LearningOptions.isPaused`) is in none of it: the evaluation leaves it out, and it gets no
-/// allowance, so its own plan is the one of its limits, which "Study This Deck" takes.
+/// A paused deck (`LearningOptions.isPaused`) asks nothing of the day: the evaluation leaves it out of the plan and
+/// counts its work, and it gets no allowance, so its own plan is the one of its limits, which "Study This Deck" takes.
 ///
 /// The work runs off the main actor, after a short pause that later calls replace, so a
 /// grade doesn't wait for it, and a quick run of grades costs one evaluation. It waits for a card

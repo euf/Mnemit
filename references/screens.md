@@ -384,14 +384,15 @@ the footer's sentence as the threshold's tooltip.
 - `LearningOptions.isPaused`; the key `paused` in `deck.json` is written only when true, same format
   version: an old build drops the key and the deck is active again. The key travels with the options
   and merges by `learningOptionsChanged`, later wins.
-- A paused deck is in none of: plan, goal, rounds, time, allowance (the other decks share it), streak,
-  words learned, widget, reminders, Study. `DailyProgress.evaluate` and `DayBreakdown` skip
-  `DeckActivity.isPaused` (such a deck's place in `newCardAllowances` holds 0; `DailyRingModel` gives
+- A paused deck is in none of: plan, goal, rounds, time, allowance (the other decks share it), widget count,
+  reminders, Study. `DailyProgress.evaluate` and `DayBreakdown` leave `DeckActivity.isPaused` out of the plan
+  and count its work: cards done, pace, streak, words in memory and words learned take every deck, so pausing
+  takes nothing from today (such a deck's place in `newCardAllowances` holds 0; `DailyRingModel` gives
   it no allowance, and its plan follows its own limits). `KnownDeckCounts` counts no cards for it and
   keeps it in `paused`; `TodayDecks` splits Today's sections and the Study queue (`studyQueue`); its
   stream has no `RoundGuide`.
-- The deck still opens: screen, browser and Study This Deck work, and reviews are written as always,
-  but they reach the ring only through cards of active decks.
+- The deck still opens: screen, browser and Study This Deck work, and its cards fill the ring like those of
+  Learn 10 New Words.
 - Today row: swipe and context menu "Pause Deck" / "Resume Deck" (`pause.circle` / `play.circle`;
   `OpenDeck` opens the file, `VocabularyDocument.setPaused` changes it, then it closes). Paused decks
   sit in a "Paused" section at the bottom, grey, without counts or subtitle, swipe and context
