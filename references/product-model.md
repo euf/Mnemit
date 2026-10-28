@@ -167,7 +167,7 @@ Every surface is the entities above and nothing else.
 | Surface | Shows |
 |---|---|
 | **Today** | the date under the title; the Today card: the ring (no number) left, its figures right (Day streak, the next moment with ≈ minutes, Words learned with +today), the week of rings under them, the card opening Progress; the Decks card (rows ≈ min or ✓); the button; empty: the ring and "Add the words you are learning.", New Deck, Shared Decks |
-| **The stream** | the card, the stack, the header: ring, flame and days, ≈ minutes to the next moment; the rests at the moments |
+| **The stream** | the card, the stack, the header: ring and ≈ minutes to the next moment; the rests at the moments, with the streak |
 | **A deck** | its Today card: "≈ 4 min" as the large value, Due, New and Learning as figures beside it; then Cards (browser with filters), Statistics (tiles Cards, Due, New, Suspended, Recall Now; the Retention card), Options |
 | **Progress** | the Streak card (flame, days, best); tiles Days studied, Rings closed, Words learned, Your ring (8 min a day, started at 2.5); the calendar card of rings; Medals; Memory; How It Works |
 | **Widgets** | medium: the Today card (the ring left, the three figures right); small: the ring, the streak and the sentence under it; lock screen: circular the ring with ≈ minutes, rectangular the streak and the sentence beside a small ring, inline "🔥 12 · ≈ 2 min" |

@@ -477,7 +477,7 @@ struct StudyView: View {
     private static let swipeStartDistance: CGFloat = 6
 }
 
-/// The left of the bar, after the close button: today's ring, the streak's flame and the minutes to the next moment, and the stage before it when the
+/// The left of the bar, after the close button: today's ring and the minutes to the next moment, and the stage before it when the
 /// learner is not at today's plan: practice changes neither the plan nor the schedule, so it
 /// shows no ring.
 ///
@@ -505,8 +505,9 @@ private struct StudyHeader: View {
         .animation(.easeOut(duration: 0.2), value: motion.showsRest && motion.travel >= 1)
     }
 
-    /// A small ring, empty inside, then the flame by the state of the streak with its days ("🔥 12") and the minutes to the next
-    /// moment of the day ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done). For a moment after a done card
+    /// A small ring, empty inside, then the minutes to the next moment of the day ("≈ 2 min": to the streak, to the ring, of
+    /// the reviews left; none once all is done). No streak here: beside the ring the cards fill it would draw the eye, and the
+    /// rests show it. For a moment after a done card
     /// the interval it was given, "in 8 days", takes the place of the text. The ring is first, so it does not move when the
     /// text changes its width.
     @ViewBuilder
@@ -522,7 +523,6 @@ private struct StudyHeader: View {
                 }
             if let progress = ring.progress {
                 let step = NextStep(progress)
-                StreakCount(step: step)
                 ZStack(alignment: .leading) {
                     if let minutes = step.minutes {
                         Text(verbatim: Format.timeLeft(minutes: minutes))

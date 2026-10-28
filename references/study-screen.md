@@ -82,9 +82,8 @@ area and the card's type: `references/design-spec.md` §4.
   added, 0 to 1), ahead of the figures, which wait for the card that speaks (`StudyMotion.shown`,
   caught up when the figures change and no card is leaving). Gain 0 (Forgot) moves nothing. The ring is
   empty inside (`StreamRing`) and goes on over itself past the goal, up to three laps
-  (`DailyRingFigure.fraction`). The streak stands beside it (`StreakCount`: "🔥 12", the flame alone at 0 days; the
-  flame is an outline until today's streak step is done, `flame.fill` in `Color.streak` from the moment it is),
-  then the minutes to the next moment ("≈ 2 min"). The ring does not bump
+  (`DailyRingFigure.fraction`). Beside it the minutes to the next moment ("≈ 2 min"). The streak is not in the bar
+  (EF 28.10: a flame beside the ring draws the eye from the cards filling it); the rests show it. The ring does not bump
   at the streak step: the burst is on the large flame in the title of the Streak kept rest, as the title
   comes in (`StreamRestView`, `flameBurstAt`). A medal bumps and bursts the ring as a card landing in it does
   (`StudyMotion.celebrate()`, called as the medal's toast shows). A done card

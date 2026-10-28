@@ -182,15 +182,14 @@ struct SessionView: View {
         }
     }
 
-    /// Today's ring, empty inside, the streak's flame by its state with its days ("🔥 12") and what the iPhone's bar says: the
-    /// minutes to the next moment of the day, "≈ 4 min". The ring comes first, so it does not move when the
+    /// Today's ring, empty inside, and what the iPhone's bar says: the minutes to the next moment of the day, "≈ 4 min". No
+    /// streak, as on the iPhone: the rests show it. The ring comes first, so it does not move when the
     /// text changes its width.
     private var ringAndFigures: some View {
         HStack(spacing: 8) {
             ProgressRing(fraction: DailyRingFigure.fraction(ring.progress, shown: nil), diameter: 28)
             if let progress = ring.progress {
                 let step = NextStep(progress)
-                StreakCount(step: step)
                 Group {
                     if let minutes = step.minutes {
                         Text(verbatim: Format.timeLeft(minutes: minutes))

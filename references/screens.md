@@ -130,9 +130,8 @@ sizes: `design-spec.md` §4.
   remembers each step's deck). Rounds count what was done in all lanes
   (`SessionDriver.setDoneElsewhere`); the stopwatch runs only in the lane whose card is on screen.
   Tests: `MultiDeckStudyTests`.
-- Header, left, right after the close button: the small ring (`StreamRing`, empty inside), the streak as the flame by its
-  state and its days ("🔥 12", `StreakCount`; the flame alone at 0 days) and the minutes to the next moment of the day beside
-  them ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done); after a done card, for 1.5 s, its
+- Header, left, right after the close button: the small ring (`StreamRing`, empty inside) and the minutes to the next
+  moment of the day beside it (no streak: the rests show it) ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done); after a done card, for 1.5 s, its
   interval ("tomorrow", "in 8 days") takes the text's place. Then an Undo button and the menu "More". A practice names itself
   and has no ring. Closing loses nothing: every grade is saved, and Today picks up the count.
 - The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, a
@@ -606,7 +605,7 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
   (`Color.studyBackdrop`, the card `Color.cardSurface`) over the stack's edges (`StackEdges`, the cards left before the
   next moment, at most four, after the ring too: the cards of Catch Up, of Learn 10 New Words and of Study These Now;
   `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done and, right
-  after it, the day's ring (empty inside), the streak ("🔥 12", `StreakCount`) and the minutes to the next moment of the day as the iPhone's
+  after it, the day's ring (empty inside) and the minutes to the next moment of the day as the iPhone's
   bar says them (`NextStep`: "≈ 4 min"; none once all is done), then Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
   Automatically, disabled at a rest); Show Answer prominent in indigo with a keycap "Space or ↩". The bar of
   the last answer (`UndoChip`) stays under the header. The rests are the iPhone's `StreamRestView`, titles included

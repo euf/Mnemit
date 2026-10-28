@@ -359,8 +359,7 @@ The streak's symbol, drawn by `StreakFlame(state:)` from the `StreakState` of th
 streak step is not done; **kept**, `flame.fill` in `Color.streak`, once it is done; **at risk**, an outline in
 `Color.streak` followed by an `exclamationmark`, on the day after a missed one until the ring closes
 (`DailyProgress.isStreakAtRisk`). It stands in the Day streak figure on Today and in the small widget, in the Streak line of
-the rests and the rectangular widget, as "🔥 12" beside the ring in the stream's header (the flame alone at 0), and on the
-streak card at the top of Progress; it is never inside a ring.
+the rests and the rectangular widget, and on the streak card at the top of Progress; it is never inside a ring.
 VoiceOver says the state: "12-day streak, kept today", "not kept yet" or "at risk".
 _Avoid_: lit and unlit flame, streak icon
 
@@ -370,7 +369,7 @@ secondary at 0 days. It is the first figure of the **Today card** and the small 
 
 **Streak line** (`StreakLine`; RU «строка стрика»):
 The flame and "12-day streak" (`NextStep.streakText`) in one line, in the same form all day: on the rests, in the rectangular
-widget. Hidden at 0 days. The stream's header has the short form `StreakCount`, "🔥 12".
+widget. Hidden at 0 days.
 
 **Today card** (on screen the first card of Today; DE „Heute“; RU «карточка дня»):
 The picture of the day (`TodayCard`): the ring on the left, its three figures on the right (the **Day streak**, the next

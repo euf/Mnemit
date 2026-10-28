@@ -207,22 +207,3 @@ struct StreakLine: View {
         }
     }
 }
-
-/// The streak in a row with little room, "🔥 12": the stream's header, after its ring. The flame alone without a streak.
-struct StreakCount: View {
-    var step: NextStep
-
-    var body: some View {
-        HStack(spacing: 4) {
-            StreakFlame(state: step.state)
-                .font(.body.weight(.semibold))
-            if step.days > 0 {
-                Text(verbatim: step.days.formatted(.number.grouping(.never)))
-                    .font(.subheadline.weight(.semibold))
-                    .monospacedDigit()
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(step.days > 0 ? Text(verbatim: step.streakSpoken) : Text("Start your streak"))
-    }
-}

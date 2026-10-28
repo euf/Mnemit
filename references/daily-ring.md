@@ -194,11 +194,10 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   your streak", "Start your streak", "Ring closed". `priceLine` is what a rest says under its title ("≈ 5 min to close the
   ring", "≈ 12 min of reviews left"); `short` is "12 · ≈ 2 min" for a line with room for little.
 - **The streak line** (`StreakLine`): `StreakFlame`, then "12-day streak" (`NextStep.streakText`), hidden at 0 days. VoiceOver
-  reads `streakSpoken`: "12-day streak, kept today", "not kept yet" or "at risk". `StreakCount` is the header form, "🔥 12",
-  the flame alone at 0 days.
+  reads `streakSpoken`: "12-day streak, kept today", "not kept yet" or "at risk".
 - **Where they stand.** Today draws the figures (`TodayCard`, `Shared/Session/TodaySummary.swift`: the ring, Day streak, the
   moment, Words learned, the week). The rests carry the streak line in their chip and the price line under their title; the
-  stream's header is the ring, `StreakCount` and "≈ N min"; the small and rectangular widgets say the sentence, the medium
+  stream's header is the ring and "≈ N min", no streak; the small and rectangular widgets say the sentence, the medium
   shows the figures, the inline one "🔥 12 · ≈ 2 min"; the reminders take its streak and its "≈ 2 min". `DailyRingView` has no
   popover and is no button. Sizes, colours and VoiceOver: `design-spec.md` §5.7.
 - **The stack** is drawn as the cards left before the next moment, up to four edges, never as a number. Past the goal, after
