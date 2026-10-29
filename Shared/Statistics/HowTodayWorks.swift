@@ -82,7 +82,7 @@ struct HowTodayWorks: Equatable, Sendable {
                 continue
             }
             let share = breakdown.decks[index]
-            let new = deck.options.newCardsPerSession.map { $0.formatted() } ?? "—"
+            let new = deck.options.newCardsPerSession.map { $0.formatted() } ?? String(localized: "Auto")
             rows.append(
                 .value(
                     label: name(of: deck, at: index, of: decks.count), value: share.admitted.formatted(),

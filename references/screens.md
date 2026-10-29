@@ -378,14 +378,14 @@ the destructive button "Restore Defaults", Cancel) comes first. It puts every op
 (`LearningOptions.restoringDefaults()`).
 
 The iPhone's form (`DeckOptionsScreen`) saves every change at once, one undo step each. Top to bottom:
-**Daily Limits** (New cards/day and Maximum reviews/day, both "—" by default, each a `LimitStepper`);
+**Daily Limits** (New cards/day, Auto by default, and Maximum reviews/day, No limit by default, each a `LimitStepper`);
 **FSRS** (Desired retention, 70–97 %); **Lapses** (Leech threshold, N lapses or Off, and Leech action,
 Keep Card or Suspend Card, `LearningOptions.leechAction`); **Advanced** (pushed screen: Maximum interval, Learning steps,
 and the section FSRS Parameters with Optimize); and, at the foot of the form only, a section with the destructive
 button Restore Defaults and the footer "Your FSRS parameters stay: they come from your reviews.", which the
 confirmation dialog repeats. Restore Defaults is one undo step named "Restore Defaults"
-(`VocabularyDocument.restoreDefaultLearningOptions()`). A `LimitStepper` shows "—" first (VoiceOver reads Off), plus
-from it gives 5 (New cards/day) or 10 (Maximum reviews/day), plus stops at 100 and 500, minus from 1 gives "—" again.
+(`VocabularyDocument.restoreDefaultLearningOptions()`). A `LimitStepper` shows its word for no number first (Auto, No limit), plus
+from it gives 5 (New cards/day) or 10 (Maximum reviews/day), plus stops at 100 and 500, minus from 1 gives that word again.
 The deck's setting "Spread out intervals" is no longer offered; `fuzzing` stays in the model and is on.
 
 The Mac's sheet (`DeckOptionsView`) has the same rows in one form, with Advanced (Maximum interval, Learning steps) folded

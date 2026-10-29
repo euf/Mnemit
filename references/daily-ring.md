@@ -53,7 +53,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   new cards, which are the deck's share of the allowance `newCardAllowance`, or exactly its New cards/day where the deck
   sets it; overdue cards are part of it (Backlog below). `nil` instead of an allowance means only a deck's own New
   cards/day cuts the new cards: tests and tools count that way.
-- A deck with **Maximum reviews/day** (`maximumReviewsPerDay`, Anki's name; “—” by default) puts at most that many cards in
+- A deck with **Maximum reviews/day** (`maximumReviewsPerDay`, Anki's name; No limit by default) puts at most that many cards in
   the review phase into the plan: the review cards already reviewed on the study day count against it, learning cards
   and new cards are no part of it. The due reviews beyond it, the least urgent, stay out of the plan and the goal until the
   next study day (`StudySession.counts` treats them as buried: `nextDue` is the next study day). At the start of a day the
@@ -148,7 +148,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   sizes them by the review workload one can sustain, and the day's time already holds that workload: as the
   reviews of earlier new cards grow, the time left for new ones shrinks. A second bound that looked a week ahead
   never set the allowance on any simulated or real learner and is gone (`ring-design.md`).
-- A deck with **New cards/day** set (`newCardsPerSession`, Anki's name; “—” by default, the ring decides) takes exactly that many new
+- A deck with **New cards/day** set (`newCardsPerSession`, Anki's name; Auto by default, the ring decides) takes exactly that many new
   cards a day, of both directions, outside the allowance, and doesn't reduce what the other decks get. The allowance is
   split over the decks without it from one queue over those decks: new words newest addition first, opened Meaning →
   Word cards alternating with them one for one (`references/scheduling.md`). Each deck's own queue is a

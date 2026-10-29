@@ -33,7 +33,7 @@ options counted the cards of each direction apart.
 - **Each deck's share.** The allowance is split over the decks without New cards/day from that one queue:
   `DailyGoal.split(_:overQueues:)` over each deck's `DailyGoal.NewQueue`, kept as
   `DeckActivity.History.newQueueToday`. Within a deck its own cards alternate the same way.
-- **New cards/day** (`newCardsPerSession`, Anki's name, in Daily Limits; “—” by default, the ring decides) is the one deck option for new
+- **New cards/day** (`newCardsPerSession`, Anki's name, in Daily Limits; Auto by default, the ring decides) is the one deck option for new
   cards. A deck that sets it takes exactly that many new cards a day, of both directions, as in Anki: outside the
   allowance, and without reducing what the other decks get. A deck with it gets its own queue's count.
 - **Gone options:** Meaning → Word New per day, Unlock after N days and Cards per session (a stream's segment is the
@@ -67,7 +67,7 @@ Meaning → Word reviews.
 The deck options screens took Anki's names, so an Anki veteran finds each setting where they expect it: Desired retention,
 Leech threshold, Leech action (Keep Card, Suspend Card), Maximum interval, Learning steps, Optimize. The option
 "Spread out intervals" went; `fuzzing` stays in the model, on. Maximum reviews/day joined New cards/day under Daily
-Limits (`LearningOptions.maximumReviewsPerDay`, “—” by default): at most that many review-phase cards a study day, the
+Limits (`LearningOptions.maximumReviewsPerDay`, No limit by default): at most that many review-phase cards a study day, the
 reviews already made today counted, the due ones beyond it waiting for the next days, the most urgent first. It touches
 neither the new cards nor the cards in learning. Every option row has a "?" button with a popover of plain words for
 a newcomer, and Restore Defaults puts the options back to their defaults, keeping the FSRS parameters and the pause.

@@ -17,15 +17,15 @@ struct DeckOptionsScreen: View {
         let options = document.deck.learningOptions
         Form {
             Section {
-                LimitStepper(title: "New cards/day", value: document.option(\.newCardsPerSession), step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
+                LimitStepper(title: "New cards/day", unset: "Auto", value: document.option(\.newCardsPerSession), step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
                     .helpButton(
-                        "How many new cards this deck gives a day. — lets Mnemit decide from your day: fewer when reviews pile up, more when you keep up. A number takes exactly that many, as in Anki."
+                        "How many new cards this deck gives a day. Auto lets Mnemit decide from your day: fewer when reviews pile up, more when you keep up. A number takes exactly that many, as in Anki."
                     )
                 LimitStepper(
-                    title: "Maximum reviews/day", value: document.option(\.maximumReviewsPerDay), step: 10, ceiling: 500, range: LearningOptions.reviewLimitRange
+                    title: "Maximum reviews/day", unset: "No limit", value: document.option(\.maximumReviewsPerDay), step: 10, ceiling: 500, range: LearningOptions.reviewLimitRange
                 )
                 .helpButton(
-                    "The most review cards this deck asks a day. — asks every card that is due, which keeps your memory on schedule. A number leaves the rest for the next days, as in Anki."
+                    "The most review cards this deck asks a day. No limit asks every card that is due, which keeps your memory on schedule. A number leaves the rest for the next days, as in Anki."
                 )
             } header: {
                 Text("Daily Limits")

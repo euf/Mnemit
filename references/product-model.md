@@ -68,7 +68,7 @@ takes exactly that many instead.
 measured pace; due cards first, then new). The ring is the cards done against that goal. The goal never grows with
 a break: a backlog stays in the plan and waits after the ring.
 
-**Which new cards.** The one deck option for new cards is **New cards/day**, Anki's name for it (“—” by default, the ring decides). A deck
+**Which new cards.** The one deck option for new cards is **New cards/day**, Anki's name for it (Auto by default, the ring decides). A deck
 that has it set takes exactly that many new cards a day, of both directions, as in Anki: outside the day's allowance,
 and without reducing what the other decks get. Every other deck gets its share of the ring's allowance (the day's time
 minus the reviews) from one queue over those decks, the decks that aren't paused. New words come newest addition first:

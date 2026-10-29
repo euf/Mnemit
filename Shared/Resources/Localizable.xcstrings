@@ -4654,6 +4654,28 @@
         }
       }
     },
+    "Auto": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αυτόματα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Авто"
+          }
+        }
+      }
+    },
     "Average chance of recall now, over cards in review.": {
       "localizations": {
         "de": {
@@ -7847,24 +7869,24 @@
         }
       }
     },
-    "How many new cards this deck gives a day. — lets Mnemit decide from your day: fewer when reviews pile up, more when you keep up. A number takes exactly that many, as in Anki.": {
+    "How many new cards this deck gives a day. Auto lets Mnemit decide from your day: fewer when reviews pile up, more when you keep up. A number takes exactly that many, as in Anki.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wie viele neue Karten dieser Stapel pro Tag gibt. — überlässt es deinem Tag: weniger, wenn sich Wiederholungen stauen, mehr, wenn du mithältst. Eine Zahl nimmt genau so viele, wie in Anki."
+            "value": "Wie viele neue Karten dieser Stapel pro Tag gibt. „Auto“ überlässt es deinem Tag: weniger, wenn sich Wiederholungen stauen, mehr, wenn du mithältst. Eine Zahl nimmt genau so viele, wie in Anki."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Πόσες νέες κάρτες δίνει αυτή η τράπουλα την ημέρα. Το — αφήνει το Mnemit να αποφασίσει από τη μέρα σου: λιγότερες όταν μαζεύονται επαναλήψεις, περισσότερες όταν προλαβαίνεις. Ένας αριθμός παίρνει ακριβώς τόσες, όπως στο Anki."
+            "value": "Πόσες νέες κάρτες δίνει αυτή η τράπουλα την ημέρα. Το «Αυτόματα» αφήνει το Mnemit να αποφασίσει από τη μέρα σου: λιγότερες όταν μαζεύονται επαναλήψεις, περισσότερες όταν προλαβαίνεις. Ένας αριθμός παίρνει ακριβώς τόσες, όπως στο Anki."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сколько новых карточек колода даёт в день. — оставляет решение твоему дню: меньше, когда копятся повторения, больше, когда ты успеваешь. Число берёт ровно столько, как в Anki."
+            "value": "Сколько новых карточек колода даёт в день. «Авто» оставляет решение твоему дню: меньше, когда копятся повторения, больше, когда ты успеваешь. Число берёт ровно столько, как в Anki."
           }
         }
       }
@@ -9955,6 +9977,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Колод пока нет"
+          }
+        }
+      }
+    },
+    "No limit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Limit"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Χωρίς όριο"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без лимита"
           }
         }
       }
@@ -13523,28 +13567,6 @@
         }
       }
     },
-    "The most review cards this deck asks a day. — asks every card that is due, which keeps your memory on schedule. A number leaves the rest for the next days, as in Anki.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wie viele Wiederholungskarten dieser Stapel pro Tag höchstens fragt. — fragt jede fällige Karte; so bleibt dein Gedächtnis im Plan. Eine Zahl lässt den Rest für die nächsten Tage, wie in Anki."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι περισσότερες κάρτες επανάληψης που ζητά αυτή η τράπουλα την ημέρα. Το — ζητά κάθε κάρτα που είναι προς επανάληψη, ώστε η μνήμη σου να μένει στο πρόγραμμα. Ένας αριθμός αφήνει τις υπόλοιπες για τις επόμενες ημέρες, όπως στο Anki."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сколько карточек на повторение колода спрашивает в день, не больше. — спрашивает каждую карточку, срок которой пришёл: так память остаётся в графике. Число оставляет остальные на следующие дни, как в Anki."
-          }
-        }
-      }
-    },
     "TSV (tab-separated)": {
       "localizations": {
         "de": {
@@ -13805,6 +13827,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Первые две минуты дня сохраняют твой стрик. После одного пропущенного дня его спасает закрытое кольцо следующего дня; два пропущенных дня его обрывают."
+          }
+        }
+      }
+    },
+    "The most review cards this deck asks a day. No limit asks every card that is due, which keeps your memory on schedule. A number leaves the rest for the next days, as in Anki.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie viele Wiederholungskarten dieser Stapel pro Tag höchstens fragt. „Kein Limit“ fragt jede fällige Karte; so bleibt dein Gedächtnis im Plan. Eine Zahl lässt den Rest für die nächsten Tage, wie in Anki."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι περισσότερες κάρτες επανάληψης που ζητά αυτή η τράπουλα την ημέρα. Το «Χωρίς όριο» ζητά κάθε κάρτα που είναι προς επανάληψη, ώστε η μνήμη σου να μένει στο πρόγραμμα. Ένας αριθμός αφήνει τις υπόλοιπες για τις επόμενες ημέρες, όπως στο Anki."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сколько карточек на повторение колода спрашивает в день, не больше. «Без лимита» спрашивает каждую карточку, срок которой пришёл: так память остаётся в графике. Число оставляет остальные на следующие дни, как в Anki."
           }
         }
       }

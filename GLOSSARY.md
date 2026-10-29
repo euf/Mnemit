@@ -231,13 +231,13 @@ The button at the bottom of the options screens. After a confirmation it puts ev
 (`LearningOptions.restoringDefaults()`). One undo step on the iPhone; on the Mac it fills the sheet, and Save applies it.
 
 **New cards/day** (the deck option, Anki's name for it; DE „Tageshöchstwert für neue Karten“; RU «новых карточек в день»):
-`LearningOptions.newCardsPerSession`, “—” by default, the ring decides. A deck that sets it takes exactly that many new cards a study day,
+`LearningOptions.newCardsPerSession`, Auto by default, the ring decides. A deck that sets it takes exactly that many new cards a study day,
 of both directions, as in Anki: outside the day's allowance (**Admission**), and without reducing what the other decks
 get. It is the one option for new cards.
 _Avoid_: new cards per session, new-card limit, quota
 
 **Maximum reviews/day** (the deck option, Anki's name for it; DE „Tageshöchstwert für Wiederholungskarten“; RU «максимум повторяемых в день»):
-`LearningOptions.maximumReviewsPerDay`, "—" by default: every Review that is due is asked. A number is the most cards in the
+`LearningOptions.maximumReviewsPerDay`, No limit by default: every Review that is due is asked. A number is the most cards in the
 Review phase a study day asks from the Deck; Reviews already made today count against it, and the due ones beyond it
 wait for the next days, the most urgent first. Learning cards and New cards are not part of it.
 _Avoid_: review limit, review quota

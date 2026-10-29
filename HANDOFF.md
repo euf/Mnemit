@@ -31,7 +31,7 @@
 - New cards: the learner's unit is the word (a note with its cards). The ring's allowance says how many new cards the day
   takes, one queue over all decks that aren't paused says which (new words newest addition first, opened Meaning → Word
   cards alternating with them one for one, `references/scheduling.md`); a Meaning → Word card opens at a 7-day interval
-  (`StudySession.unlockDays`). The one deck option for new cards is New cards/day, Anki's name (“—” by default, the ring decides): that many
+  (`StudySession.unlockDays`). The one deck option for new cards is New cards/day, Anki's name (Auto by default, the ring decides): that many
   a day, outside the allowance. ADR 0008; `references/product-model.md` §5 and §10.
 - Speech: words are rendered ahead and played from memory (`GreekSpeech`, `SpeechLog` writes
   `Library/Caches/speech.log`, read off the iPhone with `devicectl device copy from`); EF heard no stutter.

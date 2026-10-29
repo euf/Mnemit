@@ -10,11 +10,11 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
   `StudySession.counts(for:at:calendar:)`. It selects like the day's plan, so the numbers of Today's
   deck rows, of the deck screen and of the Mac's windows match what the stream will take: the whole plan.
 - How many new cards a deck takes is the ring's allowance (`DailyGoal.newCardsAllowed`, `references/daily-ring.md`),
-  unless the deck sets **New cards/day** (`newCardsPerSession`, Anki's name; “—” by default, the ring decides). A deck that sets it takes
+  unless the deck sets **New cards/day** (`newCardsPerSession`, Anki's name; Auto by default, the ring decides). A deck that sets it takes
   exactly that many new cards of both directions per study day (it turns at 4 am), as in Anki: outside the allowance, and
   without reducing what the other decks get. A card whose first review fell on the current day is subtracted from the
   count, so entering the stream again takes no new cards beyond it, and the next day restores the full count.
-- **Maximum reviews/day** (`maximumReviewsPerDay`, Anki's name; “—” by default, every due review is asked) caps the review
+- **Maximum reviews/day** (`maximumReviewsPerDay`, Anki's name; No limit by default, every due review is asked) caps the review
   cards of the plan, in `StudySession.selection`, so the counts, the plan, the goal and the stream follow. At most that many
   cards in the review phase a study day: Cards in learning or relearning and new cards are no part of it. The review
   cards already reviewed on the current study day count against it (`StudySession.reviewsDone`: for each card reviewed

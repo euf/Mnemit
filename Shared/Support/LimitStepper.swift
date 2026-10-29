@@ -1,12 +1,14 @@
 import SwiftUI
 
 /// A daily limit of the deck, New cards/day or Maximum reviews/day, as Anki names them, as one stepper whose first
-/// step is "—", no limit of the deck's own: for New cards/day the day's ring decides, for Maximum reviews/day every
-/// review that is due is asked. Plus from "—" gives `step`, minus from the lowest number gives "—" again, plus stops
+/// step is `unset`, no limit of the deck's own: for New cards/day the day's ring decides, for Maximum reviews/day every
+/// review that is due is asked. Plus from `unset` gives `step`, minus from the lowest number gives `unset` again, plus stops
 /// at `ceiling`.
 /// A value above `ceiling`, as another app or a file may have set, shows as it is, and minus takes it down.
 struct LimitStepper: View {
     var title: LocalizedStringKey
+    /// What the stepper shows without a number: Auto for New cards/day, No limit for Maximum reviews/day.
+    var unset: LocalizedStringKey
     @Binding var value: Int?
     /// What one press of plus or minus adds or takes.
     var step: Int
@@ -23,18 +25,18 @@ struct LimitStepper: View {
                 if let value {
                     Text(value, format: .number)
                 } else {
-                    Text(verbatim: "—").accessibilityLabel(Text("Off"))
+                    Text(unset)
                 }
             }
         }
     }
 
-    /// The value after plus: `step` from "—", then a step more, at most `ceiling`.
+    /// The value after plus: `step` from `unset`, then a step more, at most `ceiling`.
     static func raised(_ value: Int?, step: Int, ceiling: Int) -> Int? {
         min(ceiling, (value ?? 0) + step)
     }
 
-    /// The value after minus: a step less, never below `lowerBound`; "—" from `lowerBound`.
+    /// The value after minus: a step less, never below `lowerBound`; `unset` from `lowerBound`.
     static func lowered(_ value: Int?, step: Int, lowerBound: Int) -> Int? {
         guard let value, value > lowerBound else { return nil }
         return max(lowerBound, value - step)
