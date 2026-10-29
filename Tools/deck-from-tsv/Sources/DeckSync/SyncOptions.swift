@@ -24,16 +24,12 @@ public enum SyncLimit: Equatable, Sendable {
 /// The learning options a run sets; every option left `nil` keeps the deck's value.
 public struct OptionOverrides: Equatable, Sendable {
     public var newPerSession: SyncLimit?
-    public var newProductionPerSession: SyncLimit?
-    public var unlockDays: Int?
 
     public init() {}
 
     func applied(to options: LearningOptions) -> LearningOptions {
         var options = options
         if let newPerSession { options.newCardsPerSession = newPerSession.value }
-        if let newProductionPerSession { options.newProductionPerSession = newProductionPerSession.value }
-        if let unlockDays { options.productionUnlockDays = unlockDays }
         return options
     }
 
@@ -43,12 +39,6 @@ public struct OptionOverrides: Equatable, Sendable {
         var lines: [String] = []
         if before.newCardsPerSession != after.newCardsPerSession {
             lines.append("new per session \(limit(before.newCardsPerSession)) → \(limit(after.newCardsPerSession))")
-        }
-        if before.newProductionPerSession != after.newProductionPerSession {
-            lines.append("new production per session \(limit(before.newProductionPerSession)) → \(limit(after.newProductionPerSession))")
-        }
-        if before.productionUnlockDays != after.productionUnlockDays {
-            lines.append("unlock days \(before.productionUnlockDays) → \(after.productionUnlockDays)")
         }
         return lines
     }
@@ -71,9 +61,8 @@ public struct SyncOptions: Equatable, Sendable {
 
     public static let usage = """
         usage: deck-from-tsv <cards.tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR]
-                             [--new-per-session N|none] [--new-production-per-session N|none]
-                             [--unlock-days N] [--renew NOTES] [--remove NOTES]
-        --new-per-session and --new-production-per-session keep their names; the limits hold per study day.
+                             [--new-per-session N|none] [--renew NOTES] [--remove NOTES]
+        --new-per-session N sets the deck's New cards/day, none clears it so the day's ring decides; the name stays.
         --renew NOTES: the new cards of the word keys in the file, one per line, become today's addition in that
         order and come first among the new cards.
         --remove NOTES: the cards of the word keys in the file that were never studied leave the deck.
@@ -102,14 +91,6 @@ public struct SyncOptions: Equatable, Sendable {
             case "--backup-dir": backupDirectory = URL(fileURLWithPath: try value(of: argument))
             case "--new-per-session":
                 overrides.newPerSession = try SyncLimit(argument: try value(of: argument), flag: argument, range: LearningOptions.sessionLimitRange)
-            case "--new-production-per-session":
-                overrides.newProductionPerSession = try SyncLimit(argument: try value(of: argument), flag: argument, range: LearningOptions.productionLimitRange)
-            case "--unlock-days":
-                let days = try value(of: argument)
-                guard let count = Int(days), LearningOptions.productionUnlockDaysRange.contains(count) else {
-                    throw SyncError("\(argument) takes a number from 0 to \(LearningOptions.productionUnlockDaysRange.upperBound)")
-                }
-                overrides.unlockDays = count
             case "--renew": renew = URL(fileURLWithPath: try value(of: argument))
             case "--remove": remove = URL(fileURLWithPath: try value(of: argument))
             default:

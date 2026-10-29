@@ -29,7 +29,7 @@ struct DeckHistoryCacheTests {
         var otherDoneByDay: [Int: Int]
         var statesAfter: [Int: [Kept]]
         var starts: [Int: DeckActivity.DayStart]
-        var newCeilingToday: Int
+        var newQueueToday: DailyGoal.NewQueue
 
         init(_ history: DeckActivity.History) {
             days = history.paced.days.mapValues { $0.map { Review(date: $0.date, isNew: $0.isNew, duration: $0.duration, isDone: $0.isDone) } }
@@ -39,7 +39,7 @@ struct DeckHistoryCacheTests {
             otherDoneByDay = history.paced.otherDoneByDay
             statesAfter = history.paced.statesAfter.mapValues { $0.map { Kept(card: $0.card, state: $0.state) } }
             starts = history.starts
-            newCeilingToday = history.newCeilingToday
+            newQueueToday = history.newQueueToday
         }
     }
 
@@ -199,7 +199,6 @@ struct DeckHistoryCacheTests {
                 kind = "options"
                 var options = deck.learningOptions
                 options.newCardsPerSession = [nil, 3, 12][pick(3)]
-                options.productionUnlockDays = [0, 7][pick(2)]
                 options.isPaused = pick(4) == 0
                 if let change = DeckChange.changingLearningOptions(options, in: deck, calendar: calendar) { _ = deck.apply(change, at: now, calendar: calendar) }
             case ..<85:

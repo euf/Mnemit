@@ -37,29 +37,87 @@ struct DailyRoundsTests {
         #expect(DailyGoal.newCardsAllowed(seconds: 2 * 120, otherCards: 21, pace: pace) == 1)
     }
 
-    @Test func theAllowanceIsSharedByTheCeilingsOfTheDecksByLargestRemainder() {
-        // 10 over 30 : 20 : 10 is 5 : 3.33 : 1.67, the rounded-down parts leave 1 card, for the largest remainder.
-        #expect(DailyGoal.split(10, overCeilings: [30, 20, 10]) == [5, 3, 2])
-        #expect(DailyGoal.split(8, overCeilings: [1, 1001]) == [0, 8])
-        // Equal remainders: the earlier deck first.
-        #expect(DailyGoal.split(1, overCeilings: [5, 5]) == [1, 0])
-        #expect(DailyGoal.split(0, overCeilings: [5, 5]) == [0, 0])
+    private typealias Queue = DailyGoal.NewQueue
+    private let queueStart = Date(timeIntervalSince1970: 1_791_216_000)
+
+    private func word(_ day: Int, _ minutes: Double = 0) -> Queue.Entry { .word(day: day, created: queueStart.addingTimeInterval(minutes * 60)) }
+    private func unlocked(_ daysAgo: Double) -> Queue.Entry { .unlocked(learned: queueStart.addingTimeInterval(-daysAgo * 86400)) }
+
+    @Test func theAllowanceIsOneQueueOfTheNewestWordsAcrossTheDecks() {
+        // The words go by the study day of their addition, the later first, whichever deck they are in.
+        let a = Queue(entries: [word(10, 0), word(9, 0), word(1, 0)])
+        let b = Queue(entries: [word(10, 5), word(8, 0)])
+        #expect(DailyGoal.split(1, overQueues: [a, b]) == [1, 0])
+        #expect(DailyGoal.split(2, overQueues: [a, b]) == [1, 1])
+        #expect(DailyGoal.split(3, overQueues: [a, b]) == [2, 1])
+        #expect(DailyGoal.split(4, overQueues: [a, b]) == [2, 2])
+        #expect(DailyGoal.split(5, overQueues: [a, b]) == [3, 2])
+        #expect(DailyGoal.split(0, overQueues: [a, b]) == [0, 0])
     }
 
-    @Test func noDeckGetsMoreThanItsCeilingAndAnAllowanceBeyondTheirSumLeavesThemWhole() {
-        #expect(DailyGoal.split(100, overCeilings: [7, 3, 0]) == [7, 3, 0])
-        #expect(DailyGoal.split(10, overCeilings: [7, 3, 0]) == [7, 3, 0])
-        #expect(DailyGoal.split(9, overCeilings: [7, 3, 0]) == [6, 3, 0])
-        #expect(DailyGoal.split(5, overCeilings: []) == [])
+    @Test func wordsOfOneDayGoByTheirAdditionThenByTheEarlierDeckThenByPlace() {
+        let a = Queue(entries: [word(10, 30), word(10, 30)])
+        let b = Queue(entries: [word(10, 30), word(10, 10)])
+        // b's second word was added first, then come the three added together: a, a, b.
+        #expect(DailyGoal.split(1, overQueues: [a, b]) == [0, 1])
+        #expect(DailyGoal.split(2, overQueues: [a, b]) == [1, 1])
+        #expect(DailyGoal.split(3, overQueues: [a, b]) == [2, 1])
+        // Reversed, the earlier deck of the two still takes the tie.
+        #expect(DailyGoal.split(3, overQueues: [b, a]) == [2, 1])
     }
 
-    @Test func theSplitAddsUpToTheAllowanceWhenTheCeilingsAreEnoughForIt() {
+    @Test func openedProductionCardsAlternateWithTheWordsOldestLearnedFirstAcrossTheDecks() {
+        // Words, newest first: a, a, a. Opened cards, oldest learned first: b (30 days), a (12), b (5).
+        let a = Queue(entries: [word(10), word(9), word(8), unlocked(12)])
+        let b = Queue(entries: [unlocked(5), unlocked(30)])
+        #expect(DailyGoal.split(1, overQueues: [a, b]) == [1, 0])
+        // The word first, then the oldest opened card, which is b's.
+        #expect(DailyGoal.split(2, overQueues: [a, b]) == [1, 1])
+        #expect(DailyGoal.split(3, overQueues: [a, b]) == [2, 1])
+        #expect(DailyGoal.split(4, overQueues: [a, b]) == [3, 1])
+        // The last word, then b's newest learned card.
+        #expect(DailyGoal.split(5, overQueues: [a, b]) == [4, 1])
+        #expect(DailyGoal.split(6, overQueues: [a, b]) == [4, 2])
+        #expect(DailyGoal.split(9, overQueues: [a, b]) == [4, 2])
+        // The longer list goes on alone after the shorter: one word, three opened cards (a's two, then b's).
+        let few = [Queue(entries: [word(3), unlocked(9), unlocked(8)]), Queue(entries: [unlocked(7)])]
+        #expect(DailyGoal.split(2, overQueues: few) == [2, 0])
+        #expect(DailyGoal.split(3, overQueues: few) == [3, 0])
+        #expect(DailyGoal.split(4, overQueues: few) == [3, 1])
+    }
+
+    @Test func aDeckWithNewCardsPerDayKeepsAllItsQueueOutsideTheTotal() {
+        let limited = Queue(entries: [word(10), word(9), unlocked(3), unlocked(2)], isLimited: true)
+        let open = Queue(entries: [word(8), word(7), word(6)])
+        #expect(DailyGoal.split(0, overQueues: [limited, open]) == [4, 0])
+        // The limited deck's cards, though newer than the open deck's, don't take the total's places.
+        #expect(DailyGoal.split(2, overQueues: [limited, open]) == [4, 2])
+        #expect(DailyGoal.split(100, overQueues: [limited, open]) == [4, 3])
+        #expect(DailyGoal.split(2, overQueues: [open, limited]) == [2, 4])
+        #expect(DailyGoal.split(2, overQueues: [limited]) == [4])
+    }
+
+    @Test func noDeckGetsMoreThanItsQueueAndATotalBeyondTheirSumLeavesThemWhole() {
+        let queues = [Queue(entries: Array(repeating: word(5), count: 7)), Queue(entries: [unlocked(1), unlocked(2), unlocked(3)]), Queue()]
+        #expect(DailyGoal.split(100, overQueues: queues) == [7, 3, 0])
+        #expect(DailyGoal.split(10, overQueues: queues) == [7, 3, 0])
+        #expect(DailyGoal.split(9, overQueues: queues) == [6, 3, 0])
+        #expect(DailyGoal.split(5, overQueues: []) == [])
+        #expect(DailyGoal.split(-3, overQueues: queues) == [0, 0, 0])
+    }
+
+    @Test func theSplitAddsUpToTheTotalWhenTheQueuesAreEnoughForIt() {
+        let queues = [
+            Queue(entries: (0..<10).map { word($0 % 4, Double($0)) }),
+            Queue(entries: (0..<6).map { unlocked(Double($0)) } + (0..<4).map { word(2, Double($0)) }),
+            Queue(entries: (0..<5).map { word(9, Double($0)) }, isLimited: true),
+        ]
         for total in 0...40 {
-            for ceilings in [[10, 10, 10], [1, 2, 37], [0, 12, 13], [40]] {
-                let parts = DailyGoal.split(total, overCeilings: ceilings)
-                #expect(parts.reduce(0, +) == min(total, ceilings.reduce(0, +)))
-                #expect(zip(parts, ceilings).allSatisfy { $0 <= $1 })
-            }
+            let parts = DailyGoal.split(total, overQueues: queues)
+            // The limited deck's 5 are outside the total; the other two hold 20.
+            #expect(parts[2] == 5)
+            #expect(parts[0] + parts[1] == min(total, 20))
+            #expect(zip(parts, queues).allSatisfy { $0 <= $1.entries.count })
         }
     }
 

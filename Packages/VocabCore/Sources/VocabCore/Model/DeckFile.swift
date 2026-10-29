@@ -32,11 +32,11 @@ import Foundation
 /// and a merge may then bring back the reviews from before a reset, as it did before.
 /// So did `suspended` and `suspensionChanged` of a card (#290): an older app version
 /// asks a suspended card and drops both on save. A merge with a newer version that
-/// still holds them keeps the card suspended. `note` and `kind` of a card and the
-/// options `newProductionPerSession` and `productionUnlockDays` came
-/// without a new version too: an older app version drops them on save, and its sessions
+/// still holds them keeps the card suspended. `note` and `kind` of a card
+/// came without a new version too: an older app version drops them on save, and its sessions
 /// then ask production cards like any other. The options `revealedRecallWeight` (ADR 0005),
-/// `optimizeFromRevealed`, `caseSensitive` and `newCardOrder` are gone: a deck that has the keys still
+/// `optimizeFromRevealed`, `caseSensitive`, `newCardOrder`, `cardsPerSession`, `newProductionPerSession` and
+/// `productionUnlockDays` are gone: a deck that has the keys still
 /// reads, and the next save leaves them out; an older app version reads their defaults.
 /// `leechThreshold` came the same way: an older app
 /// version drops it, and its sessions suspend no leeches. `leechAction` too: an older app version drops it,
@@ -287,10 +287,7 @@ extension DeckFile {
         var targetRecall: Double
         var maximumInterval: Int
         var steps: Int
-        var cardsPerSession: Int?
         var newCardsPerSession: Int?
-        var newProductionPerSession: Int?
-        var productionUnlockDays: Int
         var fuzzing: Bool
         var parameters: [Double]
         var leechThreshold: Int
@@ -307,10 +304,7 @@ extension DeckFile {
             targetRecall = options.targetRecall
             maximumInterval = options.maximumInterval
             steps = options.steps
-            cardsPerSession = options.cardsPerSession
             newCardsPerSession = options.newCardsPerSession
-            newProductionPerSession = options.newProductionPerSession
-            productionUnlockDays = options.productionUnlockDays
             fuzzing = options.fuzzing
             parameters = options.parameters.weights
             leechThreshold = options.leechThreshold
@@ -331,10 +325,7 @@ extension DeckFile {
             options.targetRecall = targetRecall
             options.maximumInterval = maximumInterval
             options.steps = steps
-            options.cardsPerSession = cardsPerSession
             options.newCardsPerSession = newCardsPerSession
-            options.newProductionPerSession = newProductionPerSession
-            options.productionUnlockDays = productionUnlockDays
             options.fuzzing = fuzzing
             options.parameters = parameters
             options.leechThreshold = leechThreshold
@@ -346,8 +337,7 @@ extension DeckFile {
         }
 
         private enum CodingKeys: String, CodingKey {
-            case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
-            case newProductionPerSession, productionUnlockDays
+            case targetRecall, maximumInterval, steps, newCardsPerSession
             case fuzzing, parameters, leechThreshold, leechAction
             case updatesParametersAutomatically, lastAutoFit, paused
         }
@@ -359,19 +349,10 @@ extension DeckFile {
             maximumInterval = try container.decodeIfPresent(Int.self, forKey: .maximumInterval) ?? defaults.maximumInterval
             steps = try container.decodeIfPresent(Int.self, forKey: .steps) ?? defaults.steps
             // A missing limit takes the default, null means unlimited.
-            cardsPerSession =
-                container.contains(.cardsPerSession)
-                ? try container.decodeIfPresent(Int.self, forKey: .cardsPerSession)
-                : defaults.cardsPerSession
             newCardsPerSession =
                 container.contains(.newCardsPerSession)
                 ? try container.decodeIfPresent(Int.self, forKey: .newCardsPerSession)
                 : defaults.newCardsPerSession
-            newProductionPerSession =
-                container.contains(.newProductionPerSession)
-                ? try container.decodeIfPresent(Int.self, forKey: .newProductionPerSession)
-                : defaults.newProductionPerSession
-            productionUnlockDays = try container.decodeIfPresent(Int.self, forKey: .productionUnlockDays) ?? defaults.productionUnlockDays
             fuzzing = try container.decodeIfPresent(Bool.self, forKey: .fuzzing) ?? defaults.fuzzing
             parameters = try container.decodeIfPresent([Double].self, forKey: .parameters) ?? defaults.parameters
             leechThreshold = try container.decodeIfPresent(Int.self, forKey: .leechThreshold) ?? defaults.leechThreshold
@@ -388,10 +369,7 @@ extension DeckFile {
             try container.encode(maximumInterval, forKey: .maximumInterval)
             try container.encode(steps, forKey: .steps)
             // Written as null when unlimited, so a missing key can mean the default.
-            try container.encode(cardsPerSession, forKey: .cardsPerSession)
             try container.encode(newCardsPerSession, forKey: .newCardsPerSession)
-            try container.encode(newProductionPerSession, forKey: .newProductionPerSession)
-            try container.encode(productionUnlockDays, forKey: .productionUnlockDays)
             try container.encode(fuzzing, forKey: .fuzzing)
             try container.encode(parameters, forKey: .parameters)
             try container.encode(leechThreshold, forKey: .leechThreshold)

@@ -74,7 +74,6 @@ struct SessionTests {
         }
         var learningOptions = LearningOptions()
         learningOptions.fuzzing = false
-        learningOptions.cardsPerSession = nil
         return try Deck(learningOptions: learningOptions, cards: cards)
     }
 
@@ -231,10 +230,9 @@ struct SessionTests {
 
     @Test func sessionSizeIsLimited() throws {
         var deck = try deck(newCards: 10, reviewCards: 10)
-        deck.learningOptions.cardsPerSession = 5
-        #expect(StudySession(deck: deck, at: now, calendar: .testing, random: SeededRandom(seed: 4)).session.totalCount == 5)
-        deck.learningOptions.cardsPerSession = nil
         #expect(StudySession(deck: deck, at: now, calendar: .testing, random: SeededRandom(seed: 4)).session.totalCount == 20)
+        deck = try self.deck(newCards: 150, reviewCards: 150)
+        #expect(StudySession(deck: deck, at: now, calendar: .testing, random: SeededRandom(seed: 4)).session.totalCount == StudySession.segmentSize)
     }
 
     @Test func learningCardsAreIntroducedBeforeReviewAndNewCards() throws {
@@ -255,15 +253,14 @@ struct SessionTests {
         deck.learningOptions = LearningOptions()
         var random = SeededRandom(seed: 8)
         let selected = StudySession.selectCards(from: deck, at: now, calendar: .testing, using: &random)
-        #expect(selected.count == deck.learningOptions.cardsPerSession)
+        #expect(selected.count == StudySession.segmentSize)
         #expect(deck.cards.filter { !$0.isNew }.allSatisfy { selected.contains($0.id) })
     }
 
     @Test func reviewCardsLeastLikelyRecalledFillTheSession() throws {
         var deck = try deck(newCards: 0)
-        deck.learningOptions.cardsPerSession = 30
         func reviewCards(daysSinceLastReview days: Double) -> [Card] {
-            (0..<30).map { index in
+            (0..<StudySession.segmentSize).map { index in
                 var card = Card(question: "r\(index)", answer: "b\(index)")
                 card.learningState = LearningState(
                     phase: .review,
@@ -281,7 +278,7 @@ struct SessionTests {
         deck.cards = reviewCards(daysSinceLastReview: 5) + overdue
         var random = SeededRandom(seed: 8)
         let selected = StudySession.selectCards(from: deck, at: now, calendar: .testing, using: &random)
-        #expect(selected.count == 30)
+        #expect(selected.count == StudySession.segmentSize)
         #expect(Set(selected) == Set(overdue.map(\.id)))
     }
 

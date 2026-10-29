@@ -17,8 +17,9 @@ struct PausedDecksTests {
         StudyCounts(newProduction: 0, newOther: 0, learning: 0, review: total, nextDue: nil)
     }
 
-    func fresh(_ count: Int) -> [Card] {
-        (0..<count).map { Card(text: CardText(question: "n\($0)", answer: "x")!, created: Date()) }
+    /// `count` new cards added `daysAgo` days ago: the day's new cards go to the newest additions first.
+    func fresh(_ count: Int, daysAgo: Double = 0) -> [Card] {
+        (0..<count).map { Card(text: CardText(question: "n\($0)", answer: "x")!, created: Date().addingTimeInterval(-daysAgo * 86400)) }
     }
 
     func deck(_ cards: [Card], isPaused: Bool) throws -> Deck {
@@ -152,16 +153,18 @@ struct PausedDecksTests {
         let directory = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let pausedFile = try write(try deck(fresh(20), isPaused: true), named: "Greek", in: directory)
-        let activeFile = try write(try deck(fresh(20), isPaused: false), named: "Polish", in: directory)
+        let activeFile = try write(try deck(fresh(20, daysAgo: 2), isPaused: false), named: "Polish", in: directory)
         let pausedDocument = try VocabularyDocument(deck: deck(fresh(20), isPaused: true))
-        let activeDocument = try VocabularyDocument(deck: deck(fresh(20), isPaused: false))
+        // Three words of today and seventeen older ones.
+        let activeDocument = try VocabularyDocument(deck: deck(fresh(3) + fresh(17, daysAgo: 3), isPaused: false))
         // What the file of the deck had from a time before it was paused.
         NewCardAllowances.today[pausedFile] = 5
         let ring = DailyRingModel()
 
         await ring.refresh(documents: [pausedDocument, activeDocument], files: [pausedFile, activeFile], reloadFiles: true, delay: .zero).value
         let progress = try #require(ring.progress)
-        // The first day's 150 s hold five new cards, shared by the two decks that take part: three and two.
+        // The first day's 150 s hold five new cards, taken from one queue of the words of the two decks that take part,
+        // newest addition first: the document's three of today, then two of the file's.
         #expect(progress.newCardAllowances == [0, 3, 0, 2])
         #expect(progress.ring.goal == 5)
         #expect(pausedDocument.newCardAllowance == nil)

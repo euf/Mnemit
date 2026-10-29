@@ -497,9 +497,7 @@ struct DailyProgressTests {
     func options() -> LearningOptions {
         var options = LearningOptions()
         options.fuzzing = false
-        options.cardsPerSession = nil
         options.newCardsPerSession = nil
-        options.newProductionPerSession = nil
         return options
     }
 
@@ -535,12 +533,15 @@ struct DailyProgressTests {
         learned(question, onDay: day - interval)
     }
 
-    /// Reviews every card the session of `date` takes, all with Good.
+    /// Reviews every card the plan of `date` holds, segment after segment as the stream takes it, all with Good.
     func reviewPlan(of deck: inout Deck, at date: Date) {
-        var study = StudySession(deck: deck, at: date, calendar: calendar, random: SeededRandom(seed: 1), reviewMode: .revealed)
-        while let id = study.session.currentCardID {
-            let card = study.review(.good, of: deck.card(withID: id)!, with: deck.learningOptions, at: date, calendar: calendar)!
-            deck.cards[deck.index(of: id)!] = card
+        while true {
+            var study = StudySession(deck: deck, at: date, calendar: calendar, random: SeededRandom(seed: 1), reviewMode: .revealed)
+            guard study.session.currentCardID != nil else { return }
+            while let id = study.session.currentCardID {
+                let card = study.review(.good, of: deck.card(withID: id)!, with: deck.learningOptions, at: date, calendar: calendar)!
+                deck.cards[deck.index(of: id)!] = card
+            }
         }
     }
 
@@ -1081,12 +1082,14 @@ struct DailyProgressTests {
         let activity = DeckActivity(deck: deck, calendar: calendar)
         let history = activity.history(from: today - 1, at: now, calendar: calendar)
         #expect(history.starts[today - 1] == .init(other: 0, new: 0))
-        // Today began without them, so they are no part of its plan; the ceiling of the new cards a day
-        // that began now would take counts them.
+        // Today began without them, so they are no part of its plan; the queue of the new cards a day
+        // that began now would take counts them, within the deck's own limit.
         #expect(history.starts[today] == .init(other: 0, new: 0))
-        #expect(history.newCeilingToday == 5)
+        #expect(history.newQueueToday.entries.count == 5)
+        #expect(history.newQueueToday.isLimited)
         #expect(activity.owed(now: now, calendar: calendar).total == 5)
-        #expect(activity.owed(now: now, calendar: calendar, newCardAllowance: 2).total == 2)
+        // A deck with New cards/day takes that many, whatever the allowance of the day is.
+        #expect(activity.owed(now: now, calendar: calendar, newCardAllowance: 2).total == 5)
     }
 
     @Test func aBacklogOfFifteenHundredIsAllInThePlanAndItsGoalIsWhatFitsTheDay() throws {
@@ -1126,10 +1129,15 @@ struct DailyProgressTests {
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == plan)
         #expect(DeckActivity(deck: deck, calendar: calendar).plan(onDayOf: now, calendar: calendar).total == plan)
         // The reviews fill the 133.7 s of the day (the rings of its learning days, as in the test of the plain backlog), so
-        // no new card is admitted and the goal is the 13 reviews that fit.
+        // the day admits no new card; the deck has New cards/day, which is its own number of them outside the day's, and
+        // the goal is the 13 reviews that fit.
         let progress = evaluate([deck])
-        #expect(progress.newCardAllowances == [0])
+        #expect(progress.newCardAllowances == [7])
         #expect(progress.ring == DailyRing(done: 0, goal: 13))
+        // A deck without it gets no new card at all.
+        let free = try Deck(learningOptions: self.options(), cards: onTime + backlog + (0..<30).map { new("n\($0)") })
+        #expect(evaluate([free]).newCardAllowances == [0])
+        #expect(StudySession.counts(for: free, at: now, calendar: calendar, newCardAllowance: 0).total == 1512)
         reviewPlan(of: &deck, at: now)
         #expect(evaluate([deck]).ring == DailyRing(done: plan, goal: 13))
     }
@@ -1178,13 +1186,11 @@ struct DailyProgressTests {
     }
 
     @Test func theSizeOfASessionCapsNeitherThePlanNorWhatIsShown() throws {
-        // The default size of a session, 100, is the size of a segment of the stream, no cap on the plan.
-        var options = options()
-        options.cardsPerSession = LearningOptions().cardsPerSession
-        #expect(options.cardsPerSession == 100)
+        // The size of a session, 100, is the size of a segment of the stream, no cap on the plan.
+        #expect(StudySession.segmentSize == 100)
         let onTime = (0..<12).map { due("t\($0)", onDay: today) }
         let backlog = (0..<1500).map { due("b\($0)", onDay: today - 1 - $0 % 5) }
-        var deck = try Deck(learningOptions: options, cards: onTime + backlog)
+        var deck = try Deck(learningOptions: options(), cards: onTime + backlog)
         let plan = 12 + 1500
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == plan)
         #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 13))
@@ -1282,18 +1288,16 @@ struct DailyProgressTests {
         #expect(progress.ring == DailyRing(done: 22, goal: 15))
     }
 
-    @Test func theLimitsOfTheDeckStillCapTheAllowance() throws {
-        // Free of ceilings, the day's 150 s admit five new cards of 30 s.
+    @Test func theLimitOfTheDeckTakesTheAllowancesPlace() throws {
+        // Free of New cards/day, the day's 150 s admit five new cards of 30 s.
         let free = try Deck(learningOptions: options(), cards: (0..<20).map { fresh("n\($0)") })
         #expect(evaluate([free]).newCardAllowances == [5])
-        // A ceiling of four caps them, one of two caps them further, and one above the five changes nothing.
+        // With it the deck takes that many, fewer or more than the five: the limit is the learner's, as in Anki.
         var limited = options()
-        limited.newCardsPerSession = 4
-        #expect(evaluate([try Deck(learningOptions: limited, cards: (0..<20).map { fresh("n\($0)") })]).newCardAllowances == [4])
-        limited.newCardsPerSession = 2
-        #expect(evaluate([try Deck(learningOptions: limited, cards: (0..<20).map { fresh("n\($0)") })]).newCardAllowances == [2])
-        limited.newCardsPerSession = 9
-        #expect(evaluate([try Deck(learningOptions: limited, cards: (0..<20).map { fresh("n\($0)") })]).newCardAllowances == [5])
+        for limit in [2, 4, 9] {
+            limited.newCardsPerSession = limit
+            #expect(evaluate([try Deck(learningOptions: limited, cards: (0..<20).map { fresh("n\($0)") })]).newCardAllowances == [limit], "limit \(limit)")
+        }
     }
 
     @Test func aPausedDeckTakesNoShareOfTheAllowance() throws {

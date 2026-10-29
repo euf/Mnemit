@@ -82,12 +82,11 @@ struct HowTodayWorks: Equatable, Sendable {
                 continue
             }
             let share = breakdown.decks[index]
-            let new = deck.options.newCardsPerSession.map { $0.formatted() } ?? "∞"
-            let production = deck.options.newProductionPerSession.map { $0.formatted() } ?? "∞"
+            let new = deck.options.newCardsPerSession.map { $0.formatted() } ?? "—"
             rows.append(
                 .value(
                     label: name(of: deck, at: index, of: decks.count), value: share.admitted.formatted(),
-                    note: String(localized: "Ceiling \(share.ceiling) (limits \(new) new / \(production) production)")))
+                    note: String(localized: "Ready \(share.ceiling) (New cards/day: \(new))")))
         }
         rows += [
             .value(label: String(localized: "Cards done"), value: progress.ring.done.formatted()),
@@ -223,7 +222,7 @@ struct HowTodayWorks: Equatable, Sendable {
             .text(
                 String(
                     localized:
-                        "Meaning → Word waits until Word → Meaning reaches the interval in Unlock after. A word is asked one way a day."
+                        "Meaning → Word opens once Word → Meaning has an interval of 7 days. A word is asked one way a day."
                 )),
             .text(
                 String(

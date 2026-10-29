@@ -14,10 +14,12 @@ with no settings.
 
 1. **What the ring asks.** The cards of the day's FSRS plan that fit the day's time T: cards due, overdue included, most
    forgotten first, then new cards in the time left. Due cards beyond T stay in the plan; Catch Up goes on with them.
-2. **New cards.** As many as T leaves after the plan's other cards, within each deck's limit.
+2. **New cards.** As many as T leaves after the plan's other cards (the allowance), shared between the decks from one
+   queue: new words newest addition first, opened Meaning → Word cards alternating with them. A deck that sets New
+   cards/day takes exactly that many, outside the allowance.
 3. **How T moves**, once per study day, as a staircase (Levitt's transformed up-down): × 1.15 after the second ring in a row
    closed on a goal that filled T, and again after every second one; unchanged after the first; × 0.775 after an open ring,
-   which also starts the count again; unchanged after a ring closed on a smaller plan (a deck's limit or an empty deck set the
+   which also starts the count again; unchanged after a ring closed on a smaller plan (a deck's New cards/day or an empty deck set the
    goal), which neither counts nor breaks the run, and after a day without study. The learner is never told the rule: the
    screens show cards, How Today Works says only which way the time went.
 4. **Start and range.** 2.5 minutes before any study; 2 minutes to an hour.
@@ -26,7 +28,7 @@ with no settings.
 6. **The streak** stays apart: the first 2 minutes of cards keep it, the next closed ring repairs one missed day
    (below, "The streak step").
 
-The stack of the day ends with the plan; Push On, ten new words beyond the limits, leaves T as it is (`learning-flow.md`,
+The stack of the day ends with the plan; Push On, ten new words beyond the allowance and New cards/day, leaves T as it is (`learning-flow.md`,
 "The journey"). Earlier rules (5.4: a start of 4 minutes, a ceiling of 30, no hold, a bound by the next week; 5.5: × 1.075
 after each closed ring) are rows of "The alternatives".
 
@@ -374,19 +376,20 @@ first, stays to measure.
 
 ### Production cards after a 7-day interval
 
-Decision: meaning → Greek cards unlock when the recognition card's interval reaches 7 days; separate
-new-card limits.
+Decision: meaning → Greek cards unlock when the recognition card's interval reaches 7 days (a constant,
+`StudySession.unlockDays`); opened cards alternate with the new words one for one, the oldest learned word first, so
+the allowance stays one number and no direction has a limit of its own (ADR 0008).
 
 - `production-cards-research.md` holds the findings and the verdict: the delay itself is untested,
   production is the harder direction and receptive study buys little of it, a first spaced review passed
   is the point Nation's and Terai's argument is about. Confidence low, as that file says.
 - New in this run: nothing read. A search for a staged-against-simultaneous experiment returned a 2026
   paper on spacing by word-knowledge type (https://journals.sagepub.com/doi/10.1177/13621688261449449),
-  unread. Separate limits per direction need no source; Anki limits per deck the same way.
+  unread.
 
 **Measure.** Protocol from `production-cards-research.md` §3: the share of Forgot on production cards'
-first two review-phase reviews against FSRS's expected 10 %. Over 25 % on a deck gated at 7: raise to 14.
-At or below 10 % on a deck gated at 14 or more: lower to 7 or 0. Wait for 100 first reviews of
+first two review-phase reviews against FSRS's expected 10 %. Over 25 % on a deck gated at 7: raise `unlockDays` to 14.
+At or below 10 % on a deck gated at 14 or more: lower it to 7 or drop the gate. Wait for 100 first reviews of
 production cards; at 10 % the standard error of the share is 3 points.
 
 ### One stream across all decks

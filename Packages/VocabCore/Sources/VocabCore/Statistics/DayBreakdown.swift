@@ -22,7 +22,7 @@ public struct DayBreakdown: Hashable, Sendable {
     public struct DeckNewCards: Hashable, Sendable {
         /// The deck's share of the new cards the day's time admits (`DailyProgress.newCardAllowances`).
         public var allowance: Int
-        /// The new cards the deck's own limits take: `newCardsPerSession` and `newProductionPerSession`.
+        /// The new cards the deck could take today: all it has ready, or New cards/day.
         public var ceiling: Int
         /// The new cards the deck admits: its allowance, no more than its ceiling.
         public var admitted: Int
@@ -128,7 +128,7 @@ extension DayBreakdown {
             let allowance = progress.newCardAllowances.indices.contains(index) ? progress.newCardAllowances[index] : 0
             let admitted = min(allowance, history.starts[today]?.new ?? 0)
             plan.newAdmitted += admitted
-            shares.append(DeckNewCards(allowance: allowance, ceiling: history.newCeilingToday, admitted: admitted))
+            shares.append(DeckNewCards(allowance: allowance, ceiling: history.newQueueToday.entries.count, admitted: admitted))
         }
         self.plan = plan
         self.decks = shares

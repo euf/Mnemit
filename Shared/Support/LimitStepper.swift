@@ -1,42 +1,40 @@
 import SwiftUI
 
-/// A count the learner may leave unlimited, as one stepper whose last step is "Unlimited":
-/// plus past `ceiling` gives Unlimited, minus from Unlimited comes back to `ceiling`. A value
-/// above `ceiling`, as another app or a file may have set, shows as it is, and plus from it
-/// gives Unlimited.
+/// New cards/day, as Anki names it, as one stepper whose first step is "—", no limit of the deck's own: the day's
+/// ring decides. Plus from "—" gives `step`, minus from the lowest number gives "—" again, plus stops at `ceiling`.
+/// A value above `ceiling`, as another app or a file may have set, shows as it is, and minus takes it down.
 struct LimitStepper: View {
     var title: LocalizedStringKey
     @Binding var value: Int?
     /// What one press of plus or minus adds or takes.
     var step: Int
-    /// The last number; one step further is Unlimited.
+    /// The highest number plus reaches.
     var ceiling: Int
     var range: ClosedRange<Int>
 
     var body: some View {
         Stepper(
-            onIncrement: value == nil ? nil : { value = Self.raised(value, step: step, ceiling: ceiling) },
-            onDecrement: value == range.lowerBound ? nil : { value = Self.lowered(value, step: step, ceiling: ceiling, lowerBound: range.lowerBound) }
+            onIncrement: (value ?? 0) >= ceiling ? nil : { value = Self.raised(value, step: step, ceiling: ceiling) },
+            onDecrement: value == nil ? nil : { value = Self.lowered(value, step: step, lowerBound: range.lowerBound) }
         ) {
             ValueLabel(title) {
                 if let value {
                     Text(value, format: .number)
                 } else {
-                    Text("Unlimited")
+                    Text(verbatim: "—").accessibilityLabel(Text("Off"))
                 }
             }
         }
     }
 
-    /// The value after plus: `nil`, Unlimited, once it passes `ceiling`.
+    /// The value after plus: `step` from "—", then a step more, at most `ceiling`.
     static func raised(_ value: Int?, step: Int, ceiling: Int) -> Int? {
-        guard let value else { return nil }
-        return value + step > ceiling ? nil : value + step
+        min(ceiling, (value ?? 0) + step)
     }
 
-    /// The value after minus: `ceiling` from Unlimited, never below `lowerBound`.
-    static func lowered(_ value: Int?, step: Int, ceiling: Int, lowerBound: Int) -> Int? {
-        guard let value else { return ceiling }
+    /// The value after minus: a step less, never below `lowerBound`; "—" from `lowerBound`.
+    static func lowered(_ value: Int?, step: Int, lowerBound: Int) -> Int? {
+        guard let value, value > lowerBound else { return nil }
         return max(lowerBound, value - step)
     }
 }

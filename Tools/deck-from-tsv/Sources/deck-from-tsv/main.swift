@@ -2,8 +2,7 @@ import DeckSync
 import Foundation
 
 // deck-from-tsv <cards.tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR]
-//               [--new-per-session N|none] [--new-production-per-session N|none]
-//               [--unlock-days N] [--renew NOTES] [--remove NOTES]
+//               [--new-per-session N|none] [--renew NOTES] [--remove NOTES]
 //
 // Syncs a deck with a TSV in place and never loses progress; see `SyncPlan` and
 // `SyncOptions.usage`.

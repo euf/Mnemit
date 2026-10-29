@@ -98,28 +98,31 @@ public struct StudySession: Sendable {
     /// Recall probabilities are rounded down to steps of `1 / recallBuckets`, so
     /// review cards of similar urgency get mixed.
     static let recallBuckets = 50.0
+    /// Days the interval of a word's Word → Meaning card must have reached before its Meaning → Word card opens.
+    public static let unlockDays = 7
+    /// The most cards one session, a segment of the study stream, takes. The plan of the day, and the goal made of
+    /// it, isn't capped by it: the stream takes the plan segment after segment.
+    public static let segmentSize = 100
 
     /// Due cards in the order of their `Urgency`, cards of the same urgency at
-    /// random. At most `cardsPerSession` cards are selected.
+    /// random. At most `segmentSize` cards are selected.
     ///
     /// Cards of a note (`Card.note`) take part as follows:
     /// - A new production card waits until every recognition card of its note is in the
-    ///   review phase with a scheduled interval of `productionUnlockDays` or more.
+    ///   review phase with a scheduled interval of `unlockDays` or more.
     /// - Siblings are buried: a new or review card is left out for the day if another
     ///   card of its note was reviewed on the current study day or is already selected.
     ///   Learning and relearning cards are never left out. Skipping changes no card.
-    /// - New cards fill their limits newest addition first (`newestAdditionFirst(_:calendar:)`): production cards up to
-    ///   `newProductionPerSession`, all others up to `newCardsPerSession`. The limits
-    ///   hold for the study day: cards first reviewed on the current study day, in this
-    ///   session or an earlier one, are subtracted from them. Unlocked production cards are
-    ///   the exception to the order: they go by when their words were learned, see
-    ///   `productionOldestLearnedFirst(_:in:)`.
-    /// - `newCardAllowance` is one more ceiling for the new cards of the study day, next to those
-    ///   limits: the share of the day's new cards (`DailyGoal.newCardsAllowed`) that falls to this
-    ///   deck. Cards first reviewed on the current study day count against it, too. `nil` asks only
-    ///   the limits of the deck.
+    /// - New words come newest addition first (`newestAdditionFirst(_:calendar:)`), and the opened production cards
+    ///   alternate with them one for one, the oldest learned word first (`alternatingUnlocked(_:in:byLearned:)`).
+    ///   They fill `newCardsPerSession` (New cards/day, both kinds together), which holds for the study day: cards
+    ///   first reviewed on the current study day, in this session or an earlier one, are subtracted from it.
+    /// - `newCardAllowance` is how many new cards the study day takes from a deck without New cards/day: the share
+    ///   of the day's new cards (`DailyGoal.newCardsAllowed`) that falls to this deck (`DailyGoal.split(_:overQueues:)`).
+    ///   Cards first reviewed on the current study day count against it, too. A deck with New cards/day takes
+    ///   that many instead, and `nil` asks only the limit of the deck.
     /// - `extraNew` further new cards are taken beyond those limits and beyond
-    ///   `cardsPerSession`, in the same order and under the same lock and burying: the
+    ///   `segmentSize`, in the same order and under the same lock and burying: the
     ///   learner asked for them, see `StudyStream.addNewCards(_:in:at:calendar:)`.
     static func selectCards(
         from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, newCardAllowance: Int? = nil,
@@ -152,7 +155,7 @@ public struct StudySession: Sendable {
 
     /// The plan of the study day of `now` over `deck`, by kind: the very selection of
     /// `selectCards`, so the counts can't drift from what a stream takes, but without the
-    /// size `cardsPerSession` gives one session. That is the size of a segment of the stream,
+    /// size `segmentSize` gives one session. That is the size of a segment of the stream,
     /// which takes the plan segment after segment; the plan, and the goal made of it, is all
     /// of it, so nothing the learner sees grows as the segments go.
     ///
@@ -160,6 +163,21 @@ public struct StudySession: Sendable {
     /// don't depend on the random tie breaks, only which card of a kind is taken does.
     public static func counts(for deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, newCardAllowance: Int? = nil) -> StudyCounts {
         counts(for: deck, at: now, calendar: calendar, extraNew: extraNew, newCardAllowance: newCardAllowance, past: nil)
+    }
+
+    /// The new cards a study day that began at `now` would take from `deck` in their order, limited by New cards/day
+    /// alone, as `DailyGoal.split(_:overQueues:)` shares the day's allowance: each a new word by its addition, or an
+    /// opened production card by when its word was learned (none for a past day's copy, which has no log).
+    static func newQueue(for deck: Deck, at now: Date, calendar: StudyCalendar, past: DayIndex?) -> DailyGoal.NewQueue {
+        var random = SeededRandom(seed: 0)
+        let selected = selection(from: deck, at: now, calendar: calendar, capsSize: false, past: past, using: &random)
+        let learned = past == nil ? learnedDates(in: deck) : [:]
+        let entries = selected.filter { $0.urgency == .new }.sorted { $0.rank < $1.rank }.map { candidate -> DailyGoal.NewQueue.Entry in
+            let card = candidate.card
+            if card.kind == .production { return .unlocked(learned: card.note.flatMap { learned[$0] } ?? .distantFuture) }
+            return .word(day: calendar.dayNumber(for: card.created), created: card.created)
+        }
+        return DailyGoal.NewQueue(entries: entries, isLimited: deck.learningOptions.newCardsPerSession != nil)
     }
 
     /// `counts(for:at:calendar:extraNew:newCardAllowance:)`, or with `past` the plan of a past
@@ -235,16 +253,19 @@ public struct StudySession: Sendable {
         }
         due.sort { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
         new = newestAdditionFirst(new, calendar: calendar)
-        // A past day's copy of the deck has no log to read the dates from, and its counts don't depend on the order.
-        if past == nil { new = productionOldestLearnedFirst(new, in: deck) }
+        // A past day's copy of the deck has no log to read the dates of the words from: its opened production cards
+        // keep the order of their additions.
+        new = alternatingUnlocked(new, in: deck, byLearned: past == nil)
+        for index in new.indices { new[index].rank = index }
 
         var selected: [Candidate] = []
         var selectedNotes = Set<String>()
         let introduced = past.map { $0.introduced[day] ?? (production: 0, other: 0) } ?? newCardsIntroduced(onDayOf: now, in: deck, calendar: calendar)
-        var newLeft = max(0, (options.newCardsPerSession ?? Int.max) - introduced.other)
-        var productionLeft = max(0, (options.newProductionPerSession ?? Int.max) - introduced.production)
-        var allowanceLeft = newCardAllowance.map { max(0, $0 - introduced.production - introduced.other) } ?? Int.max
-        let sizeLimit = capsSize ? options.cardsPerSession ?? Int.max : Int.max
+        var newLeft = max(0, (options.newCardsPerSession ?? Int.max) - introduced.production - introduced.other)
+        // A deck with New cards/day takes that many, as Anki does; the day's allowance is for the decks without it.
+        let allowance = options.newCardsPerSession == nil ? newCardAllowance : nil
+        var allowanceLeft = allowance.map { max(0, $0 - introduced.production - introduced.other) } ?? Int.max
+        let sizeLimit = capsSize ? Self.segmentSize : Int.max
         for candidate in due + new where selected.count < sizeLimit {
             let card = candidate.card
             if candidate.urgency != .learning, let note = card.note {
@@ -252,14 +273,8 @@ public struct StudySession: Sendable {
                 if buried { continue }
             }
             if candidate.urgency == .new {
-                guard allowanceLeft > 0 else { continue }
-                if card.kind == .production {
-                    guard productionLeft > 0 else { continue }
-                    productionLeft -= 1
-                } else {
-                    guard newLeft > 0 else { continue }
-                    newLeft -= 1
-                }
+                guard allowanceLeft > 0, newLeft > 0 else { continue }
+                newLeft -= 1
                 allowanceLeft -= 1
             }
             selected.append(candidate)
@@ -283,28 +298,38 @@ public struct StudySession: Sendable {
         return selected.sorted { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
     }
 
-    /// The order of the unlocked new production cards (`newestAdditionFirst(_:calendar:)` stays the
-    /// order of all other new cards): the word whose recognition card was first reviewed longest
-    /// ago comes first. The daily production limit then works through the backlog of unlocked
-    /// words from the oldest, and the newest never jump ahead of it. The date of a word is the first
-    /// review of its recognition card, the earliest one if it has several. A production card
-    /// without a date (no note, no reviewed recognition card, a log that doesn't reach back to
-    /// the first review) follows the dated ones in the order it had. The production cards take
-    /// the places production cards held in `new`, so the kinds stay interleaved as the order of
-    /// additions left them.
-    private static func productionOldestLearnedFirst(_ new: [Candidate], in deck: Deck) -> [Candidate] {
-        let slots = new.indices.filter { new[$0].card.kind == .production }
-        guard !slots.isEmpty else { return new }
+    /// The new words and the opened production cards one for one, a word first, the rest of the longer list after:
+    /// so a lesson's words and the words that have just become ready to be produced share the day. The words keep
+    /// their order; the production cards go oldest learned word first with `byLearned`, so they work through the
+    /// backlog from the oldest and the newest never jump ahead of it, and keep their order without it.
+    static func alternatingUnlocked(_ new: [Candidate], in deck: Deck, byLearned: Bool) -> [Candidate] {
+        let words = new.filter { $0.card.kind != .production }
+        var unlocked = new.filter { $0.card.kind == .production }
+        guard !unlocked.isEmpty else { return new }
+        if byLearned {
+            let learned = learnedDates(in: deck)
+            func learnedOn(_ candidate: Candidate) -> Date { candidate.card.note.flatMap { learned[$0] } ?? .distantFuture }
+            unlocked = unlocked.enumerated().sorted { (learnedOn($0.element), $0.offset) < (learnedOn($1.element), $1.offset) }.map(\.element)
+        }
+        var result: [Candidate] = []
+        result.reserveCapacity(new.count)
+        for index in 0..<max(words.count, unlocked.count) {
+            if index < words.count { result.append(words[index]) }
+            if index < unlocked.count { result.append(unlocked[index]) }
+        }
+        return result
+    }
+
+    /// When each word of `deck` was learned: the first review of its recognition card, the earliest one if it has
+    /// several. A word without one (no note, no reviewed recognition card, a log that doesn't reach back to the first
+    /// review) has none, and its production card follows the dated ones.
+    static func learnedDates(in deck: Deck) -> [String: Date] {
         var learned: [String: Date] = [:]
         for card in deck.cards where card.kind == .recognition {
             guard let note = card.note, card.hasCompleteLog, let first = card.log.first?.date else { continue }
             learned[note] = min(first, learned[note] ?? first)
         }
-        func learnedOn(_ candidate: Candidate) -> Date { candidate.card.note.flatMap { learned[$0] } ?? .distantFuture }
-        let ordered = slots.map { new[$0] }.enumerated().sorted { (learnedOn($0.element), $0.offset) < (learnedOn($1.element), $1.offset) }
-        var result = new
-        for (slot, candidate) in zip(slots, ordered) { result[slot] = candidate.element }
-        return result
+        return learned
     }
 
     /// New cards in the order of their additions: the cards added on a later study day come before those of an
@@ -316,23 +341,22 @@ public struct StudySession: Sendable {
         return keyed.sorted { (-$0.day, $0.created, $0.offset) < (-$1.day, $1.created, $1.offset) }.map { new[$0.offset] }
     }
 
-    private struct Candidate {
+    struct Candidate {
         var card: Card
         var urgency: Urgency
         var tieBreak: UInt64
+        /// A new card's place in the order of new cards (`alternatingUnlocked(_:in:byLearned:)`).
+        var rank = 0
     }
 
     /// The notes with a recognition card that isn't learned yet, so their production cards
-    /// stay locked; none if `productionUnlockDays` is 0. A card is learned in the review
-    /// phase once its scheduled interval, from the last review to the due date, has
-    /// reached `productionUnlockDays`.
+    /// stay locked. A card is learned in the review phase once its scheduled interval, from the last review to the
+    /// due date, has reached `unlockDays`.
     static func notesAwaitingRecognition(in deck: Deck, calendar: StudyCalendar) -> Set<String> {
-        let unlockDays = deck.learningOptions.productionUnlockDays
-        guard unlockDays > 0 else { return [] }
         var notes = Set<String>()
         for card in deck.cards where card.kind == .recognition {
             guard let note = card.note else { continue }
-            if let state = card.learningState, state.phase == .review, calendar.days(from: state.lastReview, to: state.due) >= unlockDays {
+            if let state = card.learningState, state.phase == .review, calendar.days(from: state.lastReview, to: state.due) >= Self.unlockDays {
                 continue
             }
             notes.insert(note)
@@ -415,10 +439,9 @@ public struct StudySession: Sendable {
 /// then would take, see `StudySession.counts(for:at:calendar:)`. At the start of the day its
 /// `total` is the daily goal, later the cards left.
 public struct StudyCounts: Hashable, Sendable {
-    /// Never-studied production cards (`CardKind.production`), within
-    /// `newProductionPerSession`.
+    /// Never-studied production cards (`CardKind.production`), opened and within the day's new cards.
     public internal(set) var newProduction = 0
-    /// All other never-studied cards, within `newCardsPerSession`.
+    /// All other never-studied cards; the two together within `newCardsPerSession`.
     public internal(set) var newOther = 0
     /// Cards in learning or relearning.
     public internal(set) var learning = 0
@@ -448,7 +471,7 @@ public struct StudyCounts: Hashable, Sendable {
     public var newAtDayStart: Int { new + learningFromNew }
 
     /// The cards of the plan: all of them at the start of the day (the daily goal), the cards
-    /// left later ("N cards left"). `cardsPerSession` doesn't cap it: it is the size of a
+    /// left later ("N cards left"). `StudySession.segmentSize` doesn't cap it: it is the size of a
     /// segment of the stream.
     public var total: Int { new + learning + review }
 }

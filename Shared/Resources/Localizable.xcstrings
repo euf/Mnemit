@@ -5119,28 +5119,6 @@
         }
       }
     },
-    "Cards per session": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten pro Sitzung"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες ανά συνεδρία"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточек за сессию"
-          }
-        }
-      }
-    },
     "Cards to repair yesterday": {
       "localizations": {
         "de": {
@@ -5203,28 +5181,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Наверстать"
-          }
-        }
-      }
-    },
-    "Ceiling %lld (limits %@ new / %@ production)": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Obergrenze %1$lld (Limits %2$@ neu / %3$@ Produktion)"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ανώτατο όριο %lld (όρια %@ νέες / %@ παραγωγής)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Потолок %lld (лимиты %@ новых / %@ воспроизведение)"
           }
         }
       }
@@ -5775,6 +5731,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Цель дня"
+          }
+        }
+      }
+    },
+    "Daily Limits": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tageslimits"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ημερήσια όρια"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дневные лимиты"
           }
         }
       }
@@ -9101,50 +9079,6 @@
         }
       }
     },
-    "Meaning → Word cards": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten „Bedeutung → Wort“"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες «σημασία → λέξη»"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки «значение → слово»"
-          }
-        }
-      }
-    },
-    "Meaning → Word cards have a limit of their own.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Karten „Bedeutung → Wort“ haben ein eigenes Limit."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι κάρτες «σημασία → λέξη» έχουν δικό τους όριο."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У карточек «значение → слово» свой лимит."
-          }
-        }
-      }
-    },
     "Meaning → Word unlocks once Word → Meaning is learned": {
       "localizations": {
         "de": {
@@ -9167,46 +9101,24 @@
         }
       }
     },
-    "Meaning → Word waits until Word → Meaning has this interval.": {
+    "Meaning → Word opens once Word → Meaning has an interval of 7 days. A word is asked one way a day.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "„Bedeutung → Wort“ wartet, bis „Wort → Bedeutung“ dieses Intervall hat."
+            "value": "„Bedeutung → Wort“ öffnet sich, sobald „Wort → Bedeutung“ ein Intervall von 7 Tagen hat. Ein Wort wird am Tag nur in einer Richtung gefragt."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Το «Σημασία → λέξη» περιμένει μέχρι το «Λέξη → σημασία» να έχει αυτό το διάστημα."
+            "value": "Το «Σημασία → λέξη» ανοίγει μόλις το «Λέξη → σημασία» φτάσει σε διάστημα 7 ημερών. Μια λέξη ρωτιέται προς μία κατεύθυνση την ημέρα."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "«Значение → слово» ждёт, пока у «Слово → значение» не будет такого интервала."
-          }
-        }
-      }
-    },
-    "Meaning → Word waits until Word → Meaning reaches the interval in Unlock after. A word is asked one way a day.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„Bedeutung → Wort“ wartet, bis „Wort → Bedeutung“ das Intervall bei „Freischalten nach“ erreicht. Ein Wort wird am Tag nur in einer Richtung gefragt."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Το «Σημασία → λέξη» περιμένει μέχρι το «Λέξη → σημασία» να φτάσει το διάστημα του «Ξεκλείδωμα μετά από». Μια λέξη ρωτιέται προς μία κατεύθυνση την ημέρα."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "«Значение → слово» ждёт, пока «Слово → значение» не достигнет интервала из «Открыть после». Слово спрашивают в день в одну сторону."
+            "value": "«Значение → слово» открывается, когда у «Слово → значение» интервал 7 дней. Слово спрашивается в одну сторону в день."
           }
         }
       }
@@ -9431,28 +9343,6 @@
         }
       }
     },
-    "Never locked": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie gesperrt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πάντα ξεκλείδωτες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Всегда открыты"
-          }
-        }
-      }
-    },
     "Never studied": {
       "localizations": {
         "de": {
@@ -9493,28 +9383,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новые"
-          }
-        }
-      }
-    },
-    "New Cards": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue Karten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Νέες κάρτες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новые карточки"
           }
         }
       }
@@ -9651,46 +9519,24 @@
         }
       }
     },
-    "New cards per day": {
+    "New cards/day": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Neue Karten pro Tag"
+            "value": "Neue Karten/Tag"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Νέες κάρτες ανά ημέρα"
+            "value": "Νέες κάρτες/ημέρα"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
             "value": "Новых карточек в день"
-          }
-        }
-      }
-    },
-    "New per day": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neue pro Tag"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Νέες ανά ημέρα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новых в день"
           }
         }
       }
@@ -11165,6 +11011,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Чтение «%@»…"
+          }
+        }
+      }
+    },
+    "Ready %lld (New cards/day: %@)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereit %1$lld (Neue Karten/Tag: %2$@)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Έτοιμες %1$lld (Νέες κάρτες/ημέρα: %2$@)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово %1$lld (новых карточек в день: %2$@)"
           }
         }
       }
@@ -14755,50 +14623,6 @@
         }
       }
     },
-    "Unlimited": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unbegrenzt"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Απεριόριστο"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Без ограничений"
-          }
-        }
-      }
-    },
-    "Unlock after": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Freischalten nach"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ξεκλείδωμα μετά από"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Открыть после"
-          }
-        }
-      }
-    },
     "Untitled": {
       "localizations": {
         "de": {
@@ -16349,6 +16173,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "завтра"
+          }
+        }
+      }
+    },
+    "— lets the day's ring decide. A number takes that many new cards a day, as Anki does.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "— überlässt es dem Tagesring. Eine Zahl nimmt so viele neue Karten pro Tag, wie Anki es tut."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το — αφήνει τον κύκλο της ημέρας να αποφασίσει. Ένας αριθμός παίρνει τόσες νέες κάρτες την ημέρα, όπως το Anki."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "— оставляет решение кольцу дня. Число берёт столько новых карточек в день, как в Anki."
           }
         }
       }

@@ -47,7 +47,7 @@ extension DeckFileTests {
         // MARK: The badges
 
         @Test func badgesAreTheTimeLeftOfTheDay() async throws {
-            let f = try ShellFixture(decks: [("Alpha", 5), ("Beta", 3), ("Gamma", 4)])
+            let f = try ShellFixture(decks: [("Alpha", 5), ("Beta", 3), ("Gamma", 4)], newPerDay: 2)
             let shell = f.shell
             try await f.waitUntilRead(decks: 3)
             try await f.waitFor("the ring is worked out") { shell.isDayReady }
@@ -132,7 +132,7 @@ extension DeckFileTests {
         // MARK: Study
 
         @Test func studyTakesTheWindowAndDoneGivesTheSidebarBack() async throws {
-            let f = try ShellFixture(decks: [("Alpha", 5), ("Beta", 3)])
+            let f = try ShellFixture(decks: [("Alpha", 5), ("Beta", 3)], newPerDay: 2)
             let shell = f.shell
             try await f.waitUntilRead(decks: 2)
             shell.select(.deck(f.url("Beta")))
@@ -220,7 +220,7 @@ extension DeckFileTests {
         }
 
         @Test func theDayStudiesTheDeckStudiedLastFirst() async throws {
-            let f = try ShellFixture(decks: [("Alpha", 5), ("Beta", 3), ("Gamma", 4)])
+            let f = try ShellFixture(decks: [("Alpha", 5), ("Beta", 3), ("Gamma", 4)], newPerDay: 2)
             let shell = f.shell
             try await f.waitUntilRead(decks: 3)
             #expect(shell.queue(for: .study).map(\.lastPathComponent) == ["Alpha.mnemit", "Beta.mnemit", "Gamma.mnemit"])

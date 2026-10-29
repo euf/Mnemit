@@ -107,7 +107,8 @@ extension DailyProgressTests {
         #expect(forwards.roundPlan == backwards.roundPlan)
         #expect(forwards.ring == backwards.ring)
         #expect(forwards.streak == backwards.streak)
-        #expect(forwards.newCardAllowances == backwards.newCardAllowances.reversed())
+        // Equal words are shared by the earlier deck first, so the shares follow the order of the decks, the sum not.
+        #expect(forwards.newCardAllowances.reduce(0, +) == backwards.newCardAllowances.reduce(0, +))
     }
 
     // MARK: Admission
@@ -143,20 +144,21 @@ extension DailyProgressTests {
         #expect(progress.ring == DailyRing(done: 0, goal: 3))
     }
 
-    @Test func theAllowanceIsSharedByTheCeilingsOfTheDecks() throws {
+    @Test func aDeckWithNewCardsPerDayKeepsItsOwnNumberAndTheOthersShareTheAllowance() throws {
         var small = options()
         small.newCardsPerSession = 10
         let first = try Deck(learningOptions: small, cards: (0..<30).map { fresh("a\($0)") })
         let second = try Deck(learningOptions: options(), cards: (0..<30).map { fresh("b\($0)") })
-        // Five new cards over ceilings of 10 and 30: shares of 1.25 and 3.75, rounded down to 1 and 3, and the card that
-        // is left goes to the larger remainder: 1 and 4.
+        // The five new cards of the day, 150 s, are for the deck without New cards/day; the other takes its ten outside them.
+        // All fifteen are left to do, and the goal is what the time of the day holds.
         let progress = evaluate([first, second])
-        #expect(progress.newCardAllowances == [1, 4])
-        #expect(progress.cardsLeft == 5)
+        #expect(progress.newCardAllowances == [10, 5])
+        #expect(progress.cardsLeft == 15)
         #expect(progress.ring == DailyRing(done: 0, goal: 5))
-        // The reviews of either deck take their time from all: 9 of them leave 60 s of 150, two new cards.
+        // The reviews of either deck take their time from all: 9 of them leave 60 s of 150, two new cards, and the limited
+        // deck keeps its ten.
         let busy = try Deck(learningOptions: options(), cards: (0..<9).map { waiting("r\($0)") } + (0..<30).map { fresh("c\($0)") })
-        #expect(evaluate([first, busy]).newCardAllowances.reduce(0, +) == 2)
+        #expect(evaluate([first, busy]).newCardAllowances == [10, 2])
     }
 
     @Test func theCardsIntroducedTodayCountAgainstTheAllowanceAndTheGoalStaysForTheDay() throws {
@@ -234,8 +236,8 @@ extension DailyProgressTests {
         #expect(progress.cardsToNextRound == nil)
         #expect(progress.minutesToNextRound == nil)
         #expect(progress.ring.isGoalMet)
-        // The rest of the plan is Catch Up.
-        review(185, of: &deck, at: noon)
+        // The rest of the plan is Catch Up, taken in segments of a session.
+        reviewPlan(of: &deck, at: noon)
         #expect(evaluate([deck], at: noon).ring == DailyRing(done: 200, goal: 15))
     }
 
@@ -352,10 +354,15 @@ extension DailyProgressTests {
     @Test func theDayStartOfTodayIsThePlanOfTheDayWhenItBegan() throws {
         var options = options()
         options.newCardsPerSession = 6
-        options.productionUnlockDays = 3
-        let recognition = (0..<8).map { fresh("r\($0)", kind: .recognition, note: "n\($0)") }
-        let production = (0..<8).map { fresh("p\($0)", kind: .production, note: "n\($0)") }
-        var deck = try Deck(learningOptions: options, cards: recognition + production + (0..<4).map { waiting("w\($0)") })
+        // The words are learned, with an interval past the unlock days, so their production cards are open from the start.
+        let last = at(day: today - 20)
+        let due = calendar.start(ofDay: today + 30)
+        let state = LearningState(phase: .review, stability: 50, difficulty: 5, lastReview: last, due: due, reviews: 3)
+        let recognition = (0..<20).map { index in
+            Card(question: "r\(index)", answer: "r\(index)", note: "n\(index)", kind: .recognition, learningState: state)
+        }
+        let production = (0..<20).map { fresh("p\($0)", kind: .production, note: "n\($0)") }
+        var deck = try Deck(learningOptions: options, cards: recognition + production + (0..<8).map { fresh("w\($0)") } + (0..<4).map { waiting("x\($0)") })
         for offset in 0..<5 { study(&deck, onDay: today - 5 + offset) }
         // Some of the plan of today is done before the evaluation.
         study(&deck, onDay: today, until: { done, _ in done >= 4 })
@@ -363,6 +370,7 @@ extension DailyProgressTests {
         let activity = DeckActivity(deck: deck, calendar: calendar)
         let history = activity.history(from: today - 5, at: when, calendar: calendar)
         let plan = activity.plan(onDayOf: when, calendar: calendar)
+        #expect(plan.newProduction > 0)
         #expect(history.starts[today] == .init(other: plan.learning + plan.review, new: plan.new))
     }
 
@@ -384,17 +392,15 @@ extension DailyProgressTests {
     }
 
     @Test func theLocksOfTheProductionCardsFollowTheStateOfTheRecognitionCardsLikeTheSession() throws {
-        var options = options()
-        options.productionUnlockDays = 4
         let notes = (0..<6).map { "n\($0)" }
         let cards = notes.map { fresh("r\($0)", kind: .recognition, note: $0) } + notes.map { fresh("p\($0)", kind: .production, note: $0) }
-        var deck = try Deck(learningOptions: options, cards: cards)
+        var deck = try Deck(learningOptions: options(), cards: cards)
         var locks = ProductionLocks(of: deck, calendar: calendar)
         #expect(locks.notes == StudySession.notesAwaitingRecognition(in: deck, calendar: calendar))
         #expect(locks.notes == Set(notes))
         // Learn the recognition cards with growing intervals: the long ones unlock.
         let last = at(day: today - 10)
-        for (index, interval) in [1, 3, 4, 9].enumerated() {
+        for (index, interval) in [1, StudySession.unlockDays - 1, StudySession.unlockDays, 2 * StudySession.unlockDays].enumerated() {
             let state = LearningState(
                 phase: .review, stability: Double(interval), difficulty: 5, lastReview: last, due: calendar.start(ofDay: calendar.dayNumber(for: last) + interval), reviews: 1)
             deck.cards[index].learningState = state

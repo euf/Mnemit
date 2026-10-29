@@ -12,23 +12,12 @@ public struct LearningOptions: Hashable, Sendable {
     public var maximumInterval: Int = 36500
     /// Steps (`.good` grades) a card in (re)learning needs to reach the review phase.
     public var steps: Int = 2
-    /// Maximum number of cards in one session, which is the size of one segment of the study
-    /// stream; `nil` means unlimited. The plan of the day, and the goal made of it, isn't
-    /// capped by it: the stream takes the plan segment after segment.
-    public var cardsPerSession: Int? = 100
-    /// Maximum number of never-studied cards a study day introduces, not counting new
-    /// production cards (`newProductionPerSession`); `nil` means unlimited. Cards whose
-    /// first review fell on the current study day count against it, so every session of
-    /// the day takes from one quota. The name keeps `deck.json` readable: it said "per
+    /// New cards/day, as Anki names it: at most this many never-studied cards, of both directions, a study day
+    /// introduces from the deck; `nil`, the default, leaves it to the day's allowance alone
+    /// (`DailyProgress.newCardAllowances`). Cards whose first review fell on the current study day count against
+    /// it, so every session of the day takes from one quota. The name keeps `deck.json` readable: it said "per
     /// session" when the limit still restarted with each session.
     public var newCardsPerSession: Int? = nil
-    /// Maximum number of never-studied production cards (`CardKind.production`) a study
-    /// day introduces, counted like `newCardsPerSession`; 0 asks none, `nil` means
-    /// unlimited.
-    public var newProductionPerSession: Int? = 7
-    /// Days the interval of a note's recognition card must have reached before its
-    /// production card is introduced; 0 never holds production cards back.
-    public var productionUnlockDays: Int = 7
     /// Spreads review intervals slightly so cards learned together don't stay clustered.
     public var fuzzing: Bool = true
     public var parameters: FSRSParameters = .default
@@ -73,11 +62,8 @@ public struct LearningOptions: Hashable, Sendable {
     public static let targetRecallRange: ClosedRange<Double> = 0.7...0.97
     public static let maximumIntervalRange: ClosedRange<Int> = 30...36500
     public static let stepsRange: ClosedRange<Int> = 1...5
-    /// For `cardsPerSession` and `newCardsPerSession` when they are limited.
+    /// For `newCardsPerSession` when it is limited.
     public static let sessionLimitRange: ClosedRange<Int> = 1...9999
-    /// For `newProductionPerSession` when it is limited: unlike the other limits, 0 is valid.
-    public static let productionLimitRange: ClosedRange<Int> = 0...9999
-    public static let productionUnlockDaysRange: ClosedRange<Int> = 0...365
     /// For `leechThreshold`; 0 is off.
     public static let leechThresholdRange: ClosedRange<Int> = 0...99
 }
@@ -99,10 +85,7 @@ extension LearningOptions {
         targetRecall = targetRecall.clamped(to: Self.targetRecallRange)
         maximumInterval = maximumInterval.clamped(to: Self.maximumIntervalRange)
         steps = steps.clamped(to: Self.stepsRange)
-        cardsPerSession = cardsPerSession?.clamped(to: Self.sessionLimitRange)
         newCardsPerSession = newCardsPerSession?.clamped(to: Self.sessionLimitRange)
-        newProductionPerSession = newProductionPerSession?.clamped(to: Self.productionLimitRange)
-        productionUnlockDays = productionUnlockDays.clamped(to: Self.productionUnlockDaysRange)
         leechThreshold = leechThreshold.clamped(to: Self.leechThresholdRange)
         if let fit = lastAutoFit { lastAutoFit?.reviewCount = max(0, fit.reviewCount) }
     }

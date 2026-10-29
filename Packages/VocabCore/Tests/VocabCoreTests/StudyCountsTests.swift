@@ -11,9 +11,7 @@ struct StudyCountsTests {
 
     func options() -> LearningOptions {
         var options = LearningOptions()
-        options.cardsPerSession = nil
         options.newCardsPerSession = nil
-        options.newProductionPerSession = nil
         return options
     }
 
@@ -40,7 +38,7 @@ struct StudyCountsTests {
         // The session takes the plan, as much of it as its size allows, whatever its seed.
         for seed in 1...5 {
             let session = StudySession(deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: UInt64(seed))).session
-            #expect(session.totalCount == min(deck.learningOptions.cardsPerSession ?? Int.max, counts.total))
+            #expect(session.totalCount == min(StudySession.segmentSize, counts.total))
         }
         return counts
     }
@@ -60,16 +58,25 @@ struct StudyCountsTests {
         #expect(counts.total == 7)
     }
 
-    @Test func newCardLimitsAreSeparateForProductionCards() throws {
+    @Test func theNewCardLimitHoldsForBothKindsTogether() throws {
         var options = options()
-        options.newCardsPerSession = 2
-        options.newProductionPerSession = 1
+        options.newCardsPerSession = 3
         let cards = (0..<5).map { fresh("r\($0)", note: "r\($0)", kind: .recognition) } + (0..<3).map { fresh("p\($0)", note: "orphan\($0)", kind: .production) }
-        let counts = try taken(cards, options: options)
+        // The words and the opened production cards alternate, a word first.
+        var counts = try taken(cards, options: options)
         #expect(counts.newOther == 2)
         #expect(counts.newProduction == 1)
         #expect(counts.new == 3)
         #expect(counts.total == 3)
+        options.newCardsPerSession = 6
+        counts = try taken(cards, options: options)
+        #expect(counts.newOther == 3)
+        #expect(counts.newProduction == 3)
+        // The shorter list runs out and the longer one goes on.
+        options.newCardsPerSession = 8
+        counts = try taken(cards, options: options)
+        #expect(counts.newOther == 5)
+        #expect(counts.newProduction == 3)
     }
 
     @Test func lockedProductionCardsAreNotCounted() throws {
@@ -88,61 +95,62 @@ struct StudyCountsTests {
     }
 
     @Test func buriedSiblingsAreNotCounted() throws {
-        var options = options()
-        options.productionUnlockDays = 0
         // Two due cards of a note: one is taken.
-        var counts = try taken([review("r", note: "n", kind: .recognition), review("p", note: "n", kind: .production), review("other", note: "m")], options: options)
+        var counts = try taken([review("r", note: "n", kind: .recognition), review("p", note: "n", kind: .production), review("other", note: "m")])
         #expect(counts.review == 2)
         // A card of the note was reviewed today: its new sibling waits for tomorrow.
         var done = review("done", note: "n", kind: .recognition, interval: 10, dueInDays: 5)
         done.learningState?.lastReview = now.addingTimeInterval(-3600)
-        counts = try taken([done, fresh("p", note: "n", kind: .production), fresh("q", note: "m", kind: .production)], options: options)
+        done.learningState?.due = calendar.start(ofDay: calendar.dayNumber(for: now) + 10)
+        counts = try taken([done, fresh("p", note: "n", kind: .production), fresh("q", note: "m", kind: .production)])
         #expect(counts.newProduction == 1)
         // A learning card is never buried, and buries its new sibling.
-        counts = try taken([learning("l", note: "n"), fresh("p", note: "n", kind: .production)], options: options)
+        counts = try taken([learning("l", note: "n"), fresh("p", note: "n", kind: .production)])
         #expect(counts.learning == 1)
         #expect(counts.new == 0)
     }
 
-    @Test func sessionSizeCapsTheSessionTakingLearningThenReviewThenNewCardsButNotThePlan() throws {
-        var options = options()
-        options.cardsPerSession = 5
-        let cards = (0..<3).map { learning("l\($0)") } + (0..<10).map { review("r\($0)") } + (0..<10).map { fresh("n\($0)") }
-        let deck = try Deck(learningOptions: options, cards: cards)
+    @Test func segmentSizeCapsTheSessionTakingLearningThenReviewThenNewCardsButNotThePlan() throws {
+        let cards = (0..<3).map { learning("l\($0)") } + (0..<110).map { review("r\($0)") } + (0..<10).map { fresh("n\($0)") }
+        let deck = try Deck(learningOptions: options(), cards: cards)
         // The plan is all of it, whatever the size of a session is.
-        let counts = try taken(cards, options: options)
+        let counts = try taken(cards)
         #expect(counts.learning == 3)
-        #expect(counts.review == 10)
+        #expect(counts.review == 110)
         #expect(counts.new == 10)
-        #expect(counts.total == 23)
+        #expect(counts.total == 123)
         // A session takes the learning cards, then the reviews, up to its size.
         var random = SeededRandom(seed: 1)
         let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, using: &random)
         let selected = ids.map { deck.card(withID: $0)! }
-        #expect(selected.count == 5)
+        #expect(selected.count == StudySession.segmentSize)
         #expect(selected.filter { $0.learningState?.phase == .learning }.count == 3)
-        #expect(selected.filter { $0.learningState?.phase == .review }.count == 2)
-        options.cardsPerSession = 15
-        let wider = try Deck(learningOptions: options, cards: cards)
+        #expect(selected.filter { $0.learningState?.phase == .review }.count == StudySession.segmentSize - 3)
+        #expect(selected.filter(\.isNew).isEmpty)
+
+        // With room left after the reviews, the new cards fill it.
+        let fewer = Array(cards.prefix(3 + 90)) + cards.suffix(10)
+        let narrower = try Deck(learningOptions: options(), cards: fewer)
         random = SeededRandom(seed: 1)
-        let widerSelected = StudySession.selectCards(from: wider, at: now, calendar: calendar, using: &random).map { wider.card(withID: $0)! }
-        #expect(widerSelected.filter { $0.learningState?.phase == .review }.count == 10)
-        #expect(widerSelected.filter(\.isNew).count == 2)
-        #expect(widerSelected.count == 15)
+        let narrowerSelected = StudySession.selectCards(from: narrower, at: now, calendar: calendar, using: &random).map { narrower.card(withID: $0)! }
+        #expect(narrowerSelected.filter { $0.learningState?.phase == .review }.count == 90)
+        #expect(narrowerSelected.filter(\.isNew).count == StudySession.segmentSize - 93)
+        #expect(narrowerSelected.count == StudySession.segmentSize)
     }
 
     @Test func countsMatchTheSessionOfADeckWithEveryKindOfCard() throws {
         var options = LearningOptions()
-        options.cardsPerSession = nil
         options.newCardsPerSession = 10
-        options.newProductionPerSession = 4
         var cards: [Card] = []
         for index in 0..<30 {
-            cards.append(fresh("r\(index)", note: "n\(index)", kind: .recognition))
-            cards.append(index < 15 ? review("p\(index)", note: "n\(index)", kind: .production) : fresh("p\(index)", note: "n\(index)", kind: .production))
+            // Words 0-9 are new. Words 10-19 are learned, so their production cards are open. Words 20-29 are new, but
+            // their production cards are due for review and bury them.
+            let learned = index >= 10 && index < 20
+            cards.append(learned ? review("r\(index)", note: "n\(index)", kind: .recognition, interval: 30, dueInDays: 10) : fresh("r\(index)", note: "n\(index)", kind: .recognition))
+            cards.append(index >= 20 ? review("p\(index)", note: "n\(index)", kind: .production) : fresh("p\(index)", note: "n\(index)", kind: .production))
         }
         cards += (0..<12).map { review("x\($0)", note: "x\($0)", kind: .recognition, interval: 30, dueInDays: -1) }
-        cards += (0..<12).map { learning("l\($0)", note: "n\($0)") }
+        cards += (0..<12).map { learning("l\($0)", note: "n\(20 + $0 % 10)") }
         let deck = try Deck(learningOptions: options, cards: cards)
         let expected = StudySession.counts(for: deck, at: now, calendar: calendar)
         for seed in 1...20 {
@@ -155,8 +163,10 @@ struct StudyCountsTests {
             #expect(selected.filter { $0.isNew && $0.kind == .production }.count == expected.newProduction)
             #expect(selected.filter { $0.isNew && $0.kind != .production }.count == expected.newOther)
         }
-        #expect(expected.newOther <= 10)
-        #expect(expected.newProduction <= 4)
+        // The ten new words that can be asked alternate with the ten open production cards, one for one, up to the limit of
+        // ten for both kinds.
+        #expect(expected.newOther == 5)
+        #expect(expected.newProduction == 5)
     }
 
     @Test func nextDueIsTheFirstLaterDateOrTheNextStudyDayOfABuriedCard() throws {
@@ -166,13 +176,11 @@ struct StudyCountsTests {
         suspended.isSuspended = true
         #expect(try taken([suspended]).nextDue == nil)
 
-        var options = options()
-        options.productionUnlockDays = 0
         let both = [review("r", note: "n", kind: .recognition), review("p", note: "n", kind: .production)]
         let tomorrow = calendar.start(ofDay: calendar.dayNumber(for: now) + 1)
         // One of the siblings is asked, the other is buried until tomorrow.
-        #expect(try taken(both, options: options).nextDue == tomorrow)
-        #expect(try taken(both + [learning("soon", dueIn: 600)], options: options).nextDue == now.addingTimeInterval(600))
+        #expect(try taken(both).nextDue == tomorrow)
+        #expect(try taken(both + [learning("soon", dueIn: 600)]).nextDue == now.addingTimeInterval(600))
     }
 
     @Test func theDueCountIsAnkisAndTheDeckIsDoneWhenThePlanIsEmpty() throws {
@@ -196,7 +204,7 @@ struct StudyCountsTests {
         let none = StudySession.counts(for: finished, at: now, calendar: calendar)
         #expect(none.due == 0 && none.isDone)
         // A deck with only new cards past the limit has nothing due and, once its limit is spent, nothing left.
-        let spent = StudySession.counts(for: try Deck(learningOptions: options, cards: [fresh("n")]), at: now, calendar: calendar, newCardAllowance: 0)
+        let spent = StudySession.counts(for: try Deck(learningOptions: self.options(), cards: [fresh("n")]), at: now, calendar: calendar, newCardAllowance: 0)
         #expect(spent.due == 0 && spent.isDone)
     }
 }

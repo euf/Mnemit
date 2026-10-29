@@ -11,10 +11,15 @@ synonyms under _Avoid_ are not used, in any of the three languages.
 
 ### Cards
 
+**Word** (the learner's unit; DE Wort; RU «слово»):
+A note (`Card.note`) with its cards. A card without a note is a word with one card; a pair is Word → Meaning and
+Meaning → Word. The learner adds, keeps and counts words; the stream asks cards. **Words learned** counts words.
+_Avoid_: vocable, entry, Vokabel, Eintrag
+
 **Card** (DE Karte; RU «карточка»):
 A pair of Question and Answer, plus an optional Hint. It is asked in one direction only, from the
-Question to the Answer.
-_Avoid_: vocable, entry, index card, word, Vokabel, Eintrag, Karteikarte
+Question to the Answer. A Word has one Card or two.
+_Avoid_: vocable, entry, index card, Vokabel, Eintrag, Karteikarte
 
 **Question** (DE Frage; RU «вопрос»):
 The side of a Card that is shown and asked.
@@ -29,8 +34,10 @@ An optional addition shown together with the Question.
 _Avoid_: remark, Bemerkung
 
 **New card** (DE Neue Karte; RU «новая карточка»):
-A Card never yet asked in a Study session. New cards come newest addition first: what was added on a later day
-before what was added earlier, within a day as it was added.
+A Card never yet asked in a Study session. New cards come from one queue over all decks that aren't paused, newest
+addition first: what was added on a later day before what was added earlier, within a day as it was added. A word's
+Meaning → Word card joins the queue once it opens (see **Word → Meaning / Meaning → Word**) and alternates with the new
+words one for one.
 _Avoid_: unlearned, unseen
 
 **Addition** (DE Hinzufügung; RU «добавление», «партия»):
@@ -199,8 +206,14 @@ by the rules of `DeckChange.merging` (`references/deck-package.md`). Reviews don
 _Avoid_: sync, reconcile
 
 **Learning options** (DE Lernoptionen; RU «опции колоды»):
-The settings that apply to one Deck, such as Target recall, the number of Steps and the daily limits.
+The settings that apply to one Deck, such as Target recall, the number of Steps and New cards/day.
 _Avoid_: deck settings, Einstellungen
+
+**New cards/day** (the deck option, Anki's name for it; DE „Neue Karten/Tag“; RU «новых карточек в день»):
+`LearningOptions.newCardsPerSession`, “—” by default, the ring decides. A deck that sets it takes exactly that many new cards a study day,
+of both directions, as in Anki: outside the day's allowance (**Admission**), and without reducing what the other decks
+get. It is the one option for new cards.
+_Avoid_: new cards per session, new-card limit, quota
 
 **Preferences** (DE Einstellungen; RU «настройки приложения»):
 The app's settings that apply to all Decks.
@@ -265,8 +278,8 @@ _Avoid_: card, answer (the answer is a side of the card), повторение, 
 
 **Plan** (today's plan / heutiger Plan; RU «план дня»):
 The cards a study day asks, as FSRS sets them: every review card due, overdue ones included,
-cards in learning, and new cards within the day's limits and the deck's allowance
-(`StudySession.counts`, `newCardAllowance`).
+cards in learning, and new cards: the deck's share of the allowance (`newCardAllowance`), or exactly its
+New cards/day where it sets one (`StudySession.counts`).
 _Avoid_: session, queue, due count
 
 **Streak step** (RU «шаг стрика»):
@@ -295,11 +308,12 @@ _Avoid_: capacity, limit, quota, level
 **Admission** (new-card allowance; RU «допуск новых»):
 The new cards a day takes in: the time of the day less the day's plan cards that are not new, at
 the pace the day began with (the seven study days before it), over the price of a new card, at
-least 0 (`DailyGoal.newCardsAllowed`). The decks' own limits (`newCardsPerSession`,
-`newProductionPerSession`) are ceilings. Across all decks the allowance is shared in proportion to
-the ceilings, by largest remainder (`DailyGoal.split`); each deck's share is its
-`newCardAllowance`, which the plan takes (`DailyProgress.newCardAllowances`). Cards first reviewed
-today count against it, and Learn 10 New Words comes beyond it.
+least 0 (`DailyGoal.newCardsAllowed`). The allowance is shared between the decks without New cards/day from one
+queue over them (new words newest addition first, opened Meaning → Word cards alternating one for one):
+`DailyGoal.split(_:overQueues:)` over each deck's `DailyGoal.NewQueue`. Each deck's share is its
+`newCardAllowance`, which the plan takes (`DailyProgress.newCardAllowances`). A deck with New cards/day
+takes its own count outside the allowance. Cards first reviewed today count against it, and Learn 10 New Words comes
+beyond it and beyond New cards/day.
 _Avoid_: new-card limit, daily new cards
 
 **Daily goal** (in code and How It Works only, as "Daily goal (cards)"; DE „Tagesziel“; RU «цель дня»):
@@ -425,7 +439,7 @@ reviewed before it is due. The paths through a day: `references/learning-flow.md
 _Avoid_: session (except for the upstream types that still carry the name)
 
 **Learn 10 New Words** (the button of the stack's end; DE „10 neue Wörter lernen“; RU «Выучить 10 новых слов»):
-Ten new cards beyond the day's limits, shared over the decks that have new cards
+Ten new cards beyond the day's allowance and New cards/day, shared over the decks that have new cards
 left and asked mixed (`StudyModel.addNewCards`). It raises the stakes: their reviews come in the next days;
 the day's time stays as it is. Today carries it as the third button of the day after Study and Catch Up
 (`DayAction`), the rests and the deck screen as well. The code keeps the old name `DayAction.pushOn`,
@@ -469,9 +483,10 @@ exist.
 
 **Study These Now** (the button of Add Cards and of the import into a new deck; DE „Diese jetzt lernen“; RU «Учить их сейчас»):
 A stream over the one deck the cards went to: the cards just added first, then that deck's plan (`StudyModel.Entry.studyNow`,
-`StudyStream.addCards`). It asks only the cards a stream would ask now (new, unlocked and not buried, so the second
-direction of a pair waits for its first). The added cards take the place of the day's new cards, so tomorrow's load is the
-same as if the deck had chosen them, and they count toward the ring and its laps. The import offers it for a table of 1 to 50
+`StudyStream.addCards`). It asks only the cards a stream would ask now (new, unlocked and not buried, so the Meaning → Word card of a word waits until its
+Word → Meaning card has an interval of 7 days). The added cards go beyond New cards/day and take the place of the day's new
+cards, counting against the allowance, so tomorrow's load is the same as if the queue had chosen them, and they count toward
+the ring and its laps. The import offers it for a table of 1 to 50
 cards into an empty deck.
 _Avoid_: Study Now, Learn Added, «учить добавленные»
 
@@ -480,8 +495,9 @@ RU «Слово → значение» / «Значение → слово»):
 Which side a card asks. Word → Meaning is the recognition card (`CardKind.recognition`): the Greek word, the
 learner gives the meaning. Meaning → Word is the production card (`CardKind.production`): the meaning, the
 learner gives the Greek word. The card detail shows it as the row Direction, the Mac's table as the Kind
-column (`CardKind.title`). The Options section "Meaning → Word cards" holds its daily limit and its unlock
-rule.
+column (`CardKind.title`). A word's Meaning → Word card opens when its Word → Meaning card is in the review phase with
+an interval of 7 days or more (`StudySession.unlockDays`, a constant); opened cards alternate with the new words one for
+one, the oldest learned word first. No option sets either.
 _Avoid_: Greek → translation, translation → Greek, direction (alone, on screen)
 
 **How It Works** (DE „So funktioniert es“; RU «Как это работает»):

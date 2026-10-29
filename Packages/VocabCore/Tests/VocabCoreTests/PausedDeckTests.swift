@@ -39,9 +39,14 @@ extension DailyProgressTests {
     @Test func theDaysNewCardsAreSharedOverTheDecksThatTakePart() throws {
         let first = try deck((0..<30).map { fresh("a\($0)") })
         let second = try deck((0..<30).map { fresh("b\($0)") })
-        // Five new cards (150 s) over equal ceilings: 2.5 and 2.5, rounded down to two and two, and the card that is left
-        // goes to the earlier deck: three and two.
-        #expect(evaluate([first, second]).newCardAllowances == [3, 2])
+        // Five new cards (150 s) from one queue of the words, newest addition first. Words added together go by the
+        // place of their deck: the earlier deck takes all five.
+        #expect(evaluate([first, second]).newCardAllowances == [5, 0])
+        // Words added a study day later come before them, in whichever deck: two such words take two of the five.
+        let added = calendar.start(ofDay: today - 59)
+        let later = try deck((0..<2).map { Card(id: UUID(), text: CardText(question: "c\($0)", answer: "c", hint: "")!, created: added) })
+        #expect(evaluate([first, later]).newCardAllowances == [3, 2])
+        #expect(evaluate([later, first]).newCardAllowances == [2, 3])
         let pausedSecond = try deck((0..<30).map { fresh("b\($0)") }, isPaused: true)
         let progress = evaluate([first, pausedSecond])
         #expect(progress.newCardAllowances == [5, 0])

@@ -11,13 +11,10 @@ struct DailyLimitTests {
     let now = Date(timeIntervalSince1970: 1_791_216_000)
     var today: Int { calendar.dayNumber(for: now) }
 
-    func deck(_ cards: [Card], newPerDay: Int? = nil, productionPerDay: Int? = nil) throws -> Deck {
+    func deck(_ cards: [Card], newPerDay: Int? = nil) throws -> Deck {
         var options = LearningOptions()
         options.fuzzing = false
-        options.cardsPerSession = nil
         options.newCardsPerSession = newPerDay
-        options.newProductionPerSession = productionPerDay
-        options.productionUnlockDays = 0
         return try Deck(learningOptions: options, cards: cards)
     }
 
@@ -77,14 +74,22 @@ struct DailyLimitTests {
         #expect(ids.count == 5)
     }
 
-    @Test func anAllowanceBelowTheLimitCapsTheNewCardsAndOneAboveItLeavesThem() throws {
+    @Test func aDeckWithNewCardsPerDayIgnoresTheAllowanceWhateverItIs() throws {
         let deck = try deck(fresh(12), newPerDay: 5)
-        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 3).new == 3)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 3).new == 5)
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 9).new == 5)
-        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 0).new == 0)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 0).new == 5)
         var random = SeededRandom(seed: 1)
-        #expect(StudySession.selectCards(from: deck, at: now, calendar: calendar, newCardAllowance: 3, using: &random).count == 3)
-        #expect(StudySession(deck: deck, at: now, calendar: calendar, newCardAllowance: 2).session.totalCount == 2)
+        #expect(StudySession.selectCards(from: deck, at: now, calendar: calendar, newCardAllowance: 3, using: &random).count == 5)
+        #expect(StudySession(deck: deck, at: now, calendar: calendar, newCardAllowance: 2).session.totalCount == 5)
+    }
+
+    @Test func aDeckWithoutNewCardsPerDayTakesTheAllowanceOnly() throws {
+        let deck = try deck(fresh(12))
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 3).new == 3)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 0).new == 0)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 30).new == 12)
+        #expect(StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: nil).new == 12)
     }
 
     @Test func anAllowanceTakesNoReviewCardsAndAnUnlimitedDeckTakesJustTheAllowance() throws {
@@ -108,11 +113,13 @@ struct DailyLimitTests {
         #expect(study(&deck, at: calendar.start(ofDay: today + 1).addingTimeInterval(3600), allowance: 4).new == 4)
     }
 
-    @Test func theAllowanceHoldsForTheProductionCardsToo() throws {
-        let deck = try deck(fresh(4) + fresh(4, kind: .production, prefix: "p"), productionPerDay: 3)
+    @Test func theAllowanceHoldsForBothKindsTogether() throws {
+        let deck = try deck(fresh(4) + fresh(4, kind: .production, prefix: "p"))
+        // The words and the production cards alternate, a word first.
         let counts = StudySession.counts(for: deck, at: now, calendar: calendar, newCardAllowance: 5)
         #expect(counts.new == 5)
-        #expect(counts.newProduction <= 3)
+        #expect(counts.newOther == 3)
+        #expect(counts.newProduction == 2)
     }
 
     @Test func newCardsOnRequestComeBeyondTheAllowance() throws {
@@ -157,28 +164,22 @@ struct DailyLimitTests {
         #expect(counts.new == 5 - introduced)
     }
 
-    @Test func productionCardsHaveALimitOfTheirOwn() throws {
+    @Test func theLimitIsOneQuotaForBothKinds() throws {
         let cards = fresh(6) + fresh(6, kind: .production, prefix: "p")
-        var deck = try deck(cards, newPerDay: 2, productionPerDay: 1)
+        var deck = try deck(cards, newPerDay: 4)
         let first = study(&deck, at: now)
         #expect(first.newOther == 2)
-        #expect(first.newProduction == 1)
+        #expect(first.newProduction == 2)
 
         let second = study(&deck, at: now.addingTimeInterval(3600))
         #expect(second.new == 0)
-        #expect(deck.cards.filter { !$0.isNew && $0.kind == .production }.count == 1)
+        #expect(deck.cards.filter { !$0.isNew && $0.kind == .production }.count == 2)
 
-        // Only the other kind refills when a limit is the larger: raise the one for production cards.
-        deck.learningOptions.newProductionPerSession = 3
+        // Raising the limit lets the two more in, the kinds alternating where the first session left off.
+        deck.learningOptions.newCardsPerSession = 6
         let third = study(&deck, at: now.addingTimeInterval(7200))
-        #expect(third.newProduction == 2)
-        #expect(third.newOther == 0)
-    }
-
-    @Test func aLimitOfZeroAsksNoNewProductionCards() throws {
-        var deck = try deck(fresh(3, kind: .production), productionPerDay: 0)
-        #expect(study(&deck, at: now).total == 0)
-        #expect(deck.cards.allSatisfy { $0.isNew })
+        #expect(third.newProduction == 1)
+        #expect(third.newOther == 1)
     }
 
     @Test func noLimitIntroducesEveryCardInOneSession() throws {

@@ -4,7 +4,7 @@ import Foundation
 /// the two cards each makes: recognition (the Greek asks, the translation answers) and
 /// production (the translation asks, the Greek answers). Both carry the note of the word,
 /// so the deck knows them as siblings and holds the production card back until the
-/// recognition card is learned, see `LearningOptions.productionUnlockDays`.
+/// recognition card is learned, see `StudySession.unlockDays`.
 public enum LessonWords {
     /// One word of the lesson, its Greek side first whichever side was typed first.
     public struct Entry: Hashable, Sendable {

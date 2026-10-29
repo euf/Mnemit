@@ -128,15 +128,16 @@ struct DeckTests {
         options.targetRecall = .nan
         options.maximumInterval = 10
         options.steps = 0
-        options.cardsPerSession = 0
         options.newCardsPerSession = 100_000
 
         let built = try Deck(learningOptions: options, cards: [])
         #expect(built.learningOptions.targetRecall == LearningOptions().targetRecall)
         #expect(built.learningOptions.maximumInterval == LearningOptions.maximumIntervalRange.lowerBound)
         #expect(built.learningOptions.steps == LearningOptions.stepsRange.lowerBound)
-        #expect(built.learningOptions.cardsPerSession == LearningOptions.sessionLimitRange.lowerBound)
         #expect(built.learningOptions.newCardsPerSession == LearningOptions.sessionLimitRange.upperBound)
+        options.newCardsPerSession = 0
+        #expect(try Deck(learningOptions: options, cards: []).learningOptions.newCardsPerSession == LearningOptions.sessionLimitRange.lowerBound)
+        options.newCardsPerSession = 100_000
 
         var changed = Deck()
         _ = changed.apply(try #require(DeckChange.changingLearningOptions(options, in: changed, calendar: .testing)), day: 100)

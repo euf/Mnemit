@@ -27,6 +27,11 @@
   `references/leech-research.md` (leeches), `references/today-layout-research.md` and `references/hig-ios26.md` (Today).
   The code's rules: `references/daily-ring.md`; the package and the ledger: `references/deck-package.md`; the learner's
   paths: `references/learning-flow.md`; terms: `GLOSSARY.md`; screens: `references/screens.md`; look: `design-spec.md`.
+- New cards: the learner's unit is the word (a note with its cards). The ring's allowance says how many new cards the day
+  takes, one queue over all decks that aren't paused says which (new words newest addition first, opened Meaning → Word
+  cards alternating with them one for one, `references/scheduling.md`); a Meaning → Word card opens at a 7-day interval
+  (`StudySession.unlockDays`). The one deck option for new cards is New cards/day, Anki's name (“—” by default, the ring decides): that many
+  a day, outside the allowance. ADR 0008; `references/product-model.md` §5 and §10.
 - Speech: words are rendered ahead and played from memory (`GreekSpeech`, `SpeechLog` writes
   `Library/Caches/speech.log`, read off the iPhone with `devicectl device copy from`); EF heard no stutter.
 - Strings in en, de, ru, el; `Tools/check-localizations.swift` requires all four.
@@ -36,17 +41,16 @@
   On the iPhone EF studies, edits cards and decks, and adds words after a lesson.
 - Decks in `iCloud Drive/Mnemit/`, both built by `Tools/deck-from-tsv` from the dictionary
   `~/Documents/greek-lessons/vocab/` (`merge.py` → `greek-vocab.tsv`, `cards.py` → `cards-*.tsv`):
-  - `Greek A1–A2.mnemit`, review of the familiar: 1629 words, 3258 cards (recognition and translation
-    into Greek), 30 + 30 new per day, production not locked; paused by EF.
-  - `Greek B1.mnemit`, learning: 2394 cards,
-    20 new recognition + 7 production per day,
-    production unlocks after 7 days. 78 old cards of the first deck are
-    frozen (their words went to A1–A2), 131 adopted with their progress.
+  - `Greek A1–A2.mnemit`, review of the familiar: 1629 words, 3258 cards (Word → Meaning and Meaning → Word),
+    New cards/day —; paused by EF.
+  - `Greek B1.mnemit`, learning: 2394 cards, New cards/day — (cleared 29.10 with `deck-from-tsv --new-per-session none`):
+    the deck takes its share of the allowance. Meaning → Word cards open at an interval of 7 days.
+    78 old cards of the first deck are frozen (their words went to A1–A2), 131 adopted with their progress.
   The words of a lesson are a file of their own, `src-b1-LNN.tsv` in the order of the lesson's table; `merge.py`
   keeps the order of the sources, `curated.tsv` holds the checked Russian, English and examples. On 29.10 every card not started was renewed (`deck-from-tsv --renew`):
   lesson 6 first, then the zodiac topic, the rest in the order of the sources.
   - `Greek Grammar.mnemit`: sentence cards for the grammar tables, a form per sentence, from
-    `src-grammar-<topic>.tsv` (`cards.py` → `cards-grammar.tsv`); production not locked. First topic: δικός μου.
+    `src-grammar-<topic>.tsv` (`cards.py` → `cards-grammar.tsv`). First topic: δικός μου.
   A recognition question is the Greek form; the answer is Russian, English only where it helps, and an example.
   A translation question is Russian (a clarification in brackets tells synonyms apart), the hint the part of
   speech and English if there is any, the answer the Greek form and an example. There is never Greek in a

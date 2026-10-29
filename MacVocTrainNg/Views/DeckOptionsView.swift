@@ -32,8 +32,14 @@ struct DeckOptionsView: View {
                 }
 
                 Section {
-                    LimitStepper(title: "Cards per session", value: $options.cardsPerSession, step: 10, ceiling: 300, range: LearningOptions.sessionLimitRange)
-                    LimitStepper(title: "New cards per day", value: $options.newCardsPerSession, step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
+                    LimitStepper(title: "New cards/day", value: $options.newCardsPerSession, step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
+                } header: {
+                    Text("Daily Limits")
+                } footer: {
+                    Text("— lets the day's ring decide. A number takes that many new cards a day, as Anki does.")
+                }
+
+                Section {
                     Stepper(value: $options.steps, in: LearningOptions.stepsRange) {
                         LabeledContent("Steps per card", value: options.steps.formatted())
                     }
@@ -41,19 +47,6 @@ struct DeckOptionsView: View {
                     Text("Sessions")
                 } footer: {
                     Text("New and forgotten cards come back until you grade them Good this many times.")
-                }
-
-                Section {
-                    LimitStepper(title: "New per day", value: $options.newProductionPerSession, step: 1, ceiling: 30, range: LearningOptions.productionLimitRange)
-                    Stepper(value: $options.productionUnlockDays, in: LearningOptions.productionUnlockDaysRange) {
-                        LabeledContent(
-                            "Unlock after",
-                            value: options.productionUnlockDays == 0 ? String(localized: "Never locked") : Format.days(Double(options.productionUnlockDays)))
-                    }
-                } header: {
-                    Text("Meaning → Word cards")
-                } footer: {
-                    Text("Meaning → Word waits until Word → Meaning has this interval.")
                 }
 
                 Section {

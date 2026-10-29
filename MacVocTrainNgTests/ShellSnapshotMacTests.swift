@@ -23,7 +23,7 @@ extension DeckFileTests {
         }
 
         @Test func todayADeckAndProgress() async throws {
-            let f = try ShellFixture(decks: [("Greek A1–A2", 14), ("Greek B1", 6), ("Greek B2", 3)])
+            let f = try ShellFixture(decks: [("Greek A1–A2", 14), ("Greek B1", 6), ("Greek B2", 3)], newPerDay: 3)
             let shell = f.shell
             try await f.waitUntilRead(decks: 3)
             try await f.waitFor("the ring is worked out") { shell.isDayReady }

@@ -200,9 +200,7 @@ struct AnkiSiblingsTests {
     func options() -> LearningOptions {
         var options = LearningOptions()
         options.fuzzing = false
-        options.cardsPerSession = nil
         options.newCardsPerSession = nil
-        options.newProductionPerSession = nil
         return options
     }
 
@@ -249,7 +247,7 @@ struct AnkiSiblingsTests {
         // Two good reviews graduate the card, to an interval of two days.
         let (result, forward) = try reversePair(reviewedAfter: [])
         let interval = calendar.days(from: forward.lastReview, to: forward.due)
-        #expect(interval >= 2 && interval < options().productionUnlockDays)
+        #expect(interval >= 2 && interval < StudySession.unlockDays)
         // The next study day the forward card is not due yet and the reverse card is not unlocked.
         #expect(try selected(result, at: forward.lastReview.addingTimeInterval(86400)) == [])
     }
@@ -257,7 +255,7 @@ struct AnkiSiblingsTests {
     @Test func theReverseCardIsBuriedTheDayItsSiblingWasReviewedAndFollowsOnceUnlocked() throws {
         let (result, forward) = try reversePair(reviewedAfter: [1, 4, 10, 24])
         // The forward card is in review with an interval that unlocks the reverse card.
-        #expect(calendar.days(from: forward.lastReview, to: forward.due) >= options().productionUnlockDays)
+        #expect(calendar.days(from: forward.lastReview, to: forward.due) >= StudySession.unlockDays)
         // The same study day: the forward card is not due, and the reverse is new but buried.
         #expect(try selected(result, at: forward.lastReview.addingTimeInterval(3600)) == [])
         // The next study day the reverse card is unlocked and nothing buries it.

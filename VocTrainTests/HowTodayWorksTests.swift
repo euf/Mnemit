@@ -74,7 +74,7 @@ struct HowTodayWorksTests {
         // The plan has no row for a bound on the new cards: the day's time is the only one, told in its own section.
         #expect(plan.keys.filter { $0.hasPrefix("New cards: limited") }.isEmpty)
         #expect(plan["Greek B1"] == "6")
-        #expect(content.sections[1].rows.contains(.value(label: "Greek B1", value: "6", note: "Ceiling 27 (limits 20 new / 7 production)")))
+        #expect(content.sections[1].rows.contains(.value(label: "Greek B1", value: "6", note: "Ready 27 (New cards/day: 20)")))
         #expect(plan["Cards done"] == "18")
         #expect(plan["Cards left"] == "22")
         #expect(plan["Catch-up beyond the plan"] == nil)

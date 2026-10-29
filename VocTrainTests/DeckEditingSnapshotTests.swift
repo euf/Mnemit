@@ -222,8 +222,6 @@ struct DeckEditingSnapshotTests {
         let custom = try options {
             $0.newCardsPerSession = nil
             $0.targetRecall = 0.95
-            $0.newProductionPerSession = 3
-            $0.productionUnlockDays = 0
             $0.leechThreshold = 0
         }
         let changed = try await host(NavigationStack { DeckOptionsScreen(document: custom) }, dark: dark, asSheet: false)

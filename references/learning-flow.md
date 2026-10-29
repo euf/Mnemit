@@ -35,14 +35,16 @@ up the count, and Study goes on where the stack was.
 The course learner adds the lesson's words at the desk, One Card or From a List, in a minute. Once cards are added the
 bottom bar of Add Cards holds Add and Study These Now, which adds what is typed too, closes the sheet and starts a stream
 over that deck: the added cards first, then the deck's plan. Words of the list the deck holds but hasn't started go
-with them: the day's addition is the first of the new cards, today and on the days after, until it is learned. They are asked as new cards are (the second direction of a pair
-waits for its first), they take the place of the deck's new cards of the day, so tomorrow's load is what it would have been
-had the deck chosen them, and they count toward the ring and its laps. A table of up to 50 cards imported into a new,
+with them: the day's addition is the first of the new cards, today and on the days after, until it is learned. They are asked as new cards are (the Meaning → Word card of a word
+waits until its Word → Meaning card has an interval of 7 days), they go beyond the deck's New cards/day and take the place of its
+new cards of the day, so tomorrow's load is what it would have been had the queue chosen them, and they count toward the
+ring and its laps. The lesson's words come first even without the button: the newest addition heads the queue, and the
+ring decides how many come. A table of up to 50 cards imported into a new,
 empty deck offers the same button.
 
 ### Learn 10 New Words raises the stakes
 
-- **What it adds.** Ten new cards beyond the daily limits, from every deck that has new cards left, one at a time to
+- **What it adds.** Ten new cards beyond the day's allowance and New cards/day, from every deck that has new cards left, one at a time to
   the deck that has given the fewest so far, and asked mixed as the plan is, at once and without another rest. No
   count to choose: FSRS keeps deciding which cards come. Each of them is asked like any new card.
 - **What it costs.** Each new card comes back as reviews. Ten cards bring about 2 reviews the next day, 8 the day after,
@@ -72,7 +74,8 @@ more before you're done." Both lines are true of the scheduler's first steps (`s
 showing"); nothing is graded, recorded or scheduled. The swipe practice then teaches the four grades, and "One stack a
 day" says in four lines what the stack, the ring, the streak and the ladder of words are.
 
-Today with no deck offers New Deck first and Shared Decks second, the iCloud folder as a link under them. A new deck opens
+Today with no deck offers New Deck first and Shared Decks second, the iCloud folder as a link under them. Nothing is set for
+new words: the ring decides how many come. A new deck opens
 Add Cards by itself, and Study These Now studies what was just added. A new word is asked the first time it comes up, like any
 card, with the same two buttons (Don't know is Again, Know is Good; the swipes give only these two), and the card comes
 back in the session (`scheduling.md`, "A new card's first showing"). The first grade is the first review: it moves the ring
@@ -107,13 +110,16 @@ The imported collection brings its history, and the replay of the history runs t
 learner's usual day. The ring holds the whole queue up to an hour, and what is due beyond it is "Reviews left ≈ 45 min" after the ring, not a
 ring that cannot close. A deck's Today card shows "≈ 4 min" beside Anki's counts, Due 14, New 6 and Learning 2; How It Works shows the plan,
 the time and the FSRS parameters. A deck's new cards are asked at once, whether the deck is made in the app or by an Anki package.
+An Anki package's new cards keep Anki's new-card order. New cards/day, Anki's setting under Anki's name, works as in
+Anki: the deck takes that many new cards a day, outside the ring's allowance, and the other decks keep theirs.
 
 ### Several decks
 
 One stack over every active deck with a plan for today. The next card comes from the deck whose next card is the most
 urgent: a card in learning, then the review with the lowest recall probability, then a new card from the deck that
-has given the fewest. The day's new-card allowance is split between the decks by their ceilings; Learn 10 New Words shares its ten
-cards the same way, one at a time. A paused deck is out of the day's plan; what was done in it stays done. A deck with nothing in today's plan does not open
+has given the fewest. The day's new-card allowance is split between the decks without New cards/day from one queue over them: new words
+newest addition first, opened Meaning → Word cards alternating with them one for one; a deck with New cards/day takes that many,
+outside the allowance. Learn 10 New Words shares its ten cards one at a time. A paused deck is out of the day's plan; what was done in it stays done. A deck with nothing in today's plan does not open
 with the stack, so Learn 10 New Words takes from the decks that did. Study These Now and Study This Deck are streams over one deck.
 
 ## The stack in the stream

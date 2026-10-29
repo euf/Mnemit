@@ -198,11 +198,11 @@ struct SyncRunTests {
         """.write(to: tsv, atomically: true, encoding: .utf8)
 
         let backups = directory.appendingPathComponent("backups")
-        let arguments = [tsv.path, deckURL.path, "--backup-dir", backups.path, "--new-production-per-session", "0", "--unlock-days", "30"]
+        let arguments = [tsv.path, deckURL.path, "--backup-dir", backups.path, "--new-per-session", "30"]
         let dry = try SyncRun.run(options(arguments + ["--dry-run"]), now: now)
         #expect(dry.contains("added 2, edited 0, adopted 1, suspended 0, unchanged 0"))
         #expect(dry.contains("adopted:"))
-        #expect(dry.contains("option: new production per session 7 → 0"))
+        #expect(dry.contains("option: new per session none → 30"))
         #expect(dry.contains("dry run: nothing written"))
         #expect(try DeckFile.decode(FileWrapper(url: deckURL, options: .immediate)) == before)
         #expect(!FileManager.default.fileExists(atPath: backups.path))
@@ -219,8 +219,7 @@ struct SyncRunTests {
         let adopted = try #require(after.card(withID: before.cards[0].id))
         #expect((adopted.note, adopted.kind) == ("δυναμικός", .production))
         #expect(adopted.answer == "δυναμικός-ή-ό\nΕίναι δυναμικός.")
-        #expect(after.learningOptions.newProductionPerSession == 0)
-        #expect(after.learningOptions.productionUnlockDays == 30)
+        #expect(after.learningOptions.newCardsPerSession == 30)
         #expect(try FileManager.default.contentsOfDirectory(atPath: backups.path).count == 1)
         // A deck with the old extension is written in place under its name, and no deck of the new one appears.
         #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("Greek.mnemit").path))
@@ -373,16 +372,17 @@ struct SyncRunTests {
     }
 
     @Test func parsesTheCommandLine() throws {
-        let options = try SyncOptions.parse(["a.tsv", "b.mnemit", "--dry-run", "--new-per-session", "none", "--new-production-per-session", "0", "--unlock-days", "0", "--renew", "notes.txt", "--remove", "old.txt"])
+        let options = try SyncOptions.parse(["a.tsv", "b.mnemit", "--dry-run", "--new-per-session", "none", "--renew", "notes.txt", "--remove", "old.txt"])
         #expect(options.dryRun && !options.suspendMissing)
         #expect(options.overrides.newPerSession == .unlimited)
-        #expect(options.overrides.newProductionPerSession == .count(0))
-        #expect(options.overrides.unlockDays == 0)
         #expect(options.renew?.lastPathComponent == "notes.txt" && options.remove?.lastPathComponent == "old.txt")
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-per-session", "0"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--renew"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--bogus"]) }
+        // The options of the production cards are gone.
+        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-production-per-session", "0"]) }
+        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--unlock-days", "30"]) }
     }
 }
 

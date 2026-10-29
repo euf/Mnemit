@@ -2,7 +2,7 @@
 
 In what order should words never studied be introduced. Before this research the deck order was alphabetical inside
 three tiers (class words, textbook units 1-5, the rest). What the app does now: one rule, the newest addition first,
-lessons in the order of their tables (`scheduling.md`, Order of new cards). Researched 29.10.2026 for a learner who
+lessons in the order of their tables (`scheduling.md`, Which new cards). Researched 29.10.2026 for a learner who
 studies Greek at B1 next to a weekly class. Not repeated here: interference and retrieval-induced forgetting
 (`cross-deck-overlap.md` §2, Tinkham 1993, Waring 1997), open Greek frequency lists (`deck-formats-and-sources.md` §3.6),
 the first showing of a card (`first-exposure-research.md`, §3 and §4).

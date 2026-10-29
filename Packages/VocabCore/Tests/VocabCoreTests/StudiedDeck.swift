@@ -9,9 +9,7 @@ enum StudiedDeck {
     /// of the same words. The day is the one after the last study day, mid-afternoon.
     static func make(cards: Int, days: Int, calendar: StudyCalendar = .testing) throws -> (deck: Deck, now: Date) {
         var options = LearningOptions()
-        options.cardsPerSession = nil
         options.newCardsPerSession = 12
-        options.newProductionPerSession = 6
         let end = calendar.start(ofDay: CivilDate(year: 2026, month: 10, day: 5).dayNumber)
         let firstDay = calendar.dayNumber(for: end) - days
         var deck = try Deck(

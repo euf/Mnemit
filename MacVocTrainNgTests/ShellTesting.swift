@@ -16,8 +16,10 @@ final class ShellFixture {
     let shell: Shell
     private let suite = "shell-test-\(UUID().uuidString)"
 
-    /// A folder with the decks `decks`, each of that many new cards.
-    init(decks: [(name: String, cards: Int)] = []) throws {
+    /// A folder with the decks `decks`, each of that many new cards. The day's new cards go to the decks without New
+    /// cards/day from one queue, newest addition first, so the earliest deck takes them all: `newPerDay` gives each deck
+    /// a limit of its own, which holds outside that queue, for the tests that need every deck to have a plan.
+    init(decks: [(name: String, cards: Int)] = [], newPerDay: Int? = nil) throws {
         directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
         folderURL = directory.appending(path: "Mnemit", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
@@ -25,7 +27,7 @@ final class ShellFixture {
         let folder = DeckFolder(defaults: defaults)
         shell = Shell(folder: folder, decks: OpenDecks(), defaults: defaults)
         for (name, cards) in decks {
-            try Self.write(cards: cards, to: url(name))
+            try Self.write(cards: cards, to: url(name), newPerDay: newPerDay)
         }
         folder.use(folderURL)
     }
@@ -35,10 +37,12 @@ final class ShellFixture {
         folderURL.appending(path: "\(name).mnemit", directoryHint: .isDirectory)
     }
 
-    /// A deck of `cards` new cards, written to `url`.
+    /// A deck of `cards` new cards, written to `url`, with New cards/day `newPerDay` if it is not `nil`.
     @discardableResult
-    static func write(cards: Int, to url: URL) throws -> URL {
-        let deck = try Deck(cards: (0..<cards).map { Card(text: CardText(question: "word \($0)", answer: "x")!, created: .now.addingTimeInterval(-60)) })
+    static func write(cards: Int, to url: URL, newPerDay: Int? = nil) throws -> URL {
+        var options = LearningOptions()
+        options.newCardsPerSession = newPerDay
+        let deck = try Deck(learningOptions: options, cards: (0..<cards).map { Card(text: CardText(question: "word \($0)", answer: "x")!, created: .now.addingTimeInterval(-60)) })
         try DeckFile.fileWrapper(for: deck).write(to: url, options: .atomic, originalContentsURL: nil)
         return url
     }

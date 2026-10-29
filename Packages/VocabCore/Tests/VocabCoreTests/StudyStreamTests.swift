@@ -12,9 +12,7 @@ struct StudyStreamTests {
     func options() -> LearningOptions {
         var options = LearningOptions()
         options.fuzzing = false
-        options.cardsPerSession = nil
         options.newCardsPerSession = nil
-        options.newProductionPerSession = nil
         return options
     }
 
@@ -127,10 +125,9 @@ struct StudyStreamTests {
     }
 
     @Test func aPlanCappedBySizeGoesOnWithoutResting() throws {
-        var options = options()
-        options.cardsPerSession = 2
-        var run = try run((0..<5).map { review("r\($0)") }, options: options)
-        #expect(run.stream.session.totalCount == 2)
+        let size = StudySession.segmentSize
+        var run = try run((0..<(2 * size + size / 2)).map { review("r\($0)") })
+        #expect(run.stream.session.totalCount == size)
         var segments = Set<UUID>()
         while run.stream.stage == .plan {
             segments.insert(run.stream.session.id)
@@ -138,7 +135,7 @@ struct StudyStreamTests {
         }
         #expect(segments.count == 3)
         #expect(run.deck.cards.allSatisfy { $0.log.count == 1 })
-        #expect(run.stream.recap.reviews == 5)
+        #expect(run.stream.recap.reviews == 2 * size + size / 2)
     }
 
     @Test func aMistakeComesBackWithinThePlanAndTheRecapCountsIt() throws {
@@ -251,10 +248,9 @@ struct StudyStreamTests {
     @Test func newCardsBeyondTheLimitComeOnlyOnRequestAndAreSelectedLikeThePlan() throws {
         var options = options()
         options.newCardsPerSession = 2
-        options.productionUnlockDays = 0
         var cards = (0..<30).map { fresh("n\($0)", note: "w\($0)", kind: .recognition) }
         // The note of a card asked in the plan is buried for the extra cards, too: one card per note.
-        cards.insert(fresh("sibling", note: "w0", kind: .production), at: 1)
+        cards.insert(fresh("sibling", note: "w0", kind: .recognition), at: 1)
         var run = try run(cards, options: options)
         #expect(run.stream.session.totalCount == 2)
         _ = run.play(whileIn: .plan)
@@ -279,7 +275,6 @@ struct StudyStreamTests {
     @Test func extraNewCardsKeepTheProductionLockAndTheBurying() throws {
         var options = options()
         options.newCardsPerSession = 1
-        options.newProductionPerSession = 0
         // The limit for the day is spent by a card first reviewed today.
         var introduced = review("introduced", interval: 5, dueInDays: 5)
         introduced.learningState?.lastReview = now.addingTimeInterval(-3600)
@@ -295,8 +290,8 @@ struct StudyStreamTests {
             cards: [introduced, learned, productionOfLearned, recognitionB, lockedProductionB, firstOfC, secondOfC])
         #expect(StudySession.counts(for: deck, at: now, calendar: calendar).total == 0)
 
-        // The production limit is 0, the recognition limit used up: the extra cards ignore both, but a locked
-        // production card stays out, and so does the second card of a note.
+        // The limit of the day is used up: the extra cards ignore it, but a locked production card stays out, and so
+        // does the second card of a note.
         var random = SeededRandom(seed: 5)
         let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, extraNew: 10, using: &random)
         #expect(ids.count == 3)

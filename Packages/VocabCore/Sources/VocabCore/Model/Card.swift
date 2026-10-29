@@ -113,7 +113,7 @@ public enum CardKind: String, Sendable, CaseIterable {
     case recognition
     /// Native → foreign: the learner produces the word. A study session holds a new
     /// production card back until the recognition card of its note is learned, see
-    /// `LearningOptions.productionUnlockDays`.
+    /// `StudySession.unlockDays`.
     case production
 }
 

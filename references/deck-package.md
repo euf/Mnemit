@@ -23,6 +23,8 @@ The deck file, how both apps edit and merge it, and the media files of cards.
 - The options `leechThreshold` and `leechAction` came without a version bump. `leechAction` is `"suspend"` or left out
   (`keep`, the default); a missing or unknown value reads `keep`. An older app drops both on save, and the deck reads as keep
   again.
+- The option key for new cards is `newCardsPerSession`, which holds New cards/day. A `deck.json` that still has
+  `cardsPerSession`, `newProductionPerSession` or `productionUnlockDays` reads, and the next save leaves them out.
 - Key rules for `deck.json` and `reviews.jsonl` and when to bump `DeckFile.currentVersion`: CLAUDE.md,
   Conventions.
 

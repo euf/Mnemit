@@ -179,7 +179,7 @@ sizes: `design-spec.md` §4.
     Up** while the plan has cards left; with none, **Done** and **Learn 10 New Words**.
   - *All done* (the end of the plan, and the end of any stream that began past the ring's moment, Catch Up, Learn 10 New
     Words and Study These Now included): the title "All done for today"; the same lines. **Done** (prominent) and, while a
-    deck has new cards, **Learn 10 New Words** (bordered), ten new cards beyond the limits asked at once, with no rest
+    deck has new cards, **Learn 10 New Words** (bordered), ten new cards beyond the day's allowance and New cards/day asked at once, with no rest
     after. On the Mac a rest taller than the window scrolls under the header (`SessionView`).
   - *Practice complete*: its figures (cards, share recalled) and **Done**.
 - Frames: `VocTrainTests/StudyScreenSnapshotTests`.
@@ -213,7 +213,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   streak; the ring is today's goal and Catch Up takes the reviews still waiting; nothing due is a done day, and Learn 10 New
   Words gives more (`HowTodayWorks.Row.text`).
 - **Today's Plan**: due today, overdue included; cards in learning; new cards admitted; each deck's
-  admitted cards with its ceiling and limits (new / production), a paused deck as "Paused: <name>" with
+  admitted cards with its allowance, or its New cards/day where the deck sets it, a paused deck as "Paused: <name>" with
   no figures; cards done; cards left.
 - **Today's time**: the day's time in minutes (one decimal), the streak step and the daily goal in
   cards; the last 14 days, newest first, with the minutes asked, the minutes worked, the ring (Closed
@@ -228,8 +228,8 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 - **Swipes** (iPhone only): "Swipes that sprang back from a gap: N of M today" (`SwipeTally`,
   `study-screen.md`), with the sectors in compass degrees in the footer.
 - **Options**: seven sentences and no footer, one for each option with a rule behind it. A new word is answered Don't know
-  and comes back in the session. Target recall (higher means more reviews; 90 % is a good balance). The Meaning → Word unlock
-  rule and one direction of a word per day. The leech: a card forgotten as often as the deck's threshold says, and again
+  and comes back in the session. Target recall (higher means more reviews; 90 % is a good balance). A Meaning → Word card opens
+  once its Word → Meaning card has an interval of 7 days. The leech: a card forgotten as often as the deck's threshold says, and again
   after every half of it; its answer stays on screen so the card can be edited or set aside. Learning steps (Hard keeps the
   step, Forgot starts it over, Easy finishes at once). The FSRS parameters (they start from averages, are fitted to the
   learner's reviews, give fewer reviews for the same recall, and keep the due dates). The refit schedule, read from
@@ -259,7 +259,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   doesn't change when cards come back), a divider, Rename…, **Pause Deck** / **Resume Deck**
   (`pause.circle` / `play.circle`), Export…, Delete Deck (moves the file to the Trash).
 - A paused deck still opens: Study This Deck and the rest work, and the counts are those of the deck's
-  own limits.
+  own New cards/day.
 - `PushedDecks` keeps the stack's decks open: it opens one when a route is pushed (`DeckRoute`, the
   deck named by slot, not by file, so a rename doesn't change the route) and closes it when the route
   leaves `path`. Screens above (`CardBrowserScreen`, `CardDetailScreen`, options) show one document.
@@ -322,7 +322,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   side by side (one under the other at large text sizes): while something is typed that can be added Add is the prominent
   button, with nothing left to add Study These Now is; it adds what is typed too, closes the sheet and starts the stream
   over the deck with the added cards first. It shows only while the added cards are addable now (`StudyStream.addableCards`:
-  new, unlocked, not buried; the second direction of a pair waits for its first). From Today (`AddCardsHost`) the stream starts
+  new, unlocked, not buried; the Meaning → Word card of a word waits until its Word → Meaning card has an interval of 7 days). From Today (`AddCardsHost`) the stream starts
   after the sheet has gone and the deck is saved and closed; from the deck screen the sheet's `onDismiss` starts it on the open
   deck. The sheet is the Mac's too
   (`WordList.swift`, `LimitStepper.swift` in `Shared/Support` hold what the two share). On the Mac **Study These Now**
@@ -367,15 +367,14 @@ shows its charts beside the tiles under Statistics (⌘4).
 ## Options
 
 The iPhone's form (`DeckOptionsScreen`) saves every change at once, one undo step each. Top to bottom:
-**New Cards** (New cards per day; new cards come newest addition first, `references/scheduling.md`);
-**Scheduling** (Target recall, 70–97 %); **Meaning → Word cards** (New per day, Unlock after N days); a section for the
+**Daily Limits** (New cards/day, "—" by default: the day's ring decides; its footer "— lets the day's ring decide. A number takes that many new cards a day, as Anki does.");
+**Scheduling** (Target recall, 70–97 %); a section for the
 leech: **Leech after** N lapses (0 is Off) and **When a card becomes a leech**, Keep or Suspend (`LearningOptions.leechAction`),
 its footer "A card you forget this many times becomes a leech, and again after every half of that."; **Advanced** (Longest interval, Spread out intervals, Steps per card, FSRS parameters with
-"Compute from Review Log"). New cards per day, Meaning → Word per day and, on the Mac, Cards per session are
-one stepper each (`LimitStepper`): plus past the ceiling (100, 30, 300) shows "Unlimited", minus from it comes
-back to the ceiling. Every footer is one sentence.
+"Compute from Review Log"). New cards/day is a stepper (`LimitStepper`): "—" first (VoiceOver reads Off), plus from it gives 5, plus
+stops at 100, minus from 1 gives "—" again. Every footer is one sentence.
 
-The Mac's sheet (`DeckOptionsView`) has the same content in one form, plus Cards per session, with Save and
+The Mac's sheet (`DeckOptionsView`) has the same content in one form, with Save and
 Cancel, and Restore Defaults, which keeps the mark. The leech threshold ("Leech threshold") and the picker sit in Advanced,
 the footer's sentence as the threshold's tooltip.
 
@@ -388,7 +387,7 @@ the footer's sentence as the threshold's tooltip.
   reminders, Study. `DailyProgress.evaluate` and `DayBreakdown` leave `DeckActivity.isPaused` out of the plan
   and count its work: cards done, pace, streak, words in memory and words learned take every deck, so pausing
   takes nothing from today (such a deck's place in `newCardAllowances` holds 0; `DailyRingModel` gives
-  it no allowance, and its plan follows its own limits). `KnownDeckCounts` counts no cards for it and
+  it no allowance, and its plan follows its own New cards/day). `KnownDeckCounts` counts no cards for it and
   keeps it in `paused`; `TodayDecks` splits Today's sections and the Study queue (`studyQueue`); its
   stream has no `RoundGuide`.
 - The deck still opens: screen, browser and Study This Deck work, and its cards fill the ring like those of

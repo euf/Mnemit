@@ -50,9 +50,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 ## Plan
 
 - **Plan**: the cards the day asks for under FSRS (`StudySession.counts`): cards due, overdue too, and
-  new cards within the day's limits and the deck's allowance `newCardAllowance`; overdue cards are part
-  of it (Backlog below). `nil` instead of an allowance means only the deck's limits: tests and tools count
-  that way.
+  new cards, which are the deck's share of the allowance `newCardAllowance`, or exactly its New cards/day where the deck
+  sets it; overdue cards are part of it (Backlog below). `nil` instead of an allowance means only a deck's own New
+  cards/day cuts the new cards: tests and tools count that way.
 - The plan at the start of a day the logs work out (today, and a past day the ledger lacks) comes from
   `DeckActivity.history(from:at:calendar:)`: the log is
   replayed forward once (`replayLog`, card states at the end of every day), a copy of the deck takes
@@ -75,8 +75,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   stay open next to "0 cards left". A day that started with an empty plan (the first deck, filled during
   the day) takes the plan as it is, `done + owed`, so the first day has a goal.
 - A cap on the goal is a change to this type.
-- `cardsPerSession` is the stream's segment size and doesn't cut the plan: `counts` doesn't know it,
-  and nothing visible grows by segments.
+- The stream's segment is a constant, `StudySession.segmentSize` (100 cards). It doesn't cut the plan: `counts` doesn't
+  know it, and nothing visible grows by segments.
 
 ## Streak step
 
@@ -103,7 +103,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `RingDay.time`); the next time is T × 1.15 (`DailyGoal.grows`, reason `ringClosed`) when its ring was the
   `DailyGoal.closedToGrow`-th (2nd, 4th, …) in a row closed on a goal that filled T, T when it was the first of
   such a run (reason `closedInARow`), T when it closed on a plan smaller than T (`RingDay.filled` false: a deck's
-  new-card limit or an exhausted deck set the goal; reason `smallPlan`; such a day neither counts in the run nor
+  New cards/day or an exhausted deck set the goal; reason `smallPlan`; such a day neither counts in the run nor
   breaks it), and T × 0.775 (`DailyGoal.shrinks`) when it stayed open, which ends the run; clamped to
   120…3600 s; 150 s before any study day. A day without work is no step, and the days after it ask what they
   would have asked without it. worked(d) is the cards done on `d` at the day's own prices, new × new price +
@@ -142,10 +142,13 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   sizes them by the review workload one can sustain, and the day's time already holds that workload: as the
   reviews of earlier new cards grow, the time left for new ones shrinks. A second bound that looked a week ahead
   never set the allowance on any simulated or real learner and is gone (`ring-design.md`).
-- The decks' limits (`newCardsPerSession`, `newProductionPerSession`) are ceilings. The allowance is
-  split between decks in proportion to their ceilings by largest remainder (`DailyGoal.split`). A
-  deck's ceiling is the new cards its limits would take at the start of the day plus those created
-  since (`DeckActivity.History.newCeilingToday`).
+- A deck with **New cards/day** set (`newCardsPerSession`, Anki's name; “—” by default, the ring decides) takes exactly that many new
+  cards a day, of both directions, outside the allowance, and doesn't reduce what the other decks get. The allowance is
+  split over the decks without it from one queue over those decks: new words newest addition first, opened Meaning →
+  Word cards alternating with them one for one (`references/scheduling.md`). Each deck's own queue is a
+  `DailyGoal.NewQueue`, kept as `DeckActivity.History.newQueueToday`, and `DailyGoal.split(_:overQueues:)` gives every
+  deck its share from them. A deck with New cards/day gets its own queue's count; within a deck its cards alternate the
+  same way.
 - `DailyProgress.newCardAllowances`: the allowances per deck in `evaluate` order. The apps pass them to
   `StudySession`/`StudyStream` (`newCardAllowance`). `DailyRingModel` gives the allowance to the open
   document (`VocabularyDocument.newCardAllowance`, read by `DueCardCounter`, `StudyModel`,
@@ -153,7 +156,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `OpenDeck`, `KnownDeckCounts`, `Reminders`, `WidgetSync`; the forecast for future days takes today's
   allowance).
 - Cards first reviewed today are subtracted from the allowance, Study These Now's cards among them (they stand in for the
-  plan's new cards); Learn 10 New Words goes beyond it. A card
+  plan's new cards, and go beyond New cards/day); Learn 10 New Words goes beyond the allowance and New cards/day. A card
   counts against the allowance when its first grade is logged.
 
 ## Done card, ring, minutes
@@ -286,7 +289,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   suspended, the log before today, and for a card with an incomplete log its state too).
 - Reviewing a card with a complete log, editing text and time passing within the day don't change the
   key: only today is computed (the day's reviews from card states at its start, the day's plan, the new
-  ceiling), 8.5 ms on 3,000 cards and 400 days instead of 0.31 s.
+  new-card queue), 8.5 ms on 3,000 cards and 400 days instead of 0.31 s.
 - Suspend, options, adding and deleting a card, note and kind, reset, reviewing a card with an
   incomplete log and a new study day mean a full recount (the first review of a never-reviewed card
   doesn't change the key).
@@ -347,7 +350,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
      keep the streak, the ring is the goal and Catch Up studies the reviews waiting, nothing due is all done and Learn 10 New
      Words adds ten.
   1. Day's plan: the parts of the plan at the start of the day (due today, overdue included; learning;
-     new admitted), each deck's allowance and ceiling, goal, rounds, done, left.
+     new admitted), each deck's allowance (or its New cards/day), goal, rounds, done, left.
   2. Today's time: the time in minutes, the streak step and the goal in cards; 14 days with the minutes
      asked, the minutes worked, ring closed or open and why the time (Start, Ring closed, Ring open, Plan under the time, Past the
      ring).

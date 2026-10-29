@@ -6,7 +6,7 @@ MacVocTrain 1 documents.
 ## deck-from-tsv: sync a deck with a TSV in place
 
 - Keeps progress:
-  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--renew NOTES] [--remove NOTES]`.
+  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--renew NOTES] [--remove NOTES]`.
 - TSV with the header `note⇥kind⇥question⇥answer⇥hint` (kind is `recognition` or `production`; `\n`
   in a field is a line break).
 - A card is found by (note, kind). An old card without a note is adopted (its id and reviews stay) if
@@ -18,7 +18,7 @@ MacVocTrain 1 documents.
   `.mnemit`, and the cleanup counts copies of both extensions). A `.voctrain` deck is written in place
   under its own name.
 - A TSV without the header (question, answer, hint) works as before: only new questions are added.
-- `--new-per-session` and `--new-production-per-session` set the daily limit (the old names stay).
+- `--new-per-session N` sets the deck's New cards/day (`none` turns it Off).
 - One run sets one `created` on its cards: they are that day's addition, first among the new cards, in the
   order of the TSV (`references/scheduling.md`).
 - `--renew NOTES`: a file of word keys, one per line. After the sync, the new cards of those words join the run's
@@ -30,14 +30,15 @@ MacVocTrain 1 documents.
 
 ## Production cards
 
-- The model and the selection rules (production unlock, hiding siblings) live in VocabCore:
-  `Card.note`/`kind`, `LearningOptions.productionUnlockDays` (default 7; a value saved in a deck stays;
-  0 = don't hold) and its neighbours, `StudySession.selectCards`.
-- New production cards already unlocked come in the order the words were first learned: by the date of
-  the first review of the recognition sibling, oldest first, whatever their addition. The newest addition
-  first stays the order of recognition cards and of cards without such a date
-  (`StudySession.productionOldestLearnedFirst`).
-- The daily production limit works through the accumulated cards from the oldest word.
+- A production card is the Meaning → Word card of a word, the second card of a pair (`CardKind.production`; the
+  first is Word → Meaning, `CardKind.recognition`). The model and the selection rules (unlock, hiding siblings)
+  live in VocabCore: `Card.note`/`kind`, `StudySession.unlockDays` (7 days, a constant) and `StudySession.selectCards`.
+  A card without a note is a word with one card. The key `productionUnlockDays` in an older `deck.json` reads, and
+  the next save leaves it out.
+- An opened Meaning → Word card comes in the order the words were first learned: by the date of the first review of
+  the Word → Meaning sibling, oldest first, whatever their addition. Opened cards alternate with the new words one for
+  one, the new words newest addition first (`StudySession.alternatingUnlocked`, `StudySession.newestAdditionFirst`).
+  New cards/day, where a deck sets it, counts the cards of both directions (`references/scheduling.md`).
 - Sources, the unlock threshold and what would change the verdict: `references/production-cards-research.md`.
 
 ## Anki import: core

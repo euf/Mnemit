@@ -1,6 +1,6 @@
 # Scheduling and the day's stack
 
-Today's counts and limits, a new card's first showing, reviews, leeches, the automatic FSRS refit, the
+Today's counts, which new cards the day takes, a new card's first showing, reviews, leeches, the automatic FSRS refit, the
 day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`; the day's goal, rounds and ring:
 `references/daily-ring.md`.
 
@@ -9,16 +9,17 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 - The "today" numbers (New · Learning · Review, plan size, next date) come only from
   `StudySession.counts(for:at:calendar:)`. It selects like the day's plan, so the numbers of Today's
   deck rows, of the deck screen and of the Mac's windows match what the stream will take: the whole plan.
-  `cardsPerSession` doesn't count.
-- The limits `newCardsPerSession` and `newProductionPerSession` apply per study day (it turns at 4 am);
-  the names stay for `deck.json`. A card whose first review fell on the current day is subtracted from
-  the limit, so entering the stream again takes no new cards beyond the limit, and the next day restores
-  the full count.
+- How many new cards a deck takes is the ring's allowance (`DailyGoal.newCardsAllowed`, `references/daily-ring.md`),
+  unless the deck sets **New cards/day** (`newCardsPerSession`, Anki's name; “—” by default, the ring decides). A deck that sets it takes
+  exactly that many new cards of both directions per study day (it turns at 4 am), as in Anki: outside the allowance, and
+  without reducing what the other decks get. A card whose first review fell on the current day is subtracted from the
+  count, so entering the stream again takes no new cards beyond it, and the next day restores the full count.
+- A `deck.json` that still has `cardsPerSession`, `newProductionPerSession` or `productionUnlockDays` reads, and the next
+  save leaves the keys out.
 - A deck row on Today reads the whole deck including `reviews.jsonl` (`KnownDeckCounts` through
   `DeckFileReader`), as the document on the deck screen does: only the log knows the cards started
   today, and counting from `deck.json` alone (`DeckFile.decode(_ data:)`) showed the full limit.
-- The `deck-from-tsv` flags `--new-per-session` and `--new-production-per-session` keep the old names
-  too and set the daily limit.
+- The `deck-from-tsv` flag `--new-per-session` sets New cards/day.
 - The counts of the card filters and of the Statistics tiles (Due, New, Suspended) are
   `Deck.filterCounts(at:)`: Due is due now, not new and not suspended; New is new and not suspended;
   Suspended is suspended. `Card.isDue(at:)` is the study session's own test, where a new card is due;
@@ -105,6 +106,8 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
 
 - Study opens the day's stack, which ends with the plan; there are no sessions (`StudyStream` in
   VocabCore, driven by `SessionDriver` in both apps). Every review is written at once, and leaving loses nothing.
+  The stream takes the plan in segments of 100 cards (`StudySession.segmentSize`, a constant); a segment doesn't cut the
+  plan, and nothing visible grows by segments.
 - Within the plan the stream rests twice a day at most (`StudyStream.roundRest`,
   `restAtRoundEnd(roundsDone:rounds:)`, `continueRound()`): at the end of the first round ("Streak
   kept", Keep Going or Done for Now) and at the end of the last while the plan has cards beyond the
@@ -118,13 +121,13 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
   computed yet) and in practice the stream doesn't rest.
 - While resting there is no card (`currentCard == nil`): speech doesn't say the hidden word, and grades
   and Suspend are refused (`StudyModel.isRoundRest`).
-- The stack is the day's plan (`StudySession.counts`, same selection and limits, every card due, overdue
+- The stack is the day's plan (`StudySession.counts`, same selection, every card due, overdue
   ones included; while the plan is not empty it is recounted after every segment). When it is empty the
   stream rests for good: "Ring closed" (or "Done for today") with Done and, while a deck has new cards
   left, Learn 10 New Words.
 - Learn 10 New Words is the only way past the end: `addNewCards(_:)`, `StudyStream.newCardChunk` (10) new
-  cards beyond the limits. Over several decks `StudyModel` shares them out one at a time to the deck that
-  has given the fewest new cards (`pushOnCounts`), and the stack asks them mixed (`mostUrgentLane()`). It
+  cards beyond the allowance and every deck's New cards/day. Over several decks `StudyModel` shares them out one at a time to
+  the deck that has given the fewest new cards (`pushOnCounts`), and the stack asks them mixed (`mostUrgentLane()`). It
   puts every round behind the stream (`roundsPassed = .max`): its cards lie beyond a closed ring, and no
   rest of a round comes after them. Today's button of that name (`StudyModel.Entry.pushOn` on the iPhone,
   `SessionViewModel.Entry.pushOn` on the Mac, from the Today window and the deck window's toolbar; the
@@ -134,11 +137,26 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
   (`practicingMistakesIn:`, `practicingNewestWordsIn:`) from the deck screen and the Mac's menu; they
   change no card, practice once and end in a pause with the results.
 
-## Order of new cards: the newest addition first
+## Which new cards: one queue, the newest addition first
 
-- One rule, no option: the new cards added on a later study day come before those of an earlier one; within a
-  day they come as they were added, by `Card.created`, then in deck order (`StudySession.newestAdditionFirst`).
-  The order decides which new cards the day's limits take; the session then mixes the cards it took.
+- The learner's unit is the word: a note (`Card.note`) with its cards. A card without a note is a word with one card;
+  a pair is Word → Meaning (`CardKind.recognition`) and Meaning → Word (`CardKind.production`, the internal name of
+  the card the screens call Meaning → Word).
+- The ring's allowance says how many new cards the decks without New cards/day take; one queue over all decks that aren't
+  paused says which. No option orders it.
+- New words come newest addition first: the cards added on a later study day come before those of an earlier one;
+  within a day they come as they were added, by `Card.created`, then in deck order (`StudySession.newestAdditionFirst`).
+- A word's Meaning → Word card opens when its Word → Meaning card is in the review phase with an interval of 7 days or
+  more (`StudySession.unlockDays`, a constant). Opened Meaning → Word cards, the oldest learned word first, alternate
+  with the new words one for one (`StudySession.alternatingUnlocked`).
+- Each deck's share of the day's allowance comes from that one queue: `DailyGoal.split(_:overQueues:)` over each deck's
+  `DailyGoal.NewQueue`, kept as `DeckActivity.History.newQueueToday` (`references/daily-ring.md`). The split covers the
+  decks without New cards/day; a deck with it gets its own queue's count. Within a deck its own cards alternate the same
+  way.
+- The unlock interval (7 days, `unlockDays`), the stream's segment (100 cards, `segmentSize`) and the order above are
+  constants, no options. New cards/day is the one setting, under Anki's name. Learn 10 New Words goes beyond the
+  allowance and New cards/day; Study These Now goes beyond the deck's day, and its cards then take the place of the day's new
+  cards: they count against the deck's share of the allowance, or against New cards/day for a deck that has it.
 - An addition is whatever puts cards in a deck that day: Add Cards, a list of lesson words, an import, a run of
   `deck-from-tsv`. An imported or shared deck has one `created` for all its cards, so its author's order holds
   (an Anki package in Anki's new-card order, `references/import-export.md`); words typed one by one come in the
@@ -148,7 +166,6 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
   the words of the list the deck holds already (`WordListPreview.renewable(in:)`), so the whole lesson goes first;
   `deck-from-tsv --renew NOTES` does it for a list of word keys. A merge takes the stamps along with the card's
   content (`Card.contentChanged`).
-- Unlocked production cards keep their own order, the oldest learned word first (`references/import-export.md`).
 
 ## Newest batch
 

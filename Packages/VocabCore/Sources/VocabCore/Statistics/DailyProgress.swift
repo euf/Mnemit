@@ -270,22 +270,53 @@ public enum DailyGoal {
         return max(0, Int((left / pace.newCard + 1e-9).rounded(.down)))
     }
 
-    /// `total` new cards shared among decks in proportion to their `ceilings`, the new cards each deck's own
-    /// limits let it introduce: each part is its share rounded down, and the cards that are left go to the
-    /// largest remainders, the earlier deck first among equals. No deck gets more than its ceiling; with
-    /// `total` at the sum of the ceilings or more, each gets its ceiling.
-    public static func split(_ total: Int, overCeilings ceilings: [Int]) -> [Int] {
-        let ceilings = ceilings.map { max(0, $0) }
-        let sum = ceilings.reduce(0, +)
-        guard total < sum else { return ceilings }
-        let total = max(0, total)
-        var parts = ceilings.map { total * $0 / sum }
-        let remainders = ceilings.map { total * $0 % sum }
-        let order = ceilings.indices.sorted { remainders[$0] != remainders[$1] ? remainders[$0] > remainders[$1] : $0 < $1 }
-        var left = total - parts.reduce(0, +)
-        for index in order where left > 0 {
-            parts[index] += 1
-            left -= 1
+    /// A deck's new cards of the study day in its own order (`StudySession.newQueue(for:at:calendar:past:)`).
+    public struct NewQueue: Equatable, Sendable {
+        public enum Entry: Equatable, Sendable {
+            /// A new word, by its addition: the study day of `Card.created`, then `created`.
+            case word(day: Int, created: Date)
+            /// An opened production card, by when its word was learned.
+            case unlocked(learned: Date)
+        }
+
+        public var entries: [Entry]
+        /// Whether the deck has New cards/day: it then takes its entries, as Anki does, outside the day's allowance.
+        public var isLimited: Bool
+
+        public init(entries: [Entry] = [], isLimited: Bool = false) {
+            self.entries = entries
+            self.isLimited = isLimited
+        }
+    }
+
+    /// The day's `total` new cards shared among decks from one queue over the decks without New cards/day: their
+    /// new words newest addition first (the later study day first, then the earlier `created`, then the earlier deck),
+    /// their opened production cards oldest learned first, the two one for one, a word first; the first `total`
+    /// of it, counted per deck. A deck with New cards/day gets the whole of its queue, which counts against no one.
+    public static func split(_ total: Int, overQueues queues: [NewQueue]) -> [Int] {
+        var parts = queues.map { $0.isLimited ? $0.entries.count : 0 }
+        var words: [(day: Int, created: Date, deck: Int, index: Int)] = []
+        var unlocked: [(learned: Date, deck: Int, index: Int)] = []
+        for (deck, queue) in queues.enumerated() where !queue.isLimited {
+            for (index, entry) in queue.entries.enumerated() {
+                switch entry {
+                case let .word(day, created): words.append((day, created, deck, index))
+                case let .unlocked(learned): unlocked.append((learned, deck, index))
+                }
+            }
+        }
+        words.sort { (-$0.day, $0.created, $0.deck, $0.index) < (-$1.day, $1.created, $1.deck, $1.index) }
+        unlocked.sort { ($0.learned, $0.deck, $0.index) < ($1.learned, $1.deck, $1.index) }
+        var left = max(0, total)
+        for index in 0..<max(words.count, unlocked.count) where left > 0 {
+            if index < words.count, left > 0 {
+                parts[words[index].deck] += 1
+                left -= 1
+            }
+            if index < unlocked.count, left > 0 {
+                parts[unlocked[index].deck] += 1
+                left -= 1
+            }
         }
         return parts
     }
@@ -853,9 +884,10 @@ public struct DeckActivity: Sendable {
     struct History {
         var paced: PaceLog
         var starts: [Int: DayStart]
-        /// The new cards the deck's own limits take on the study day of `now` if it began now: the
-        /// cards created since it began are in this plan, which `starts` leaves them out of.
-        var newCeilingToday: Int
+        /// The new cards the study day of `now` would take from the deck if it began now, in their order
+        /// (`StudySession.newQueue(for:at:calendar:past:)`): the cards created since it began are in it, which
+        /// `starts` leaves them out of.
+        var newQueueToday: DailyGoal.NewQueue
         /// Which `Past` the days before today are from, if they are kept for the next change; two histories that
         /// name the same hold the same days before today.
         var pastID: UUID?
@@ -977,7 +1009,7 @@ public struct DeckActivity: Sendable {
         let past = Past(key: key, paced: paced.without(day: today), starts: starts, stood: stood, locks: locks)
         starts[today] = Self.dayStart(on: today, of: stood, locks: locks, calendar: calendar)
         let history = History(
-            paced: paced, starts: starts, newCeilingToday: Self.newCeiling(on: today, of: stood, locks: locks, calendar: calendar), pastID: past.id)
+            paced: paced, starts: starts, newQueueToday: Self.newQueue(on: today, of: stood, locks: locks, calendar: calendar), pastID: past.id)
         return (history, past)
     }
 
@@ -988,7 +1020,7 @@ public struct DeckActivity: Sendable {
         var starts = past.starts
         starts[today] = Self.dayStart(on: today, of: past.stood, locks: past.locks, calendar: calendar)
         return History(
-            paced: past.paced.adding(reviews), starts: starts, newCeilingToday: Self.newCeiling(on: today, of: past.stood, locks: past.locks, calendar: calendar),
+            paced: past.paced.adding(reviews), starts: starts, newQueueToday: Self.newQueue(on: today, of: past.stood, locks: past.locks, calendar: calendar),
             pastID: past.id)
     }
 
@@ -999,10 +1031,11 @@ public struct DeckActivity: Sendable {
         return DayStart(other: counts.learning + counts.review, new: counts.new)
     }
 
-    /// The new cards the deck's limits take on `day` if it began now: the cards created since it began count.
-    private static func newCeiling(on day: Int, of stood: Deck, locks: ProductionLocks, calendar: StudyCalendar) -> Int {
+    /// The new cards `day` would take from the deck if it began now, in their order: the cards created since it
+    /// began count.
+    private static func newQueue(on day: Int, of stood: Deck, locks: ProductionLocks, calendar: StudyCalendar) -> DailyGoal.NewQueue {
         let later = StudySession.DayIndex(lockedNotes: locks.notes, countsCardsCreatedLater: true)
-        return StudySession.counts(for: stood, at: calendar.start(ofDay: day), calendar: calendar, past: later).new
+        return StudySession.newQueue(for: stood, at: calendar.start(ofDay: day), calendar: calendar, past: later)
     }
 }
 
@@ -1075,7 +1108,7 @@ public final class DeckHistoryCache: @unchecked Sendable {
 }
 
 /// The notes whose production cards are held back, as `StudySession` finds them
-/// (`LearningOptions.productionUnlockDays`), kept up to date card by card: a note is locked while one of its
+/// (`StudySession.unlockDays`), kept up to date card by card: a note is locked while one of its
 /// recognition cards isn't learned, which a history of hundreds of days would otherwise look up for every card on
 /// every day.
 struct ProductionLocks {
@@ -1087,7 +1120,7 @@ struct ProductionLocks {
     private(set) var notes: Set<String> = []
 
     init(of deck: Deck, calendar: StudyCalendar) {
-        unlockDays = deck.learningOptions.productionUnlockDays
+        unlockDays = StudySession.unlockDays
         self.calendar = calendar
         isLearned = Array(repeating: true, count: deck.cards.count)
         for (index, card) in deck.cards.enumerated() where Self.isLockable(card, unlockDays: unlockDays) {
@@ -1427,7 +1460,7 @@ public struct DailyProgress: Hashable, Sendable {
         let startPace = pace(over: (today - DailyGoal.paceDays)...(today - 1))
         let other = histories.reduce(0) { $0 + ($1.starts[today]?.other ?? 0) }
         let allowed = DailyGoal.newCardsAllowed(seconds: time, otherCards: other, pace: startPace)
-        let allowances = DailyGoal.split(allowed, overCeilings: histories.map(\.newCeilingToday))
+        let allowances = DailyGoal.split(allowed, overQueues: histories.map(\.newQueueToday))
         let startNew = zip(allowances, histories).reduce(0) { $0 + min($1.0, $1.1.starts[today]?.new ?? 0) }
         let startRounds = DayRounds(otherCards: other, newCards: startNew, pace: startPace, seconds: time)
 

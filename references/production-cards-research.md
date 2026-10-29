@@ -5,13 +5,12 @@ Research for Mnemit, 22.10.2026. Confidence: **[S]** from the cited source as re
 
 Rule in the code: a word's production card (meaning → Greek) waits until its recognition card
 (Greek → meaning) is in the review phase with a scheduled interval of at least
-`LearningOptions.productionUnlockDays` (default 7, 0 never locks). Production cards have their own
-daily limit `newProductionPerSession` (default 7), and unlocked ones are taken oldest-learned first:
-by the first review of the word's recognition card, whatever the deck's new-card order. A new or
+7 days (`StudySession.unlockDays`, a constant). Opened production cards alternate with the new recognition
+cards one for one, oldest-learned first: by the first review of the word's recognition card, whatever the
+deck's new-card order. A new or
 review card is buried for the study day when its sibling was reviewed that day or is already
 selected; learning cards are never buried (`StudySession.selectCards`, `notesAwaitingRecognition`).
-Decks in use: Greek A1–A2 (known words, 0 days), Greek B1 (new words, 7 days, 20 new recognition +
-7 new production per day), see HANDOFF.md.
+Decks in use: Greek A1–A2 (known words), Greek B1 (new words), see HANDOFF.md.
 
 ## 1. Findings
 
@@ -198,23 +197,20 @@ after two weeks, maximum 16. **[S]** Table 2, p. 32.
   can turn an interval of 8 into 6, which delays the cells with an 8 by one review. Any threshold
   from 12 to 46 days behaves like 21 on the all-Good path; 7 days means "after the first spaced
   recognition review passed", 21 means "after the second".
-- **The gate decides when a word becomes eligible; the daily limit decides when its production
-  card is introduced.** In `selectCards`, new production cards fill `newProductionPerSession`
-  (7) while new recognition cards fill `newCardsPerSession`. With 20 new recognition cards a day
-  (Greek B1 deck), about 20 production cards a day become eligible from day 13 on and 7 are
-  introduced, so the eligible but unintroduced production cards grow by about 13 a day, roughly
-  560 by day 56, and introducing all 1118 productions at 7 a day takes about 160 days. Taken
-  newest-created first, the eligible production cards would leave the oldest eligible ones waiting
-  longest; `StudySession.productionOldestLearnedFirst` takes the oldest learned word first instead. **[I]** (arithmetic on `StudySession.swift` 257–300; the
-  daily new-card allowance can lower the 20.) A gate of 7 instead of 21 moves the start of the
-  production stream from day 13 to day 2 and leaves its steady rate at 7 a day.
+- **The gate decides when a word becomes eligible; the alternation decides when its production
+  card is introduced.** Opened production cards alternate with the new recognition cards one for
+  one (`StudySession.alternatingUnlocked`), so while both have cards waiting the day's new cards
+  split about evenly between the two directions. Taken newest-created first, the eligible production
+  cards would leave the oldest eligible ones waiting longest; the oldest learned word first avoids
+  that. **[I]** A gate of 7 instead of 21 moves the start of the production stream from day 13 to day 2
+  and leaves its steady rate at the rate of new words.
 
 ## 3. Verdict for Mnemit
 
 **Rule.** The production card of a word is introduced when its recognition card is in the review
 phase with a scheduled interval of at least **7 days**. The two cards of a word are never asked on
-the same study day (bury; learning-phase cards exempt). The lock is switched off (0 days) for decks
-of words the learner already knows.
+the same study day (bury; learning-phase cards exempt). Opened production cards alternate with the new
+recognition cards one for one.
 
 Reasons:
 
@@ -233,22 +229,23 @@ Reasons:
    target. **[I]**
 5. Confidence is low: the base is short list-learning experiments with no spaced schedule and no
    staged-introduction condition, and the 7 against 21 choice rests on points 1–3, not on a
-   measured difference. Under the production limit of 7 a day the two values differ mostly in
+   measured difference. With one production card for every new word the two values differ mostly in
    the first two weeks of a new deck (section 2, last point). **[I]**
 
-Greek A1–A2 deck: 0 days stays right (known words; Teng & Xu: productive exercises on receptively
-known words raise productive scores).
+Greek A1–A2 deck: its words are known, and a word's production card opens as soon as its recognition
+card has an interval of 7 days (Teng & Xu: productive exercises on receptively known words raise productive
+scores).
 
 ### Where the rule lives in code
 
-- Default `LearningOptions.productionUnlockDays` = 7 in
-  `Packages/VocabCore/Sources/VocabCore/Model/Deck.swift`. `DeckFile` always writes the key, so a deck
-  keeps the value it was saved with; the Greek B1 deck is set to 7.
+- The constant `StudySession.unlockDays` = 7, no option. A `productionUnlockDays` in an older `deck.json`
+  reads, and the next save leaves it out.
 - Gate: `StudySession.notesAwaitingRecognition` compares `calendar.days(from: lastReview, to: due)`
-  with `productionUnlockDays`.
-- Order: unlocked new production cards are sorted by the first review of the word's recognition
-  card, oldest first (`StudySession.swift`, `productionOldestLearnedFirst`), so the daily production
-  limit works through the backlog of unlocked words from the oldest. Tests in `NoteSelectionTests`.
+  with `unlockDays`.
+- Order: opened new production cards are sorted by the first review of the word's recognition
+  card, oldest first, and alternate with the new recognition cards one for one
+  (`StudySession.alternatingUnlocked`), so the backlog of opened words is worked through from the
+  oldest. Tests in `NoteSelectionTests`.
 
 ### What evidence would change it
 
@@ -258,7 +255,7 @@ known words raise productive scores).
 - Mnemit's own log, per card kind (the retention tables by kind in the statistics screen): the share
   of Forgot on production cards' first two review-phase reviews. FSRS at 0.9 expects about 10 %.
   Above 25 % on a deck with the 7-day gate → raise to 14; at or below 10 % on a deck with
-  production gated at 14 or more → lower to 7 or 0. The thresholds are our choice. **[I]**
+  production gated at 14 or more → lower to 7 or drop the gate. The thresholds are our choice. **[I]**
 - The full text of Terai et al. (2021) naming the vocabulary size of the two proficiency groups,
   to place a B1 learner in it.
 - A measurement of how much a recognition review raises the production card's first-review pass

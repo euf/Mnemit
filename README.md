@@ -49,8 +49,8 @@ are in [`references/`](references/).
 ### Studying
 
 - **No sessions, one stream over all decks.** Study is one stream over every active deck: the day's
-  plan (cards in learning, then review cards with the lowest recall probability first, then new
-  cards within the day's limits, taken from the decks in turn), each card from the deck whose next
+  plan (cards in learning, then review cards with the lowest recall probability first, then the day's
+  new cards, drawn from one queue over the decks), each card from the deck whose next
   card is most urgent and graded into that deck. Study This Deck runs it over one deck. When
   the ring is closed the stack rests ("Ring closed") and offers Catch Up while the plan has cards
   left; once the plan is done it offers Learn 10 New Words, ten new cards from the decks, mixed, whose
@@ -100,16 +100,16 @@ are in [`references/`](references/).
   fit the day's time: 1,500 overdue cards with a six-minute day give a goal of about 36 at 10
   seconds a card, and the rest wait in the plan. When the ring closes, "Catch Up" goes on with
   them; those cards are due, so their reviews are ordinary ones and the cards done count beyond the goal.
-  The size of a study session in the deck options is the size of one segment of the stream and does not cut the plan.
-- **Two directions per word, production one spaced review behind.** Each word has a
-  recognition card (Greek → meaning) and a production card (meaning → Greek). Production is the
+  A segment of the stream is 100 cards and does not cut the plan.
+- **Two directions per word, the second one spaced review behind.** Each word has a
+  Word → Meaning card (recognition: Greek → meaning) and a Meaning → Word card (production: meaning → Greek). Production is the
   harder direction (about half the recall of recognition after two weeks in the one experiment
   that measured both), recognition study yields little of it, and adding it does not lower
-  recognition. A word's production card therefore unlocks once its recognition card has an
-  interval of 7 days, which on the default parameters is after the first spaced review passed
-  (the lock is a deck option; 0 turns it off for words already known). Production cards have
-  their own daily limit and come oldest learned word first (by the first review of the
-  recognition card), whatever the new-card order; siblings are buried for the day so one card
+  recognition. A word's production card therefore opens once its recognition card is in the
+  review phase with an interval of 7 days or more, which on the default parameters is after the first spaced
+  review passed (a constant, no option). Opened production cards alternate with the new words one for
+  one and come oldest learned word first (by the first review of the
+  recognition card); siblings are buried for the day so one card
   does not answer the other. No study compares introducing the second direction later with introducing it together;
   the numbers and sources are in [references/production-cards-research.md](references/production-cards-research.md).
 - **Pause a deck.** A deck can be paused, from its row on Today (swipe or long press), from the menu of
@@ -152,6 +152,12 @@ are in [`references/`](references/).
   a good balance, and only the time adapts. Learn 10 New Words is the one way past the
   time: ten new cards at once, whose reviews fill the next days. Sources and measurements: [`ring-design.md`](references/ring-design.md),
   [`day-model-research.md`](references/day-model-research.md), Part 1 §3.
+- **One queue for the new cards, the newest addition first.** The day's time says how many; one queue over all
+  decks that aren't paused says which. New words come newest addition first, so a lesson's words lead the next
+  day's new cards without a step from the learner, and opened Meaning → Word cards alternate with them one for one.
+  Each deck's share of the day's count is what the queue gives it. A newcomer sets nothing. An Anki veteran's
+  **New cards/day**, the one setting for new cards, works as in Anki: a deck that sets it takes exactly that many a
+  day, outside the time, and the other decks keep their share.
 - **FSRS-6, fitted per deck, without a button.** Each deck starts with the default
   parameters, or with the FSRS settings of the Anki preset it was imported from. The
   optimizer (a Swift port of fsrs-rs 6.6.2, checked against it and against py-fsrs reference
@@ -188,7 +194,7 @@ are in [`references/`](references/).
 
 - **Anki packages with their history.** `.apkg` and `.colpkg` in all three layouts (including the
   zstd-compressed current one) is read without Anki; review history is replayed through
-  Mnemit's FSRS. HTML is reduced to text; the first image and the first sound of each side
+  Mnemit's FSRS, and the new cards keep Anki's new-card order. HTML is reduced to text; the first image and the first sound of each side
   come along as the card's media, a back takes the meaning and then the example sentence, and cloze
   cards are counted and left out. The preview names the images, sounds and megabytes the package brings. On the iPhone "Open in Mnemit" works from Files, Safari and Mail; on the Mac an
   `.apkg` opened from the Finder becomes a new deck.

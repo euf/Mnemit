@@ -13,9 +13,7 @@ struct NoteSelectionTests {
     func options() -> LearningOptions {
         var options = LearningOptions()
         options.fuzzing = false
-        options.cardsPerSession = nil
         options.newCardsPerSession = nil
-        options.newProductionPerSession = nil
         return options
     }
 
@@ -73,24 +71,8 @@ struct NoteSelectionTests {
         #expect(try selected([fresh("r", note: "n", kind: .recognition), production]) == ["r"])
     }
 
-    @Test func productionUnlocksAfterSevenDaysByDefault() {
-        #expect(LearningOptions().productionUnlockDays == 7)
-    }
-
-    @Test func unlockDaysZeroNeverLocks() throws {
-        var options = options()
-        options.productionUnlockDays = 0
-        let production = fresh("p", note: "n", kind: .production)
-        let young = review("r", note: "n", kind: .recognition, interval: 2, daysAgo: 1)
-        #expect(try selected([young, production], options: options) == ["p"])
-    }
-
-    @Test func unlockDaysIsTheLimit() throws {
-        var options = options()
-        options.productionUnlockDays = 5
-        let production = fresh("p", note: "n", kind: .production)
-        #expect(try selected([review("r", note: "n", kind: .recognition, interval: 4, daysAgo: 1), production], options: options) == [])
-        #expect(try selected([review("r", note: "n", kind: .recognition, interval: 5, daysAgo: 1), production], options: options) == ["p"])
+    @Test func productionUnlocksAfterSevenDays() {
+        #expect(StudySession.unlockDays == 7)
     }
 
     @Test func productionWithoutRecognitionOrNoteIsNotLocked() throws {
@@ -113,30 +95,26 @@ struct NoteSelectionTests {
     // MARK: Burying siblings
 
     @Test func siblingReviewedTodayBuriesNewAndReviewCards() throws {
-        var options = options()
-        options.productionUnlockDays = 0
         let today = now.addingTimeInterval(-3600)
-        // Not due: reviewed an hour ago with an interval of a few days.
-        var done = review("done", note: "n", kind: .recognition, interval: 3, daysAgo: 0)
+        // Not due: reviewed an hour ago with an interval that has unlocked the production card.
+        var done = review("done", note: "n", kind: .recognition, interval: StudySession.unlockDays, daysAgo: 0)
         done.learningState?.lastReview = today
-        #expect(try selected([done, fresh("p", note: "n", kind: .production)], options: options) == [])
-        #expect(try selected([done, review("p", note: "n", kind: .production, interval: 3, daysAgo: 5)], options: options) == [])
+        #expect(try selected([done, fresh("p", note: "n", kind: .production)]) == [])
+        #expect(try selected([done, review("p", note: "n", kind: .production, interval: 3, daysAgo: 5)]) == [])
         // Another note is not affected.
-        #expect(try selected([done, fresh("p", note: "m", kind: .production)], options: options) == ["p"])
+        #expect(try selected([done, fresh("p", note: "m", kind: .production)]) == ["p"])
     }
 
     @Test func siblingReviewedOnAnEarlierStudyDayBuriesNothing() throws {
-        var options = options()
-        options.productionUnlockDays = 0
-        var done = review("done", note: "n", kind: .recognition, interval: 3, daysAgo: 0)
+        var done = review("done", note: "n", kind: .recognition, interval: StudySession.unlockDays, daysAgo: 0)
         let production = fresh("p", note: "n", kind: .production)
         // 02:00 in Berlin is before the rollover at 04:00: still the study day before.
         done.learningState?.lastReview = Date(timeIntervalSince1970: 1_791_158_400)
         #expect(calendar.dayNumber(for: done.learningState!.lastReview) == calendar.dayNumber(for: now) - 1)
-        #expect(try selected([done, production], options: options) == ["p"])
+        #expect(try selected([done, production]) == ["p"])
         // 05:00 in Berlin is the same study day.
         done.learningState?.lastReview = Date(timeIntervalSince1970: 1_791_169_200)
-        #expect(try selected([done, production], options: options) == [])
+        #expect(try selected([done, production]) == [])
     }
 
     @Test func onlyOneDueSiblingIsSelectedPerSession() throws {
@@ -160,36 +138,31 @@ struct NoteSelectionTests {
     }
 
     @Test func learningCardsAreNeverBuried() throws {
-        var options = options()
-        options.productionUnlockDays = 0
         var done = review("done", note: "n", kind: .recognition, interval: 3, daysAgo: 0)
         done.learningState?.lastReview = now.addingTimeInterval(-3600)
         let production = learning("p", note: "n", kind: .production)
-        #expect(try selected([done, production], options: options) == ["p"])
+        #expect(try selected([done, production]) == ["p"])
 
         // A learning card in the session buries the due review or new card of its note.
         let sibling = review("sibling", note: "n", kind: .recognition, interval: 3, daysAgo: 5)
-        #expect(try selected([sibling, production], options: options) == ["p"])
-        #expect(try selected([fresh("new", note: "n", kind: .recognition), production], options: options) == ["p"])
+        #expect(try selected([sibling, production]) == ["p"])
+        #expect(try selected([fresh("new", note: "n", kind: .recognition), production]) == ["p"])
         // Two learning cards of a note are both asked.
-        #expect(try selected([learning("a", note: "n"), learning("b", note: "n")], options: options) == ["a", "b"])
+        #expect(try selected([learning("a", note: "n"), learning("b", note: "n")]) == ["a", "b"])
     }
 
-    @Test func buriedCardsDoNotUseUpTheLimits() throws {
+    @Test func buriedCardsDoNotUseUpTheLimit() throws {
         var options = options()
-        options.productionUnlockDays = 0
         options.newCardsPerSession = 2
-        options.newProductionPerSession = 1
         let cards = [
             fresh("a", note: "n", kind: .recognition),
-            fresh("a2", note: "n", kind: .production),
+            fresh("a2", note: "n", kind: .recognition),
             fresh("b", note: "m", kind: .recognition),
             fresh("c", note: "k", kind: .recognition),
-            fresh("c2", note: "k", kind: .production),
+            fresh("c2", note: "k", kind: .recognition),
         ]
-        // "a2" is buried by "a" without using the production slot, so "c2" still gets it
-        // although the limit of two cut "c".
-        #expect(try selected(cards, options: options) == ["a", "b", "c2"])
+        // "a2" is buried by "a" without taking one of the two places, so "b" still gets it.
+        #expect(try selected(cards, options: options) == ["a", "b"])
         options.newCardsPerSession = 3
         #expect(try selected(cards, options: options) == ["a", "b", "c"])
     }
@@ -201,26 +174,38 @@ struct NoteSelectionTests {
 
     // MARK: Limits and order of new cards
 
-    @Test func productionCardsHaveTheirOwnLimit() throws {
+    @Test func newCardsPerSessionIsOneLimitOverBothKinds() throws {
         var options = options()
         options.newCardsPerSession = 3
-        options.newProductionPerSession = 2
         let cards =
             (0..<6).map { fresh("r\($0)", note: "r\($0)", kind: .recognition) }
             + (0..<6).map { fresh("p\($0)", note: "orphan\($0)", kind: .production) }
             + (0..<3).map { fresh("x\($0)") }
-        let chosen = try selected(cards, options: options)
-        #expect(chosen.count == 5)
-        #expect(chosen.filter { $0.hasPrefix("p") }.count == 2)
-        // The limit of 3 counts recognition and plain cards together, in deck order.
-        #expect(Set(chosen.filter { !$0.hasPrefix("p") }) == ["r0", "r1", "r2"])
-
-        options.newProductionPerSession = 0
-        #expect(try selected(cards, options: options).count == 3)
-        options.newProductionPerSession = nil
-        #expect(try selected(cards, options: options).count == 9)
+        // The words go in deck order and the opened production cards alternate with them, a word first.
+        #expect(try selected(cards, options: options) == ["r0", "p0", "r1"])
+        options.newCardsPerSession = 4
+        #expect(try selected(cards, options: options) == ["r0", "p0", "r1", "p1"])
         options.newCardsPerSession = nil
         #expect(try selected(cards, options: options).count == 15)
+    }
+
+    @Test func aDeckWithNewCardsPerSessionIgnoresTheAllowance() throws {
+        var options = options()
+        let cards = (0..<8).map { fresh("c\($0)") }
+        func taken(allowance: Int?) throws -> Int {
+            let deck = try Deck(learningOptions: options, cards: cards)
+            var random = SeededRandom(seed: 1)
+            return StudySession.selectCards(from: deck, at: now, calendar: calendar, newCardAllowance: allowance, using: &random).count
+        }
+        // Without New cards/day the allowance of the day is the limit, and nil leaves the deck all of it.
+        #expect(try taken(allowance: 3) == 3)
+        #expect(try taken(allowance: nil) == 8)
+        // With it the deck takes its own number, more or less than the allowance.
+        options.newCardsPerSession = 5
+        #expect(try taken(allowance: 3) == 5)
+        options.newCardsPerSession = 2
+        #expect(try taken(allowance: 6) == 2)
+        #expect(try taken(allowance: nil) == 2)
     }
 
     @Test func newCardsComeNewestDayFirstAndWithinADayAsTheyWereAdded() throws {
@@ -251,7 +236,7 @@ struct NoteSelectionTests {
 
     @Test func theNewestDayStillOrdersProductionCardsWithoutALearnedWord() throws {
         var options = options()
-        options.newProductionPerSession = 1
+        options.newCardsPerSession = 1
         let old = Card(id: UUID(), text: CardText(question: "old", answer: "a")!, note: "o", kind: .production, created: now.addingTimeInterval(-86400))
         let young = Card(id: UUID(), text: CardText(question: "young", answer: "a")!, note: "y", kind: .production, created: now)
         #expect(try selected([old, young], options: options) == ["young"])
@@ -273,7 +258,7 @@ struct NoteSelectionTests {
 
     @Test func unlockedProductionCardsGoByWhenTheirWordsWereLearnedWhateverTheirAddition() throws {
         var options = options()
-        options.newProductionPerSession = 7
+        options.newCardsPerSession = 7
         // Word i was learned 10...39 days ago, in an order unrelated to the deck's and to the creation dates
         // of the production cards, of which p0 is the newest.
         func age(_ i: Int) -> Int { (i * 7) % 30 + 10 }
@@ -287,10 +272,8 @@ struct NoteSelectionTests {
         #expect(try selected(cards, options: options) == oldest)
     }
 
-    @Test func newRecognitionCardsKeepTheOrderOfAdditionsNextToProductionCardsOldestLearnedFirst() throws {
+    @Test func newWordsAndOpenedProductionCardsAlternateOneForOneTheOldestLearnedFirst() throws {
         var options = options()
-        options.newCardsPerSession = 2
-        options.newProductionPerSession = 1
         let cards = [
             Card(id: UUID(), text: CardText(question: "old", answer: "a")!, note: "a", kind: .recognition, created: now.addingTimeInterval(-86400)),
             Card(id: UUID(), text: CardText(question: "mid", answer: "a")!, note: "b", kind: .recognition, created: now.addingTimeInterval(-3600)),
@@ -300,7 +283,36 @@ struct NoteSelectionTests {
             production("p1", note: "x", created: now),
             production("p2", note: "y", created: now.addingTimeInterval(-86400)),
         ]
-        #expect(try selected(cards, options: options) == ["new", "mid", "p2"])
+        // The words come as they were added (the day before last), the production cards by when their words were
+        // learned: p2's word is 30 days old, p1's 12; the two lists alternate, a word first.
+        options.newCardsPerSession = 3
+        #expect(try selected(cards, options: options) == ["mid", "p2", "new"])
+        options.newCardsPerSession = 4
+        #expect(try selected(cards, options: options) == ["mid", "p2", "new", "p1"])
+        options.newCardsPerSession = 5
+        #expect(try selected(cards, options: options) == ["mid", "p2", "new", "p1", "old"])
+    }
+
+    @Test func theLongerListOfNewCardsFollowsTheShorterOneAlternating() throws {
+        var options = options()
+        func words(_ count: Int) -> [Card] { (0..<count).map { fresh("w\($0)") } }
+        func unlocked(_ count: Int) -> [Card] {
+            (0..<count).flatMap { [learned("r\($0)", note: "n\($0)", learnedDaysAgo: 40 - $0), production("p\($0)", note: "n\($0)", created: now)] }
+        }
+        func order(_ cards: [Card]) throws -> [String] {
+            let deck = try Deck(learningOptions: options, cards: cards)
+            var random = SeededRandom(seed: 1)
+            let ids = StudySession.selectCards(from: deck, at: now, calendar: calendar, using: &random)
+            return ids.compactMap { deck.card(withID: $0)?.question }.sorted()
+        }
+        options.newCardsPerSession = 6
+        // Two words, four opened cards: w0 p0 w1 p1 p2 p3.
+        #expect(try order(words(2) + unlocked(4)) == ["p0", "p1", "p2", "p3", "w0", "w1"])
+        // Four words, one opened card: w0 p0 w1 w2 w3.
+        #expect(try order(words(4) + unlocked(1)) == ["p0", "w0", "w1", "w2", "w3"])
+        options.newCardsPerSession = 3
+        // A limit short of the lists still takes them alternating: w0 p0 w1.
+        #expect(try order(words(4) + unlocked(4)) == ["p0", "w0", "w1"])
     }
 
     @Test func aProductionCardWithoutALearnedWordFollowsTheOthersInTheOrderOfAdditions() throws {
@@ -313,28 +325,26 @@ struct NoteSelectionTests {
             learned("r1", note: "x", learnedDaysAgo: 12),
             learned("r2", note: "y", learnedDaysAgo: 30),
         ]
-        options.newProductionPerSession = 2
+        options.newCardsPerSession = 2
         #expect(try selected(cards, options: options) == ["p1", "p2"])
-        options.newProductionPerSession = 3
+        options.newCardsPerSession = 3
         // `noNote` has no note, so it is not locked either; both undated cards come after, the day's cards as they
         // were added.
         #expect(try selected(cards, options: options) == ["p1", "p2", "noNote"])
     }
 
-    @Test func sessionSizeCapStopsTheSelectionBeforeBuryingMore() throws {
-        var options = options()
-        options.cardsPerSession = 2
-        let cards = [
-            review("a", note: "n", kind: .recognition, interval: 3, daysAgo: 9),
-            review("a2", note: "n", kind: .production, interval: 3, daysAgo: 9),
-            review("b", note: "m", kind: .recognition, interval: 3, daysAgo: 9),
-            review("c", note: "k", kind: .recognition, interval: 3, daysAgo: 9),
-        ]
-        // Buried cards don't take a place: whichever sibling comes first, two others fill it.
-        for seed in 1...10 {
-            let chosen = try selected(cards, options: options, seed: UInt64(seed))
-            #expect(chosen.count == 2)
-            #expect(chosen.filter { $0 == "a" || $0 == "a2" }.count <= 1)
+    @Test func segmentSizeCapStopsTheSelectionBeforeBuryingMore() throws {
+        // 120 notes of two due cards each: a note gives one card, and a buried card takes no place of the segment.
+        let cards = (0..<120).flatMap { index in
+            [
+                review("a\(index)", note: "n\(index)", kind: .recognition, interval: 3, daysAgo: 9),
+                review("b\(index)", note: "n\(index)", kind: .production, interval: 3, daysAgo: 9),
+            ]
+        }
+        for seed in 1...3 {
+            let chosen = try selected(cards, seed: UInt64(seed))
+            #expect(chosen.count == StudySession.segmentSize)
+            #expect(Set(chosen.map { $0.dropFirst() }).count == StudySession.segmentSize)
         }
     }
 
@@ -358,7 +368,7 @@ struct NoteSelectionTests {
         // The first interval is under 7 days: the production card waits, and the
         // recognition card isn't due.
         let interval = calendar.days(from: now, to: scheduled.learningState!.due)
-        #expect(interval < deck.learningOptions.productionUnlockDays)
+        #expect(interval < StudySession.unlockDays)
         #expect(StudySession(deck: deck, at: now, calendar: calendar).session.isFinished)
 
         // With an interval of 7 days the production card is unlocked, but the sibling

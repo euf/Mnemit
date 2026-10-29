@@ -16,11 +16,11 @@ struct DeckOptionsScreen: View {
         let options = document.deck.learningOptions
         Form {
             Section {
-                LimitStepper(title: "New cards per day", value: document.option(\.newCardsPerSession), step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
+                LimitStepper(title: "New cards/day", value: document.option(\.newCardsPerSession), step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
             } header: {
-                Text("New Cards")
+                Text("Daily Limits")
             } footer: {
-                Text("Meaning → Word cards have a limit of their own.")
+                Text("— lets the day's ring decide. A number takes that many new cards a day, as Anki does.")
             }
 
             Section {
@@ -29,23 +29,6 @@ struct DeckOptionsScreen: View {
                 Text("Scheduling")
             } footer: {
                 Text("Higher means better recall and more reviews.")
-            }
-
-            Section {
-                LimitStepper(title: "New per day", value: document.option(\.newProductionPerSession), step: 1, ceiling: 30, range: LearningOptions.productionLimitRange)
-                Stepper(value: document.option(\.productionUnlockDays), in: LearningOptions.productionUnlockDaysRange) {
-                    ValueLabel("Unlock after") {
-                        if options.productionUnlockDays == 0 {
-                            Text("Never locked")
-                        } else {
-                            Text(Format.days(Double(options.productionUnlockDays)))
-                        }
-                    }
-                }
-            } header: {
-                Text("Meaning → Word cards")
-            } footer: {
-                Text("Meaning → Word waits until Word → Meaning has this interval.")
             }
 
             Section {

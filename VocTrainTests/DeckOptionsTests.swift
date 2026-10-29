@@ -46,8 +46,6 @@ struct DeckOptionsTests {
         let (document, undoManager) = try makeDocument()
         step(undoManager) { document.option(\.newCardsPerSession).wrappedValue = 15 }
         step(undoManager) { document.option(\.targetRecall).wrappedValue = 0.8 }
-        step(undoManager) { document.option(\.newProductionPerSession).wrappedValue = nil }
-        step(undoManager) { document.option(\.productionUnlockDays).wrappedValue = 0 }
         step(undoManager) { document.option(\.leechThreshold).wrappedValue = 5 }
         step(undoManager) { document.option(\.leechAction).wrappedValue = .suspend }
         step(undoManager) { document.option(\.maximumInterval).wrappedValue = 365 }
@@ -57,8 +55,6 @@ struct DeckOptionsTests {
         var expected = LearningOptions()
         expected.newCardsPerSession = 15
         expected.targetRecall = 0.8
-        expected.newProductionPerSession = nil
-        expected.productionUnlockDays = 0
         expected.leechThreshold = 5
         expected.leechAction = .suspend
         expected.maximumInterval = 365
@@ -69,14 +65,21 @@ struct DeckOptionsTests {
         // Saved and read again, as the deck is on the phone.
         let saved = try DeckFile.decode(document.fileWrapper())
         #expect(saved.learningOptions == expected)
-        // Unlimited stays unlimited, and limited stays limited.
-        #expect(saved.learningOptions.newProductionPerSession == nil)
         #expect(saved.learningOptions.newCardsPerSession == 15)
 
-        // One step each: ten undos bring back the defaults.
-        for _ in 0..<10 { undoManager.undo() }
+        // One step each: seven undos bring back the defaults.
+        for _ in 0..<7 { undoManager.undo() }
         #expect(!undoManager.canUndo)
         #expect(document.deck.learningOptions == LearningOptions())
+    }
+
+    @Test func newCardsPerDayStaysLimitedOrUnlimitedInTheFile() throws {
+        let (document, undoManager) = try makeDocument()
+        #expect(document.deck.learningOptions.newCardsPerSession == nil)
+        step(undoManager) { document.option(\.newCardsPerSession).wrappedValue = 15 }
+        #expect(try DeckFile.decode(document.fileWrapper()).learningOptions.newCardsPerSession == 15)
+        step(undoManager) { document.option(\.newCardsPerSession).wrappedValue = nil }
+        #expect(try DeckFile.decode(document.fileWrapper()).learningOptions.newCardsPerSession == nil)
     }
 
     @Test func allOptionsTogetherAreOneChangeToo() throws {

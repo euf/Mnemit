@@ -15,23 +15,26 @@ minutes, a goal sized to their usual day, and a gain they can see grow.
 
 ## 2. Who it is for
 
-| Persona | Rhythm | Job | Leaves when |
-|---|---|---|---|
-| **Course learner** | phone, 2–10 min several times a day; a desk after each lesson | keep the habit at no cost; get a lesson's words in tonight; remember them by the next class | the habit costs more than a minute to start; new words wait for days |
-| **Newcomer** | phone only, no decks, never used flashcards | start in two minutes; feel progress on day one; build a streak | a red failure or an unexplained number in the first minutes |
-| **Anki veteran** | desk and phone, 30–60 min a day, years of history | bring the history; trust the schedule; study by keyboard; see the counts | counts don't match Anki; the schedule is second-guessed; the day is hidden |
+| Persona | Rhythm | Job | New cards | Leaves when |
+|---|---|---|---|---|
+| **Course learner** (Greek with a weekly class) | phone, 2–10 min several times a day; a desk after each lesson | keep the habit at no cost; get a lesson's words in tonight; remember them by the next class | the lesson's words go first the day they are added; the ring decides how many | the habit costs more than a minute to start; new words wait for days |
+| **Newcomer** | phone only, no decks, never used flashcards | start in two minutes; feel progress on day one; build a streak | nothing to set; the ring decides | a red failure or an unexplained number in the first minutes |
+| **Anki veteran** | desk and phone, 30–60 min a day, years of history | bring the history; trust the schedule; study by keyboard; see the counts | the history comes in, new cards in Anki's new-card order; New cards/day works as in Anki: that many a day, whatever the ring says | counts don't match Anki; the schedule is second-guessed; the day is hidden |
 
 ## 3. Principles
 
 1. **FSRS decides what to study; Mnemit decides how much and how it feels.** The learner never schedules anything.
-2. **One unit of work: the card.** It is seen as objects (the stack, the ring) and counted only inside a deck.
+2. **The unit is the word.** A word has one card or a pair, Word → Meaning and Meaning → Word. The learner adds, keeps and
+   counts words; the stream asks cards, which are seen as objects (the stack, the ring) and counted only inside a deck.
 3. **Minutes translate, they never measure.** "≈ 2 min" turns the cards ahead into a decision; it is always an estimate
    at the learner's own pace and never a goal.
 4. **The habit costs two minutes; the goal is your usual day; extra is celebrated, never required.**
 5. **One next thing at a time:** one sentence, one button, one stack.
 6. **Words are the gain; everything else is effort.**
 7. **Anki-grade truth one tap away:** counts, FSRS figures and retention live in the deck, not on Today.
-8. **Nothing to configure to succeed.** Settings are ceilings and preferences, never a plan.
+8. **Nothing to configure to succeed.** A newcomer gets reasonable defaults: the machinery works without being noticed and
+   asks for no attention. An Anki veteran gets the settings and mechanics they know, under Anki's names; the ring, the
+   streak and the rest are cosmetics on top.
 9. **Progress never goes back.** A day, once over, keeps what it earned: its ring, its place in the streak, its medals and
    the words it learned stay, whatever later happens to the decks and cards.
 
@@ -42,7 +45,7 @@ Seven, and only these appear on screen.
 | Entity | What it is to the learner | Shown as |
 |---|---|---|
 | **Deck** | a set of words they study | name; on Today ≈ minutes left today or ✓ |
-| **Card** | one question and its answer; a word gives two (Word → Meaning, Meaning → Word) | the card on screen; numbers only inside a deck (Due, New, Learning, Suspended) |
+| **Word** | what they add and learn: one card, or a pair, Word → Meaning and Meaning → Word; a card is one question and its answer | the card on screen; numbers only inside a deck (Due, New, Learning, Suspended) |
 | **Stack** | the cards left before the next moment of the day | edges under the card, up to four, fewer at the end; never a number |
 | **Ring** | how far today is | an arc of the cards done against today's goal, laps past it; never a number |
 | **Streak** | the habit: days in a row | a flame and the days, a line of its own under the ring |
@@ -55,11 +58,21 @@ size, the allowance, stability and difficulty (the card's Details and How It Wor
 ## 5. The day
 
 **What FSRS gives.** Each card has a due date. Today's plan is every card due (overdue first, most forgotten first)
-plus new cards: as many as the time left after the due cards allows, within the deck's per-day ceiling.
+plus new cards: as many as the time left after the due cards allows (the ring's allowance); a deck with New cards/day set
+takes exactly that many instead.
 
 **What Mnemit adds: today's goal.** The plan's cards that fit the learner's usual time (the day's time, at their
 measured pace; due cards first, then new). The ring is the cards done against that goal. The goal never grows with
 a break: a backlog stays in the plan and waits after the ring.
+
+**Which new cards.** The one deck option for new cards is **New cards/day**, Anki's name for it (“—” by default, the ring decides). A deck
+that has it set takes exactly that many new cards a day, of both directions, as in Anki: outside the day's allowance,
+and without reducing what the other decks get. Every other deck gets its share of the ring's allowance (the day's time
+minus the reviews) from one queue over those decks, the decks that aren't paused. New words come newest addition first:
+the cards added on a later study day before those of an earlier one, within a day as they were added, then in deck order.
+An opened Meaning → Word card, the oldest learned word first, alternates with them one for one. A word's Meaning → Word
+card opens when its Word → Meaning card is in the review phase at an interval of 7 days or more; the 7 is a constant.
+Each deck's share of the allowance is what that queue gives it, and within a deck its own cards alternate the same way.
 
 **Up to three moments**, each the end of a stack:
 
@@ -73,9 +86,10 @@ On most days the ring takes the whole plan and the third moment doesn't exist. *
 moments are one: only the closed ring keeps the streak ("!" on the flame). Two missed days end it; the best run stays in
 Progress.
 
-**Beyond the day**, by choice: **Learn 10 New Words** (the next ten new cards) and **Study These Now** (the cards just
-added after a lesson, first in a stream over that deck, then the deck's plan; they take the place of the day's new
-cards, so tomorrow's load is the same as if the deck had chosen them). Both count toward the ring and its laps.
+**Beyond the day**, by choice: **Learn 10 New Words** (the next ten new cards, beyond the allowance and New cards/day) and
+**Study These Now** (the cards just added after a lesson, first in a stream over that deck, then the deck's plan; they go
+beyond New cards/day and count against the allowance, taking the place of the day's new cards, so tomorrow's load is the
+same as if the queue had chosen them). Both count toward the ring and its laps.
 
 **The streak** stands beside the ring as a figure, "Day streak 🔥 12", in the same place and form all day; the flame's
 shape is its state (an outline while today's step is open, filled once it is kept, an outline with "!" the day after a
@@ -213,13 +227,16 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
 
 - **Newcomer, day 1:** the introduction shows one new word, Don't know or Know, and the word coming back in the same
   sitting, then the two swipes, left and right → no decks → New Deck or Shared Decks → the first card → two minutes: the flame fills,
-  "1-day streak", first medal at 10 words. Their ring is 2.5 minutes; the first moments come fast.
+  "1-day streak", first medal at 10 words. Their ring is 2.5 minutes; the first moments come fast. Nothing is set: the
+  ring decides how many new words come.
 - **Course learner, a lesson night:** the morning widget shows "Day streak 12" and "To keep your streak ≈ 2 min"; the bus ride keeps it;
-  the evening lesson's 20 words go in at the desk and Study These Now puts them first; the stack runs out at the ring;
-  laps show the extra; tomorrow the words come back as reviews.
-- **Anki veteran, the first week:** the import brings cards, history and review times; the goal starts at their usual day;
-  2,000 overdue cards are "≈ 45 min of reviews left" after the ring, not a ring that can't close; the deck screen shows
-  Anki's counts; FSRS is untouched.
+  the evening lesson's 20 words go in at the desk and Study These Now puts them first (added the same day, they head the
+  queue anyway; the ring decides how many come); the stack runs out at the ring; laps show the extra; tomorrow the words
+  come back as reviews.
+- **Anki veteran, the first week:** the import brings cards, history and review times, the new cards in Anki's new-card
+  order; the goal starts at their usual day; 2,000 overdue cards are "≈ 45 min of reviews left" after the ring, not a ring
+  that can't close; the deck screen shows Anki's counts; New cards/day works as in
+  Anki, exactly that many a day; FSRS is untouched.
 
 ## 11. What changes from 8.0 to this model
 

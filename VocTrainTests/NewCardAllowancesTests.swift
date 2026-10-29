@@ -7,8 +7,9 @@ import Testing
 /// The new cards a deck may introduce today: the daily ring works them out, and the plan of each deck takes them.
 @MainActor
 struct NewCardAllowancesTests {
-    func fresh(_ count: Int) -> [Card] {
-        (0..<count).map { Card(text: CardText(question: "n\($0)", answer: "x")!, created: Date()) }
+    /// `count` new cards added `daysAgo` days ago: the day's new cards go to the newest additions first.
+    func fresh(_ count: Int, daysAgo: Double = 0) -> [Card] {
+        (0..<count).map { Card(text: CardText(question: "n\($0)", answer: "x")!, created: Date().addingTimeInterval(-daysAgo * 86400)) }
     }
 
     func writeDeck(named name: String, cards: [Card], in directory: URL) throws -> URL {
@@ -45,11 +46,13 @@ struct NewCardAllowancesTests {
     @Test func theRingHandsOutTheAllowanceOfEachDeckToItsFileAndItsDocument() async throws {
         let directory = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let url = try writeDeck(named: "Greek", cards: fresh(20), in: directory)
-        let document = try VocabularyDocument(deck: Deck(cards: fresh(20)))
+        let url = try writeDeck(named: "Greek", cards: fresh(20, daysAgo: 2), in: directory)
+        // Three words of today and seventeen older ones.
+        let document = try VocabularyDocument(deck: Deck(cards: fresh(3) + fresh(17, daysAgo: 3)))
         let ring = DailyRingModel()
 
-        // The 150 s of the first day at the first pace of 30 s a new card hold five of them, shared by the ceilings of the two decks: 2.5 and 2.5, and the odd card goes to the earlier.
+        // The 150 s of the first day at the first pace of 30 s a new card hold five of them, taken from one queue of the
+        // words of both decks, newest addition first: the document's three of today, then two of the file's.
         await ring.refresh(documents: [document], files: [url], reloadFiles: true, delay: .zero).value
         let progress = try #require(ring.progress)
         #expect(progress.newCardAllowances.reduce(0, +) == 5)
