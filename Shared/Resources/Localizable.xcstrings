@@ -13501,24 +13501,24 @@
         }
       }
     },
-    "The memory model behind the schedule. Mnemit fits it to your reviews by itself; Optimize does it now.": {
+    "The memory model behind the schedule. Mnemit fits it to your reviews by itself; Optimize does it now. Restore Defaults leaves it as it is.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Das Gedächtnismodell hinter dem Zeitplan. Mnemit passt es von selbst an deine Wiederholungen an; „Optimieren“ tut es jetzt."
+            "value": "Das Gedächtnismodell hinter dem Zeitplan. Mnemit passt es von selbst an deine Wiederholungen an; „Optimieren“ tut es jetzt. „Standardwerte“ lässt es, wie es ist."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Το μοντέλο μνήμης πίσω από το πρόγραμμα. Το Mnemit το προσαρμόζει μόνο του στις επαναλήψεις σου· η «Βελτιστοποίηση» το κάνει τώρα."
+            "value": "Το μοντέλο μνήμης πίσω από το πρόγραμμα. Το Mnemit το προσαρμόζει μόνο του στις επαναλήψεις σου· η «Βελτιστοποίηση» το κάνει τώρα. Η «Επαναφορά προεπιλογών» το αφήνει όπως είναι."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Модель памяти, на которой строится расписание. Mnemit сам подгоняет её под твои повторения; «Оптимизировать» делает это сейчас."
+            "value": "Модель памяти, на которой строится расписание. Mnemit сам подгоняет её под твои повторения; «Оптимизировать» делает это сейчас. «Вернуть значения по умолчанию» её не трогает."
           }
         }
       }
@@ -15389,6 +15389,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Молодые: интервал меньше 21 дня на момент вопроса; зрелые: 21 день и больше. Шаги обучения, первые повторения и повторы в тот же день не считаются."
+          }
+        }
+      }
+    },
+    "Your FSRS parameters stay: they come from your reviews.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die FSRS-Parameter bleiben: Sie stammen aus den eigenen Wiederholungen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι παράμετροι FSRS μένουν: προέρχονται από τις επαναλήψεις σου."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Параметры FSRS останутся: они подобраны по повторениям."
           }
         }
       }

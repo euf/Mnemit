@@ -103,7 +103,6 @@ struct DeckAdvancedOptionsScreen: View {
 
             ParametersSection(options: document.option(\.self), cards: document.deck.trainingCards, calendar: document.calendar, appliesAtOnce: true)
 
-            RestoreDefaultsSection(document: document)
         }
         .monospacedDigit()
         .navigationTitle("Advanced")
@@ -112,8 +111,9 @@ struct DeckAdvancedOptionsScreen: View {
     }
 }
 
-/// The way back to the defaults, on both screens: every option of the deck at once, one undo step, once the learner
-/// has confirmed. The FSRS parameters and the pause stay (`LearningOptions.restoringDefaults()`).
+/// The way back to the defaults, at the foot of the main screen only, away from the FSRS parameters it leaves alone:
+/// every option of the deck at once, one undo step, once the learner has confirmed. The FSRS parameters and the pause
+/// stay (`LearningOptions.restoringDefaults()`); the footer and the dialog say so.
 private struct RestoreDefaultsSection: View {
     @ObservedObject var document: VocabularyDocument
     @State private var isAsking = false
@@ -124,7 +124,11 @@ private struct RestoreDefaultsSection: View {
                 .confirmationDialog("Restore the defaults of this deck's options?", isPresented: $isAsking, titleVisibility: .visible) {
                     Button("Restore Defaults", role: .destructive) { document.restoreDefaultLearningOptions() }
                     Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Your FSRS parameters stay: they come from your reviews.")
                 }
+        } footer: {
+            Text("Your FSRS parameters stay: they come from your reviews.")
         }
     }
 }

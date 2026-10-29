@@ -55,7 +55,7 @@ struct ParametersSection: View {
         } header: {
             HStack {
                 Text("FSRS Parameters")
-                HelpButton(text: "The memory model behind the schedule. Mnemit fits it to your reviews by itself; Optimize does it now.")
+                HelpButton(text: "The memory model behind the schedule. Mnemit fits it to your reviews by itself; Optimize does it now. Restore Defaults leaves it as it is.")
             }
         } footer: {
             if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {

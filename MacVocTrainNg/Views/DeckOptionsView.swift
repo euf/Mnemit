@@ -91,6 +91,8 @@ struct DeckOptionsView: View {
                 .confirmationDialog("Restore the defaults of this deck's options?", isPresented: $isAskingToRestore, titleVisibility: .visible) {
                     Button("Restore Defaults", role: .destructive) { options = options.restoringDefaults() }
                     Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Your FSRS parameters stay: they come from your reviews.")
                 }
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
