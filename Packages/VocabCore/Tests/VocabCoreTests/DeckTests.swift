@@ -136,6 +136,8 @@ struct DeckTests {
         #expect(built.learningOptions.steps == LearningOptions.stepsRange.lowerBound)
         #expect(built.learningOptions.newCardsPerSession == LearningOptions.sessionLimitRange.upperBound)
         options.newCardsPerSession = 0
+        #expect(try Deck(learningOptions: options, cards: []).learningOptions.newCardsPerSession == 0)
+        options.newCardsPerSession = -3
         #expect(try Deck(learningOptions: options, cards: []).learningOptions.newCardsPerSession == LearningOptions.sessionLimitRange.lowerBound)
         options.newCardsPerSession = 100_000
 

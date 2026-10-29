@@ -228,6 +228,14 @@ struct SessionTests {
         #expect(session.totalCount == 7)
     }
 
+    /// New cards/day of 0 is a review-only stretch: the deck gives no new card, and its due cards stay.
+    @Test func aNewCardLimitOfZeroGivesNoNewCards() throws {
+        var deck = try deck(newCards: 10, reviewCards: 3)
+        deck.learningOptions.newCardsPerSession = 0
+        let session = StudySession(deck: deck, at: now, calendar: .testing, random: SeededRandom(seed: 4)).session
+        #expect(session.totalCount == 3)
+    }
+
     @Test func sessionSizeIsLimited() throws {
         var deck = try deck(newCards: 10, reviewCards: 10)
         #expect(StudySession(deck: deck, at: now, calendar: .testing, random: SeededRandom(seed: 4)).session.totalCount == 20)

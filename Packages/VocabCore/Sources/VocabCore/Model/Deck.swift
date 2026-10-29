@@ -68,8 +68,8 @@ public struct LearningOptions: Hashable, Sendable {
     public static let targetRecallRange: ClosedRange<Double> = 0.7...0.97
     public static let maximumIntervalRange: ClosedRange<Int> = 30...36500
     public static let stepsRange: ClosedRange<Int> = 1...5
-    /// For `newCardsPerSession` when it is limited.
-    public static let sessionLimitRange: ClosedRange<Int> = 1...9999
+    /// For `newCardsPerSession` when it is limited; 0 is a review-only stretch, as in Anki.
+    public static let sessionLimitRange: ClosedRange<Int> = 0...9999
     /// For `maximumReviewsPerDay` when it is limited.
     public static let reviewLimitRange: ClosedRange<Int> = 1...9999
     /// For `leechThreshold`; 0 is off.
