@@ -29,8 +29,6 @@ public struct LearningOptions: Hashable, Sendable {
     /// Days the interval of a note's recognition card must have reached before its
     /// production card is introduced; 0 never holds production cards back.
     public var productionUnlockDays: Int = 7
-    /// In which order a session introduces new cards when it can't take all of them.
-    public var newCardOrder: NewCardOrder = .deckOrder
     /// Spreads review intervals slightly so cards learned together don't stay clustered.
     public var fuzzing: Bool = true
     public var parameters: FSRSParameters = .default
@@ -90,14 +88,6 @@ public enum LeechAction: String, Sendable, CaseIterable {
     case keep
     /// The card is suspended, as Anki's classic leech action does.
     case suspend
-}
-
-/// The order in which a study session takes new cards when a limit leaves some out.
-public enum NewCardOrder: String, Sendable, CaseIterable {
-    /// As the deck lists them.
-    case deckOrder
-    /// By creation date, the newest first; cards created together stay in deck order.
-    case newestFirst
 }
 
 extension LearningOptions {
@@ -224,16 +214,14 @@ public struct Deck: Hashable, Sendable {
         cards.reduce(0) { $0 + ($1.isSuspended ? 1 : 0) }
     }
 
-    /// The newest batch of words: the cards whose `created` falls on the second of the
-    /// deck's latest one, in deck order, without suspended cards. `deck-from-tsv` stamps one
-    /// `created` per run, so a batch is what one run added, usually the words of the last
-    /// lesson or two. Empty for a deck without cards. Meant for `Practice(practicing:at:)`.
-    ///
-    /// Cards added by hand in between start a batch of their own.
-    public var newestBatchIDs: [Card.ID] {
-        func second(_ card: Card) -> Int { Int(card.created.timeIntervalSince1970.rounded(.down)) }
-        guard let newest = cards.map(second).max() else { return [] }
-        return cards.filter { second($0) == newest && !$0.isSuspended }.map(\.id)
+    /// The newest batch of words: the cards whose `created` falls on the study day of the deck's
+    /// latest one, in deck order, without suspended cards: what was added that day, usually the
+    /// words of the last lesson. The same batch the new cards are ordered by (newest addition
+    /// first). Empty for a deck without cards. Meant for `Practice(practicing:at:)`.
+    public func newestBatchIDs(calendar: StudyCalendar) -> [Card.ID] {
+        guard let newest = cards.map(\.created).max() else { return [] }
+        let day = calendar.dayNumber(for: newest)
+        return cards.filter { calendar.dayNumber(for: $0.created) == day && !$0.isSuspended }.map(\.id)
     }
 
     /// The cards graded `.again` at least once on the study day of `date`, in deck order,

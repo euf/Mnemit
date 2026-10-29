@@ -40,6 +40,24 @@ struct AnkiSiblingsTests {
         return try AnkiImport.read(Fixtures.zip([("collection.anki2", collection)]))
     }
 
+    /// The new cards come in Anki's new-card order, the position its cards hold, after the cards studied; a filtered
+    /// card by the position it had before.
+    @Test(arguments: [false, true]) func newCardsComeInAnkisNewCardOrder(current: Bool) throws {
+        let notes = (1...4).map { Fixtures.RawNote(id: $0, model: 1, fields: ["w\($0)", "m\($0)"]) }
+        let cards = [
+            Fixtures.RawCard(id: 10, note: 1, due: 3),
+            Fixtures.RawCard(id: 20, note: 2, due: 1),
+            Fixtures.RawCard(id: 30, note: 3, filteredFrom: 1, due: -100_000, originalDue: 2),
+            Fixtures.RawCard(id: 40, note: 4, type: 2, due: 900),
+        ]
+        let collection =
+            current
+            ? Fixtures.currentCollection(noteTypes: [Self.basic], notes: notes, cards: cards, reviews: [])
+            : Fixtures.legacyCollection(noteTypes: [Self.basic], notes: notes, cards: cards, reviews: [])
+        let imported = try AnkiImport.read(Fixtures.zip([("collection.anki2", collection)]))
+        #expect(imported.notes.map { $0.front } == ["w4", "w2", "w3", "w1"])
+    }
+
     static func package(_ name: String) throws -> AnkiImport {
         let url = try #require(Bundle.module.url(forResource: "Resources/Anki/\(name)", withExtension: "apkg"))
         return try AnkiImport.read(url)

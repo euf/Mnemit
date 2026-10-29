@@ -117,7 +117,7 @@ struct SessionDriverDurationTests {
     @Test func practiceLogsNothing() throws {
         let (document, undoManager) = try makeDocument()
         let clock = TestClock()
-        let stream = StudyStream(practicingNewestWordsIn: document.deck, at: document.clock.now)
+        let stream = StudyStream(practicingNewestWordsIn: document.deck, at: document.clock.now, calendar: document.calendar)
         let driver = SessionDriver(document: document, stream: stream, now: clock.now)
         clock.advance(.seconds(5))
         grade(driver, undoManager: undoManager)

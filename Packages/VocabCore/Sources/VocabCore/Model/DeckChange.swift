@@ -73,6 +73,34 @@ extension DeckChange {
         return added.isEmpty ? nil : DeckChange(upserts: added)
     }
 
+    /// Moves the new cards with `ids` in `deck` into the addition of the study day of `now`, as if they were added
+    /// again, in the order of `ids`: they get `created` stamps a second apart that end at `now` in whole seconds,
+    /// so the new cards come in that order and before every earlier addition (`StudySession`, newest addition
+    /// first). A lesson's words that the deck holds already go first with the lesson that way. Cards that have
+    /// been studied, have a log or are suspended stay out, and so does an ID `deck` doesn't hold; `nil` if that
+    /// leaves none. Stamps that reach back past the start of the day put the first cards with the day before.
+    public static func renewing(_ ids: [Card.ID], in deck: Deck, at now: Date) -> DeckChange? {
+        var seen = Set<Card.ID>()
+        let cards = ids.compactMap { id -> Card? in
+            guard seen.insert(id).inserted, let card = deck.card(withID: id), card.isNew, card.log.isEmpty, !card.isSuspended else { return nil }
+            return card
+        }
+        let last = now.timeIntervalSince1970.rounded(.down)
+        let renewed = cards.enumerated().map { index, card in
+            var card = card
+            card.created = Date(timeIntervalSince1970: last - Double(cards.count - 1 - index))
+            return card
+        }
+        return renewed.isEmpty ? nil : DeckChange(upserts: renewed)
+    }
+
+    /// `adding(_:to:)` and `renewing(_:in:at:)` in one change, one undo: the new words of a lesson and those of it
+    /// the deck holds already but hasn't started.
+    public static func adding(_ cards: [Card], to deck: Deck, renewing ids: [Card.ID], at now: Date) -> DeckChange? {
+        let upserts = (renewing(ids, in: deck, at: now)?.upserts ?? []) + (adding(cards, to: deck)?.upserts ?? [])
+        return upserts.isEmpty ? nil : DeckChange(upserts: upserts.map(\.card))
+    }
+
     /// Removes the cards with `ids` from `deck`; `nil` if `deck` holds none of them.
     public static func removing(_ ids: Set<Card.ID>, from deck: Deck) -> DeckChange? {
         let removals = deck.cards.map(\.id).filter(ids.contains)

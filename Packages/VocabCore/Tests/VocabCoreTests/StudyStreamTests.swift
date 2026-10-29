@@ -84,7 +84,7 @@ struct StudyStreamTests {
         _ = run.deck.apply(change, at: now, calendar: calendar)
         #expect(run.deck.card(withID: id)?.log.map(\.duration) == [.milliseconds(3300)])
 
-        var practice = StudyStream(practicingNewestWordsIn: run.deck, at: now)
+        var practice = StudyStream(practicingNewestWordsIn: run.deck, at: now, calendar: .testing)
         let practiced = practice.grade(.good, in: run.deck, at: now, calendar: calendar, duration: .milliseconds(3300))
         guard case .practiced? = practiced else {
             Issue.record("not practiced")
@@ -222,7 +222,7 @@ struct StudyStreamTests {
 
     @Test func practiceOnlyStreamRestsWhenDoneAndKeepsItsRecap() throws {
         let deck = try Deck(learningOptions: options(), cards: [review("a"), review("b"), review("c")])
-        var stream = StudyStream(practicingNewestWordsIn: deck, at: now, random: SeededRandom(seed: 3))
+        var stream = StudyStream(practicingNewestWordsIn: deck, at: now, calendar: .testing, random: SeededRandom(seed: 3))
         #expect(stream.isPracticeOnly)
         #expect(stream.stage == .practiceNewest)
         #expect(stream.session.totalCount == 3)
@@ -496,7 +496,7 @@ struct StudyStreamTests {
     }
 
     @Test func aPracticeOnlyStreamNeverRestsInsideItself() throws {
-        var stream = StudyStream(practicingNewestWordsIn: try Deck(cards: [fresh("a"), fresh("b")]), at: now)
+        var stream = StudyStream(practicingNewestWordsIn: try Deck(cards: [fresh("a"), fresh("b")]), at: now, calendar: .testing)
         let rests = stream.restAtRoundEnd(roundsDone: 1, rounds: 3)
         #expect(!rests)
         #expect(!stream.isResting)

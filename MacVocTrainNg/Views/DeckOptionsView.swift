@@ -34,10 +34,6 @@ struct DeckOptionsView: View {
                 Section {
                     LimitStepper(title: "Cards per session", value: $options.cardsPerSession, step: 10, ceiling: 300, range: LearningOptions.sessionLimitRange)
                     LimitStepper(title: "New cards per day", value: $options.newCardsPerSession, step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
-                    Picker("New card order", selection: $options.newCardOrder) {
-                        Text("Deck order").tag(NewCardOrder.deckOrder)
-                        Text("Newest first").tag(NewCardOrder.newestFirst)
-                    }
                     Stepper(value: $options.steps, in: LearningOptions.stepsRange) {
                         LabeledContent("Steps per card", value: options.steps.formatted())
                     }

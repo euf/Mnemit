@@ -22,8 +22,8 @@ import Foundation
 /// everything else is, so undo and redo bring the rest back or take it away.
 ///
 /// A stream from `init(practicingMistakesIn:at:calendar:random:)` or
-/// `init(practicingNewestWordsIn:at:random:)` does one practice, which changes no card
-/// (`Stage.practiceMistakes`, today's mistakes; `Stage.practiceNewest`, `Deck.newestBatchIDs`),
+/// `init(practicingNewestWordsIn:at:calendar:random:)` does one practice, which changes no card
+/// (`Stage.practiceMistakes`, today's mistakes; `Stage.practiceNewest`, `Deck.newestBatchIDs(calendar:)`),
 /// and then rests (`isPracticeOnly`).
 ///
 /// The stream is one value, so undo restores all of it: stage, segment and random state.
@@ -107,9 +107,9 @@ public struct StudyStream: Sendable {
         self.init(practicing: deck.mistakes(onDayOf: now, calendar: calendar), as: .practiceMistakes, at: now, random: random)
     }
 
-    /// A stream of one practice of `Deck.newestBatchIDs`.
-    public init(practicingNewestWordsIn deck: Deck, at now: Date, random: SeededRandom = SeededRandom()) {
-        self.init(practicing: deck.newestBatchIDs, as: .practiceNewest, at: now, random: random)
+    /// A stream of one practice of `Deck.newestBatchIDs(calendar:)`.
+    public init(practicingNewestWordsIn deck: Deck, at now: Date, calendar: StudyCalendar, random: SeededRandom = SeededRandom()) {
+        self.init(practicing: deck.newestBatchIDs(calendar: calendar), as: .practiceNewest, at: now, random: random)
     }
 
     private init(practicing cardIDs: [Card.ID], as stage: Stage, at now: Date, random: SeededRandom) {
@@ -275,7 +275,7 @@ public struct StudyStream: Sendable {
         case .practiceMistakes:
             segment = .practice(Practice(practicing: deck.mistakes(onDayOf: now, calendar: calendar), at: now, random: segmentRandom))
         case .practiceNewest:
-            segment = .practice(Practice(practicing: deck.newestBatchIDs, at: now, random: segmentRandom))
+            segment = .practice(Practice(practicing: deck.newestBatchIDs(calendar: calendar), at: now, random: segmentRandom))
         case .rest:
             return nil
         }

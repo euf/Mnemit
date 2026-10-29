@@ -114,7 +114,7 @@ final class StudyModel: Identifiable {
             case .practiceMistakes:
                 stream = StudyStream(practicingMistakesIn: document.deck, at: now, calendar: document.calendar)
             case .practiceNewest:
-                stream = StudyStream(practicingNewestWordsIn: document.deck, at: now)
+                stream = StudyStream(practicingNewestWordsIn: document.deck, at: now, calendar: document.calendar)
             }
             var guide: RoundGuide?
             if index == 0, let rounds {

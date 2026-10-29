@@ -25,7 +25,7 @@ struct SessionDriverTests {
 
     private func makeStream(for document: VocabularyDocument, practicing: Bool = false) -> StudyStream {
         if practicing {
-            return StudyStream(practicingNewestWordsIn: document.deck, at: document.clock.now)
+            return StudyStream(practicingNewestWordsIn: document.deck, at: document.clock.now, calendar: document.calendar)
         }
         return StudyStream(deck: document.deck, at: document.clock.now, calendar: document.calendar)
     }

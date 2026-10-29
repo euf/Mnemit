@@ -6,7 +6,7 @@ MacVocTrain 1 documents.
 ## deck-from-tsv: sync a deck with a TSV in place
 
 - Keeps progress:
-  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--new-order deck|newest]`.
+  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--renew NOTES]`.
 - TSV with the header `note⇥kind⇥question⇥answer⇥hint` (kind is `recognition` or `production`; `\n`
   in a field is a line break).
 - A card is found by (note, kind). An old card without a note is adopted (its id and reviews stay) if
@@ -19,7 +19,11 @@ MacVocTrain 1 documents.
   under its own name.
 - A TSV without the header (question, answer, hint) works as before: only new questions are added.
 - `--new-per-session` and `--new-production-per-session` set the daily limit (the old names stay).
-- One run sets one `created` on its cards: that is the newest batch (`references/scheduling.md`).
+- One run sets one `created` on its cards: they are that day's addition, first among the new cards, in the
+  order of the TSV (`references/scheduling.md`).
+- `--renew NOTES`: a file of word keys, one per line. After the sync, the new cards of those words join the run's
+  addition in the file's order (`DeckChange.renewing`), so a deck's waiting cards can be put in a new order. The
+  stamps are a second apart; a run refuses when they would reach back into the previous study day.
 
 ## Production cards
 
@@ -27,8 +31,8 @@ MacVocTrain 1 documents.
   `Card.note`/`kind`, `LearningOptions.productionUnlockDays` (default 7; a value saved in a deck stays;
   0 = don't hold) and its neighbours, `StudySession.selectCards`.
 - New production cards already unlocked come in the order the words were first learned: by the date of
-  the first review of the recognition sibling, oldest first, whatever `newCardOrder` says. That stays
-  the order of recognition cards and of cards without such a date
+  the first review of the recognition sibling, oldest first, whatever their addition. The newest addition
+  first stays the order of recognition cards and of cards without such a date
   (`StudySession.productionOldestLearnedFirst`).
 - The daily production limit works through the accumulated cards from the oldest word.
 - Sources, the unlock threshold and what would change the verdict: `references/production-cards-research.md`.
@@ -73,6 +77,9 @@ MacVocTrain 1 documents.
   except the second card of a forward/reverse pair (two templates, the second's question is the field
   the first answers with, `isReversePair`): it is `production` and waits to unlock. A type with one
   template gets neither `note` nor `kind`. A duplicate on re-import is still found by the question.
+- Order: the cards studied in Anki first, in the order their notes were made, then the new ones in Anki's
+  new-card order (the position in `cards.due`, `odue` for a card in a filtered deck), so the author's order of a
+  shared deck is the order its new cards come in here (`AnkiCollection.imported()`).
 - Cards with history: `AnkiImport.cards(from:learningOptions:calendar:created:)`. The state comes from
   replaying the reviews through `Scheduler.replaying` with the deck's FSRS parameters (Anki's own memory
   state is not read). `DeckChange.importing(_:into:learningOptions:media:)` puts them in the deck
@@ -196,6 +203,9 @@ MacVocTrain 1 documents.
   bracket), two cards per word, one Undo.
 - Sides are separated by `=`, `–`, `—`, a tab, or a hyphen with spaces on both sides (the phone keyboard
   types it); a hyphen inside a word doesn't split.
+- A word of the list the deck holds already is a duplicate, unchecked. Its cards that aren't started yet join
+  the addition in the same undo step (`WordListPreview.renewable(in:)`, `VocabularyDocument.addLessonCards(_:renewing:)`):
+  the lesson goes first among the new cards as a whole, and Study These Now asks those cards too.
 
 ## Word key
 

@@ -72,12 +72,14 @@ struct AnkiCollection {
 
         var result = AnkiImport()
         var usedDecks = Set<Int>()
-        // The deck a filtered card came from is `odid`.
+        // The deck a filtered card came from is `odid`. The cards studied come first, in the order their notes were
+        // made; the new ones (`type` 0) follow in Anki's new-card order, the position `due` holds (`odue` in a
+        // filtered deck), so the deck's author's order is the order the new cards come in here.
         let cards = try database.rows(
             """
             SELECT c.id, c.ord, c.queue, CASE WHEN c.odid != 0 THEN c.odid ELSE c.did END, n.mid, n.flds, n.guid
             FROM cards c JOIN notes n ON n.id = c.nid
-            ORDER BY n.id, c.ord, c.id
+            ORDER BY c.type = 0, CASE WHEN c.type = 0 THEN (CASE WHEN c.odid != 0 THEN c.odue ELSE c.due END) END, n.id, c.ord, c.id
             """
         ) { ($0.int(0), $0.int(1), $0.int(2), $0.int(3), $0.int(4), $0.text(5), $0.text(6)) }
 

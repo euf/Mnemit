@@ -273,7 +273,7 @@ private struct PracticeButtons: View {
 
     private func cards(of practice: DeckPractice) -> Int {
         switch practice {
-        case .newest: document.deck.newestBatchIDs.count
+        case .newest: document.deck.newestBatchIDs(calendar: document.calendar).count
         case .mistakes: document.deck.mistakes(onDayOf: document.clock.now, calendar: document.calendar).count
         }
     }

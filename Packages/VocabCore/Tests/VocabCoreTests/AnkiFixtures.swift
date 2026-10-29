@@ -145,6 +145,12 @@ enum AnkiFixtures {
         var ord = 0
         var queue = 0
         var filteredFrom = 0
+        /// 0 new, 1 learning, 2 review, 3 relearning.
+        var type = 0
+        /// A new card's position in Anki's new-card order.
+        var due = 0
+        /// `due` before the card went into a filtered deck.
+        var originalDue = 0
     }
 
     struct RawNote {
@@ -169,13 +175,13 @@ enum AnkiFixtures {
 
     private static let commonTables = [
         "CREATE TABLE notes (id integer PRIMARY KEY, guid text, mid integer, flds text)",
-        "CREATE TABLE cards (id integer PRIMARY KEY, nid integer, did integer, ord integer, queue integer, odid integer)",
+        "CREATE TABLE cards (id integer PRIMARY KEY, nid integer, did integer, ord integer, queue integer, odid integer, type integer, due integer, odue integer)",
         "CREATE TABLE revlog (id integer PRIMARY KEY, cid integer, ease integer, type integer, factor integer, time integer)",
     ]
 
     private static func rows(notes: [RawNote], cards: [RawCard], reviews: [RawReview]) -> [String] {
         notes.map { "INSERT INTO notes VALUES (\($0.id), \(quoted($0.guid ?? "guid\($0.id)")), \($0.model), \(quoted($0.fields.joined(separator: "\u{1F}"))))" }
-            + cards.map { "INSERT INTO cards VALUES (\($0.id), \($0.note), \($0.deck), \($0.ord), \($0.queue), \($0.filteredFrom))" }
+            + cards.map { "INSERT INTO cards VALUES (\($0.id), \($0.note), \($0.deck), \($0.ord), \($0.queue), \($0.filteredFrom), \($0.type), \($0.due), \($0.originalDue))" }
             + reviews.map { "INSERT INTO revlog VALUES (\($0.id), \($0.card), \($0.ease), \($0.type), \($0.factor), \($0.time))" }
     }
 

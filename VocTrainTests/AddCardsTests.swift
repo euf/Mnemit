@@ -133,6 +133,25 @@ struct AddCardsTests {
         #expect(!undoManager.canUndo)
     }
 
+    @Test func theListsWordsTheDeckHoldsButHasntStartedJoinTheDaysAdditionInTheSameStep() throws {
+        var studied = makeCard("γράφω", note: "γράφω", kind: .recognition)
+        studied.learningState = LearningState(phase: .review, stability: 3, difficulty: 5, lastReview: created, due: created, reviews: 2)
+        let waiting = [makeCard("κλέβω", note: "κλέβω", kind: .recognition), makeCard("to steal", note: "κλέβω", kind: .production)]
+        let (document, undoManager) = try makeDocument(cards: waiting + [studied])
+        let preview = WordListPreview(text: "ο κλέφτης = thief\nκλέβω = to steal\nγράφω = to write", deck: document.deck, created: created)
+        let renewed = preview.renewable(in: document.deck)
+        #expect(renewed == waiting.map(\.id))
+
+        var added = 0
+        step(undoManager) { added = document.addLessonCards(preview.rows.filter(\.isSelectedByDefault).flatMap(\.cards), renewing: renewed) }
+        #expect(added == 4)
+        // Renewed at the document's clock, a minute after they were made; the studied card keeps its date.
+        #expect(renewed.allSatisfy { document.deck.card(withID: $0)!.created > created })
+        #expect(document.deck.card(withID: studied.id)?.created == created)
+        undoManager.undo()
+        #expect(document.deck.cards.map(\.created) == [created, created, created])
+    }
+
     // MARK: One card, both directions
 
     @Test func oneCardInBothDirectionsMakesTwoLinkedCardsInOneUndoStep() throws {

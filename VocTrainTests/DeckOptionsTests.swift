@@ -45,7 +45,6 @@ struct DeckOptionsTests {
     @Test func everyOptionOfTheScreenChangesAloneAndSurvivesTheFile() throws {
         let (document, undoManager) = try makeDocument()
         step(undoManager) { document.option(\.newCardsPerSession).wrappedValue = 15 }
-        step(undoManager) { document.option(\.newCardOrder).wrappedValue = .newestFirst }
         step(undoManager) { document.option(\.targetRecall).wrappedValue = 0.8 }
         step(undoManager) { document.option(\.newProductionPerSession).wrappedValue = nil }
         step(undoManager) { document.option(\.productionUnlockDays).wrappedValue = 0 }
@@ -57,7 +56,6 @@ struct DeckOptionsTests {
 
         var expected = LearningOptions()
         expected.newCardsPerSession = 15
-        expected.newCardOrder = .newestFirst
         expected.targetRecall = 0.8
         expected.newProductionPerSession = nil
         expected.productionUnlockDays = 0

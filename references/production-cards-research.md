@@ -203,9 +203,9 @@ after two weeks, maximum 16. **[S]** Table 2, p. 32.
   (7) while new recognition cards fill `newCardsPerSession`. With 20 new recognition cards a day
   (Greek B1 deck), about 20 production cards a day become eligible from day 13 on and 7 are
   introduced, so the eligible but unintroduced production cards grow by about 13 a day, roughly
-  560 by day 56, and introducing all 1118 productions at 7 a day takes about 160 days. With
-  `newCardOrder = .newestFirst` the eligible production cards are taken newest-created first, so
-  the oldest eligible ones wait longest. **[I]** (arithmetic on `StudySession.swift` 257–300; the
+  560 by day 56, and introducing all 1118 productions at 7 a day takes about 160 days. Taken
+  newest-created first, the eligible production cards would leave the oldest eligible ones waiting
+  longest; `StudySession.productionOldestLearnedFirst` takes the oldest learned word first instead. **[I]** (arithmetic on `StudySession.swift` 257–300; the
   daily new-card allowance can lower the 20.) A gate of 7 instead of 21 moves the start of the
   production stream from day 13 to day 2 and leaves its steady rate at 7 a day.
 

@@ -221,7 +221,6 @@ struct DeckEditingSnapshotTests {
 
         let custom = try options {
             $0.newCardsPerSession = nil
-            $0.newCardOrder = .newestFirst
             $0.targetRecall = 0.95
             $0.newProductionPerSession = 3
             $0.productionUnlockDays = 0

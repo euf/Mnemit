@@ -92,7 +92,7 @@ extension Shell {
             canChange: canChange,
             canStudyDeck: canChange && document?.deck.cards.isEmpty == false,
             canPracticeMistakes: canChange && document.map { !$0.deck.mistakes(onDayOf: now, calendar: $0.calendar).isEmpty } == true,
-            canPracticeNewest: canChange && document.map { !$0.deck.newestBatchIDs.isEmpty } == true,
+            canPracticeNewest: canChange && document.map { !$0.deck.newestBatchIDs(calendar: $0.calendar).isEmpty } == true,
             isPaused: document?.deck.learningOptions.isPaused ?? false,
             canImport: !inRun && (selectedURL == nil || canChange),
             inRun: inRun,

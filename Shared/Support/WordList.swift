@@ -140,6 +140,26 @@ struct WordListPreview {
         }
     }
 
+    /// The new cards of `deck` for the words of the list it holds already, in the order of the list: a card whose
+    /// word key is one of the word's, or whose question is the word, as the duplicate check found it; only cards not
+    /// started yet and not suspended. What `VocabularyDocument.addLessonCards(_:renewing:)` moves into the day's
+    /// addition, so the lesson's known-but-unstarted words go first with its new ones.
+    func renewable(in deck: Deck) -> [Card.ID] {
+        let waiting = deck.cards.filter { $0.isNew && $0.log.isEmpty && !$0.isSuspended }
+        var ids: [Card.ID] = []
+        for row in rows where row.duplicate == .inDeck {
+            let keys = Set(WordKey(row.entry.note)?.sameKeys ?? [])
+            let question = CardText.key(forQuestion: row.entry.greek)
+            for card in waiting where !ids.contains(card.id) {
+                let cardKeys = card.note.flatMap { WordKey($0) }?.sameKeys ?? []
+                if !keys.isDisjoint(with: cardKeys) || CardText.key(forQuestion: card.question) == question {
+                    ids.append(card.id)
+                }
+            }
+        }
+        return ids
+    }
+
     /// Word keys compare in composed Unicode form, as `LessonWords` does.
     private static func normalized(_ note: String) -> String {
         CardText.trimmed(note).precomposedStringWithCanonicalMapping

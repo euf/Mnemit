@@ -134,11 +134,26 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
   (`practicingMistakesIn:`, `practicingNewestWordsIn:`) from the deck screen and the Mac's menu; they
   change no card, practice once and end in a pause with the results.
 
+## Order of new cards: the newest addition first
+
+- One rule, no option: the new cards added on a later study day come before those of an earlier one; within a
+  day they come as they were added, by `Card.created`, then in deck order (`StudySession.newestAdditionFirst`).
+  The order decides which new cards the day's limits take; the session then mixes the cards it took.
+- An addition is whatever puts cards in a deck that day: Add Cards, a list of lesson words, an import, a run of
+  `deck-from-tsv`. An imported or shared deck has one `created` for all its cards, so its author's order holds
+  (an Anki package in Anki's new-card order, `references/import-export.md`); words typed one by one come in the
+  order they were typed.
+- Renewing (`DeckChange.renewing(_:in:at:)`) moves cards not started yet into the day's addition, in a given
+  order: `created` stamps a second apart that end at the moment of the change. A lesson list in Add Cards renews
+  the words of the list the deck holds already (`WordListPreview.renewable(in:)`), so the whole lesson goes first;
+  `deck-from-tsv --renew NOTES` does it for a list of word keys. A merge takes the stamps along with the card's
+  content (`Card.contentChanged`).
+- Unlocked production cards keep their own order, the oldest learned word first (`references/import-export.md`).
+
 ## Newest batch
 
-- `Deck.newestBatchIDs`: the cards with the same `created` (to the second) as the newest card of the
-  deck, without suspended ones. `deck-from-tsv` sets one `created` per run.
+- `Deck.newestBatchIDs(calendar:)`: the cards whose `created` falls on the study day of the deck's newest card,
+  without suspended ones: the same day's addition the order of new cards starts with.
 - Practicing the batch doesn't touch the schedule. Mac: Study ▸ Practice Newest Words
   (`SessionViewModel(entry: .practiceNewest)`); iPhone: the deck screen's ⋯ menu
   (`StudyModel(entry: .practiceNewest)`).
-- A card added by hand later starts a batch of its own.

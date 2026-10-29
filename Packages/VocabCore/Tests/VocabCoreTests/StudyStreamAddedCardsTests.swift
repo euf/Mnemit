@@ -120,7 +120,7 @@ extension StudyStreamTests {
         #expect(run.stream.session.currentCardID == before)
 
         let deck = try Deck(learningOptions: options(), cards: [review("a"), given])
-        var practice = StudyStream(practicingNewestWordsIn: deck, at: now, random: SeededRandom(seed: 3))
+        var practice = StudyStream(practicingNewestWordsIn: deck, at: now, calendar: .testing, random: SeededRandom(seed: 3))
         let added7 = practice.addCards([given.id], in: deck, at: now, calendar: calendar)
         #expect(!added7)
     }

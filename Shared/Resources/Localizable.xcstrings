@@ -5999,28 +5999,6 @@
         }
       }
     },
-    "Deck order": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reihenfolge im Stapel"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σειρά στην τράπουλα"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Порядок в колоде"
-          }
-        }
-      }
-    },
     "Decks": {
       "localizations": {
         "de": {
@@ -9651,28 +9629,6 @@
         }
       }
     },
-    "New card order": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reihenfolge neuer Karten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Σειρά νέων καρτών"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Порядок новых карточек"
-          }
-        }
-      }
-    },
     "New cards admitted": {
       "localizations": {
         "de": {
@@ -9735,28 +9691,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новых в день"
-          }
-        }
-      }
-    },
-    "Newest first": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neueste zuerst"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πρώτα οι νεότερες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сначала новые"
           }
         }
       }

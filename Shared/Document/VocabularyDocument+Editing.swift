@@ -49,13 +49,15 @@ extension VocabularyDocument {
     }
 
     /// Appends the cards of lesson words, see `LessonWords`, as one change: one undo takes
-    /// all of them back. Returns the number of cards added, 0 while the document can't be
-    /// changed.
+    /// all of them back. The cards in `renewed`, the list's words the deck holds already but hasn't
+    /// started (`WordListPreview.renewable(in:)`), join the day's addition in the same change, so the
+    /// whole lesson goes first among the new cards (`DeckChange.adding(_:to:renewing:at:)`). Returns the
+    /// number of cards added or renewed, 0 while the document can't be changed.
     @discardableResult
-    func addLessonCards(_ cards: [Card]) -> Int {
-        guard isReadyToEdit, let change = DeckChange.adding(cards, to: deck) else { return 0 }
+    func addLessonCards(_ cards: [Card], renewing renewed: [Card.ID] = []) -> Int {
+        guard isReadyToEdit, let change = DeckChange.adding(cards, to: deck, renewing: renewed, at: clock.now) else { return 0 }
         perform(change, actionName: String(localized: "Add Cards"))
-        return cards.count
+        return cards.count + renewed.count
     }
 
     /// Changes question, answer and hint of a card, see `DeckChange.editingText(of:to:in:)`.

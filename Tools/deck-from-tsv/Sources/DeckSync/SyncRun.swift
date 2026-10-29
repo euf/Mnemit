@@ -67,6 +67,7 @@ public enum SyncRun {
             skipped = result.skippedRows
         }
         try plan.apply(to: &deck, at: now, calendar: calendar)
+        let renewed = try renew(options.renew, in: &deck, at: now, calendar: calendar)
 
         let updated = options.overrides.applied(to: deck.learningOptions)
         if let change = DeckChange.changingLearningOptions(updated, in: deck, calendar: calendar) {
@@ -79,6 +80,9 @@ public enum SyncRun {
             "added \(plan.added.count), edited \(plan.edited.count), adopted \(plan.adopted.count), suspended \(plan.suspended.count), unchanged \(plan.unchanged)"
                 + (skipped > 0 ? ", \(skipped) empty rows skipped" : ""))
         report += optionChanges.map { "option: \($0)" }
+        if options.renew != nil {
+            report.append("renewed \(renewed) new cards: today's addition, first among the new cards")
+        }
 
         if options.dryRun {
             report += lists(of: plan)
@@ -96,6 +100,33 @@ public enum SyncRun {
         }
         try DeckFile.fileWrapper(for: deck).write(to: url, options: .atomic, originalContentsURL: nil)
         return report.joined(separator: "\n")
+    }
+
+    /// Renews the new cards of the word keys listed in `file`, in its order (`DeckChange.renewing(_:in:at:)`).
+    /// - Returns: How many cards were renewed.
+    /// - Throws: `SyncError` if the file can't be read, or if the stamps, a second apart, would reach back
+    ///   into the day before: the cards would then not all be today's addition.
+    private static func renew(_ file: URL?, in deck: inout Deck, at now: Date, calendar: StudyCalendar) throws -> Int {
+        guard let file else { return 0 }
+        let text: String
+        do {
+            text = try String(contentsOf: file, encoding: .utf8)
+        } catch {
+            throw SyncError("can't read \(file.path): \(error.localizedDescription)")
+        }
+        var byNote: [String: [Card.ID]] = [:]
+        for card in deck.cards {
+            if let note = card.note { byNote[SyncRow.normalized(note), default: []].append(card.id) }
+        }
+        let ids = text.split(whereSeparator: \.isNewline).flatMap { byNote[SyncRow.normalized(String($0))] ?? [] }
+        guard let change = DeckChange.renewing(ids, in: deck, at: now) else { return 0 }
+        let before = deck
+        _ = deck.apply(change, at: now, calendar: calendar)
+        let renewed = deck.cards.filter { card in before.card(withID: card.id)?.created != card.created }
+        if let first = renewed.map(\.created).min(), calendar.dayNumber(for: first) != calendar.dayNumber(for: now) {
+            throw SyncError("--renew: \(renewed.count) cards a second apart reach back into yesterday; run it later in the day")
+        }
+        return renewed.count
     }
 
     /// The cards of each kind of change, one per line.

@@ -141,7 +141,7 @@ public struct Card: Identifiable, Hashable, Sendable {
     public internal(set) var questionAudio: String?
     public internal(set) var answerImage: String?
     public internal(set) var answerAudio: String?
-    public let created: Date
+    public internal(set) var created: Date
     /// `nil` while the card has never been studied. Only `Scheduler` and
     /// `DeckChange` change it.
     public internal(set) var learningState: LearningState?
@@ -151,7 +151,8 @@ public struct Card: Identifiable, Hashable, Sendable {
     /// A merge leaves out the reviews before it, which the other device may still hold
     /// (#273).
     public internal(set) var learningStateReset: Date?
-    /// When the learner last changed the texts, the media, the note or the kind of the card, in whole
+    /// When the learner last changed the texts, the media, the note, the kind or the addition (`created`, see
+    /// `DeckChange.renewing(_:in:at:)`) of the card, in whole
     /// seconds; `nil` if never since it was created or since an app version without this
     /// stamp saved it. `Deck.apply(_:at:calendar:)` sets it, and undoing a change sets it
     /// again, so undo reaches the other device. A merge takes the content of a card
@@ -271,6 +272,7 @@ public struct Card: Identifiable, Hashable, Sendable {
     /// Whether the texts, the media, the note or the kind differ from those of `other`.
     func hasOtherContent(than other: Card) -> Bool {
         question != other.question || answer != other.answer || hint != other.hint || note != other.note || kind != other.kind || media != other.media
+            || created != other.created
     }
 
     /// The latest time anything was done to the card: created, edited, reset, suspended or

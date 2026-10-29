@@ -332,11 +332,12 @@ struct AddCardsView: View {
 
     private func addList() {
         let cards = selectedCards(of: preview)
-        let count = document.addLessonCards(cards)
+        let renewed = preview.renewable(in: document.deck)
+        let count = document.addLessonCards(cards, renewing: renewed)
         guard count > 0 else { return }
         listText = ""
         flipped = []
-        didAdd(count, ids: cards.map(\.id))
+        didAdd(count, ids: renewed + cards.map(\.id))
     }
 
     private func didAdd(_ count: Int, ids: [Card.ID]) {

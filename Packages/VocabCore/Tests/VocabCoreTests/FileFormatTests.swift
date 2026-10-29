@@ -13,7 +13,6 @@ struct DeckFileTests {
         learningOptions.cardsPerSession = nil
         learningOptions.newProductionPerSession = 0
         learningOptions.productionUnlockDays = 30
-        learningOptions.newCardOrder = .newestFirst
         var card = Card(question: "dom", answer: "Haus / Gebäude", hint: "Substantiv", note: "dom", kind: .recognition, created: date, learningState: nil)
         card.learningState = LearningState(phase: .review, step: 0, stability: 12.5, difficulty: 4.2, lastReview: date, due: date.addingTimeInterval(86400), reviews: 3, lapses: 1)
         // One review short, like a card imported from MacVocTrain 1 with a learning state.
@@ -114,7 +113,6 @@ struct DeckFileTests {
         #expect(deck.cards[0].kind == nil)
         #expect(deck.learningOptions.newProductionPerSession == nil)
         #expect(deck.learningOptions.productionUnlockDays == 14)
-        #expect(deck.learningOptions.newCardOrder == .newestFirst)
         #expect(deck.learningOptions.leechThreshold == 6)
 
         #expect(deck.cards[0].media == CardMedia(questionImage: "e3b0c44298fc1c14.png", questionAudio: "ba7816bf8f01cfea.mp3", answerAudio: "ba7816bf8f01cfea.mp3"))
@@ -126,10 +124,10 @@ struct DeckFileTests {
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 
-    /// A deck written while the options `revealedRecallWeight`, `optimizeFromRevealed` and `caseSensitive` existed
-    /// reads, and its next save leaves the keys out.
+    /// A deck written while the options `revealedRecallWeight`, `optimizeFromRevealed`, `caseSensitive` and `newCardOrder`
+    /// existed reads, and its next save leaves the keys out.
     func withoutRemovedOptions(_ data: Data) -> String {
-        ["revealedRecallWeight\" : 0.5", "optimizeFromRevealed\" : false", "caseSensitive\" : true"].reduce(String(decoding: data, as: UTF8.self)) {
+        ["revealedRecallWeight\" : 0.5", "optimizeFromRevealed\" : false", "caseSensitive\" : true", "newCardOrder\" : \"newestFirst\""].reduce(String(decoding: data, as: UTF8.self)) {
             $0.replacingOccurrences(of: "    \"\($1),\n", with: "")
         }
     }
@@ -190,7 +188,7 @@ struct DeckFileTests {
             let deck = try DeckFile.decode(older)
             #expect(deck.learningOptions.leechThreshold == 5)
             let written = String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self)
-            for key in ["revealedRecallWeight", "optimizeFromRevealed", "caseSensitive"] {
+            for key in ["revealedRecallWeight", "optimizeFromRevealed", "caseSensitive", "newCardOrder"] {
                 #expect(!written.contains(key))
             }
         }
@@ -291,14 +289,12 @@ struct DeckFileTests {
         #expect(read.cards[1].note == nil)
         #expect(read.learningOptions.newProductionPerSession == 0)
         #expect(read.learningOptions.productionUnlockDays == 30)
-        #expect(read.learningOptions.newCardOrder == .newestFirst)
 
         let old = try DeckFile.decode(deckJSON())
         #expect(old.cards[0].note == nil)
         #expect(old.cards[0].kind == nil)
         #expect(old.learningOptions.newProductionPerSession == 7)
         #expect(old.learningOptions.productionUnlockDays == 7)
-        #expect(old.learningOptions.newCardOrder == .deckOrder)
 
         let odd = Data(
             """
@@ -309,7 +305,6 @@ struct DeckFileTests {
         let clamped = try DeckFile.decode(odd)
         #expect(clamped.learningOptions.newProductionPerSession == LearningOptions.productionLimitRange.upperBound)
         #expect(clamped.learningOptions.productionUnlockDays == LearningOptions.productionUnlockDaysRange.upperBound)
-        #expect(clamped.learningOptions.newCardOrder == .deckOrder)
         #expect(clamped.cards[0].note == nil)
         #expect(clamped.cards[0].kind == nil)
     }
@@ -327,7 +322,7 @@ struct DeckFileTests {
             .replacingOccurrences(of: "\"version\" : 3", with: "\"version\" : \(DeckFile.currentVersion)")
             .replacingOccurrences(of: "com.mfluch.voctrain.deck", with: DeckFile.format)
             // The options added since take their defaults.
-            .replacingOccurrences(of: "\"newCardsPerSession\" : 15,", with: "\"newCardOrder\" : \"deckOrder\",\n    \"newCardsPerSession\" : 15,\n    \"newProductionPerSession\" : 7,")
+            .replacingOccurrences(of: "\"newCardsPerSession\" : 15,", with: "\"newCardsPerSession\" : 15,\n    \"newProductionPerSession\" : 7,")
             .replacingOccurrences(of: "    \"steps\" : 2,", with: "    \"productionUnlockDays\" : 7,\n    \"steps\" : 2,")
             .replacingOccurrences(of: "    \"maximumInterval\" :", with: "    \"leechThreshold\" : 8,\n    \"maximumInterval\" :")
             // The option the app no longer has is left out.
@@ -359,10 +354,10 @@ struct DeckFileTests {
         #expect(deckJSON.contains("\"format\" : \"de.fluch-it-consulting.voctrain.deck\""))
         #expect(deckJSON.contains("\"version\" : \(DeckFile.currentVersion)"))
         #expect(deckJSON.contains("\"question\" : \"dom\""))
-        for key in ["learningOptions", "targetRecall", "steps", "learningState", "learningStateReset", "reviews", "hint", "progress", "contentModified", "suspended", "suspensionChanged", "note", "kind", "newProductionPerSession", "productionUnlockDays", "newCardOrder"] {
+        for key in ["learningOptions", "targetRecall", "steps", "learningState", "learningStateReset", "reviews", "hint", "progress", "contentModified", "suspended", "suspensionChanged", "note", "kind", "newProductionPerSession", "productionUnlockDays"] {
             #expect(deckJSON.contains("\"\(key)\" :"), "missing key \(key)")
         }
-        for key in ["revealedRecallWeight", "optimizeFromRevealed", "caseSensitive"] {
+        for key in ["revealedRecallWeight", "optimizeFromRevealed", "caseSensitive", "newCardOrder"] {
             #expect(!deckJSON.contains(key))
         }
         #expect(!deckJSON.contains("\"log\""))

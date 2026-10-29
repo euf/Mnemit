@@ -29,8 +29,14 @@ An optional addition shown together with the Question.
 _Avoid_: remark, Bemerkung
 
 **New card** (DE Neue Karte; RU «новая карточка»):
-A Card never yet asked in a Study session.
+A Card never yet asked in a Study session. New cards come newest addition first: what was added on a later day
+before what was added earlier, within a day as it was added.
 _Avoid_: unlearned, unseen
+
+**Addition** (DE Hinzufügung; RU «добавление», «партия»):
+The cards a deck got on one study day: Add Cards, a lesson list, an import, a `deck-from-tsv` run. The latest is
+the newest batch. Renewing moves cards not started yet into the day's addition.
+_Avoid_: import batch, generation
 
 **Suspended card** (DE Ausgesetzte Karte; RU «приостановленная карточка»):
 A Card the learner suspended, on the Mac or the iPhone, or that a Leech moment set aside: it is never Due and no

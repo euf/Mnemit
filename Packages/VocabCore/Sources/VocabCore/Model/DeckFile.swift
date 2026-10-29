@@ -33,10 +33,10 @@ import Foundation
 /// So did `suspended` and `suspensionChanged` of a card (#290): an older app version
 /// asks a suspended card and drops both on save. A merge with a newer version that
 /// still holds them keeps the card suspended. `note` and `kind` of a card and the
-/// options `newProductionPerSession`, `productionUnlockDays` and `newCardOrder` came
+/// options `newProductionPerSession` and `productionUnlockDays` came
 /// without a new version too: an older app version drops them on save, and its sessions
 /// then ask production cards like any other. The options `revealedRecallWeight` (ADR 0005),
-/// `optimizeFromRevealed` and `caseSensitive` are gone: a deck that has the keys still
+/// `optimizeFromRevealed`, `caseSensitive` and `newCardOrder` are gone: a deck that has the keys still
 /// reads, and the next save leaves them out; an older app version reads their defaults.
 /// `leechThreshold` came the same way: an older app
 /// version drops it, and its sessions suspend no leeches. `leechAction` too: an older app version drops it,
@@ -291,8 +291,6 @@ extension DeckFile {
         var newCardsPerSession: Int?
         var newProductionPerSession: Int?
         var productionUnlockDays: Int
-        /// `NewCardOrder.rawValue`; a value this version doesn't know reads as the default.
-        var newCardOrder: String
         var fuzzing: Bool
         var parameters: [Double]
         var leechThreshold: Int
@@ -313,7 +311,6 @@ extension DeckFile {
             newCardsPerSession = options.newCardsPerSession
             newProductionPerSession = options.newProductionPerSession
             productionUnlockDays = options.productionUnlockDays
-            newCardOrder = options.newCardOrder.rawValue
             fuzzing = options.fuzzing
             parameters = options.parameters.weights
             leechThreshold = options.leechThreshold
@@ -338,7 +335,6 @@ extension DeckFile {
             options.newCardsPerSession = newCardsPerSession
             options.newProductionPerSession = newProductionPerSession
             options.productionUnlockDays = productionUnlockDays
-            options.newCardOrder = NewCardOrder(rawValue: newCardOrder) ?? options.newCardOrder
             options.fuzzing = fuzzing
             options.parameters = parameters
             options.leechThreshold = leechThreshold
@@ -351,7 +347,7 @@ extension DeckFile {
 
         private enum CodingKeys: String, CodingKey {
             case targetRecall, maximumInterval, steps, cardsPerSession, newCardsPerSession
-            case newProductionPerSession, productionUnlockDays, newCardOrder
+            case newProductionPerSession, productionUnlockDays
             case fuzzing, parameters, leechThreshold, leechAction
             case updatesParametersAutomatically, lastAutoFit, paused
         }
@@ -376,7 +372,6 @@ extension DeckFile {
                 ? try container.decodeIfPresent(Int.self, forKey: .newProductionPerSession)
                 : defaults.newProductionPerSession
             productionUnlockDays = try container.decodeIfPresent(Int.self, forKey: .productionUnlockDays) ?? defaults.productionUnlockDays
-            newCardOrder = try container.decodeIfPresent(String.self, forKey: .newCardOrder) ?? defaults.newCardOrder
             fuzzing = try container.decodeIfPresent(Bool.self, forKey: .fuzzing) ?? defaults.fuzzing
             parameters = try container.decodeIfPresent([Double].self, forKey: .parameters) ?? defaults.parameters
             leechThreshold = try container.decodeIfPresent(Int.self, forKey: .leechThreshold) ?? defaults.leechThreshold
@@ -397,7 +392,6 @@ extension DeckFile {
             try container.encode(newCardsPerSession, forKey: .newCardsPerSession)
             try container.encode(newProductionPerSession, forKey: .newProductionPerSession)
             try container.encode(productionUnlockDays, forKey: .productionUnlockDays)
-            try container.encode(newCardOrder, forKey: .newCardOrder)
             try container.encode(fuzzing, forKey: .fuzzing)
             try container.encode(parameters, forKey: .parameters)
             try container.encode(leechThreshold, forKey: .leechThreshold)

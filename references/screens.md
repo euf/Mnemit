@@ -317,7 +317,8 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   for the next card and shows the badge "Added · N cards so far"; **Done** adds what is typed and closes;
   Cancel asks before discarding typed text. From a List: paste lines `word = translation`, a live preview of
   the cards, a row per word with a tick (duplicates, and words another deck holds, unchecked; a tap
-  switches), Add N Cards. An addition is one undo step ("Add Cards"). Once cards are added the bottom bar holds Add and **Study These Now**
+  switches), Add N Cards. An addition is one undo step ("Add Cards"); the list's words the deck holds but hasn't
+  started join it (`WordListPreview.renewable(in:)`), so the lesson goes first among the new cards. Once cards are added the bottom bar holds Add and **Study These Now**
   side by side (one under the other at large text sizes): while something is typed that can be added Add is the prominent
   button, with nothing left to add Study These Now is; it adds what is typed too, closes the sheet and starts the stream
   over the deck with the added cards first. It shows only while the added cards are addable now (`StudyStream.addableCards`:
@@ -366,7 +367,7 @@ shows its charts beside the tiles under Statistics (⌘4).
 ## Options
 
 The iPhone's form (`DeckOptionsScreen`) saves every change at once, one undo step each. Top to bottom:
-**New Cards** (New cards per day, New card order);
+**New Cards** (New cards per day; new cards come newest addition first, `references/scheduling.md`);
 **Scheduling** (Target recall, 70–97 %); **Meaning → Word cards** (New per day, Unlock after N days); a section for the
 leech: **Leech after** N lapses (0 is Off) and **When a card becomes a leech**, Keep or Suspend (`LearningOptions.leechAction`),
 its footer "A card you forget this many times becomes a leech, and again after every half of that."; **Advanced** (Longest interval, Spread out intervals, Steps per card, FSRS parameters with

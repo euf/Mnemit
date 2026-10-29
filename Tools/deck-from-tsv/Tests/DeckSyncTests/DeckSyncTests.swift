@@ -198,7 +198,7 @@ struct SyncRunTests {
         """.write(to: tsv, atomically: true, encoding: .utf8)
 
         let backups = directory.appendingPathComponent("backups")
-        let arguments = [tsv.path, deckURL.path, "--backup-dir", backups.path, "--new-production-per-session", "0", "--unlock-days", "30", "--new-order", "newest"]
+        let arguments = [tsv.path, deckURL.path, "--backup-dir", backups.path, "--new-production-per-session", "0", "--unlock-days", "30"]
         let dry = try SyncRun.run(options(arguments + ["--dry-run"]), now: now)
         #expect(dry.contains("added 2, edited 0, adopted 1, suspended 0, unchanged 0"))
         #expect(dry.contains("adopted:"))
@@ -221,7 +221,6 @@ struct SyncRunTests {
         #expect(adopted.answer == "δυναμικός-ή-ό\nΕίναι δυναμικός.")
         #expect(after.learningOptions.newProductionPerSession == 0)
         #expect(after.learningOptions.productionUnlockDays == 30)
-        #expect(after.learningOptions.newCardOrder == .newestFirst)
         #expect(try FileManager.default.contentsOfDirectory(atPath: backups.path).count == 1)
         // A deck with the old extension is written in place under its name, and no deck of the new one appears.
         #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("Greek.mnemit").path))
@@ -231,6 +230,30 @@ struct SyncRunTests {
         #expect(again.contains("added 0, edited 0, adopted 0, suspended 0, unchanged 3"))
         #expect(again.contains("nothing to change"))
         #expect(try FileManager.default.contentsOfDirectory(atPath: backups.path).count == 1)
+    }
+
+    @Test func renewPutsTheListedWordsFirstAmongTodaysNewCards() throws {
+        let directory = try scratch()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let deckURL = directory.appendingPathComponent("Greek.mnemit")
+        _ = try writeDeck(at: deckURL, questions: [("a", "α")])
+        let tsv = directory.appendingPathComponent("cards.tsv")
+        try """
+        note\tkind\tquestion\tanswer\thint
+        x\trecognition\tx\tχ\t
+        y\trecognition\ty\tψ\t
+        z\trecognition\tz\tζ\t
+        """.write(to: tsv, atomically: true, encoding: .utf8)
+        let notes = directory.appendingPathComponent("notes.txt")
+        try "z\ny\nx\nunknown\n".write(to: notes, atomically: true, encoding: .utf8)
+
+        let report = try SyncRun.run(options([tsv.path, deckURL.path, "--renew", notes.path]), now: now.addingTimeInterval(0.5))
+        #expect(report.contains("renewed 3 new cards"))
+        let after = try DeckFile.decode(FileWrapper(url: deckURL, options: .immediate))
+        func created(_ note: String) -> Date? { after.cards.first { $0.note == note }?.created }
+        #expect(created("z") == now.addingTimeInterval(-2))
+        #expect(created("y") == now.addingTimeInterval(-1))
+        #expect(created("x") == now)
     }
 
     @Test func suspendMissingSuspendsAndKeepsProgress() throws {
@@ -328,15 +351,15 @@ struct SyncRunTests {
     }
 
     @Test func parsesTheCommandLine() throws {
-        let options = try SyncOptions.parse(["a.tsv", "b.mnemit", "--dry-run", "--new-per-session", "none", "--new-production-per-session", "0", "--unlock-days", "0", "--new-order", "deck"])
+        let options = try SyncOptions.parse(["a.tsv", "b.mnemit", "--dry-run", "--new-per-session", "none", "--new-production-per-session", "0", "--unlock-days", "0", "--renew", "notes.txt"])
         #expect(options.dryRun && !options.suspendMissing)
         #expect(options.overrides.newPerSession == .unlimited)
         #expect(options.overrides.newProductionPerSession == .count(0))
         #expect(options.overrides.unlockDays == 0)
-        #expect(options.overrides.newOrder == .deckOrder)
+        #expect(options.renew?.lastPathComponent == "notes.txt")
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-per-session", "0"]) }
-        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-order", "random"]) }
+        #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--renew"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--bogus"]) }
     }
 }

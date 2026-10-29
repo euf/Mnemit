@@ -34,7 +34,8 @@ up the count, and Study goes on where the stack was.
 
 The course learner adds the lesson's words at the desk, One Card or From a List, in a minute. Once cards are added the
 bottom bar of Add Cards holds Add and Study These Now, which adds what is typed too, closes the sheet and starts a stream
-over that deck: the added cards first, then the deck's plan. They are asked as new cards are (the second direction of a pair
+over that deck: the added cards first, then the deck's plan. Words of the list the deck holds but hasn't started go
+with them: the day's addition is the first of the new cards, today and on the days after, until it is learned. They are asked as new cards are (the second direction of a pair
 waits for its first), they take the place of the deck's new cards of the day, so tomorrow's load is what it would have been
 had the deck chosen them, and they count toward the ring and its laps. A table of up to 50 cards imported into a new,
 empty deck offers the same button.

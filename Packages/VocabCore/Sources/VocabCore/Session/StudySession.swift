@@ -108,7 +108,7 @@ public struct StudySession: Sendable {
     /// - Siblings are buried: a new or review card is left out for the day if another
     ///   card of its note was reviewed on the current study day or is already selected.
     ///   Learning and relearning cards are never left out. Skipping changes no card.
-    /// - New cards fill their limits in `newCardOrder`: production cards up to
+    /// - New cards fill their limits newest addition first (`newestAdditionFirst(_:calendar:)`): production cards up to
     ///   `newProductionPerSession`, all others up to `newCardsPerSession`. The limits
     ///   hold for the study day: cards first reviewed on the current study day, in this
     ///   session or an earlier one, are subtracted from them. Unlocked production cards are
@@ -234,10 +234,7 @@ public struct StudySession: Sendable {
             if case .new = urgency { new.append(candidate) } else { due.append(candidate) }
         }
         due.sort { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
-        if options.newCardOrder == .newestFirst {
-            // Stable: cards created together stay in deck order.
-            new = new.enumerated().sorted { ($1.element.card.created, $0.offset) < ($0.element.card.created, $1.offset) }.map(\.element)
-        }
+        new = newestAdditionFirst(new, calendar: calendar)
         // A past day's copy of the deck has no log to read the dates from, and its counts don't depend on the order.
         if past == nil { new = productionOldestLearnedFirst(new, in: deck) }
 
@@ -286,15 +283,15 @@ public struct StudySession: Sendable {
         return selected.sorted { ($0.urgency, $0.tieBreak) < ($1.urgency, $1.tieBreak) }
     }
 
-    /// The order of the unlocked new production cards, whatever `newCardOrder` is (it stays the
+    /// The order of the unlocked new production cards (`newestAdditionFirst(_:calendar:)` stays the
     /// order of all other new cards): the word whose recognition card was first reviewed longest
     /// ago comes first. The daily production limit then works through the backlog of unlocked
     /// words from the oldest, and the newest never jump ahead of it. The date of a word is the first
     /// review of its recognition card, the earliest one if it has several. A production card
     /// without a date (no note, no reviewed recognition card, a log that doesn't reach back to
     /// the first review) follows the dated ones in the order it had. The production cards take
-    /// the places production cards held in `new`, so the kinds stay interleaved as `newCardOrder`
-    /// left them.
+    /// the places production cards held in `new`, so the kinds stay interleaved as the order of
+    /// additions left them.
     private static func productionOldestLearnedFirst(_ new: [Candidate], in deck: Deck) -> [Candidate] {
         let slots = new.indices.filter { new[$0].card.kind == .production }
         guard !slots.isEmpty else { return new }
@@ -308,6 +305,15 @@ public struct StudySession: Sendable {
         var result = new
         for (slot, candidate) in zip(slots, ordered) { result[slot] = candidate.element }
         return result
+    }
+
+    /// New cards in the order of their additions: the cards added on a later study day come before those of an
+    /// earlier one, and within a day they come as they were added: by `Card.created`, then in deck order. So a
+    /// lesson's words go first the day they are added, an imported or shared deck (one `created` for all) keeps
+    /// its author's order, and words added one by one come in the order they were typed.
+    private static func newestAdditionFirst(_ new: [Candidate], calendar: StudyCalendar) -> [Candidate] {
+        let keyed = new.enumerated().map { (day: calendar.dayNumber(for: $0.element.card.created), created: $0.element.card.created, offset: $0.offset) }
+        return keyed.sorted { (-$0.day, $0.created, $0.offset) < (-$1.day, $1.created, $1.offset) }.map { new[$0.offset] }
     }
 
     private struct Candidate {

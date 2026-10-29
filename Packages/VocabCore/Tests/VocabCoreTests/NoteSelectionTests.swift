@@ -223,7 +223,7 @@ struct NoteSelectionTests {
         #expect(try selected(cards, options: options).count == 15)
     }
 
-    @Test func newCardsComeInDeckOrderOrNewestFirst() throws {
+    @Test func newCardsComeNewestDayFirstAndWithinADayAsTheyWereAdded() throws {
         let created = now.addingTimeInterval(-86400)
         // Cards 0...3 are a day older than 4...9.
         let cards = (0..<10).map { index in
@@ -231,19 +231,27 @@ struct NoteSelectionTests {
         }
         var options = options()
         options.newCardsPerSession = 3
-        #expect(try selected(cards, options: options) == ["c0", "c1", "c2"])
-        options.newCardOrder = .newestFirst
         // Cards created together stay in deck order.
         #expect(try selected(cards, options: options) == ["c4", "c5", "c6"])
         options.newCardsPerSession = 8
-        // The older cards follow the newer ones, again in deck order.
+        // The older day follows the newer one, again in deck order.
         #expect(try selected(cards, options: options) == ["c4", "c5", "c6", "c7", "c8", "c9", "c0", "c1"])
+
+        // Within a day the card added first comes first, wherever the deck lists it.
+        let typed = [
+            Card(id: UUID(), question: "second", answer: "a", created: now),
+            Card(id: UUID(), question: "first", answer: "a", created: now.addingTimeInterval(-600)),
+            Card(id: UUID(), question: "yesterday", answer: "a", created: created),
+        ]
+        options.newCardsPerSession = 1
+        #expect(try selected(typed, options: options) == ["first"])
+        options.newCardsPerSession = 2
+        #expect(try selected(typed, options: options) == ["first", "second"])
     }
 
-    @Test func newestFirstStillOrdersProductionCardsWithoutALearnedWord() throws {
+    @Test func theNewestDayStillOrdersProductionCardsWithoutALearnedWord() throws {
         var options = options()
         options.newProductionPerSession = 1
-        options.newCardOrder = .newestFirst
         let old = Card(id: UUID(), text: CardText(question: "old", answer: "a")!, note: "o", kind: .production, created: now.addingTimeInterval(-86400))
         let young = Card(id: UUID(), text: CardText(question: "young", answer: "a")!, note: "y", kind: .production, created: now)
         #expect(try selected([old, young], options: options) == ["young"])
@@ -263,9 +271,8 @@ struct NoteSelectionTests {
         Card(id: UUID(), text: CardText(question: question, answer: "a")!, note: note, kind: .production, created: created)
     }
 
-    @Test func unlockedProductionCardsGoByWhenTheirWordsWereLearnedWhateverTheNewCardOrder() throws {
+    @Test func unlockedProductionCardsGoByWhenTheirWordsWereLearnedWhateverTheirAddition() throws {
         var options = options()
-        options.newCardOrder = .newestFirst
         options.newProductionPerSession = 7
         // Word i was learned 10...39 days ago, in an order unrelated to the deck's and to the creation dates
         // of the production cards, of which p0 is the newest.
@@ -278,13 +285,10 @@ struct NoteSelectionTests {
         let oldest = Set((0..<30).sorted { age($0) > age($1) }.prefix(7).map { "p\($0)" })
         #expect(oldest != Set((0..<7).map { "p\($0)" }))
         #expect(try selected(cards, options: options) == oldest)
-        options.newCardOrder = .deckOrder
-        #expect(try selected(cards, options: options) == oldest)
     }
 
-    @Test func newRecognitionCardsKeepTheNewCardOrderNextToProductionCardsOldestLearnedFirst() throws {
+    @Test func newRecognitionCardsKeepTheOrderOfAdditionsNextToProductionCardsOldestLearnedFirst() throws {
         var options = options()
-        options.newCardOrder = .newestFirst
         options.newCardsPerSession = 2
         options.newProductionPerSession = 1
         let cards = [
@@ -299,9 +303,8 @@ struct NoteSelectionTests {
         #expect(try selected(cards, options: options) == ["new", "mid", "p2"])
     }
 
-    @Test func aProductionCardWithoutALearnedWordFollowsTheOthersInNewCardOrder() throws {
+    @Test func aProductionCardWithoutALearnedWordFollowsTheOthersInTheOrderOfAdditions() throws {
         var options = options()
-        options.newCardOrder = .newestFirst
         let cards = [
             production("alone", note: "none", created: now),
             production("p1", note: "x", created: now.addingTimeInterval(-86400)),
@@ -313,8 +316,9 @@ struct NoteSelectionTests {
         options.newProductionPerSession = 2
         #expect(try selected(cards, options: options) == ["p1", "p2"])
         options.newProductionPerSession = 3
-        // `noNote` has no note, so it is not locked either; both undated cards come after, newest first.
-        #expect(try selected(cards, options: options) == ["p1", "p2", "alone"])
+        // `noNote` has no note, so it is not locked either; both undated cards come after, the day's cards as they
+        // were added.
+        #expect(try selected(cards, options: options) == ["p1", "p2", "noNote"])
     }
 
     @Test func sessionSizeCapStopsTheSelectionBeforeBuryingMore() throws {
