@@ -38,14 +38,14 @@
   `~/Documents/greek-lessons/vocab/` (`merge.py` → `greek-vocab.tsv`, `cards.py` → `cards-*.tsv`):
   - `Greek A1–A2.mnemit`, review of the familiar: 1629 words, 3258 cards (recognition and translation
     into Greek), 30 + 30 new per day, production not locked; paused by EF.
-  - `Greek B1.mnemit`, learning: 2394 cards,
+  - `Greek B1.mnemit`, learning: 2418 cards,
     20 new recognition + 7 production per day,
     production unlocks after 21 days. 78 old cards of the first deck are
     frozen (their words went to A1–A2), 131 adopted with their progress.
   The words of a lesson are a file of their own, `src-b1-LNN.tsv` in the order of the lesson's table; `merge.py`
-  keeps the order of the sources, `curated.tsv` holds the checked Russian, English and examples. On 29.10 every
-  card not started was renewed (`deck-from-tsv --renew`): lesson 6 first, then the zodiac topic, then the rest
-  in the order of the sources.
+  keeps the order of the sources, `curated.tsv` holds the checked Russian, English and examples. Grammar gets sentence cards in a file of its own (`src-b1-dikos.tsv`: a
+  form of δικός μου per sentence). On 29.10 every card not started was renewed (`deck-from-tsv --renew`): the
+  δικός sentences first, then lesson 6, the zodiac topic, the rest in the order of the sources.
   A recognition question is the Greek form; the answer is Russian, English only where it helps, and an example.
   A translation question is Russian (a clarification in brackets tells synonyms apart), the hint the part of
   speech and English if there is any, the answer the Greek form and an example. There is never Greek in a
