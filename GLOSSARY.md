@@ -51,8 +51,9 @@ Session asks it until they resume it (Resume; Keep It at the moment). Its Learni
 _Avoid_: ignored, disabled, deferred, buried
 
 **Leech** (DE Lernbremse; RU «приставучая»; EL βδέλλα):
-A Card forgotten as often as its Deck's threshold says: its lapses have reached `LearningOptions.leechThreshold` (8 by
-default, 0 is off; `Card.isLeech(threshold:)`). The file holds no flag: the state follows the lapses, so a card put back in
+A Card forgotten as often as its Deck's threshold says: its Forgots, the first answer of a new card apart, have reached
+`LearningOptions.leechThreshold` (8 by default, 0 is off; `Card.isLeech(threshold:)`). The file holds no flag: the state
+follows the log, so a card put back in
 rotation is still a leech. The learner meets it at the **Leech moment**.
 _Avoid_: Difficult, hard card, hard word, «пиявка»
 

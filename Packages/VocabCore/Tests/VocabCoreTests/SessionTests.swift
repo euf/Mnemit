@@ -149,18 +149,20 @@ struct SessionTests {
         #expect(study.session.reviewCount == 1)
     }
 
-    @Test func sameSeedGivesSameDueDatesWithFuzzing() throws {
-        var deck = try deck(newCards: 0, reviewCards: 20)
-        deck.learningOptions.fuzzing = true
-        func dueDates(seed: UInt64) -> [Card.ID: Date] {
+    /// The fuzz of a review comes from the card and the second of the review, as in a replay of the log, not from the
+    /// seed of the session: the same reviews give the same due dates in any session.
+    @Test func theFuzzComesFromTheCardAndTheSecondNotFromTheSessionSeed() throws {
+        let deck = try deck(newCards: 0, reviewCards: 20)
+        func dueDates(seed: UInt64, fuzzing: Bool = true) -> [Card.ID: Date] {
             var deck = deck
+            deck.learningOptions.fuzzing = fuzzing
             var study = StudySession(deck: deck, at: now, calendar: .testing, random: SeededRandom(seed: seed))
             _ = play(&study, deck: &deck) { _ in .good }
             return Dictionary(uniqueKeysWithValues: deck.cards.map { ($0.id, $0.learningState!.due) })
         }
-        #expect(dueDates(seed: 3) == dueDates(seed: 3))
-        // The fuzz is real: another seed spreads the intervals differently.
-        #expect(dueDates(seed: 3) != dueDates(seed: 4))
+        #expect(dueDates(seed: 3) == dueDates(seed: 4))
+        // The fuzz is real: it spreads the intervals.
+        #expect(dueDates(seed: 3) != dueDates(seed: 3, fuzzing: false))
     }
 
     @Test func fuzzingDoesNotChangeTheOrder() throws {

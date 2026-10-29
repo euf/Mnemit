@@ -67,9 +67,11 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 
 ## Leech
 
-- **The moments.** `LearningOptions.leechThreshold` is T (Leech threshold on the options screens: 8 lapses, as in Anki; 0 = Off). A lapse is a Forgot on a card in
-  the review phase. The lapse that brings `lapses` to T is a leech moment, and so is every lapse that brings it to
+- **The moments.** `LearningOptions.leechThreshold` is T (Leech threshold on the options screens: 8, as in Anki; 0 = Off). What counts is every Forgot but the first
+  answer of a new card, in the review phase or not (`Card.forgotCount`: the Forgots of the log, or the stored `lapses` when
+  an imported log holds fewer). The Forgot that brings the count to T is a leech moment, and so is every Forgot that brings it to
   T + k × ceil(T / 2) for k ≥ 1: T = 8 gives 8, 12, 16, 20; T = 5 gives 5, 8, 11 (`StudySession.isLeechMoment(lapses:threshold:)`).
+  A moment comes only with a Forgot, so a card that is a leech by its old log meets its moment at its next checkpoint.
   `Session.leechIDs` holds every moment, whatever the action. In the stream a moment is a stop that keeps the answer on
   screen (`study-screen.md`).
 - **Keep Card or Suspend Card.** The options screens call it Leech action. `LearningOptions.leechAction`: `.keep` (the default) leaves the card in rotation and FSRS goes on
@@ -80,7 +82,7 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
   undoable step like `.suspend`: the session counts the card as suspended, not done). Where the review already suspended the
   card (Suspend), Set Aside is Keep It (`SessionCommand.keep(id)`): it resumes the card and the session asks it again. Undo of
   the grade takes back the moment and any suspension.
-- **No flag in the file.** `Card.isLeech(threshold:)` derives from `lapses` (`lapses >= T`), so the Leeches filter
+- **No flag in the file.** `Card.isLeech(threshold:)` derives from the Forgot count (`forgotCount >= T`), so the Leeches filter
   (`CardFilter.leeches`, the title "Leeches") shows resumed cards too, and merges need no rule.
 - **Anki import.** `AnkiPreset.leech` carries the preset's threshold and action: Anki's `leech_threshold` (proto field 22) and
   `leech_action` (field 21: 0 suspend, 1 tag only, which is Keep); an older collection has `dconf.lapse.leechFails` and
