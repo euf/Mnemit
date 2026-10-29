@@ -199,7 +199,7 @@ enum DayAction: Equatable {
     var title: LocalizedStringKey {
         switch self {
         case .study: "Study"
-        case .catchUp: "Catch Up"
+        case .catchUp: "Keep Going"
         case .pushOn: "Learn 10 New Words"
         }
     }

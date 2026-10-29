@@ -331,11 +331,12 @@ struct StreamRestView: View {
         }
     }
 
-    /// The ring is closed and the plan has cards left, as after a break: Catch Up goes on with them.
+    /// The ring is closed and the plan has cards left: Keep Going goes on with them, the default as at the streak's rest,
+    /// since a learner who has just closed the ring mostly finishes the few reviews left.
     private var ringButtons: some View {
         VStack(spacing: Spacing.gap) {
-            button("Done", prominent: true, action: onDone)
-            button("Catch Up", prominent: false, action: onNextRound)
+            button("Keep Going", prominent: true, action: onNextRound)
+            button("Done for Now", prominent: false, action: onDone)
         }
     }
 

@@ -15,9 +15,10 @@ struct HelpButton: View {
         .buttonStyle(.borderless)
         .accessibilityLabel("Help")
         .popover(isPresented: $isShown) {
+            // A fixed width: with only a maximum the popover measures the text on one line and cuts the lines past it.
             Text(text)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 300, alignment: .leading)
+                .frame(width: 280, alignment: .leading)
                 .padding()
                 .presentationCompactAdaptation(.popover)
         }

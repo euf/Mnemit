@@ -62,7 +62,7 @@ struct HowTodayWorks: Equatable, Sendable {
     private static func today() -> Section {
         let rows: [Row] = [
             .text(String(localized: "The first two minutes keep your streak. Stop there or go on.")),
-            .text(String(localized: "The ring is today's goal: the cards you usually have time for. Close it and the day is done; Catch Up takes the reviews still waiting.")),
+            .text(String(localized: "The ring is today's goal: the cards you usually have time for. Close it and the day is done; Keep Going takes the reviews still waiting.")),
             .text(String(localized: "Nothing due: the day is done. Learn 10 New Words if you want more.")),
         ]
         return Section(title: String(localized: "Today"), rows: rows, footer: "")

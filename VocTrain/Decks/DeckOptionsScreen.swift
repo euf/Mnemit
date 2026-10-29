@@ -87,12 +87,8 @@ struct DeckAdvancedOptionsScreen: View {
         let options = document.deck.learningOptions
         Form {
             Section {
-                Stepper(value: document.option(\.maximumInterval), in: LearningOptions.maximumIntervalRange, step: 30) {
-                    ValueLabel("Maximum interval") {
-                        Text(Format.days(Double(options.maximumInterval)))
-                    }
-                }
-                .helpButton("The longest a card waits before it is asked again. The default holds no card back.")
+                MaximumIntervalPicker(days: document.option(\.maximumInterval))
+                    .helpButton("The longest a card waits before it is asked again. The default holds no card back.")
                 Stepper(value: document.option(\.steps), in: LearningOptions.stepsRange) {
                     ValueLabel("Learning steps") {
                         Text(options.steps, format: .number)

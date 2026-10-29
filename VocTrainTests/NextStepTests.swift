@@ -104,7 +104,7 @@ struct NextStepTests {
         #expect(step(.kept).moment == Moment(label: "Next", value: "Close the ring"))
         #expect(step(.atRisk).moment == Moment(label: "Next", value: "Save your streak"))
         #expect(step(days: 0, .open).moment == Moment(label: "Next", value: "Start your streak"))
-        #expect(step(.kept, closed: true, reviews: true).moment == Moment(label: "Next", value: "Catch Up"))
+        #expect(step(.kept, closed: true, reviews: true).moment == Moment(label: "Next", value: "Keep Going"))
     }
 
     /// A tinted widget draws every lap in one tone: past the goal the ring says its lap as a number.

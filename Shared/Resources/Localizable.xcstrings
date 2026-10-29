@@ -2844,6 +2844,94 @@
         }
       }
     },
+    "%lld years": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Jahr"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Jahre"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld χρόνος"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld χρόνια"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld year"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld years"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld года"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld лет"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld год"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld года"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld-day streak": {
       "localizations": {
         "de": {
@@ -5159,28 +5247,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Карточки с одним ключом слова — одно слово, например оба направления перевода."
-          }
-        }
-      }
-    },
-    "Catch Up": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nachholen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αναπλήρωση"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наверстать"
           }
         }
       }
@@ -13985,24 +14051,24 @@
         }
       }
     },
-    "The ring is today's goal: the cards you usually have time for. Close it and the day is done; Catch Up takes the reviews still waiting.": {
+    "The ring is today's goal: the cards you usually have time for. Close it and the day is done; Keep Going takes the reviews still waiting.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Der Ring ist das Tagesziel: die Karten, für die du sonst Zeit hast. Ist er geschlossen, ist der Tag erledigt; „Nachholen“ nimmt die Wiederholungen, die noch warten."
+            "value": "Der Ring ist das Tagesziel: die Karten, für die du sonst Zeit hast. Ist er geschlossen, ist der Tag erledigt; „Weitermachen“ nimmt die Wiederholungen, die noch warten."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ο κύκλος είναι ο στόχος της ημέρας: οι κάρτες για τις οποίες συνήθως έχεις χρόνο. Όταν κλείσει, η μέρα έχει τελειώσει· η «Αναπλήρωση» παίρνει τις επαναλήψεις που περιμένουν ακόμη."
+            "value": "Ο κύκλος είναι ο στόχος της ημέρας: οι κάρτες για τις οποίες συνήθως έχεις χρόνο. Όταν κλείσει, η μέρα έχει τελειώσει· το «Συνέχισε» παίρνει τις επαναλήψεις που περιμένουν ακόμη."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Кольцо — цель на сегодня: столько карточек, на сколько у тебя обычно есть время. Закрыл его — день сделан; «Наверстать» берёт повторения, которые ещё ждут."
+            "value": "Кольцо — цель на сегодня: столько карточек, на сколько у тебя обычно есть время. Закрыл его — день сделан; «Учиться дальше» берёт повторения, которые ещё ждут."
           }
         }
       }

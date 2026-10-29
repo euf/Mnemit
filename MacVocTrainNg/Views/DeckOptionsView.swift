@@ -67,10 +67,8 @@ struct DeckOptionsView: View {
 
                 Section {
                     DisclosureGroup("Advanced", isExpanded: $showsAdvanced) {
-                        Stepper(value: $options.maximumInterval, in: LearningOptions.maximumIntervalRange, step: 30) {
-                            LabeledContent("Maximum interval", value: Format.days(Double(options.maximumInterval)))
-                        }
-                        .helpButton("The longest a card waits before it is asked again. The default holds no card back.")
+                        MaximumIntervalPicker(days: $options.maximumInterval)
+                            .helpButton("The longest a card waits before it is asked again. The default holds no card back.")
                         Stepper(value: $options.steps, in: LearningOptions.stepsRange) {
                             LabeledContent("Learning steps", value: options.steps.formatted())
                         }

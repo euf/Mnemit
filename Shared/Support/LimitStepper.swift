@@ -1,4 +1,5 @@
 import SwiftUI
+import VocabCore
 
 /// A daily limit of the deck, New cards/day or Maximum reviews/day, as Anki names them, as one stepper whose first
 /// step is `unset`, no limit of the deck's own: for New cards/day the day's ring decides, for Maximum reviews/day every
@@ -64,5 +65,29 @@ struct ValueLabel<Value: View>: View {
         } else {
             LabeledContent(title) { value }
         }
+    }
+}
+
+/// Maximum interval as Anki names it, as a menu of round values: a stepper over 30...36,500 days takes a thousand presses.
+/// The top of the range is Anki's default and holds no card back, so it reads No limit. A value off the menu, as an Anki
+/// preset or a file may have set, stays on it as it is.
+struct MaximumIntervalPicker: View {
+    @Binding var days: Int
+
+    static let choices = [180, 365, 730, 1095, 1825, 3650, LearningOptions.maximumIntervalRange.upperBound]
+
+    var body: some View {
+        Picker("Maximum interval", selection: $days) {
+            ForEach(Self.choices.contains(days) ? Self.choices : (Self.choices + [days]).sorted(), id: \.self) { days in
+                Text(Self.label(days)).tag(days)
+            }
+        }
+    }
+
+    /// "No limit", "5 years", or "180 days" for what isn't whole years.
+    static func label(_ days: Int) -> String {
+        if days >= LearningOptions.maximumIntervalRange.upperBound { return String(localized: "No limit") }
+        if days % 365 == 0 { return String(localized: "\(days / 365) years") }
+        return Format.days(Double(days))
     }
 }

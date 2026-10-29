@@ -197,7 +197,7 @@ extension DeckFileTests {
                 Mirror(reflecting: MenuKey.studyDay.title(MenuState(dayAction: action))).children.first { $0.label == "key" }?.value as? String
             }
             #expect(title(.study) == "Study")
-            #expect(title(.catchUp) == "Catch Up")
+            #expect(title(.catchUp) == "Keep Going")
             #expect(title(.pushOn) == "Learn 10 New Words")
         }
 

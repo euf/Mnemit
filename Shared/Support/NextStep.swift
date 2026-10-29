@@ -109,7 +109,7 @@ struct NextStep: Equatable, Sendable {
 
     /// The next moment as a figure: "To keep your streak", "To close the ring", "To save your streak" (the day after a miss), "Reviews
     /// left" (the ring closed, cards left), "To start your streak" (no days), each over its `minutes`; without them "Next" over
-    /// "Keep your streak", "Close the ring", "Save your streak", "Catch Up", "Start your streak".
+    /// "Keep your streak", "Close the ring", "Save your streak", "Keep Going", "Start your streak".
     var moment: Moment {
         let price = minutes.map { Format.timeLeft(minutes: $0) }
         func figure(_ label: String, or words: String) -> Moment {
@@ -117,7 +117,7 @@ struct NextStep: Equatable, Sendable {
         }
         if isClosed {
             guard reviewsLeft else { return Moment(label: String(localized: "Today"), value: String(localized: "All done")) }
-            return figure(String(localized: "Reviews left"), or: String(localized: "Catch Up"))
+            return figure(String(localized: "Reviews left"), or: String(localized: "Keep Going"))
         }
         guard days > 0 else { return figure(String(localized: "To start your streak"), or: String(localized: "Start your streak")) }
         switch state {
