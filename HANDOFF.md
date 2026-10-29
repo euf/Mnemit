@@ -40,7 +40,7 @@
     into Greek), 30 + 30 new per day, production not locked; paused by EF.
   - `Greek B1.mnemit`, learning: 2394 cards,
     20 new recognition + 7 production per day,
-    production unlocks after 21 days. 78 old cards of the first deck are
+    production unlocks after 7 days. 78 old cards of the first deck are
     frozen (their words went to A1–A2), 131 adopted with their progress.
   The words of a lesson are a file of their own, `src-b1-LNN.tsv` in the order of the lesson's table; `merge.py`
   keeps the order of the sources, `curated.tsv` holds the checked Russian, English and examples. On 29.10 every card not started was renewed (`deck-from-tsv --renew`):
