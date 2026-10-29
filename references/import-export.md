@@ -6,7 +6,7 @@ MacVocTrain 1 documents.
 ## deck-from-tsv: sync a deck with a TSV in place
 
 - Keeps progress:
-  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--renew NOTES]`.
+  `swift run -c release --package-path Tools/deck-from-tsv deck-from-tsv <tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR] [--new-per-session N|none] [--new-production-per-session N|none] [--unlock-days N] [--renew NOTES] [--remove NOTES]`.
 - TSV with the header `note⇥kind⇥question⇥answer⇥hint` (kind is `recognition` or `production`; `\n`
   in a field is a line break).
 - A card is found by (note, kind). An old card without a note is adopted (its id and reviews stay) if
@@ -24,6 +24,9 @@ MacVocTrain 1 documents.
 - `--renew NOTES`: a file of word keys, one per line. After the sync, the new cards of those words join the run's
   addition in the file's order (`DeckChange.renewing`), so a deck's waiting cards can be put in a new order. The
   stamps are a second apart; a run refuses when they would reach back into the previous study day.
+- `--remove NOTES`: the cards of the listed word keys that were never studied leave the deck as a deletion
+  (`DeckChange.removing`), which a merge honours; studied cards of those words stay. For words that move to
+  another deck.
 
 ## Production cards
 

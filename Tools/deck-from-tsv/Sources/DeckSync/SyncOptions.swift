@@ -65,14 +65,18 @@ public struct SyncOptions: Equatable, Sendable {
     /// A file of word keys (`Card.note`), one per line: their new cards join the run's addition in that
     /// order, after the run's other changes (`DeckChange.renewing(_:in:at:)`).
     public var renew: URL?
+    /// A file of word keys, one per line: their cards that were never studied leave the deck, as a deletion
+    /// a merge honours (`DeckChange.removing(_:from:)`); studied cards of those words stay.
+    public var remove: URL?
 
     public static let usage = """
         usage: deck-from-tsv <cards.tsv> <deck.mnemit | deck.voctrain> [--dry-run] [--suspend-missing] [--backup-dir DIR]
                              [--new-per-session N|none] [--new-production-per-session N|none]
-                             [--unlock-days N] [--renew NOTES]
+                             [--unlock-days N] [--renew NOTES] [--remove NOTES]
         --new-per-session and --new-production-per-session keep their names; the limits hold per study day.
         --renew NOTES: the new cards of the word keys in the file, one per line, become today's addition in that
         order and come first among the new cards.
+        --remove NOTES: the cards of the word keys in the file that were never studied leave the deck.
         """
 
     /// - Parameter arguments: The command line without the program name.
@@ -84,6 +88,7 @@ public struct SyncOptions: Equatable, Sendable {
         var backupDirectory: URL?
         var overrides = OptionOverrides()
         var renew: URL?
+        var remove: URL?
 
         var remaining = arguments[...]
         func value(of flag: String) throws -> String {
@@ -106,6 +111,7 @@ public struct SyncOptions: Equatable, Sendable {
                 }
                 overrides.unlockDays = count
             case "--renew": renew = URL(fileURLWithPath: try value(of: argument))
+            case "--remove": remove = URL(fileURLWithPath: try value(of: argument))
             default:
                 if argument.hasPrefix("--") { throw SyncError("unknown option \(argument)") }
                 positional.append(argument)
@@ -120,6 +126,6 @@ public struct SyncOptions: Equatable, Sendable {
         guard positional.count == 2 else { throw SyncError("expected a TSV and a deck") }
         return SyncOptions(
             input: URL(fileURLWithPath: positional[0]), deck: URL(fileURLWithPath: positional[1]), dryRun: dryRun,
-            suspendMissing: suspendMissing, backupDirectory: backupDirectory, overrides: overrides, renew: renew)
+            suspendMissing: suspendMissing, backupDirectory: backupDirectory, overrides: overrides, renew: renew, remove: remove)
     }
 }

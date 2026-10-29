@@ -68,6 +68,7 @@ public enum SyncRun {
         }
         try plan.apply(to: &deck, at: now, calendar: calendar)
         let renewed = try renew(options.renew, in: &deck, at: now, calendar: calendar)
+        let removed = try remove(options.remove, from: &deck, at: now, calendar: calendar)
 
         let updated = options.overrides.applied(to: deck.learningOptions)
         if let change = DeckChange.changingLearningOptions(updated, in: deck, calendar: calendar) {
@@ -82,6 +83,9 @@ public enum SyncRun {
         report += optionChanges.map { "option: \($0)" }
         if options.renew != nil {
             report.append("renewed \(renewed) new cards: today's addition, first among the new cards")
+        }
+        if options.remove != nil {
+            report.append("removed \(removed) cards never studied")
         }
 
         if options.dryRun {
@@ -102,23 +106,39 @@ public enum SyncRun {
         return report.joined(separator: "\n")
     }
 
+    /// Removes the cards of the word keys listed in `file` that were never studied (`DeckChange.removing(_:from:)`).
+    /// - Returns: How many cards were removed.
+    private static func remove(_ file: URL?, from deck: inout Deck, at now: Date, calendar: StudyCalendar) throws -> Int {
+        guard let file else { return 0 }
+        let notes = Set(try noteLines(of: file).map(SyncRow.normalized))
+        let ids = deck.cards.filter { card in
+            card.isNew && card.log.isEmpty && card.note.map { notes.contains(SyncRow.normalized($0)) } == true
+        }.map(\.id)
+        guard let change = DeckChange.removing(Set(ids), from: deck) else { return 0 }
+        _ = deck.apply(change, at: now, calendar: calendar)
+        return ids.count
+    }
+
+    /// The lines of a file of word keys.
+    private static func noteLines(of file: URL) throws -> [String] {
+        do {
+            return try String(contentsOf: file, encoding: .utf8).split(whereSeparator: \.isNewline).map(String.init)
+        } catch {
+            throw SyncError("can't read \(file.path): \(error.localizedDescription)")
+        }
+    }
+
     /// Renews the new cards of the word keys listed in `file`, in its order (`DeckChange.renewing(_:in:at:)`).
     /// - Returns: How many cards were renewed.
     /// - Throws: `SyncError` if the file can't be read, or if the stamps, a second apart, would reach back
     ///   into the day before: the cards would then not all be today's addition.
     private static func renew(_ file: URL?, in deck: inout Deck, at now: Date, calendar: StudyCalendar) throws -> Int {
         guard let file else { return 0 }
-        let text: String
-        do {
-            text = try String(contentsOf: file, encoding: .utf8)
-        } catch {
-            throw SyncError("can't read \(file.path): \(error.localizedDescription)")
-        }
         var byNote: [String: [Card.ID]] = [:]
         for card in deck.cards {
             if let note = card.note { byNote[SyncRow.normalized(note), default: []].append(card.id) }
         }
-        let ids = text.split(whereSeparator: \.isNewline).flatMap { byNote[SyncRow.normalized(String($0))] ?? [] }
+        let ids = try noteLines(of: file).flatMap { byNote[SyncRow.normalized($0)] ?? [] }
         guard let change = DeckChange.renewing(ids, in: deck, at: now) else { return 0 }
         let before = deck
         _ = deck.apply(change, at: now, calendar: calendar)

@@ -256,6 +256,28 @@ struct SyncRunTests {
         #expect(created("x") == now)
     }
 
+    @Test func removeTakesOutTheNeverStudiedCardsOfTheListedWords() throws {
+        let directory = try scratch()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let deckURL = directory.appendingPathComponent("Greek.mnemit")
+        let tsv = directory.appendingPathComponent("cards.tsv")
+        try """
+        note\tkind\tquestion\tanswer\thint
+        x\trecognition\tx\tχ\t
+        y\trecognition\ty\tψ\t
+        """.write(to: tsv, atomically: true, encoding: .utf8)
+        _ = try SyncRun.run(options([tsv.path, deckURL.path]), now: now)
+        let notes = directory.appendingPathComponent("notes.txt")
+        try "y\n".write(to: notes, atomically: true, encoding: .utf8)
+
+        let report = try SyncRun.run(options([tsv.path, deckURL.path, "--remove", notes.path]), now: now.addingTimeInterval(5))
+        #expect(report.contains("removed 1 cards never studied"))
+        let after = try DeckFile.decode(FileWrapper(url: deckURL, options: .immediate))
+        // Gone with a deletion a merge honours; the table still names y, so another run adds it back.
+        #expect(after.cards.map(\.note) == ["x"])
+        #expect(after.deletedCards.count == 1)
+    }
+
     @Test func suspendMissingSuspendsAndKeepsProgress() throws {
         let directory = try scratch()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -351,12 +373,12 @@ struct SyncRunTests {
     }
 
     @Test func parsesTheCommandLine() throws {
-        let options = try SyncOptions.parse(["a.tsv", "b.mnemit", "--dry-run", "--new-per-session", "none", "--new-production-per-session", "0", "--unlock-days", "0", "--renew", "notes.txt"])
+        let options = try SyncOptions.parse(["a.tsv", "b.mnemit", "--dry-run", "--new-per-session", "none", "--new-production-per-session", "0", "--unlock-days", "0", "--renew", "notes.txt", "--remove", "old.txt"])
         #expect(options.dryRun && !options.suspendMissing)
         #expect(options.overrides.newPerSession == .unlimited)
         #expect(options.overrides.newProductionPerSession == .count(0))
         #expect(options.overrides.unlockDays == 0)
-        #expect(options.renew?.lastPathComponent == "notes.txt")
+        #expect(options.renew?.lastPathComponent == "notes.txt" && options.remove?.lastPathComponent == "old.txt")
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--new-per-session", "0"]) }
         #expect(throws: SyncError.self) { try SyncOptions.parse(["a.tsv", "b.mnemit", "--renew"]) }
