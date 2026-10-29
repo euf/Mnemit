@@ -58,6 +58,7 @@
     "fuzzing" : false,
     "leechThreshold" : 6,
     "maximumInterval" : 36500,
+    "maximumReviewsPerDay" : null,
     "newCardOrder" : "newestFirst",
     "newCardsPerSession" : 15,
     "newProductionPerSession" : null,

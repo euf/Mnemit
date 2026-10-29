@@ -79,7 +79,7 @@ Later, with the reason:
    add-on). **[I]** All of them choose a due date from the state of other cards. Mnemit
    recomputes due dates by replaying each card's log when two devices merge, so the chosen
    date would have to be stored in the log first, or the two devices diverge.
-4. **Workload estimate for the target recall** (the graph in Anki's manual; fsrs-rs simulator).
+4. **Workload estimate for the desired retention** (the graph in Anki's manual; fsrs-rs simulator).
    **[I]** Useful when choosing 85 % vs 90 %; needs a simulator port.
 5. **Listening mode**, audio first with the text hidden (Japanese Learning). **[I]** Greek TTS
    is already there; a mode on top of it.

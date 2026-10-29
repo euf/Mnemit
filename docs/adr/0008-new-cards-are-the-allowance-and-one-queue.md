@@ -61,3 +61,13 @@ Meaning → Word reviews.
 
 `DeckFile.currentVersion` stays. An older app that reads a deck saved by this one finds none of `cardsPerSession`,
 `newProductionPerSession` and `productionUnlockDays` and uses their defaults.
+
+## Later
+
+The deck options screens took Anki's names, so an Anki veteran finds each setting where they expect it: Desired retention,
+Leech threshold, Leech action (Keep Card, Suspend Card), Maximum interval, Learning steps, Optimize. The option
+"Spread out intervals" went; `fuzzing` stays in the model, on. Maximum reviews/day joined New cards/day under Daily
+Limits (`LearningOptions.maximumReviewsPerDay`, “—” by default): at most that many review-phase cards a study day, the
+reviews already made today counted, the due ones beyond it waiting for the next days, the most urgent first. It touches
+neither the new cards nor the cards in learning. Every option row has a "?" button with a popover of plain words for
+a newcomer, and Restore Defaults puts the options back to their defaults, keeping the FSRS parameters and the pause.

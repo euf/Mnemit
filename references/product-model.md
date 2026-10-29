@@ -34,7 +34,10 @@ minutes, a goal sized to their usual day, and a gain they can see grow.
 7. **Anki-grade truth one tap away:** counts, FSRS figures and retention live in the deck, not on Today.
 8. **Nothing to configure to succeed.** A newcomer gets reasonable defaults: the machinery works without being noticed and
    asks for no attention. An Anki veteran gets the settings and mechanics they know, under Anki's names; the ring, the
-   streak and the rest are cosmetics on top.
+   streak and the rest are cosmetics on top. The deck options screens serve both: each row carries Anki's name (Daily
+   Limits, New cards/day, Maximum reviews/day, Desired retention, Leech threshold, Leech action, Maximum interval,
+   Learning steps, Optimize), and a newcomer who wanders in finds a "?" on every row with a plain explanation, and
+   Restore Defaults as the way back.
 9. **Progress never goes back.** A day, once over, keeps what it earned: its ring, its place in the streak, its medals and
    the words it learned stay, whatever later happens to the decks and cards.
 

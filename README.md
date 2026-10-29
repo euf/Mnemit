@@ -130,7 +130,7 @@ are in [`references/`](references/).
 
 ### Scheduling
 
-- **The day's time sets the new cards.** Under FSRS a learner chooses two things: the target recall
+- **The day's time sets the new cards.** Under FSRS a learner chooses two things: the desired retention
   and how many new cards to take in. Reviews follow from them: FSRS brings a card back when its
   predicted recall falls to the target, and the benchmarks judge a scheduler by how well that
   prediction matches what happens (srs-benchmark: log loss and RMSE over bins, FSRS-6 at 0.065;
@@ -148,7 +148,7 @@ are in [`references/`](references/).
   reviews of earlier cards grow, fewer new cards fit, and when the learner gives more time, more
   fit. The queue cannot run away, since intake is what the reviews leave (Reddy et al. 2016:
   a review queue fed faster than it is served grows without bound), and a break is paced by the
-  time instead of becoming a wall. The target recall stays at 0.9, the value Anki's guide calls
+  time instead of becoming a wall. The desired retention stays at 0.9, the value Anki's guide calls
   a good balance, and only the time adapts. Learn 10 New Words is the one way past the
   time: ten new cards at once, whose reviews fill the next days. Sources and measurements: [`ring-design.md`](references/ring-design.md),
   [`day-model-research.md`](references/day-model-research.md), Part 1 §3.

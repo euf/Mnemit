@@ -48,20 +48,19 @@ struct ParametersSection: View {
                 computation
             }
             if options.parameters != .default {
-                Button("Reset Algorithm Parameters") {
+                Button("Reset FSRS Parameters") {
                     options.parameters = .default
                 }
             }
         } header: {
-            Text("Algorithm Parameters")
-        } footer: {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Parameters fitted to your reviews need fewer reviews for the same recall.")
-                if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {
-                    Text("Needs \(FSRSOptimizer.minimumReviewCount) reviews, each on a later day than the card's previous one.")
-                }
+            HStack {
+                Text("FSRS Parameters")
+                HelpButton(text: "The memory model behind the schedule. Mnemit fits it to your reviews by itself; Optimize does it now.")
             }
-            .foregroundStyle(.secondary)
+        } footer: {
+            if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {
+                Text("Needs \(FSRSOptimizer.minimumReviewCount) reviews, each on a later day than the card's previous one.")
+            }
         }
         .onDisappear { task?.cancel() }
     }
@@ -70,7 +69,7 @@ struct ParametersSection: View {
     private var computation: some View {
         switch state {
         case .idle:
-            Button("Compute from Review Log", action: start)
+            Button("Optimize", action: start)
         case .running(let fraction):
             HStack {
                 ProgressView(value: fraction)
@@ -110,7 +109,7 @@ struct ParametersSection: View {
             }
         case .failed:
             Text("The parameters could not be computed.")
-            Button("Compute from Review Log", action: start)
+            Button("Optimize", action: start)
         }
     }
 

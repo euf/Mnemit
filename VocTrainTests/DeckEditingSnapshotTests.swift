@@ -221,6 +221,7 @@ struct DeckEditingSnapshotTests {
 
         let custom = try options {
             $0.newCardsPerSession = nil
+            $0.maximumReviewsPerDay = 200
             $0.targetRecall = 0.95
             $0.leechThreshold = 0
         }

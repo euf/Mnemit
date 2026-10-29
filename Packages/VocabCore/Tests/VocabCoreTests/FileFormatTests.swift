@@ -139,7 +139,10 @@ struct DeckFileTests {
         expectFixedDeck(deck)
         #expect(deck.cards.allSatisfy { $0.media.isEmpty })
         #expect(deck.media.isEmpty)
-        let written = withoutRemovedOptions(data).replacingOccurrences(of: "\"version\" : 4", with: "\"version\" : \(DeckFile.currentVersion)")
+        let written = withoutRemovedOptions(data)
+            .replacingOccurrences(of: "\"version\" : 4", with: "\"version\" : \(DeckFile.currentVersion)")
+            // The option added since takes its default.
+            .replacingOccurrences(of: "    \"maximumInterval\" : 36500,\n", with: "    \"maximumInterval\" : 36500,\n    \"maximumReviewsPerDay\" : null,\n")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
     }
 
@@ -321,6 +324,7 @@ struct DeckFileTests {
             .replacingOccurrences(of: "com.mfluch.voctrain.deck", with: DeckFile.format)
             // The options added since take their defaults.
             .replacingOccurrences(of: "    \"maximumInterval\" :", with: "    \"leechThreshold\" : 8,\n    \"maximumInterval\" :")
+            .replacingOccurrences(of: "    \"maximumInterval\" : 36500,\n", with: "    \"maximumInterval\" : 36500,\n    \"maximumReviewsPerDay\" : null,\n")
             // The option the app no longer has is left out.
             .replacingOccurrences(of: "    \"caseSensitive\" : true,\n", with: "")
         #expect(String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self) == written)
@@ -588,6 +592,34 @@ struct DeckFileTests {
         #expect(learningOptions.steps == LearningOptions.stepsRange.lowerBound)
         #expect(learningOptions.maximumInterval == LearningOptions.maximumIntervalRange.lowerBound)
         #expect(learningOptions.newCardsPerSession == LearningOptions.sessionLimitRange.upperBound)
+    }
+
+    /// Maximum reviews/day is written as null while unlimited, a number otherwise, and a file without the key reads as
+    /// unlimited, which is also what an older app version leaves behind when it saves the deck.
+    @Test func maximumReviewsPerDayRoundTripsAsNullOrANumberAndAMissingKeyReadsUnlimited() throws {
+        var deck = try sampleDeck()
+        func writtenValue(_ deck: Deck) throws -> Any? {
+            let json = try #require(JSONSerialization.jsonObject(with: DeckFile.encodeDeck(deck)) as? [String: Any])
+            return (json["learningOptions"] as? [String: Any])?["maximumReviewsPerDay"]
+        }
+        #expect(try writtenValue(deck) is NSNull)
+        #expect(try DeckFile.decode(DeckFile.fileWrapper(for: deck)).learningOptions.maximumReviewsPerDay == nil)
+
+        var options = deck.learningOptions
+        options.maximumReviewsPerDay = 150
+        _ = deck.apply(try #require(DeckChange.changingLearningOptions(options, in: deck, calendar: .testing)), at: date, calendar: .testing)
+        #expect(try writtenValue(deck) as? Int == 150)
+        let read = try DeckFile.decode(DeckFile.fileWrapper(for: deck))
+        #expect(read.learningOptions.maximumReviewsPerDay == 150)
+        #expect(read == deck)
+
+        #expect(try DeckFile.decode(deckJSON()).learningOptions.maximumReviewsPerDay == nil)
+        let outOfRange = Data(
+            """
+            {"format": "de.fluch-it-consulting.voctrain.deck", "version": 3, "progress": [], "cards": [],
+             "learningOptions": {"maximumReviewsPerDay": 100000}}
+            """.utf8)
+        #expect(try DeckFile.decode(outOfRange).learningOptions.maximumReviewsPerDay == LearningOptions.reviewLimitRange.upperBound)
     }
 
     @Test func rejectsInvalidValues() {

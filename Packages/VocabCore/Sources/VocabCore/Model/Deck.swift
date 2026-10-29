@@ -18,7 +18,13 @@ public struct LearningOptions: Hashable, Sendable {
     /// it, so every session of the day takes from one quota. The name keeps `deck.json` readable: it said "per
     /// session" when the limit still restarted with each session.
     public var newCardsPerSession: Int? = nil
-    /// Spreads review intervals slightly so cards learned together don't stay clustered.
+    /// Maximum reviews/day, as Anki names it: at most this many cards in the review phase (not the cards in
+    /// learning or relearning, not the new ones) does a study day ask from the deck; `nil`, the default, asks every
+    /// one that is due. Review cards already reviewed on the current study day count against it, and the due ones
+    /// beyond it wait for the next days, the most urgent first (`StudySession.counts(for:at:calendar:)`).
+    public var maximumReviewsPerDay: Int? = nil
+    /// Spreads review intervals slightly so cards learned together don't stay clustered. The options screens
+    /// don't offer it, as Anki has no such option: it stays on.
     public var fuzzing: Bool = true
     public var parameters: FSRSParameters = .default
     /// The lapses (Again on a card in the review phase) at which a study session meets a leech, see
@@ -31,7 +37,7 @@ public struct LearningOptions: Hashable, Sendable {
     /// the fit when it predicts the reviews better, see `ParameterRefit`.
     public var updatesParametersAutomatically: Bool = true
     /// The last time the app fitted the parameters by itself, `nil` before the first time.
-    /// Set by `ParameterRefit.Result`; the learner's own "Compute from Review Log" leaves it.
+    /// Set by `ParameterRefit.Result`; the learner's own "Optimize" leaves it.
     public var lastAutoFit: AutoFit?
     /// Whether the learner paused the deck: it takes no part in the day (plan, goal, rounds,
     /// time, admission of new cards, streak, words in memory, widget, reminders, the
@@ -64,6 +70,8 @@ public struct LearningOptions: Hashable, Sendable {
     public static let stepsRange: ClosedRange<Int> = 1...5
     /// For `newCardsPerSession` when it is limited.
     public static let sessionLimitRange: ClosedRange<Int> = 1...9999
+    /// For `maximumReviewsPerDay` when it is limited.
+    public static let reviewLimitRange: ClosedRange<Int> = 1...9999
     /// For `leechThreshold`; 0 is off.
     public static let leechThresholdRange: ClosedRange<Int> = 0...99
 }
@@ -86,8 +94,20 @@ extension LearningOptions {
         maximumInterval = maximumInterval.clamped(to: Self.maximumIntervalRange)
         steps = steps.clamped(to: Self.stepsRange)
         newCardsPerSession = newCardsPerSession?.clamped(to: Self.sessionLimitRange)
+        maximumReviewsPerDay = maximumReviewsPerDay?.clamped(to: Self.reviewLimitRange)
         leechThreshold = leechThreshold.clamped(to: Self.leechThresholdRange)
         if let fit = lastAutoFit { lastAutoFit?.reviewCount = max(0, fit.reviewCount) }
+    }
+
+    /// The options with every value back at its default, as the options screens' Restore Defaults does. What the
+    /// learner's reviews made stays: the FSRS `parameters` and the note of the last automatic fit; so does the
+    /// pause of the deck, which is no option of the screens.
+    public func restoringDefaults() -> LearningOptions {
+        var restored = LearningOptions()
+        restored.parameters = parameters
+        restored.lastAutoFit = lastAutoFit
+        restored.isPaused = isPaused
+        return restored
     }
 }
 

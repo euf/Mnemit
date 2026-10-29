@@ -206,7 +206,7 @@ struct HowTodayWorks: Equatable, Sendable {
         return Section(title: String(localized: "Swipes"), rows: rows, footer: footer)
     }
 
-    /// What the Options screen's one-line footers leave out: one sentence per option that has a rule behind it.
+    /// What the Options screen's help leaves out: one sentence per option that has a rule behind it.
     private static func options() -> Section {
         let rows: [Row] = [
             .text(
@@ -217,7 +217,7 @@ struct HowTodayWorks: Equatable, Sendable {
             .text(
                 String(
                     localized:
-                        "Target recall: the chance you still remember a card when it comes back. Higher means more reviews; \(Format.percent(0.9)) is a good balance."
+                        "Desired retention: the chance you still remember a card when it comes back. Higher means more reviews; \(Format.percent(0.9)) is a good balance."
                 )),
             .text(
                 String(
@@ -232,7 +232,7 @@ struct HowTodayWorks: Equatable, Sendable {
             .text(
                 String(
                     localized:
-                        "A new or forgotten card comes back in the session until you grade it Good as many times as Steps per card says. Hard keeps its step, Forgot starts it over, Easy finishes it at once."
+                        "A new or forgotten card comes back in the session until you grade it Good as many times as Learning steps says. Hard keeps its step, Forgot starts it over, Easy finishes it at once."
                 )),
             .text(
                 String(
@@ -251,13 +251,13 @@ struct HowTodayWorks: Equatable, Sendable {
     private static func fsrs(_ deck: DeckInfo, position: Int, of count: Int) -> Section {
         let options = deck.options
         let rows: [Row] = [
-            .value(label: String(localized: "Target recall"), value: Format.percent(options.targetRecall)),
+            .value(label: String(localized: "Desired retention"), value: Format.percent(options.targetRecall)),
             .value(label: String(localized: "Parameters"), value: options.parameters == .default ? String(localized: "Default") : String(localized: "Fitted")),
             .numbers(options.parameters.weights.map { String(format: "%.4f", $0) }.joined(separator: " ")),
             .value(
                 label: String(localized: "Last automatic fit"), value: options.lastAutoFit.map(Self.summary) ?? String(localized: "None yet")),
-            .value(label: String(localized: "Steps per card"), value: options.steps.formatted()),
-            .value(label: String(localized: "Longest interval"), value: Format.days(Double(options.maximumInterval))),
+            .value(label: String(localized: "Learning steps"), value: options.steps.formatted()),
+            .value(label: String(localized: "Maximum interval"), value: Format.days(Double(options.maximumInterval))),
         ]
         let footer = String(
             localized:

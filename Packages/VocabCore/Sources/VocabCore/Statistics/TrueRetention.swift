@@ -12,7 +12,7 @@ import Foundation
 /// come from replaying the card's log with the deck's learning options, the way
 /// `DeckChange.merging` replays it. Options changed since a review move the replay away
 /// from what the device scheduled then: the steps change which reviews count, the
-/// parameters and the target recall the young/mature split near `matureInterval`. Cards
+/// parameters and the desired retention the young/mature split near `matureInterval`. Cards
 /// whose log doesn't reach back to their first review, see `Card.hasCompleteLog`, can't
 /// be replayed and are left out.
 public struct TrueRetention: Hashable, Sendable {

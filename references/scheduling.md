@@ -14,6 +14,16 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
   exactly that many new cards of both directions per study day (it turns at 4 am), as in Anki: outside the allowance, and
   without reducing what the other decks get. A card whose first review fell on the current day is subtracted from the
   count, so entering the stream again takes no new cards beyond it, and the next day restores the full count.
+- **Maximum reviews/day** (`maximumReviewsPerDay`, Anki's name; “—” by default, every due review is asked) caps the review
+  cards of the plan, in `StudySession.selection`, so the counts, the plan, the goal and the stream follow. At most that many
+  cards in the review phase a study day: Cards in learning or relearning and new cards are no part of it. The review
+  cards already reviewed on the current study day count against it (`StudySession.reviewsDone`: for each card reviewed
+  today, its log is replayed from the grades to tell which reviews asked it in the review phase,
+  `Card.reviewPhaseReviews`; a lapse counts, the relearning after it does not). The due reviews beyond the cap are not in the
+  plan: they wait, as buried cards do, and come back on the next study day, the most urgent first (lowest recall
+  probability, as the plan orders them). New cards/day and the allowance don't change. The plan of a past day is the
+  plan at its start, with nothing reviewed yet. `deck.json` holds the key as `null` while unlimited; a missing key reads as
+  unlimited, and an older app version drops the key on save. Range 1 to 9999.
 - A `deck.json` that still has `cardsPerSession`, `newProductionPerSession` or `productionUnlockDays` reads, and the next
   save leaves the keys out.
 - A deck row on Today reads the whole deck including `reviews.jsonl` (`KnownDeckCounts` through
@@ -57,12 +67,12 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 
 ## Leech
 
-- **The moments.** `LearningOptions.leechThreshold` is T (8 lapses, as in Anki; 0 = off). A lapse is a Forgot on a card in
+- **The moments.** `LearningOptions.leechThreshold` is T (Leech threshold on the options screens: 8 lapses, as in Anki; 0 = Off). A lapse is a Forgot on a card in
   the review phase. The lapse that brings `lapses` to T is a leech moment, and so is every lapse that brings it to
   T + k × ceil(T / 2) for k ≥ 1: T = 8 gives 8, 12, 16, 20; T = 5 gives 5, 8, 11 (`StudySession.isLeechMoment(lapses:threshold:)`).
   `Session.leechIDs` holds every moment, whatever the action. In the stream a moment is a stop that keeps the answer on
   screen (`study-screen.md`).
-- **Keep or Suspend.** `LearningOptions.leechAction`: `.keep` (the default) leaves the card in rotation and FSRS goes on
+- **Keep Card or Suspend Card.** The options screens call it Leech action. `LearningOptions.leechAction`: `.keep` (the default) leaves the card in rotation and FSRS goes on
   scheduling it; `.suspend`, Anki's classic action, makes the review suspend the card (`StudySession.review`), which leaves the
   session. The deck options offer the two as a picker. `deck.json` key `leechAction` is `"suspend"` and left out while keep
   (`deck-package.md`).
@@ -86,7 +96,7 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
   new parameters are scored by log loss on the newest 20 % (`FSRSOptimizer.compareOnNewest`). The new
   ones stay if their log loss is lower than the current one by any amount (`requiredImprovement` = 0;
   that constant is the threshold); otherwise the parameters stay and the attempt is recorded.
-- The manual "Compute from Review Log" compares over the whole log (`compare(with:)`), and the person
+- The manual "Optimize" compares over the whole log (`compare(with:)`), and the person
   decides.
 - State in `LearningOptions`: `lastAutoFit` (date, number of usable reviews, accepted or not) and
   `updatesParametersAutomatically` (default yes). Both keys sit in `deck.json` without a version bump

@@ -245,6 +245,27 @@ public struct Card: Identifiable, Hashable, Sendable {
         learningState == nil || (hasCompleteLog && log[0].date >= start)
     }
 
+    /// How many of the card's reviews on the study day of `now` asked it in the review phase: the ones that count
+    /// against Maximum reviews/day (`LearningOptions.maximumReviewsPerDay`). A lapse counts, the relearning after it
+    /// does not. The phase comes from the grades alone, replayed from the first review as `credit(onDayOf:calendar:steps:)`
+    /// does; a log that doesn't reach back to it (`hasCompleteLog`) starts as a review card.
+    func reviewPhaseReviews(onDayOf now: Date, calendar: StudyCalendar, steps required: Int) -> Int {
+        let day = calendar.dayNumber(for: now)
+        var phase: LearningPhase = hasCompleteLog || log.isEmpty ? .learning : .review
+        var steps = Steps(required: required)
+        var count = 0
+        for entry in log {
+            if phase == .review {
+                if calendar.dayNumber(for: entry.date) == day { count += 1 }
+                if entry.grade == .again { (phase, steps) = (.relearning, Steps(required: required)) }
+            } else {
+                steps.apply(entry.grade)
+                if steps.areEnough { (phase, steps) = (.review, Steps(required: required)) }
+            }
+        }
+        return count
+    }
+
     /// New cards are always due, suspended cards never.
     public func isDue(at date: Date) -> Bool {
         guard !isSuspended else { return false }

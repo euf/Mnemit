@@ -116,6 +116,15 @@ extension VocabularyDocument {
         perform(change, actionName: String(localized: "Change Learning Options"))
     }
 
+    /// Puts every option of the deck back at its default, as Restore Defaults of the options screens does: the FSRS
+    /// parameters and the pause stay (`LearningOptions.restoringDefaults()`). One undo step.
+    func restoreDefaultLearningOptions() {
+        guard isReadyToEdit,
+            let change = DeckChange.changingLearningOptions(deck.learningOptions.restoringDefaults(), in: deck, calendar: calendar)
+        else { return }
+        perform(change, actionName: String(localized: "Restore Defaults"))
+    }
+
     /// Pauses the deck or resumes it (`LearningOptions.isPaused`): a paused deck takes no part in the
     /// day. A change of the options like any, so it merges and syncs with them; one undo step.
     func setPaused(_ isPaused: Bool) {

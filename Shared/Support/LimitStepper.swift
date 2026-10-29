@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// New cards/day, as Anki names it, as one stepper whose first step is "—", no limit of the deck's own: the day's
-/// ring decides. Plus from "—" gives `step`, minus from the lowest number gives "—" again, plus stops at `ceiling`.
+/// A daily limit of the deck, New cards/day or Maximum reviews/day, as Anki names them, as one stepper whose first
+/// step is "—", no limit of the deck's own: for New cards/day the day's ring decides, for Maximum reviews/day every
+/// review that is due is asked. Plus from "—" gives `step`, minus from the lowest number gives "—" again, plus stops
+/// at `ceiling`.
 /// A value above `ceiling`, as another app or a file may have set, shows as it is, and minus takes it down.
 struct LimitStepper: View {
     var title: LocalizedStringKey

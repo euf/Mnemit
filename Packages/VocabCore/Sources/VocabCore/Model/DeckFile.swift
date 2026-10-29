@@ -49,7 +49,8 @@ import Foundation
 /// of the file while they hold their defaults: an older app version drops them, fits
 /// nothing by itself and forgets when the newer one last did. `paused` of the options, left
 /// out while the deck is not paused, came the same way: an older app version drops it, and
-/// the deck is no longer paused.
+/// the deck is no longer paused. `maximumReviewsPerDay` (Maximum reviews/day) came the same way, written as
+/// null while unlimited: an older app version drops it, and the deck asks every review that is due again.
 ///
 /// When `currentVersion` goes up: a missing key takes its default, so a newer app
 /// version reads an older deck of the same version. The other way round, an older
@@ -288,6 +289,8 @@ extension DeckFile {
         var maximumInterval: Int
         var steps: Int
         var newCardsPerSession: Int?
+        /// Null while unlimited; a missing key reads as unlimited.
+        var maximumReviewsPerDay: Int?
         var fuzzing: Bool
         var parameters: [Double]
         var leechThreshold: Int
@@ -305,6 +308,7 @@ extension DeckFile {
             maximumInterval = options.maximumInterval
             steps = options.steps
             newCardsPerSession = options.newCardsPerSession
+            maximumReviewsPerDay = options.maximumReviewsPerDay
             fuzzing = options.fuzzing
             parameters = options.parameters.weights
             leechThreshold = options.leechThreshold
@@ -326,6 +330,7 @@ extension DeckFile {
             options.maximumInterval = maximumInterval
             options.steps = steps
             options.newCardsPerSession = newCardsPerSession
+            options.maximumReviewsPerDay = maximumReviewsPerDay
             options.fuzzing = fuzzing
             options.parameters = parameters
             options.leechThreshold = leechThreshold
@@ -337,7 +342,7 @@ extension DeckFile {
         }
 
         private enum CodingKeys: String, CodingKey {
-            case targetRecall, maximumInterval, steps, newCardsPerSession
+            case targetRecall, maximumInterval, steps, newCardsPerSession, maximumReviewsPerDay
             case fuzzing, parameters, leechThreshold, leechAction
             case updatesParametersAutomatically, lastAutoFit, paused
         }
@@ -353,6 +358,7 @@ extension DeckFile {
                 container.contains(.newCardsPerSession)
                 ? try container.decodeIfPresent(Int.self, forKey: .newCardsPerSession)
                 : defaults.newCardsPerSession
+            maximumReviewsPerDay = try container.decodeIfPresent(Int.self, forKey: .maximumReviewsPerDay)
             fuzzing = try container.decodeIfPresent(Bool.self, forKey: .fuzzing) ?? defaults.fuzzing
             parameters = try container.decodeIfPresent([Double].self, forKey: .parameters) ?? defaults.parameters
             leechThreshold = try container.decodeIfPresent(Int.self, forKey: .leechThreshold) ?? defaults.leechThreshold
@@ -370,6 +376,7 @@ extension DeckFile {
             try container.encode(steps, forKey: .steps)
             // Written as null when unlimited, so a missing key can mean the default.
             try container.encode(newCardsPerSession, forKey: .newCardsPerSession)
+            try container.encode(maximumReviewsPerDay, forKey: .maximumReviewsPerDay)
             try container.encode(fuzzing, forKey: .fuzzing)
             try container.encode(parameters, forKey: .parameters)
             try container.encode(leechThreshold, forKey: .leechThreshold)

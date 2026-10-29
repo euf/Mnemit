@@ -228,15 +228,15 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 - **Swipes** (iPhone only): "Swipes that sprang back from a gap: N of M today" (`SwipeTally`,
   `study-screen.md`), with the sectors in compass degrees in the footer.
 - **Options**: seven sentences and no footer, one for each option with a rule behind it. A new word is answered Don't know
-  and comes back in the session. Target recall (higher means more reviews; 90 % is a good balance). A Meaning → Word card opens
+  and comes back in the session. Desired retention (higher means more reviews; 90 % is a good balance). A Meaning → Word card opens
   once its Word → Meaning card has an interval of 7 days. The leech: a card forgotten as often as the deck's threshold says, and again
   after every half of it; its answer stays on screen so the card can be edited or set aside. Learning steps (Hard keeps the
   step, Forgot starts it over, Easy finishes at once). The FSRS parameters (they start from averages, are fitted to the
   learner's reviews, give fewer reviews for the same recall, and keep the due dates). The refit schedule, read from
   `ParameterRefit`: the first fit at 400 reviews, again at 1,500, then every 30 days or after 1,000 more; a new fit is kept
   only if it predicts the latest reviews better.
-- **FSRS**, one section per deck: target recall, default or fitted parameters with the 21 values
-  (monospaced, four decimals, wrapped), the last automatic fit, steps per card, longest interval.
+- **FSRS**, one section per deck: desired retention, default or fitted parameters with the 21 values
+  (monospaced, four decimals, wrapped), the last automatic fit, learning steps, maximum interval.
 - Code: `HowTodayWorks` (the rows) and `HowTodayWorksView` in `Shared/Statistics`; `DayBreakdown` in
   VocabCore holds what `DailyProgress` does not: the parts of the plan, the decks' shares, the days,
   the base of the pace.
@@ -366,17 +366,30 @@ shows its charts beside the tiles under Statistics (⌘4).
 
 ## Options
 
-The iPhone's form (`DeckOptionsScreen`) saves every change at once, one undo step each. Top to bottom:
-**Daily Limits** (New cards/day, "—" by default: the day's ring decides; its footer "— lets the day's ring decide. A number takes that many new cards a day, as Anki does.");
-**Scheduling** (Target recall, 70–97 %); a section for the
-leech: **Leech after** N lapses (0 is Off) and **When a card becomes a leech**, Keep or Suspend (`LearningOptions.leechAction`),
-its footer "A card you forget this many times becomes a leech, and again after every half of that."; **Advanced** (Longest interval, Spread out intervals, Steps per card, FSRS parameters with
-"Compute from Review Log"). New cards/day is a stepper (`LimitStepper`): "—" first (VoiceOver reads Off), plus from it gives 5, plus
-stops at 100, minus from 1 gives "—" again. Every footer is one sentence.
+Both screens use Anki's names, so a learner who knows Anki finds each setting where it expects it (German as
+Anki's German UI, Greek and Russian as its translations). Each option row has a "?" button
+(`HelpButton` in `Shared/Support`, SF Symbol `questionmark.circle`, accessibility label "Help") that opens a popover
+with a few plain sentences for a newcomer: what the row does and what its default means. On the iPhone the popover
+stays a popover (`presentationCompactAdaptation`). The sections have no footers of their own; only the FSRS
+section keeps the hint "Needs 400 reviews, each on a later day than the card's previous one." while the log is short.
+Restore Defaults is the way back to the defaults; a confirmation dialog ("Restore the defaults of this deck's options?",
+the destructive button "Restore Defaults", Cancel) comes first. It puts every option back to
+`LearningOptions()` and keeps the FSRS parameters, the note of the last automatic fit (`lastAutoFit`) and the pause
+(`LearningOptions.restoringDefaults()`).
 
-The Mac's sheet (`DeckOptionsView`) has the same content in one form, with Save and
-Cancel, and Restore Defaults, which keeps the mark. The leech threshold ("Leech threshold") and the picker sit in Advanced,
-the footer's sentence as the threshold's tooltip.
+The iPhone's form (`DeckOptionsScreen`) saves every change at once, one undo step each. Top to bottom:
+**Daily Limits** (New cards/day and Maximum reviews/day, both "—" by default, each a `LimitStepper`);
+**FSRS** (Desired retention, 70–97 %); **Lapses** (Leech threshold, N lapses or Off, and Leech action,
+Keep Card or Suspend Card, `LearningOptions.leechAction`); **Advanced** (pushed screen: Maximum interval, Learning steps,
+and the section FSRS Parameters with Optimize); and a section with the destructive button Restore Defaults, on
+the form and on the Advanced screen. Restore Defaults is one undo step named "Restore Defaults"
+(`VocabularyDocument.restoreDefaultLearningOptions()`). A `LimitStepper` shows "—" first (VoiceOver reads Off), plus
+from it gives 5 (New cards/day) or 10 (Maximum reviews/day), plus stops at 100 and 500, minus from 1 gives "—" again.
+The deck's setting "Spread out intervals" is no longer offered; `fuzzing` stays in the model and is on.
+
+The Mac's sheet (`DeckOptionsView`) has the same rows in one form, with Advanced (Maximum interval, Learning steps) folded
+in a disclosure group, and Save and Cancel. Restore Defaults sits at the left of the bottom bar and fills the sheet's
+edited options; Save applies everything as one change.
 
 ## Pausing a deck
 

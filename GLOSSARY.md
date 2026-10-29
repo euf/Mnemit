@@ -101,13 +101,20 @@ moment is the lapse that brings the lapses to the threshold T and every ceil(T /
 T = 8 (`StudySession.isLeechMoment`). Undoing the grade takes the moment back.
 _Avoid_: leech alert, leech warning
 
-**Keep** (the Deck's leech action, the default; DE Behalten; RU «оставить»):
+**Leech threshold** (the deck option, Anki's name for it; DE Schwellenwert Lernbremse; RU «порог для приставучих»):
+`LearningOptions.leechThreshold`, the lapses that make a Card a Leech: 8 by default, "Off" (0) never marks one. The row shows
+"Off" or "N lapses".
+
+**Leech action** (the deck option, Anki's name for it; DE Aktion bei Lernbremsen; RU «что делать с приставучими»):
+`LearningOptions.leechAction`: what a Leech does to its Card, **Keep Card** or **Suspend Card**.
+
+**Keep Card** (the Deck's leech action, the default; DE Karte behalten; RU «оставить карточку»):
 A Leech stays in rotation and FSRS goes on scheduling it (`LeechAction.keep`). An Anki import maps Anki's "tag only" action
 to it.
 
-**Suspend** (the Deck's other leech action; DE Aussetzen; RU «приостановить»):
+**Suspend Card** (the Deck's other leech action; DE Karte aussetzen; RU «приостановить карточку»):
 The review that makes a Card a Leech suspends it, and the card leaves the stack (`LeechAction.suspend`). Learning options
-offer Keep and Suspend as "When a card becomes a leech".
+offer Keep Card and Suspend Card as the Leech action.
 
 **Set Aside** / **Keep It** (the actions of a Leech moment; DE Beiseitelegen / Behalten; RU «отложить» / «оставить»):
 Set Aside suspends the card from the moment and the stack goes on without it (`SessionCommand.setAside`). When the Deck's
@@ -143,6 +150,10 @@ A Good for a Card in Learning or Relearning. Hard keeps the Card on its Step, Ag
 zero, Easy moves it straight to the Review phase.
 _Avoid_: learning step as a time delay (as in Anki), "right answer"
 
+**Learning steps** (the deck option, Anki's name for it; DE Lernstufen; RU «шаги изучения»):
+`LearningOptions.steps`, how many Steps a Card needs to reach the Review phase: 2 by default, 1 to 5. A count of Good
+grades, with no time delay between them.
+
 **Stability** (DE Stabilität; RU «стабильность»):
 The number of days until a Card's Recall probability falls to 90 %.
 
@@ -154,18 +165,18 @@ The estimated chance of knowing a Card now; "retrievability" in FSRS. The time s
 counts in whole Study days, so on the day of a Review it is 100 %.
 _Avoid_: retrievability, chance of remembering
 
-**Target recall** (DE Angestrebte Abrufquote; RU «целевая запоминаемость»):
-The Recall probability at which a Card in the Review phase is asked again; "desired retention" in
-FSRS.
-_Avoid_: desired retention; "retention" is the measured rate
+**Desired retention** (the deck option, Anki's and FSRS's name for it; DE Gewünschte Erinnerungsquote; RU «желаемое усвоение»):
+The Recall probability at which a Card in the Review phase is asked again (`LearningOptions.targetRecall`, 70 to 97 %, 90 %
+by default). The section is called FSRS on the options screens.
+_Avoid_: target recall; "retention" alone is the measured rate
 
 **Retention** (DE Behaltensquote; RU «фактическая запоминаемость»):
 The share of a Card's Reviews in the Review phase the learner recalled (Hard, Good or Easy), per
 period and split by Interval under 21 Study days (Young) and from 21 (Mature); "true retention" in
-Anki. It shows what the Target recall actually achieves. Not counted: Reviews in Learning and
+Anki. It shows what the Desired retention actually achieves. Not counted: Reviews in Learning and
 Relearning, the first Review of a New card, and further Reviews on the same Study day. Code:
 `TrueRetention`.
-_Avoid_: true retention, retention for the Target recall
+_Avoid_: true retention, retention for the Desired retention
 
 **Parameters** (DE Parameter; RU «параметры»):
 The 21 weights of the FSRS model, per Deck in the Learning options. They start with the defaults of
@@ -176,6 +187,10 @@ reaches back to the first Review.
 **Interval** (DE Abstand; RU «интервал»):
 The number of Study days until a Card in the Review phase is asked again.
 _Avoid_: review date, pause
+
+**Maximum interval** (the deck option, Anki's name for it; DE Höchstintervall; RU «максимальный интервал»):
+`LearningOptions.maximumInterval`, the longest Interval FSRS gives a Card: 36500 days by default, which holds no card back;
+30 days at least.
 
 **Study day** (DE Lerntag; RU «учебный день»):
 A day that starts at 4 am. Intervals count in Study days.
@@ -206,14 +221,26 @@ by the rules of `DeckChange.merging` (`references/deck-package.md`). Reviews don
 _Avoid_: sync, reconcile
 
 **Learning options** (DE Lernoptionen; RU «опции колоды»):
-The settings that apply to one Deck, such as Target recall, the number of Steps and New cards/day.
+The settings that apply to one Deck, such as Desired retention, Learning steps and New cards/day. The screens use Anki's
+names; each row has a "?" with plain words for a newcomer.
 _Avoid_: deck settings, Einstellungen
 
-**New cards/day** (the deck option, Anki's name for it; DE „Neue Karten/Tag“; RU «новых карточек в день»):
+**Restore Defaults** (Anki's term; DE Standardwerte; RU «вернуть значения по умолчанию»):
+The button at the bottom of the options screens. After a confirmation it puts every option of the Deck back to
+`LearningOptions()` and keeps the FSRS Parameters, the note of the last automatic fit and the pause
+(`LearningOptions.restoringDefaults()`). One undo step on the iPhone; on the Mac it fills the sheet, and Save applies it.
+
+**New cards/day** (the deck option, Anki's name for it; DE „Tageshöchstwert für neue Karten“; RU «новых карточек в день»):
 `LearningOptions.newCardsPerSession`, “—” by default, the ring decides. A deck that sets it takes exactly that many new cards a study day,
 of both directions, as in Anki: outside the day's allowance (**Admission**), and without reducing what the other decks
 get. It is the one option for new cards.
 _Avoid_: new cards per session, new-card limit, quota
+
+**Maximum reviews/day** (the deck option, Anki's name for it; DE „Tageshöchstwert für Wiederholungskarten“; RU «максимум повторяемых в день»):
+`LearningOptions.maximumReviewsPerDay`, "—" by default: every Review that is due is asked. A number is the most cards in the
+Review phase a study day asks from the Deck; Reviews already made today count against it, and the due ones beyond it
+wait for the next days, the most urgent first. Learning cards and New cards are not part of it.
+_Avoid_: review limit, review quota
 
 **Preferences** (DE Einstellungen; RU «настройки приложения»):
 The app's settings that apply to all Decks.

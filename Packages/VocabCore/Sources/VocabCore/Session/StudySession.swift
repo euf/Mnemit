@@ -107,6 +107,10 @@ public struct StudySession: Sendable {
     /// Due cards in the order of their `Urgency`, cards of the same urgency at
     /// random. At most `segmentSize` cards are selected.
     ///
+    /// Review cards fill `maximumReviewsPerDay` (Maximum reviews/day) for the study day: the review cards already
+    /// reviewed on the current study day are subtracted from it, and the due ones beyond it, the least urgent, wait
+    /// for the next days. Cards in learning and new cards are not part of it.
+    ///
     /// Cards of a note (`Card.note`) take part as follows:
     /// - A new production card waits until every recognition card of its note is in the
     ///   review phase with a scheduled interval of `unlockDays` or more.
@@ -220,7 +224,7 @@ public struct StudySession: Sendable {
     }
 
     /// The cards of a session in the order of their `Urgency`: every card due, overdue ones included,
-    /// the most forgotten first, and the new cards within the limits.
+    /// the most forgotten first, the review cards within Maximum reviews/day and the new cards within the limits.
     private static func selection(
         from deck: Deck, at now: Date, calendar: StudyCalendar, extraNew: Int = 0, newCardAllowance: Int? = nil,
         capsSize: Bool = true, past: DayIndex? = nil, using random: inout SeededRandom
@@ -265,6 +269,12 @@ public struct StudySession: Sendable {
         // A deck with New cards/day takes that many, as Anki does; the day's allowance is for the decks without it.
         let allowance = options.newCardsPerSession == nil ? newCardAllowance : nil
         var allowanceLeft = allowance.map { max(0, $0 - introduced.production - introduced.other) } ?? Int.max
+        // Maximum reviews/day: the review cards asked today count against it. A past day's plan is the plan at its
+        // start, with nothing reviewed yet.
+        var reviewsLeft = Int.max
+        if let limit = options.maximumReviewsPerDay {
+            reviewsLeft = max(0, limit - (past == nil ? reviewsDone(onDayOf: now, in: deck, calendar: calendar) : 0))
+        }
         let sizeLimit = capsSize ? Self.segmentSize : Int.max
         for candidate in due + new where selected.count < sizeLimit {
             let card = candidate.card
@@ -276,6 +286,9 @@ public struct StudySession: Sendable {
                 guard allowanceLeft > 0, newLeft > 0 else { continue }
                 newLeft -= 1
                 allowanceLeft -= 1
+            } else if candidate.urgency != .learning {
+                guard reviewsLeft > 0 else { continue }
+                reviewsLeft -= 1
             }
             selected.append(candidate)
             if let note = card.note { selectedNotes.insert(note) }
@@ -376,6 +389,16 @@ public struct StudySession: Sendable {
             if card.kind == .production { introduced.production += 1 } else { introduced.other += 1 }
         }
         return introduced
+    }
+
+    /// The reviews of cards in the review phase made on the study day of `date`: what Maximum reviews/day has used up.
+    private static func reviewsDone(onDayOf date: Date, in deck: Deck, calendar: StudyCalendar) -> Int {
+        let today = calendar.dayNumber(for: date)
+        let steps = deck.learningOptions.steps
+        return deck.cards.reduce(0) { sum, card in
+            guard let lastReview = card.learningState?.lastReview, calendar.dayNumber(for: lastReview) == today else { return sum }
+            return sum + card.reviewPhaseReviews(onDayOf: date, calendar: calendar, steps: steps)
+        }
     }
 
     /// For each note, the cards reviewed on the study day of `date`.

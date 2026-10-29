@@ -147,9 +147,9 @@ struct HowTodayWorksTests {
         }
 
         let fsrs = content.sections[8]
-        #expect(values(fsrs)["Target recall"] == Format.percent(0.9))
+        #expect(values(fsrs)["Desired retention"] == Format.percent(0.9))
         #expect(values(fsrs)["Parameters"] == "Default")
-        #expect(values(fsrs)["Steps per card"] == "2")
+        #expect(values(fsrs)["Learning steps"] == "2")
         #expect(values(fsrs)["Last automatic fit"]?.hasPrefix("Updated") == true)
         // The 21 weights, four decimals, as the default parameters have them.
         let numbers = try #require(fsrs.rows.compactMap { row -> String? in if case let .numbers(text) = row { text } else { nil } }.first)

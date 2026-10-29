@@ -3,7 +3,7 @@ import VocabCore
 
 /// The retention tables of the statistics screens, in both apps: how often the learner
 /// recalled cards in the review phase, by period and by young/mature interval, read against
-/// the deck's target recall.
+/// the deck's desired retention.
 /// The host puts the title above.
 struct RetentionTables: View {
     var retention: TrueRetention
@@ -13,7 +13,7 @@ struct RetentionTables: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Review cards you recalled: Hard, Good or Easy.")
                     .foregroundStyle(.secondary)
-                Text("Target recall: \(Format.percent(retention.desiredRetention))")
+                Text("Desired retention: \(Format.percent(retention.desiredRetention))")
                     .font(.callout.weight(.medium))
             }
 

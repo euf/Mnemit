@@ -8,7 +8,7 @@
   answers as a retired card (deck format version 6). A deck edited while open (the other device, `deck-from-tsv`, which now
   writes through `NSFileCoordinator`) changes in place, and an undo of a grade survives the reread on both apps. A leech
   (8 lapses, again every half threshold) stops on "Keeps slipping" with Edit, Set Aside or Keep It and Continue; the deck
-  chooses Keep (default) or Suspend; a Leeches filter; the Mac's card table has Lapses, Stability, Difficulty and Recall.
+  chooses Keep Card (default) or Suspend Card; a Leeches filter; the Mac's card table has Lapses, Stability, Difficulty and Recall.
   Every card has two answer buttons, Forgot and Good (Don't know and Know on a first showing); what can be given is what the
   screen shows (a swipe up or down springs back, 2 and 4 do nothing); the setting "Hard and Easy Buttons" adds Hard and
   Easy as buttons, swipes and keys together. The greens rise in chroma from Hard (sage) to
@@ -16,6 +16,7 @@
   the ring on the left, Day streak, the next moment with ≈ minutes and Words learned on the right, the week under them, the
   date as the subtitle; Progress, a deck and Statistics use the same cards and tiles. The introduction teaches a new word's
   first showing; the long texts are shorter in all four languages. Medal toasts stand where they cover nothing.
+- Deck options (both apps) use Anki's names (Desired retention, Leech threshold, Leech action, Maximum interval, Learning steps, Optimize), a "?" popover on each row and Restore Defaults; new option Maximum reviews/day (`maximumReviewsPerDay`, a cap on the day's review cards, `references/scheduling.md`); "Spread out intervals" is gone, `fuzzing` stays on.
 - Both devices run 9.0.38 (c9c236a), the iPhone signed until 03.11. The Mac was seen live on 27.10 (vqa, on 9.0.28): Today, Progress, a deck's page and its
   columns, Preferences, a stream on a copy of Greek B1 (two buttons, key 2 for Hard, the receipt), `deck-from-tsv` run twice
   on the open copy (no alert, 2314 → 2316 cards, the stream went on) and an undo after the reread; the ledger wrote

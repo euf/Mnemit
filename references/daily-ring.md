@@ -53,6 +53,12 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   new cards, which are the deck's share of the allowance `newCardAllowance`, or exactly its New cards/day where the deck
   sets it; overdue cards are part of it (Backlog below). `nil` instead of an allowance means only a deck's own New
   cards/day cuts the new cards: tests and tools count that way.
+- A deck with **Maximum reviews/day** (`maximumReviewsPerDay`, Anki's name; “—” by default) puts at most that many cards in
+  the review phase into the plan: the review cards already reviewed on the study day count against it, learning cards
+  and new cards are no part of it. The due reviews beyond it, the least urgent, stay out of the plan and the goal until the
+  next study day (`StudySession.counts` treats them as buried: `nextDue` is the next study day). At the start of a day the
+  plan holds the cap, and each review done leaves one fewer in "left". The plan of a past day is its plan at the start, so
+  the cap applies in full (`DeckActivity.history`, `plan(onDayOf:calendar:)`).
 - The plan at the start of a day the logs work out (today, and a past day the ledger lacks) comes from
   `DeckActivity.history(from:at:calendar:)`: the log is
   replayed forward once (`replayLog`, card states at the end of every day), a copy of the deck takes
@@ -262,7 +268,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 ## Backlog
 
 - **Backlog**: Review cards that were due before the start of the study day. They are part of the plan
-  like any card due, most forgotten first.
+  like any card due, most forgotten first. A deck with Maximum reviews/day takes only that many of them a day, the most
+  forgotten first, and the rest of the backlog waits for the next days: the plan, the goal and the ring never show it.
 - The goal takes the plan's cards that fit the day's time (`DayRounds`); the rest stay in the plan, and the
   ring's rest offers Catch Up, which goes on with it.
 
