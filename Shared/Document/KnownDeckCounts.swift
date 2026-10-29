@@ -11,15 +11,19 @@ import VocabCore
 /// cards are those of the deck's allowance for the day (`NewCardAllowances`).
 ///
 /// A paused deck (`LearningOptions.isPaused`) asks nothing of the day: it has no counts, and is in
-/// `paused` instead, which also tells the list it was read.
+/// `paused` instead, which also tells the list it was read. A deck that can't be read is in `failed`, with the
+/// reason: it was tried, so the day is told without it and its row says why it has no figures.
 @MainActor @Observable
 final class KnownDeckCounts {
     private(set) var counts: [URL: StudyCounts] = [:]
     /// The decks that were read and are paused.
     private(set) var paused: Set<URL> = []
 
-    /// Whether any deck was read yet: until then the figures are placeholders.
-    var isRead: Bool { !counts.isEmpty || !paused.isEmpty }
+    /// The decks that were tried and can't be read, with why: too new, damaged, not downloaded yet.
+    private(set) var failed: [URL: String] = [:]
+
+    /// Whether any deck was tried yet: until then the figures are placeholders.
+    var isRead: Bool { !counts.isEmpty || !paused.isEmpty || !failed.isEmpty }
 
     /// Reads the decks one after the other, off the main actor. The allowances are those the daily
     /// ring worked out; the call comes after its evaluation.
@@ -27,11 +31,16 @@ final class KnownDeckCounts {
         for url in urls {
             let allowance = allowances[url]
             let read = await Task.detached(priority: .utility) { Self.read(at: url, on: [Date()], allowance: allowance) }.value
-            counts[url] = read.flatMap { $0.isPaused ? nil : $0.counts.first }
-            if read?.isPaused == true {
+            counts[url] = (try? read.get()).flatMap { $0.isPaused ? nil : $0.counts.first }
+            if case let .success(read) = read, read.isPaused {
                 paused.insert(url)
             } else {
                 paused.remove(url)
+            }
+            if case let .failure(failure) = read {
+                failed[url] = failure.reason
+            } else {
+                failed[url] = nil
             }
         }
     }
@@ -52,14 +61,15 @@ final class KnownDeckCounts {
     /// The new cards are limited by `allowance`, today's, at every date: a later day admits about as
     /// many as this one does, which no one can know before it has begun.
     nonisolated static func counts(at url: URL, on dates: [Date], allowance: Int? = nil) -> [StudyCounts]? {
-        guard let read = read(at: url, on: dates, allowance: allowance), !read.isPaused else { return nil }
+        guard let read = try? read(at: url, on: dates, allowance: allowance).get(), !read.isPaused else { return nil }
         return read.counts
     }
 
-    /// The counts at `dates` and whether the deck is paused, from one read; `nil` if it can't be read.
-    nonisolated private static func read(at url: URL, on dates: [Date], allowance: Int?) -> (counts: [StudyCounts], isPaused: Bool)? {
-        guard let deck = DeckFileReader.deck(at: url) else { return nil }
-        let calendar = StudyCalendar()
-        return (dates.map { StudySession.counts(for: deck, at: $0, calendar: calendar, newCardAllowance: allowance) }, deck.learningOptions.isPaused)
+    /// The counts at `dates` and whether the deck is paused, from one read; why not if it can't be read.
+    nonisolated private static func read(at url: URL, on dates: [Date], allowance: Int?) -> Result<(counts: [StudyCounts], isPaused: Bool), DeckReadFailure> {
+        DeckFileReader.read(at: url).map { deck in
+            let calendar = StudyCalendar()
+            return (dates.map { StudySession.counts(for: deck, at: $0, calendar: calendar, newCardAllowance: allowance) }, deck.learningOptions.isPaused)
+        }
     }
 }

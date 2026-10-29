@@ -70,7 +70,7 @@ struct StartScreen: View {
     var body: some View {
         NavigationStack(path: $path) {
             TodayScreen(
-                decks: knownDecks.byName, counts: deckCounts.counts, paused: deckCounts.paused, progress: ring.progress, now: Date(), query: $query,
+                decks: knownDecks.byName, counts: deckCounts.counts, paused: deckCounts.paused, failed: deckCounts.failed, progress: ring.progress, now: Date(), query: $query,
                 hits: search.hits(for: query), isSearching: !search.isLoaded,
                 canForget: { !knownDecks.isInFolder($0.url) }, study: { study($0) }, pushOn: { study(.all, entry: .pushOn) }, showDeck: showDeck, showCard: showCard,
                 forget: { knownDecks.forget($0.url) }, setPaused: setPaused, addCards: { openLastDeck(importing: nil) },

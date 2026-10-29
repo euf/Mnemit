@@ -16,9 +16,10 @@ struct TodayDecks: Equatable {
         paused = decks.filter { pausedURLs.contains($0.url) }
     }
 
-    /// Whether every deck of the day has its `counts`: a paused deck has none to wait for.
-    func isRead(_ counts: [URL: StudyCounts]) -> Bool {
-        active.allSatisfy { counts[$0.url] != nil }
+    /// Whether every deck of the day was tried: it has its `counts` or is in `failed`. A paused deck has none to wait
+    /// for, and a deck that can't be read never will have: the day is told without it.
+    func isRead(_ counts: [URL: StudyCounts], failed: [URL: String] = [:]) -> Bool {
+        active.allSatisfy { counts[$0.url] != nil || failed[$0.url] != nil }
     }
 
     /// The decks Study runs one after the other: those of the day with cards left, the one `last` studied

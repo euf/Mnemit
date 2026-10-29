@@ -50,6 +50,32 @@ struct KnownDeckCountsTests {
         #expect(row == screen)
     }
 
+    /// One deck that can't be read (too new, damaged, not downloaded) must not keep Today's placeholders on for the
+    /// decks that can: the day is told once every deck was tried, and the bad one's row has its reason.
+    @MainActor @Test func aDeckThatCannotBeReadDoesNotHoldTheDayBack() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let cards = ["dom", "kot"].map { Card(text: CardText(question: $0, answer: "x")!, created: Date()) }
+        let good = directory.appending(path: "Good.mnemit", directoryHint: .isDirectory)
+        try DeckFile.fileWrapper(for: Deck(cards: cards)).write(to: good, options: .atomic, originalContentsURL: nil)
+        let bad = directory.appending(path: "Bad.mnemit", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: bad, withIntermediateDirectories: true)
+        try Data("not json".utf8).write(to: bad.appending(path: "deck.json"))
+
+        let known = KnownDeckCounts()
+        await known.refresh([good, bad])
+        let decks = TodayDecks([good, bad].map(KnownDeck.init(url:)))
+        #expect(known.counts[good]?.total == 2)
+        #expect(known.counts[bad] == nil)
+        #expect(known.failed[good] == nil)
+        #expect(try #require(known.failed[bad]).isEmpty == false)
+        #expect(known.isRead)
+        #expect(decks.isRead(known.counts, failed: known.failed))
+        #expect(!decks.isRead(known.counts))
+    }
+
     @Test func aDeckThatCannotBeReadHasNoCounts() {
         let missing = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).mnemit", directoryHint: .isDirectory)
         #expect(KnownDeckCounts.counts(at: missing) == nil)

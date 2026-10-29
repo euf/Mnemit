@@ -142,6 +142,12 @@ enum DeckFileReader {
     /// iCloud Drive. It holds none of the media files: the readers count cards, and a deck read
     /// like this is never saved.
     nonisolated static func deck(at url: URL) -> Deck? {
+        try? read(at: url).get()
+    }
+
+    /// The deck at `url`, or why it can't be read, in the words of the deck's own screen: "Downloading from iCloud…",
+    /// "This deck was created by a newer version of Mnemit.".
+    nonisolated static func read(at url: URL) -> Result<Deck, DeckReadFailure> {
         // A deck outside the app's sandbox can be read only while the app accesses it.
         let isAccessing = url.startAccessingSecurityScopedResource()
         defer {
@@ -149,13 +155,35 @@ enum DeckFileReader {
                 url.stopAccessingSecurityScopedResource()
             }
         }
-        var deck: Deck?
-        var error: NSError?
+        var result: Result<Deck, DeckReadFailure> = .failure(DeckReadFailure(reason: String(localized: "The deck could not be read.")))
+        var coordination: NSError?
         // Coordinated, as the open deck's document and the merger write the package.
-        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { url in
-            deck = try? DeckFile.read(at: url, withMedia: false)
+        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordination) { url in
+            do {
+                result = .success(try DeckFile.read(at: url, withMedia: false))
+            } catch {
+                let reason = ICloudDownload.isPending(url) ? String(localized: "Downloading from iCloud…") : VocabularyDocument.openingError(for: error).localizedDescription
+                result = .failure(DeckReadFailure(reason: reason))
+            }
         }
-        return deck
+        return result
+    }
+}
+
+/// Why `DeckFileReader` could not read a deck.
+struct DeckReadFailure: Error, Equatable, Sendable {
+    var reason: String
+}
+
+/// Whether a file lives in iCloud Drive and its content has not arrived yet.
+enum ICloudDownload {
+    nonisolated static func isPending(_ url: URL) -> Bool {
+        if let status = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey]).ubiquitousItemDownloadingStatus {
+            return status != .current
+        }
+        // Before the system lists the file under its own name, only the hidden placeholder is there.
+        let placeholder = url.deletingLastPathComponent().appending(path: ".\(url.lastPathComponent).icloud")
+        return FileManager.default.fileExists(atPath: placeholder.path)
     }
 }
 

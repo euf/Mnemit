@@ -24,6 +24,8 @@ struct TodayScreen: View {
     var counts: [URL: StudyCounts]
     /// The decks that were read as paused.
     var paused: Set<URL> = []
+    /// The decks that can't be read, with why (`KnownDeckCounts.failed`): their rows say it.
+    var failed: [URL: String] = [:]
     /// `nil` until evaluated.
     var progress: DailyProgress?
     var now: Date
@@ -68,7 +70,7 @@ struct TodayScreen: View {
     /// own, so until both are there the header holds its placeholders, and it changes once instead of
     /// going from a closed ring to an open one as each figure arrives.
     private var isDayReady: Bool {
-        progress != nil && TodayDecks(decks, paused: paused).isRead(counts) && (!decks.isEmpty || !paused.isEmpty)
+        progress != nil && TodayDecks(decks, paused: paused).isRead(counts, failed: failed) && (!decks.isEmpty || !paused.isEmpty)
     }
 
     /// The cards left of today's plan, all decks: every card due, overdue ones included.
@@ -166,7 +168,7 @@ struct TodayScreen: View {
             if !sections.active.isEmpty {
                 Section("Decks") {
                     ForEach(sections.active) { deck in
-                        DeckRow(name: deck.name, counts: counts[deck.url], pace: progress?.pace) { showDeck(deck) }
+                        DeckRow(name: deck.name, counts: counts[deck.url], pace: progress?.pace, failure: failed[deck.url]) { showDeck(deck) }
                             .swipeActions(allowsFullSwipe: !canForget(deck)) {
                                 pauseButton(deck, pausing: true)
                                 removeButton(deck)
@@ -287,15 +289,28 @@ struct DeckRow: View {
     /// The day's pace, which prices the cards; `nil` until the ring is evaluated.
     var pace: Pace?
     var isPaused = false
+    /// Why the deck has no figures: it can't be read. The row says it under the name, with a warning sign for the time.
+    var failure: String?
     var open: () -> Void
 
     var body: some View {
         Button(action: open) {
             HStack(spacing: 12) {
-                Text(name)
-                    .foregroundStyle(isPaused ? .secondary : .primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name)
+                        .foregroundStyle(isPaused ? .secondary : .primary)
+                    if let failure {
+                        Text(failure)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Spacer(minLength: 0)
-                if let counts {
+                if failure != nil {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                        .accessibilityHidden(true)
+                } else if let counts {
                     if counts.isDone {
                         Image(systemName: "checkmark")
                             .foregroundStyle(.secondary)

@@ -47,6 +47,8 @@ struct SidebarRow: Identifiable, Hashable {
     var isPaused = false
     /// The plan left in the deck; `nil` before the deck is read, for a paused deck and before the ring is worked out.
     var badge: SidebarBadge?
+    /// Why the deck has no figures: it can't be read (`KnownDeckCounts.failed`).
+    var failure: String?
 
     var id: URL { url }
     var name: String { url.deletingPathExtension().lastPathComponent }
@@ -104,8 +106,9 @@ struct SidebarContent: View {
         if !rows.isEmpty {
             Section(title) {
                 ForEach(rows) { row in
-                    Label(row.name, systemImage: row.isPaused ? "pause.circle" : "rectangle.stack")
+                    Label(row.name, systemImage: row.failure != nil ? "exclamationmark.triangle" : row.isPaused ? "pause.circle" : "rectangle.stack")
                         .badge(row.badge?.text)
+                        .help(row.failure ?? "")
                         .accessibilityValue(row.badge.map(\.spoken) ?? Text(verbatim: ""))
                         .tag(Shell.Item.deck(row.url))
                         .contextMenu { menu(for: row) }
@@ -157,7 +160,7 @@ extension Shell {
         let day = TodayDecks(folder.decks.map(KnownDeck.init(url:)), paused: paused)
         let pace = ring.progress?.pace
         func row(_ url: URL) -> SidebarRow {
-            SidebarRow(url: url, isPaused: paused.contains(url), badge: SidebarBadge(studyCounts(url), pace: pace))
+            SidebarRow(url: url, isPaused: paused.contains(url), badge: SidebarBadge(studyCounts(url), pace: pace), failure: counts.failed[url])
         }
         // The day's plan left, priced as one: the new cards at their price, the rest at theirs.
         let left = day.active.compactMap { studyCounts($0.url) }
