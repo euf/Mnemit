@@ -64,14 +64,15 @@ struct WordsLearnedTests {
         #expect(result.shownGain == nil)
     }
 
-    @Test func aLapseTakesTheWordOutUntilItIsLearnedAgain() throws {
+    @Test func aLapseTakesNoWordOut() throws {
         let known = learned(recognition(), on: today - 5)
         let lapsed = reviewed(known, .again, on: today)
         #expect(lapsed.learningState?.phase == .relearning)
         let after = try count([lapsed], on: today)
-        #expect(after.words == 0)
+        // A word in relearning has left learning, as the ledger and the medals count it.
+        #expect(after.words == 1)
         #expect(after.wordsAtDayStart == 1)
-        #expect(after.gainToday == -1)
+        #expect(after.gainToday == 0)
         #expect(after.shownGain == nil)
 
         // Made up the same day: the day began with it and ends with it.
@@ -83,12 +84,26 @@ struct WordsLearnedTests {
         #expect(back.shownGain == nil)
     }
 
-    @Test func aLapseNextToANewWordNetsOut() throws {
+    @Test func aLapseNextToNewWordsHidesNoneOfTheirGain() throws {
         let lapsed = reviewed(learned(recognition("old"), on: today - 5), .again, on: today)
         let result = try count([lapsed, learned(recognition("new"), on: today), learned(recognition("newer"), on: today)], on: today)
-        #expect(result.words == 2)
+        #expect(result.words == 3)
         #expect(result.wordsAtDayStart == 1)
-        #expect(result.shownGain == 1)
+        #expect(result.shownGain == 2)
+    }
+
+    @Test func aCardThatLapsedLastNightAndIsRelearnedThisMorningAddsNothingAndTheHeadlineNeverFalls() throws {
+        // At 4:00 the card is in relearning. It graduates again today: the word was learned before, so the headline holds
+        // and tomorrow's ledger value for today (the medals' count) is the same number.
+        let known = learned(recognition(), on: today - 5)
+        let lapsedLastNight = reviewed(known, .again, on: today - 1)
+        let relearned = reviewed(reviewed(lapsedLastNight, on: today), on: today)
+        let deck = try Deck(cards: [relearned])
+        let progress = DailyProgress.evaluate([DeckActivity(deck: deck, calendar: calendar)], at: noon(today), calendar: calendar)
+        #expect(progress.learned == WordsLearned(words: 1, wordsAtDayStart: 1))
+        #expect(progress.learned.shownGain == nil)
+        let tomorrow = DailyProgress.evaluate([DeckActivity(deck: deck, calendar: calendar)], at: noon(today + 1), calendar: calendar)
+        #expect(tomorrow.records.first { $0.day == today }?.wordsLearned == progress.learned.words)
     }
 
     @Test func aSuspendedWordIsInNeitherNumber() throws {
@@ -169,7 +184,7 @@ struct WordsLearnedTests {
     }
 
     @Test func theWordsThatLeftLearningAreCountedFromTheDayTheirFirstCardDid() throws {
-        // A lapse takes a word out of "words learned" but not out of the count the medals are earned from.
+        // A lapse takes a word out of neither "words learned" nor the count the medals are earned from.
         var cards = (1...5).map { learned(recognition("a\($0)"), on: today - 2) }
         cards += (1...4).map { learned(recognition("b\($0)"), on: today - 1) }
         cards += (1...3).map { learned(recognition("c\($0)"), on: today) }
@@ -182,7 +197,8 @@ struct WordsLearnedTests {
         let progress = DailyProgress.evaluate([DeckActivity(deck: deck, calendar: calendar)], at: noon(today), calendar: calendar)
         // First study day: today - 2. The imported word has no day and counts from it.
         #expect(progress.records.map(\.wordsLearned) == [5 + 1 + 1, 7 + 4, 11 + 3])
-        #expect(progress.learned.words == 14 - 1)
+        // The lapsed word stays learned: the headline is the medals' count.
+        #expect(progress.learned.words == 14)
         #expect(progress.achievements.contains(Achievement(kind: .wordsLearned(count: 10), day: today - 1)))
         #expect(!progress.achievements.contains(Achievement(kind: .wordsLearned(count: 50), day: today)))
     }

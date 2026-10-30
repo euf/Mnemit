@@ -1,8 +1,9 @@
 import Foundation
 
 /// How many words the learner has learned, in whole words: the words whose Word → Meaning card (a card without a
-/// kind, from a deck of older versions, is one too) has left learning (is in the review phase) and is not
-/// suspended. A card in learning or relearning does not count: a lapse takes a word out until it is learned again.
+/// kind, from a deck of older versions, is one too) has left learning (is in the review or relearning phase) and is
+/// not suspended. A lapse takes no word out: the card is relearning, and the word stays learned, as in the medals and
+/// the ledger (`leftLearning(in:calendar:)`, `cumulative`), so the headline and the gain are one count.
 /// The production card (Meaning → Word) is the same word the other way round and counts nothing.
 ///
 /// `wordsAtDayStart` is the same count from the state of each card before the day's reviews, so `gainToday` is
@@ -39,14 +40,20 @@ public struct WordsLearned: Hashable, Sendable {
         let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
         var held: [Held] = []
         for card in deck.cards where !card.isSuspended && card.kind != .production {
-            let learnedNow = card.learningState?.phase == .review
-            let learnedAtStart = scheduler.standing(card, atStartOf: start, now: now).learningState?.phase == .review
+            let learnedNow = Self.hasLeftLearning(card.learningState)
+            let learnedAtStart = Self.hasLeftLearning(scheduler.standing(card, atStartOf: start, now: now).learningState)
             if learnedNow || learnedAtStart {
                 held.append(Held(key: WordKey(card: card), now: learnedNow, atStart: learnedAtStart))
             }
         }
         self = Self.tally(held)
         self.held = held
+    }
+
+    /// Whether a card in this state has left learning: review or relearning. The one rule of every count of words.
+    static func hasLeftLearning(_ state: LearningState?) -> Bool {
+        guard let phase = state?.phase else { return false }
+        return phase != .learning
     }
 
     /// The decks together, a word held more than once counted once.
@@ -94,7 +101,7 @@ public struct WordsLearned: Hashable, Sendable {
     static func leftLearning(in deck: Deck, calendar: StudyCalendar) -> [(key: WordKey?, day: Int?)] {
         var left: [(key: WordKey?, day: Int?)] = []
         for card in deck.cards where !card.isSuspended && card.kind != .production {
-            guard let phase = card.learningState?.phase, phase != .learning else { continue }
+            guard hasLeftLearning(card.learningState) else { continue }
             var day: Int?
             if card.hasCompleteLog {
                 var steps = Steps(required: deck.learningOptions.steps)
@@ -135,7 +142,7 @@ public struct WordsLearned: Hashable, Sendable {
         return byDay
     }
 
-    /// What the day added: now minus the day's start; negative after a lapse that is not made up.
+    /// What the day added: now minus the day's start; negative only when a card was reset or a word set aside.
     public var gainToday: Int { words - wordsAtDayStart }
 
     /// The gain to show, "+N today": `nil` unless it is above 0.

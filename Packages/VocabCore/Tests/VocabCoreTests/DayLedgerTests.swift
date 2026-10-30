@@ -100,7 +100,7 @@ struct DayLedgerTests {
         let objects = try lines.prefix(2).map { try #require(JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any]) }
         #expect(objects[0]["day"] as? String == CivilDate(dayNumber: 19_990).isoString)
         #expect(objects[1]["day"] as? String == CivilDate(dayNumber: 20_000).isoString)
-        #expect(Set(objects[1].keys) == ["day", "reviews", "done", "goal", "keep", "kept", "closed", "time", "reason", "worked", "filled", "words"])
+        #expect(Set(objects[1].keys) == ["day", "reviews", "done", "goal", "keep", "kept", "closed", "time", "reason", "worked", "filled", "words", "rule"])
         #expect(objects[1]["reason"] as? String == "sustainedOvershoot" && objects[1]["keep"] as? Int == 4 && objects[1]["words"] as? Int == 3)
         #expect(DayLedger().encoded().isEmpty)
     }
@@ -356,7 +356,65 @@ extension DailyProgressTests {
         #expect(past(alone) == past(first))
         #expect(alone.records.count == first.records.count && alone.records.first?.day == today - 9)
         #expect(first.records.contains { $0.streak > 0 })
-        // Today, with nothing planned, is kept, and the streak goes on through it.
-        #expect(alone.streak.days == (first.records.dropLast().last?.streak ?? 0) + 1)
+        // Today has no deck to study: an idle day, which neither keeps the streak nor breaks it.
+        #expect(alone.streak.days == (first.records.dropLast().last?.streak ?? 0))
+    }
+}
+
+/// A record written by a rule that counted wrongly is worked out from the logs again.
+extension DailyProgressTests {
+    @Test func aRecordOfAnOlderRuleIsWorkedOutFromTheLogsAgainAndTheNewRuleWinsTheMerge() throws {
+        let (a, b, early, first, ledger) = try fixture()
+        let day = today - 8
+        let honest = try #require(ledger.days[day])
+        // What a deck counted twice left behind: more reviews, more cards done, a bigger plan, and no rule key.
+        var inflated = honest
+        inflated.reviews += 50
+        inflated.done += 18
+        inflated.goal += 4
+        inflated.rule = 0
+        var old = ledger
+        old.days[day] = inflated
+        // A record of the current rule with the same figures is kept as written and raised: that is the ledger's job.
+        var current = ledger
+        current.days[day] = {
+            var kept = inflated
+            kept.rule = LedgerDay.currentRule
+            return kept
+        }()
+        #expect(evaluate([a, b], at: early, ledger: current).records.first { $0.day == day }?.done == honest.done + 18)
+        // A record of rule 0 is not: the day is the logs' again, and the ledger is told.
+        let healed = evaluate([a, b], at: early, ledger: old)
+        #expect(healed.records == first.records)
+        #expect(healed.ledgerUpdates.map(\.day) == [day])
+        let update = try #require(healed.ledgerUpdates.first)
+        #expect(update.rule == LedgerDay.currentRule && update.done == honest.done && update.reviews == honest.reviews && update.goal == honest.goal)
+        // Merged into the ledger, the new record wins over the old one however large the old one is, in both orders.
+        #expect(old.updating(healed.ledgerUpdates).days[day] == update)
+        #expect(DayLedger(days: [day: update]).merging(old).days[day] == update)
+        #expect(old.merging(DayLedger(days: [day: update])).days[day] == update)
+        // And then nothing is left to heal.
+        #expect(evaluate([a, b], at: early, ledger: old.updating(healed.ledgerUpdates)).ledgerUpdates.isEmpty)
+    }
+
+    @Test func theWordsOfAnOldRecordAreKeptWhenItIsWorkedOutAgain() throws {
+        let (a, b, early, _, ledger) = try fixture()
+        let day = today - 8
+        var old = ledger
+        old.days[day]?.rule = 0
+        old.days[day]?.wordsLearned += 5
+        let words = try #require(old.days[day]?.wordsLearned)
+        let healed = evaluate([a, b], at: early, ledger: old)
+        #expect(healed.records.first { $0.day == day }?.wordsLearned == words)
+        #expect(healed.records.allSatisfy { $0.day < day || $0.wordsLearned >= words })
+    }
+
+    @Test func theFileKeepsTheRuleAndAFileWithoutItIsRuleZero() {
+        let line = String(decoding: DayLedger(days: [20_000: LedgerDay(day: 20_000, reviews: 3, done: 2, goal: 5, keepAt: 3, time: 150, reason: .start, worked: 60, filled: true, wordsLearned: 1)]).encoded(), as: UTF8.self)
+        #expect(line.contains("\"rule\":\(LedgerDay.currentRule)"))
+        let bare = line.replacingOccurrences(of: ",\"rule\":\(LedgerDay.currentRule)", with: "")
+        #expect(!bare.contains("rule"))
+        #expect(DayLedger.decode(Data(bare.utf8)).days[20_000]?.rule == 0)
+        #expect(DayLedger.decode(Data(line.utf8)).days[20_000]?.rule == LedgerDay.currentRule)
     }
 }

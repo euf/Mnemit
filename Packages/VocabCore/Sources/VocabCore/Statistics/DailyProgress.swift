@@ -528,11 +528,15 @@ public struct Streak: Hashable, Sendable {
     ///     day before `planRuleStart` that has a review.
     ///   - isClosed: Whether a study day's ring was closed, done ≥ its goal. Not asked for a day
     ///     before `planRuleStart` that has a review.
+    ///   - isIdle: Whether nothing could be asked of a study day: every deck paused or every card suspended, nothing done
+    ///     (`LedgerDay.isIdle`). Such a day neither keeps the streak nor breaks it, and a single missed day before it
+    ///     still waits for the next day that closes its ring.
     ///   - repairCards: The cards that close today's ring, what today still owes.
     public static func evaluate(
-        reviews: [Int: Int], today: Int, planRuleStart: Int = DailyGoal.planRuleStart, isKept: (Int) -> Bool, isClosed: (Int) -> Bool, repairCards: Int
+        reviews: [Int: Int], today: Int, planRuleStart: Int = DailyGoal.planRuleStart, isKept: (Int) -> Bool, isClosed: (Int) -> Bool,
+        isIdle: (Int) -> Bool = { _ in false }, repairCards: Int
     ) -> Streak {
-        walk(reviews: reviews, today: today, planRuleStart: planRuleStart, isKept: isKept, isClosed: isClosed, repairCards: repairCards).streak
+        walk(reviews: reviews, today: today, planRuleStart: planRuleStart, isKept: isKept, isClosed: isClosed, isIdle: isIdle, repairCards: repairCards).streak
     }
 
     /// How one study day ended in `walk`.
@@ -550,12 +554,14 @@ public struct Streak: Hashable, Sendable {
     /// before today ends with the streak it left (a single missed day leaves the streak it interrupted, at risk).
     /// No review, no days.
     static func walk(
-        reviews: [Int: Int], today: Int, planRuleStart: Int, isKept: (Int) -> Bool, isClosed: (Int) -> Bool, repairCards: Int
+        reviews: [Int: Int], today: Int, planRuleStart: Int, isKept: (Int) -> Bool, isClosed: (Int) -> Bool, isIdle: (Int) -> Bool = { _ in false },
+        repairCards: Int
     ) -> (streak: Streak, steps: [Int: Step]) {
         guard let first = reviews.filter({ $0.value > 0 }).keys.min() else { return (Streak(days: 0, repairCards: nil), [:]) }
         func isLegacy(_ day: Int) -> Bool { day < planRuleStart && (reviews[day] ?? 0) > 0 }
         func kept(_ day: Int) -> Bool { isLegacy(day) || isKept(day) }
         func closed(_ day: Int) -> Bool { isLegacy(day) || isClosed(day) }
+        func idle(_ day: Int) -> Bool { !isLegacy(day) && isIdle(day) }
 
         enum State {
             case idle
@@ -574,6 +580,10 @@ public struct Streak: Hashable, Sendable {
         var state = State.idle
         var steps: [Int: Step] = [:]
         for day in first..<max(first, today) {
+            if idle(day) {
+                steps[day] = Step(days: state.days, saved: false, atRisk: false)
+                continue
+            }
             var saved = false
             switch state {
             case let .counting(days):
@@ -589,6 +599,8 @@ public struct Streak: Hashable, Sendable {
 
         let step: Step
         switch state {
+        case _ where idle(today):
+            step = Step(days: state.days, saved: false, atRisk: false)
         case .idle:
             step = Step(days: kept(today) ? 1 : 0, saved: false, atRisk: false)
         case let .counting(days):
@@ -630,6 +642,10 @@ public struct DeckActivity: Sendable {
     /// Whether the learner paused the deck (`LearningOptions.isPaused`): `DailyProgress.evaluate` and
     /// `DayBreakdown` leave it out of the day's plan and count its work.
     public var isPaused: Bool { deck.learningOptions.isPaused }
+
+    /// Whether the deck holds a card that is not suspended: the work a day could ask of it. A deck of suspended cards or
+    /// of none asks nothing, like a paused one.
+    var hasActiveCards: Bool { deck.cards.contains { !$0.isSuspended } }
 
     /// Counts the entries of every card's log. A day is looked up once per quarter of an
     /// hour: every time zone's offset, daylight saving time's included, is a multiple of
@@ -1230,7 +1246,9 @@ public struct DailyProgress: Hashable, Sendable {
     public var cardsLeft: Int
     /// Of `cardsLeft`, the cards that were new when the day began (`StudyCounts.newAtDayStart`).
     public var newCardsLeft: Int
-    /// What one done card takes this learner, new cards and others, `DailyGoal.pace(days:newDone:otherDone:)`.
+    /// What one done card takes this learner, new cards and others, `DailyGoal.pace(days:newDone:otherDone:)`, over the
+    /// study days before today: the one price of every minute figure of the day, the rounds', Catch Up's, the deck rows'
+    /// and the widget's, so none of them drifts from the others as the day's own grades come in.
     public var pace: Pace
     /// The time of today, worked out from the learner's logs: what the day admits new cards up to
     /// (`DailyGoal.nextTime(after:)`).
@@ -1240,7 +1258,8 @@ public struct DailyProgress: Hashable, Sendable {
     public var ringDays: [DailyGoal.RingDay]
     /// Today's cards cut into rounds, as the plan stood when the day began.
     public var roundPlan: DayRounds
-    /// Whether today keeps the streak: its first round is done, or its plan was empty.
+    /// Whether today keeps the streak: its first round is done, or its plan was empty. Nothing is at stake on an idle day
+    /// either, but it grows no streak (`LedgerDay.isIdle`).
     public var streakKeptToday: Bool
     /// How many new cards each deck may introduce today, in the order of the decks given to
     /// `evaluate(_:at:calendar:)`: the plan takes them as `newCardAllowance`. A paused deck has 0
@@ -1402,6 +1421,8 @@ public struct DailyProgress: Hashable, Sendable {
         }
 
         let wordsByDay = WordsLearned.cumulative(given.flatMap { $0.leftLearning(calendar: calendar) }, from: first, through: today)
+        // Whether any active deck holds a card to study: without one an empty plan is nobody's doing, an idle day.
+        let hasWork = decks.contains(where: \.hasActiveCards)
 
         /// How each day before today was sized and stood, as the ledger holds it raised by the logs, or worked out from
         /// the logs and the days before it where the ledger lacks it.
@@ -1416,18 +1437,23 @@ public struct DailyProgress: Hashable, Sendable {
                 // The words learned never fall from one day to the next.
                 words = max(words, wordsByDay[day] ?? 0)
                 let record: LedgerDay
-                if let known = ledger.days[day] {
+                if let known = ledger.days[day], known.rule >= LedgerDay.currentRule {
                     record = known.raised(reviews: reviews[day] ?? 0, done: newDone + otherDone, worked: worked, wordsLearned: words)
                 } else {
+                    // A day the ledger lacks, or holds from an older rule: worked out from the logs. The words never
+                    // fall: the logs count a word once whatever the figures of the old record were.
+                    words = max(words, ledger.days[day]?.wordsLearned ?? 0)
                     let size = DailyGoal.nextTime(after: before.days)
                     let other = histories.reduce(0) { $0 + ($1.starts[day]?.other ?? 0) }
                     let allowed = DailyGoal.newCardsAllowed(seconds: size.time, otherCards: other, pace: pace)
                     let rounds = DayRounds(
                         otherCards: other, newCards: min(allowed, histories.reduce(0) { $0 + ($1.starts[day]?.new ?? 0) }), pace: pace,
                         seconds: size.time)
+                    let idle = rounds.goal == 0 && newDone + otherDone == 0 && !hasWork
                     record = LedgerDay(
                         day: day, reviews: reviews[day] ?? 0, done: newDone + otherDone, goal: rounds.goal, keepAt: rounds.ends.first ?? 0,
-                        time: size.time, reason: size.reason, worked: worked, filled: rounds.filled, wordsLearned: words)
+                        kept: idle ? false : nil, closed: idle ? false : nil, time: size.time, reason: size.reason, worked: worked,
+                        filled: rounds.filled, wordsLearned: words)
                 }
                 words = record.wordsLearned
                 if record != ledger.days[day] { before.updates.append(record) }
@@ -1451,6 +1477,7 @@ public struct DailyProgress: Hashable, Sendable {
         }
         var kept = before.records.mapValues(\.kept)
         var closed = before.records.mapValues(\.closed)
+        var idle = before.records.mapValues(\.isIdle)
         // The reviews: the ledger's for the days before today, the logs' for today.
         var streakReviews = before.records.mapValues(\.reviews)
         streakReviews[today] = reviews[today]
@@ -1476,12 +1503,16 @@ public struct DailyProgress: Hashable, Sendable {
             startRounds.goal > 0
             ? startRounds : DayRounds(otherCards: owed - owedNew, newCards: done + owedNew, pace: startPace, seconds: time)
         let isKeptToday = startRounds.ends.first.map { done >= $0 } ?? true
+        // An empty plan that nothing could fill, every deck paused or every card suspended, keeps the streak for
+        // nobody: it neither grows nor breaks. Today shows it as kept (nothing is at stake), the records as idle.
+        let isIdleToday = startRounds.goal == 0 && done == 0 && !hasWork
         // Today is closed by its ring: cards added after the day began are extra work, not debt.
-        kept[today] = isKeptToday
-        closed[today] = ring.isGoalMet
+        kept[today] = isKeptToday && !isIdleToday
+        closed[today] = ring.isGoalMet && !isIdleToday
+        idle[today] = isIdleToday
         let (streak, steps) = Streak.walk(
             reviews: streakReviews, today: today, planRuleStart: planRuleStart, isKept: { kept[$0] ?? false }, isClosed: { closed[$0] ?? false },
-            repairCards: max(0, ring.goal - ring.done))
+            isIdle: { idle[$0] ?? false }, repairCards: max(0, ring.goal - ring.done))
         let ringToday = DailyGoal.RingDay(
             day: today, time: time, reason: size.reason,
             worked: startPace.seconds(newCards: newDoneByDay[today] ?? 0, otherCards: otherDoneByDay[today] ?? 0), closed: ring.isGoalMet, studied: ring.done > 0,
@@ -1504,7 +1535,7 @@ public struct DailyProgress: Hashable, Sendable {
         var shares = allowances.makeIterator()
         let givenAllowances = given.map { $0.isPaused ? 0 : shares.next() ?? 0 }
         return DailyProgress(
-            ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: pace(over: (today - DailyGoal.paceDays)...today), time: time,
+            ring: ring, streak: streak, cardsLeft: owed, newCardsLeft: owedNew, pace: startPace, time: time,
             roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: givenAllowances,
             memory: MemoryEstimate.total(given.map { $0.memory(at: now, calendar: calendar) }),
             learned: learned,

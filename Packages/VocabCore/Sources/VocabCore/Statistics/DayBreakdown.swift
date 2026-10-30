@@ -53,7 +53,7 @@ public struct DayBreakdown: Hashable, Sendable {
     }
 
     /// What the price of one kind of card, new or other, is worked out from: the reviews and the done cards of
-    /// the pace window, the seven study days before today and today.
+    /// the pace window, the seven study days before today.
     public struct PaceBasis: Hashable, Sendable {
         /// Reviews of this kind with a logged duration.
         public var durations: Int
@@ -133,8 +133,8 @@ extension DayBreakdown {
         self.plan = plan
         self.decks = shares
 
-        // What today's pace is worked out from: the same window as `progress.pace`.
-        let window = (today - DailyGoal.paceDays)...today
+        // What the day's pace is worked out from: the same window as `progress.pace`, the days before today.
+        let window = (today - DailyGoal.paceDays)...(today - 1)
         let windowDays = window.compactMap { paced[$0] }
         func basis(isNew: Bool, doneByDay: [Int: Int]) -> PaceBasis {
             let ofKind = windowDays.flatMap { $0 }.filter { $0.isNew == isNew }

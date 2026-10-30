@@ -699,15 +699,18 @@ struct DailyProgressTests {
             answered("c\(index)", [.good, .good], at: [at(0, 9).addingTimeInterval(Double(index) * 20), at(0, 9).addingTimeInterval(Double(index) * 20 + 10)])
         }
         let decks = [try Deck(learningOptions: options(), cards: Array(cards[..<9])), try Deck(learningOptions: options(), cards: Array(cards[9...]))]
-        let progress = evaluate(decks)
+        // The price of a day is the one its start had: the next day reads it from these.
+        let progress = evaluate(decks, at: now.addingTimeInterval(86_400))
         #expect(abs(progress.pace.newCard - 20) < 1e-9)
         // No other card was done: its fallback.
         #expect(progress.pace.otherCard == DailyGoal.fallbackOtherCardSeconds)
         // Nothing is due, no cards are left and no time is wanted.
         #expect(progress.cardsLeft == 0)
         #expect(progress.minutesLeft == nil)
+        // Today's own grades change no price of today: the day began with the fallbacks.
+        #expect(evaluate(decks).pace == Pace())
         // One deck alone has too few cards done and too few gaps (16 of them are in the other): the fallbacks.
-        #expect(evaluate([decks[0]]).pace == Pace())
+        #expect(evaluate([decks[0]], at: now.addingTimeInterval(86_400)).pace == Pace())
     }
 
     @Test func theLoggedDurationsPriceThePaceInsteadOfTheGaps() throws {
@@ -719,7 +722,7 @@ struct DailyProgressTests {
         let log = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
         #expect(log.days[today]?.compactMap(\.duration) == [Duration](repeating: .seconds(4), count: 50))
         // 4 s a review, two reviews a card.
-        #expect(abs(evaluate([deck]).pace.newCard - 8) < 1e-9)
+        #expect(abs(evaluate([deck], at: now.addingTimeInterval(86_400)).pace.newCard - 8) < 1e-9)
     }
 
     @Test func newCardsAndOthersAreEachPricedFromTheirOwnGaps() throws {
@@ -744,9 +747,10 @@ struct DailyProgressTests {
         let deck = try Deck(learningOptions: options, cards: cards)
         let log = DeckActivity(deck: deck, calendar: calendar).paceLog(at: now, calendar: calendar)
         #expect(log.newDone == 10 && log.otherDone == 20)
+        let tomorrow = evaluate([deck], at: now.addingTimeInterval(86_400))
+        #expect(abs(tomorrow.pace.newCard - 24) < 1e-9)
+        #expect(abs(tomorrow.pace.otherCard - 6) < 1e-9)
         let progress = evaluate([deck])
-        #expect(abs(progress.pace.newCard - 24) < 1e-9)
-        #expect(abs(progress.pace.otherCard - 6) < 1e-9)
         // The card in relearning is the one card left, and it was not new when the day began.
         #expect(progress.cardsLeft == 1 && progress.newCardsLeft == 0)
         #expect(progress.minutesLeft == 0)
