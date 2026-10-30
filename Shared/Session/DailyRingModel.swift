@@ -139,7 +139,7 @@ final class DailyRingModel {
                 self.ledger = result.4
                 ledgerStore = store
                 progress = result.0
-                day = calendar.dayNumber(for: now)
+                self.day = day
                 NewCardAllowances.today.merge(result.2)
                 for url in result.3 {
                     NewCardAllowances.today[url] = nil
