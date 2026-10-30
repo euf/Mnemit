@@ -73,7 +73,9 @@ struct Medal: View {
                     .font(.caption2)
                     .foregroundStyle(isEarned ? .secondary : .tertiary)
                     .monospacedDigit()
-                    .lineLimit(1)
+                    // A grey medal tells what earns it, a sentence of its own.
+                    .multilineTextAlignment(.center)
+                    .lineLimit(isEarned ? 1 : 3)
             }
         }
         .frame(width: size * 2.2)
@@ -83,7 +85,14 @@ struct Medal: View {
 
     /// The date it was earned, or how far the next tier is.
     private var caption: String? {
-        isEarned ? date?.formatted(.dateTime.day().month(.abbreviated)) : hint
+        guard isEarned else {
+            // What earns it, and how far the learner is.
+            let lines = [kind.detail, hint].compactMap { $0 }
+            return lines.isEmpty ? nil : lines.joined(separator: "\n")
+        }
+        // The year once the day is not of this one: a medal of two years ago is not read as of this spring.
+        guard let date else { return nil }
+        return date.formatted(Calendar.current.isDate(date, equalTo: .now, toGranularity: .year) ? .dateTime.day().month(.abbreviated) : .dateTime.day().month(.abbreviated).year())
     }
 
     /// The title, what it took, how often, and the date, or "Not yet, 12 of 14 days".

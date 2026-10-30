@@ -370,7 +370,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 
 ## Statistics (both apps)
 
-`SummaryTiles` (`Shared/Statistics`): Cards, Due, New, Suspended (only when above 0) and Recall Now, each the
+`SummaryTiles` (`Shared/Statistics`): Cards, Due, New, Suspended (only when above 0) and Remembered Now, each the
 figure of the card filters (`Deck.filterCounts(at:)`; `DeckStatistics.Summary`); the figures scale with Dynamic
 Type. The tiles are `FigureTile`s in an adaptive grid (at least 150 pt wide), one column at the accessibility sizes; their help texts stay as
 tooltips on the Mac. The iPhone screen (`StatisticsScreen`, pushed from the deck screen) is a grouped list: the tiles on the

@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// The tiles at the top of a deck's statistics, the same on both apps: Cards, Due, New, Suspended (once a card is)
-/// and Recall Now, two to a row, one column at accessibility sizes. Due, New and Suspended are the counts of the card filters
+/// and Remembered Now, two to a row, one column at accessibility sizes. Due, New and Suspended are the counts of the card filters
 /// (`references/quality-plan.md` §4.1).
 struct SummaryTiles: View {
     var summary: DeckStatistics.Summary
@@ -20,13 +20,13 @@ struct SummaryTiles: View {
                 tile("Suspended", summary.suspended.formatted(), help: "Cards no session asks.")
             }
             tile(
-                "Recall Now", summary.averageRecallProbability.map(Format.percent) ?? "–",
-                help: "Average chance of recall now, over cards in review.")
+                "Remembered Now", summary.averageRecallProbability.map(Format.percent) ?? "–",
+                help: "Average chance of recall now, over cards in review.", footnote: "Estimated")
         }
     }
 
-    private func tile(_ title: LocalizedStringKey, _ value: String, help: LocalizedStringKey? = nil) -> some View {
-        FigureTile(label: Text(title), value: Text(verbatim: value))
+    private func tile(_ title: LocalizedStringKey, _ value: String, help: LocalizedStringKey? = nil, footnote: LocalizedStringKey? = nil) -> some View {
+        FigureTile(label: Text(title), value: Text(verbatim: value), footnote: footnote.map { Text($0) })
             .help(help ?? title)
     }
 }

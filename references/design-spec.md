@@ -120,7 +120,7 @@ The owner's references of 27.10.2026 are Apple's Fitness Summary and the Activit
 Where the parts stand:
 
 - **Progress** (`ProgressScreen`) is a `Form` in `.formStyle(.grouped)`: the streak card (§5.7), the four tiles (Days studied, Rings closed, Words learned, Your ring) with zero row insets and a clear row background on iOS, on macOS the four figures sharing the grouped card; the calendar of rings; Medals with Show All; Memory; a last section with How It Works and the footer "What's behind the ring."
-- **Statistics** (`SummaryTiles`): Cards, Due, New, Suspended (once a card is) and Recall Now as tiles; on the iPhone `StatisticsScreen` is a grouped list of the tiles and a section Retention.
+- **Statistics** (`SummaryTiles`): Cards, Due, New, Suspended (once a card is) and Remembered Now as tiles; on the iPhone `StatisticsScreen` is a grouped list of the tiles and a section Retention.
 - **A deck's Today card** (`DeckTodayCard`, §3.2) is the first section of the deck screen and the strip of the Mac's deck page.
 
 ## 3. iPhone deck screen

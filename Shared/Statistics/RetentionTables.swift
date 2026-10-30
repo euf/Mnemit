@@ -11,8 +11,9 @@ struct RetentionTables: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Review cards you recalled: Hard, Good or Easy.")
+                Text("Recalled means Hard, Good or Easy.")
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text("Desired retention: \(Format.percent(retention.desiredRetention))")
                     .font(.callout.weight(.medium))
             }
@@ -47,8 +48,8 @@ private struct RetentionGrid: View {
         Grid(alignment: .trailing, horizontalSpacing: columnSpacing, verticalSpacing: 8) {
             GridRow {
                 Text(verbatim: "")
-                Text("Young cards")
-                Text("Mature cards")
+                Text("Young")
+                Text("Mature")
                 Text("Total")
             }
             .font(.caption)
@@ -99,9 +100,9 @@ extension TrueRetention.Period {
         switch self {
         case .today: String(localized: "Today")
         case .yesterday: String(localized: "Yesterday")
-        case .last7Days: String(localized: "Last 7 days")
-        case .last30Days: String(localized: "Last 30 days")
-        case .last365Days: String(localized: "Last 365 days")
+        case .last7Days: String(localized: "7 days")
+        case .last30Days: String(localized: "30 days")
+        case .last365Days: String(localized: "1 year")
         }
     }
 }

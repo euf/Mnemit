@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// The statistics of an open deck, pushed from its screen: the tiles the Mac has (Cards, Due, New, Suspended,
-/// Recall Now) over the retention table, which has a section of its own. The Mac adds its charts.
+/// Remembered Now) over the retention table, which has a section of its own. The Mac adds its charts.
 struct StatisticsScreen: View {
     var document: VocabularyDocument
     @State private var figures: Figures?

@@ -36,6 +36,8 @@ struct ProgressScreen<Trailing: View>: View {
                 WeeksGrid(records: records)
             } header: {
                 WeeksGrid(records: records).title
+            } footer: {
+                Text("A full ring is a closed day; a band joins days that kept the streak.")
             }
             Section("Medals") {
                 latestMedals
@@ -121,7 +123,7 @@ struct ProgressScreen<Trailing: View>: View {
         let latest = progress.achievements.recentMedals
         if latest.isEmpty {
             if let next = AchievementLine.single.lazy.compactMap({ NextTier.of($0, earned: [], records: records, streak: progress.streak.days) }).first {
-                Medal(kind: next.kind, isEarned: false)
+                Medal(kind: next.kind, isEarned: false, hint: next.hint)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.tight)
             }
@@ -178,7 +180,7 @@ struct ProgressScreen<Trailing: View>: View {
 }
 
 /// The size of the learner's ring, which grows with them: today's time in minutes and the time of the first day, the tile
-/// "Your ring 8 min" over "a day · started at 2.5". The first day's alone, as it was, when the ring has not moved.
+/// "Your ring 8 min" over "a day (started at 2.5 min)". The first day's alone, as it was, when the ring has not moved.
 struct RingSize: Equatable {
     /// Today's time and the first study day's, in minutes.
     var minutes: Double
@@ -192,10 +194,10 @@ struct RingSize: Equatable {
     /// The minutes, "8" and "2.5".
     var value: String { Self.format(minutes) }
 
-    /// "a day · started at 2.5", or "a day" while the ring has not moved.
+    /// "a day (started at 2.5 min)", or "a day" while the ring has not moved.
     var footnote: String {
         let began = Self.format(started)
-        return began == value ? String(localized: "a day") : String(localized: "a day · started at \(began)")
+        return began == value ? String(localized: "a day") : String(localized: "a day (started at \(began) min)")
     }
 
     /// One decimal at most, "8" and "2.5".
