@@ -19,14 +19,10 @@ struct DeckOptionsView: View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    LimitStepper(title: "New cards/day", unset: "Auto", value: $options.newCardsPerSession, step: 5, ceiling: 100, range: LearningOptions.sessionLimitRange)
-                        .helpButton(
-                            "How many new cards this deck gives a day. Auto lets Mnemit decide from your day: fewer when reviews pile up, more when you keep up. A number takes exactly that many, as in Anki."
-                        )
-                    LimitStepper(title: "Maximum reviews/day", unset: "No limit", value: $options.maximumReviewsPerDay, step: 10, ceiling: 500, range: LearningOptions.reviewLimitRange)
-                        .helpButton(
-                            "The most review cards this deck asks a day. No limit asks every card that is due, which keeps your memory on schedule. A number leaves the rest for the next days, as in Anki."
-                        )
+                    NewCardsPicker(limit: $options.newCardsPerSession)
+                        .helpButton("New cards a day. Auto: Mnemit decides, fewer when reviews pile up. A number: exactly that many. None: no new cards.")
+                    ReviewLimitPicker(limit: $options.maximumReviewsPerDay)
+                        .helpButton("The most reviews asked a day. No limit asks every due card; a number leaves the rest for later.")
                 } header: {
                     Text("Daily Limits")
                 }
@@ -42,25 +38,17 @@ struct DeckOptionsView: View {
                     }
                     .helpButton("The chance you still remember a card when it comes back. Higher means more reviews; \(Format.percent(0.9)) suits most learners.")
                 } header: {
-                    Text(verbatim: "FSRS")
+                    Text("Memory Model (FSRS)")
                 }
 
                 Section {
-                    Stepper(value: $options.leechThreshold, in: LearningOptions.leechThresholdRange) {
-                        LabeledContent("Leech threshold") {
-                            if options.leechThreshold == 0 {
-                                Text("Off")
-                            } else {
-                                Text("\(options.leechThreshold) lapses")
-                            }
-                        }
-                    }
-                    .helpButton("A card you forget this many times becomes a leech: it costs you more time than it gives. Off never marks one.")
+                    LeechThresholdPicker(threshold: $options.leechThreshold)
+                        .helpButton("A card you forget this many times is a leech: it takes more time than it gives. Off marks none.")
                     Picker("Leech action", selection: $options.leechAction) {
                         Text("Keep Card").tag(LeechAction.keep)
                         Text("Suspend Card").tag(LeechAction.suspend)
                     }
-                    .helpButton("What happens to a leech. Keep Card goes on asking it; Suspend Card stops asking it until you resume it.")
+                    .helpButton("Keep Card goes on asking a leech. Suspend Card stops asking it until you resume it.")
                 } header: {
                     Text("Lapses")
                 }
@@ -69,10 +57,8 @@ struct DeckOptionsView: View {
                     DisclosureGroup("Advanced", isExpanded: $showsAdvanced) {
                         MaximumIntervalPicker(days: $options.maximumInterval)
                             .helpButton("The longest a card waits before it is asked again. The default holds no card back.")
-                        Stepper(value: $options.steps, in: LearningOptions.stepsRange) {
-                            LabeledContent("Learning steps", value: options.steps.formatted())
-                        }
-                        .helpButton("How many times you grade a new or forgotten card Good before it moves on to longer intervals.")
+                        LearningStepsPicker(steps: $options.steps)
+                            .helpButton("How many times you grade a new or forgotten card Good before longer intervals begin. Anki’s list “1m 10m” is 2.")
                     }
                 }
 

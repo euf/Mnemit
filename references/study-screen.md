@@ -122,10 +122,10 @@ area and the card's type: `references/design-spec.md` §4.
   grade's gain; a card that had gone under the stack takes its deepest edge with it for a moment. Across
   the end of a round the ring goes back up to the bar first, then the card returns. After a step that
   gave no grade (a suspension) the card rises in from the stack.
-- At a round's end, as the last card goes past the edge, the ring in the bar comes down into the rest's
+- At a round's end, as the last card sets off, the ring in the bar comes down at once into the rest's
   ring place (`RingTraveler`, `ringPlace` on `StreamRestView`, 0.55 s: `StudyMotion`'s `travel`, a spring
   with a little bounce: 0.1 coming down, 0.05 going back up) at the rest's size (96 pt) as one motion and bursts on arrival. The place of the
-  last card stays as an empty slot, a faint rounded outline (`SlotOutline`, 10 % of the primary colour);
+  last card shows a faint rounded outline under it (`SlotOutline`, 10 % of the primary colour) that fades in 0.15 s as the ring lands;
   the rest screen holds only the ring's place, the ring itself is the one that travelled. Then the
   title, each line and the buttons come in one after the other, 0.1 s apart, each with a fade and a
   6 pt lift (`StreamRestView` with `staggers`). Keep Going, Catch Up and Push On take the ring back up

@@ -16,9 +16,18 @@ struct EditCardSheet: View {
     @State private var showsAdvanced: Bool
     @Environment(\.dismiss) private var dismiss
 
-    init(document: VocabularyDocument, card: Card, showsAdvanced: Bool = false, onSave: @escaping () -> Void = {}) {
+    private enum Field: Hashable {
+        case question, answer, hint
+    }
+
+    @FocusState private var focus: Field?
+    /// The keyboard opens in the answer: a card is mostly edited from the study stream, for a wrong translation.
+    private var focusesAnswer: Bool
+
+    init(document: VocabularyDocument, card: Card, showsAdvanced: Bool = false, focusesAnswer: Bool = false, onSave: @escaping () -> Void = {}) {
         self.document = document
         self.card = card
+        self.focusesAnswer = focusesAnswer
         self.onSave = onSave
         _question = State(initialValue: card.question)
         _answer = State(initialValue: card.answer)
@@ -47,10 +56,12 @@ struct EditCardSheet: View {
                 Section("Question") {
                     TextField("Question", text: $question, axis: .vertical)
                         .lineLimit(1...4)
+                        .focused($focus, equals: .question)
                 }
                 Section {
                     TextField("Answer", text: $answer, axis: .vertical)
                         .lineLimit(1...8)
+                        .focused($focus, equals: .answer)
                 } header: {
                     Text("Answer")
                 } footer: {
@@ -59,6 +70,7 @@ struct EditCardSheet: View {
                 Section("Hint") {
                     TextField("Hint", text: $hint, axis: .vertical)
                         .lineLimit(1...4)
+                        .focused($focus, equals: .hint)
                 }
                 Section {
                     DisclosureGroup("Advanced", isExpanded: $showsAdvanced) {
@@ -73,6 +85,7 @@ struct EditCardSheet: View {
             }
             .navigationTitle("Edit Card")
             .navigationBarTitleDisplayMode(.inline)
+            .defaultFocus($focus, focusesAnswer ? .answer : nil)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

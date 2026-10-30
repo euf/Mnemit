@@ -145,13 +145,13 @@ struct StudyMotionTests {
         #expect(motion.interval == nil)
     }
 
-    /// The rest: the ring waits for the card to land and comes down with the slot showing; Next Round takes it back up
+    /// The rest: the ring comes down with the slot showing; Next Round takes it back up
     /// and applies the round at once. Only the states each call sets are checked: the timed steps between them run on
     /// the main actor, which a full parallel run can hold up for seconds, and the frozen frames of
     /// `StudyScreenSnapshotTests` (rest travel half and end, burst peak) show them.
     @Test func theRestIsReachedByTheRingsWayAndLeftBackwards() {
         let motion = motion()
-        motion.restBegan(afterExit: true, reduceMotion: false)
+        motion.restBegan(reduceMotion: false)
         #expect(motion.showsRest && motion.travels && !motion.hasArrived && motion.showsSlot)
         #expect(motion.travel == 0)
 
@@ -164,10 +164,20 @@ struct StudyMotionTests {
         #expect(motion.restSnapshot != nil)
     }
 
+    /// The ring sets off at once with the last card, not a quarter of a second later, when the card is gone and only its
+    /// empty slot is left: the slot never waits on its own. The main actor runs the ring's task before the sleep ends.
+    @Test func theRingComesDownAtOnceWithTheLastCard() async {
+        let motion = motion()
+        motion.restBegan(reduceMotion: false)
+        #expect(motion.travel == 0)
+        try? await Task.sleep(for: .milliseconds(60))
+        #expect(motion.travel == 1)
+    }
+
     /// Without travel (Reduce Motion) the rest is there at once, with no ring on the way and no burst.
     @Test func withoutTravelTheRestComesAtOnce() {
         let motion = motion()
-        motion.restBegan(afterExit: true, reduceMotion: true)
+        motion.restBegan(reduceMotion: true)
         #expect(motion.showsRest && !motion.travels && motion.hasArrived && !motion.showsSlot && motion.burstStartedAt == nil)
         motion.leaveRest(
             snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created), reduceMotion: true,

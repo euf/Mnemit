@@ -183,11 +183,27 @@ struct SpokenWord: View {
     @ViewBuilder
     private var word: some View {
         if !text.isEmpty {
-            Text(text)
+            Text(text.keepingEndingsTogether)
                 .font(font)
                 .minimumScaleFactor(0.6)
                 .selectable()
         }
+    }
+}
+
+extension String {
+    /// The word of a dictionary line with its endings ("υπεύθυνος, -η, -ο") as one unit for the line breaker: the space
+    /// after a comma that a hyphened ending follows is a non-breaking one, so "-ο" never stands alone on a line. A unit
+    /// too wide for the line shrinks (`minimumScaleFactor`) before it breaks. What the speaker says is the text as it is.
+    var keepingEndingsTogether: String {
+        let characters = Array(self)
+        return String(
+            characters.indices.map { index in
+                let isTied =
+                    characters[index] == " " && index > 0 && characters[index - 1] == "," && index + 2 < characters.count
+                    && characters[index + 1] == "-" && characters[index + 2].isLetter
+                return isTied ? "\u{00A0}" : characters[index]
+            })
     }
 }
 

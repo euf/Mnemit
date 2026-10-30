@@ -209,6 +209,9 @@ private struct ShortcutsOverlay: View {
         row(keys: ["S"]) {
             Text("Pronounce")
         }
+        row(keys: ["⌘E"]) {
+            Text("Edit Card")
+        }
         row(keys: ["⌘."]) {
             Text("Done")
         }

@@ -134,7 +134,7 @@ sizes: `design-spec.md` §4.
   moment of the day beside it (no streak: the rests show it) ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done); after a done card, for 1.5 s, its
   interval ("tomorrow", "in 8 days") takes the text's place. Then an Undo button and the menu "More". A practice names itself
   and has no ring. Closing loses nothing: every grade is saved, and Today picks up the count.
-- The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, a
+- The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card (the keyboard opens in the answer; on the Mac ⌘E, shown on the item and in the cheat sheet), Card Info, Suspend Card, a
   divider, Pronounce Automatically (where the device has a Greek voice). The iPhone adds Undo above them,
   which is also its own button. The items are disabled at a rest, never hidden.
 - **The answer buttons** appear with the answer: two wide buttons side by side, as tall as the two rows the four once took,
@@ -313,11 +313,12 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 ## Add Cards, New Deck, Import, Export (iPhone)
 
 - **Add Cards** (sheet), two modes in a segmented control, opened on the mode used last
-  (`AddCardsMode`). One Card: Question, Answer, Hint, "Both directions" toggle; **Add** keeps the sheet open
-  for the next card and shows the badge "Added · N cards so far"; **Done** adds what is typed and closes;
+  (`AddCardsMode`) with the keyboard up in it (the Question field, or the list's editor), and the deck the words go to named
+  under the title. One Card: Question, Answer, Hint, "Both directions" toggle; **Add** keeps the sheet open
+  for the next card and shows the badge "Added · N words so far" (a word is a line of the list, or one card or pair); **Done** adds what is typed and closes;
   Cancel asks before discarding typed text. From a List: paste lines `word = translation`, a live preview of
   the cards, a row per word with a tick (duplicates, and words another deck holds, unchecked; a tap
-  switches), Add N Cards. An addition is one undo step ("Add Cards"); the list's words the deck holds but hasn't
+  switches), Add N Words (the checked rows). An addition is one undo step ("Add Cards"); the list's words the deck holds but hasn't
   started join it (`WordListPreview.renewable(in:)`), so the lesson goes first among the new cards. Once cards are added the bottom bar holds Add and **Study These Now**
   side by side (one under the other at large text sizes): while something is typed that can be added Add is the prominent
   button, with nothing left to add Study These Now is; it adds what is typed too, closes the sheet and starts the stream
@@ -325,7 +326,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   new, unlocked, not buried; the Meaning → Word card of a word waits until its Word → Meaning card has an interval of 7 days). From Today (`AddCardsHost`) the stream starts
   after the sheet has gone and the deck is saved and closed; from the deck screen the sheet's `onDismiss` starts it on the open
   deck. The sheet is the Mac's too
-  (`WordList.swift`, `LimitStepper.swift` in `Shared/Support` hold what the two share). On the Mac **Study These Now**
+  (`WordList.swift` in `Shared/Support` holds what the two share). On the Mac **Study These Now**
   sits between Add and Done once cards are added, and Done stays the default button (Return): the iPhone's "prominent while
   nothing is left to add" has no counterpart. It adds what is typed, closes the sheet and the deck page starts the stream
   over that deck with the added cards first (`Shell.study(.deck(url), entry: .studyNow(ids))`, from the sheet's `onDismiss`).
@@ -378,14 +379,18 @@ the destructive button "Restore Defaults", Cancel) comes first. It puts every op
 (`LearningOptions.restoringDefaults()`).
 
 The iPhone's form (`DeckOptionsScreen`) saves every change at once, one undo step each. Top to bottom:
-**Daily Limits** (New cards/day, Auto by default, and Maximum reviews/day, No limit by default, each a `LimitStepper`);
-**FSRS** (Desired retention, 70–97 %); **Lapses** (Leech threshold, N lapses or Off, and Leech action,
+**Daily Limits** (New cards/day, Auto by default, and Maximum reviews/day, No limit by default, each a menu of round
+numbers, `LimitMenu`);
+**Memory Model (FSRS)** (Desired retention, 70–97 %); **Lapses** (Leech threshold, a menu of N lapses or Off, and Leech action,
 Keep Card or Suspend Card, `LearningOptions.leechAction`); **Advanced** (pushed screen: Maximum interval, Learning steps,
 and the section FSRS Parameters with Optimize); and, at the foot of the form only, a section with the destructive
 button Restore Defaults and the footer "Your FSRS parameters stay: they come from your reviews.", which the
 confirmation dialog repeats. Restore Defaults is one undo step named "Restore Defaults"
-(`VocabularyDocument.restoreDefaultLearningOptions()`). A `LimitStepper` shows its word for no number first (Auto, No limit), plus
-from it gives 5 (New cards/day) or 10 (Maximum reviews/day), plus stops at 100 and 500, minus from 1 gives that word again.
+(`VocabularyDocument.restoreDefaultLearningOptions()`). A menu keeps a value off it, as another app or a file may have set, in its numeric place. New cards/day offers Auto, None
+(0, a review-only stretch), 5, 10, 15, 20, 30, 40, 50, 75, 100; Maximum reviews/day 50 to 500 and No limit last;
+the leech threshold Off, 4 to 20; Learning steps 1 to 5. A menu sets its value in one write and one undo step, where a
+stepper takes one of each per press. Each "?" opens a popover of at most about twenty words that scrolls when the room
+above or below its row is smaller than the text.
 The deck's setting "Spread out intervals" is no longer offered; `fuzzing` stays in the model and is on.
 
 The Mac's sheet (`DeckOptionsView`) has the same rows in one form, with Advanced (Maximum interval, Learning steps) folded

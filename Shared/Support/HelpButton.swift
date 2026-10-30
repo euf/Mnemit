@@ -16,11 +16,16 @@ struct HelpButton: View {
         .accessibilityLabel("Help")
         .popover(isPresented: $isShown) {
             // A fixed width: with only a maximum the popover measures the text on one line and cuts the lines past it.
-            Text(text)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(width: 280, alignment: .leading)
-                .padding()
-                .presentationCompactAdaptation(.popover)
+            // The scroll view is for a text taller than the room above or below the row: it scrolls instead of being cut.
+            ScrollView {
+                Text(text)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(width: 280, alignment: .leading)
+                    .padding()
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(maxHeight: 320)
+            .presentationCompactAdaptation(.popover)
         }
     }
 }

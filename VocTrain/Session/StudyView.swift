@@ -144,10 +144,10 @@ struct StudyView: View {
             CardInfoSheet(document: model.document, card: card)
         }
         .sheet(item: $editing) { card in
-            EditCardSheet(document: model.document, card: card)
+            EditCardSheet(document: model.document, card: card, focusesAnswer: true)
         }
         .sheet(item: $editingLeech) { card in
-            EditCardSheet(document: model.leechMoment?.document ?? model.document, card: card, onSave: continueLeech)
+            EditCardSheet(document: model.leechMoment?.document ?? model.document, card: card, focusesAnswer: true, onSave: continueLeech)
         }
         // After the card has flown out: the question changes when the grade is given. The
         // speech waits until the new card has settled.
@@ -224,13 +224,13 @@ struct StudyView: View {
     private func continueLeech() {
         motion.arrival = .rises
         model.continueLeech()
-        if model.isResting { motion.restBegan(afterExit: false, reduceMotion: reduceMotion) }
+        if model.isResting { motion.restBegan(reduceMotion: reduceMotion) }
     }
 
     private func toggleLeechAside() {
         motion.arrival = .rises
         model.toggleLeechAside()
-        if model.isResting { motion.restBegan(afterExit: false, reduceMotion: reduceMotion) }
+        if model.isResting { motion.restBegan(reduceMotion: reduceMotion) }
     }
 
     // MARK: The cards
@@ -354,7 +354,7 @@ struct StudyView: View {
         // The label is gone in a moment.
         AccessibilityNotification.Announcement(receipt.announcement).post()
         if model.isResting {
-            motion.restBegan(afterExit: receipt.destination == .ring, reduceMotion: reduceMotion)
+            motion.restBegan(reduceMotion: reduceMotion)
         }
     }
 
@@ -419,7 +419,7 @@ struct StudyView: View {
                         .frame(width: slot.width, height: slot.height)
                         .position(x: slot.midX - origin.x, y: slot.midY - origin.y)
                         .opacity(motion.showsSlot ? 1 : 0)
-                        .animation(.easeOut(duration: 0.2), value: motion.showsSlot)
+                        .animation(.easeOut(duration: 0.15), value: motion.showsSlot)
                 }
             }
         }

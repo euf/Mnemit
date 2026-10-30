@@ -39,7 +39,7 @@ struct AddCardsSheet: View {
     @State private var listText = ""
     /// The rows of the preview the learner switched against their default, by `Row.id`.
     @State private var flipped: Set<String> = []
-    /// The cards added since the sheet opened, for the confirmation.
+    /// The words added since the sheet opened, for the confirmation: a word is a line of the list, or the one card or pair.
     @State private var addedInSession = 0
     /// Every card added since the sheet opened.
     @State private var addedIDs: [Card.ID] = []
@@ -56,7 +56,7 @@ struct AddCardsSheet: View {
     @ScaledMetric(relativeTo: .body) private var editorHeight: CGFloat = 160
 
     /// - Parameters: The rest is what the sheet starts with; the snapshot tests show it
-    ///   with the fields filled, or just after an addition of `added` cards.
+    ///   with the fields filled, or just after an addition of `added` words.
     init(
         document: VocabularyDocument, showsList: Bool = false, question: String = "", answer: String = "", hint: String = "", list: String = "",
         added: Int = 0, studyable: [Card.ID] = [], studyNow: @escaping ([Card.ID]) -> Void = { _ in }
@@ -97,6 +97,11 @@ struct AddCardsSheet: View {
         row.isSelectedByDefault != flipped.contains(row.id)
     }
 
+    /// The deck the words go to, which the sheet names under its title: with two decks the learner can't tell otherwise.
+    private var deckName: String {
+        document.packageURL?.deletingPathExtension().lastPathComponent ?? ""
+    }
+
     /// What Add would do now, the cards of the checked rows.
     private func selectedCards(of preview: WordListPreview) -> [Card] {
         let cards = preview.rows.filter(isSelected).flatMap(\.cards)
@@ -127,6 +132,7 @@ struct AddCardsSheet: View {
                 }
             }
             .navigationTitle("Add Cards")
+            .navigationSubtitle(deckName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -146,7 +152,7 @@ struct AddCardsSheet: View {
             .safeAreaBar(edge: .bottom) { bottomButtons }
             .overlay(alignment: .top) {
                 if showsConfirmation {
-                    ConfirmationBadge(count: addedInSession)
+                    ConfirmationBadge(count: addedInSession, inWords: true)
                         .transition(.opacity)
                 }
             }
@@ -156,7 +162,7 @@ struct AddCardsSheet: View {
                 try? await Task.sleep(for: .seconds(2))
                 showsConfirmation = false
             }
-            .defaultFocus($focus, .question)
+            .defaultFocus($focus, mode == .oneCard ? .question : .list)
             .onChange(of: mode) { focus = mode == .oneCard ? .question : .list }
             .confirmationDialog("Discard what you typed?", isPresented: $asksToDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) { dismiss() }
@@ -301,14 +307,15 @@ struct AddCardsSheet: View {
     /// These Now when there is nothing left to add.
     @ViewBuilder
     private var bottomButtons: some View {
-        let cards = mode == .fromList ? selectedCards(of: preview).count : 0
-        let canAdd = document.isReadyToEdit && (mode == .oneCard ? text != nil : cards > 0)
+        // The list counts words, a line each, not the cards they make.
+        let words = mode == .fromList ? preview.rows.filter(isSelected).count : 0
+        let canAdd = document.isReadyToEdit && (mode == .oneCard ? text != nil : words > 0)
         let add = Button(action: add) {
             Group {
                 if mode == .oneCard {
                     Text("Add")
                 } else {
-                    Text("Add \(cards) Cards")
+                    Text("Add \(words) Words")
                 }
             }
             .lineLimit(1)
@@ -378,26 +385,27 @@ struct AddCardsSheet: View {
         answer = ""
         hint = ""
         focus = .question
-        didAdd(count, ids: ids)
+        didAdd(words: 1, ids: ids)
     }
 
     private func addList() {
         let cards = selectedCards(of: preview)
+        let words = preview.rows.filter(isSelected).count
         let renewed = preview.renewable(in: document.deck)
         let count = document.addLessonCards(cards, renewing: renewed)
         guard count > 0 else { return }
         listText = ""
         flipped = []
-        didAdd(count, ids: renewed + cards.map(\.id))
+        didAdd(words: words, ids: renewed + cards.map(\.id))
     }
 
-    private func didAdd(_ count: Int, ids: [Card.ID]) {
+    private func didAdd(words: Int, ids: [Card.ID]) {
         addedIDs += ids
         studyable = StudyStream.addableCards(addedIDs, in: document.deck, at: document.clock.now, calendar: document.calendar)
-        addedInSession += count
+        addedInSession += words
         additions += 1
         showsConfirmation = true
-        AccessibilityNotification.Announcement(String(localized: "Added · \(addedInSession) cards so far")).post()
+        AccessibilityNotification.Announcement(String(localized: "Added · \(addedInSession) words so far")).post()
     }
 
     // MARK: Leaving

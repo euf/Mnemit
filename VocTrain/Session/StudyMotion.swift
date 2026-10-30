@@ -70,8 +70,6 @@ final class StudyMotion {
     enum Timing {
         /// A graded card takes this long to be off the screen.
         static let flight = 0.45
-        /// The ring comes down to the rest this long after the last card has set off: as it goes past the edge.
-        static let exit = 0.25
         /// A card that went back today slides under the stack for this long.
         static let sheet = 0.6
         /// What a done card's interval says beside the ring stays this long.
@@ -303,9 +301,10 @@ final class StudyMotion {
         restSnapshot = nil
     }
 
-    /// The last card of the round has left: its place stays as an empty slot, and the ring, as the card goes
-    /// past the edge, comes down into the slot. Without travel (Reduce Motion) the rest comes with a crossfade.
-    func restBegan(afterExit: Bool, reduceMotion: Bool) {
+    /// The last card of the round has set off: its place shows as a slot under it, and the ring comes down into the
+    /// slot at once, so it has landed as the card is off the screen and no empty slot waits for it. Without travel
+    /// (Reduce Motion) the rest comes with a crossfade.
+    func restBegan(reduceMotion: Bool) {
         restTask?.cancel()
         restSnapshot = nil
         burstStartedAt = nil
@@ -324,7 +323,6 @@ final class StudyMotion {
         showsSlot = true
         guard frozen == nil else { return }
         restTask = Task { [weak self] in
-            if afterExit { try? await Task.sleep(for: .seconds(Timing.exit)) }
             guard !Task.isCancelled, let self else { return }
             withAnimation(.spring(duration: Timing.travel, bounce: 0.1)) { travel = 1 }
             try? await Task.sleep(for: .seconds(Timing.travel * 0.85))
