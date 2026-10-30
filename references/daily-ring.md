@@ -12,6 +12,13 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   cards into minutes ("≈ 2 min", an estimate at the learner's pace; `product-model.md` §3). A review (one grade of one card) counts toward neither the goal, the ring nor the
   streak; reviews are for the optimizer, statistics and pace.
 
+## The study day's clock
+
+- `StudyCalendar` (VocabCore/Scheduling) cuts the study days at 04:00 in the machine's time zone. `StudyCalendar()` reads the zone
+  at each call (`StudyCalendar.systemTimeZone` makes Foundation forget the zone it cached before), so a calendar made after the
+  learner changed zone, with the app open on Today and no deck document, is in the new one. A calendar is a value with a fixed
+  zone, so the caches keyed by it (`DailyProgressCache`) start over on a change.
+
 ## The ledger: past days
 
 - A study day, once over, is a record (`LedgerDay`, `Packages/VocabCore/Sources/VocabCore/Statistics/DayLedger.swift`):

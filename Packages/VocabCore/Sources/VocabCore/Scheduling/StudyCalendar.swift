@@ -8,7 +8,14 @@ public struct StudyCalendar: Hashable, Sendable {
     public var timeZone: TimeZone
     public var rolloverHour: Int
 
-    public init(timeZone: TimeZone = .current, rolloverHour: Int = 4) {
+    /// The machine's time zone as it is now. Foundation keeps the zone it read first, so it forgets that
+    /// one before: a calendar made after the learner changed the zone follows it without a relaunch.
+    public static var systemTimeZone: TimeZone {
+        NSTimeZone.resetSystemTimeZone()
+        return TimeZone.current
+    }
+
+    public init(timeZone: TimeZone = StudyCalendar.systemTimeZone, rolloverHour: Int = 4) {
         self.timeZone = timeZone
         self.rolloverHour = rolloverHour
     }
