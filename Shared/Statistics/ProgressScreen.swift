@@ -74,7 +74,7 @@ struct ProgressScreen<Trailing: View>: View {
     }
 
     private var ringsClosed: Int {
-        records.filter { $0.closed && $0.done > 0 }.count
+        records.filter(\.closedWithWork).count
     }
 
     /// The totals as tiles, two to a row (one column at accessibility sizes) on the page, not inside a card: days studied,
@@ -295,7 +295,7 @@ struct WeeksGrid: View {
         .padding(.vertical, Spacing.tight)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
-        .accessibilityValue(Text("\(records.suffix(Self.weeks * 7).filter { $0.closed && $0.done > 0 }.count) rings closed"))
+        .accessibilityValue(Text("\(records.suffix(Self.weeks * 7).filter(\.closedWithWork).count) rings closed"))
     }
 
     /// A capsule in the streak's colour behind each run of a row, from the left of its first column to the right of
