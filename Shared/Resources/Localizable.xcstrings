@@ -378,6 +378,28 @@
         }
       }
     },
+    "%@ · suspended": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · ausgesetzt"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · приостановлена"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · σε αναστολή"
+          }
+        }
+      }
+    },
     "%@, %lld cards": {
       "localizations": {
         "de": {
@@ -3930,6 +3952,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Месяц подряд"
+          }
+        }
+      }
+    },
+    "A paused deck is left out of today's plan. Swipe it to resume.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein pausierter Stapel ist nicht im Plan von heute. Zum Fortsetzen wischen."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Колода на паузе не входит в план на сегодня. Чтобы вернуть её, смахни строку."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μια τράπουλα σε παύση δεν μπαίνει στο πρόγραμμα της ημέρας. Σύρε τη γραμμή για να συνεχίσει."
           }
         }
       }
@@ -13881,6 +13925,28 @@
         }
       }
     },
+    "Sorted by %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sortiert nach %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сортировка: %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ταξινόμηση: %@"
+          }
+        }
+      }
+    },
     "Sound": {
       "localizations": {
         "de": {
@@ -14933,6 +14999,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Το πολύ τόσες επαναλήψεις την ημέρα. Το «Χωρίς όριο» ρωτά κάθε κάρτα που είναι προς επανάληψη· με αριθμό οι υπόλοιπες περιμένουν."
+          }
+        }
+      }
+    },
+    "The next step lists the cards and marks those the deck already has.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der nächste Schritt listet die Karten auf und markiert die, die der Stapel schon hat."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На следующем шаге будут видны карточки; те, что уже есть в колоде, помечены."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το επόμενο βήμα δείχνει τις κάρτες και σημειώνει όσες έχει ήδη η τράπουλα."
           }
         }
       }
