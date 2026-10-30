@@ -11,6 +11,8 @@ struct TodayPageContent: View {
     /// Whether the Mnemit folder can't be reached (`DeckFolder.isLost`): the page says it and asks for the folder again.
     var folderLost = false
     var progress: DailyProgress?
+    /// A streak that ended, told under the card once (`EndedStreak`).
+    var endedStreak: EndedStreak?
     var now: Date
     /// `false` until the ring and the decks are read: the figures are placeholders then.
     var isLoaded: Bool
@@ -43,6 +45,7 @@ struct TodayPageContent: View {
         TodayCard(progress: isLoaded ? progress : nil, now: now, isLoaded: isLoaded, open: progress == nil ? nil : showProgress)
             .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .help("Progress")
+        if let endedStreak { StreakEndedNote(streak: endedStreak) }
         Button(action: study) {
             Text(action.title)
                 .frame(maxWidth: .infinity)
@@ -99,6 +102,9 @@ struct TodayPage: View {
     /// The month's screen, shown on the first open of a new month after a month with study, as on the iPhone.
     @State private var monthRecap: MonthRecap?
     @AppStorage("shownMonthRecap") private var shownMonthRecap = ""
+    /// A streak that ended, until Study is started; the day it ended on is kept so that it is told once.
+    @State private var endedStreak: EndedStreak?
+    @AppStorage("shownStreakEnd") private var shownStreakEnd = 0
 
     /// - Parameter toasts: The medals' toasts; a test passes one with a toast frozen in.
     init(shell: Shell, newDeck: @escaping () -> Void, toasts: MedalToasts? = nil) {
@@ -110,7 +116,7 @@ struct TodayPage: View {
     var body: some View {
         let ring = shell.ring
         TodayPageContent(
-            hasDecks: !shell.known.isEmpty, folderLost: shell.folder.isLost, progress: ring.progress, now: Date(), isLoaded: shell.isDayReady,
+            hasDecks: !shell.known.isEmpty, folderLost: shell.folder.isLost, progress: ring.progress, endedStreak: endedStreak, now: Date(), isLoaded: shell.isDayReady,
             action: shell.dayAction, canStudy: shell.canStudyDay, study: { shell.study(.day) }, showProgress: { shell.select(.progress) },
             newDeck: newDeck, chooseFolder: chooseFolder, sharedDecks: { DeckWebWindow.show() }
         )
@@ -127,6 +133,10 @@ struct TodayPage: View {
         .onChange(of: ring.progress, initial: true) {
             toasts.offer(ring.progress, earlierDays: true)
             showMonthRecapIfDue()
+            offerEndedStreak()
+        }
+        .onChange(of: shell.run != nil) { _, isStudying in
+            if isStudying { endedStreak = nil }
         }
         .sheet(item: $monthRecap) { recap in
             MonthRecapSheet(recap: recap) {
@@ -141,6 +151,15 @@ struct TodayPage: View {
     private func chooseFolder() {
         shell.folder.choose()
         shell.refresh()
+    }
+
+    /// The streak that ended since it was last told, while no stream runs and the ring is of today.
+    private func offerEndedStreak() {
+        guard endedStreak == nil, shell.run == nil, !shell.ring.isStale, let progress = shell.ring.progress,
+            let ended = EndedStreak.pending(records: progress.records, current: progress.streak.days, shown: shownStreakEnd)
+        else { return }
+        shownStreakEnd = ended.day
+        endedStreak = ended
     }
 
     /// The month's screen once, on the first open of a month after a month with study; never in a test run.

@@ -151,6 +151,41 @@ struct TodayCard: View {
     }
 }
 
+/// A streak that ended before today, told once on the first Today after the break: "12-day streak ended · Best: 30".
+struct EndedStreak: Equatable {
+    /// The days the streak had.
+    var days: Int
+    /// The study day it ended on: the first day without it.
+    var day: Int
+    /// The longest streak there has been.
+    var best: Int
+
+    /// The last streak of two days or more that a day of `records` ended, while the streak now is a day or none and the
+    /// end is newer than the one told before (`shown` is its study day, 0 if none). A streak that a missed day only put
+    /// at risk has not ended, and one rebuilt since says nothing of the old.
+    static func pending(records: [DayRecord], current: Int, shown: Int) -> EndedStreak? {
+        guard current <= 1, let end = zip(records, records.dropFirst()).filter({ $0.streak >= 2 && $0.streak > $1.streak }).last, end.1.day > shown else { return nil }
+        return EndedStreak(days: end.0.streak, day: end.1.day, best: records.map(\.streak).max() ?? end.0.streak)
+    }
+
+    /// "12-day streak ended", and " · Best: 30" when the streak was not the best.
+    var text: String {
+        [String(localized: "\(days)-day streak ended"), best > days ? String(localized: "Best: \(best)") : nil].compactMap { $0 }.joined(separator: " · ")
+    }
+}
+
+/// What `EndedStreak` says, under the Today card.
+struct StreakEndedNote: View {
+    var streak: EndedStreak
+
+    var body: some View {
+        Text(verbatim: streak.text)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
+}
+
 /// The card of a day with no deck: the empty ring and what to do, "Add the words you are learning."
 struct EmptyTodayCard: View {
     @ScaledMetric(relativeTo: .title) private var ringSize: CGFloat = 112
