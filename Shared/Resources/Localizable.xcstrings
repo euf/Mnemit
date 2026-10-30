@@ -3554,6 +3554,28 @@
         }
       }
     },
+    "1 year": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Jahr"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 год"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 έτος"
+          }
+        }
+      }
+    },
     "2 months in a row": {
       "localizations": {
         "de": {
@@ -3642,6 +3664,50 @@
         }
       }
     },
+    "30 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 Tage"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 дней"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 ημέρες"
+          }
+        }
+      }
+    },
+    "7 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 Tage"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 дней"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 ημέρες"
+          }
+        }
+      }
+    },
     "< 1 min": {
       "localizations": {
         "de": {
@@ -3710,6 +3776,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Μια κάρτα που ξεχνάς τόσες φορές είναι βδέλλα: σου παίρνει περισσότερο χρόνο απ’ όσο σου δίνει. Το «Ανενεργό» δεν σημαδεύει καμία."
+          }
+        }
+      }
+    },
+    "A full ring is a closed day; a band joins days that kept the streak.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein voller Ring ist ein geschlossener Tag; ein Band verbindet Tage, die die Serie gehalten haben."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Полное кольцо — закрытый день; полоса соединяет дни, в которые стрик сохранён."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ένας γεμάτος δακτύλιος είναι μια κλεισμένη ημέρα· μια ταινία ενώνει ημέρες που κράτησαν τη σειρά."
           }
         }
       }
@@ -7479,6 +7567,28 @@
         }
       }
     },
+    "Estimated": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschätzt"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Примерно"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εκτίμηση"
+          }
+        }
+      }
+    },
     "Every card has been studied.": {
       "localizations": {
         "de": {
@@ -8931,6 +9041,28 @@
         }
       }
     },
+    "Import from Anki or File": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus Anki oder Datei importieren"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортировать из Anki или файла"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εισαγωγή από Anki ή αρχείο"
+          }
+        }
+      }
+    },
     "Import…": {
       "localizations": {
         "de": {
@@ -9389,72 +9521,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Последние 13 недель"
-          }
-        }
-      }
-    },
-    "Last 30 days": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Letzte 30 Tage"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τελευταίες 30 ημέρες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Последние 30 дней"
-          }
-        }
-      }
-    },
-    "Last 365 days": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Letzte 365 Tage"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τελευταίες 365 ημέρες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Последние 365 дней"
-          }
-        }
-      }
-    },
-    "Last 7 days": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Letzte 7 Tage"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τελευταίες 7 ημέρες"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Последние 7 дней"
           }
         }
       }
@@ -11263,6 +11329,28 @@
         }
       }
     },
+    "Open a Mnemit Folder from iCloud Drive": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mnemit-Ordner aus iCloud Drive öffnen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть папку Mnemit из iCloud Drive"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Άνοιγμα φακέλου Mnemit από το iCloud Drive"
+          }
+        }
+      }
+    },
     "Open in Safari": {
       "localizations": {
         "de": {
@@ -12011,6 +12099,28 @@
         }
       }
     },
+    "Ready %lld (New cards/day: %@), the day's time fits %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereit %lld (Neue Karten/Tag: %@), die Zeit des Tages reicht für %lld"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступно %lld (новых в день: %@), время дня вмещает %lld"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Έτοιμες %lld (Νέες κάρτες/ημέρα: %@), ο χρόνος της ημέρας φτάνει για %lld"
+          }
+        }
+      }
+    },
     "Recall": {
       "localizations": {
         "de": {
@@ -12099,6 +12209,28 @@
         }
       }
     },
+    "Recalled means Hard, Good or Easy.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Erinnert“ heißt Schwer, Gut oder Leicht."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Вспомнил» значит «Трудно», «Хорошо» или «Легко»."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Θυμήθηκες» σημαίνει Δύσκολο, Καλά ή Εύκολο."
+          }
+        }
+      }
+    },
     "Relearning": {
       "localizations": {
         "de": {
@@ -12183,6 +12315,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вспомнил"
+          }
+        }
+      }
+    },
+    "Remembered Now": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt gewusst"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Помню сейчас"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Θυμάσαι τώρα"
           }
         }
       }
@@ -12689,28 +12843,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оценка"
-          }
-        }
-      }
-    },
-    "Review cards you recalled: Hard, Good or Easy.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wiederholungskarten, die du gewusst hast: Schwer, Gut oder Leicht."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες επανάληψης που θυμήθηκες: Δύσκολο, Καλά ή Εύκολο."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточки в повторении, которые ты вспомнил: «Трудно», «Хорошо» или «Легко»."
           }
         }
       }
@@ -16543,24 +16675,24 @@
         }
       }
     },
-    "a day · started at %@": {
+    "a day (started at %@ min)": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "pro Tag · Start bei %@"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "την ημέρα · ξεκίνησε στα %@"
+            "value": "pro Tag (Start bei %@ Min.)"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "в день · начало: %@"
+            "value": "в день (начало: %@ мин)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "την ημέρα (ξεκίνησε στα %@ λεπτά)"
           }
         }
       }
