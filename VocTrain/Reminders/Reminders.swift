@@ -19,9 +19,14 @@ enum ReminderPlan {
     /// What a reminder says, in the words of Today: the streak it keeps, "Keep your 12-day streak", and the price of the streak
     /// step, "≈ 2 min"; without a streak, "Start your streak". `nil` when no deck has cards, and then no reminder is
     /// due either. A count of the cards due, which after a break can be hundreds, is never in it.
-    static func content(_ decks: [(name: String, total: Int)], streak: Int) -> (title: String, body: String)? {
-        guard decks.contains(where: { $0.total > 0 }) else { return nil }
-        let time = Format.timeLeft(minutes: 2)
+    ///
+    /// The step is the first two minutes of the day's plan, or all of it when it is shorter (`DailyGoal.streakStepCards`) at
+    /// `secondsPerCard`; two minutes without a price.
+    static func content(_ decks: [(name: String, total: Int)], streak: Int, secondsPerCard: Double? = nil) -> (title: String, body: String)? {
+        let cards = decks.reduce(0) { $0 + $1.total }
+        guard cards > 0 else { return nil }
+        let step = secondsPerCard.flatMap { DailyGoal.minutesLeft(cards: DailyGoal.streakStepCards(in: cards, secondsPerCard: $0), secondsPerCard: $0) }
+        let time = Format.timeLeft(minutes: step ?? 2)
         guard streak > 0 else { return (String(localized: "Start your streak"), time) }
         return (String(localized: "Keep your \(streak)-day streak"), time)
     }
@@ -43,15 +48,27 @@ enum ReminderPlan {
     /// it is still there for tomorrow and, if today is kept, the day after; whatever the learner does on those days, the
     /// app plans again when it next runs.
     static func streakReminders(
-        at fires: [Date], days: [[(name: String, total: Int)]], now: Date, streak: Int, isKeptToday: Bool, studyCalendar: StudyCalendar = StudyCalendar()
+        at fires: [Date], days: [[(name: String, total: Int)]], now: Date, streak: Int, isKeptToday: Bool, secondsPerCard: Double? = nil,
+        studyCalendar: StudyCalendar = StudyCalendar()
     ) -> [(index: Int, fire: Date, title: String, body: String)] {
         guard streak > 0 else { return [] }
         return fires.enumerated().compactMap { index, fire in
             let daysAhead = studyCalendar.dayNumber(for: fire) - studyCalendar.dayNumber(for: now)
-            let isAtStake = daysAhead == 0 ? !isKeptToday : daysAhead <= (isKeptToday ? 2 : 1)
-            guard isAtStake, days.indices.contains(index), let text = content(days[index], streak: streak) else { return nil }
+            let isAtStake = daysAhead == 0 ? !isKeptToday : holds(daysAhead: daysAhead, isKeptToday: isKeptToday)
+            guard isAtStake, days.indices.contains(index), let text = content(days[index], streak: streak, secondsPerCard: secondsPerCard) else { return nil }
             return (index, fire, text.title, text.body)
         }
+    }
+
+    /// Whether the streak still stands `daysAhead` study days from now if the learner studies on none of them: it holds through
+    /// one missed day, so tomorrow when today is not kept, and the day after when it is.
+    static func holds(daysAhead: Int, isKeptToday: Bool) -> Bool {
+        daysAhead <= (isKeptToday ? 2 : 1)
+    }
+
+    /// The streak a daily reminder at `fire` names: the streak now while it still stands then, none after.
+    static func streakNamed(at fire: Date, now: Date, streak: Int, isKeptToday: Bool, studyCalendar: StudyCalendar = StudyCalendar()) -> Int {
+        holds(daysAhead: studyCalendar.dayNumber(for: fire) - studyCalendar.dayNumber(for: now), isKeptToday: isKeptToday) ? streak : 0
     }
 
     /// The number on the icon: 1 while today's ring is open, 0 once it is closed. Without the ring's figures, 1 while cards are due.
@@ -190,8 +207,8 @@ final class Reminders {
         for (index, fire) in fires.enumerated() {
             let day = days[index + 1]
             // A streak holds through one missed day; a reminder further ahead than that names none.
-            let streak = index < 2 ? progress?.streak.days ?? 0 : 0
-            guard let text = ReminderPlan.content(day, streak: streak) else { continue }
+            let streak = ReminderPlan.streakNamed(at: fire, now: now, streak: progress?.streak.days ?? 0, isKeptToday: progress?.streakKeptToday ?? false)
+            guard let text = ReminderPlan.content(day, streak: streak, secondsPerCard: progress?.secondsPerCardLeft) else { continue }
             first = first ?? fire
             let content = UNMutableNotificationContent()
             content.title = text.title
@@ -204,7 +221,8 @@ final class Reminders {
 
         let streakDays = Array(days.dropFirst(1 + fires.count))
         let evenings = ReminderPlan.streakReminders(
-            at: streakFires, days: streakDays, now: now, streak: progress?.streak.days ?? 0, isKeptToday: progress?.streakKeptToday ?? false)
+            at: streakFires, days: streakDays, now: now, streak: progress?.streak.days ?? 0, isKeptToday: progress?.streakKeptToday ?? false,
+            secondsPerCard: progress?.secondsPerCardLeft)
         for evening in evenings {
             let content = UNMutableNotificationContent()
             content.title = evening.title

@@ -447,10 +447,13 @@ edited options; Save applies everything as one change.
   if named `Mnemit`). Mac: `DeckFolder` (a scoped bookmark, entitlement `bookmarks.app-scope`).
 - Reminders: `Reminders`, local notifications 7 days ahead on the days whose decks have cards
   (`StudySession.counts(for:at:)`), in the words of Today (`ReminderPlan.content`): the title "Keep your 12-day streak"
-  and the body "≈ 2 min" (the time to keep the streak, not the length of the day); "Start your streak" and "≈ 2 min"
-  without a streak; never a count of the cards due. The number on the icon is "1" while today's ring is open and 0 once it
+  and the body "≈ 2 min" (the time to keep the streak, not the length of the day: the first two minutes of that day's plan at the
+  price of a card, "< 1 min" for a plan shorter than one, `DailyGoal.streakStepCards`); "Start your streak" and the same body
+  without a streak; never a count of the cards due. A daily reminder names the streak only while it still stands on its day
+  (`ReminderPlan.streakNamed`, in study days like the evening one). The number on the icon is "1" while today's ring is open and 0 once it
   is closed (`ReminderPlan.badge`; without the ring's figures, 1 while cards are due). Recomputed on going to the background,
-  after closing a deck and on a time change.
+  after closing a deck and on a time change. The notifications are local and fixed at the app's last run: a step the learner
+  does on the Mac afterwards reaches the iPhone's reminders only when the app next runs there.
 - Streak reminder: a second notification at 21:00 (`ReminderPlan.streakMinutes`), ids `streak-reminder-0…6`, in
   the first reminder's words (title "Keep your 12-day streak", body "≈ 2 min"), scheduled in the same
   pass for the next seven 21:00s. A streak must be at stake: it is 1 or more and, for today, the streak step is

@@ -41,6 +41,30 @@ struct ReminderPlanTests {
         #expect(ReminderPlan.content([("B1", 23)], streak: 0)?.title == "Start your streak")
     }
 
+    @Test func theReminderPricesTheStreakStepByThePlanOfItsDay() {
+        // Five cards at 10 s are the whole day: less than a minute, not the two minutes of a long plan.
+        #expect(ReminderPlan.content([("B1", 5)], streak: 12, secondsPerCard: 10)?.body == "< 1 min")
+        #expect(ReminderPlan.content([("B1", 300)], streak: 12, secondsPerCard: 10)?.body == "≈ 2 min")
+        // Three cards at 50 s reach the two minutes, as the app's step does: 150 s.
+        #expect(ReminderPlan.content([("B1", 100)], streak: 12, secondsPerCard: 50)?.body == "≈ 3 min")
+        // Without a price the step is the constant two minutes.
+        #expect(ReminderPlan.content([("B1", 5)], streak: 12)?.body == "≈ 2 min")
+    }
+
+    @Test func aDailyReminderNamesTheStreakOnlyWhileItStillStandsThatDay() {
+        // 09:00 has passed, the first daily reminder is tomorrow and the one after is two study days ahead.
+        let now = date(21, 12)
+        func named(_ day: Int, kept: Bool) -> Int {
+            ReminderPlan.streakNamed(at: date(day, 9), now: now, streak: 12, isKeptToday: kept, studyCalendar: studyCalendar)
+        }
+        // Today's step is open and the learner stays away: tomorrow still has the streak, the day after has none.
+        #expect(named(22, kept: false) == 12)
+        #expect(named(23, kept: false) == 0)
+        // Today's step is done: one missed day more is held.
+        #expect(named(23, kept: true) == 12)
+        #expect(named(24, kept: true) == 0)
+    }
+
     @Test func noReminderWhenNothingIsDue() {
         #expect(ReminderPlan.content([("B1", 0), ("A1–A2", 0)], streak: 5) == nil)
         #expect(ReminderPlan.content([], streak: 5) == nil)
