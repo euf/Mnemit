@@ -236,11 +236,12 @@ struct StudyView: View {
     // MARK: The cards
 
     /// In portrait the buttons sit below the card. In landscape the iPhone is too low for the
-    /// two rows: Forgot and the three others share one row. The gaps are from `Spacing`: 12
+    /// two rows: Forgot and the three others share one row. The gaps are from `Spacing`: 24
     /// between the card and the buttons (8 in landscape), with the room for the stack's edges
-    /// in it, 12 under the buttons, above the safe area, and the 16 of the side margins.
+    /// in it, which a medal's toast shares (`MedalToastPlace.gap`), 12 under the buttons, above
+    /// the safe area, and the 16 of the side margins.
     private func cardArea(_ card: Card) -> some View {
-        VStack(spacing: isCompact ? Spacing.tight : Spacing.gap) {
+        VStack(spacing: isCompact ? Spacing.tight : Spacing.section) {
             cardView(card)
                 .padding(.bottom, StackPose.reserve)
                 .medalToast(toasts, at: .gap)
@@ -461,15 +462,16 @@ struct StudyView: View {
         } label: {
             Text("Show Answer")
                 .font(.body.weight(.semibold))
+                .dynamicTypeSize(...GradeChoice.largestText)
                 .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, minHeight: showAnswerHeight)
+                .frame(maxWidth: .infinity, minHeight: min(showAnswerHeight, GradeChoice.tallest))
                 .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
-    /// Forgot's height, `GradeChoice.scaledHeight`.
+    /// Forgot's height, `GradeChoice.scaledHeight`, up to `GradeChoice.tallest`.
     @ScaledMetric(relativeTo: .body) private var showAnswerHeight: CGFloat = 50
 
     private static let forgotWidth: CGFloat = 170
@@ -529,10 +531,16 @@ private struct StudyHeader: View {
                             .opacity(motion.interval == nil ? 1 : 0)
                     }
                     if let interval = motion.interval {
-                        Text(verbatim: interval)
-                            .transition(.opacity)
-                            // VoiceOver has it from the announcement of the grade.
-                            .accessibilityHidden(true)
+                        // The repeat glyph marks it as the card's, not the session's: "in 8 days" beside the ring reads as time left.
+                        Label {
+                            Text(verbatim: interval)
+                        } icon: {
+                            Image(systemName: "repeat")
+                        }
+                        .labelStyle(.titleAndIcon)
+                        .transition(.opacity)
+                        // VoiceOver has it from the announcement of the grade.
+                        .accessibilityHidden(true)
                     }
                 }
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: motion.interval)
@@ -540,6 +548,9 @@ private struct StudyHeader: View {
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+                // Gone with the ring, which has left the bar for the rest: its figures say nothing without it.
+                .opacity(motion.travels ? 0 : 1)
+                .animation(.easeOut(duration: 0.15), value: motion.travels)
             }
         }
         .accessibilityElement(children: .combine)

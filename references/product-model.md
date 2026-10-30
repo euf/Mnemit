@@ -118,12 +118,12 @@ Good to Easy, a vivid jade.
 
 **A word that keeps slipping** (a leech: as many lapses as the deck's threshold, 8 by default as in Anki, and again at
 every half threshold after it, 12, 16 …) is never taken away silently. On the Forgot that makes it one, its answer stays on
-screen under "Keeps slipping", with Edit (a hint, an example, a clearer question), Set Aside and Continue: the answer
+screen under "Keeps slipping", with Edit (a hint, an example, a clearer question), Suspend Card and Continue: the answer
 right after an error is what helps most (Pashler 2005: +494 % at a week; Rowland 2014: g 0.73 with feedback, 0.39
 without), and rewriting the card is Anki's and SuperMemo's first advice (`leech-research.md`). The deck's leech action decides what Continue
 leaves: **Keep** (the default) keeps the card in rotation, where FSRS goes on scheduling it (on the logs of 2,000 Anki
 users, cards past 8 lapses are 1 % of cards and 7.6 % of review time, and 72 % of their later answers are recalled, against
-85 % overall, `Tools/ring-sim/leeches.md`); **Suspend**, Anki's classic action, sets it aside, and the moment offers Keep It instead of Set Aside. A
+85 % overall, `Tools/ring-sim/leeches.md`); **Suspend**, Anki's classic action, suspends it, and the moment offers Keep Card instead of Suspend Card. A
 deck's Cards have a Leeches filter; the Mac's table adds the columns Lapses, Stability, Difficulty and Recall.
 
 **The past is written down.** When a study day is over, its record is kept: the cards done against its goal, whether it
@@ -248,7 +248,7 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
 | Past days | worked out from the logs of the active decks at every look: pausing or deleting a deck, or deleting a card, rewrote them | written down when the day ends and read from the records; a record only rises |
 | A deleted card | gone with its answers; today's ring could drop | leaves the plan and the stack; its answers stay in the log; the ring keeps what it counted |
 | A deck changed while open | merged; the table tool wrote past the apps | merged in place; the tool writes like an app; the stream drops a card that is gone |
-| A word that keeps slipping | suspended at 8 lapses, marked Difficult | a leech stays on screen with Edit, Set Aside, Continue; the deck chooses Keep (default) or Suspend; warned again every half threshold; a Leeches filter; the Mac shows Lapses, Stability, Difficulty, Recall |
+| A word that keeps slipping | suspended at 8 lapses, marked Difficult | a leech stays on screen with Edit, Suspend Card, Continue; the deck chooses Keep (default) or Suspend; warned again every half threshold; a Leeches filter; the Mac shows Lapses, Stability, Difficulty, Recall |
 | Grade colours | three greens by lightness, Hard the lightest | chroma rises from Hard to Easy: Hard a dull sage, Easy a vivid jade |
 | The introduction | the four swipes, the day in four lines | first a new word's first showing (Don't know, Know, it comes back), then the two swipes |
 | Words on screen | sentences that explain | short and plain everywhere; no text that explains the interface |

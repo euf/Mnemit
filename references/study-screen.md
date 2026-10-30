@@ -37,7 +37,9 @@ area and the card's type: `references/design-spec.md` §4.
   Hard and Easy Buttons is on (`@AppStorage("ShowsFourAnswerButtons")`, `GradeChoice.showsFourButtonsKey`, off by
   default, Settings) and the card is not new. A first showing stays two with the setting on.
 - With the four: Forgot full width, under it Hard, Good and Easy in a `WeightedRow(weights: [1, 1.25, 1])`, Good
-  wider. At the accessibility text sizes the buttons stack: Forgot over Good, or Forgot over Hard, Good and Easy, one under the other.
+  wider. At the accessibility text sizes the buttons stack: Forgot over Good, or Forgot over Hard, Good and Easy, one under the other,
+  at most `GradeChoice.tallest` (64 pt) high and with labels that follow the text size up to `GradeChoice.largestText` (AX3), so the
+  card keeps its room. Forgot has the cross and Good the tick in every set; Hard and Easy have none.
 - iPhone landscape (`isCompact`, 44 pt): `GradeChoice(part: .forgot)` and `part: .recalled` stand in one row, Forgot
   beside Good (or beside Hard, Good and Easy).
 - Swipes give all four grades whatever the buttons are: ← Forgot, → Good, ↑ Easy, ↓ Hard. A swipe toward a grade with
@@ -49,12 +51,13 @@ area and the card's type: `references/design-spec.md` §4.
 - After the Forgot that brings a card to a leech moment (`scheduling.md`, "Leech") the stream stops before the next
   card (`SessionDriver.leechMoment`, `StudyModel.leechMoment`). `LeechMomentView` takes the card area's place
   (`StudyView.leechLayer`): the title "Keeps slipping", the card's question and answer revealed on `Color.cardSurface`
-  (radius 22, 12 % hairline, 200 to 340 pt tall, full width), then **Continue** (`.borderedProminent`, large) over
-  **Edit** and **Set Aside** (`.bordered`). When the review already suspended the card (the deck's leech action
-  Suspend), the last button is **Keep It**, which resumes it. The Mac has the same view with the keys Return, E and S
-  (`screens.md`).
+  (radius 22, 12 % hairline, 200 to 340 pt tall, full width) under a sentence that counts the lapses ("Forgotten 8 times.
+  Suspend it, or keep asking?"), then **Continue** (`.borderedProminent`, large) over **Edit** and **Suspend Card**
+  (`SecondaryActionStyle`, side by side, one under the other when a long title leaves no width). When the review already
+  suspended the card (the deck's leech action Suspend), the last button is **Keep Card**, which resumes it. The Mac has the
+  same view with the keys Return, E and S (`screens.md`).
 - Continue goes on to the next card, or to the rest when the leech was the round's last card. Edit opens the edit
-  sheet and goes on once it is saved. Set Aside and Keep It are one undoable step each, and go on.
+  sheet and goes on once it is saved. Suspend Card and Keep Card are one undoable step each, and go on.
 - The bar stays; in its menu Undo works and the card's Edit, Info and Suspend are disabled while the moment shows.
   Undo takes back the grade, the moment and any suspension in one step. VoiceOver reads the title, the question, the
   answer, then the three actions, and is told the screen changed.
@@ -92,7 +95,8 @@ area and the card's type: `references/design-spec.md` §4.
   bump or burst. No haptic accompanies the ring.
 - The interval beside the ring: for a done card the text beside the ring shows
   `GradeReceipt.flightLabel` for 1.5 s, cross-faded, then its figures again: "tomorrow" for 1 day,
-  `Format.interval` for the rest ("in 8 days", "in 3 months"). VoiceOver is told the same, since the text
+  `Format.interval` for the rest ("in 8 days", "in 3 months"), after the repeat glyph (`repeat`) that marks it as the card's and
+  not the session's time. The text goes with the ring when the ring leaves the bar for the rest. VoiceOver is told the same, since the text
   is gone in a moment: "Good, in 8 days", posted as an `AccessibilityNotification.Announcement`
   (`GradeReceipt.announcement`).
 - Velocity: a swipe's flight starts with the finger's release velocity (`DragGesture.Value.velocity`).
