@@ -7,9 +7,10 @@ import VocabCore
 /// card never changes size at the reveal.
 ///
 /// Every part has one size, whatever the card says: the Greek word is the largest, the gloss in
-/// the learner's language the second, the example the smallest. `minimumScaleFactor(0.6)` is
-/// only a valve for the largest Dynamic Type sizes; nothing in the face is laid out again while
-/// the card is swiped.
+/// the learner's language the second, the example the smallest. `smallestScale` is only a valve
+/// for the largest Dynamic Type sizes, where a half of the card holds less than its text asks;
+/// nothing in the face is laid out again while the card is swiped, and it is one bitmap while it
+/// moves (`FlightCard`), so it cannot scroll.
 ///
 /// A side with an image shows it above its text, scaled to fit and at most `maxImageShare` of the
 /// card's height; one with a sound has the speaker button for it. `media` is the deck's, which
@@ -27,8 +28,36 @@ struct CardFace: View {
     /// The card's height, to cap the image by.
     @State private var height: CGFloat = 0
 
+    #if os(iOS)
+    @Environment(\.dynamicTypeSize) private var textSize
+    /// The room the question leaves at the card's top for the corner's badge, which grows with its text: the question
+    /// never lies under it.
+    @ScaledMetric(relativeTo: .caption2) private var badgeClearance: CGFloat = 16
+    #endif
+
+    /// The accessibility sizes, where the card's room is dear.
+    private var isLargeText: Bool {
+        #if os(iOS)
+        textSize.isAccessibilitySize
+        #else
+        false
+        #endif
+    }
+
+    /// The room above the question for the badge in the corner; the Mac's text has a fixed size and room enough.
+    private var clearanceForBadge: CGFloat {
+        #if os(iOS)
+        memory == nil ? 0 : badgeClearance
+        #else
+        0
+        #endif
+    }
+
     /// How much of the card's height an image takes at most.
     static let maxImageShare: CGFloat = 0.4
+
+    /// How far a text shrinks to fit its half of the card before it is cut with "…".
+    static let smallestScale: CGFloat = 0.5
 
     init(card: Card, isRevealed: Bool, media: DeckMedia? = nil, memory: CardMemory? = nil) {
         self.init(question: card.question, hint: card.hint, answer: card.answer, isRevealed: isRevealed, cardMedia: card.media, media: media)
@@ -55,6 +84,7 @@ struct CardFace: View {
         VStack(spacing: Metrics.spacing) {
             questionBlock
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.top, clearanceForBadge)
             Group {
                 Divider()
                 answerBlock
@@ -68,9 +98,9 @@ struct CardFace: View {
             .accessibilityHidden(!isRevealed)
             .animation(.easeOut(duration: 0.15), value: isRevealed)
             #if os(iOS)
-            // Lifts the divider a little above the middle: the buttons below weigh more.
+            // Lifts the divider a little above the middle: the buttons below weigh more. Large text needs the room.
             Color.clear
-                .frame(height: Spacing.section)
+                .frame(height: isLargeText ? 0 : Spacing.section)
             #endif
         }
         .multilineTextAlignment(.center)
@@ -82,6 +112,8 @@ struct CardFace: View {
             }
         }
         .onGeometryChange(for: CGFloat.self, of: { $0.size.height }, action: { height = $0 })
+        // As the buttons below: past AX3 a two-word headword with its ending would not fit the card's width.
+        .dynamicTypeSize(...GradeChoice.largestText)
     }
 
     /// The image of a side, which waits for the card's height: it has no room before.
@@ -102,7 +134,7 @@ struct CardFace: View {
                 Text(hint)
                     .font(Metrics.hint)
                     .foregroundStyle(Color.cardSecondary)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(CardFace.smallestScale)
                     .selectable()
             }
         }
@@ -119,7 +151,7 @@ struct CardFace: View {
                 Text(example)
                     .font(Metrics.example)
                     .foregroundStyle(Color.cardSecondary)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(CardFace.smallestScale)
                     .selectable()
             }
         }
@@ -182,12 +214,27 @@ struct SpokenWord: View {
 
     @ViewBuilder
     private var word: some View {
-        if !text.isEmpty {
-            Text(text.keepingEndingsTogether)
-                .font(font)
-                .minimumScaleFactor(0.6)
-                .selectable()
+        if let (first, second) = text.glossHalves {
+            // "отвечать · to answer": on one line when both fit, else each half is a unit of its own and the dot is gone,
+            // so no "·" dangles at the end of a line.
+            ViewThatFits(in: .horizontal) {
+                line(text).lineLimit(1)
+                VStack(spacing: 0) {
+                    line(first)
+                    line(second)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        } else if !text.isEmpty {
+            line(text)
         }
+    }
+
+    private func line(_ text: String) -> some View {
+        Text(text.keepingEndingsTogether)
+            .font(font)
+            .minimumScaleFactor(CardFace.smallestScale)
+            .selectable()
     }
 }
 
@@ -204,6 +251,17 @@ extension String {
                     && characters[index + 1] == "-" && characters[index + 2].isLetter
                 return isTied ? "\u{00A0}" : characters[index]
             })
+    }
+}
+
+extension String {
+    /// A line of "the learner's language · English" as its two halves; `nil` for any other text. The deck's answers
+    /// are written so, and the halves wrap on their own.
+    var glossHalves: (String, String)? {
+        guard let separator = range(of: " · ") else { return nil }
+        let first = self[..<separator.lowerBound].trimmingCharacters(in: .whitespaces)
+        let second = self[separator.upperBound...].trimmingCharacters(in: .whitespaces)
+        return first.isEmpty || second.isEmpty ? nil : (first, second)
     }
 }
 
