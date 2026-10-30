@@ -175,15 +175,21 @@ struct HomeSnapshotTests {
         try data.write(to: Self.directory.appending(path: file))
     }
 
+    /// Today's frames wait for the bar's glass to settle: a frame taken at 0.8 s shows the buttons at the top right as blank
+    /// capsules, the same view at 3 s shows the plus and the ellipsis.
+    func shootToday(_ name: String, _ view: some View, height: CGFloat = 812, types: [DynamicTypeSize?] = [nil]) async throws {
+        try await shoot(name, view, height: height, types: types, settle: .seconds(2.5))
+    }
+
     // MARK: Tests
 
     /// After the streak step: the cards left with their time, the cards done and left, the streak kept, the words in memory.
     @Test func todayWithCardsDue() async throws {
-        try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)))
+        try await shootToday("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)))
     }
 
     @Test func todayWithCardsDueAtLargeTypeSizes() async throws {
-        try await shoot("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)), types: [.xxxLarge, .accessibility3, .accessibility5])
+        try await shootToday("today-due", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12)), types: [.xxxLarge, .accessibility3, .accessibility5])
     }
 
     /// The states of the day at the largest text size (the same at the standard one are the tests above): the card's ring stands
@@ -201,15 +207,15 @@ struct HomeSnapshotTests {
             ),
         ]
         for state in states {
-            try await shoot("today-ax5-\(state.name)", today(counts: state.counts, progress: state.progress), height: 1400, types: [.accessibility5])
+            try await shootToday("today-ax5-\(state.name)", today(counts: state.counts, progress: state.progress), height: 1400, types: [.accessibility5])
         }
-        try await shoot("today-ax5-empty", today(decks: [], counts: [:], progress: nil), height: 1000, types: [.accessibility5])
+        try await shootToday("today-ax5-empty", today(decks: [], counts: [:], progress: nil), height: 1000, types: [.accessibility5])
     }
 
     /// A medal's toast on Today stands over the large title, under the bar's buttons: over neither the ring nor a deck row.
     @Test func todayWithAMedalToast() async throws {
         let toasts = MedalToasts(store: CelebratedMedals(defaults: nil), frozen: Achievement(kind: .comeback, day: 0))
-        try await shoot("today-toast", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12), toasts: toasts))
+        try await shootToday("today-toast", today(counts: leftCounts(done: 10), progress: Self.roundsProgress(done: 10, streak: 12), toasts: toasts))
     }
 
     /// A deck paused: it moves to a "Paused" section at the bottom, in the secondary colour, with no counts, and the
@@ -225,44 +231,44 @@ struct HomeSnapshotTests {
 
     /// Before the first round: the time it takes to keep the streak, which is not kept yet.
     @Test func todayBeforeTheFirstRound() async throws {
-        try await shoot("today-first-round", today(counts: leftCounts(done: 3), progress: Self.roundsProgress(done: 3, streak: 12)))
+        try await shootToday("today-first-round", today(counts: leftCounts(done: 3), progress: Self.roundsProgress(done: 3, streak: 12)))
     }
 
     /// The last round done with cards still left: the ring is closed and the rest waits in Catch Up.
     @Test func todayWithTheRingClosed() async throws {
-        try await shoot("today-closed", today(counts: leftCounts(done: 28), progress: Self.roundsProgress(done: 31, streak: 13, cardsLeft: 2)))
+        try await shootToday("today-closed", today(counts: leftCounts(done: 28), progress: Self.roundsProgress(done: 31, streak: 13, cardsLeft: 2)))
     }
 
     /// The day after a missed one: the streak survives only if the ring closes, and its flame says so.
     @Test func todayWithTheStreakAtRisk() async throws {
-        try await shoot("today-at-risk", today(counts: leftCounts(done: 3), progress: Self.roundsProgress(done: 3, streak: 12, repairCards: 15)))
+        try await shootToday("today-at-risk", today(counts: leftCounts(done: 3), progress: Self.roundsProgress(done: 3, streak: 12, repairCards: 15)))
     }
 
     /// The very first day: no streak, no words yet.
     @Test func todayOnTheFirstDay() async throws {
         let memory = MemoryEstimate(words: 0, wordsAtDayStart: 0)
-        try await shoot("today-first-day", today(counts: leftCounts(done: 0), progress: Self.roundsProgress(done: 0, streak: 0, memory: memory, learned: WordsLearned(words: 0, wordsAtDayStart: 0))))
+        try await shootToday("today-first-day", today(counts: leftCounts(done: 0), progress: Self.roundsProgress(done: 0, streak: 0, memory: memory, learned: WordsLearned(words: 0, wordsAtDayStart: 0))))
     }
 
     /// Before the rounds are known the old lines stand: the cards left and the time they take.
     @Test func todayWithoutRounds() async throws {
-        try await shoot("today-no-rounds", today(counts: dueCounts, progress: Self.progress(done: 14, goal: 20, streak: 12, cardsLeft: 84)))
+        try await shootToday("today-no-rounds", today(counts: dueCounts, progress: Self.progress(done: 14, goal: 20, streak: 12, cardsLeft: 87)))
     }
 
     @Test func todayWithNothingDueAfterReviews() async throws {
-        try await shoot("today-done", today(counts: doneCounts, progress: Self.roundsProgress(done: 31, streak: 13)))
+        try await shootToday("today-done", today(counts: doneCounts, progress: Self.roundsProgress(done: 31, streak: 13)))
     }
 
     @Test func todayWithNothingDueAndNoReviews() async throws {
-        try await shoot("today-nothing", today(counts: doneCounts, progress: Self.progress(done: 0, goal: 1, streak: 0, cardsLeft: 0)))
+        try await shootToday("today-nothing", today(counts: doneCounts, progress: Self.progress(done: 0, goal: 1, streak: 0, cardsLeft: 0)))
     }
 
     @Test func todayBeforeTheDecksAreRead() async throws {
-        try await shoot("today-loading", today(counts: [:], progress: nil))
+        try await shootToday("today-loading", today(counts: [:], progress: nil))
     }
 
     @Test func todayAtFirstLaunch() async throws {
-        try await shoot("today-empty", today(decks: [], counts: [:], progress: nil))
+        try await shootToday("today-empty", today(decks: [], counts: [:], progress: nil))
     }
 
     @Test func todayWithSearchResults() async throws {
@@ -271,7 +277,7 @@ struct HomeSnapshotTests {
             AllCardsSearch.Hit(deck: Self.greekB1, card: UUID(), question: "house", answer: "το σπίτι"),
             AllCardsSearch.Hit(deck: Self.greekA1, card: UUID(), question: "η πολυκατοικία", answer: "многоквартирный дом · block of flats\nΜένουμε σε μια πολυκατοικία."),
         ]
-        try await shoot("today-search", today(counts: dueCounts, progress: nil, query: "house", hits: hits))
+        try await shootToday("today-search", today(counts: dueCounts, progress: nil, query: "house", hits: hits))
     }
 
     func deckScreen(document: VocabularyDocument?, counts: StudyCounts? = nil, canEdit: Bool = true) -> some View {
