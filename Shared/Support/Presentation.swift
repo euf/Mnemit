@@ -481,7 +481,7 @@ struct MissedDayMark: View {
 extension Text {
     /// The prompt of a text field in the secondary colour: the system's own is `#656569` on a sheet's `#2C2C2E`, 2.4:1 in dark.
     static func prompt(_ key: LocalizedStringKey) -> Text {
-        Text(key).foregroundStyle(.secondary)
+        Text(key).foregroundColor(.secondary)
     }
 }
 
