@@ -22,7 +22,7 @@ struct HowTodayWorksTests {
     /// step ends at card 12 and the day at 34.
     static var progress: DailyProgress {
         DailyProgress(
-            ring: DailyRing(done: 18, goal: 34), streak: Streak(days: 12, repairCards: nil), cardsLeft: 22, newCardsLeft: 5,
+            ring: DailyRing(done: 18, goal: 34), streak: Streak(days: 12, repairCards: nil), cardsLeft: 18, newCardsLeft: 5,
             pace: Pace(newCard: 31.4, otherCard: 9.2), time: 480,
             roundPlan: DayRounds(otherCards: 28, newCards: 12, pace: Pace(), seconds: 480), streakKeptToday: true, newCardAllowances: [6])
     }
@@ -35,7 +35,7 @@ struct HowTodayWorksTests {
         ]
         return DayBreakdown(
             plan: DayBreakdown.Plan(reviewsDue: 28, learning: 2, newAdmitted: 6),
-            decks: [DayBreakdown.DeckNewCards(allowance: 6, ceiling: 27, admitted: 6)], days: days,
+            decks: [DayBreakdown.DeckNewCards(allowance: 6, ceiling: 20, admitted: 6)], days: days,
             newCards: DayBreakdown.PaceBasis(durations: 214, gaps: 120, reviews: 500, doneCards: 200),
             otherCards: DayBreakdown.PaceBasis(durations: 5, gaps: 12, reviews: 40, doneCards: 40))
     }
@@ -74,9 +74,11 @@ struct HowTodayWorksTests {
         // The plan has no row for a bound on the new cards: the day's time is the only one, told in its own section.
         #expect(plan.keys.filter { $0.hasPrefix("New cards: limited") }.isEmpty)
         #expect(plan["Greek B1"] == "6")
-        #expect(content.sections[1].rows.contains(.value(label: "Greek B1", value: "6", note: "Ready 27 (New cards/day: 20)")))
+        #expect(content.sections[1].rows.contains(.value(label: "Greek B1", value: "6", note: "Ready 20 (New cards/day: 20), the day's time fits 6")))
         #expect(plan["Cards done"] == "18")
-        #expect(plan["Cards left"] == "22")
+        #expect(plan["Cards left"] == "18")
+        // The parts of the plan are the cards done and the cards left: 28 + 2 + 6 = 18 + 18.
+        #expect(Int(plan["Due today, overdue included"]!)! + Int(plan["Cards in learning"]!)! + Int(plan["New cards admitted"]!)! == Int(plan["Cards done"]!)! + Int(plan["Cards left"]!)!)
         #expect(plan["Catch-up beyond the plan"] == nil)
 
         let time = content.sections[2]

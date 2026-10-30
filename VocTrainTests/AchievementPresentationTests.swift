@@ -255,7 +255,7 @@ struct AchievementPresentationTests {
         }
         return DailyProgress(
             ring: DailyRing(done: 14, goal: 24), streak: Streak(days: streak, repairCards: nil), time: 480, streakKeptToday: true,
-            learned: WordsLearned(words: 412, wordsAtDayStart: 400), ladder: [180, 36, 64, 85, 42, 9], records: records,
+            learned: WordsLearned(words: 212, wordsAtDayStart: 200), ladder: [180, 36, 64, 85, 42, 9], records: records,
             achievements: Achievements.earned(over: records),
             ringDays: [DailyGoal.RingDay(day: today - 109, time: 150, worked: 0, closed: true, studied: true)])
     }

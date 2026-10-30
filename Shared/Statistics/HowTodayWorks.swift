@@ -83,10 +83,12 @@ struct HowTodayWorks: Equatable, Sendable {
             }
             let share = breakdown.decks[index]
             let new = deck.options.newCardsPerSession.map { $0.formatted() } ?? String(localized: "Auto")
-            rows.append(
-                .value(
-                    label: name(of: deck, at: index, of: decks.count), value: share.admitted.formatted(),
-                    note: String(localized: "Ready \(share.ceiling) (New cards/day: \(new))")))
+            // Fewer admitted than ready: the day's time is what stops the new cards, and the row says so.
+            let note =
+                share.admitted < share.ceiling
+                ? String(localized: "Ready \(share.ceiling) (New cards/day: \(new)), the day's time fits \(share.admitted)")
+                : String(localized: "Ready \(share.ceiling) (New cards/day: \(new))")
+            rows.append(.value(label: name(of: deck, at: index, of: decks.count), value: share.admitted.formatted(), note: note))
         }
         rows += [
             .value(label: String(localized: "Cards done"), value: progress.ring.done.formatted()),

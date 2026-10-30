@@ -114,7 +114,6 @@ struct TodayScreen: View {
                     Button("Add Cards", systemImage: "plus.rectangle.on.rectangle", action: addCards)
                         .disabled(decks.isEmpty)
                     Button("Import…", systemImage: "square.and.arrow.down", action: importCards)
-                        .disabled(decks.isEmpty)
                     AnkiWebLink(action: showAnkiWeb)
                     Button("New Deck", systemImage: "rectangle.stack.badge.plus", action: newDeck)
                 }
@@ -155,12 +154,16 @@ struct TodayScreen: View {
                 Text("New Deck").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            Button(action: importCards) {
+                Text("Import from Anki or File").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
             Button(action: showAnkiWeb) {
                 Text("Shared Decks").frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
-            Button("Use iCloud Drive Folder", action: chooseFolder)
-                .font(.footnote)
+            Button("Open a Mnemit Folder from iCloud Drive", action: chooseFolder)
+                .font(.subheadline)
                 .controlSize(.regular)
                 .padding(.top, Spacing.hairline)
         }
@@ -188,7 +191,7 @@ struct TodayScreen: View {
             }
             let sections = TodayDecks(decks, paused: paused)
             if !sections.active.isEmpty {
-                Section("Decks") {
+                Section {
                     ForEach(sections.active) { deck in
                         DeckRow(name: deck.name, counts: counts[deck.url], pace: progress?.pace, failure: failed[deck.url]) { showDeck(deck) }
                             .swipeActions(allowsFullSwipe: !canForget(deck)) {
@@ -197,6 +200,8 @@ struct TodayScreen: View {
                             }
                             .contextMenu { pauseButton(deck, pausing: true) }
                     }
+                } header: {
+                    decksHeader(sections.active)
                 }
             }
             if !sections.paused.isEmpty {
@@ -217,6 +222,20 @@ struct TodayScreen: View {
         .onChange(of: progress, initial: true) { celebrateMissedMedals() }
         .onChange(of: isDayReady) { celebrateMissedMedals() }
         .medalToast(toasts, at: .title)
+    }
+
+    /// "Decks", and over two or more decks the minutes of all their rows together: the rows add up to a figure, of which the
+    /// card's own minutes are the part that keeps the streak or closes the ring.
+    private func decksHeader(_ active: [KnownDeck]) -> some View {
+        let minutes = active.compactMap { counts[$0.url] }.compactMap { DeckMinutes.minutes($0, pace: progress?.pace) }.reduce(0, +)
+        return HStack {
+            Text("Decks")
+            Spacer()
+            if active.count > 1, minutes > 0 {
+                Text(verbatim: Format.timeLeft(minutes: minutes))
+                    .monospacedDigit()
+            }
+        }
     }
 
     /// The day's one action, in the bottom bar beside the search: named by what it does next, prominent while the
