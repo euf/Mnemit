@@ -108,7 +108,7 @@ private struct CardDetailList: View {
                     document.setSuspended(!card.isSuspended, of: [card.id])
                 }
                 if !card.isNew {
-                    Button("Reset Progress", systemImage: "arrow.counterclockwise") {
+                    Button("Reset Progress", systemImage: "arrow.counterclockwise", role: .destructive) {
                         document.resetLearningState(of: [card.id])
                     }
                 }
@@ -132,7 +132,7 @@ private struct CardDetailList: View {
                     CardDetailScreen(document: document, cardID: sibling.id, canEdit: canEdit)
                 } label: {
                     VStack(alignment: .leading, spacing: Spacing.hairline) {
-                        Text(sibling.kind?.title ?? String(localized: "Other direction"))
+                        Text(sibling.kind.map { String(localized: "Other direction: \($0.title)") } ?? String(localized: "Other direction"))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         Text(sibling.question)
@@ -153,7 +153,12 @@ private struct CardDetailList: View {
     @ViewBuilder
     private func memorySection(now: Date) -> some View {
         Section("Memory") {
-            CardMemoryLine(card: card, now: now)
+            if card.isSuspended {
+                // Not "due now": no session asks a suspended card.
+                Text(verbatim: MaturityCategory(card: card).cardTitle)
+            } else {
+                CardMemoryLine(card: card, now: now)
+            }
             if card.isSuspended {
                 Label("Suspended: no session asks it.", systemImage: "pause.circle")
                     .foregroundStyle(.secondary)
