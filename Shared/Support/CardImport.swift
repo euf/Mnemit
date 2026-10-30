@@ -49,6 +49,18 @@ enum CardImport {
             self.init(fileName: fileName, candidates: result.candidates, skippedRows: result.skippedRows)
         }
 
+        /// Every card the file holds, so the lines of the preview add up: those it lists and, in an Anki package,
+        /// those it leaves out. The cards in the file, less the left-out ones, are the list; the ticked ones are
+        /// what the button adds.
+        var cardsInFile: Int {
+            candidates.count + (anki.map { $0.skippedCloze + $0.skippedEmpty } ?? 0)
+        }
+
+        /// "6 of 7 will be added": the ticked cards of the listed ones.
+        var willBeAddedLine: String {
+            String(localized: "\(selection.count) of \(candidates.count) will be added")
+        }
+
         /// The selected cards in file order.
         var selectedCards: [Card] {
             candidates.filter { selection.contains($0.id) }.map(\.card)

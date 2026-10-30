@@ -130,16 +130,13 @@ struct ImportPreviewSheet: View {
                         PreviewList(preview: preview)
                     }
                 } else if let failure {
-                    ContentUnavailableView {
-                        Label("Import failed", systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text(failure)
-                    }
+                    ImportFailureView(message: failure)
                 } else {
                     ProgressView("Reading “\(file.name)”…")
                 }
             }
-            .navigationTitle("Import Cards")
+            // Short: between Cancel and "Add 6 Cards" a longer title is cut ("Import Car…").
+            .navigationTitle("Import")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -219,6 +216,29 @@ struct ImportPreviewSheet: View {
     }
 }
 
+/// A file that could not be read: what is wrong with it and, for an Anki package, how to export one Mnemit can read.
+struct ImportFailureView: View {
+    var message: String
+    /// Opens the file picker again; `nil` where the sheet can't.
+    var chooseAnother: (() -> Void)?
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("Import failed", systemImage: "exclamationmark.triangle")
+        } description: {
+            Text(message)
+        } actions: {
+            if let chooseAnother {
+                Button("Choose Another File", action: chooseAnother)
+                    .buttonStyle(.borderedProminent)
+            }
+            Link("How to Export from Anki", destination: Self.exportHelp)
+        }
+    }
+
+    private static let exportHelp = URL(string: "https://docs.ankiweb.net/exporting.html")!
+}
+
 private struct PreviewList: View {
     @Bindable var preview: CardImport.Preview
 
@@ -229,27 +249,61 @@ private struct PreviewList: View {
                     row(candidate)
                 }
             } header: {
-                VStack(alignment: .leading, spacing: 2) {
-                    if let anki = preview.anki {
-                        Text(anki.deckTitle)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                    }
-                    Text("\(preview.candidates.count) cards in “\(preview.fileName)”")
-                    ForEach(preview.anki?.lines ?? [], id: \.self) { line in
-                        Text(line)
-                    }
-                    ForEach(preview.otherDeckLines, id: \.self) { line in
-                        Text(line)
-                    }
-                    if preview.skippedRows > 0 {
-                        Text("\(preview.skippedRows) rows without a question or an answer are left out.")
-                    }
-                }
-                .textCase(nil)
+                header
             }
         }
         .listStyle(.insetGrouped)
+    }
+
+    /// The name of the deck, then the facts of the file, the cards that will be added of those it lists, and what is left out
+    /// in a box of its own: cards in the file, less those left out, are the list, and the ticked ones are the button.
+    private var header: some View {
+        VStack(alignment: .leading, spacing: Spacing.tight) {
+            if let anki = preview.anki {
+                Text(anki.deckTitle)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(preview.cardsInFile) cards in “\(preview.fileName)”")
+                ForEach(preview.anki?.facts ?? [], id: \.self) { line in
+                    Text(line)
+                }
+                ForEach(preview.otherDeckLines, id: \.self) { line in
+                    Text(line)
+                }
+                if preview.skippedRows > 0 {
+                    Text("\(preview.skippedRows) rows without a question or an answer are left out.")
+                }
+            }
+            Text(preview.willBeAddedLine)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+            let warnings = preview.anki?.warnings ?? []
+            if !warnings.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(warnings, id: \.self) { line in
+                        Label {
+                            Text(line)
+                        } icon: {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+                .foregroundStyle(.primary)
+                .padding(Spacing.gap)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+            }
+        }
+        .textCase(nil)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// The question on one line, as the list shows it: a word and its article are written on two lines in Anki.
+    private func oneLine(_ text: String) -> String {
+        text.split(whereSeparator: \.isNewline).joined(separator: " ")
     }
 
     private func row(_ candidate: CardImporter.Candidate) -> some View {
@@ -266,10 +320,13 @@ private struct PreviewList: View {
                     .imageScale(.large)
                     .foregroundStyle(isSelected ? Color.appAccentOnRaised : Color.secondary)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(candidate.card.question)
-                    Text(candidate.card.answer)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    SideText(text: oneLine(candidate.card.question), image: candidate.card.questionImage, audio: candidate.card.questionAudio)
+                    SideText(
+                        text: oneLine(candidate.card.answer.split(separator: "\n", maxSplits: 1).first.map(String.init) ?? candidate.card.answer),
+                        image: candidate.card.answerImage, audio: candidate.card.answerAudio
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     if !candidate.card.hint.isEmpty {
                         Text(candidate.card.hint)
                             .font(.footnote)
