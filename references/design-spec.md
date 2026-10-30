@@ -196,7 +196,7 @@ What the header shows: `screens.md`, Study.
 
 The stream's rests (titles, figures and buttons: `screens.md`, Study) are one `StreamRestView`: the same ring (96 pt, a picture) and the streak chip under it (`StreakLine`: the flame and "12-day streak"), over the title (on the Streak kept rest, whose title is the streak, nothing under the ring: the days with the filled flame beside them), the lines in secondary under it (the price line of the sentence, the words learned, the week), the buttons 24 pt below, as wide as the card (iPhone 400 pt at most, Mac 320). The first button of a rest is `.borderedProminent` and the default action (Keep Going; Done); the others are `.bordered` on the Mac and on the iPhone `SecondaryActionStyle` (the accent on a wash and a hairline of it, never grey, which reads as disabled); Learn 10 New Words carries no footnote. The rings of the last seven days (`WeekRings`) are 22 pt each, weekday initials under them, today last and bold.
 
-The motion into and out of a rest (`RingTraveler`, `SlotOutline`, the staggered lines, Reduce Motion): `study-screen.md`, Motion.
+The motion into and out of a rest (`RingTraveler`, the staggered lines, Reduce Motion): `study-screen.md`, Motion.
 
 ### 4.3 Grade area
 

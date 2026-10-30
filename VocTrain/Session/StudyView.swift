@@ -402,7 +402,7 @@ struct StudyView: View {
     // MARK: The rest
 
     /// The stop at the end of a round or of the plan. The ring is the one that came down from the bar: this
-    /// only leaves it its place and, until it has come, the empty place of the card.
+    /// only leaves it its place. No outline of the card that left waits for it: EF read one as a card left behind.
     private var restLayer: some View {
         StreamRestView(
             rest: motion.restSnapshot ?? model.rest, progress: ring.progress,
@@ -411,19 +411,6 @@ struct StudyView: View {
             ringPlace: reduceMotion ? nil : { motion.ringRest = $0 }, staggers: !reduceMotion, arrived: motion.hasArrived || reduceMotion,
             frozenStep: motion.frozen?.lines
         )
-        .background {
-            GeometryReader { proxy in
-                let slot = motion.cardSlot
-                let origin = proxy.frame(in: .global).origin
-                if slot.width > 0 {
-                    SlotOutline()
-                        .frame(width: slot.width, height: slot.height)
-                        .position(x: slot.midX - origin.x, y: slot.midY - origin.y)
-                        .opacity(motion.showsSlot ? 1 : 0)
-                        .animation(.easeOut(duration: 0.15), value: motion.showsSlot)
-                }
-            }
-        }
     }
 
     /// The same space for Show Answer and for the grade buttons: both are in the layout, one

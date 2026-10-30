@@ -152,7 +152,7 @@ struct StudyMotionTests {
     @Test func theRestIsReachedByTheRingsWayAndLeftBackwards() {
         let motion = motion()
         motion.restBegan(reduceMotion: false)
-        #expect(motion.showsRest && motion.travels && !motion.hasArrived && motion.showsSlot)
+        #expect(motion.showsRest && motion.travels && !motion.hasArrived)
         #expect(motion.travel == 0)
 
         var applied = false
@@ -178,7 +178,7 @@ struct StudyMotionTests {
     @Test func withoutTravelTheRestComesAtOnce() {
         let motion = motion()
         motion.restBegan(reduceMotion: true)
-        #expect(motion.showsRest && !motion.travels && motion.hasArrived && !motion.showsSlot && motion.burstStartedAt == nil)
+        #expect(motion.showsRest && !motion.travels && motion.hasArrived && motion.burstStartedAt == nil)
         motion.leaveRest(
             snapshot: StreamRest(isPracticeOnly: false, recap: StudyStream.Recap(), nextDue: nil, now: created), reduceMotion: true,
             cardsAfter: 0.2, arrival: .rises, apply: {}, didLeave: { true }, then: {})

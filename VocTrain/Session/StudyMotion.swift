@@ -146,8 +146,6 @@ final class StudyMotion {
     private(set) var travels = false
     /// The ring has come down: the lines come in.
     private(set) var hasArrived = true
-    /// The place where the card was shows as an empty slot until the ring has come into it.
-    private(set) var showsSlot = false
     private(set) var burstStartedAt: Date?
     /// What the rest said when the stream left it, for the moment it takes the ring to go back up.
     private(set) var restSnapshot: StreamRest?
@@ -297,12 +295,11 @@ final class StudyMotion {
         travels = isResting
         travel = isResting ? 1 : 0
         hasArrived = true
-        showsSlot = false
         restSnapshot = nil
     }
 
-    /// The last card of the round has set off: its place shows as a slot under it, and the ring comes down into the
-    /// slot at once, so it has landed as the card is off the screen and no empty slot waits for it. Without travel
+    /// The last card of the round has set off: the ring comes down into the rest at once, so it has landed as the card
+    /// is off the screen and nothing marks the card's empty place. Without travel
     /// (Reduce Motion) the rest comes with a crossfade.
     func restBegan(reduceMotion: Bool) {
         restTask?.cancel()
@@ -313,14 +310,12 @@ final class StudyMotion {
             travels = false
             travel = 1
             hasArrived = true
-            showsSlot = false
             restTask = nil
             return
         }
         travels = true
         travel = 0
         hasArrived = false
-        showsSlot = true
         guard frozen == nil else { return }
         restTask = Task { [weak self] in
             guard !Task.isCancelled, let self else { return }
@@ -328,7 +323,6 @@ final class StudyMotion {
             try? await Task.sleep(for: .seconds(Timing.travel * 0.85))
             guard !Task.isCancelled else { return }
             hasArrived = true
-            showsSlot = false
             burstStartedAt = .now
             restTask = nil
         }
@@ -380,6 +374,5 @@ final class StudyMotion {
         travels = true
         self.travel = travel
         hasArrived = travel >= 1
-        showsSlot = travel < 1
     }
 }

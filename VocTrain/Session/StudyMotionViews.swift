@@ -305,17 +305,6 @@ private struct SheetOnItsWay: View {
     }
 }
 
-/// The place of a card that has left and not been replaced, as the last card of a round leaves: a faint
-/// rounded outline, where the ring comes down into.
-struct SlotOutline: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-            .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1.5)
-            .accessibilityHidden(true)
-            .allowsHitTesting(false)
-    }
-}
-
 /// The ring steps: it swells to 1.35 and back with a little overshoot, and glows in the accent for 0.45 s. A step is a card
 /// landing in it; with Reduce Motion the ring only steps.
 private struct RingBump: ViewModifier {
