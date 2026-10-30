@@ -133,6 +133,10 @@ struct AnkiImportScreenTests {
         #expect(preview.candidates.allSatisfy { $0.duplicate == nil })
         // Everything is checked: the cards, the suspended one among them.
         #expect(preview.selection.count == 7)
+        // The lines add up: 9 cards in the file, 2 cloze left out, 7 listed and ticked.
+        #expect(preview.cardsInFile == 9)
+        #expect(preview.willBeAddedLine == String(localized: "\(7) of \(7) will be added"))
+        #expect(anki.facts.count + anki.warnings.count == anki.lines.count)
         // The package's preset has FSRS settings, which an existing deck doesn't take.
         #expect(anki.settings == .keptForExistingDeck)
         #expect(anki.lines.count == 5)

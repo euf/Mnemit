@@ -152,7 +152,7 @@ struct AddCardsSheet: View {
             .safeAreaBar(edge: .bottom) { bottomButtons }
             .overlay(alignment: .top) {
                 if showsConfirmation {
-                    ConfirmationBadge(count: addedInSession, inWords: true)
+                    ConfirmationBadge(count: addedInSession)
                         .transition(.opacity)
                 }
             }
@@ -245,8 +245,8 @@ struct AddCardsSheet: View {
                 .frame(minHeight: editorHeight)
                 .overlay(alignment: .topLeading) {
                     if listText.isEmpty {
-                        Text(verbatim: "κλέβω = to steal\nη κλοπή = theft\nο κλέφτης = thief")
-                            .foregroundStyle(.tertiary)
+                        Text(verbatim: "e.g.  κλέβω = to steal\nη κλοπή = theft\nο κλέφτης = thief")
+                            .foregroundStyle(.secondary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 8)
                             .allowsHitTesting(false)
@@ -255,7 +255,7 @@ struct AddCardsSheet: View {
                 }
                 .accessibilityLabel(Text("Lesson words"))
         } footer: {
-            Text("One word per line: the word, then =, – or - with spaces, then the translation.")
+            Text("Write each word on its own line as: word = translation. A dash works too.")
         }
 
         if !preview.invalidLines.isEmpty {
@@ -314,6 +314,8 @@ struct AddCardsSheet: View {
             Group {
                 if mode == .oneCard {
                     Text("Add")
+                } else if words == 0 {
+                    Text("Add")
                 } else {
                     Text("Add \(words) Words")
                 }
@@ -357,7 +359,7 @@ struct AddCardsSheet: View {
             add.buttonStyle(.glassProminent)
             study.buttonStyle(.glass)
         } else {
-            add.buttonStyle(.glass)
+            // With nothing typed there is nothing to add: a disabled Add beside it would only take room from the form.
             study.buttonStyle(.glassProminent)
         }
     }

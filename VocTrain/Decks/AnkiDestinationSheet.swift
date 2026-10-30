@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import VocabCore
 
 /// Where the cards of a package from "Open in Mnemit" go: a new deck named after the Anki deck,
@@ -18,9 +19,14 @@ struct AnkiDestinationSheet: View {
     @State private var package: AnkiImport?
     /// Why the package could not be read.
     @State private var failure: String?
+    /// The package chosen after the first one could not be read, which replaces `url`.
+    @State private var picked: URL?
+    @State private var isChoosing = false
     @Environment(\.dismiss) private var dismiss
 
-    private var fileName: String { url.lastPathComponent }
+    private var packageURL: URL { picked ?? url }
+
+    private var fileName: String { packageURL.lastPathComponent }
 
     var body: some View {
         NavigationStack {
@@ -28,11 +34,7 @@ struct AnkiDestinationSheet: View {
                 if let package {
                     destinations(of: package)
                 } else if let failure {
-                    ContentUnavailableView {
-                        Label("Import failed", systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text(failure)
-                    }
+                    ImportFailureView(message: failure) { isChoosing = true }
                 } else {
                     ProgressView("Reading “\(fileName)”…")
                 }
@@ -46,10 +48,16 @@ struct AnkiDestinationSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
-        .task {
+        .fileImporter(isPresented: $isChoosing, allowedContentTypes: UTType.ankiPackages) { result in
+            if case let .success(chosen) = result {
+                failure = nil
+                picked = chosen
+            }
+        }
+        .task(id: packageURL) {
             guard package == nil else { return }
             do {
-                package = try await CardImport.loadAnki(at: url)
+                package = try await CardImport.loadAnki(at: packageURL)
             } catch {
                 failure = CardImport.failureMessage(error)
             }
@@ -58,7 +66,7 @@ struct AnkiDestinationSheet: View {
 
     private func destinations(of package: AnkiImport) -> some View {
         let name = CardImport.deckName(forDecks: package.deckNames, fileName: fileName)
-        let file = ImportedFile(ankiAt: url, package: package)
+        let file = ImportedFile(ankiAt: packageURL, package: package)
         var fileForNewDeck = file
         fileForNewDeck.isNewDeck = true
         return List {

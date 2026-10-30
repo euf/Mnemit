@@ -48,7 +48,8 @@ struct DeckNameSheet: View {
     /// The name as the file system gets it, `nil` if it can't name a file.
     private var fileName: String? { DeckFiles.fileName(for: name) }
 
-    private var canSubmit: Bool { fileName != nil && fileName != current && !isWorking }
+    /// Off while the field shows an error, as for a name that can't make a file: the name has to change first.
+    var canSubmit: Bool { fileName != nil && fileName != current && !isWorking && failure == nil }
 
     /// Why the name won't do: what the last try threw, or that it can't name a file once
     /// there is something to judge.

@@ -28,7 +28,7 @@ struct SettingsView: View {
                 Section {
                     Toggle("Hard and Easy Buttons", isOn: $showsFourButtons)
                 } footer: {
-                    Text("Adds Hard and Easy: buttons, and swipes down and up.")
+                    Text("Adds Hard and Easy buttons, and swipes down and up.")
                 }
 
                 Section {

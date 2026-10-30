@@ -77,7 +77,7 @@ struct EditCardSheet: View {
                         TextField("Word Key", text: $note)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                        Text("Cards with the same word key are one word, like both directions of a translation.")
+                        Text("Cards with the same word key count as one word: both directions of a translation share it. Change it only to link or unlink cards.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }

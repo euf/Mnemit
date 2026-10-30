@@ -84,7 +84,10 @@ extension CardImport {
 
         /// One line each: the cards with history, the settings, the media, whatever was left out, then
         /// the images and sounds that couldn't come.
-        var lines: [String] {
+        var lines: [String] { facts + warnings }
+
+        /// What the package brings: the cards with history, the settings, the media.
+        var facts: [String] {
             var lines = [String(localized: "\(withHistory) with review history")]
             switch settings {
             case .absent:
@@ -97,7 +100,12 @@ extension CardImport {
                 lines.append(String(localized: "Anki's settings for this deck are not applied to an existing deck."))
             }
             lines += mediaLine.map { [$0] } ?? []
-            lines += skipLines
+            return lines
+        }
+
+        /// What the import leaves out: whole cards, then the images and sounds of fields that stay.
+        var warnings: [String] {
+            var lines = skipLines
             if skippedMediaRefs > 0 {
                 lines.append(String(localized: "Images and sounds are left out of \(skippedMediaRefs) fields."))
             }

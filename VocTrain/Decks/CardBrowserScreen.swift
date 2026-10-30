@@ -47,6 +47,12 @@ struct CardBrowserScreen: View {
 
     private var isSelecting: Bool { editMode == .active }
 
+    /// What the bar says: the screen, or while selecting how many cards the buttons below act on.
+    private var title: String {
+        guard isSelecting else { return String(localized: "Cards") }
+        return selection.isEmpty ? String(localized: "Select Cards") : String(localized: "\(selection.count) selected")
+    }
+
     var body: some View {
         let now = document.clock.now
         let threshold = document.deck.learningOptions.leechThreshold
@@ -66,13 +72,16 @@ struct CardBrowserScreen: View {
                 list(output.rows, now: now, threshold: threshold)
             }
         }
-        .navigationTitle("Cards")
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: Text("Search Cards"))
         .safeAreaBar(edge: .top) {
             if !document.deck.cards.isEmpty {
                 FilterBar(selection: $filter, counts: output.counts)
             }
+        }
+        .safeAreaBar(edge: .bottom) {
+            if isSelecting { selectionBar }
         }
         .environment(\.editMode, $editMode)
         .toolbar { toolbar }
@@ -107,7 +116,9 @@ struct CardBrowserScreen: View {
                 NavigationLink {
                     CardDetailScreen(document: document, cardID: card.id, canEdit: canEdit)
                 } label: {
-                    CardRow(card: card, state: BrowserState(card, leechThreshold: threshold), now: now)
+                    CardRow(
+                        card: card, state: BrowserState(card, leechThreshold: threshold), now: now,
+                        showsDirection: !query.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
                 .swipeActions(edge: .trailing) {
                     if isEditable {
@@ -169,11 +180,19 @@ struct CardBrowserScreen: View {
                     .accessibilityLabel(Text("Undo \(undo.actionName)"))
             }
         }
-        ToolbarItem(placement: .primaryAction) {
-            Menu("Sort", systemImage: "arrow.up.arrow.down") {
-                Picker("Sort", selection: $sort) {
-                    ForEach(BrowserSort.allCases) { sort in
-                        Text(sort.title).tag(sort)
+        if isSelecting {
+            ToolbarItem(placement: .primaryAction) {
+                let shown = memo.output(deck: document.deck, filter: filter, sort: sort, query: query, now: document.clock.now).rows.map(\.id)
+                Button("Select All") { selection = Set(shown) }
+                    .disabled(shown.isEmpty || selection.count == shown.count)
+            }
+        } else {
+            ToolbarItem(placement: .primaryAction) {
+                Menu("Sort", systemImage: "arrow.up.arrow.down") {
+                    Picker("Sort", selection: $sort) {
+                        ForEach(BrowserSort.allCases) { sort in
+                            Text(sort.title).tag(sort)
+                        }
                     }
                 }
             }
@@ -187,24 +206,30 @@ struct CardBrowserScreen: View {
             }
             .disabled(document.deck.cards.isEmpty)
         }
-        if isSelecting {
-            // Symbols, not words: four words don't fit the bar of the narrowest iPhone. The
-            // titles are what VoiceOver reads.
-            ToolbarItemGroup(placement: .bottomBar) {
-                let canAct = isEditable && !selection.isEmpty
-                Button("Suspend", systemImage: "pause.circle") { document.setSuspended(true, of: selection) }
-                    .disabled(!canAct)
-                Spacer()
-                Button("Resume", systemImage: "play.circle") { document.setSuspended(false, of: selection) }
-                    .disabled(!canAct)
-                Spacer()
-                Button("Reset", systemImage: "arrow.counterclockwise") { document.resetLearningState(of: selection) }
-                    .disabled(!canAct)
-                Spacer()
-                Button("Delete", systemImage: "trash", role: .destructive) { delete(selection) }
-                    .disabled(!canAct)
-            }
+    }
+
+    /// What the selection can do, each action a symbol with its word under it: bare glyphs leave a learner guessing what
+    /// the circular arrow does, and four short words fit the narrowest iPhone when they are stacked. Not in the toolbar,
+    /// which shows only the symbols.
+    private var selectionBar: some View {
+        HStack(spacing: Spacing.tight) {
+            barButton("Suspend", "pause.circle") { document.setSuspended(true, of: selection) }
+            barButton("Resume", "play.circle") { document.setSuspended(false, of: selection) }
+            barButton("Reset", "arrow.counterclockwise") { document.resetLearningState(of: selection) }
+            barButton("Delete", "trash", role: .destructive) { delete(selection) }
         }
+        .disabled(!(isEditable && !selection.isEmpty))
+        .padding(.horizontal, Spacing.margin)
+        .padding(.bottom, Spacing.tight)
+    }
+
+    private func barButton(_ title: LocalizedStringKey, _ symbol: String, role: ButtonRole? = nil, action: @escaping () -> Void) -> some View {
+        Button(role: role, action: action) {
+            Label(title, systemImage: symbol)
+                .labelStyle(StackedLabelStyle())
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.glass)
     }
 
     /// One card goes at once, as Undo covers it; several ask first.
@@ -214,6 +239,17 @@ struct CardBrowserScreen: View {
             selection.subtract(ids)
         } else {
             deleting = ids
+        }
+    }
+}
+
+/// The icon over its title, in the small type of a tab bar.
+private struct StackedLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(spacing: 2) {
+            configuration.icon
+            configuration.title
+                .font(.caption2)
         }
     }
 }
@@ -276,6 +312,8 @@ struct CardRow: View {
     var card: Card
     var state: BrowserState
     var now: Date
+    /// Whether the row says which way the card asks: in a search the two cards of a word sit side by side.
+    var showsDirection = false
     @Environment(\.dynamicTypeSize) private var typeSize
 
     private var answer: String {
@@ -297,6 +335,11 @@ struct CardRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                if showsDirection, let kind = card.kind {
+                    Text(kind.title)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             if !typeSize.isAccessibilitySize {
                 Spacer(minLength: Spacing.tight)

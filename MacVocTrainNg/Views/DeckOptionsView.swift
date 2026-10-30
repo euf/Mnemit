@@ -48,6 +48,7 @@ struct DeckOptionsView: View {
                         Text("Keep Card").tag(LeechAction.keep)
                         Text("Suspend Card").tag(LeechAction.suspend)
                     }
+                    .disabled(options.leechThreshold == 0)
                     .helpButton("Keep Card goes on asking a leech. Suspend Card stops asking it until you resume it.")
                 } header: {
                     Text("Lapses")

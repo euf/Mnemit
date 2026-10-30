@@ -39,9 +39,10 @@ struct ImportPreviewView: View {
                     Text(anki.deckTitle)
                         .fontWeight(.semibold)
                 }
-                Text("\(preview.candidates.count) cards in “\(preview.fileName)”")
+                // The lines add up: cards in the file, less those left out, are the table; the ticked ones are the button.
+                Text("\(preview.cardsInFile) cards in “\(preview.fileName)”")
                     .foregroundStyle(.secondary)
-                ForEach(preview.anki?.lines ?? [], id: \.self) { line in
+                ForEach(preview.anki?.facts ?? [], id: \.self) { line in
                     Text(line)
                         .foregroundStyle(.secondary)
                 }
@@ -53,6 +54,12 @@ struct ImportPreviewView: View {
                     Text("\(preview.skippedRows) rows without a question or an answer are left out.")
                         .foregroundStyle(.secondary)
                 }
+                ForEach(preview.anki?.warnings ?? [], id: \.self) { line in
+                    Label(line, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.secondary)
+                }
+                Text(preview.willBeAddedLine)
+                    .fontWeight(.semibold)
             }
             .padding(16)
 

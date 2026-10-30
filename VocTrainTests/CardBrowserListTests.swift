@@ -103,6 +103,17 @@ struct CardBrowserListTests {
         #expect(shown(list, sort: .alphabetical) == ["Alpha", "beta", "Άλφα", "άλφα δ", "βήτα"])
     }
 
+    @Test func alphabeticalSortsAWordUnderItsFirstLetterNotItsArticle() {
+        let list = [card("το σπίτι"), card("η θάλασσα"), card("ο δρόμος"), card("βάζω"), card("η στάση")]
+        #expect(shown(list, sort: .alphabetical) == ["βάζω", "ο δρόμος", "η θάλασσα", "το σπίτι", "η στάση"])
+    }
+
+    @Test func aDueCardSaysDueWhereANewOneSaysNew() {
+        let now = Date(timeIntervalSinceReferenceDate: 1_000_000)
+        #expect(BrowserState.due(now.addingTimeInterval(-60)).text(now: now) == String(localized: "Due"))
+        #expect(BrowserState.new.text(now: now) == String(localized: "New"))
+    }
+
     @Test func difficultyPutsTheHardestFirstAndNewCardsLast() {
         let list = [
             card("easy", learning: state(.review, due: 0, difficulty: 2)),
@@ -157,7 +168,7 @@ struct CardBrowserListTests {
         #expect(BrowserState.new.symbol == nil)
         #expect(BrowserState.due(due).symbol == nil)
         #expect(BrowserState.suspended.symbol != nil)
-        #expect(BrowserState.due(now.addingTimeInterval(-60)).text(now: now) == Format.due(now.addingTimeInterval(-60), now: now))
+        #expect(BrowserState.due(due).text(now: now) == Format.due(due, now: now))
     }
 
     // MARK: Memo

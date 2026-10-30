@@ -71,7 +71,7 @@ struct LearningStepsPicker: View {
 
     var body: some View {
         Picker("Learning steps", selection: $steps) {
-            ForEach(LearningOptions.stepsRange, id: \.self) { Text($0, format: .number).tag($0) }
+            ForEach(LearningOptions.stepsRange, id: \.self) { Text("\($0) steps").tag($0) }
         }
     }
 }

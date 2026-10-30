@@ -8,7 +8,8 @@ enum BrowserSort: String, CaseIterable, Identifiable {
     case due
     /// The newest first.
     case added
-    /// By question, the way the system sorts names: case and accents don't decide.
+    /// By the question without its article, the way the system sorts names: case and accents don't decide, and
+    /// "η θάλασσα" stands under θ.
     case alphabetical
     /// The most difficult first (FSRS difficulty), new cards last.
     case difficulty
@@ -33,11 +34,16 @@ enum BrowserSort: String, CaseIterable, Identifiable {
             switch self {
             case .due: Self.compare(dueKey(lhs.card), dueKey(rhs.card))
             case .added: Self.compare(rhs.card.created, lhs.card.created)
-            case .alphabetical: lhs.card.question.localizedStandardCompare(rhs.card.question)
+            case .alphabetical: Self.word(of: lhs.card).localizedStandardCompare(Self.word(of: rhs.card))
             case .difficulty: Self.compare(difficultyKey(rhs.card), difficultyKey(lhs.card))
             case .lapses: Self.compare(rhs.card.learningState?.lapses ?? -1, lhs.card.learningState?.lapses ?? -1)
             }
         return order == .orderedSame ? lhs.position < rhs.position : order == .orderedAscending
+    }
+
+    /// The question as the sort reads it: the lemma, without article and without the endings after it.
+    static func word(of card: Card) -> String {
+        WordKey(card.question)?.lemma ?? card.question
     }
 
     private func dueKey(_ card: Card) -> Double {
@@ -82,7 +88,8 @@ enum BrowserState: Equatable {
         case .suspended: String(localized: "Suspended")
         case .leech: String(localized: "Leech")
         case .new: String(localized: "New")
-        case let .due(date): Format.due(date, now: now)
+        // "Due", not "Now": next to "New" in the same column the two are one shape.
+        case let .due(date): date <= now ? String(localized: "Due") : Format.due(date, now: now)
         }
     }
 

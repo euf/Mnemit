@@ -173,28 +173,29 @@ extension String {
     }
 }
 
-/// "Added", with the words or cards of the sheet's session so far, briefly under the bar; the Mac's Add Cards sheet shows it
-/// too, counting cards.
+/// "Added", with the words of the sheet's session so far, briefly under the bar; the Mac's Add Cards sheet shows it too.
 struct ConfirmationBadge: View {
     var count: Int
-    /// Words, as the iPhone's sheet counts them, where the Mac counts cards.
-    var inWords = false
 
     var body: some View {
-        Label {
-            if inWords {
-                Text("Added · \(count) words so far")
-            } else {
-                Text("Added · \(count) cards so far")
-            }
-        } icon: {
-            Image(systemName: "checkmark.circle.fill")
+        // At large text sizes the sentence takes two lines and covers the form: the count alone stays on one.
+        ViewThatFits(in: .horizontal) {
+            label { Text("Added · \(count) words so far") }
+            label { Text("Added · \(count)") }
         }
         .font(.subheadline.weight(.medium))
         .padding(.horizontal, Spacing.margin)
         .padding(.vertical, Spacing.tight)
         .background(.regularMaterial, in: Capsule())
         .padding(.top, Spacing.tight)
+    }
+
+    private func label(_ title: () -> Text) -> some View {
+        Label {
+            title().lineLimit(1).fixedSize(horizontal: true, vertical: false)
+        } icon: {
+            Image(systemName: "checkmark.circle.fill")
+        }
     }
 }
 
