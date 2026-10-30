@@ -9,15 +9,19 @@ struct PixelBitmap {
     let scale: CGFloat
     private let bytes: [UInt8]
 
-    init(_ image: UIImage) {
-        let cgImage = image.cgImage!
+    /// The picture has no pixels: a renderer under load sometimes gives an image without a backing store.
+    struct Empty: Error {}
+
+    init(_ image: UIImage) throws {
+        // Under a loaded simulator the image may lack its bitmap; a test then fails instead of crashing its host.
+        guard let cgImage = image.cgImage else { throw Empty() }
         let (w, h) = (cgImage.width, cgImage.height)
         var bytes = [UInt8](repeating: 0, count: w * h * 4)
         bytes.withUnsafeMutableBytes { buffer in
             let context = CGContext(
                 data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
-                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: w, height: h))
+                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            context?.draw(cgImage, in: CGRect(x: 0, y: 0, width: w, height: h))
         }
         (width, height, scale, self.bytes) = (w, h, image.scale, bytes)
     }

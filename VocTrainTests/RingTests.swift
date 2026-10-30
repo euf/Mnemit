@@ -199,16 +199,16 @@ struct RingSnapshotTests {
         window.windowLevel = .alert + 1
         window.rootViewController = UIHostingController(rootView: RingHost(box: box))
         window.makeKeyAndVisible()
-        func picture() -> PixelBitmap {
-            PixelBitmap(UIGraphicsImageRenderer(bounds: bounds).image { _ in window.drawHierarchy(in: bounds, afterScreenUpdates: true) })
+        func picture() throws -> PixelBitmap {
+            try PixelBitmap(UIGraphicsImageRenderer(bounds: bounds).image { _ in window.drawHierarchy(in: bounds, afterScreenUpdates: true) })
         }
         try await Task.sleep(for: .milliseconds(300))
-        let first = picture()
+        let first = try picture()
         box.value = 1.6
         try await Task.sleep(for: .milliseconds(150))
-        let during = picture()
+        let during = try picture()
         try await Task.sleep(for: .milliseconds(1200))
-        let last = picture()
+        let last = try picture()
         window.isHidden = true
         #expect(differing(first, last) > 100, "the ring moved")
         #expect(differing(during, last) > 20, "a moment after the change the ring is not yet where it ends")

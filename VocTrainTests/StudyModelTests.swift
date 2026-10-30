@@ -67,8 +67,8 @@ struct StudyModelTests {
         model.reveal()
         grade(model, .again, undoManager: undoManager)
         undoManager.undo()
-        #expect(document.card(withID: card.id) == card)
-        #expect(model.currentCard == card)
+        #expect(document.card(withID: card.id)?.withoutUndoNote == card)
+        #expect(model.currentCard?.withoutUndoNote == card)
         #expect(model.session.reviewCount == 0)
         // The card returns with its answer showing, ready to be graded again.
         #expect(model.stage == .revealed)
@@ -386,7 +386,7 @@ struct StudyModelTests {
 
         undoManager.undo()
         #expect(model.leechMoment == nil)
-        #expect(document.card(withID: original.id) == original)
+        #expect(document.card(withID: original.id)?.withoutUndoNote == original)
         #expect(model.stage == .revealed)
         #expect(model.returnedByUndo)
         #expect(model.session.leechIDs.isEmpty)
@@ -405,7 +405,7 @@ struct StudyModelTests {
 
         undoManager.undo()
         #expect(model.leechMoment == nil)
-        #expect(document.card(withID: original.id) == original)
+        #expect(document.card(withID: original.id)?.withoutUndoNote == original)
         #expect(model.stage == .revealed)
         #expect(model.returnedByUndo)
 
@@ -815,5 +815,15 @@ struct StudyModelTests {
         practice.reveal()
         grade(practice, .good, undoManager: otherUndo)
         #expect(!practice.isRoundRest)
+    }
+}
+
+extension Card {
+    /// The card without the note of a review taken back (`undone`): after Undo it is the card as it was before the
+    /// review, but for that note.
+    var withoutUndoNote: Card {
+        var card = self
+        card.undone = []
+        return card
     }
 }

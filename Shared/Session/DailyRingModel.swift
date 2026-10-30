@@ -218,14 +218,23 @@ struct NewCardAllowances: Equatable, Sendable {
         self.day = day
     }
 
-    @MainActor private static var stored = NewCardAllowances()
+    /// The sets by the study day they were worked out for, so an evaluation of another day (a test's clock, a
+    /// device clock set back) never empties today's.
+    @MainActor private static var stored: [Int?: NewCardAllowances] = [:]
 
     /// What the daily ring worked out last, for every deck file it has seen: the allowance of a deck
     /// holds for the study day, so a file the last evaluation left out keeps the one it had. At the
     /// next day's 4:00 it is empty until the ring evaluates again: yesterday's time budget is not today's.
     @MainActor static var today: NewCardAllowances {
-        get { stored.valid(on: StudyCalendar().dayNumber(for: Date())) }
-        set { stored = newValue }
+        get {
+            let day = StudyCalendar().dayNumber(for: Date())
+            return stored[day] ?? stored[nil]?.valid(on: day) ?? NewCardAllowances(day: day)
+        }
+        set {
+            stored[newValue.day] = newValue
+            let day = StudyCalendar().dayNumber(for: Date())
+            stored = stored.filter { $0.key.map { $0 >= day - 1 } ?? true }
+        }
     }
 
     /// What the set says on study day `day`: its entries, or none when it was worked out for another day.

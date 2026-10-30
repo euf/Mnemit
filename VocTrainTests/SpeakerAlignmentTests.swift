@@ -60,7 +60,7 @@ struct SpeakerAlignmentTests {
         if let data = image.pngData() {
             try? data.write(to: directory.appendingPathComponent("align-\(name).png"))
         }
-        return try measured(PixelBitmap(image))
+        return try measured(try PixelBitmap(image))
     }
 
     private func measured(_ bitmap: PixelBitmap) throws -> Measure {

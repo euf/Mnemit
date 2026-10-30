@@ -27,7 +27,7 @@ struct DocumentTests {
         #expect(document.deck.cards.first?.log.map(\.grade) == [.good])
 
         undoManager.undo()
-        #expect(document.deck.cards == [card])
+        #expect(document.deck.cards.map(\.withoutUndoNote) == [card])
     }
 
     @Test func dueCardsCountNewCards() throws {

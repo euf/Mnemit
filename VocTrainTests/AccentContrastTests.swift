@@ -154,7 +154,7 @@ struct AccentContrastTests {
         try await Task.sleep(for: .milliseconds(600))
         let bounds = content.view.bounds
         let image = UIGraphicsImageRenderer(bounds: bounds).image { _ in content.view.drawHierarchy(in: bounds, afterScreenUpdates: true) }
-        let pixels = PixelBitmap(image)
+        let pixels = try PixelBitmap(image)
         let (red, green, blue) = pixels.rgb(pixels.width / 2, pixels.height / 2)
         return (content.traitCollection.userInterfaceLevel, UIColor(red: CGFloat(red) / 255, green: CGFloat(green) / 255, blue: CGFloat(blue) / 255, alpha: 1))
     }
@@ -207,7 +207,7 @@ struct AccentContrastTests {
         window.isHidden = true
         // The swatches are where the picture is not the window's background; the safe area of a window
         // this small is not the same on every device, so their place is found, not assumed.
-        let pixels = PixelBitmap(image)
+        let pixels = try PixelBitmap(image)
         let background = pixels.rgb(1, 1)
         var firstPixel: (x: Int, y: Int)?
         search: for y in 0..<pixels.height {
