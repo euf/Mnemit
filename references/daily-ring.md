@@ -18,7 +18,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `day`, `reviews` (log entries of the day), `done` (cards done), `goal`, `keepAt` (the cards done that keep the streak:
   the end of the first round, 0 for an empty plan), `kept`, `closed`, `time` (the day's seconds), `reason`
   (`DailyGoal.SizeReason`), `worked` (seconds of the cards done at the day's prices), `filled`, `wordsLearned` (cumulative at
-  the day's end). A missed day has a record too, done 0, so a later pause cannot turn its empty plan into a kept day.
+  the day's end), `rule` (the rule that wrote it, `LedgerDay.currentRule`). A missed day has a record too, done 0, so a later pause cannot turn its empty plan into a kept day.
   `DayLedger` holds one record per day.
 - **What reads from where** (`DailyProgress.evaluate(_:at:calendar:planRuleStart:ledger:cache:)`). From the ledger: the days
   before today (the first study day through yesterday), their `records`, `week`, `weekRings`, `ringDays` (the size rule's
@@ -27,8 +27,12 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `learned.wordsAtDayStart` is the ledger's cumulative count of yesterday, `learned.words` that plus
   `max(0, logs.words - logs.wordsAtDayStart)`; without a past day the logs' own. The first day is the earlier of the ledger's
   first day with reviews and the logs' first.
-- **The raise rule** (`LedgerDay.raised(reviews:done:worked:wordsLearned:)`). Each day before today is its record raised by
-  the logs of the active decks. Reviews, done and words take the larger value. `worked` takes the logs' value only when `done`
+- **The rule stamp.** A record of an older `rule` than `LedgerDay.currentRule` (a file without the key is rule 0) is not raised: the day
+  is worked out from the logs again as a missing day is, keeping the record's words learned, and listed in `ledgerUpdates`.
+  `DayLedger.merging` takes the newer rule first, so a device that has not learned the rule cannot lift a healed day back. Rule 1
+  heals the days that a deck counted twice (a document and its own file) inflated.
+- **The raise rule** (`LedgerDay.raised(reviews:done:worked:wordsLearned:)`). Each day before today of the current rule is its
+  record raised by the logs of the active decks. Reviews, done and words take the larger value. `worked` takes the logs' value only when `done`
   rises: a price that changed since (a deck paused or deleted) says nothing of the day. `kept` is true once it was, or once
   done reaches `keepAt`; `closed` likewise at `goal`. `goal`, `keepAt`, `time`, `reason` and `filled` never change. A day
   that is over only rises, when real reviews of it arrive late (the other device's log, an Anki import).
@@ -39,7 +43,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   the smaller encoded line. Commutative and idempotent, so any device can read any file again.
 - **File**: JSON Lines, one record per day, oldest first (`DayLedger.encoded()`, `decode(_:)`); keys `day` (ISO date),
   `reviews`, `done`, `goal`, `keep`, `kept`, `closed`, `time` and `worked` (to 0.1 s), `reason` (`start`, `ringClosed`,
-  `closedInARow`, `ringOpen`, `smallPlan`, `sustainedOvershoot`; an unknown one reads `ringOpen`), `filled`, `words`. `decode` never
+  `closedInARow`, `ringOpen`, `smallPlan`, `sustainedOvershoot`; an unknown one reads `ringOpen`), `filled`, `words`, `rule` (missing: 0). `decode` never
   throws: an unreadable line costs its day only. Where the files live: `deck-package.md`.
 - **The app side**: `DailyRingModel.refresh(documents:files:ledger:reloadFiles:delay:)` takes a `ProgressLedgerStore?` (`nil` in
   previews and tests: no ledger, no write). It reads the ledger off the main actor, with the deck files, when `reloadFiles` is set
@@ -228,7 +232,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 
 - **Pace**: seconds per done card at two prices (`Pace`, `DailyGoal.pace`): for cards that were new at
   the start of their study day (no reviews before the day), and for the others (review, relearning,
-  learning from earlier days).
+  learning from earlier days). `DailyProgress.pace` is the pace over the seven study days before today, the price the
+  day began with: the rounds, Catch Up, the deck rows, the widget and How It Works (`DayBreakdown`) all use it, so no minute
+  figure drifts from another while the day's own grades come in.
 - A review's time is how long the card stood on screen from showing the question to the grade while
   the app was active (`ReviewLogEntry.duration`, key `ms` in `reviews.jsonl`, in milliseconds).
   `SessionDriver` measures it with `ActiveStopwatch` on `SuspendingClock`: the iPhone reports a
@@ -275,7 +281,11 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 
 ## Streak
 
-- A day counts when its streak step is done (done ≥ its `keepAt`, the end of the step), an empty plan too (`keepAt` 0).
+- A day counts when its streak step is done (done ≥ its `keepAt`, the end of the step), an empty plan too (`keepAt` 0): an
+  exhausted deck, with nothing due, keeps the streak. An empty plan that nobody could fill, every deck paused or every card
+  suspended, with nothing done, is an idle day (`LedgerDay.isIdle`: `goal` 0 and not `kept`): it neither grows the streak nor
+  breaks it (`Streak.walk` `isIdle`), is no ring and no medal, and does not end a run of closed rings; Today shows it as kept,
+  with nothing at stake and no reminder. Work done in it makes it an ordinary kept day.
 - A past day is judged by its record (`kept`, `closed`), which holds the day's own goal and `keepAt` and only rises, when
   reviews of that day arrive late; a day made up on a later day stays missed.
 - Days before `DailyGoal.planRuleStart` (23.10.2026) count with one review, so as not to break a streak
@@ -322,13 +332,14 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 ## Words learned
 
 - `WordsLearned` (VocabCore/Statistics), the gain Today shows as its figure ("Words learned" 412, "+12 today"): the words whose Word →
-  Meaning card (kind not production; a card without a kind is a word) is in the review phase, not suspended, in active decks.
-  A word held twice (the same `WordKey`) counts once, a card without a word key is a word of its own. A lapse takes the word
-  out until it is relearned; a suspended card is in neither number. `wordsAtDayStart` is the same from the card states before
+  Meaning card (kind not production; a card without a kind is a word) has left learning (review or relearning, `WordsLearned.hasLeftLearning`),
+  not suspended, in active decks. The ledger and the medals count by the same rule.
+  A word held twice (the same `WordKey`) counts once, a card without a word key is a word of its own. A lapse takes no word
+  out; a suspended card is in neither number. `wordsAtDayStart` is the same from the card states before
   today's reviews (`Scheduler.standing(_:atStartOf:now:)`, shared with `MemoryEstimate`); `shownGain` is "+N today" and is nil
   unless above 0. `DailyProgress.learned` holds it; `WordsLearned.line` is the text. With a past day in the ledger,
   `learned.wordsAtDayStart` is the ledger's count of the day before and `learned.words` that plus today's gain from the
-  logs, so a word that lapsed stays counted, as in the medals.
+  logs, which count by the same rule, so the headline never falls and equals tomorrow's ledger value for today.
 - Words-learned medals: `DayRecord.wordsLearned` is the count of words that had left learning by the end of that day
   (`WordsLearned.cumulative`, kept in the ledger as `wordsLearned`; the first day by the Steps rule over the log; a lapse takes
   none back; a card without a full log counts from the first study day). `AchievementKind.wordsLearned(count:)` for `WordsLearned.milestones(upTo:)`: 10, 50, 100,

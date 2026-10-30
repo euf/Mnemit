@@ -5,8 +5,14 @@ import Foundation
 /// by its end.
 ///
 /// A record only rises (`raised(reviews:done:worked:wordsLearned:)`): real reviews of the day that arrive late, another
-/// device's log or an import, lift it; a log that says less leaves it as it was.
+/// device's log or an import, lift it; a log that says less leaves it as it was. A record of an older `rule` than
+/// `currentRule` was written by code that is known to have counted wrongly: `DailyProgress.evaluate` works the day out
+/// from the logs again instead of raising it.
 public struct LedgerDay: Hashable, Sendable {
+    /// The rule that writes records now. 1: a deck counts once per day (rule 0 counted a deck that a document held
+    /// twice, and its past days stayed inflated for good), and a day nothing could be asked of is idle.
+    public static let currentRule = 1
+
     /// The study day number (`StudyCalendar.dayNumber`).
     public var day: Int
     /// The entries of the logs on the day.
@@ -31,11 +37,13 @@ public struct LedgerDay: Hashable, Sendable {
     public var filled: Bool
     /// The words that had left learning by the end of the day (`WordsLearned.cumulative`).
     public var wordsLearned: Int
+    /// The rule that wrote the record (`currentRule`); 0 for a record of a file without the key.
+    public var rule: Int
 
     /// `kept` and `closed` are what `done` says unless given.
     public init(
         day: Int, reviews: Int, done: Int, goal: Int, keepAt: Int, kept: Bool? = nil, closed: Bool? = nil, time: Double,
-        reason: DailyGoal.SizeReason, worked: Double, filled: Bool, wordsLearned: Int
+        reason: DailyGoal.SizeReason, worked: Double, filled: Bool, wordsLearned: Int, rule: Int = LedgerDay.currentRule
     ) {
         self.day = day
         self.reviews = reviews
@@ -49,7 +57,13 @@ public struct LedgerDay: Hashable, Sendable {
         self.worked = worked
         self.filled = filled
         self.wordsLearned = wordsLearned
+        self.rule = rule
     }
+
+    /// An empty plan that nobody could have worked, nothing done: every deck paused or every card suspended
+    /// (`DayRecord.isIdle`). It is the one record with `goal` 0 that is not `kept`: the day neither keeps the streak nor
+    /// breaks it, and counts for no medal. An exhausted deck, with nothing due, is not idle: it keeps the streak.
+    public var isIdle: Bool { goal == 0 && !kept && done == 0 }
 
     /// The day as the size rule reads it (`DailyGoal.nextTime(after:)`).
     public var ringDay: DailyGoal.RingDay {
@@ -66,8 +80,11 @@ public struct LedgerDay: Hashable, Sendable {
         raised.done = max(self.done, done)
         if done > self.done { raised.worked = max(self.worked, worked) }
         raised.wordsLearned = max(self.wordsLearned, wordsLearned)
-        raised.kept = kept || raised.done >= keepAt
-        raised.closed = closed || raised.done >= goal
+        // An idle day stays idle until something is done in it.
+        if !(isIdle && raised.done == 0) {
+            raised.kept = kept || raised.done >= keepAt
+            raised.closed = closed || raised.done >= goal
+        }
         return raised
     }
 
@@ -86,8 +103,9 @@ public struct DayLedger: Hashable, Sendable {
         self.days = days
     }
 
-    /// Both ledgers' days; of a day in both, the record that is more: the larger `done`, then `reviews`, `wordsLearned`
-    /// and `goal`, then the smaller encoded line. Commutative and idempotent.
+    /// Both ledgers' days; of a day in both, the record that is more: the newer `rule`, then the larger `done`,
+    /// `reviews`, `wordsLearned` and `goal`, then the smaller encoded line. A device that has not learned the new rule
+    /// yet cannot lift a day back to its old figures. Commutative and idempotent.
     public func merging(_ other: DayLedger) -> DayLedger {
         DayLedger(days: days.merging(other.days, uniquingKeysWith: Self.winner))
     }
@@ -98,7 +116,7 @@ public struct DayLedger: Hashable, Sendable {
     }
 
     private static func winner(_ a: LedgerDay, _ b: LedgerDay) -> LedgerDay {
-        let keys = [(a.done, b.done), (a.reviews, b.reviews), (a.wordsLearned, b.wordsLearned), (a.goal, b.goal)]
+        let keys = [(a.rule, b.rule), (a.done, b.done), (a.reviews, b.reviews), (a.wordsLearned, b.wordsLearned), (a.goal, b.goal)]
         for (x, y) in keys where x != y { return x > y ? a : b }
         return line(a) <= line(b) ? a : b
     }
@@ -119,6 +137,8 @@ public struct DayLedger: Hashable, Sendable {
         var worked: Double
         var filled: Bool
         var words: Int
+        /// Missing in the files of rule 0.
+        var rule: Int?
 
         init(_ day: LedgerDay) {
             self.day = CivilDate(dayNumber: day.day).isoString
@@ -133,6 +153,7 @@ public struct DayLedger: Hashable, Sendable {
             worked = LedgerDay.tenths(day.worked) / 10
             filled = day.filled
             words = day.wordsLearned
+            rule = day.rule
         }
 
         var ledgerDay: LedgerDay? {
@@ -140,7 +161,7 @@ public struct DayLedger: Hashable, Sendable {
             return LedgerDay(
                 day: date.dayNumber, reviews: max(0, reviews), done: max(0, done), goal: max(0, goal), keepAt: max(0, keep), kept: kept,
                 closed: closed, time: time, reason: DailyGoal.SizeReason(name: reason), worked: worked, filled: filled,
-                wordsLearned: max(0, words))
+                wordsLearned: max(0, words), rule: max(0, rule ?? 0))
         }
     }
 

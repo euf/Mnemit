@@ -19,6 +19,14 @@ public struct DayRecord: Hashable, Sendable {
     /// words learned are earned from; a lapse takes none back.
     public var wordsLearned: Int
 
+    /// The ring was closed with work in it: a day whose plan was empty closes its ring, but counts for nothing.
+    /// "Rings closed" on Progress, in the month recap and for the medals is this.
+    public var closedWithWork: Bool { closed && done > 0 }
+
+    /// Nothing was asked of the day and nothing could be: its plan was empty because every deck was paused or every
+    /// card suspended, and nothing was done. The day neither keeps the streak nor breaks it (`LedgerDay.isIdle`).
+    public var isIdle: Bool { goal == 0 && !kept && done == 0 }
+
     /// How the day's ring is drawn, in laps of its goal: a closed day on which cards were done is full at least, and
     /// goes on over itself as far as it was worked past the goal (at most `maxLaps`, 3); any other day has the share of
     /// its goal that was done, so a partial day is partial, and a missed day, or an idle one that had nothing due, is an
@@ -106,11 +114,12 @@ public enum Achievements {
             func earnOnce(_ kind: AchievementKind) { if tiers.insert(kind).inserted { earn(kind) } }
             for days in streakMilestones where record.streak >= days { earnOnce(.streak(days: days)) }
             // A ring closed with work in it: a day whose plan was empty closes its ring, but earns nothing.
-            let worked = record.closed && record.done > 0
+            let worked = record.closedWithWork
             if worked { earnOnce(.firstRing) }
             if let last = previous, record.day != last + 1 { run = 0 }
             previous = record.day
-            run = worked ? run + 1 : 0
+            // An idle day (everything paused or suspended) neither adds to a run of closed rings nor ends it.
+            run = worked ? run + 1 : record.isIdle ? run : 0
             if run > 0, run % 7 == 0 { earn(.perfectWeek) }
             if record.ringShare >= 2 { earn(.doubleRing) }
             if record.ringShare >= DayRecord.maxLaps { earn(.tripleRing) }
@@ -130,7 +139,7 @@ public enum Achievements {
         let days = records.filter { inMonth($0.day) }
         guard !days.isEmpty else { return nil }
         return MonthRecap(
-            year: target.year, month: target.month, daysStudied: days.filter { $0.done > 0 }.count, ringsClosed: days.filter(\.closed).count,
+            year: target.year, month: target.month, daysStudied: days.filter { $0.done > 0 }.count, ringsClosed: days.filter(\.closedWithWork).count,
             cardsDone: days.reduce(0) { $0 + $1.done }, bestStreak: days.map(\.streak).max() ?? 0,
             achievements: earned(over: records).filter { inMonth($0.day) })
     }

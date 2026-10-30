@@ -148,6 +148,27 @@ struct AchievementsTests {
         #expect(!previous.achievements.contains(Achievement(kind: .comeback, day: october + 2)))
     }
 
+    @Test func aMonthRecapNeverClosesMoreRingsThanItHasStudiedDays() throws {
+        // Nine days of study and three days with an empty plan, whose rings are closed and hold no work: Progress says 9.
+        let first = CivilDate(year: 2026, month: 10, day: 1).dayNumber
+        let studied = (0..<9).map { day(first + $0, done: 12, goal: 12, streak: $0 + 1) }
+        let empty = (9..<12).map { DayRecord(day: first + $0, done: 0, goal: 0, kept: true, closed: true, streak: 9) }
+        let recap = try #require(Achievements.recap(ofMonthContaining: first, records: studied + empty, calendar: .testing))
+        #expect(recap.daysStudied == 9)
+        #expect(recap.ringsClosed == 9)
+        #expect((studied + empty).filter(\.closedWithWork).count == recap.ringsClosed)
+    }
+
+    @Test func anIdleDayNeitherEndsARunOfClosedRingsNorCountsInIt() {
+        // Six closed rings, an idle day (everything paused), a seventh closed ring: a perfect week, the idle day between.
+        var records = closedDays(6)
+        records.append(DayRecord(day: 106, done: 0, goal: 0, kept: false, closed: false, streak: 6))
+        records.append(day(107, streak: 7))
+        #expect(records[6].isIdle)
+        // The idle day adds nothing to the run and does not end it: the seventh closed ring completes the week.
+        #expect(Achievements.earned(over: records).filter { $0.kind == .perfectWeek }.map(\.day) == [107])
+    }
+
     @Test func aMonthWithoutADayInTheRecordsHasNoRecap() {
         let records = closedDays(3)
         let far = records[0].day + 90

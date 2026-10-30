@@ -115,3 +115,71 @@ extension DailyProgressTests {
         #expect(progress.ring.goal == alone.plan.reviewsDue + alone.plan.learning + alone.plan.newAdmitted)
     }
 }
+
+/// A day with an empty plan that nothing could fill neither keeps the streak nor breaks it.
+extension DailyProgressTests {
+    /// Studied on three days in a row, then every deck paused, or every card suspended, and never opened again.
+    func abandoned(pausing: Bool) throws -> Deck {
+        var deck = try Deck(learningOptions: options(), cards: (0..<40).map { fresh("c\($0)") })
+        for offset in 0..<3 {
+            study(&deck, onDay: today - 9 + offset)
+        }
+        if pausing {
+            deck.learningOptions.isPaused = true
+        } else {
+            for index in deck.cards.indices {
+                deck.cards[index].isSuspended = true
+            }
+        }
+        return deck
+    }
+
+    @Test func daysWhenEveryDeckIsPausedNeitherGrowNorBreakTheStreak() throws {
+        let progress = evaluate([try abandoned(pausing: true)])
+        // Three studied days, then seven days (to today) of nothing to ask: the streak is the three.
+        #expect(progress.streak.days == 3)
+        #expect(progress.records.suffix(7).allSatisfy { $0.isIdle })
+        #expect(progress.records.suffix(7).allSatisfy { $0.streak == 3 })
+        // No medal from the idle days: not the week-long streak they would add up to, no ring.
+        #expect(!progress.achievements.contains { $0.kind == .streak(days: 7) })
+        #expect(progress.achievements.filter { $0.kind == .perfectWeek }.isEmpty)
+        // Nothing is at stake today, and it asks nothing.
+        #expect(progress.streakKeptToday)
+        #expect(progress.ring == DailyRing(done: 0, goal: 0))
+    }
+
+    @Test func daysWhenEveryCardIsSuspendedNeitherGrowNorBreakTheStreak() throws {
+        let progress = evaluate([try abandoned(pausing: false)])
+        #expect(progress.streak.days == 3)
+        #expect(progress.records.suffix(7).allSatisfy { $0.isIdle })
+        #expect(!progress.achievements.contains { $0.kind == .streak(days: 7) })
+    }
+
+    @Test func anIdleDayStaysInTheLedgerAsItWasAndNothingDoneInItMakesItAnOrdinaryDay() throws {
+        let deck = try abandoned(pausing: true)
+        let first = evaluate([deck])
+        let ledger = DayLedger().updating(first.ledgerUpdates)
+        let idle = try #require(ledger.days[today - 1])
+        #expect(idle.isIdle && !idle.kept && !idle.closed)
+        // The learner resumes the deck: the idle days stay idle, whatever the plan of today is.
+        var resumed = deck
+        resumed.learningOptions.isPaused = false
+        let later = evaluate([resumed], ledger: ledger)
+        #expect(later.records.dropLast().suffix(6).allSatisfy { $0.isIdle })
+        #expect(later.streak.days == 3)
+        // Work done in an idle day's record lifts it to a kept, closed day.
+        let worked = idle.raised(reviews: 4, done: 2, worked: 20, wordsLearned: 0)
+        #expect(!worked.isIdle && worked.kept && worked.closed)
+        #expect(idle.raised(reviews: 0, done: 0, worked: 0, wordsLearned: 0) == idle)
+    }
+
+    @Test func anExhaustedDeckStillKeepsTheStreak() throws {
+        // Thirty cards were due yesterday, five were done: the day before had nothing due, with cards in the deck. Its empty
+        // plan keeps the streak, as the design says; only a plan nobody could fill is idle.
+        var deck = try Deck(learningOptions: options(), cards: (0..<30).map { due("c\($0)", onDay: today - 1) })
+        review(5, of: &deck, at: calendar.start(ofDay: today - 1).addingTimeInterval(12 * 3600))
+        let emptyDay = try #require(evaluate([deck]).records.first { $0.day == today - 2 })
+        #expect(emptyDay.goal == 0 && emptyDay.done == 0)
+        #expect(emptyDay.kept && emptyDay.closed && !emptyDay.isIdle)
+    }
+}
