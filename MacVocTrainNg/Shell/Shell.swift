@@ -144,6 +144,28 @@ final class Shell {
         await decks.close(url)
     }
 
+    /// Try Again on a deck's page: the deck that could not be opened is closed and opened anew, as its file may be readable
+    /// now.
+    func reopenDeck(_ url: URL) async {
+        await forget(url)
+        deck(for: url)
+        revision += 1
+    }
+
+    /// Try Again on the stream's screen: the decks of the run that could not be opened are opened anew, and the run begins again.
+    func retryStudy() async {
+        guard let failed = run, runFailure != nil else { return }
+        let urls = failed.decks.map(\.url)
+        for deck in failed.decks where deck.failure != nil {
+            await forget(deck.url)
+        }
+        guard run === failed else { return }
+        let run = StudyRun(deck: deck(for: urls[0]), entry: failed.entry, upcoming: Array(urls.dropFirst()), ownsDeck: false) { [unowned self] in deck(for: $0) }
+        self.run = run
+        runFailure = nil
+        await begin(run)
+    }
+
     // MARK: - Selecting
 
     /// Selects a page, opening the deck of a deck's page. While a stream runs, the window shows nothing else.
@@ -212,9 +234,9 @@ final class Shell {
         dayDecks.active.reduce(0) { $0 + (studyCounts($1.url)?.total ?? 0) }
     }
 
-    /// Whether the day can be told: the ring is worked out and the decks are read.
+    /// Whether the day can be told: the ring is worked out for today and the decks are read.
     var isDayReady: Bool {
-        ring.progress != nil && counts.isRead
+        ring.progress != nil && !ring.isStale && counts.isRead
     }
 
     var dayAction: DayAction {

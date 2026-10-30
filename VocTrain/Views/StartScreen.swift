@@ -61,6 +61,10 @@ struct StartScreen: View {
     @State private var monthRecap: MonthRecap?
     @State private var showsProgressAfterRecap = false
     @AppStorage("shownMonthRecap") private var shownMonthRecap = ""
+    /// A streak that ended, under the card from the first idle Today until Study is started; `shownStreakEnd` holds the study
+    /// day it ended on, so that it is told once.
+    @State private var endedStreak: EndedStreak?
+    @AppStorage("shownStreakEnd") private var shownStreakEnd = 0
     @State private var wantsIntroduction = false
     /// Whether the decks were checked for a new fit of their FSRS parameters since launch.
     @State private var hasCheckedParameters = false
@@ -74,7 +78,7 @@ struct StartScreen: View {
     var body: some View {
         NavigationStack(path: $path) {
             TodayScreen(
-                decks: knownDecks.byName, counts: deckCounts.counts, paused: deckCounts.paused, failed: deckCounts.failed, folderLost: knownDecks.folderLost, progress: ring.progress, now: Date(), query: $query,
+                decks: knownDecks.byName, counts: deckCounts.counts, paused: deckCounts.paused, failed: deckCounts.failed, folderLost: knownDecks.folderLost, progress: ring.isStale ? nil : ring.progress, endedStreak: endedStreak, now: Date(), query: $query,
                 hits: search.hits(for: query), isSearching: !search.isLoaded,
                 canForget: { !knownDecks.isInFolder($0.url) }, study: { study($0) }, pushOn: { study(.all, entry: .pushOn) }, showDeck: showDeck, showCard: showCard,
                 forget: { knownDecks.forget($0.url) }, setPaused: setPaused, addCards: { openLastDeck(importing: nil) },
@@ -124,7 +128,7 @@ struct StartScreen: View {
             DeckWebBrowserView(browser: browser) { webBrowser = nil }
         }
         .fullScreenCover(item: $run) { run in
-            StudyRunView(run: run, ring: ring, knownDecks: knownDecks, counts: deckCounts.counts) { self.run = nil }
+            StudyRunView(run: run, ring: ring, knownDecks: knownDecks, counts: deckCounts.counts, onRetry: run.ownsDeck ? { retry(run) } : nil) { self.run = nil }
         }
         .fullScreenCover(isPresented: $showsIntroduction) {
             OnboardingView(knownDecks: knownDecks, reminders: reminders, onFinish: finishIntroduction)
@@ -157,6 +161,7 @@ struct StartScreen: View {
             }
         }
         .onChange(of: run) { previous, current in
+            if current != nil { endedStreak = nil }
             if current == nil, let previous {
                 Task {
                     if previous.ownsDeck {
@@ -230,16 +235,12 @@ struct StartScreen: View {
         // At launch and whenever the app comes back to the front. A deck that is open shows
         // its own figures, and Today reads again once it is closed.
         .task(id: scenePhase) {
-            if scenePhase == .active, run == nil, path.isEmpty, addingCards == nil {
-                await refreshAll()
-            }
+            if scenePhase == .active { await refreshOnForeground() }
             if scenePhase == .active { syncWidget() }
             // While Today stays on screen, a minute at a time: reviews saved on the Mac arrive, and the day turns at 04:00.
             while scenePhase == .active, !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
-                if !Task.isCancelled, run == nil, path.isEmpty, addingCards == nil, !showsSettings, !showsNewDeck {
-                    await refreshAll()
-                }
+                if !Task.isCancelled { await refreshOnTick() }
             }
         }
         // Once the lists are read and nothing covers Today, the decks that are due get their
@@ -247,6 +248,12 @@ struct StartScreen: View {
         // anew when Today is back, with the decks already done no longer due.
         .task(id: canRefitParameters) {
             if canRefitParameters { await refitParameters() }
+        }
+        // A streak that ended, once Today is idle: under the card until Study starts, and told once.
+        .task(id: pendingEndedStreak) {
+            guard let ended = pendingEndedStreak, endedStreak == nil else { return }
+            shownStreakEnd = ended.day
+            endedStreak = ended
         }
         // The first open of a new month, after a month with study: the month's screen, once.
         .task(id: pendingMonthRecap) {
@@ -262,6 +269,12 @@ struct StartScreen: View {
     private var isIdle: Bool {
         hasSeenIntroduction && !showsIntroduction && !isOpeningStudy && run == nil && path.isEmpty && addingCards == nil && !showsSettings && !showsNewDeck
             && monthRecap == nil && !isChoosing && !isChoosingImport && incomingAnki == nil && waitingAnki == nil && chosenAnki == nil
+    }
+
+    /// The streak that ended since it was last told, once Today is all there is on screen and the ring is of today.
+    private var pendingEndedStreak: EndedStreak? {
+        guard isIdle, !ring.isStale, let progress = ring.progress else { return nil }
+        return EndedStreak.pending(records: progress.records, current: progress.streak.days, shown: shownStreakEnd)
     }
 
     /// The recap of last month while nothing is open, and never in a test run.
@@ -296,11 +309,11 @@ struct StartScreen: View {
                 DeckScreen(
                     deck: deck, knownCounts: deckCounts.counts[deck.url], pace: ring.progress?.pace, start: { studyDeck(deck, entry: $0) },
                     rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) },
-                    didChangePause: { refreshRing(withOpen: deck) })
+                    didChangePause: { refreshRing(withOpen: deck) }, retry: { Task { await pushed.retry(slot) } })
             }
         case let .card(slot, id):
             PushedDeckView(pushed: pushed, slot: slot) { deck in
-                CardHost(deck: deck, id: id)
+                CardHost(deck: deck, id: id) { Task { await pushed.retry(slot) } }
             }
         case .progress:
             if let progress = ring.progress {
@@ -344,6 +357,19 @@ struct StartScreen: View {
         run = StudyRun(deck: OpenDeck(url: first), entry: entry, upcoming: Array(urls.dropFirst()))
     }
 
+    /// Try Again on the screen of a run whose deck could not be opened: the run goes, and once its screen is off the glass
+    /// the same decks are opened anew. The onChange of `run` closes the old decks.
+    private func retry(_ failed: StudyRun) {
+        guard run == failed, failed.ownsDeck else { return }
+        run = nil
+        Task {
+            isOpeningStudy = true
+            defer { isOpeningStudy = false }
+            try? await Task.sleep(for: .milliseconds(700))
+            if run == nil { run = failed.triedAgain() }
+        }
+    }
+
     /// Starts the stream of the deck whose screen is open, on the deck the screen holds.
     private func studyDeck(_ deck: OpenDeck, entry: StudyModel.Entry) {
         guard run == nil else { return }
@@ -380,6 +406,39 @@ struct StartScreen: View {
     private func refreshRing(withOpen deck: OpenDeck) {
         let others = knownDecks.byName.map(\.url).filter { !KnownDecks.isSameFile($0, deck.url) }
         ring.refresh(documents: deck.document.map { [$0] } ?? [], files: others, ledger: knownDecks.ledgerStore)
+    }
+
+    /// The app came to the front: the decks and the ring are read again unless a deck screen or the Add Cards sheet covers
+    /// Today, then the ring only, if the day has turned. A stream refreshes the ring itself.
+    private func refreshOnForeground() async {
+        guard run == nil else { return }
+        if path.isEmpty, addingCards == nil {
+            await refreshAll()
+        } else if ring.isStale {
+            await refreshRingForNewDay()
+        }
+    }
+
+    /// A minute has passed: as `refreshOnForeground()`, and not behind Settings or the New Deck sheet.
+    private func refreshOnTick() async {
+        guard run == nil else { return }
+        if path.isEmpty, addingCards == nil, !showsSettings, !showsNewDeck {
+            await refreshAll()
+        } else if ring.isStale {
+            await refreshRingForNewDay()
+        }
+    }
+
+    /// The day turned while a deck screen or a sheet covers Today: the ring is worked out again, with the decks that are
+    /// open as their documents have them (their new cards for the day), so that the screens show today's figures. The stream
+    /// does the same for itself.
+    private func refreshRingForNewDay() async {
+        var open: [OpenDeck] = []
+        for deck in pushed.openDecks + [addingCards].compactMap({ $0 }) where deck.document != nil && !open.contains(where: { KnownDecks.isSameFile($0.url, deck.url) }) {
+            open.append(deck)
+        }
+        let others = knownDecks.byName.map(\.url).filter { url in !open.contains { KnownDecks.isSameFile($0.url, url) } }
+        await ring.refresh(documents: open.compactMap(\.document), files: others, ledger: knownDecks.ledgerStore, reloadFiles: true, delay: .zero).value
     }
 
     /// The deck used last, as the list spells its file.

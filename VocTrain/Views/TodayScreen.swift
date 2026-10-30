@@ -30,6 +30,8 @@ struct TodayScreen: View {
     var folderLost = false
     /// `nil` until evaluated.
     var progress: DailyProgress?
+    /// A streak that ended, told under the card once (`EndedStreak`).
+    var endedStreak: EndedStreak?
     var now: Date
     /// What the search field holds.
     @Binding var query: String
@@ -181,6 +183,8 @@ struct TodayScreen: View {
                 // The list's own card; the whole of it is a button to Progress, its week row ends in the chevron the deck rows draw too.
                 TodayCard(progress: isDayReady ? progress : nil, now: now, isLoaded: isDayReady, open: progress == nil ? nil : showProgress)
                     .listRowInsets(EdgeInsets())
+            } footer: {
+                if let endedStreak { StreakEndedNote(streak: endedStreak) }
             }
             let sections = TodayDecks(decks, paused: paused)
             if !sections.active.isEmpty {

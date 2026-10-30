@@ -21,7 +21,14 @@ struct DeckPage: View {
                     await ParameterRefitter.refit(document, pool: AllDecks.pool(besides: document)) { shell.session == nil }
                 }
             } else if let failure = deck.failure {
-                ContentUnavailableView("The deck could not be opened", systemImage: "exclamationmark.triangle", description: Text(failure))
+                ContentUnavailableView {
+                    Label("The deck could not be opened", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(failure)
+                } actions: {
+                    Button("Try Again") { Task { await shell.reopenDeck(deck.url) } }
+                        .buttonStyle(.borderedProminent)
+                }
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

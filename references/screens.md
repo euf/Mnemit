@@ -49,8 +49,14 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   - Under a divider, the week's seven rings with their weekday letters (`WeekRings`), a chevron at the end of the row.
   - Where the figures do not fit beside the ring (the larger text sizes, `ViewThatFits`) the ring stands over them.
   - The day turns at 04:00, and work done just before it, on either device, belongs to the day before. The card waits for
-    every deck to be read and the ring to be evaluated (`isDayReady`); until then it shows placeholders. The ring keeps its
-    size with the text; the figures wrap and the list scrolls.
+    every deck to be read and the ring to be evaluated for today (`isDayReady`, `DailyRingModel.isStale`); until then it
+    shows placeholders. The ring is evaluated again on coming to the front and every minute, under a deck screen and the
+    Add Cards sheet too, with the open decks as their documents have them (`refreshRingForNewDay`); the stream does the
+    same for itself. The ring keeps its size with the text; the figures wrap and the list scrolls.
+  - A streak that ended (two missed days, or a day that only kept the streak after one) is told once, on the first idle
+    Today after the break, as a line under the card: "12-day streak ended · Best: 30", the best left out when the ended
+    streak was it (`EndedStreak`, `StreakEndedNote`; the Mac's page shows the same line under its card). It goes when
+    Study starts, and `shownStreakEnd` keeps the study day it ended on so that it is told once.
 - The bottom bar holds the day's one button beside Search All Cards, which is minimised to a button
   (`.searchToolbarBehavior(.minimize)`). The button is named by `DayAction`
   (`Shared/Session/TodaySummary.swift`): **Study** in the accent while the ring is open; **Catch Up** once the
@@ -63,6 +69,12 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   minutes up, "< 1 min", backlog included); no subtitle. Ring and streak cover all decks; decks are rows. Tapping a
   row pushes the deck screen. Swipe and context menu: **Pause Deck** (`pause.circle`); a swipe also offers Remove from
   List where the list may forget the deck.
+- A deck that can't be read (damaged, from a newer version, still downloading from iCloud) says why under its name, with a
+  warning sign in place of the time (`DeckRow(failure:)`, `KnownDeckCounts.failed`); it does not hold the day back, the other
+  decks show their figures and the ring counts them. Its screen offers **Try Again**.
+- A Mnemit folder that can't be reached (signed out of iCloud, the folder gone) is kept, not forgotten: Today shows the card
+  "The Mnemit folder can't be reached" with **Choose Folder Again** (`LostFolderCard`, `KnownDecks.folderLost`); a refresh
+  reads the folder again once it is back, and New Deck waits.
 - **Paused** section at the bottom, only when a deck is paused (Pausing a deck).
 - Toolbar, trailing: the **+** menu: Add Cards (into the last used deck, `KnownDecks.last`: studied or added
   to), Import… (into the deck used last), Shared Decks on AnkiWeb, New Deck (into the deck folder; without
@@ -434,8 +446,9 @@ edited options; Save applies everything as one change.
   rules screen; "Skip" leads on) → "One stack a day" (four lines: the stack, the ring, the streak, the
   ladder) → sync (iCloud Drive: folder picker, `chooseFolder`; "Only on This iPhone": `useLocalFolder`,
   the app's Documents folder without bookmark or scope, in Files On My iPhone ▸ Mnemit; with no decks in
-  the folder, "Decks in this folder appear here." or "Add decks in Files, under On My iPhone → Mnemit.",
-  neither naming the Mac) → reminder.
+  the folder, "Decks in this folder appear here." or "Next, create your first deck.", neither naming the Mac) →
+  reminder. The welcome step has **Skip Introduction** under Get Started: it ends the introduction there; Today's empty
+  state offers New Deck, Shared Decks and the iCloud Drive folder, and Settings shows the introduction again.
 - **Settings** (a sheet from the **…** menu of Today, `SettingsView`): Reminder (the Daily Reminder toggle
   and, while it is on, the time; its footer appears only when notifications are off in iOS Settings, with
   Open Settings), Hard and Easy Buttons (a toggle in a section of its own, footer "Adds Hard and Easy: buttons, and
@@ -594,8 +607,8 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
   (prominent, large) while the plan has cards left in the deck, else **Learn 10 New Words** (grey); the same button is the last
   toolbar item, after Add Cards and Learning Options, behind a fixed spacer. Toolbar: the segmented Cards | Statistics in the
   middle, Add Cards and Learning Options, and on Cards the Details button. Sheets: Learning Options, Add Cards and the
-  preview of an import, the two that offer Study These Now (a stream over the deck once the sheet has gone); an empty deck opens Add Cards by itself, once. A deck still being read shows a spinner,
-  one that cannot be opened says why. An error of a deck (autosave, read) is a sheet of the window, never
+  preview of an import, the two that offer Study These Now (a stream over the deck once the sheet has gone); an empty deck opens Add Cards by itself, once. A deck still being read shows a spinner, with "Downloading from iCloud…" under it while the file is still arriving (iPhone);
+  one that cannot be opened says why (a deck of a newer version also says to update Mnemit), with Try Again. An error of a deck (autosave, read) is a sheet of the window, never
   app-modal. Cards, filters, inspector and edit sheet: Card browser.
 - **The stream** (`SessionView`) takes the whole window: the sidebar goes (`columnVisibility = .detailOnly`, the
   toggle removed) and Done gives it back in the state it had; the selection cannot change meanwhile. It is one

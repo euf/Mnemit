@@ -19,11 +19,13 @@ struct DeckScreen: View {
     var delete: () async throws -> Void
     /// The deck was paused or resumed from its menu.
     var didChangePause: () -> Void = {}
+    /// Opens the deck again after it could not be opened.
+    var retry: () -> Void = {}
 
     var body: some View {
         DeckContent(
             name: deck.name, knownCounts: knownCounts, pace: pace, document: deck.document, failure: deck.failure, merger: deck.merger,
-            canEdit: deck.isEditable, start: start, rename: rename, delete: delete, didChangePause: didChangePause
+            canEdit: deck.isEditable, start: start, rename: rename, delete: delete, didChangePause: didChangePause, retry: retry
         )
         .background {
             if let document = deck.document {
@@ -61,6 +63,8 @@ struct DeckContent: View {
     var rename: (String) async throws -> Void
     var delete: () async throws -> Void
     var didChangePause: () -> Void = {}
+    /// Opens the deck again after it could not be opened.
+    var retry: () -> Void = {}
 
     @State private var showsRename = false
     @State private var confirmsDelete = false
@@ -82,6 +86,7 @@ struct DeckContent: View {
                     Text(failure)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    Button("Try Again", action: retry)
                 }
             }
             if let document, let merger {

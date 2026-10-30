@@ -67,6 +67,13 @@ final class PushedDecks {
         }
     }
 
+    /// Opens the deck of `slot` anew, for Try Again on a deck that could not be opened: the file may be there now.
+    func retry(_ slot: Slot) async {
+        guard let url = decks[slot]?.url else { return }
+        await close(slot)
+        reopen(slot, at: url)
+    }
+
     /// Opens the deck of `slot` again, at `url`: the deck was renamed, or the rename failed.
     func reopen(_ slot: Slot, at url: URL) {
         decks[slot] = OpenDeck(url: url)

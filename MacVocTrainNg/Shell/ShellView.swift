@@ -124,6 +124,8 @@ struct ShellView: View {
             ProgressPage(shell: shell)
                 .navigationTitle("Progress")
         case let .deck(url):
+            // A deck opened anew (Try Again) is another object under the same file.
+            let _ = shell.revision
             if let deck = shell.decks.deck(for: url) {
                 DeckPage(deck: deck, shell: shell)
                     .id(url)
@@ -145,6 +147,8 @@ struct ShellView: View {
             } description: {
                 Text(failure)
             } actions: {
+                Button("Try Again") { Task { await shell.retryStudy() } }
+                    .buttonStyle(.borderedProminent)
                 Button("Done") { shell.endStudy() }
             }
         } else {

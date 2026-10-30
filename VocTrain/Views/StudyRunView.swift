@@ -9,10 +9,12 @@ struct StudyRunView: View {
     var knownDecks: KnownDecks
     /// What today's plan takes from each deck.
     var counts: [URL: StudyCounts]
+    /// Opens the decks anew after one could not be opened; `nil` where the screen holding the deck does it.
+    var onRetry: (() -> Void)?
     var onClose: () -> Void
 
     var body: some View {
-        RunStream(run: run, ring: ring, knownDecks: knownDecks, onClose: onClose)
+        RunStream(run: run, ring: ring, knownDecks: knownDecks, onRetry: onRetry, onClose: onClose)
     }
 }
 
@@ -20,15 +22,42 @@ struct StudyRunView: View {
 /// doesn't turn from white to grey when the stream appears.
 struct StudyPlaceholder: View {
     var failure: String?
+    /// The file being read: while iCloud Drive is still downloading it, the spinner says so.
+    var url: URL?
+    /// Opens the deck again; `nil` where the screen can't.
+    var onRetry: (() -> Void)?
     var onClose: () -> Void
+    @State private var isDownloading = false
 
     var body: some View {
         NavigationStack {
             Group {
                 if let failure {
-                    ContentUnavailableView("The deck could not be opened", systemImage: "exclamationmark.triangle", description: Text(failure))
+                    ContentUnavailableView {
+                        Label("The deck could not be opened", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(failure)
+                    } actions: {
+                        if let onRetry {
+                            Button("Try Again", action: onRetry)
+                                .buttonStyle(.borderedProminent)
+                        }
+                    }
                 } else {
-                    ProgressView()
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        if isDownloading {
+                            Text("Downloading from iCloud…")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .task(id: url) {
+                while let url, !Task.isCancelled {
+                    isDownloading = ICloudDownload.isPending(url)
+                    try? await Task.sleep(for: .seconds(1))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -49,6 +78,7 @@ private struct RunStream: View {
     var run: StudyRun
     var ring: DailyRingModel
     var knownDecks: KnownDecks
+    var onRetry: (() -> Void)?
     var onClose: () -> Void
     @State private var model: StudyModel?
     @Environment(\.scenePhase) private var scenePhase
@@ -73,7 +103,9 @@ private struct RunStream: View {
             if let model {
                 StudyView(model: model, ring: ring, onClose: onClose)
             } else {
-                StudyPlaceholder(failure: settled && ready.isEmpty ? run.decks.compactMap(\.failure).first : nil, onClose: onClose)
+                StudyPlaceholder(
+                    failure: settled && ready.isEmpty ? run.decks.compactMap(\.failure).first : nil,
+                    url: run.decks.first { $0.document == nil && $0.failure == nil }?.url, onRetry: onRetry, onClose: onClose)
             }
         }
         .background {
