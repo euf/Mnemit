@@ -40,7 +40,8 @@ struct ParametersSection: View {
             }
             switch reviewCount {
             case nil:
-                LabeledContent("Usable reviews", value: "")
+                // Counted in a moment: a row with no value would look broken.
+                EmptyView()
             case let count? where count < FSRSOptimizer.minimumReviewCount:
                 LabeledContent("Usable reviews", value: "\(count) / \(FSRSOptimizer.minimumReviewCount)")
             case let count?:

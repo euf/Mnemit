@@ -15,18 +15,19 @@ struct DeckTodayCard: View {
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            // The time keeps its width, the counts share what is left.
+            // The time and each count keep their width: a label that doesn't fit ("Learning") moves the layout on
+            // to the next one instead of breaking inside a word.
             HStack(alignment: .top, spacing: Spacing.gap) {
                 today.fixedSize(horizontal: true, vertical: false)
-                counters
+                counters(fixed: true)
             }
             VStack(alignment: .leading, spacing: Spacing.tight) {
                 today
-                HStack(alignment: .top, spacing: Spacing.gap) { counters }
+                HStack(alignment: .top, spacing: Spacing.gap) { counters(fixed: true) }
             }
             VStack(alignment: .leading, spacing: Spacing.tight) {
                 today
-                counters
+                counters(fixed: false)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -62,11 +63,16 @@ struct DeckTodayCard: View {
     }
 
     @ViewBuilder
-    private var counters: some View {
+    private func counters(fixed: Bool) -> some View {
         if let plan {
-            if plan.due > 0 { Figure(label: Text("Due"), value: Text(plan.due, format: .number)) }
-            if plan.new > 0 { Figure(label: Text("New"), value: Text(plan.new, format: .number)) }
-            if plan.learning > 0 { Figure(label: Text("Learning"), value: Text(plan.learning, format: .number)) }
+            if plan.due > 0 { counter(Figure(label: Text("Due"), value: Text(plan.due, format: .number)), fixed: fixed) }
+            if plan.new > 0 { counter(Figure(label: Text("New"), value: Text(plan.new, format: .number)), fixed: fixed) }
+            if plan.learning > 0 { counter(Figure(label: Text("Learning"), value: Text(plan.learning, format: .number)), fixed: fixed) }
         }
+    }
+
+    @ViewBuilder
+    private func counter(_ figure: some View, fixed: Bool) -> some View {
+        if fixed { figure.fixedSize(horizontal: true, vertical: false) } else { figure }
     }
 }
