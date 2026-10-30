@@ -31,11 +31,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
-    /// Quitting saves every open deck first, a grade made a moment ago included, and then answers.
+    /// Quitting saves every open deck first, a grade made a moment ago included, and then answers. A deck that
+    /// can't be saved keeps the app open: its page says why, and quitting would drop the reviews it holds.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         Task {
-            await shell.closeAll()
-            replyToTerminate(true)
+            replyToTerminate(await shell.closeAll())
         }
         return .terminateLater
     }

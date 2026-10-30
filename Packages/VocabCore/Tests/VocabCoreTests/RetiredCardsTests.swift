@@ -97,7 +97,7 @@ struct RetiredCardsTests {
         let package = try DeckFile.fileWrapper(for: deck)
 
         let json = String(decoding: package.fileWrappers![DeckFile.deckFileName]!.regularFileContents!, as: UTF8.self)
-        #expect(json.contains("\"version\" : 6") && json.contains("\"retired\""))
+        #expect(json.contains("\"version\" : 7") && json.contains("\"retired\""))
         let lines = String(decoding: package.fileWrappers![DeckFile.reviewsFileName]!.regularFileContents!, as: UTF8.self).split(separator: "\n")
         #expect(lines.count == 2)
         #expect(lines.contains { $0.contains(dom.id.uuidString) })

@@ -97,6 +97,39 @@ struct ProgressLedgerStoreTests {
         }
     }
 
+    /// This device's file that iCloud Drive has not downloaded is a placeholder: the ledger is not written over it.
+    @Test func aPlaceholderOfTheOwnFileIsNotWrittenOver() throws {
+        let folder = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let store = ProgressLedgerStore(folder: folder, defaults: device())
+        store.write(DayLedger().updating([day(20_000, done: 5)]))
+        let placeholder = store.directory.appending(path: ".\(store.file.lastPathComponent).icloud", directoryHint: .notDirectory)
+        try FileManager.default.moveItem(at: store.file, to: placeholder)
+
+        store.write(DayLedger().updating([day(20_000, done: 1)]))
+        #expect(!FileManager.default.fileExists(atPath: store.file.path))
+        #expect(FileManager.default.fileExists(atPath: placeholder.path))
+    }
+
+    /// A deck file that fails to read leaves the ledger as it is: the days before today would be sized from the
+    /// decks that did read.
+    @Test func noLedgerIsWrittenWhileADeckFileFailsToRead() async throws {
+        let folder = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let now = Date()
+        let first = try writeDeck(named: "First", cards: reviewedCards(12, now: now), in: folder)
+        let missing = folder.appending(path: "Missing.mnemit", directoryHint: .isDirectory)
+        let store = ProgressLedgerStore(folder: folder, defaults: device())
+
+        let model = DailyRingModel()
+        await model.refresh(documents: [], files: [first, missing], ledger: store, reloadFiles: true, delay: .zero).value
+        #expect(store.read().days.isEmpty)
+
+        let whole = DailyRingModel()
+        await whole.refresh(documents: [], files: [first], ledger: store, reloadFiles: true, delay: .zero).value
+        #expect(!store.read().days.isEmpty)
+    }
+
     func writeDeck(named name: String, cards: [Card], in directory: URL) throws -> URL {
         let url = directory.appending(path: "\(name).mnemit", directoryHint: .isDirectory)
         try DeckFile.fileWrapper(for: Deck(cards: cards)).write(to: url, options: .atomic, originalContentsURL: nil)

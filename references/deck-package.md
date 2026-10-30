@@ -20,6 +20,12 @@ The deck file, how both apps edit and merge it, and the media files of cards.
   (`Deck.retiredCards`), as card records without logs, left out while there are none. Their lines in `reviews.jsonl` come
   after those of the cards. An older app would drop the key and reject the lines of a card it doesn't know, so it rejects the
   deck. A deck without the key reads with no retired cards.
+- Format version 7: lines of `reviews.jsonl` with `"undone":true` are reviews the learner took back with Undo
+  (`Card.undone`, after the card's other lines). They are not part of `Card.log`, so the schedule, the statistics and the
+  optimizer never see them; a merge keeps a review out of the joined log if either version noted it as undone, and
+  replays the card without it. An older app would read such a line as a review, so it rejects the deck, and an app of
+  this version writes every deck as version 7. A reset clears the notes of the card; a merge drops those before the latest
+  reset. Ceiling: a Redo after another device took the note in is taken back again by that device's copy.
 - The options `leechThreshold` and `leechAction` came without a version bump. `leechAction` is `"suspend"` or left out
   (`keep`, the default); a missing or unknown value reads `keep`. An older app drops both on save, and the deck reads as keep
   again.
@@ -69,10 +75,12 @@ The deck file, how both apps edit and merge it, and the media files of cards.
   card leaves the plan and the stream with its reviews kept (retired), so today's ring keeps what it counted. Edited texts
   follow the later `contentChanged`; the stream shows `document.card(withID:)`, so the card on screen and those to come show
   the new text. The file keeps times to the second.
-- A review's change is `learningOnly`: it and its inverse replace only the learning state, log, reset stamp and suspension of
-  a card the deck holds. Undoing a review keeps a text a merge brought in and brings no deleted card back; if a merge deleted
-  the graded card, undo does nothing to it. Ceiling: if the other device graded the same card meanwhile, undo restores this
-  device's state of it.
+- A review's change is `learningOnly`: it replaces only the learning state, log, reset stamp and suspension of a card the
+  deck holds. Its inverse takes back that one review (`Card.takeBack`, `DeckChange.ReviewEdit`): if the card's log is still
+  the one the review left, the card is exactly as it was before, else the log without the review is replayed, so reviews
+  another device added meanwhile, a reset and a suspension made since stay. Redo puts the review back the same way.
+  Undoing a review keeps a text a merge brought in and brings no deleted card back; if a merge deleted the graded card, undo
+  does nothing to it.
 - Undo survives a reread. UIDocument and NSDocument empty their undo manager inside `revert(toContentsOf:…)`, which is how a
   file is read again after another device changed it. Both `DeckFileDocument`s (iPhone and Mac) override the revert: they swap
   in a scratch `UndoManager` and put the real one back when the read ends (the iPhone in the completion handler, the Mac in a

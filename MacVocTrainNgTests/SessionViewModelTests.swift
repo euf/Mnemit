@@ -101,7 +101,7 @@ struct SessionViewModelTests {
 
         undoManager.undo()
         #expect(document.card(withID: first.id)?.isNew == true)
-        #expect(model.currentCard == first)
+        #expect(model.currentCard?.withoutUndoNote == first)
         #expect(model.session.completedCount == 0)
         #expect(model.stage == .revealed)  // the card comes back with its answer shown
         #expect(!undoManager.canUndo)  // card and session in one step
@@ -146,7 +146,12 @@ struct SessionViewModelTests {
         var reviewCount: Int
 
         @MainActor init(_ model: SessionViewModel) {
-            cards = model.document.deck.cards
+            // The note of a review taken back (`Card.undone`) is not part of the place the learner sees.
+            cards = model.document.deck.cards.map { card in
+                var card = card
+                card.undone = []
+                return card
+            }
             currentCardID = model.currentCard?.id
             completedCount = model.session.completedCount
             totalCount = model.session.totalCount
@@ -191,7 +196,7 @@ struct SessionViewModelTests {
 
         undoManager.undo()
         #expect(model.stage == .revealed)
-        #expect(model.currentCard == card)
+        #expect(model.currentCard?.withoutUndoNote == card)
 
         undoManager.redo()
         #expect(model.isResting)
@@ -226,7 +231,7 @@ struct SessionViewModelTests {
 
         undoManager.undo()
         undoManager.undo()
-        #expect(document.card(withID: card.id) == card)
+        #expect(document.card(withID: card.id)?.withoutUndoNote == card)
         undoManager.redo()
         #expect(document.card(withID: card.id)?.learningState?.step == 1)
         #expect(model.currentCard?.learningState?.step == 1)
@@ -269,11 +274,11 @@ struct SessionViewModelTests {
         undoManager.undo()
         #expect(model.streamStage == .plan)
         #expect(model.currentCard?.id == pushed.id)
-        #expect(document.card(withID: pushed.id) == pushed)
+        #expect(document.card(withID: pushed.id)?.withoutUndoNote == pushed)
         undoManager.undo()
         #expect(model.streamStage == .plan)
         #expect(model.currentCard?.id == planned.id)
-        #expect(document.card(withID: planned.id) == planned)
+        #expect(document.card(withID: planned.id)?.withoutUndoNote == planned)
         #expect(!undoManager.canUndo)
     }
 
@@ -286,7 +291,7 @@ struct SessionViewModelTests {
         step(undoManager) { model.grade(.good) }
 
         undoManager.undo()
-        #expect(model.currentCard == first)
+        #expect(model.currentCard?.withoutUndoNote == first)
         model.reveal()
         step(undoManager) { model.grade(.again) }
         #expect(!undoManager.canRedo)
@@ -295,7 +300,7 @@ struct SessionViewModelTests {
 
         undoManager.undo()
         #expect(document.card(withID: first.id)?.isNew == true)
-        #expect(model.currentCard == first)
+        #expect(model.currentCard?.withoutUndoNote == first)
         #expect(model.session.mistakeIDs.isEmpty)
         #expect(!undoManager.canUndo)
     }
@@ -336,7 +341,7 @@ struct SessionViewModelTests {
         // The card comes back with its answer shown, as on the iPhone: it was graded so.
         undoManager.undo()
         #expect(document.card(withID: first.id)?.isNew == true)
-        #expect(model.currentCard == first)
+        #expect(model.currentCard?.withoutUndoNote == first)
         #expect(model.stage == .revealed)
     }
 
@@ -403,7 +408,7 @@ struct SessionViewModelTests {
         #expect(model.session.reviewCount == 1)
 
         undoManager.undo()
-        #expect(document.card(withID: leech.id) == leech)
+        #expect(document.card(withID: leech.id)?.withoutUndoNote == leech)
         #expect(model.leechMoment == nil)
         #expect(!model.isResting)
         #expect(model.session.leechIDs.isEmpty)
@@ -617,9 +622,9 @@ struct SessionViewModelTests {
         #expect(closed == nil)
 
         undoManager.undo()
-        #expect(document.card(withID: card.id) == card)
+        #expect(document.card(withID: card.id)?.withoutUndoNote == card)
         undoManager.redo()
-        #expect(document.card(withID: card.id) == reviewed)
+        #expect(document.card(withID: card.id)?.withoutUndoNote == reviewed)
     }
 
     @Test(arguments: [false, true])
@@ -817,5 +822,15 @@ struct SessionViewModelTests {
         #expect(reviewed.log.map(\.date) == expected.log.map(\.date))
         #expect(reviewed.log.map(\.grade) == expected.log.map(\.grade))
         #expect(document.deck.progress.map(\.day) == [day])
+    }
+}
+
+extension Card {
+    /// The card without the note of a review taken back (`undone`): after Undo it is the card as it was before the
+    /// review, but for that note.
+    var withoutUndoNote: Card {
+        var card = self
+        card.undone = []
+        return card
     }
 }

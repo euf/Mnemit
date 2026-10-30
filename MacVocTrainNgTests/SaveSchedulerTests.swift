@@ -12,7 +12,7 @@ struct SaveSchedulerTests {
         SaveScheduler(delay: delay) { [saves] in
             guard saves.canSave else { return nil }
             saves.count += 1
-            return Task {}
+            return Task { [saves] in !saves.fails }
         }
     }
 
@@ -46,6 +46,23 @@ struct SaveSchedulerTests {
         #expect(saves.count == 0)
     }
 
+    /// A save that fails keeps the change: `flush()` saves it again, and the failure is reported.
+    @Test func aFailedSaveLeavesTheChangeToBeSavedAgain() async {
+        let scheduler = makeScheduler(delay: .zero)
+        var failures = 0
+        scheduler.onFailure = { failures += 1 }
+        saves.fails = true
+
+        scheduler.changed()
+        await scheduler.saving?.value
+        #expect(saves.count == 1 && failures == 1 && scheduler.hasFailed)
+
+        saves.fails = false
+        scheduler.flush()
+        await scheduler.saving?.value
+        #expect(saves.count == 2 && failures == 1 && !scheduler.hasFailed)
+    }
+
     /// E.g. the file can no longer be changed when the save is due.
     @Test func aSaveWithNowhereToSaveIsLeftOut() async {
         let scheduler = makeScheduler(delay: .zero)
@@ -63,4 +80,6 @@ final class SaveCounter {
     var count = 0
     /// Whether there is somewhere to save to.
     var canSave = true
+    /// Whether the saves it counts fail.
+    var fails = false
 }

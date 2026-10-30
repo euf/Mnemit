@@ -198,7 +198,7 @@ struct DocumentTests {
     @Test func everyDeckFileErrorOpensWithItsOwnMessage() {
         let errors: [DeckFile.Error] = [
             .notADeck, .unsupportedVersion(5), .outdatedVersion(2), .damagedReviewLog(line: 3), .missingReviewLog,
-            .reviewsOfUnknownCard(line: 3), .reviewLogTooLong(question: "dom"), .duplicateCardID(question: "dom"),
+            .reviewsOfUnknownCard(line: 3), .reviewLogTooLong(question: "dom"), .reviewLogTooShort(question: "dom"), .duplicateCardID(question: "dom"),
             .parameterOutOfRange(index: 20),
         ]
         let openingErrors = errors.map(VocabularyDocument.openingError(for:))

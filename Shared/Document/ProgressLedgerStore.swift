@@ -66,6 +66,13 @@ struct ProgressLedgerStore: Equatable, Sendable {
                 folder.stopAccessingSecurityScopedResource()
             }
         }
+        // This device's file as it can't be read now (a placeholder iCloud Drive hasn't downloaded, a failed
+        // coordinated read) holds the sizes of the days it recorded: replacing it with `ledger`, which lacks them,
+        // would write them anew. The next evaluation reads it.
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+        if names.contains(".\(file.lastPathComponent).icloud") || (FileManager.default.fileExists(atPath: file.path) && Self.data(at: file) == nil) {
+            return
+        }
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var error: NSError?
         NSFileCoordinator().coordinate(writingItemAt: file, options: .forReplacing, error: &error) { url in

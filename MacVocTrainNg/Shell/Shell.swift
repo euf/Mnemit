@@ -429,9 +429,9 @@ final class Shell {
     }
 
     /// Saves and closes every open deck, when the app quits.
-    func closeAll() async {
+    func closeAll() async -> Bool {
         subscriptions = [:]
-        await decks.closeAll()
+        return await decks.closeAll()
     }
 
     // MARK: - Undo

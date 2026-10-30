@@ -30,6 +30,10 @@ public struct DeckChange: Sendable {
     /// review, e.g. its text by a merge, and undoing the review must not take that back, nor bring a
     /// card back that was deleted meanwhile.
     var learningOnly = false
+    /// With `learningOnly`: the cards on which the change takes back or puts back one review instead of replacing
+    /// the whole learning, see `ReviewEdit`. The inverse of a review takes back only that review, so reviews
+    /// another device added to the card meanwhile stay.
+    var reviewEdits: [Card.ID: ReviewEdit] = [:]
     /// Media files the deck takes in: those of an import or of a merge, or those a card's new
     /// media come in. Files the deck holds already stay as they are.
     var addedMedia = DeckMedia()
@@ -37,6 +41,13 @@ public struct DeckChange: Sendable {
     /// still names stays.
     var removedMedia: Set<String> = []
     var contentStamp: ContentStamp
+
+    /// One review of a card that a `learningOnly` change takes back or puts back; the card of the upsert is the card
+    /// as it was before the review (`takeBack`) or after it (`putBack`), see `Card.takeBack(_:before:scheduler:)`.
+    enum ReviewEdit: Sendable {
+        case takeBack(ReviewLogEntry)
+        case putBack(ReviewLogEntry)
+    }
 
     /// What a change does to `Deck.contentModified` and `Deck.learningOptionsChanged`.
     enum ContentStamp: Sendable {
@@ -151,6 +162,7 @@ extension DeckChange {
         let cards = deck.cards.filter { ids.contains($0.id) && (!$0.isNew || !$0.log.isEmpty) }.map { card in
             var card = card
             card.resetLearningState()
+            card.undone = []
             card.learningStateReset = reset
             return card
         }
@@ -275,6 +287,7 @@ extension Deck {
             }
         }
 
+        let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
         var indices = Dictionary(cards.enumerated().map { ($0.element.id, $0.offset) }) { first, _ in first }
         var insertions: [(card: Card, index: Int)] = []
         var comingBack = Set<Card.ID>()
@@ -282,8 +295,22 @@ extension Deck {
             var card = card
             if change.learningOnly {
                 guard let index = indices[card.id] else { continue }
-                inverse.upserts.append((cards[index], nil))
-                cards[index].takeLearning(from: card)
+                let current = cards[index]
+                inverse.upserts.append((current, nil))
+                switch change.reviewEdits[card.id] {
+                case let .takeBack(entry)?:
+                    cards[index].takeBack(entry, before: card, scheduler: scheduler)
+                    inverse.reviewEdits[card.id] = .putBack(entry)
+                case let .putBack(entry)?:
+                    cards[index].putBack(entry, after: card, scheduler: scheduler)
+                    inverse.reviewEdits[card.id] = .takeBack(entry)
+                case nil:
+                    cards[index].takeLearning(from: card)
+                    // A review adds one entry at the end of the log; undoing it takes back that one.
+                    if let entry = card.log.last, card.log.count == current.log.count + 1, card.log.dropLast() == current.log[...] {
+                        inverse.reviewEdits[card.id] = .takeBack(entry)
+                    }
+                }
                 continue
             }
             if let index = indices[card.id] {

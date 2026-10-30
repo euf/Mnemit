@@ -150,6 +150,8 @@ final class VocabularyDocument: ObservableObject {
             return AppError(String(localized: "The review log of this deck contains reviews of a card that is not in the deck (line \(line))."))
         case let .reviewLogTooLong(question):
             return AppError(String(localized: "The review log of the card “\(question)” lists more reviews than the card has had."))
+        case let .reviewLogTooShort(question):
+            return AppError(String(localized: "The review log of this deck (reviews.jsonl) lacks reviews of the card “\(question)”. Wait until the deck has finished syncing and open it again; if that doesn't help, restore a copy from the .backups folder next to it."))
         case let .duplicateCardID(question):
             return AppError(String(localized: "Several cards of this deck have the same ID, among them “\(question)”."))
         case let .parameterOutOfRange(index):

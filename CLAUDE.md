@@ -149,4 +149,6 @@ The active developer dir may be the Command Line Tools; prefix with
   logs may only grow at the end or be replaced as a whole.
   A line of `reviews.jsonl` has the keys `card`, `date`, `grade` and, when set, `mode` and `ms`
   (the milliseconds the card was on screen, `ReviewLogEntry.duration`); an older app version
-  drops `ms` on save, which costs the pace its measured time and nothing else.
+  drops `ms` on save, which costs the pace its measured time and nothing else. A line with `"undone":true` is
+  a review the learner took back (`Card.undone`, never part of `Card.log`): a merge needs it to keep the review
+  out, and an older app version would read it as a review, so version 7 added it and rejects older apps.

@@ -39,23 +39,38 @@ final class OpenDecks {
 
     /// Saves and closes the kept deck of the file, before the file is renamed or deleted. A change whose
     /// undo group is still open is saved too: the deck waits for the group to close first.
-    func close(_ url: URL) async {
+    /// A deck whose save failed stays kept, open, with its unsaved changes; returns `false` then.
+    @discardableResult
+    func close(_ url: URL) async -> Bool {
         let key = Self.key(url)
-        guard let deck = kept.removeValue(forKey: key) else { return }
+        guard let deck = kept.removeValue(forKey: key) else { return true }
         order.removeAll { $0 == key }
         await deck.settleChanges()
-        await deck.close()
+        guard await deck.close() else {
+            kept[key] = deck
+            order.append(key)
+            return false
+        }
+        return true
     }
 
-    /// Saves and closes every kept deck, when the app quits.
-    func closeAll() async {
+    /// Saves and closes every kept deck, when the app quits. The decks whose save failed stay kept and open;
+    /// returns `false` if there are any.
+    func closeAll() async -> Bool {
+        var failed = false
         let decks = order.compactMap { kept[$0] }
         kept = [:]
         order = []
         for deck in decks {
             await deck.settleChanges()
-            await deck.close()
+            if !(await deck.close()) {
+                failed = true
+                let key = Self.key(deck.url)
+                kept[key] = deck
+                order.append(key)
+            }
         }
+        return !failed
     }
 
     /// The words of the open decks but `document`'s, paused ones included, for the places that

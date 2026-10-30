@@ -44,8 +44,8 @@ struct SessionDriverTests {
         #expect(listener.moves == 1)
 
         undoManager.undo()
-        #expect(document.card(withID: first.id) == first)
-        #expect(driver.currentCard == first)
+        #expect(document.card(withID: first.id)?.withoutUndoNote == first)
+        #expect(driver.currentCard?.withoutUndoNote == first)
         #expect(driver.session.reviewCount == 0)
         #expect(listener.restores == 1)
         #expect(listener.moves == 2)
@@ -70,7 +70,7 @@ struct SessionDriverTests {
 
         undoManager.undo()
         #expect(driver.session.reviewCount == 0)
-        #expect(driver.currentCard == card)
+        #expect(driver.currentCard?.withoutUndoNote == card)
 
         undoManager.redo()
         #expect(driver.session.reviewCount == 1)
@@ -88,7 +88,7 @@ struct SessionDriverTests {
         let current = later.currentCard
 
         undoManager.undo()
-        #expect(driver.document.card(withID: first.id) == first)
+        #expect(driver.document.card(withID: first.id)?.withoutUndoNote == first)
         #expect(listener.restores == 1)
         #expect(later.stream.id == stream)
         #expect(later.currentCard == current)
@@ -161,8 +161,8 @@ struct SessionDriverTests {
         #expect(undoManager.undoActionName == String(localized: "Suspend Card"))
 
         undoManager.undo()
-        #expect(document.card(withID: first.id) == first)
-        #expect(driver.currentCard == first)
+        #expect(document.card(withID: first.id)?.withoutUndoNote == first)
+        #expect(driver.currentCard?.withoutUndoNote == first)
         #expect(driver.session.totalCount == 2)
         #expect(driver.session.suspendedCount == 0)
         #expect(!undoManager.canUndo)
@@ -177,7 +177,7 @@ struct SessionDriverTests {
         let (driver, undoManager, _) = try makeDriver(cards: 1)
         step(undoManager) { driver.suspendCurrentCard() }
         #expect(driver.isResting)
-        #expect(driver.currentCard == nil)
+        #expect(driver.currentCard?.withoutUndoNote == nil)
         #expect(!driver.suspendCurrentCard())
     }
 
@@ -216,12 +216,12 @@ struct SessionDriverTests {
         let other = try #require(driver.document.deck.cards.first { $0.id != current.id })
 
         step(undoManager) { driver.document.delete([other.id]) }
-        #expect(driver.currentCard == current)
+        #expect(driver.currentCard?.withoutUndoNote == current)
         #expect(listener.changes == 1)
         #expect(listener.moves == 0)
 
         step(undoManager) { driver.grade(.good) }
-        #expect(driver.currentCard == nil)
+        #expect(driver.currentCard?.withoutUndoNote == nil)
         #expect(driver.isResting)
     }
 

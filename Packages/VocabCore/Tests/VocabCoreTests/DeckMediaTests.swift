@@ -104,11 +104,11 @@ struct DeckMediaTests {
         #expect(!json.contains("Image") && !json.contains("Audio"))
     }
 
-    @Test func versionSixIsWrittenAndThePreviousOnesAreStillRead() throws {
+    @Test func versionSevenIsWrittenAndThePreviousOnesAreStillRead() throws {
         let (deck, _, _) = try deckWithMedia()
         let json = String(decoding: try DeckFile.encodeDeck(deck), as: UTF8.self)
-        #expect(DeckFile.currentVersion == 6)
-        #expect(json.contains("\"version\" : 6"))
+        #expect(DeckFile.currentVersion == 7)
+        #expect(json.contains("\"version\" : 7"))
 
         func deckJSON(version: Int) -> Data {
             Data(
@@ -117,19 +117,19 @@ struct DeckMediaTests {
                  "cards": [{"id": "6F9619FF-8B86-D011-B42D-00C04FC964FF", "question": "dom", "answer": "Haus"}]}
                 """.utf8)
         }
-        for version in [3, 4, 5, 6] {
+        for version in [3, 4, 5, 6, 7] {
             let old = try DeckFile.decode(deckJSON(version: version))
             #expect(old.cards[0].media.isEmpty)
             #expect(old.media.isEmpty)
             #expect(old.retiredCards.isEmpty)
         }
-        #expect(throws: DeckFile.Error.unsupportedVersion(7)) { try DeckFile.decode(deckJSON(version: 7)) }
-        // A package of version 4 reads, and is written as 6.
+        #expect(throws: DeckFile.Error.unsupportedVersion(8)) { try DeckFile.decode(deckJSON(version: 8)) }
+        // A package of version 4 reads, and is written as 7.
         let package = try DeckFile.fileWrapper(for: Deck())
         package.removeFileWrapper(package.fileWrappers![DeckFile.deckFileName]!)
         package.addRegularFile(withContents: deckJSON(version: 4), preferredFilename: DeckFile.deckFileName)
         let read = try DeckFile.decode(package)
-        #expect(String(decoding: try DeckFile.encodeDeck(read), as: UTF8.self).contains("\"version\" : 6"))
+        #expect(String(decoding: try DeckFile.encodeDeck(read), as: UTF8.self).contains("\"version\" : 7"))
     }
 
     @Test func aNameThatIsNoFileNameReadsAsNone() throws {

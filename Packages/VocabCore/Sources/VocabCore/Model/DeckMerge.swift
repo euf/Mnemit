@@ -29,6 +29,8 @@ extension DeckChange {
     ///   (`Deck.learningOptionsChanged`), or likewise from the later `contentModified`.
     /// - The review logs of a card are joined. A review in both versions, at the same
     ///   second with the same grade, counts once, with the duration either version holds.
+    /// - A review one version took back with Undo (`Card.undone`) stays out of the joined log, whichever version
+    ///   still holds it; the notes of both versions are joined. The learning state is replayed without it.
     /// - A card's reviews before its latest reset (`Card.learningStateReset`) drop out:
     ///   a version that hasn't seen the reset counts as a new card with only the
     ///   reviews since, replayed from scratch (#273).
@@ -175,6 +177,8 @@ extension DeckChange {
         merged.learningState = learned.learningState
         merged.log = learned.log
         merged.learningStateReset = learned.learningStateReset
+        let reset = learned.learningStateReset.map { Int($0.timeIntervalSince1970.rounded(.down)) } ?? .min
+        merged.undone = Set(mine.undone + theirs.undone).filter { $0.second >= reset }.sorted()
         let suspension = latestSuspension(of: mine, and: theirs, preferringMine: !otherHasContent)
         merged.isSuspended = suspension.isSuspended
         merged.suspensionChanged = suspension.suspensionChanged
@@ -188,17 +192,6 @@ extension DeckChange {
         var model: FSRSParameters
         /// Whether its deck is the one the merge takes the content from.
         var hasContent: Bool
-    }
-
-    /// A review as a merge compares it: at whole seconds, as `reviews.jsonl` stores it.
-    private struct ReviewKey: Hashable {
-        var second: Int
-        var grade: Grade
-
-        init(_ entry: ReviewLogEntry) {
-            second = Int(entry.date.timeIntervalSince1970.rounded(.down))
-            grade = entry.grade
-        }
     }
 
     /// Of both versions of a card, the one that suspended or resumed it last; if both
@@ -251,8 +244,9 @@ extension DeckChange {
     }
 
     private static func joinedLearning(of mine: Version, and theirs: Version, scheduler: Scheduler) -> Card {
-        let mine = resetting(mine, like: theirs.card, scheduler: scheduler)
-        let theirs = resetting(theirs, like: mine.card, scheduler: scheduler)
+        let undone = Set(mine.card.undone + theirs.card.undone)
+        let mine = resetting(dropping(undone, from: mine, scheduler: scheduler), like: theirs.card, scheduler: scheduler)
+        let theirs = resetting(dropping(undone, from: theirs, scheduler: scheduler), like: mine.card, scheduler: scheduler)
         let onlyMine = reviews(of: mine.card.log, missingFrom: theirs.card.log)
         let onlyTheirs = reviews(of: theirs.card.log, missingFrom: mine.card.log)
 
@@ -273,6 +267,24 @@ extension DeckChange {
             return scheduler.replaying(joined, of: mine.card)
         }
         return continuing(mine, theirs, scheduler: scheduler)
+    }
+
+    /// `version` without the reviews in `undone`: its log replayed without them if it reaches back to the
+    /// first review, else its count of reviews lowered by them, as `Card.takeBack(_:before:scheduler:)` does.
+    private static func dropping(_ undone: Set<ReviewKey>, from version: Version, scheduler: Scheduler) -> Version {
+        guard version.card.log.contains(where: { undone.contains(ReviewKey($0)) }) else { return version }
+        var card = version.card
+        let rest = card.log.filter { !undone.contains(ReviewKey($0)) }
+        if card.hasCompleteLog {
+            card = scheduler.replaying(rest, of: card)
+        } else {
+            if var state = card.learningState {
+                state.reviews = max(0, state.reviews - (card.log.count - rest.count))
+                card.learningState = state
+            }
+            card.log = rest
+        }
+        return Version(card: card, model: scheduler.learningOptions.parameters, hasContent: version.hasContent)
     }
 
     /// `version` after the reset of the learning state `other` holds, if `version`
