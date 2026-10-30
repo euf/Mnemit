@@ -52,7 +52,7 @@ are in [`references/`](references/).
   plan (cards in learning, then review cards with the lowest recall probability first, then the day's
   new cards, drawn from one queue over the decks), each card from the deck whose next
   card is most urgent and graded into that deck. Study This Deck runs it over one deck. When
-  the ring is closed the stack rests ("Ring closed") and offers Catch Up while the plan has cards
+  the ring is closed the stack rests ("Ring closed") and offers Keep Going while the plan has cards
   left; once the plan is done it offers Learn 10 New Words, ten new cards from the decks, mixed, whose
   reviews make the next days harder. A card is never reviewed before it is due: an early review gains FSRS
   little, and more work is a new card.
@@ -61,9 +61,9 @@ are in [`references/`](references/).
   [`learning-flow.md`](references/learning-flow.md). Today is one card: the ring, a picture with no number in it, and beside it
   three figures, the Day streak, the next moment with its minutes ("To keep your streak", "≈ 2 min") and the words learned, with
   the week of rings under them. The button under it names
-  what comes next: Study while the ring is open, Catch Up once it is closed and the plan has cards left, Learn 10 New Words
+  what comes next: Study while the ring is open, Keep Going once it is closed and the plan has cards left, Learn 10 New Words
   once the plan is done. The streak is kept after the first ≈ 2 minutes, where Study rests once ("Streak kept": Keep Going or
-  Done for Now); the next rest is the closed ring ("Ring closed"), then, after Catch Up, "All done". Study These Now, in Add
+  Done for Now); the next rest is the closed ring ("Ring closed"), then, after Keep Going, "All done". Study These Now, in Add
   Cards, studies the cards just added first. Inside, the day has a time in minutes of work at your own pace, learned from your
   review logs (`daily-ring.md`): two and a half minutes on the first day, then more after rings you close, less after one
   left open, and, for a learner who goes well past the ring on most days, what they really do; between two minutes and an
@@ -86,7 +86,7 @@ are in [`references/`](references/).
   in neither count. Older logs without times are priced from the pauses between reviews, by their
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
-  cards added later, Study These Now, Learn 10 New Words and Catch Up count as cards done beyond it. The ring is
+  cards added later, Study These Now, Learn 10 New Words and Keep Going count as cards done beyond it. The ring is
   full at the goal and goes on over itself past it, up to three laps. The flame stands in the Day streak figure: filled once the day keeps the streak, an orange outline with an exclamation mark the day after a missed one, a grey outline otherwise; no ring holds a number. A missed day is repaired when the next day closes its ring, the streak step
   is not enough then; two missed days in a row end the streak. Today is computed from the review
   logs; a day that is over is kept as a progress record, one file per device in the deck folder (`.mnemit-progress/`), and a
@@ -98,7 +98,7 @@ are in [`references/`](references/).
 - **The day's time paces a backlog.** After an import or a break, every card due is in today's
   plan, overdue ones included, the most forgotten first. The goal is the cards of the plan that
   fit the day's time: 1,500 overdue cards with a six-minute day give a goal of about 36 at 10
-  seconds a card, and the rest wait in the plan. When the ring closes, "Catch Up" goes on with
+  seconds a card, and the rest wait in the plan. When the ring closes, "Keep Going" goes on with
   them; those cards are due, so their reviews are ordinary ones and the cards done count beyond the goal.
   A segment of the stream is 100 cards and does not cut the plan.
 - **Two directions per word, the second one spaced review behind.** Each word has a
@@ -250,7 +250,7 @@ are in [`references/`](references/).
 - **Mac** (macOS 26): one window. Its sidebar lists Today, Progress and the decks of the Mnemit folder, each
   deck with "≈ 4 min" or a check (the minutes left of its plan); Today holds the Today card
   (the ring with the Day streak, the next moment, the words learned and the week) over all of them with the same button as the
-  iPhone (Study, Catch Up or Learn 10 New Words); a deck's page opens with the deck's own card ("≈ 4 min" with Due, New and
+  iPhone (Study, Keep Going or Learn 10 New Words); a deck's page opens with the deck's own card ("≈ 4 min" with Due, New and
   Learning) and Study This Deck, then either the card table (filters, inspector, multi-select, keyboard) or its statistics.
   Study is by keys and buttons, and neither app has a typed answer: the two buttons are Forgot and Good (← or 1, → or 3),
   named Don't know and Know on a card's first showing, Hard and Easy are ↓ ↑ or 2 4 (and buttons with "Hard and Easy Buttons"

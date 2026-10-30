@@ -13,7 +13,7 @@ with no settings.
 ## The rule
 
 1. **What the ring asks.** The cards of the day's FSRS plan that fit the day's time T: cards due, overdue included, most
-   forgotten first, then new cards in the time left. Due cards beyond T stay in the plan; Catch Up goes on with them.
+   forgotten first, then new cards in the time left. Due cards beyond T stay in the plan; Keep Going goes on with them.
 2. **New cards.** As many as T leaves after the plan's other cards (the allowance), shared between the decks from one
    queue: new words newest addition first, opened Meaning → Word cards alternating with them. A deck that sets New
    cards/day takes exactly that many, outside the allowance.
@@ -89,7 +89,7 @@ the parameters.
 
 ## The alternatives
 
-All rows change one part of the chosen rule. S: the learner stops at the ring; E: the learner goes on to Catch Up and more new
+All rows change one part of the chosen rule. S: the learner stops at the ring; E: the learner goes on to Keep Going and more new
 cards; skip 0.3: an open ring makes the learner skip the next day with probability 0.3. "Newcomers" are the 10 synthetic learner
 types without an imported collection, "real" the 854 users of the Anki logs; words are words in memory on day 120 (the sum of
 recall probabilities); open run is the longest run of open rings, in study days; peak is the largest ring of the run, in
@@ -173,7 +173,7 @@ day before; "first week" is the share of perfect first weeks.
   which Mnemit replays with seeded fuzz.
 - **One new card a day, first in the stack**: the only evidence is correlational (in the real logs a day without a new
   card is followed by a gap of 7 days or more 5.2 % of the time against 3.0 %).
-- **Intake smoothing** (new cards held to 1.25-2 × their recent average): Catch Up −1.5 points, words −5 to −16 %.
+- **Intake smoothing** (new cards held to 1.25-2 × their recent average): Keep Going −1.5 points, words −5 to −16 %.
 - **A "kept up with FSRS" counter**: it depends on the target retention and on the intake, so it punishes learners who
   add more.
 - **PEST steps** (Taylor & Creelman 1967): words +9 to 17 %, perfect first weeks 0.69 against 0.83. **A QUEST-like
@@ -250,7 +250,7 @@ faster climb (× 1.15 until the first open ring, TCP's slow start: 0.700 perfect
 - **Cards** (`cards.py`): FSRS-6 with the default parameters at retention 0.9, a learner with a willingness in minutes a day
   (lognormal around a level, sigma 0.4-0.9, 10-30 % of days skipped), 120 days, 40 seeds per synthetic type, prices of 30 s a new
   card and 10 s an other card (`DailyGoal`'s defaults), a deck of 5,000 words, a limit of 20 new cards a day. The day's plan, the
-  cut at T, new cards in the time left, Catch Up for the eager learner, done cards and recall drawn from R as in the app. Real users
+  cut at T, new cards in the time left, Keep Going for the eager learner, done cards and recall drawn from R as in the app. Real users
   enter with the minutes of their first 120 days as willingness (854 users with 120 days of log and a third of them studied).
   Runtime: about half an hour for one response over every rule on an idle Mac.
 - **Reproduce**: `Tools/ring-sim/cards.py --real ~/Library/Caches/anki-revlogs-10k --resp S` (and `--resp E`, `--skip 0.3`).

@@ -92,8 +92,8 @@ struct TodayPageContent: View {
     }
 }
 
-/// The Today page: `TodayPageContent` over the shell's day, with Study in the toolbar (⌘L is the Study menu's), the
-/// medals of earlier days as toasts and the month's recap.
+/// The Today page: `TodayPageContent` over the shell's day (its one Study button takes Return; ⌘L is the Study menu's),
+/// the medals of earlier days as toasts and the month's recap.
 struct TodayPage: View {
     var shell: Shell
     var newDeck: () -> Void
@@ -120,15 +120,6 @@ struct TodayPage: View {
             action: shell.dayAction, canStudy: shell.canStudyDay, study: { shell.study(.day) }, showProgress: { shell.select(.progress) },
             newDeck: newDeck, chooseFolder: chooseFolder, sharedDecks: { DeckWebWindow.show() }
         )
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(shell.dayAction.title) { shell.study(.day) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color.appAccent)
-                    .disabled(!shell.canStudyDay)
-                    .help("Study today's plan")
-            }
-        }
         .medalToast(toasts, at: .inset)
         .onChange(of: ring.progress, initial: true) {
             toasts.offer(ring.progress, earlierDays: true)

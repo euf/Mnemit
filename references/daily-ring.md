@@ -194,7 +194,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   cards and retired cards alike, so deleting a card never moves the ring back. A retired card is in no plan, count, browser,
   search, export, words learned or statistics; it is in `reviewsByDay` and in the FSRS refit (`Deck.trainingCards`).
   Reviews per day (`reviewsByDay`) are needed only for the start of the streak and for the days before `planRuleStart`.
-- A card is done in any mode, including Catch Up, the ring's rest.
+- A card is done in any mode, including Keep Going, the ring's rest.
 - **Partial credit**: the ring also shows the cards on their way (`DailyRing.underway`,
   `Deck.cardsUnderway`): each reviewed today and still due today counts the answers recalled today
   (Hard, Good, Easy) over those plus the learning steps it still needs, at its best moment of the day
@@ -203,7 +203,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - **Ring**: done cards against the day's goal. The ring is full at the goal and goes on over itself past it, a second
   lap and a third, as the Fitness rings do: the drawn value is done over goal, at most 3 (`DailyRingFigure.fraction`,
   `ProgressRing.maxLaps`; `DailyRing.fraction` itself stays capped at 1 and says whether the goal is met). Done cards
-  beyond the goal (Catch Up, Study These Now, Learn 10 New Words) count as cards done and draw the laps. A past day's ring is drawn
+  beyond the goal (Keep Going, Study These Now, Learn 10 New Words) count as cards done and draw the laps. A past day's ring is drawn
   the same way from `DayRecord.ringShare`: its share of its goal, a closed day at least full and up to 3 laps, a day
   with none done a `MissedDayMark`. `DailyProgress.weekRings` (seven days, today last) feeds the week's rings on Today and
   on the rests, and the Progress calendar draws the same share.
@@ -215,7 +215,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (`NextStep.moment`) it is a label over a value: "To keep your streak" · "≈ 2 min", "To close the ring" · "≈ 5 min", "To save
   your streak" (the day after a miss), "Reviews left" · "≈ 12 min" (ring closed, cards left), "To start your streak" (no
   streak), "Today" · "All done"; without a price the label is "Next" over the moment in words ("Keep your streak", "Close the
-  ring", "Save your streak", "Catch Up", "Start your streak"). As a sentence, where one line is all there is room for: "≈ 2
+  ring", "Save your streak", "Keep Going", "Start your streak"). As a sentence, where one line is all there is room for: "≈ 2
   min to keep your streak", "≈ 5 min to close the ring", at risk "≈ 6 min to close the ring and save your streak", without a
   streak "≈ 2 min to start your streak", "Ring closed · ≈ 12 min of reviews left" (two parts, `NextStep.lines`), "All done for
   today". Without a price (`nil` minutes) the time is left out: "Keep your streak", "Close the ring", "Close the ring to save
@@ -229,7 +229,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   shows the figures, the inline one "🔥 12 · ≈ 2 min"; the reminders take its streak and its "≈ 2 min". `DailyRingView` has no
   popover and is no button. Sizes, colours and VoiceOver: `design-spec.md` §5.7.
 - **The stack** is drawn as the cards left before the next moment, up to four edges, never as a number. Past the goal, after
-  the ring, it counts the cards left in the plan's lanes (Catch Up), or the cards of Learn 10 New Words or Study These
+  the ring, it counts the cards left in the plan's lanes (Keep Going), or the cards of Learn 10 New Words or Study These
   Now (`StudyModel.cardsBehind`).
 - **Cards left**: the plan's cards not done yet, `StudySession.counts(...).total` now (`DailyProgress.cardsLeft`). Done +
   left = plan, which is the goal or more (review cards beyond the day's time are left too). No screen shows it as a count;
@@ -248,7 +248,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - **Pace**: seconds per done card at two prices (`Pace`, `DailyGoal.pace`): for cards that were new at
   the start of their study day (no reviews before the day), and for the others (review, relearning,
   learning from earlier days). `DailyProgress.pace` is the pace over the seven study days before today, the price the
-  day began with: the rounds, Catch Up, the deck rows, the widget and How It Works (`DayBreakdown`) all use it, so no minute
+  day began with: the rounds, Keep Going, the deck rows, the widget and How It Works (`DayBreakdown`) all use it, so no minute
   figure drifts from another while the day's own grades come in.
 - A review's time is how long the card stood on screen from showing the question to the grade while
   the app was active (`ReviewLogEntry.duration`, key `ms` in `reviews.jsonl`, in milliseconds).
@@ -294,7 +294,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   like any card due, most forgotten first. A deck with Maximum reviews/day takes only that many of them a day, the most
   forgotten first, and the rest of the backlog waits for the next days: the plan, the goal and the ring never show it.
 - The goal takes the plan's cards that fit the day's time (`DayRounds`); the rest stay in the plan, and the
-  ring's rest offers Catch Up, which goes on with it.
+  ring's rest offers Keep Going, which goes on with it.
 
 ## Streak
 
@@ -382,7 +382,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   footer.
 - Sections in order:
   0. Today: the three moments in three plain sentences, no figures (`HowTodayWorks.Row.text`, empty footer): the first minutes
-     keep the streak, the ring is the goal and Catch Up studies the reviews waiting, nothing due is all done and Learn 10 New
+     keep the streak, the ring is the goal and Keep Going studies the reviews waiting, nothing due is all done and Learn 10 New
      Words adds ten.
   1. Day's plan: the parts of the plan at the start of the day (due today, overdue included; learning;
      new admitted), each deck's allowance (or its New cards/day), goal, rounds, done, left.

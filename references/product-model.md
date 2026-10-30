@@ -82,8 +82,8 @@ Each deck's share of the allowance is what that queue gives it, and within a dec
 | Moment | Reached when | What it gives | Rest |
 |---|---|---|---|
 | **Streak kept** | the first ~2 minutes' worth of cards are done | today counts in the streak; the flame fills | Keep Going · Done for Now |
-| **Ring closed** | the goal's cards are done | the day's learning is done; the ring bursts | Done · Catch Up or Learn 10 New Words |
-| **All done** | the plan's last due card is done (Catch Up) | nothing is due until tomorrow | Learn 10 New Words · Done |
+| **Ring closed** | the goal's cards are done | the day's learning is done; the ring bursts | Done · Keep Going or Learn 10 New Words |
+| **All done** | the plan's last due card is done (Keep Going) | nothing is due until tomorrow | Learn 10 New Words · Done |
 
 On most days the ring takes the whole plan and the third moment doesn't exist. **After a missed day** the first two
 moments are one: only the closed ring keeps the streak ("!" on the flame). Two missed days end it; the best run stays in
@@ -101,7 +101,7 @@ your streak ≈ 2 min" → "To close the ring ≈ 5 min" → "Reviews left ≈ 1
 your streak ≈ 6 min" (the ring); without a streak the streak reads 0 and the moment "To start your streak". Where one line
 of text is all there is room for (the rests, the small widgets, the reminders, VoiceOver) the figure reads as one
 sentence: "≈ 2 min to keep your streak", "≈ 5 min to close the ring", "Ring closed · ≈ 12 min of reviews left", "All done
-for today". **The button** follows the moment: Study, then Catch Up, then Learn 10 New Words.
+for today". **The button** follows the moment: Study, then Keep Going, then Learn 10 New Words.
 
 **A card** is asked; a tap shows the answer; the learner answers with two buttons, Forgot and Good ("Don't know" and
 "Know" on its first showing), or swipes left and right (on the Mac ← or 1, → or 3). What can be given is what the screen
@@ -142,7 +142,7 @@ the log, so today's ring keeps what it counted; an undo still takes back the las
 - **The habit loop (daily):** the widget shows the flame and the days with "≈ 2 min to keep your streak", or the reminder
   says "Keep your 12-day streak · ≈ 2 min" → one tap to the first card → two minutes → the flame fills, the rest offers
   Keep Going. Cost two minutes, reward immediate.
-- **The learning loop (a sitting):** the card, the answer, the stack shrinking, the ring filling → the ring closes → Catch Up
+- **The learning loop (a sitting):** the card, the answer, the stack shrinking, the ring filling → the ring closes → Keep Going
   if due cards remain, Learn 10 New Words if not.
 - **The progress loop (weeks):** words learned and their milestones, the week of rings, the calendar with streak runs and
   laps, medals, and the ring's own size growing with the learner (the tile "Your ring 8 MIN · a day · started at 2.5").

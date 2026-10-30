@@ -112,8 +112,6 @@ struct DeckPageContent: View {
                     .help("Learning Options")
                     .disabled(!canEdit)
             }
-            ToolbarSpacer(.fixed, placement: .primaryAction)
-            ToolbarItem(placement: .primaryAction) { studyButton }
         }
         .sheet(isPresented: $showingOptions) {
             DeckOptionsView(document: document)
@@ -176,7 +174,7 @@ struct DeckPageContent: View {
         .padding(.vertical, Spacing.gap)
     }
 
-    /// Study This Deck while cards are due, Learn 10 New Words when nothing is: in the strip and in the toolbar.
+    /// Study This Deck while cards are due, Learn 10 New Words when nothing is: in the strip, once.
     private var studyButton: some View {
         let isDue = document.dueCards.counts.total > 0
         return Button {

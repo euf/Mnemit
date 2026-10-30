@@ -11,7 +11,7 @@ the figures and the sentence, the goal and its size) is `product-model.md`. How 
 ### One day
 
 ```
-Today ─Study─► the stack ─► Streak kept ─Keep Going─► the stack ─► Ring closed ─Catch Up─► the stack ─► All done
+Today ─Study─► the stack ─► Streak kept ─Keep Going─► the stack ─► Ring closed ─Keep Going─► the stack ─► All done
                                 │ Done for Now                       │ Done, or Learn 10 New Words          │ Done, or Learn 10 New Words
                                 ▼                                    ▼                                      ▼
                               Today                                Today                                  Today
@@ -22,7 +22,7 @@ The ordinary days:
 1. A usual day: Study, the first ≈ 2 minutes fill the flame (Streak kept), Keep Going, the ring closes with the plan done:
    Done or Learn 10 New Words. The third moment does not exist.
 2. After a lesson: Add Cards, Study These Now, the stream over that deck (the next journey), then the day as above.
-3. After a break: Study, Streak kept, Ring closed with reviews left (Today's figure reads "Reviews left ≈ 12 min"), Catch Up,
+3. After a break: Study, Streak kept, Ring closed with reviews left (Today's figure reads "Reviews left ≈ 12 min"), Keep Going,
    All done: Done or Learn 10 New Words.
 4. After a missed day: the flame carries "!" and the first two moments are one: Study until the ring closes, "Streak saved",
    the Comeback medal; then as above.
@@ -101,8 +101,8 @@ until then their extra words come through Learn 10 New Words.
 ### A return after a break
 
 Days without study leave the time as it was. The plan holds every overdue card; the ring is the most forgotten that fit
-the time, with no new word while reviews fill it; the rest waits behind Catch Up once the ring is closed, where the next moment's figure prices it ("Reviews left ≈ 12 min"). A learner who
-stops at the ring meets Catch Up on 6.9 % of a newcomer's study days and 10.4 % of a real user's.
+the time, with no new word while reviews fill it; the rest waits behind Keep Going once the ring is closed, where the next moment's figure prices it ("Reviews left ≈ 12 min"). A learner who
+stops at the ring meets Keep Going on 6.9 % of a newcomer's study days and 10.4 % of a real user's.
 
 ### An Anki user
 
@@ -127,7 +127,7 @@ with the stack, so Learn 10 New Words takes from the decks that did. Study These
 **The stack.** The card on top lies on the sheets under it, drawn as the edges of a book's pages:
 under its bottom edge blank sheets with its corner radius, each 8 pt lower and 7 pt narrower
 on each side than the one above it, darker and fainter with depth; up to four of them (`StackPose`), one fewer than the cards left before the next moment, so
-a long stretch looks thick and the last five thin out one line at a time; after the ring the stack is the cards of Catch Up,
+a long stretch looks thick and the last five thin out one line at a time; after the ring the stack is the cards of Keep Going,
 of Learn 10 New Words or of Study These Now.
 - Graded, the card goes on with the finger and leaves past the edge of the screen. Nothing rides on
   it: a label on a card that is leaving is never read.
@@ -248,10 +248,10 @@ cards done, the best streak of the month, the achievements of the month, and See
 | "Round 2 of 4 · ≈ 2 min" on Today, in the bar, in the widget, on the Mac | one figure with the minutes to the next moment | two progress measures beside one ring; rounds are an internal unit of time |
 | The day's time, "Next round ≈ 2 min" | How It Works only | the size of the day is learned, not chosen |
 | Review ahead after catch-up | gone from Keep Going | reviewing before due gains FSRS little, and fills the ring with low-value work; more work is a new card |
-| Keep Going running catch-up, then review ahead, then practice | Catch Up when the plan has cards left; Learn 10 New Words once the stack is done | one named way on; practice stays on the deck screen |
+| Keep Going running catch-up, then review ahead, then practice | Keep Going when the plan has cards left; Learn 10 New Words once the stack is done | one named way on; practice stays on the deck screen |
 | Practice after the plan, a stream that never ended | gone: the stack ends with the plan | a day with an end; practice changes no card and stays on the deck screen |
 | "+10 new" with "≈ +2 cards/day next week" | Learn 10 New Words, with no footnote | the learner decides whether to raise the stakes, FSRS which cards come; the count and the forecast asked for a choice the learner can't weigh |
-| The ring closing in the middle of a stream after a break | the stack stops at the ring | the ring is the day's goal; the cards beyond it stay in the plan and Catch Up goes on with them |
+| The ring closing in the middle of a stream after a break | the stack stops at the ring | the ring is the day's goal; the cards beyond it stay in the plan and Keep Going goes on with them |
 
 Kept as they are: one stack over all decks, the 04:00 day, the ring in cards, work beyond the goal counted
 as cards done, the streak's repair by a closed ring, words in

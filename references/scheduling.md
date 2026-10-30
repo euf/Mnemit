@@ -132,7 +132,7 @@ What the learner sees and the paths through a day: `learning-flow.md`, "The jour
 - Within the plan the stream rests twice a day at most (`StudyStream.roundRest`,
   `restAtRoundEnd(roundsDone:rounds:)`, `continueRound()`): at the end of the first round ("Streak
   kept", Keep Going or Done for Now) and at the end of the last while the plan has cards beyond the
-  goal ("Ring closed", Catch Up or Done). The segment stays in place.
+  goal ("Ring closed", Keep Going or Done). The segment stays in place.
 - The rest is a state of the same stream: `isResting` is true on it, `StreamRest.roundEnd` carries the
   round, `roundsPassed` holds the rounds passed, all inside the value. So Undo across a round boundary
   brings the card back and lifts the rest, and Redo finds it again.

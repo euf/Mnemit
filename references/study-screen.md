@@ -132,7 +132,7 @@ area and the card's type: `references/design-spec.md` §4.
   place of the last card: an outline there read as a card left behind;
   the rest screen holds only the ring's place, the ring itself is the one that travelled. Then the
   title, each line and the buttons come in one after the other, 0.1 s apart, each with a fade and a
-  6 pt lift (`StreamRestView` with `staggers`). Keep Going, Catch Up and Push On take the ring back up
+  6 pt lift (`StreamRestView` with `staggers`). Keep Going, Keep Going and Push On take the ring back up
   (the lines fade, the stream moves on, and 0.3 s later the cards are dealt, the stack spreading out
   from under the top card edge by edge), so the card area is back while the ring is still on its way.
 - The burst (`RingBurst`: the ring swells 1.0 → 1.12 → 1.0 in 0.4 s, and 12 specks of the accent,

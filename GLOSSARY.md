@@ -378,7 +378,7 @@ of every file it has read (`references/daily-ring.md`, `references/deck-package.
 _Avoid_: history (that is the Review log), Daily snapshot (a Deck's cards by stability), statistics
 
 **Backlog** (RU «хвост»):
-Overdue cards, part of the plan, worked off as the day's time allows: after the ring they are the cards of Catch Up, priced
+Overdue cards, part of the plan, worked off as the day's time allows: after the ring they are the cards of Keep Going, priced
 as "≈ 12 min of reviews left".
 
 **Ring** (RU «кольцо»):
@@ -386,7 +386,7 @@ How far today is: done cards against the daily goal, with the **cards underway**
 today counts as the part of a card its answers recalled made, recalled answers over those plus the
 steps it still needs (`Card.credit`), so every answer recalled moves the ring and Forgot moves
 nothing. The ring is full at done ≥ goal, in whole cards, and goes on over itself past it, as the Fitness rings do,
-to three laps: done cards beyond the goal (Catch Up, Learn 10 New Words, Study These Now) draw the second and third lap.
+to three laps: done cards beyond the goal (Keep Going, Learn 10 New Words, Study These Now) draw the second and third lap.
 `DailyRing.fraction` is capped at 1 and says whether the goal is met; the drawing takes
 `DailyRingFigure.fraction`. Past days draw their own share of their goal (`DayRecord.ringShare`). The ring is a picture: it holds
 no number and no flame at any size, and the streak and the minutes are figures beside it (**Today card**).
@@ -462,7 +462,7 @@ _Avoid_: seconds per review, seconds per answer
 **Stack** (Study; RU «стопка дня»):
 The cards left before the next moment of the day, drawn as up to four edges under the card, fewer at the end, never as a
 number. Study without sessions: the day's plan over all decks, mixed by FSRS's urgency, in a stack that ends at each
-moment (**Streak kept**, **Ring closed**, **All done**); after the ring the stack is the cards of Catch Up, of Learn 10 New
+moment (**Streak kept**, **Ring closed**, **All done**); after the ring the stack is the cards of Keep Going, of Learn 10 New
 Words or of Study These Now. It ends with the plan (`StudyStream`; the type keeps the old name "stream"). A card is never
 reviewed before it is due. The paths through a day: `references/learning-flow.md`, "The journey".
 _Avoid_: session (except for the upstream types that still carry the name)
@@ -470,7 +470,7 @@ _Avoid_: session (except for the upstream types that still carry the name)
 **Learn 10 New Words** (the button of the stack's end; DE „10 neue Wörter lernen“; RU «Выучить 10 новых слов»):
 Ten new cards beyond the day's allowance and New cards/day, shared over the decks that have new cards
 left and asked mixed (`StudyModel.addNewCards`). It raises the stakes: their reviews come in the next days;
-the day's time stays as it is. Today carries it as the third button of the day after Study and Catch Up
+the day's time stays as it is. Today carries it as the third button of the day after Study and Keep Going
 (`DayAction`), the rests and the deck screen as well. The code keeps the old name `DayAction.pushOn`,
 `StudyModel.Entry.pushOn`.
 _Avoid_: +10 new, extra new cards, Go on
@@ -502,11 +502,11 @@ rest: only the closed ring keeps the streak ("Streak saved").
 
 **Ring closed** (the second moment; DE „Ring geschlossen“; RU «кольцо закрыто»):
 The end of the stack that closes the goal: the day's learning is done and the ring bursts. The rest shows the medal, the
-words learned, the week and "≈ 12 min of reviews left" when due cards remain, with **Done** and **Catch Up**, or **Done**
-and **Learn 10 New Words** when none remain.
+words learned, the week and "≈ 12 min of reviews left" when due cards remain, with **Keep Going** (the default) and **Done for Now**,
+or **Done** and **Learn 10 New Words** when none remain.
 
 **All done** (the third moment; on screen "All done for today"; DE „Alles für heute erledigt“; RU «всё на сегодня сделано»):
-The end of the plan's last due card, Catch Up included: nothing is due until tomorrow. It is also the title of a rest that
+The end of the plan's last due card, Keep Going included: nothing is due until tomorrow. It is also the title of a rest that
 stands where the ring's moment lies behind the stream. On most days the ring takes the whole plan and this moment does not
 exist.
 
@@ -531,7 +531,7 @@ _Avoid_: Greek → translation, translation → Greek, direction (alone, on scre
 
 **How It Works** (DE „So funktioniert es“; RU «Как это работает»):
 The screen that tells the learner the three moments of the day in plain sentences (the first minutes keep the streak; the
-ring is the goal and Catch Up studies the reviews waiting; nothing due means all done), and then the numbers under the day:
+ring is the goal and Keep Going studies the reviews waiting; nothing due means all done), and then the numbers under the day:
 the plan, the day's time, the pace, the streak, the words in memory, the swipes (iPhone), the options and the FSRS figures of
 each deck. The last row of the Progress screen; on the Mac a sheet of the Progress page. The types keep the old name:
 `HowTodayWorks`, `HowTodayWorksView`.

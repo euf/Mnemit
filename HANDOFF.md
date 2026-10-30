@@ -90,7 +90,7 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    Study These Now, the rests, the reminders and the icon's "1". Xcode's Apple ID was lost once (24.10): `ios-renew` then
    fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
 2. **The Mac, still to see live:** a cold launch with a deck from Finder, ⌘Q with a stream running, a Dock click after ⌘W,
-   the New Deck sheet, the cheat sheet, Catch Up in the menu, the search over all decks, a sidebar row's Pause, the month's
+   the New Deck sheet, the cheat sheet, Keep Going in the menu, the search over all decks, a sidebar row's Pause, the month's
    sheet, a medal toast in the header. Seen on 27.10: at a 1000 pt window the card table's four new columns sit past the
    right edge (the Kind column takes the room); once, right after a file merge, the Z key did nothing until a click (not
    reproduced); Delete Deck of a deck in `/private/tmp` does nothing (no Trash there).

@@ -44,7 +44,7 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
       keep your streak" over "≈ 2 min"; the step done, "To close the ring"; the day after a missed day, "To save your
       streak"; without a streak, "To start your streak"; the ring closed with cards of the plan left, "Reviews left"; nothing
       left, "Today" over "All done". Without a price the label is "Next" and the value is the moment's name ("Keep your
-      streak", "Close the ring", "Save your streak", "Start your streak", "Catch Up").
+      streak", "Close the ring", "Save your streak", "Start your streak", "Keep Going").
     - **Words learned**: the words, with "+12 today" after them on a day that added some; shown from 0 words too.
   - Under a divider, the week's seven rings with their weekday letters (`WeekRings`), a chevron at the end of the row.
   - Where the figures do not fit beside the ring (the larger text sizes, `ViewThatFits`) the ring stands over them.
@@ -59,9 +59,9 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
     Study starts, and `shownStreakEnd` keeps the study day it ended on so that it is told once.
 - The bottom bar holds the day's one button beside Search All Cards, which is minimised to a button
   (`.searchToolbarBehavior(.minimize)`). The button is named by `DayAction`
-  (`Shared/Session/TodaySummary.swift`): **Study** in the accent while the ring is open; **Catch Up** once the
+  (`Shared/Session/TodaySummary.swift`): **Study** in the accent while the ring is open; **Keep Going** once the
   ring is closed and the plan has cards left; **Learn 10 New Words** once the plan is done, with no footnote. Its title is one
-  line and shrinks to 75 %. Study and Catch Up open the stream over the screen (`StudyRunView`) over every active
+  line and shrinks to 75 %. Study and Keep Going open the stream over the screen (`StudyRunView`) over every active
   deck. Learn 10 New Words opens it with ten new cards at once over every active deck (`StudyModel.Entry.pushOn`),
   without the rest first. With every deck paused the button is disabled.
 - Decks section: a row per deck with its name and what its plan leaves of today at the day's pace, "≈ 4 min", a check when
@@ -171,7 +171,7 @@ sizes: `design-spec.md` §4.
   suspension. A leech resumed under Suspend is asked again in the stream.
 - The card lies on a stack drawn as a book's page edges, 8 pt apart, each 7 pt narrower on a side and
   darker than the one above; up to four, one fewer than the cards left before the next moment, after the ring too (the
-  cards of Catch Up, of Learn 10 New Words, of Study These Now). How cards leave it and come back:
+  cards of Keep Going, of Learn 10 New Words, of Study These Now). How cards leave it and come back:
   `learning-flow.md`, "The stack in the stream", and `study-screen.md`, Motion.
 - Undo, from the button in the bar, the menu or a shake, takes back the review that ended the round
   and the rest with it; redo brings it back. Card Info (`CardInfoSheet`) shows the same
@@ -188,9 +188,9 @@ sizes: `design-spec.md` §4.
     Now**. The rest has no card on screen, so nothing is spoken and nothing is graded.
   - *Ring closed* (the end of the stack that closes the goal): the title "Ring closed" ("Streak saved" when the ring saved
     the streak), the medal, the price line "≈ 12 min of reviews left" while cards of the plan are left, the words learned
-    ("412 words learned · +12 today"), the rings of the last seven days (`WeekRings`). **Done** (prominent) and **Catch
-    Up** while the plan has cards left; with none, **Done** and **Learn 10 New Words**.
-  - *All done* (the end of the plan, and the end of any stream that began past the ring's moment, Catch Up, Learn 10 New
+    ("412 words learned · +12 today"), the rings of the last seven days (`WeekRings`). **Keep Going** (prominent) and
+    **Done for Now** while the plan has cards left; with none, **Done** and **Learn 10 New Words**.
+  - *All done* (the end of the plan, and the end of any stream that began past the ring's moment, Keep Going, Learn 10 New
     Words and Study These Now included): the title "All done for today"; the same lines. **Done** (prominent) and, while a
     deck has new cards, **Learn 10 New Words** (the accent on a wash of it, `SecondaryActionStyle`), ten new cards beyond the day's allowance and New cards/day asked at once, with no rest
     after. On the Mac a rest taller than the window scrolls under the header (`SessionView`).
@@ -223,7 +223,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   and the rounds. Read-only: no controls, no charts. A grouped form; each section's footer holds its
   rule.
 - **Today**: the three moments in three plain sentences, no figures and an empty footer: the first two minutes keep the
-  streak; the ring is today's goal and Catch Up takes the reviews still waiting; nothing due is a done day, and Learn 10 New
+  streak; the ring is today's goal and Keep Going takes the reviews still waiting; nothing due is a done day, and Learn 10 New
   Words gives more (`HowTodayWorks.Row.text`).
 - **Today's Plan**: due today, overdue included; cards in learning; new cards admitted; each deck's
   admitted cards with its allowance, or its New cards/day where the deck sets it, a paused deck as "Paused: <name>" with
@@ -556,7 +556,7 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
 | | iPhone | Mac |
 |---|---|---|
 | Today | the root screen | the Today page of the window |
-| The day's button | Study / Catch Up / Learn 10 New Words | the same |
+| The day's button | Study / Keep Going / Learn 10 New Words | the same |
 | Study over several decks | one stream mixes the decks (`StudyModel`) | the same `StudyModel`: Today's button opens the decks of the day and mixes them in one stream over the window |
 | The stream | swipes, the stack, the ring travelling to the rests | keys and buttons, the stack, the rests |
 | Progress, medals, How It Works | pushed from Today | the Progress page; How It Works is a sheet of it |
@@ -600,7 +600,7 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
   card selected in its deck's table (`Shell.showCard`).
 - **Today page** (`TodayPageContent`): no large title; the window's title bar holds "Today" and the date (`todaySubtitle`).
   The iPhone's Today card (`TodayCard`) on `Color.tileGround` (radius 16, at most 560 pt wide) as a button to Progress, and the
-  day's one button under it, `DayAction` (Study in the accent, Catch Up or Learn 10 New Words grey; extra large, the default
+  day's one button under it, `DayAction` (Study in the accent, Keep Going or Learn 10 New Words grey; extra large, the default
   action; also in the toolbar). Without a deck: `EmptyTodayCard`, **New Deck** (prominent), **Shared Decks** (bordered) and
   **Use iCloud Drive Folder** as a footnote-size link under them. The medals of earlier days this Mac never celebrated come once
   as toasts, and the month's sheet (`MonthRecapSheet`) shows on the first open of a month, its See All Progress opening
@@ -632,7 +632,7 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
 - **Menus** (`AppCommands`; the items read `Shell.menu`, a `MenuState`). In a stream every item but Help is off.
   - File: New Deck… ⌘N, Open Deck… ⌘O, Import Cards… ⇧⌘I, Shared Decks on AnkiWeb…, Export Deck…, Show in Finder
     (the last two need a read deck).
-  - Study: the day's action ⌘L (Study, Catch Up or Learn 10 New Words, from any page), Study This Deck ⌥⌘L, Add
+  - Study: the day's action ⌘L (Study, Keep Going or Learn 10 New Words, from any page), Study This Deck ⌥⌘L, Add
     Cards… ⇧⌘L, Practice Newest Words, Practice Today's Mistakes, Pause Deck / Resume Deck, Learning Options… ⌘;.
   - View: Today ⌘1, Progress ⌘2, Cards ⌘3, Statistics ⌘4 (the last two need a selected deck), Show Inspector / Hide
     Inspector ⌥⌘I (only on a deck's Cards), then the system's sidebar items.
@@ -641,13 +641,13 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
     the stream (Space, arrows, Z or Esc, S, ?) in one. In a stream the sheet names the grades of the card on screen
     (`MenuState.onNewCard`): on a first showing "Show the answer, then grade Know" and "Grade: ← Don't know, → Know,
     ↑ Easy, ↓ Hard", on later showings "… grade Good" and "← Forgot, → Good, ↑ Easy, ↓ Hard". "?" opens it in a stream
-    only, and it comes up by itself in the first stream. Study's first item reads Study, Catch Up or Learn 10 New
+    only, and it comes up by itself in the first stream. Study's first item reads Study, Keep Going or Learn 10 New
     Words by `DayAction` (`MenuKey.studyDay.title`).
 - The Mac's day counts `AllDecks`: the open decks and the rest of the Mnemit folder. The ring in the stream's
   header, Today, Progress and How It Works all count them.
 - **The Mac's stream** (`SessionView`) looks as the iPhone's does: the card on the grouped backdrop
   (`Color.studyBackdrop`, the card `Color.cardSurface`) over the stack's edges (`StackEdges`, the cards left before the
-  next moment, at most four, after the ring too: the cards of Catch Up, of Learn 10 New Words and of Study These Now;
+  next moment, at most four, after the ring too: the cards of Keep Going, of Learn 10 New Words and of Study These Now;
   `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done and, right
   after it, the day's ring (empty inside) and the minutes to the next moment of the day as the iPhone's
   bar says them (`NextStep`: "≈ 4 min"; none once all is done), then Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
