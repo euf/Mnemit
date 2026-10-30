@@ -49,16 +49,24 @@ final class KnownDecks {
         var bookmark: Data
     }
 
-    /// Reads the decks from `defaults`. Forgets those that are gone, e.g. deleted. `localFolder`
-    /// is the directory `useLocalFolder()` takes, the app's Documents directory.
-    init(defaults: UserDefaults = .standard, localFolder: URL = .documentsDirectory) {
+    /// How a bookmark of a deck is resolved to its file; tests give another.
+    typealias Resolve = (Data) throws -> (url: URL, isStale: Bool)
+
+    /// The bookmarks of decks that did not resolve for a reason that can pass, as access that is stale or
+    /// denied while iCloud Drive is signed out. They stay in the defaults with the others, and `init` and
+    /// `refreshFolder()` try them again, so a deck is back on the list when access returns.
+    private var unresolved: [Data] = []
+    @ObservationIgnored private let resolve: Resolve
+
+    /// Reads the decks from `defaults`. Forgets those whose file is gone, e.g. deleted; a bookmark that fails for any
+    /// other reason is kept. `localFolder` is the directory `useLocalFolder()` takes, the app's Documents directory.
+    init(defaults: UserDefaults = .standard, localFolder: URL = .documentsDirectory, resolve: @escaping Resolve = KnownDecks.resolveBookmark) {
         self.defaults = defaults
         self.localFolder = localFolder
-        entries = (defaults.array(forKey: Self.key) as? [Data] ?? []).compactMap { bookmark in
-            var isStale = false
-            guard let url = try? URL(resolvingBookmarkData: bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &isStale) else { return nil }
-            return Entry(deck: KnownDeck(url: url), bookmark: isStale ? Self.bookmark(for: url) ?? bookmark : bookmark)
-        }
+        self.resolve = resolve
+        entries = []
+        unresolved = defaults.array(forKey: Self.key) as? [Data] ?? []
+        resolveKept()
         save()
         if defaults.bool(forKey: Self.localFolderKey) {
             takeLocalFolder()
@@ -152,6 +160,10 @@ final class KnownDecks {
 
     /// Reads the folder again, for decks that arrived since.
     func refreshFolder() {
+        if !unresolved.isEmpty {
+            resolveKept()
+            save()
+        }
         if folderLost, let bookmark = defaults.data(forKey: Self.folderKey) {
             resolveFolder(bookmark)
         }
@@ -226,7 +238,31 @@ final class KnownDecks {
     }
 
     private func save() {
-        defaults.set(entries.map(\.bookmark), forKey: Self.key)
+        defaults.set(entries.map(\.bookmark) + unresolved, forKey: Self.key)
+    }
+
+    private nonisolated static func resolveBookmark(_ bookmark: Data) throws -> (url: URL, isStale: Bool) {
+        var isStale = false
+        let url = try URL(resolvingBookmarkData: bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &isStale)
+        return (url, isStale)
+    }
+
+    /// Takes the decks of the bookmarks in `unresolved` that resolve now onto the end of the list, drops those whose file is
+    /// gone or whose data can't be read ever, and leaves the others.
+    private func resolveKept() {
+        var kept: [Data] = []
+        for bookmark in unresolved {
+            do {
+                let (url, isStale) = try resolve(bookmark)
+                guard !entries.contains(where: { Self.isSameFile($0.deck.url, url) }) else { continue }
+                entries.append(Entry(deck: KnownDeck(url: url), bookmark: isStale ? Self.bookmark(for: url) ?? bookmark : bookmark))
+            } catch let error as CocoaError where [.fileNoSuchFile, .fileReadNoSuchFile, .fileReadCorruptFile].contains(error.code) {
+                continue
+            } catch {
+                kept.append(bookmark)
+            }
+        }
+        unresolved = kept
     }
 
     private static func bookmark(for url: URL) -> Data? {
