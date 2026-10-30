@@ -203,6 +203,9 @@ struct SpokenWord: View {
             word
             SpeakButton(text: text, font: font, sound: sound, media: media)
         }
+        // The word takes the height of its lines before the hint or the example under it: a stack hands a flexible Text what
+        // the others leave, and at the accessibility sizes "απαντάω (απάντησα)" was cut to one line at half size.
+        .layoutPriority(1)
         #else
         // The Mac's speaker is a small button at its own size, centred beside the word.
         HStack(spacing: Spacing.tight) {
