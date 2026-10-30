@@ -83,7 +83,8 @@ extension DailyProgressTests {
         reviewPlan(of: &first, at: now)
         reviewPlan(of: &second, at: now)
         let before = evaluate([first, second])
-        #expect(before.ring == DailyRing(done: 20, goal: 20))
+        // The plan of 20 cards that were due at the day's start is 15 of them, the day's time; all 20 are done.
+        #expect(before.ring == DailyRing(done: 20, goal: 15))
         var options = second.learningOptions
         options.isPaused = true
         _ = second.apply(try #require(DeckChange.changingLearningOptions(options, in: second, calendar: calendar)), at: now, calendar: calendar)

@@ -80,7 +80,7 @@ final class VersionMerger {
     }
 
     /// What the learner reads when a save failed: the changes are still in the app.
-    static var saveFailure: String {
+    nonisolated static var saveFailure: String {
         String(localized: "The deck could not be saved. The app keeps your latest changes and tries again; leave it open until this message goes away.")
     }
 

@@ -195,7 +195,7 @@ struct StartScreen: View {
         .onChange(of: addingCards) { previous, current in
             if current == nil, let previous {
                 Task {
-                    await previous.close()
+                    await UnsavedDecks.close(previous)
                     search.invalidate()
                     await refreshAll()
                     // Study These Now: the deck is saved and closed, the stream opens it again.
@@ -396,7 +396,7 @@ struct StartScreen: View {
             } else {
                 pauseFailure = deck.name
             }
-            await open.close()
+            await UnsavedDecks.close(open)
             await refreshAll()
         }
     }
@@ -529,7 +529,7 @@ struct StartScreen: View {
     private func rename(_ slot: PushedDecks.Slot, to name: String) async throws {
         guard let deck = pushed.deck(slot) else { return }
         let old = deck.url
-        await pushed.close(slot)
+        guard await pushed.close(slot) else { throw DeckFiles.Failure.unsaved }
         do {
             let new = try await DeckFiles.rename(old, to: name)
             knownDecks.replace(old, with: new)
@@ -546,7 +546,7 @@ struct StartScreen: View {
     private func trash(_ slot: PushedDecks.Slot) async throws {
         guard let deck = pushed.deck(slot) else { return }
         let url = deck.url
-        await pushed.close(slot)
+        guard await pushed.close(slot) else { throw DeckFiles.Failure.unsaved }
         let outcome: DeckFiles.Trashed
         do {
             outcome = try await DeckFiles.trash(url)
@@ -714,6 +714,7 @@ struct StartScreen: View {
 
     /// Looks for decks that arrived in the folder, then reads the counts and the ring.
     private func refreshAll() async {
+        await UnsavedDecks.retry()
         knownDecks.refreshFolder()
         await refreshCounts()
     }

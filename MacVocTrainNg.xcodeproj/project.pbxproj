@@ -89,6 +89,7 @@
 			membershipExceptions = (
 				Document/OpenDeck.swift,
 				Document/StudyRun.swift,
+				Document/UnsavedDecks.swift,
 				Web/DeckWebBrowser.swift,
 				Web/DeckWebBrowserView.swift,
 			);

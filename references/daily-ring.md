@@ -81,6 +81,10 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   by transitions; cards created later are not in the plan.
 - For today the same is `DeckActivity.plan(onDayOf:calendar:)`: cards reviewed today go back to the
   state of their last review before the day (`Scheduler.replaying`).
+- A card whose log doesn't reach back to its first review (imported without history, or from MacVocTrain 1)
+  can't be replayed. If its log shows a review today, the day's start sees it as a review card due then
+  (`Card.standingWithoutLog(atStartOf:now:)`), so the plan and the goal hold as such cards are reviewed;
+  a card of that kind reviewed ahead adds one to the plan. A card not reviewed today stands as it is.
 
 ## Goal
 
@@ -316,7 +320,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   held by `DailyRingModel`) keeps `DeckActivity.Past`: the history without today, a copy of the deck at
   the start of today and the production locks, as long as nothing the past days read changes
   (`DeckActivity.PastKey`: the options; for each card its place in the deck, `kind`, `note`, `created`,
-  suspended, the log before today, and for a card with an incomplete log its state too).
+  suspended, the log before today, and for a card with an incomplete log its state at the start of today too).
 - Reviewing a card with a complete log, editing text and time passing within the day don't change the
   key: only today is computed (the day's reviews from card states at its start, the day's plan, the new
   new-card queue), 8.5 ms on 3,000 cards and 400 days instead of 0.31 s.

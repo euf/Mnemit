@@ -138,10 +138,16 @@ final class Shell {
         ring.refreshAllDecks(decks: decks, folder: folder)
     }
 
-    /// Saves and closes the deck, before its file is renamed or deleted.
-    private func forget(_ url: URL) async {
+    /// Saves and closes the deck, before its file is renamed or deleted. A deck that can't save stays open with its
+    /// changes, and this returns `false`.
+    @discardableResult
+    private func forget(_ url: URL) async -> Bool {
         subscriptions.removeValue(forKey: OpenDecks.key(url))
-        await decks.close(url)
+        guard await decks.close(url) else {
+            if let deck = decks.deck(for: url) { watch(deck) }
+            return false
+        }
+        return true
     }
 
     /// Try Again on a deck's page: the deck that could not be opened is closed and opened anew, as its file may be readable
@@ -397,7 +403,7 @@ final class Shell {
     func rename(_ url: URL, to name: String) async throws {
         guard run == nil else { return }
         let wasSelected = selectedURL == url
-        await forget(url)
+        guard await forget(url) else { throw DeckFiles.Failure.unsaved }
         do {
             let renamed = try await DeckFiles.rename(url, to: name)
             if let index = others.firstIndex(of: url) {
@@ -422,7 +428,7 @@ final class Shell {
     func delete(_ url: URL) async throws {
         guard run == nil else { return }
         let wasSelected = selectedURL == url
-        await forget(url)
+        guard await forget(url) else { throw DeckFiles.Failure.unsaved }
         do {
             try await DeckFiles.trash(url)
         } catch {

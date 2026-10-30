@@ -80,6 +80,36 @@ struct KnownDecksTests {
         #expect(defaults.array(forKey: KnownDecks.key)?.isEmpty == true)
     }
 
+    /// A bookmark that fails to resolve while access is away (iCloud Drive signed out, say) stays in the defaults and the
+    /// deck is back on the list once it resolves; a bookmark of a file that is gone is dropped.
+    @Test func aBookmarkThatFailsForAnotherReasonThanAMissingFileIsKeptUntilItResolves() throws {
+        let polish = try makeDeck(named: "Polish")
+        let gone = try makeDeck(named: "Gone")
+        let known = KnownDecks(defaults: defaults)
+        known.remember(polish)
+        known.remember(gone)
+        let stored = try #require(defaults.array(forKey: KnownDecks.key) as? [Data])
+        #expect(stored.count == 2)
+
+        // Gone's file is deleted; Polish's bookmark fails while access is away.
+        var isAway = true
+        let resolve: KnownDecks.Resolve = { bookmark in
+            if bookmark == stored[0] { throw CocoaError(.fileNoSuchFile) }
+            if isAway { throw CocoaError(.fileReadNoPermission) }
+            return (polish, false)
+        }
+        let away = KnownDecks(defaults: defaults, resolve: resolve)
+        #expect(away.byName.isEmpty)
+        // Polish is kept for the day access returns, Gone is not.
+        #expect((defaults.array(forKey: KnownDecks.key) as? [Data]) == [stored[1]])
+
+        isAway = false
+        away.refreshFolder()
+        #expect(away.byName.map(\.name) == ["Polish"])
+        #expect((defaults.array(forKey: KnownDecks.key) as? [Data]) == [stored[1]])
+        #expect(KnownDecks(defaults: defaults).byName.map(\.name) == ["Polish"])
+    }
+
     @Test func aPackageIsTheSameFileWithOrWithoutTheSlashAtTheEnd() {
         let url = URL(fileURLWithPath: "/Users/learner/Library/Mobile Documents/com~apple~CloudDocs/Polish.mnemit")
         #expect(KnownDecks.isSameFile(url, URL(fileURLWithPath: url.path + "/", isDirectory: true)))

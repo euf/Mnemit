@@ -695,8 +695,13 @@ public struct DeckActivity: Sendable {
         let start = calendar.start(ofDay: calendar.dayNumber(for: now))
         let scheduler = Scheduler(learningOptions: deck.learningOptions, calendar: calendar)
         var atStart = deck
-        for index in atStart.cards.indices where atStart.cards[index].hasCompleteLog {
+        for index in atStart.cards.indices {
             let card = atStart.cards[index]
+            guard card.hasCompleteLog else {
+                // Its log can't be replayed: the card stands as the day found it, `Card.standingWithoutLog(atStartOf:now:)`.
+                atStart.cards[index].learningState = card.standingWithoutLog(atStartOf: start, now: now)
+                continue
+            }
             let before = card.log.prefix { $0.date < start }
             if before.count < card.log.count, card.log[before.count].date <= now {
                 atStart.cards[index] = scheduler.replaying(Array(before), of: card)
@@ -966,7 +971,7 @@ public struct DeckActivity: Sendable {
                 let isReplayable = card.hasCompleteLog || (before == 0 && card.learningState == nil)
                 return PastCard(
                     id: card.id, created: card.created, kind: card.kind, note: card.note, isSuspended: card.isSuspended, isReplayable: isReplayable,
-                    log: card.log.prefix(before), state: isReplayable ? nil : card.learningState)
+                    log: card.log.prefix(before), state: isReplayable ? nil : card.standingWithoutLog(atStartOf: start))
             }
         }
     }
@@ -1011,8 +1016,14 @@ public struct DeckActivity: Sendable {
         let today = key.today
         let paced = replayLog(from: first, through: today, calendar: calendar, keepsStates: true)
         var stood = deck
+        let todayStart = calendar.start(ofDay: today)
         for index in stood.cards.indices {
-            if stood.cards[index].hasCompleteLog { stood.cards[index].learningState = nil }
+            if stood.cards[index].hasCompleteLog {
+                stood.cards[index].learningState = nil
+            } else {
+                // Every day sees a card that can't be replayed as today's start found it, not as today's reviews left it.
+                stood.cards[index].learningState = stood.cards[index].standingWithoutLog(atStartOf: todayStart)
+            }
             // Without the log, the day's start has no first review to take back.
             stood.cards[index].log = []
         }

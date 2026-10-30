@@ -280,6 +280,23 @@ public struct Card: Identifiable, Hashable, Sendable {
         learningState == nil || (hasCompleteLog && log[0].date >= start)
     }
 
+    /// The learning state of a card whose log doesn't reach back to the first review (`hasCompleteLog`) when the study
+    /// day that began at `start` began. The state it had before the day's reviews is not kept, so a card the log shows
+    /// reviewed on the day (by `now`) is taken as a review card that was due when the day began, with the interval it
+    /// has now: the plan of the day holds it for as long as the day lasts, however many times it was reviewed. A card
+    /// reviewed ahead is taken for one that was due. A card the log doesn't show reviewed that day stands as it is.
+    // ponytail: a review ahead can't be told from a due one without the lost state; a card imported without history
+    // and reviewed ahead adds one to its day's plan.
+    func standingWithoutLog(atStartOf start: Date, now: Date = .distantFuture) -> LearningState? {
+        guard var state = learningState, log.contains(where: { $0.date >= start && $0.date <= now }) else { return learningState }
+        let interval = state.due.timeIntervalSince(state.lastReview)
+        state.phase = .review
+        state.step = 0
+        state.due = start
+        state.lastReview = start.addingTimeInterval(-max(0, interval))
+        return state
+    }
+
     /// How many of the card's reviews on the study day of `now` asked it in the review phase: the ones that count
     /// against Maximum reviews/day (`LearningOptions.maximumReviewsPerDay`). A lapse counts, the relearning after it
     /// does not. The phase comes from the grades alone, replayed from the first review as `credit(onDayOf:calendar:steps:)`

@@ -35,6 +35,6 @@ enum DeckRefits {
             document.applyParameterRefit(result)
             await deck.settleChanges()
         }
-        await deck.close()
+        await UnsavedDecks.close(deck)
     }
 }

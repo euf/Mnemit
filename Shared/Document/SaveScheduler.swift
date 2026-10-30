@@ -14,8 +14,9 @@ final class SaveScheduler {
     private(set) var saving: Task<Void, Never>?
     /// Whether a change waits for the save scheduled after it.
     private var hasUnsavedChange = false
-    /// Whether the latest save that ran failed and no save has succeeded since.
-    private(set) var hasFailed = false
+    /// Whether the latest save that ran failed and no save has succeeded since. Tests set it to make
+    /// `OpenDeck.close()` refuse, which the file document alone does not do on demand.
+    var hasFailed = false
     /// How long a save waits for more changes.
     private let delay: Duration
     /// How long after a failed save the next one starts.

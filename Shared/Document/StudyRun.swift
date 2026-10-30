@@ -39,11 +39,15 @@ final class StudyRun {
         ownsDeck ? StudyRun(deck: OpenDeck(url: deck.url), entry: entry, upcoming: decks.dropFirst().map(\.url)) : nil
     }
 
-    /// Saves what is unsaved and lets go of the decks the run owns.
-    func close() async {
+    /// Saves what is unsaved and lets go of the decks the run owns. A deck that can't save is kept
+    /// open with its changes (`UnsavedDecks`), and this returns `false`.
+    @discardableResult
+    func close() async -> Bool {
+        var saved = true
         for deck in owned {
-            await deck.close()
+            if !(await UnsavedDecks.close(deck)) { saved = false }
         }
+        return saved
     }
 }
 
