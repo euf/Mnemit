@@ -132,27 +132,30 @@ struct NewCardAllowancesTests {
         let url = directory.appending(path: "Greek.mnemit", directoryHint: .isDirectory)
         let other = directory.appending(path: "Polish.mnemit", directoryHint: .isDirectory)
         let today = StudyCalendar().dayNumber(for: Date())
-        defer { NewCardAllowances.today = NewCardAllowances() }
 
         var yesterday = NewCardAllowances(day: today - 1)
         yesterday[url] = 12
         yesterday[other] = 3
-        NewCardAllowances.today = yesterday
-        #expect(NewCardAllowances.today[url] == nil)
+        #expect(yesterday.valid(on: today - 1)[url] == 12)
+        #expect(yesterday.valid(on: today)[url] == nil)
+        // A set nobody dated holds on every day.
+        var undated = NewCardAllowances()
+        undated[url] = 4
+        #expect(undated.valid(on: today)[url] == 4)
 
         // The first evaluation of the day replaces them all, also the files it leaves out.
-        NewCardAllowances.today = yesterday
+        var held = yesterday
         var current = NewCardAllowances(day: today)
         current[url] = 5
-        NewCardAllowances.today.merge(current)
-        #expect(NewCardAllowances.today[url] == 5)
-        #expect(NewCardAllowances.today[other] == nil)
+        held.merge(current)
+        #expect(held.valid(on: today)[url] == 5)
+        #expect(held.valid(on: today)[other] == nil)
 
         // Within the day, a file the evaluation left out keeps its allowance.
         var again = NewCardAllowances(day: today)
         again[other] = 2
-        NewCardAllowances.today.merge(again)
-        #expect(NewCardAllowances.today[url] == 5)
-        #expect(NewCardAllowances.today[other] == 2)
+        held.merge(again)
+        #expect(held.valid(on: today)[url] == 5)
+        #expect(held.valid(on: today)[other] == 2)
     }
 }

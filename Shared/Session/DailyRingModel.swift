@@ -211,11 +211,14 @@ struct NewCardAllowances: Equatable, Sendable {
     /// holds for the study day, so a file the last evaluation left out keeps the one it had. At the
     /// next day's 4:00 it is empty until the ring evaluates again: yesterday's time budget is not today's.
     @MainActor static var today: NewCardAllowances {
-        get {
-            if let day = stored.day, day != StudyCalendar().dayNumber(for: Date()) { return NewCardAllowances() }
-            return stored
-        }
+        get { stored.valid(on: StudyCalendar().dayNumber(for: Date())) }
         set { stored = newValue }
+    }
+
+    /// What the set says on study day `day`: its entries, or none when it was worked out for another day.
+    func valid(on day: Int) -> NewCardAllowances {
+        if let own = self.day, own != day { return NewCardAllowances() }
+        return self
     }
 
     subscript(url: URL) -> Int? {
@@ -225,8 +228,8 @@ struct NewCardAllowances: Equatable, Sendable {
 
     /// Takes `other`'s entries over, those of an earlier study day going first.
     mutating func merge(_ other: NewCardAllowances) {
-        if let otherDay = other.day, otherDay != day {
-            byFile = [:]
+        if let otherDay = other.day {
+            if day != nil, day != otherDay { byFile = [:] }
             day = otherDay
         }
         byFile.merge(other.byFile) { _, new in new }
