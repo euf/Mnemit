@@ -63,7 +63,7 @@ struct DeckOptionsView: View {
                     }
                 }
 
-                ParametersSection(options: $options, cards: document.deck.trainingCards, calendar: document.calendar)
+                ParametersSection(options: $options, cards: document.deck.trainingCards, pool: AllDecks.pool(besides: document), calendar: document.calendar)
             }
             .formStyle(.grouped)
 

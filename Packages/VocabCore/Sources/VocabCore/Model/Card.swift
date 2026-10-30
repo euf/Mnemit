@@ -308,11 +308,19 @@ public struct Card: Identifiable, Hashable, Sendable {
         return learningState.due <= date
     }
 
-    /// Whether the card has lapsed `threshold` times or more; never for a threshold of 0.
-    /// Derived from the lapse count, so it needs no flag in the deck file and no merge
-    /// rule: every version of a card agrees on its lapses.
+    /// How often the learner forgot the card, for the leech rule: every Forgot in the log but the first answer, which only
+    /// says the card is new. `lapses` counts the Forgots of the review phase alone, and a card forgotten in its learning
+    /// steps again and again stays below any threshold; the log holds them all. A log that doesn't reach back to the first
+    /// review (`hasCompleteLog`) may hold fewer, and the stored lapses stand for the rest.
+    var forgotCount: Int {
+        max(learningState?.lapses ?? 0, log.dropFirst().count { $0.grade == .again })
+    }
+
+    /// Whether the card was forgotten `threshold` times or more (`forgotCount`); never for a threshold of 0.
+    /// Derived from the log and the lapse count, so it needs no flag in the deck file and no merge
+    /// rule: every version of a card agrees on its Forgots.
     public func isLeech(threshold: Int) -> Bool {
-        threshold > 0 && (learningState?.lapses ?? 0) >= threshold
+        threshold > 0 && forgotCount >= threshold
     }
 
     /// What makes two cards ask the same, for finding duplicates: the key of the question text

@@ -11,13 +11,13 @@ struct ParameterRefitterTests {
     let calendar = StudyCalendar.testing
 
     /// 250 cards that were all forgotten three days after their first review and then recalled
-    /// the day after, started over ten days so that the newest reviews hold both: 500 usable
+    /// the day after, started over forty days so that the newest reviews hold both: 500 usable
     /// reviews, which the default parameters predict badly, so a fit beats them by far.
     func forgetfulDeck(options: LearningOptions = LearningOptions()) throws -> Deck {
         let noon = Date(timeIntervalSince1970: 1_791_201_600)
         let cards = (0..<250).map { index -> Card in
             let steps: [(days: Int, grade: Grade)] = [(0, .good), (3, .again), (4, .good)]
-            let log = steps.map { ReviewLogEntry(date: noon.addingTimeInterval(Double(index % 10 + $0.days) * 86400 + Double(index)), grade: $0.grade) }
+            let log = steps.map { ReviewLogEntry(date: noon.addingTimeInterval(Double(index % 40 + $0.days) * 86400 + Double(index)), grade: $0.grade) }
             let state = LearningState(phase: .review, stability: 3, difficulty: 5, lastReview: log[2].date, due: log[2].date, reviews: 3)
             return Card(question: "q\(index)", answer: "a", learningState: state, log: log)
         }

@@ -7,7 +7,10 @@ import VocabCore
 /// apps' options screens.
 struct ParametersSection: View {
     @Binding var options: LearningOptions
+    /// The cards of this deck.
     let cards: [Card]
+    /// The other decks of the learner: the memory model is fitted on the reviews of all of them.
+    var pool = ReviewPool()
     let calendar: StudyCalendar
     /// Whether a change of `options` is saved as it is made, so new parameters need no
     /// Save button to take effect.
@@ -17,6 +20,8 @@ struct ParametersSection: View {
     /// rebuilds this view on every change to the options, and counting goes through the
     /// whole log. `nil` while counting.
     @State private var reviewCount: Int?
+    /// The cards of all decks, once counted.
+    @State private var allCards: [Card] = []
     @State private var state = ComputationState.idle
     @State private var task: Task<Void, Never>?
 
@@ -33,6 +38,11 @@ struct ParametersSection: View {
                 // On a row that is always there, whatever the count.
                 .task { await countReviews() }
             Toggle("Update parameters automatically", isOn: $options.updatesParametersAutomatically)
+            if ParameterRefit.hasOwnParameters(options) {
+                Text("Set by hand or by an Anki preset: kept as they are.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
             if let fit = options.lastAutoFit {
                 Text(Self.summary(of: fit))
                     .font(.footnote)
@@ -56,11 +66,11 @@ struct ParametersSection: View {
         } header: {
             HStack {
                 Text("FSRS Parameters")
-                HelpButton(text: "The memory model behind the schedule. Mnemit fits it to your reviews by itself; Optimize does it now. Restore Defaults leaves it as it is.")
+                HelpButton(text: "The memory model behind the schedule, fitted by itself to the reviews of all your decks. Optimize does it now.")
             }
         } footer: {
             if let reviewCount, reviewCount < FSRSOptimizer.minimumReviewCount {
-                Text("Needs \(FSRSOptimizer.minimumReviewCount) reviews, each on a later day than the card's previous one.")
+                Text("Needs \(FSRSOptimizer.minimumReviewCount) reviews from all your decks together, each on a later day than the card's previous one.")
             }
         }
         .onDisappear { task?.cancel() }
@@ -106,6 +116,8 @@ struct ParametersSection: View {
             } else {
                 Button("Use New Parameters") {
                     options.parameters = comparison.parameters
+                    // Set by hand: the automatic update leaves them as they are.
+                    options.lastAutoFit = nil
                 }
             }
         case .failed:
@@ -114,14 +126,14 @@ struct ParametersSection: View {
         }
     }
 
-    /// What the last automatic fit did, in a line: "Updated 22 Oct from 2,314 answers", or
+    /// What the last automatic fit did, in a line: "Updated 22 Oct. Fitted on 2,314 reviews from all your decks.", or
     /// that it checked and kept the parameters.
     static func summary(of fit: LearningOptions.AutoFit) -> String {
         let date = fit.date.formatted(.dateTime.day().month(.abbreviated))
         if fit.adopted {
-            return String(localized: "Updated \(date) from \(fit.reviewCount.formatted()) answers")
+            return String(localized: "Updated \(date). Fitted on \(fit.reviewCount.formatted()) reviews from all your decks.")
         }
-        return String(localized: "Checked \(date), kept: no better fit")
+        return String(localized: "Checked \(date), kept: no clear gain")
     }
 
     private static func error(_ value: Double) -> String {
@@ -136,16 +148,19 @@ struct ParametersSection: View {
         // The form may create the row again after scrolling it out of view.
         guard reviewCount == nil else { return }
         let cards = cards
+        let pool = pool
         let calendar = calendar
         let options = options
-        let count = await Task.detached(priority: .userInitiated) {
-            FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar).reviewCount
+        let (all, count) = await Task.detached(priority: .userInitiated) { () -> ([Card], Int) in
+            let all = cards + pool.trainingCards()
+            return (all, FSRSOptimizer(cards: all, learningOptions: options, calendar: calendar).reviewCount)
         }.value
+        allCards = all
         reviewCount = count
     }
 
     private func start() {
-        let optimizer = FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar)
+        let optimizer = FSRSOptimizer(cards: allCards, learningOptions: options, calendar: calendar)
         let current = options.parameters
         state = .running(0)
         task = Task {

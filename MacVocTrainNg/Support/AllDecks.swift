@@ -13,6 +13,15 @@ enum AllDecks {
     }
 }
 
+extension AllDecks {
+    /// The decks the memory model is fitted on besides `document`'s: the other open ones as their documents have them, the rest
+    /// of the folder read from the files.
+    static func pool(besides document: VocabularyDocument, decks: OpenDecks = .shared, folder: DeckFolder = .shared) -> ReviewPool {
+        let all = current(decks: decks, folder: folder)
+        return ReviewPool(decks: all.documents.filter { $0 !== document }.map(\.deck), files: all.files)
+    }
+}
+
 extension DailyRingModel {
     /// Evaluates the ring over `AllDecks`.
     @discardableResult

@@ -171,8 +171,8 @@ struct PausedDecksTests {
         #expect(activeDocument.newCardAllowance == 3)
         #expect(NewCardAllowances.today[pausedFile] == nil)
         #expect(NewCardAllowances.today[activeFile] == 2)
-        // The paused deck's own screen takes the plan of its limits.
-        #expect(pausedDocument.dueCards.counts.new == 20)
+        // The paused deck's own screen plans no new card by itself: it asks nothing of the day, and Learn 10 New Words adds them.
+        #expect(pausedDocument.dueCards.counts.new == 0)
     }
 
     @Test func theRoundsOfTheDayAreNoneOfAPausedDecksStream() throws {

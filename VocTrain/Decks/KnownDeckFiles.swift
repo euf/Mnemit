@@ -7,6 +7,11 @@ import VocabCore
 struct KnownDeckFiles: Sendable {
     var decks: [KnownDeck] = []
 
+    /// The decks the memory model is fitted on besides the one at `url`: every other known deck, paused ones included.
+    func pool(excluding url: URL?) -> ReviewPool {
+        ReviewPool(files: decks.filter { known in url.map { !KnownDecks.isSameFile(known.url, $0) } ?? true }.map(\.url))
+    }
+
     /// The words of every known deck but the one at `url`, paused decks included, read from
     /// their files off the main thread. ponytail: read again at every sheet; a cache by file
     /// date if the decks grow so that this is slow.

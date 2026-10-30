@@ -17,13 +17,13 @@ struct DeckRefitsTests {
     }
 
     /// 250 cards that were all forgotten three days after their first review and then recalled
-    /// the day after, started over ten days so that the newest reviews hold both: 500 usable
+    /// the day after, started over forty days so that the newest reviews hold both: 500 usable
     /// reviews, which the default parameters predict badly, so a fit beats them by far.
     func forgetfulDeck(cards count: Int = 250, options: LearningOptions = LearningOptions()) throws -> Deck {
         let noon = Date(timeIntervalSince1970: 1_791_201_600)
         let cards = (0..<count).map { index -> Card in
             let steps: [(days: Int, grade: Grade)] = [(0, .good), (3, .again), (4, .good)]
-            let log = steps.map { ReviewLogEntry(date: noon.addingTimeInterval(Double(index % 10 + $0.days) * 86400 + Double(index)), grade: $0.grade) }
+            let log = steps.map { ReviewLogEntry(date: noon.addingTimeInterval(Double(index % 40 + $0.days) * 86400 + Double(index)), grade: $0.grade) }
             let state = LearningState(phase: .review, stability: 3, difficulty: 5, lastReview: log[2].date, due: log[2].date, reviews: 3)
             return Card(question: "q\(index)", answer: "a", created: noon, learningState: state, log: log)
         }
@@ -54,6 +54,7 @@ struct DeckRefitsTests {
     }
 
     @Test func aDeckThatIsNotDueOrSwitchedOffStaysAsItIs() async throws {
+        // Alone in the folder, 100 reviews are too few.
         let few = try write(forgetfulDeck(cards: 50), named: "Few.mnemit")
         var off = LearningOptions()
         off.updatesParametersAutomatically = false
@@ -63,9 +64,24 @@ struct DeckRefitsTests {
         let fitted = try write(forgetfulDeck(options: recent), named: "Recent.mnemit")
         let before = try [few, switchedOff, fitted].map(saved)
 
-        await DeckRefits.run([few, switchedOff, fitted]) { true }
+        await DeckRefits.run([few]) { true }
+        // 500 + 500 reviews: not the 1,500 the second fit of a deck last fitted at 400 waits for.
+        await DeckRefits.run([switchedOff, fitted]) { true }
 
         #expect(try [few, switchedOff, fitted].map(saved) == before)
+    }
+
+    /// The memory model is the learner's: a deck with 100 reviews of its own is fitted on the 600 of both decks,
+    /// and so is the other one.
+    @Test func everyDeckIsFittedOnTheReviewsOfAllDecks() async throws {
+        let few = try write(forgetfulDeck(cards: 50), named: "Few.mnemit")
+        let many = try write(forgetfulDeck(), named: "Many.mnemit")
+
+        await DeckRefits.run([few, many]) { true }
+
+        for url in [few, many] {
+            #expect(try saved(url).learningOptions.lastAutoFit?.reviewCount == 600)
+        }
     }
 
     @Test func nothingIsFittedWhileTheScreenIsBusy() async throws {

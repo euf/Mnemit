@@ -242,7 +242,7 @@ struct HowTodayWorks: Equatable, Sendable {
             .text(
                 String(
                     localized:
-                        "Parameters are fitted first at \(ParameterRefit.minimumReviewCount.formatted()) reviews, again at \(ParameterRefit.secondFitReviewCount.formatted()), then every \(Format.days(Double(ParameterRefit.intervalDays))) or after \(ParameterRefit.reviewStep.formatted()) more reviews. A new fit is kept only if it predicts your latest reviews better."
+                        "Parameters are fitted first at \(ParameterRefit.minimumReviewCount.formatted()) reviews, again at \(ParameterRefit.secondFitReviewCount.formatted()), then every \(Format.days(Double(ParameterRefit.intervalDays))) or after \(ParameterRefit.reviewStep.formatted()) more reviews, counting all your decks together. A new fit is kept only if it predicts your latest reviews clearly better."
                 )),
         ]
         return Section(title: String(localized: "Options"), rows: rows, footer: "")
@@ -261,7 +261,7 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(
             localized:
-                "A card comes back when your chance of recalling it falls to the target. FSRS models your memory with 21 parameters, fitted to your reviews; a new fit is kept only if it predicts your latest reviews better."
+                "A card comes back when your chance of recalling it falls to the target. FSRS models your memory with 21 parameters, fitted to the reviews of all your decks; a new fit is kept only if it predicts your latest reviews clearly better."
         )
         // FSRS is a name, not a word to translate.
         let title = count > 1 ? "FSRS · " + name(of: deck, at: position, of: count) : "FSRS"
@@ -273,9 +273,9 @@ struct HowTodayWorks: Equatable, Sendable {
     private static func summary(of fit: LearningOptions.AutoFit) -> String {
         let date = fit.date.formatted(.dateTime.day().month(.abbreviated))
         if fit.adopted {
-            return String(localized: "Updated \(date) from \(fit.reviewCount.formatted()) answers")
+            return String(localized: "Updated \(date). Fitted on \(fit.reviewCount.formatted()) reviews from all your decks.")
         }
-        return String(localized: "Checked \(date), kept: no better fit")
+        return String(localized: "Checked \(date), kept: no clear gain")
     }
 
     /// A deck's name, or its place among the decks where the screen doesn't know it.

@@ -234,7 +234,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   step, Forgot starts it over, Easy finishes at once). The FSRS parameters (they start from averages, are fitted to the
   learner's reviews, give fewer reviews for the same recall, and keep the due dates). The refit schedule, read from
   `ParameterRefit`: the first fit at 400 reviews, again at 1,500, then every 30 days or after 1,000 more; a new fit is kept
-  only if it predicts the latest reviews better.
+  only if it predicts the latest reviews clearly better, on the reviews of all decks together.
 - **FSRS**, one section per deck: desired retention, default or fitted parameters with the 21 values
   (monospaced, four decimals, wrapped), the last automatic fit, learning steps, maximum interval.
 - Code: `HowTodayWorks` (the rows) and `HowTodayWorksView` in `Shared/Statistics`; `DayBreakdown` in
@@ -259,7 +259,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   doesn't change when cards come back), a divider, Rename…, **Pause Deck** / **Resume Deck**
   (`pause.circle` / `play.circle`), Export…, Delete Deck (moves the file to the Trash).
 - A paused deck still opens: Study This Deck and the rest work, and the counts are those of the deck's
-  own New cards/day.
+  own New cards/day; on Auto its plan holds no new card, and Learn 10 New Words adds ten.
 - `PushedDecks` keeps the stack's decks open: it opens one when a route is pushed (`DeckRoute`, the
   deck named by slot, not by file, so a rename doesn't change the route) and closes it when the route
   leaves `path`. Screens above (`CardBrowserScreen`, `CardDetailScreen`, options) show one document.
@@ -406,7 +406,7 @@ edited options; Save applies everything as one change.
   reminders, Study. `DailyProgress.evaluate` and `DayBreakdown` leave `DeckActivity.isPaused` out of the plan
   and count its work: cards done, pace, streak, words in memory and words learned take every deck, so pausing
   takes nothing from today (such a deck's place in `newCardAllowances` holds 0; `DailyRingModel` gives
-  it no allowance, and its plan follows its own New cards/day). `KnownDeckCounts` counts no cards for it and
+  it no allowance, and its plan holds the new cards of its own New cards/day, none on Auto: `StudySession`). `KnownDeckCounts` counts no cards for it and
   keeps it in `paused`; `TodayDecks` splits Today's sections and the Study queue (`studyQueue`); its
   stream has no `RoundGuide`.
 - The deck still opens: screen, browser and Study This Deck work, and its cards fill the ring like those of

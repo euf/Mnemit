@@ -27,9 +27,9 @@ public struct LearningOptions: Hashable, Sendable {
     /// don't offer it, as Anki has no such option: it stays on.
     public var fuzzing: Bool = true
     public var parameters: FSRSParameters = .default
-    /// The lapses (Again on a card in the review phase) at which a study session meets a leech, see
+    /// The Forgots (Again, but the first answer of a new card) at which a study session meets a leech, see
     /// `StudySession.isLeechMoment(lapses:threshold:)`; 0 never does. A card is a leech from that many
-    /// lapses on, resumed or not: `Card.isLeech(threshold:)`.
+    /// Forgots on, resumed or not: `Card.isLeech(threshold:)`.
     public var leechThreshold: Int = 8
     /// What a leech does to the card: it stays in rotation, or is suspended.
     public var leechAction: LeechAction = .keep

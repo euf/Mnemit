@@ -1,10 +1,12 @@
 import Foundation
 
-/// When the app fits a deck's FSRS parameters to its review log again by itself, and when
-/// it keeps the fit. The learner gets the parameters of the optimizer without opening the
-/// options, and never worse ones: the fit is trained on the older 80 % of the log and has to
-/// beat the parameters the deck has on the newest 20 %, which it never saw. A fit that doesn't
-/// is thrown away, and only the attempt is noted (`LearningOptions.lastAutoFit`).
+/// When the app fits the FSRS parameters of a deck to the review log again by itself, and when
+/// it keeps the fit. The memory model is the learner's, not a deck's: the log the fit sees is the
+/// reviews of all the learner's decks together, so it has its 400 reviews sooner, and every deck
+/// gets the parameters it finds. The learner gets them without opening the options, and not worse
+/// ones: the fit is trained on the older 80 % of the log and has to beat the parameters the deck
+/// has on the newest 20 %, which it never saw, by more than the noise of that comparison. A fit
+/// that doesn't is thrown away, and only the attempt is noted (`LearningOptions.lastAutoFit`).
 ///
 /// Pure: the apps decide where and when to call `fit(cards:options:calendar:now:)`, which
 /// is the heavy part, and apply its `Result` through the document.
@@ -22,9 +24,18 @@ public enum ParameterRefit {
     public static let reviewStep = 1000
     /// The share of the log, the newest reviews by time, that the fit is judged on.
     public static let holdoutShare = 0.2
-    /// By how much, relative to the log loss of the current parameters on those reviews, the
-    /// fitted ones must be lower to be kept.
-    public static let requiredImprovement = 0.0
+    /// By how many standard errors the fitted parameters must beat the current ones on those reviews to be kept (see
+    /// `keeps(_:)`). One and a half: of 60 simulated learners with 430 usable reviews whose parameters were the deck's own,
+    /// 3 passed (5 %, at a mean cost of 0.2 % log loss on a fresh log) against 18 with no margin, and a learner whose
+    /// parameters differ a lot passes at 3,600 reviews, where two standard errors would wait for 7,500.
+    public static let requiredStandardErrors = 1.5
+
+    /// Whether the parameters of the deck were set by hand: they are not the defaults and no automatic fit made them,
+    /// as with the presets of an Anki import or "Use New Parameters" of the options. The refit leaves such a deck as it is,
+    /// though its reviews are part of the log the other decks are fitted on. Putting the defaults back hands it over again.
+    public static func hasOwnParameters(_ options: LearningOptions) -> Bool {
+        options.parameters != .default && options.lastAutoFit?.adopted != true
+    }
 
     /// Whether a deck with `reviewCount` usable reviews is due for a fit at `now`.
     ///
@@ -43,10 +54,12 @@ public enum ParameterRefit {
         return days >= Double(intervalDays) || reviewCount - lastFit.reviewCount >= reviewStep
     }
 
-    /// Whether to keep fitted parameters: their log loss on the newest reviews is lower than
-    /// that of the current ones by at least `requiredImprovement`, relative to it.
+    /// Whether to keep fitted parameters: their log loss on the newest reviews is lower than that of the current ones by
+    /// more than `requiredStandardErrors` times the noise of the difference. The first fit has 80 reviews to be judged on,
+    /// where the noise of the difference is several times the 0.004 a fit gains at that size, and a fixed margin either
+    /// keeps noise or turns away every fit; a margin of two standard errors shrinks as the log grows.
     public static func keeps(_ comparison: FSRSOptimizer.Comparison) -> Bool {
-        comparison.computed.logLoss < comparison.current.logLoss * (1 - requiredImprovement)
+        comparison.current.logLoss - comparison.computed.logLoss > requiredStandardErrors * comparison.standardError
     }
 
     /// What a fit found, to apply to the learning options of the deck as they are then.
@@ -64,16 +77,17 @@ public enum ParameterRefit {
         }
     }
 
-    /// Fits the deck again if it is due and the learner has not turned the update off;
-    /// `nil` if it is not. Runs the optimizer, so call it off the main actor, at low
-    /// priority.
+    /// Fits the deck again if it is due, the learner has not turned the update off and the parameters are not
+    /// the learner's own (`hasOwnParameters(_:)`); `nil` if not. `cards` are those of all the learner's decks, the
+    /// deck's own among them, and `options` those of the deck the result is for. Runs the optimizer, so call it off
+    /// the main actor, at low priority.
     ///
     /// An optimizer that finds nothing to fit counts as an attempt that kept the parameters,
     /// or a deck like that would be tried again at every launch.
     ///
     /// - Throws: `CancellationError`, checked between the batches of the optimizer.
     public static func fit(cards: [Card], options: LearningOptions, calendar: StudyCalendar, now: Date) throws -> Result? {
-        guard options.updatesParametersAutomatically else { return nil }
+        guard options.updatesParametersAutomatically, !hasOwnParameters(options) else { return nil }
         let optimizer = FSRSOptimizer(cards: cards, learningOptions: options, calendar: calendar)
         let reviewCount = optimizer.reviewCount
         guard isDue(reviewCount: reviewCount, lastFit: options.lastAutoFit, at: now) else { return nil }

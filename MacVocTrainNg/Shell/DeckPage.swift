@@ -18,7 +18,7 @@ struct DeckPage: View {
                 // The deck opened: its parameters are fitted again if it is due, in the background and never into a stream.
                 .task(id: deck.isEditable && document.isReadyToEdit) {
                     guard deck.isEditable, document.isReadyToEdit else { return }
-                    await ParameterRefitter.refit(document) { shell.session == nil }
+                    await ParameterRefitter.refit(document, pool: AllDecks.pool(besides: document)) { shell.session == nil }
                 }
             } else if let failure = deck.failure {
                 ContentUnavailableView("The deck could not be opened", systemImage: "exclamationmark.triangle", description: Text(failure))

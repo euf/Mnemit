@@ -1,6 +1,20 @@
 import Foundation
 import VocabCore
 
+/// The decks whose reviews the memory model is fitted on together: the model is the learner's, so a deck's
+/// parameters come from the reviews of every deck in the folder (`ParameterRefit`). Without any it is the deck alone.
+struct ReviewPool: Sendable {
+    /// Decks held in memory, as an open document has them, with the reviews not saved yet.
+    var decks: [Deck] = []
+    /// Decks read from their files, those that can't be read left out.
+    var files: [URL] = []
+
+    /// The cards of all of them that the optimizer learns from. Reads files: call it off the main actor.
+    nonisolated func trainingCards() -> [Card] {
+        decks.flatMap(\.trainingCards) + files.flatMap { DeckFileReader.deck(at: $0)?.trainingCards ?? [] }
+    }
+}
+
 /// Runs the automatic refit of a deck's FSRS parameters for both apps, see `ParameterRefit`
 /// for when a deck is due and what is kept. This is the part that costs: the optimizer runs
 /// off the main actor at background priority, one deck at a time in the whole app, and the
@@ -14,15 +28,17 @@ import VocabCore
 enum ParameterRefitter {
     /// Fits `document`'s deck if it is due and applies the result.
     ///
-    /// - Parameter canApply: `false` while something stands in the way of changing the deck:
-    ///   the Mac's study stream.
-    static func refit(_ document: VocabularyDocument, canApply: @MainActor () -> Bool = { true }) async {
+    /// - Parameters:
+    ///   - pool: The other decks of the learner, which the fit learns from together with `document`'s own.
+    ///   - canApply: `false` while something stands in the way of changing the deck:
+    ///     the Mac's study stream.
+    static func refit(_ document: VocabularyDocument, pool: ReviewPool = ReviewPool(), canApply: @MainActor () -> Bool = { true }) async {
         let deck = document.deck
         let calendar = document.calendar
         let now = document.clock.now
-        guard deck.learningOptions.updatesParametersAutomatically else { return }
+        guard deck.learningOptions.updatesParametersAutomatically, !ParameterRefit.hasOwnParameters(deck.learningOptions) else { return }
         await run(
-            fit: { try ParameterRefit.fit(cards: deck.trainingCards, options: deck.learningOptions, calendar: calendar, now: now) },
+            fit: { try ParameterRefit.fit(cards: deck.trainingCards + pool.trainingCards(), options: deck.learningOptions, calendar: calendar, now: now) },
             canApply: { document.isReadyToEdit && canApply() },
             apply: { document.applyParameterRefit($0) })
     }

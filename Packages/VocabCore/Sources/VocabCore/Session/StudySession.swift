@@ -6,10 +6,6 @@ public struct StudySession: Sendable {
     /// The state shared with practice. Only this type changes it.
     public private(set) var session: Session
 
-    /// Fuzzes the intervals of reviews. Kept apart from the order of the session, so
-    /// a review doesn't change which card comes next. As part of the session's value,
-    /// undoing a review restores it: the same review again yields the same due date.
-    private var fuzzing: SeededRandom
     /// How the session asks its cards; every review records it in the card's log.
     public let reviewMode: ReviewMode
 
@@ -36,9 +32,7 @@ public struct StudySession: Sendable {
 
     /// A session over `cardIDs` in their order of urgency, see `SessionQueue`.
     init(cardIDs: [Card.ID], at now: Date, random: SeededRandom, reviewMode: ReviewMode) {
-        var random = random
         self.reviewMode = reviewMode
-        fuzzing = SeededRandom(seed: random.next())
         session = Session(cardIDs: cardIDs, startedAt: now, random: random)
     }
 
@@ -58,6 +52,9 @@ public struct StudySession: Sendable {
     mutating func review(_ grade: Grade, of card: Card, with learningOptions: LearningOptions, at now: Date, calendar: StudyCalendar, duration: Duration? = nil) -> Card? {
         guard card.id == session.currentCardID else { return nil }
         let scheduler = Scheduler(learningOptions: learningOptions, calendar: calendar)
+        // The fuzz of the replay (`Scheduler.replaying(_:of:)`), so a merge that replays this review gives the due date
+        // set here, and undoing the review and grading again gives the same one.
+        var fuzzing = Scheduler.random(forReviewOf: card.id, at: now)
         var scheduled = scheduler.review(card, grade: grade, at: now, mode: reviewMode, duration: duration, using: &fuzzing)
         let becameLeech = Self.isNewLeech(scheduled, after: card, threshold: learningOptions.leechThreshold)
         let suspends = becameLeech && learningOptions.leechAction == .suspend
@@ -66,14 +63,17 @@ public struct StudySession: Sendable {
         return scheduled
     }
 
-    /// Whether the review that made `scheduled` out of `card` lapsed it onto a leech moment.
+    /// Whether the review that made `scheduled` out of `card` forgot it onto a leech moment. A moment comes only with a
+    /// Forgot, so cards that already count as leeches by their log (`Card.forgotCount`) don't stop the stream all at once:
+    /// each one does at its next checkpoint.
     private static func isNewLeech(_ scheduled: Card, after card: Card, threshold: Int) -> Bool {
-        guard !card.isSuspended, let lapses = scheduled.learningState?.lapses else { return false }
-        return lapses > (card.learningState?.lapses ?? 0) && isLeechMoment(lapses: lapses, threshold: threshold)
+        guard !card.isSuspended else { return false }
+        let forgots = scheduled.forgotCount
+        return forgots > card.forgotCount && isLeechMoment(lapses: forgots, threshold: threshold)
     }
 
-    /// Whether a lapse that brings a card to `lapses` is a leech moment: the lapse that reaches the
-    /// threshold, and every half threshold after it, rounded up, as Anki does: 8, 12, 16 … for 8,
+    /// Whether a Forgot that brings a card to `lapses` of them (`Card.forgotCount`) is a leech moment: the one that
+    /// reaches the threshold, and every half threshold after it, rounded up, as Anki does: 8, 12, 16 … for 8,
     /// 5, 8, 11 … for 5. A threshold of 0 never is.
     static func isLeechMoment(lapses: Int, threshold: Int) -> Bool {
         guard threshold > 0, lapses >= threshold else { return false }
@@ -267,7 +267,9 @@ public struct StudySession: Sendable {
         let introduced = past.map { $0.introduced[day] ?? (production: 0, other: 0) } ?? newCardsIntroduced(onDayOf: now, in: deck, calendar: calendar)
         var newLeft = max(0, (options.newCardsPerSession ?? Int.max) - introduced.production - introduced.other)
         // A deck with New cards/day takes that many, as Anki does; the day's allowance is for the decks without it.
-        let allowance = options.newCardsPerSession == nil ? newCardAllowance : nil
+        // A paused deck asks nothing of the day, so the ring has no allowance for it: without New cards/day of its own it takes
+        // no new card by itself, and Learn 10 New Words adds them (`extraNew`).
+        let allowance = options.newCardsPerSession == nil ? newCardAllowance ?? (options.isPaused && past == nil ? 0 : nil) : nil
         var allowanceLeft = allowance.map { max(0, $0 - introduced.production - introduced.other) } ?? Int.max
         // Maximum reviews/day: the review cards asked today count against it. A past day's plan is the plan at its
         // start, with nothing reviewed yet.

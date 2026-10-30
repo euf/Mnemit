@@ -67,9 +67,11 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 
 ## Leech
 
-- **The moments.** `LearningOptions.leechThreshold` is T (Leech threshold on the options screens: 8 lapses, as in Anki; 0 = Off). A lapse is a Forgot on a card in
-  the review phase. The lapse that brings `lapses` to T is a leech moment, and so is every lapse that brings it to
+- **The moments.** `LearningOptions.leechThreshold` is T (Leech threshold on the options screens: 8, as in Anki; 0 = Off). What counts is every Forgot but the first
+  answer of a new card, in the review phase or not (`Card.forgotCount`: the Forgots of the log, or the stored `lapses` when
+  an imported log holds fewer). The Forgot that brings the count to T is a leech moment, and so is every Forgot that brings it to
   T + k × ceil(T / 2) for k ≥ 1: T = 8 gives 8, 12, 16, 20; T = 5 gives 5, 8, 11 (`StudySession.isLeechMoment(lapses:threshold:)`).
+  A moment comes only with a Forgot, so a card that is a leech by its old log meets its moment at its next checkpoint.
   `Session.leechIDs` holds every moment, whatever the action. In the stream a moment is a stop that keeps the answer on
   screen (`study-screen.md`).
 - **Keep Card or Suspend Card.** The options screens call it Leech action. `LearningOptions.leechAction`: `.keep` (the default) leaves the card in rotation and FSRS goes on
@@ -80,7 +82,7 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
   undoable step like `.suspend`: the session counts the card as suspended, not done). Where the review already suspended the
   card (Suspend), Set Aside is Keep It (`SessionCommand.keep(id)`): it resumes the card and the session asks it again. Undo of
   the grade takes back the moment and any suspension.
-- **No flag in the file.** `Card.isLeech(threshold:)` derives from `lapses` (`lapses >= T`), so the Leeches filter
+- **No flag in the file.** `Card.isLeech(threshold:)` derives from the Forgot count (`forgotCount >= T`), so the Leeches filter
   (`CardFilter.leeches`, the title "Leeches") shows resumed cards too, and merges need no rule.
 - **Anki import.** `AnkiPreset.leech` carries the preset's threshold and action: Anki's `leech_threshold` (proto field 22) and
   `leech_action` (field 21: 0 suspend, 1 tag only, which is Keep); an older collection has `dconf.lapse.leechFails` and
@@ -89,13 +91,20 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 ## Automatic FSRS refit
 
 - `ParameterRefit` in VocabCore, `ParameterRefitter` in `Shared/Document`.
-- When: the first fit once the deck has `FSRSOptimizer.minimumReviewCount` (400) usable reviews, the
-  second at 1,500, then at most once in 30 days or after 1,000 new reviews, whichever comes first. A
-  deck that arrives with a long log is fitted once right away.
+- The memory model is the learner's: the log a deck is fitted on is the usable reviews of all the decks in the folder
+  together (the caller passes their cards), and every deck whose parameters are not its own gets the fit. Parameters
+  are a deck's own when they are not the defaults and no automatic fit made them (`ParameterRefit.hasOwnParameters`: an
+  Anki preset, "Use New Parameters" on the options screen, which clears `lastAutoFit`); such a deck is left as it is,
+  its reviews still in the others' log, and Reset FSRS Parameters hands it over again.
+- When: the first fit once the folder has `FSRSOptimizer.minimumReviewCount` (400) usable reviews, the
+  second at 1,500, then at most once in 30 days or after 1,000 new reviews, whichever comes first, counted per deck
+  from its own `lastAutoFit`. A deck that arrives with a long log is fitted once right away.
 - The judge is a time holdout: the optimizer learns on the oldest 80 % of reviews, and the current and
   new parameters are scored by log loss on the newest 20 % (`FSRSOptimizer.compareOnNewest`). The new
-  ones stay if their log loss is lower than the current one by any amount (`requiredImprovement` = 0;
-  that constant is the threshold); otherwise the parameters stay and the attempt is recorded.
+  ones stay if their log loss is lower than the current one by more than `ParameterRefit.requiredStandardErrors` (1.5)
+  times the standard error of the difference, review by review (`Comparison.standardError`); otherwise the parameters
+  stay and the attempt is recorded. Of 60 simulated learners with 430 usable reviews and the deck's own parameters as
+  the truth, 18 fits were kept with no margin (17 worse on a fresh log) and 3 with this one.
 - The manual "Optimize" compares over the whole log (`compare(with:)`), and the person
   decides.
 - State in `LearningOptions`: `lastAutoFit` (date, number of usable reviews, accepted or not) and
@@ -104,11 +113,13 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 - The optimizer runs off the main thread at background priority, one deck at a time for the whole app
   (`ParameterRefitter.run`). `VocabularyDocument.applyParameterRefit` applies the result as one Undo step
   "Update Parameters" and drops it if the switch is off or another fit is newer.
-- Mac: on opening the document (`DocumentView`), not during the Study stream. iPhone: after launch, once
-  Today is read and nothing is open (`StartScreen.canRefitParameters`), `DeckRefits` reads the file of
-  each known deck, opens a due one through `OpenDeck`, applies and closes it.
-- The switch and the line about the last fit: `ParametersSection` (iPhone: Options → Advanced; Mac: the
-  Learning Options sheet).
+- The pool is a `ReviewPool` (`Shared/Document`): decks in memory and decks read from files. Mac: on opening the document
+  (`DeckPage`), not during the Study stream, over the other open documents and the rest of the folder
+  (`AllDecks.pool(besides:)`). iPhone: after launch, once Today is read and nothing is open (`StartScreen.canRefitParameters`),
+  `DeckRefits` reads the files of all known decks once, then opens each due one through `OpenDeck`, applies and closes it.
+- The switch, the line about the last fit ("Fitted on N reviews from all your decks"), "Usable reviews N / 400" counted over
+  all decks, and the note on a deck whose parameters are its own: `ParametersSection` (iPhone: Options → Advanced; Mac: the
+  Learning Options sheet). Optimize there fits on the pool too and applies to this deck only.
 
 ## The day's stack
 
