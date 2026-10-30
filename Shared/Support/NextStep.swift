@@ -150,10 +150,10 @@ struct NextStep: Equatable, Sendable {
     var spoken: String { days > 0 ? [streakSpoken, sentence].joined(separator: " · ") : sentence }
 
     /// The short form for a line with room for little, after the flame: "7 · ≈ 2 min", "7 · Done" once nothing is left,
-    /// the days alone without a price. Without a streak the sentence.
+    /// without a price the moment in words, "7 · Keep your streak". Without a streak the sentence.
     var short: String {
         guard days > 0 else { return sentence }
-        let tail = minutes.map(Format.timeLeft(minutes:)) ?? (isClosed && !reviewsLeft ? String(localized: "Done") : nil)
+        let tail = minutes.map(Format.timeLeft(minutes:)) ?? (isClosed && !reviewsLeft ? String(localized: "Done") : moment.value)
         return [days.formatted(.number.grouping(.never)), tail].compactMap { $0 }.joined(separator: " · ")
     }
 
