@@ -86,6 +86,9 @@ final class WidgetSync {
     /// The write itself; waits for the one before it, so an older snapshot never lands on a
     /// newer one.
     private func write(_ inputs: Inputs) async {
+        // No deck yet (or none read yet): the ring is empty and met, and the widget would say "All done for
+        // today". It keeps what it has, a snapshot of earlier decks or its own placeholder.
+        guard !inputs.decks.isEmpty else { return }
         let previous = lastWrite
         let run = Task { @MainActor in
             await previous?.value

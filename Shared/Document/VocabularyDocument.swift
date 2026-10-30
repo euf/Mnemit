@@ -116,11 +116,9 @@ final class VocabularyDocument: ObservableObject {
         }
     }
 
-    /// Switches to the machine's new time zone. Foundation keeps the zone it read
-    /// first, so it forgets that one before.
+    /// Switches to the machine's new time zone.
     private func followSystemTimeZone() {
-        NSTimeZone.resetSystemTimeZone()
-        switchTimeZone(to: .current)
+        switchTimeZone(to: StudyCalendar.systemTimeZone)
     }
 
     /// Counts study days in `timeZone` from now on, starting them at the same hour.

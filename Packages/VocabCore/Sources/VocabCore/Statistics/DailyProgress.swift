@@ -352,6 +352,14 @@ public enum DailyGoal {
         return minutes(seconds: Double(cards) * secondsPerCard)
     }
 
+    /// The cards of a plan of `cards` that are the streak step when each takes `secondsPerCard`: the first that fill
+    /// `streakSeconds`, or the whole plan when it is shorter; 0 for no cards, or without a price. Where only the number of the
+    /// cards of a later day is known: the widget's forecast and the reminders.
+    public static func streakStepCards(in cards: Int, secondsPerCard: Double) -> Int {
+        guard cards > 0, secondsPerCard > 0 else { return 0 }
+        return min(cards, max(1, Int((streakSeconds / secondsPerCard - 1e-9).rounded(.up))))
+    }
+
     /// Whole minutes, up; the seconds are taken to the millisecond first, so that cards priced
     /// by one price that was worked out from the sum (`Pace.secondsPerCard(newCards:otherCards:)`)
     /// give the minutes of the sum, whatever the floating point leaves in the last digit.

@@ -71,6 +71,9 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// `nil` in a snapshot an older app wrote, and then the widget leaves the figure out.
     var wordsLearned: Int?
     var wordsLearnedToday: Int?
+    /// The seconds of work the day asks (`DailyProgress.time`): what the goal of a day that begins after the snapshot is cut
+    /// at, as the app cuts it when it runs (`state(at:)`). `nil` in a snapshot an older app wrote: that goal is the plan.
+    var daySeconds: Double?
 
     /// How far ahead the forecast reaches.
     static let forecastHours = 48
@@ -80,15 +83,16 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         case date
         case done = "reviews"
         case goal, streakDays, isGoalMet, due, nextReminder, secondsPerCard
-        case rounds, roundsDone, minutesToNextRound, wordsInMemory, wordsToday, ladder, isStreakAtRisk, week, weekRings, wordsLearned, wordsLearnedToday
+        case rounds, roundsDone, minutesToNextRound, wordsInMemory, wordsToday, ladder, isStreakAtRisk, week, weekRings, wordsLearned, wordsLearnedToday, daySeconds
     }
 
     init(
         date: Date, done: Int, goal: Int, streakDays: Int, isGoalMet: Bool, due: [Due], nextReminder: Date?, secondsPerCard: Double? = nil,
         rounds: Int? = nil, roundsDone: Int? = nil, minutesToNextRound: Int? = nil, wordsInMemory: Int? = nil, wordsToday: Int? = nil,
         ladder: [Int]? = nil, isStreakAtRisk: Bool? = nil, week: [Bool?]? = nil, weekRings: [Double?]? = nil, wordsLearned: Int? = nil,
-        wordsLearnedToday: Int? = nil
+        wordsLearnedToday: Int? = nil, daySeconds: Double? = nil
     ) {
+        self.daySeconds = daySeconds
         self.wordsLearned = wordsLearned
         self.wordsLearnedToday = wordsLearnedToday
         self.isStreakAtRisk = isStreakAtRisk
@@ -121,7 +125,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
             minutesToNextRound: progress.minutesToNextRound, wordsInMemory: progress.memory.shownWords, wordsToday: progress.memory.shownGain,
             ladder: progress.ladder, isStreakAtRisk: progress.isStreakAtRisk, week: progress.week.count == 7 ? progress.week : nil,
             weekRings: progress.week.count == 7 ? progress.weekRings : nil, wordsLearned: progress.learned.words,
-            wordsLearnedToday: progress.learned.shownGain)
+            wordsLearnedToday: progress.learned.shownGain, daySeconds: progress.time)
     }
 
     /// The moments the forecast looks at: `now`, then each full hour after it.
@@ -240,7 +244,8 @@ extension WidgetSnapshot {
     ///
     /// On the study day of the snapshot they are the snapshot's, with the cards left that were
     /// forecast for the hour. Once a study day has begun, today's cards done are 0 and its goal
-    /// is the plan, as forecast for the moment; a day whose plan is empty is met, and counts
+    /// is the cards of the plan that fit the day's time, as forecast for the moment (`forecastGoal(plan:)`), with the minutes of the
+    /// streak step; a day whose plan is empty is met, and counts
     /// for the streak. The streak holds through one missed day, which the plan of the next
     /// makes up for, and ends with a second one, as in `Streak.evaluate`; a day on which the
     /// goal was not met counts as missed.
@@ -258,12 +263,32 @@ extension WidgetSnapshot {
         let missed = days - (same.isStreakKept ? 1 : 0)
         let isEmptyPlanMet = count == 0 && missed == 0
         let kept = missed >= 2 ? 0 : streakDays + (isEmptyPlanMet ? 1 : 0)
+        let newGoal = forecastGoal(plan: count)
+        let step = streakStep(ofGoal: newGoal)
         return WidgetState(
-            date: moment, done: 0, goal: count, streakDays: kept, isGoalMet: count == 0, due: count, nextReminder: reminder,
-            secondsPerCard: secondsPerCard, ladder: ladder, isStreakAtRisk: missed == 1 && count > 0 && kept > 0,
+            date: moment, done: 0, goal: newGoal, streakDays: kept, isGoalMet: count == 0, due: count, nextReminder: reminder,
+            secondsPerCard: secondsPerCard, rounds: step?.rounds, roundsDone: step.map { _ in 0 }, minutesToNextRound: step?.minutes,
+            ladder: ladder, isStreakAtRisk: missed == 1 && count > 0 && kept > 0,
             week: week.map { Self.moved($0, ending: isGoalMet, between: false, today: count == 0, daysLater: days) },
             weekRings: weekRings.map { Self.moved($0, ending: $0.last.flatMap { $0 } ?? (isGoalMet ? 1 : 0), between: 0, today: count == 0 ? 1 : 0, daysLater: days) },
             wordsLearned: wordsLearned)
+    }
+
+    /// The goal of a study day that began after the snapshot, whose plan holds `plan` cards: the cards that fit the day's
+    /// time at the one price the snapshot has, at least one, as the app cuts it (`DayRounds`); the plan itself when the
+    /// snapshot has no time or no price.
+    private func forecastGoal(plan: Int) -> Int {
+        guard plan > 0, let daySeconds, daySeconds > 0, let secondsPerCard, secondsPerCard > 0 else { return plan }
+        return min(plan, max(1, Int((daySeconds / secondsPerCard + 1e-9).rounded(.down))))
+    }
+
+    /// The rounds of such a day and the minutes of the first, the streak step: the cards of the goal that fill
+    /// `DailyGoal.streakSeconds` at the snapshot's one price, a second round for the rest. `nil` without a price.
+    private func streakStep(ofGoal goal: Int) -> (rounds: Int, minutes: Int?)? {
+        guard let secondsPerCard, secondsPerCard > 0 else { return nil }
+        guard goal > 0 else { return (0, nil) }
+        let cards = DailyGoal.streakStepCards(in: goal, secondsPerCard: secondsPerCard)
+        return (cards < goal ? 2 : 1, DailyGoal.minutesLeft(cards: cards, secondsPerCard: secondsPerCard))
     }
 
     /// The week of a snapshot `daysLater` study days on, whether as closed or as laps: the snapshot's day as it ended (`last`),

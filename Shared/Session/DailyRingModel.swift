@@ -66,12 +66,17 @@ final class DailyRingModel {
     /// - Returns: The evaluation, which a later call cancels: its `value` is there when the figures are.
     @discardableResult
     func refresh(documents: [VocabularyDocument], files: [URL] = [], ledger store: ProgressLedgerStore? = nil, reloadFiles: Bool = false, delay: Duration = .milliseconds(250)) -> Task<Void, Never> {
+        // A deck passed twice (an open document and its own file, a file under two spellings) would count its
+        // reviews twice, and the ledger keeps the larger figure for good: the first spelling stays.
+        var seen = Set(documents.compactMap { $0.packageURL.map(NewCardAllowances.key) })
+        let files = files.filter { seen.insert(NewCardAllowances.key($0)).inserted }
         let decks = documents.map(\.deck)
         let progressCache = progressCache
         let caches = documents.map { historyCaches[ObjectIdentifier($0)] ?? DeckHistoryCache() }
         historyCaches = Dictionary(zip(documents.map { ObjectIdentifier($0) }, caches), uniquingKeysWith: { first, _ in first })
         let calendar = documents.first?.calendar ?? StudyCalendar()
         let now = documents.first?.clock.now ?? Date()
+        let day = calendar.dayNumber(for: now)
         let known = fileActivities
         let mustRead = reloadFiles || Set(files) != Set(known.keys)
         let knownLedger = ledger
@@ -105,7 +110,7 @@ final class DailyRingModel {
                 }
                 // In the order of the activities: the documents, then the files that were read. A paused deck has
                 // none, and the allowance of its file from before it was paused goes with it.
-                var allowances = NewCardAllowances()
+                var allowances = NewCardAllowances(day: day)
                 var paused: [URL] = []
                 for (url, allowance) in zip(read, progress.newCardAllowances.dropFirst(decks.count)) {
                     if fileActivities[url]?.isPaused == true {
@@ -193,23 +198,46 @@ enum ICloudDownload {
 /// the one of its limits.
 struct NewCardAllowances: Equatable, Sendable {
     private var byFile: [String: Int] = [:]
+    /// The study day the allowances were worked out for; `nil` for a set nobody dated.
+    private(set) var day: Int?
+
+    init(day: Int? = nil) {
+        self.day = day
+    }
+
+    @MainActor private static var stored = NewCardAllowances()
 
     /// What the daily ring worked out last, for every deck file it has seen: the allowance of a deck
-    /// holds for the study day, so a file the last evaluation left out keeps the one it had.
-    @MainActor static var today = NewCardAllowances()
+    /// holds for the study day, so a file the last evaluation left out keeps the one it had. At the
+    /// next day's 4:00 it is empty until the ring evaluates again: yesterday's time budget is not today's.
+    @MainActor static var today: NewCardAllowances {
+        get { stored.valid(on: StudyCalendar().dayNumber(for: Date())) }
+        set { stored = newValue }
+    }
+
+    /// What the set says on study day `day`: its entries, or none when it was worked out for another day.
+    func valid(on day: Int) -> NewCardAllowances {
+        if let own = self.day, own != day { return NewCardAllowances() }
+        return self
+    }
 
     subscript(url: URL) -> Int? {
         get { byFile[Self.key(url)] }
         set { byFile[Self.key(url)] = newValue }
     }
 
+    /// Takes `other`'s entries over, those of an earlier study day going first.
     mutating func merge(_ other: NewCardAllowances) {
+        if let otherDay = other.day {
+            if day != nil, day != otherDay { byFile = [:] }
+            day = otherDay
+        }
         byFile.merge(other.byFile) { _, new in new }
     }
 
     /// The same file however its URL is spelled: the path of a package may end with a slash, and
     /// `/var` is a link to `/private/var`.
-    private static func key(_ url: URL) -> String {
+    static func key(_ url: URL) -> String {
         url.standardizedFileURL.resolvingSymlinksInPath().path
     }
 }

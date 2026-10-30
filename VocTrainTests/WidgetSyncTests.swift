@@ -60,6 +60,16 @@ struct WidgetSyncTests {
         #expect(store.writes == 1)
     }
 
+    @Test func withNoDeckThereIsNothingToWrite() async {
+        let store = FakeSnapshotStore()
+        let reloads = Reloads()
+        let empty = WidgetSync.Inputs(progress: Fixtures.progress(done: 0, goal: 0, streak: 0), decks: [], nextReminder: nil)
+        await sync(store, reloads).flush(empty)
+        #expect(store.writes == 0)
+        #expect(store.read() == nil)
+        #expect(reloads.count == 0)
+    }
+
     @Test func noReloadIfTheStoreRefuses() async {
         let store = FakeSnapshotStore()
         store.succeeds = false

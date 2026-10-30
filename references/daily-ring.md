@@ -12,6 +12,13 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   cards into minutes ("≈ 2 min", an estimate at the learner's pace; `product-model.md` §3). A review (one grade of one card) counts toward neither the goal, the ring nor the
   streak; reviews are for the optimizer, statistics and pace.
 
+## The study day's clock
+
+- `StudyCalendar` (VocabCore/Scheduling) cuts the study days at 04:00 in the machine's time zone. `StudyCalendar()` reads the zone
+  at each call (`StudyCalendar.systemTimeZone` makes Foundation forget the zone it cached before), so a calendar made after the
+  learner changed zone, with the app open on Today and no deck document, is in the new one. A calendar is a value with a fixed
+  zone, so the caches keyed by it (`DailyProgressCache`) start over on a change.
+
 ## The ledger: past days
 
 - A study day, once over, is a record (`LedgerDay`, `Packages/VocabCore/Sources/VocabCore/Statistics/DayLedger.swift`):
@@ -45,6 +52,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `reviews`, `done`, `goal`, `keep`, `kept`, `closed`, `time` and `worked` (to 0.1 s), `reason` (`start`, `ringClosed`,
   `closedInARow`, `ringOpen`, `smallPlan`, `sustainedOvershoot`; an unknown one reads `ringOpen`), `filled`, `words`, `rule` (missing: 0). `decode` never
   throws: an unreadable line costs its day only. Where the files live: `deck-package.md`.
+- **One deck, one evaluation**: `refresh` drops every file that is the package of a passed document or an earlier file, compared by
+  `NewCardAllowances.key` (standardized, symlinks resolved), so a deck passed twice never counts its reviews twice: the ledger
+  keeps the larger figure of a day for good. The Mac's `AllDecks` compares by `OpenDecks.key`, the same rule.
 - **The app side**: `DailyRingModel.refresh(documents:files:ledger:reloadFiles:delay:)` takes a `ProgressLedgerStore?` (`nil` in
   previews and tests: no ledger, no write). It reads the ledger off the main actor, with the deck files, when `reloadFiles` is set
   or the store changed, and otherwise keeps the last one. After an evaluation with `ledgerUpdates` it writes
@@ -164,7 +174,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   document (`VocabularyDocument.newCardAllowance`, read by `DueCardCounter`, `StudyModel`,
   `SessionViewModel`, `SessionDriver`) and to `NewCardAllowances.today` per deck file (read by
   `OpenDeck`, `KnownDeckCounts`, `Reminders`, `WidgetSync`; the forecast for future days takes today's
-  allowance).
+  allowance). The set carries the study day it was worked out for: it reads empty from the next day's 4:00 until
+  the first evaluation of that day replaces it.
 - Cards first reviewed today are subtracted from the allowance, Study These Now's cards among them (they stand in for the
   plan's new cards, and go beyond New cards/day); Learn 10 New Words goes beyond the allowance and New cards/day. A card
   counts against the allowance when its first grade is logged.
@@ -268,7 +279,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - `DailyProgress.cardsLeft`, `.newCardsLeft`, `.pace`, `.minutesLeft`. The widget's forecast knows only
   the number of cards per hour, so the snapshot holds one price (`WidgetSnapshot.secondsPerCard` =
   `DailyProgress.secondsPerCardLeft`: the time of the cards left now divided by their number; without
-  cards, the other price) and counts each hour's minutes by it.
+  cards, the other price) and counts each hour's minutes by it. For a day that begins after the snapshot it also holds
+  `DailyProgress.time` (`daySeconds`): that day's goal is `min(plan, max(1, time / price))` cards and its streak step the first
+  `DailyGoal.streakSeconds` of them (`DailyGoal.streakStepCards`). The snapshot is not written while no deck is known.
 - Practice is not written to the log and doesn't count.
 
 ## Backlog

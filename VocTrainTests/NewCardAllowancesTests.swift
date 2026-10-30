@@ -88,4 +88,74 @@ struct NewCardAllowancesTests {
         #expect(document.newCardAllowance == expected)
         await deck.close()
     }
+
+    // MARK: A deck is counted once
+
+    @Test func aDeckPassedAsADocumentAndAsItsOwnFileIsEvaluatedOnce() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = try writeDeck(named: "Greek", cards: fresh(10, daysAgo: 2), in: directory)
+        // The same package behind a link and with a slash at its end, as two lists may spell it.
+        let link = directory.appending(path: "link")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: directory)
+        let spelled = URL(fileURLWithPath: link.path + "/Greek.mnemit/", isDirectory: true)
+        let document = try VocabularyDocument(deck: Deck(cards: fresh(10, daysAgo: 2)))
+        document.packageURL = url
+
+        let alone = DailyRingModel()
+        await alone.refresh(documents: [document], reloadFiles: true, delay: .zero).value
+        let twice = DailyRingModel()
+        await twice.refresh(documents: [document], files: [spelled], reloadFiles: true, delay: .zero).value
+
+        let single = try #require(alone.progress)
+        let doubled = try #require(twice.progress)
+        #expect(single.newCardAllowances.count == 1)
+        #expect(doubled.newCardAllowances == single.newCardAllowances)
+        #expect(doubled.ring == single.ring)
+    }
+
+    @Test func aFileListedTwiceIsEvaluatedOnce() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = try writeDeck(named: "Greek", cards: fresh(10, daysAgo: 2), in: directory)
+        let slash = URL(fileURLWithPath: url.path + "/", isDirectory: true)
+        let ring = DailyRingModel()
+        await ring.refresh(documents: [], files: [url, slash], reloadFiles: true, delay: .zero).value
+        #expect(try #require(ring.progress).newCardAllowances.count == 1)
+    }
+
+    // MARK: The study day
+
+    @Test func anAllowanceOfYesterdayIsNoAllowanceToday() throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appending(path: "Greek.mnemit", directoryHint: .isDirectory)
+        let other = directory.appending(path: "Polish.mnemit", directoryHint: .isDirectory)
+        let today = StudyCalendar().dayNumber(for: Date())
+
+        var yesterday = NewCardAllowances(day: today - 1)
+        yesterday[url] = 12
+        yesterday[other] = 3
+        #expect(yesterday.valid(on: today - 1)[url] == 12)
+        #expect(yesterday.valid(on: today)[url] == nil)
+        // A set nobody dated holds on every day.
+        var undated = NewCardAllowances()
+        undated[url] = 4
+        #expect(undated.valid(on: today)[url] == 4)
+
+        // The first evaluation of the day replaces them all, also the files it leaves out.
+        var held = yesterday
+        var current = NewCardAllowances(day: today)
+        current[url] = 5
+        held.merge(current)
+        #expect(held.valid(on: today)[url] == 5)
+        #expect(held.valid(on: today)[other] == nil)
+
+        // Within the day, a file the evaluation left out keeps its allowance.
+        var again = NewCardAllowances(day: today)
+        again[other] = 2
+        held.merge(again)
+        #expect(held.valid(on: today)[url] == 5)
+        #expect(held.valid(on: today)[other] == 2)
+    }
 }

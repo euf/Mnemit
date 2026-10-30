@@ -8,8 +8,8 @@ enum AllDecks {
     /// The open documents, and the decks of the folder that none of them holds.
     static func current(decks: OpenDecks = .shared, folder: DeckFolder = .shared) -> (documents: [VocabularyDocument], files: [URL]) {
         let documents = decks.documents
-        let open = Set(documents.compactMap { $0.packageURL?.standardizedFileURL })
-        return (documents, folder.decks.filter { !open.contains($0.standardizedFileURL) })
+        let open = Set(documents.compactMap { $0.packageURL.map(OpenDecks.key) })
+        return (documents, folder.decks.filter { !open.contains(OpenDecks.key($0)) })
     }
 }
 
