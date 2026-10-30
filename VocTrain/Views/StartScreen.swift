@@ -65,6 +65,10 @@ struct StartScreen: View {
     /// Whether the decks were checked for a new fit of their FSRS parameters since launch.
     @State private var hasCheckedParameters = false
     @AppStorage("IntroductionSeen") private var hasSeenIntroduction = false
+    /// Whether a link or a tap on a reminder is opening Study: nothing else comes up over Today meanwhile.
+    @State private var isOpeningStudy = false
+    private let reminderTaps = ReminderTaps.shared
+    @State private var handledReminderTaps = 0
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -141,6 +145,12 @@ struct StartScreen: View {
             Text(importFailure ?? "")
         }
         .onOpenURL(perform: open)
+        // A tap on a reminder is the widget's tap; one that launched the app is counted already.
+        .onChange(of: reminderTaps.count, initial: true) { _, count in
+            guard count > handledReminderTaps else { return }
+            handledReminderTaps = count
+            openStudyLink()
+        }
         .onAppear {
             if !hasSeenIntroduction {
                 showsIntroduction = true
@@ -250,7 +260,7 @@ struct StartScreen: View {
 
     /// Whether nothing is open or asked for: no stream, no deck, no sheet, no introduction.
     private var isIdle: Bool {
-        hasSeenIntroduction && !showsIntroduction && run == nil && path.isEmpty && addingCards == nil && !showsSettings && !showsNewDeck
+        hasSeenIntroduction && !showsIntroduction && !isOpeningStudy && run == nil && path.isEmpty && addingCards == nil && !showsSettings && !showsNewDeck
             && monthRecap == nil && !isChoosing && !isChoosingImport && incomingAnki == nil && waitingAnki == nil && chosenAnki == nil
     }
 
@@ -485,14 +495,19 @@ struct StartScreen: View {
     private func open(_ url: URL) {
         switch IncomingLink(url) {
         case .study:
-            // The introduction comes first, and there are no decks before it.
-            guard hasSeenIntroduction else { return }
-            Task { await studyFromWidget() }
+            openStudyLink()
         case .ankiPackage:
             Task { await receiveAnki(url) }
         case .deck:
             add(deckAt: url)
         }
+    }
+
+    /// The widget's link and a tap on a reminder: the first card in one tap.
+    private func openStudyLink() {
+        // The introduction comes first, and there are no decks before it.
+        guard hasSeenIntroduction else { return }
+        Task { await studyFromLink() }
     }
 
     // MARK: Anki packages
@@ -523,13 +538,19 @@ struct StartScreen: View {
     private func uncoverToday() async {
         let isCovered =
             showsSettings || showsNewDeck || isChoosing || isChoosingImport || addingCards != nil || webBrowser != nil
-            || !path.isEmpty
+            || monthRecap != nil || incomingAnki != nil || !path.isEmpty
+        // A package the learner had not placed yet asks again once the stream is over.
+        if waitingAnki == nil, let package = incomingAnki {
+            waitingAnki = package
+        }
         showsSettings = false
         showsNewDeck = false
         isChoosing = false
         isChoosingImport = false
         addingCards = nil
         webBrowser = nil
+        monthRecap = nil
+        incomingAnki = nil
         path = []
         if isCovered {
             try? await Task.sleep(for: .milliseconds(600))
@@ -593,21 +614,16 @@ struct StartScreen: View {
         }
     }
 
-    /// One tap on the widget is the first card: what covers Today closes first, the decks are
-    /// read if the app has just started, and then Study runs as from its button.
-    private func studyFromWidget() async {
-        let isCovered = showsSettings || addingCards != nil || showsNewDeck || isChoosing || !path.isEmpty
-        showsSettings = false
-        addingCards = nil
-        showsNewDeck = false
-        isChoosing = false
-        path = []
-        if isCovered {
-            try? await Task.sleep(for: .milliseconds(600))
-        }
+    /// One tap on the widget or on a reminder is the first card: the decks are read if the app has just started,
+    /// everything that covers Today closes (`uncoverToday()`, the month's screen too), and then Study runs as from
+    /// its button. Reading comes first, as the month's screen is due once the ring is evaluated.
+    private func studyFromLink() async {
+        isOpeningStudy = true
+        defer { isOpeningStudy = false }
         if !deckCounts.isRead {
             await refreshAll()
         }
+        await uncoverToday()
         study(.all)
     }
 

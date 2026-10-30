@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// The iPhone app: studies and edits decks it keeps in iCloud Drive or on the iPhone,
 /// or opens from the Files app (#254). It edits cards the way the Mac app does, through
@@ -11,6 +12,8 @@ import SwiftUI
 @main
 struct VocTrainApp: App {
     init() {
+        // A tap on a reminder opens Study, as the widget does; the delegate must be there before the launch is over.
+        UNUserNotificationCenter.current().delegate = ReminderTapDelegate.shared
         // The app that hosts a test run never speaks by itself: a simulator plays the voice
         // through the speakers of the Mac.
         let environment = ProcessInfo.processInfo.environment

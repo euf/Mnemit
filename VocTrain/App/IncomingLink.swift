@@ -1,4 +1,6 @@
 import Foundation
+import Observation
+import UserNotifications
 
 /// What a URL the app was opened with asks for, see `StartScreen.open(_:)`.
 enum IncomingLink: Equatable {
@@ -17,6 +19,42 @@ enum IncomingLink: Equatable {
             self = .ankiPackage
         } else {
             self = .deck
+        }
+    }
+}
+
+/// The taps on the app's reminders, which go where the widget's tap goes: Study starts at once (`IncomingLink.study`).
+/// The delegate counts them and `StartScreen` follows the count, so a tap that launched the app is not lost to a screen
+/// that was not there yet.
+@MainActor @Observable
+final class ReminderTaps {
+    static let shared = ReminderTaps()
+    private(set) var count = 0
+
+    func tapped() {
+        count += 1
+    }
+}
+
+/// Hears the taps on the reminders (`Reminders` puts `userInfo` on each). Set as the notification center's delegate
+/// before the app has finished launching, as a tap that opens the app is delivered right after.
+final class ReminderTapDelegate: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
+    static let shared = ReminderTapDelegate()
+    /// What every reminder carries.
+    static var userInfo: [AnyHashable: Any] { ["mnemitRoute": "study"] }
+
+    /// Whether the learner opened the notification itself (not dismissed it) and it is one of the reminders.
+    nonisolated static func isStudyTap(actionIdentifier: String, userInfo: [AnyHashable: Any]) -> Bool {
+        actionIdentifier == UNNotificationDefaultActionIdentifier && userInfo["mnemitRoute"] as? String == "study"
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let isStudy = Self.isStudyTap(actionIdentifier: response.actionIdentifier, userInfo: response.notification.request.content.userInfo)
+        completionHandler()
+        if isStudy {
+            Task { @MainActor in ReminderTaps.shared.tapped() }
         }
     }
 }

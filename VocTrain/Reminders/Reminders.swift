@@ -215,7 +215,8 @@ final class Reminders {
         }
     }
 
-    private func add(_ content: UNNotificationContent, id: String, at fire: Date) async {
+    private func add(_ content: UNMutableNotificationContent, id: String, at fire: Date) async {
+        content.userInfo = ReminderTapDelegate.userInfo
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))

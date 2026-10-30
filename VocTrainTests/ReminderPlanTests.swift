@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UserNotifications
 import VocabCore
 
 @testable import VocTrain
@@ -104,5 +105,22 @@ struct ReminderPlanTests {
         #expect(ReminderPlan.badge(due: 450, progress: closed) == 0, "a backlog after the ring is no reason for the icon")
         #expect(ReminderPlan.badge(due: 12, progress: nil) == 1)
         #expect(ReminderPlan.badge(due: 0, progress: nil) == 0)
+    }
+}
+
+/// A tap on a reminder is the widget's tap: Study starts at once.
+struct ReminderTapTests {
+    @Test func onlyAnOpenedReminderStartsStudy() {
+        let info = ReminderTapDelegate.userInfo
+        #expect(ReminderTapDelegate.isStudyTap(actionIdentifier: UNNotificationDefaultActionIdentifier, userInfo: info))
+        #expect(!ReminderTapDelegate.isStudyTap(actionIdentifier: UNNotificationDismissActionIdentifier, userInfo: info))
+        #expect(!ReminderTapDelegate.isStudyTap(actionIdentifier: UNNotificationDefaultActionIdentifier, userInfo: [:]))
+    }
+
+    @MainActor @Test func aTapIsCounted() {
+        let taps = ReminderTaps()
+        taps.tapped()
+        taps.tapped()
+        #expect(taps.count == 2)
     }
 }
