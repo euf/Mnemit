@@ -74,7 +74,7 @@ struct StartScreen: View {
     var body: some View {
         NavigationStack(path: $path) {
             TodayScreen(
-                decks: knownDecks.byName, counts: deckCounts.counts, paused: deckCounts.paused, failed: deckCounts.failed, folderLost: knownDecks.folderLost, progress: ring.progress, now: Date(), query: $query,
+                decks: knownDecks.byName, counts: deckCounts.counts, paused: deckCounts.paused, failed: deckCounts.failed, folderLost: knownDecks.folderLost, progress: ring.isStale ? nil : ring.progress, now: Date(), query: $query,
                 hits: search.hits(for: query), isSearching: !search.isLoaded,
                 canForget: { !knownDecks.isInFolder($0.url) }, study: { study($0) }, pushOn: { study(.all, entry: .pushOn) }, showDeck: showDeck, showCard: showCard,
                 forget: { knownDecks.forget($0.url) }, setPaused: setPaused, addCards: { openLastDeck(importing: nil) },
@@ -232,6 +232,8 @@ struct StartScreen: View {
         .task(id: scenePhase) {
             if scenePhase == .active, run == nil, path.isEmpty, addingCards == nil {
                 await refreshAll()
+            } else if scenePhase == .active, run == nil, ring.isStale {
+                await refreshRingForNewDay()
             }
             if scenePhase == .active { syncWidget() }
             // While Today stays on screen, a minute at a time: reviews saved on the Mac arrive, and the day turns at 04:00.
@@ -239,6 +241,8 @@ struct StartScreen: View {
                 try? await Task.sleep(for: .seconds(60))
                 if !Task.isCancelled, run == nil, path.isEmpty, addingCards == nil, !showsSettings, !showsNewDeck {
                     await refreshAll()
+                } else if !Task.isCancelled, run == nil, ring.isStale {
+                    await refreshRingForNewDay()
                 }
             }
         }
@@ -380,6 +384,18 @@ struct StartScreen: View {
     private func refreshRing(withOpen deck: OpenDeck) {
         let others = knownDecks.byName.map(\.url).filter { !KnownDecks.isSameFile($0, deck.url) }
         ring.refresh(documents: deck.document.map { [$0] } ?? [], files: others, ledger: knownDecks.ledgerStore)
+    }
+
+    /// The day turned while a deck screen or a sheet covers Today: the ring is worked out again, with the decks that are
+    /// open as their documents have them (their new cards for the day), so that the screens show today's figures. The stream
+    /// does the same for itself.
+    private func refreshRingForNewDay() async {
+        var open: [OpenDeck] = []
+        for deck in pushed.openDecks + [addingCards].compactMap({ $0 }) where deck.document != nil && !open.contains(where: { KnownDecks.isSameFile($0.url, deck.url) }) {
+            open.append(deck)
+        }
+        let others = knownDecks.byName.map(\.url).filter { url in !open.contains { KnownDecks.isSameFile($0.url, url) } }
+        await ring.refresh(documents: open.compactMap(\.document), files: others, ledger: knownDecks.ledgerStore, reloadFiles: true, delay: .zero).value
     }
 
     /// The deck used last, as the list spells its file.

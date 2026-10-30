@@ -212,9 +212,9 @@ final class Shell {
         dayDecks.active.reduce(0) { $0 + (studyCounts($1.url)?.total ?? 0) }
     }
 
-    /// Whether the day can be told: the ring is worked out and the decks are read.
+    /// Whether the day can be told: the ring is worked out for today and the decks are read.
     var isDayReady: Bool {
-        ring.progress != nil && counts.isRead
+        ring.progress != nil && !ring.isStale && counts.isRead
     }
 
     var dayAction: DayAction {

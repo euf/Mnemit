@@ -35,6 +35,15 @@ import VocabCore
 final class DailyRingModel {
     /// `nil` until the first evaluation is done.
     private(set) var progress: DailyProgress?
+    /// The study day `progress` was worked out for. `nil` for the figures a preview or a test hands in.
+    private(set) var day: Int?
+
+    /// Whether `progress` is of a day that has ended: the app was open or suspended across the turn of the day.
+    var isStale: Bool { Self.isStale(day: day, at: Date()) }
+
+    nonisolated static func isStale(day: Int?, at now: Date, calendar: StudyCalendar = StudyCalendar()) -> Bool {
+        day.map { $0 != calendar.dayNumber(for: now) } ?? false
+    }
 
     /// `progress` is for a screen shown with figures that no deck produces: the previews and the frames of the tests.
     init(progress: DailyProgress? = nil) {
@@ -122,6 +131,7 @@ final class DailyRingModel {
                 self.ledger = result.4
                 ledgerStore = store
                 progress = result.0
+                day = calendar.dayNumber(for: now)
                 NewCardAllowances.today.merge(result.2)
                 for url in result.3 {
                     NewCardAllowances.today[url] = nil
