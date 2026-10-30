@@ -489,7 +489,9 @@ edited options; Save applies everything as one change.
   (`week`: seven entries, today last, true a closed ring, false an open one, null before the first study day; `weekRings`: the
   share of each day's goal, which the widget's week draws),
   rounds (`rounds`, `roundsDone`, `minutesToNextRound`), the price of a card left (`secondsPerCard`; the
-  forecast holds only card counts per hour, so the snapshot keeps one price), a forecast of how many cards are
+  forecast holds only card counts per hour, so the snapshot keeps one price), the day's seconds (`daySeconds`, optional: with it
+  the goal of a day that begins after the snapshot is the cards of the plan that fit those seconds, and the streak step has its
+  two minutes; without it the goal is the plan), a forecast of how many cards are
   in the plan for each hour 48 hours ahead across all decks, and the time of the next reminder
   (`Reminders.nextFire`). `isStreakAtRisk` and `week` are optional and left out of the JSON when nil: an older
   snapshot decodes as not at risk with no week, and an older widget ignores the keys. `wordsInMemory` and

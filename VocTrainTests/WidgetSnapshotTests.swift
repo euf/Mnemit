@@ -159,11 +159,39 @@ struct WidgetSnapshotTests {
         #expect(state.roundStatus == RoundStatus(rounds: 2, roundsDone: 1, minutesToNext: 2))
         #expect(state.wordsInMemory == 28 && state.wordsToday == 15)
         #expect(state.wordsLearned == 412 && state.wordsLearnedToday == 12)
-        // The next study day only has a forecast: no rounds, and the words are not the same after a night.
+        // The next study day only has a forecast, its streak step at the price of the constant two minutes, and the words are
+        // not the same after a night.
         let tomorrow = snapshot.state(at: Fixtures.date(23, 10), calendar: Fixtures.studyCalendar)
-        #expect(tomorrow.roundStatus == nil && tomorrow.wordsInMemory == nil && tomorrow.wordsToday == nil)
+        #expect(tomorrow.roundStatus == RoundStatus(rounds: 1, roundsDone: 0, minutesToNext: 2))
+        #expect(tomorrow.wordsInMemory == nil && tomorrow.wordsToday == nil)
         // The words learned stay, the day's gain does not.
         #expect(tomorrow.wordsLearned == 412 && tomorrow.wordsLearnedToday == nil)
+    }
+
+    @Test func aDayAfterTheSnapshotHasTheGoalThatFitsItsTimeAndTheStreakStepPriced() throws {
+        // Back from a break: 300 cards are due at 10 s each, and the day's time is 150 s.
+        var snapshot = Fixtures.snapshot(now: Fixtures.date(22, 20), done: 20, streak: 12, isGoalMet: true, secondsPerCard: 10) { _ in 300 }
+        snapshot.daySeconds = 150
+        let decoded = try #require(WidgetSnapshot.decoded(from: try snapshot.encoded()))
+        #expect(decoded == snapshot)
+
+        let state = decoded.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar)
+        // The ring of the app after 4:00: fifteen cards, three minutes to close it, two to keep the streak.
+        #expect(state.goal == 15 && state.due == 300)
+        #expect(state.minutesLeft == 3)
+        #expect(state.roundStatus == RoundStatus(rounds: 2, roundsDone: 0, minutesToNext: 2))
+        #expect(state.nextStep.minutes == 2)
+
+        // A plan shorter than the time is the goal, and a step that is the whole of it is one round.
+        let short = Fixtures.snapshot(now: Fixtures.date(22, 20), done: 20, streak: 12, isGoalMet: true, secondsPerCard: 10) { _ in 5 }
+        var timed = short
+        timed.daySeconds = 150
+        let day = timed.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar)
+        #expect(day.goal == 5 && day.roundStatus == RoundStatus(rounds: 1, roundsDone: 0, minutesToNext: 0))
+
+        // A snapshot with no time keeps the plan as the goal.
+        let untimed = Fixtures.snapshot(now: Fixtures.date(22, 20), done: 20, streak: 12, isGoalMet: true, secondsPerCard: 10) { _ in 300 }
+        #expect(untimed.state(at: Fixtures.date(23, 5), calendar: Fixtures.studyCalendar).goal == 300)
     }
 
     @Test func theStreakIsKeptOnceTheFirstRoundIsDone() {

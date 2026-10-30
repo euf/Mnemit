@@ -279,7 +279,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - `DailyProgress.cardsLeft`, `.newCardsLeft`, `.pace`, `.minutesLeft`. The widget's forecast knows only
   the number of cards per hour, so the snapshot holds one price (`WidgetSnapshot.secondsPerCard` =
   `DailyProgress.secondsPerCardLeft`: the time of the cards left now divided by their number; without
-  cards, the other price) and counts each hour's minutes by it.
+  cards, the other price) and counts each hour's minutes by it. For a day that begins after the snapshot it also holds
+  `DailyProgress.time` (`daySeconds`): that day's goal is `min(plan, max(1, time / price))` cards and its streak step the first
+  `DailyGoal.streakSeconds` of them (`DailyGoal.streakStepCards`). The snapshot is not written while no deck is known.
 - Practice is not written to the log and doesn't count.
 
 ## Backlog
