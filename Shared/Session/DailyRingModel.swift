@@ -99,7 +99,10 @@ final class DailyRingModel {
                     ledger = store?.read() ?? DayLedger()
                 }
                 let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar, ledger: ledger, cache: progressCache)
-                if let store, !progress.ledgerUpdates.isEmpty {
+                // A deck file that failed to read is left out of the day's figures: a past day's record made from
+                // the others would be smaller than the day was, and its size never changes once written
+                // (`LedgerDay`). The next evaluation, when every file reads, writes it.
+                if let store, !progress.ledgerUpdates.isEmpty, read.count == files.count {
                     ledger = ledger.updating(progress.ledgerUpdates)
                     store.write(ledger)
                 }
