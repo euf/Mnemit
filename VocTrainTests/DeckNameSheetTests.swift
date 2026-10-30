@@ -20,6 +20,15 @@ struct DeckNameSheetTests {
         #expect(invalid == DeckFiles.Failure.invalidName.errorDescription)
     }
 
+    @Test func theActionStaysOffWhileTheFieldShowsAnError() {
+        let taken = DeckNameSheet(
+            title: "New Deck", actionTitle: "Create", current: nil, prefill: "Greek B1", failure: "A deck named “Greek B1” already exists.",
+            perform: { _ in })
+        #expect(!taken.canSubmit)
+        let fresh = DeckNameSheet(title: "New Deck", actionTitle: "Create", current: nil, prefill: "Greek B1", perform: { _ in })
+        #expect(fresh.canSubmit)
+    }
+
     @Test func successLeavesNoMessage() async {
         var received: [String] = []
         let message = await DeckNameSheet.attempt("Greek B2") { received.append($0) }

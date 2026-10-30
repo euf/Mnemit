@@ -3,7 +3,7 @@ import SwiftUI
 /// "New Deck": what a new deck asks first, its name, as the iPhone's New Deck sheet does. `onCreate` makes
 /// the deck; Add Cards opens after it.
 struct NewDeckView: View {
-    /// Called with the name, `nil` while the field is empty.
+    /// Called with the name as a file name; the sheet creates nothing while the field is empty, so it is never `nil` here.
     var onCreate: (_ name: String?) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
@@ -20,6 +20,9 @@ struct NewDeckView: View {
 
     private var isInvalid: Bool { fileName == nil && !name.allSatisfy(\.isWhitespace) }
 
+    /// Create is off while the name is empty, as on the iPhone, and while it can't name a file.
+    var canCreate: Bool { fileName != nil }
+
     var body: some View {
         VStack(spacing: 0) {
             Text("New Deck")
@@ -29,7 +32,7 @@ struct NewDeckView: View {
 
             Form {
                 Section {
-                    TextField("Name", text: $name, prompt: Text("Untitled"))
+                    TextField("Name", text: $name)
                         .focused($isFocused)
                         .onSubmit(create)
                 } footer: {
@@ -49,7 +52,7 @@ struct NewDeckView: View {
                     .keyboardShortcut(.cancelAction)
                 Button("Create", action: create)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(isInvalid)
+                    .disabled(!canCreate)
             }
             .padding(20)
         }
@@ -58,7 +61,7 @@ struct NewDeckView: View {
     }
 
     private func create() {
-        guard !isInvalid else { return }
+        guard canCreate else { return }
         onCreate(fileName)
         dismiss()
     }
