@@ -1144,25 +1144,25 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld карточки-cloze пропущены."
+                  "value": "%lld карточки с пропуском в тексте не добавлены."
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld карточек-cloze пропущены."
+                  "value": "%lld карточек с пропуском в тексте не добавлено."
                 }
               },
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld карточка-cloze пропущена."
+                  "value": "%lld карточка с пропуском в тексте не добавлена."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld карточки-cloze пропущены."
+                  "value": "%lld карточки с пропуском в тексте не добавлены."
                 }
               }
             }
@@ -2294,6 +2294,34 @@
         }
       }
     },
+    "%lld of %lld will be added": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld von %2$lld werden hinzugefügt"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Будет добавлено: %1$lld из %2$lld"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Θα προστεθούν %1$lld από %2$lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld of %2$lld will be added"
+          }
+        }
+      }
+    },
     "%lld of %lld words": {
       "localizations": {
         "de": {
@@ -2558,6 +2586,28 @@
         }
       }
     },
+    "%lld selected": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ausgewählt"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрано: %lld"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επιλεγμένες: %lld"
+          }
+        }
+      }
+    },
     "%lld sounds": {
       "localizations": {
         "de": {
@@ -2639,6 +2689,94 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld звука"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld steps": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Schritt"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Schritte"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld шага"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld шагов"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld шаг"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld шага"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld βήμα"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld βήματα"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld step"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld steps"
                 }
               }
             }
@@ -3013,6 +3151,94 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Стрик: %lld дня"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld-day streak ended": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie von %lld Tag beendet"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serie von %lld Tagen beendet"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Стрик закончился: %lld дня"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Стрик закончился: %lld дней"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Стрик закончился: %lld день"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Стрик закончился: %lld дня"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Το σερί της %lld ημέρας τελείωσε"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Το σερί των %lld ημερών τελείωσε"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld-day streak ended"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld-day streak ended"
                 }
               }
             }
@@ -3444,24 +3670,46 @@
         }
       }
     },
-    "A card you forget this many times becomes a leech: it costs you more time than it gives. Off never marks one.": {
+    "A card comes back when your chance of recalling it falls to the target. FSRS models your memory with 21 parameters, fitted to the reviews of all your decks; a new fit is kept only if it predicts your latest reviews clearly better.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eine Karte, die du so oft vergisst, wird zur Lernbremse: Sie kostet dich mehr Zeit, als sie bringt. Aus markiert nie eine."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μια κάρτα που ξεχνάς τόσες φορές γίνεται βδέλλα: σου παίρνει περισσότερο χρόνο απ' όσο σου δίνει. Όταν είναι ανενεργό, καμία κάρτα δεν γίνεται βδέλλα."
+            "value": "Eine Karte kommt zurück, wenn deine Chance, sie zu behalten, auf das Ziel sinkt. FSRS bildet dein Gedächtnis mit 21 Parametern ab, angepasst an die Abfragen aller Stapel; eine neue Anpassung bleibt nur, wenn sie deine letzten Abfragen deutlich besser vorhersagt."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карточка, которую ты забываешь столько раз, становится приставучей: она отнимает больше времени, чем даёт. При значении «Выкл.» приставучими не становятся."
+            "value": "Слово возвращается, когда шанс его вспомнить падает до цели. FSRS описывает вашу память 21 параметром, подогнанным под ответы во всех колодах; новый подбор остаётся, только если заметно лучше предсказывает ваши последние ответы."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μια κάρτα επιστρέφει όταν η πιθανότητα να τη θυμηθείτε πέσει στον στόχο. Το FSRS μοντελοποιεί τη μνήμη σας με 21 παραμέτρους, προσαρμοσμένες στις επαναλήψεις όλων των τράπουλών σας· η νέα προσαρμογή διατηρείται μόνο αν προβλέπει καθαρά καλύτερα τις τελευταίες σας επαναλήψεις."
+          }
+        }
+      }
+    },
+    "A card you forget this many times is a leech: it takes more time than it gives. Off marks none.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Karte, die du so oft vergisst, ist eine Lernbremse: Sie kostet mehr Zeit, als sie bringt. „Aus“ markiert keine."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карточка, которую ты забываешь столько раз, становится приставучей: она отнимает больше времени, чем даёт. «Выкл.»: ни одна не станет."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μια κάρτα που ξεχνάς τόσες φορές είναι βδέλλα: σου παίρνει περισσότερο χρόνο απ’ όσο σου δίνει. Το «Ανενεργό» δεν σημαδεύει καμία."
           }
         }
       }
@@ -3506,28 +3754,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новое слово"
-          }
-        }
-      }
-    },
-    "A card comes back when your chance of recalling it falls to the target. FSRS models your memory with 21 parameters, fitted to your reviews; a new fit is kept only if it predicts your latest reviews better.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Karte kommt wieder, wenn deine Chance, sie abzurufen, auf das Ziel sinkt. FSRS bildet dein Gedächtnis mit 21 Parametern ab, angepasst an deine Wiederholungen; eine neue Anpassung bleibt nur, wenn sie deine neuesten Wiederholungen besser vorhersagt."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μια κάρτα επανέρχεται όταν η πιθανότητά σου να τη θυμηθείς πέσει στον στόχο. Το FSRS μοντελοποιεί τη μνήμη σου με 21 παραμέτρους, προσαρμοσμένες στις επαναλήψεις σου· μια νέα προσαρμογή κρατιέται μόνο αν προβλέπει καλύτερα τις πιο πρόσφατες επαναλήψεις σου."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Карточка возвращается, когда твой шанс вспомнить её падает до целевого. FSRS моделирует твою память по 21 параметру, подогнанному под твои повторения; новая подгонка остаётся, только если лучше предсказывает твои последние повторения."
           }
         }
       }
@@ -3884,6 +4110,94 @@
         }
       }
     },
+    "Add %lld Words": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wort hinzufügen"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Wörter hinzufügen"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Добавить %lld слова"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Добавить %lld слов"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Добавить %lld слово"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Добавить %lld слова"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Προσθήκη %lld λέξης"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Προσθήκη %lld λέξεων"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Add %lld Word"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Add %lld Words"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Add Card": {
       "localizations": {
         "de": {
@@ -3946,28 +4260,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Добавить карточки…"
-          }
-        }
-      }
-    },
-    "Add decks in Files, under On My iPhone → Mnemit.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lege Stapel in der Dateien-App ab, unter „Auf meinem iPhone“ → Mnemit."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πρόσθεσε τράπουλες στην εφαρμογή «Αρχεία», στο «Στο iPhone μου» → Mnemit."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Добавляй колоды в приложении «Файлы», в разделе «На iPhone» → Mnemit."
           }
         }
       }
@@ -4126,6 +4418,28 @@
         }
       }
     },
+    "Added · %lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinzugefügt · %lld"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавлено · %lld"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Προστέθηκαν · %lld"
+          }
+        }
+      }
+    },
     "Added · %lld cards so far": {
       "localizations": {
         "de": {
@@ -4214,46 +4528,134 @@
         }
       }
     },
-    "Adds Hard and Easy: buttons, and keys 2 and 4.": {
+    "Added · %lld words so far": {
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fügt Schwer und Leicht hinzu: Schaltflächen und die Tasten 2 und 4."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Προσθέτει Δύσκολο και Εύκολο: κουμπιά και πλήκτρα 2 και 4."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hinzugefügt · bisher %lld Wort"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Hinzugefügt · bisher %lld Wörter"
+                }
+              }
+            }
           }
         },
         "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Добавляет «Трудно» и «Легко»: кнопки и клавиши 2 и 4."
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Добавлено · пока %lld слова"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Добавлено · пока %lld слов"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Добавлено · пока %lld слово"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Добавлено · пока %lld слова"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Προστέθηκε · %lld λέξη μέχρι τώρα"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Προστέθηκαν · %lld λέξεις μέχρι τώρα"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Added · %lld word so far"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Added · %lld words so far"
+                }
+              }
+            }
           }
         }
       }
     },
-    "Adds Hard and Easy: buttons, and swipes down and up.": {
+    "Adds Hard and Easy buttons, and keys 2 and 4.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fügt Schwer und Leicht hinzu: Schaltflächen und Wischen nach unten und oben."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Προσθέτει Δύσκολο και Εύκολο: κουμπιά και σύρσιμο προς τα κάτω και προς τα πάνω."
+            "value": "Fügt die Schaltflächen Schwer und Leicht hinzu sowie die Tasten 2 und 4."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Добавляет «Трудно» и «Легко»: кнопки и свайпы вниз и вверх."
+            "value": "Добавляет кнопки «Трудно» и «Легко» и клавиши 2 и 4."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Προσθέτει κουμπιά Δύσκολο και Εύκολο και πλήκτρα 2 και 4."
+          }
+        }
+      }
+    },
+    "Adds Hard and Easy buttons, and swipes down and up.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fügt die Schaltflächen Schwer und Leicht hinzu sowie Wischen nach unten und oben."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавляет кнопки «Трудно» и «Легко» и свайпы вниз и вверх."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Προσθέτει κουμπιά Δύσκολο και Εύκολο και σύρσιμο προς τα κάτω και προς τα πάνω."
           }
         }
       }
@@ -4606,28 +5008,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Настройки Anki для этой колоды не применяются к уже существующей колоде."
-          }
-        }
-      }
-    },
-    "Another version of this deck could not be merged": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine andere Fassung dieses Stapels ließ sich nicht zusammenführen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μια άλλη έκδοση αυτής της τράπουλας δεν μπόρεσε να συγχωνευτεί"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Другую версию этой колоды не удалось объединить"
           }
         }
       }
@@ -5229,24 +5609,24 @@
         }
       }
     },
-    "Cards with the same word key are one word, like both directions of a translation.": {
+    "Cards with the same word key count as one word: both directions of a translation share it. Change it only to link or unlink cards.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karten mit demselben Wortschlüssel sind ein Wort, etwa beide Richtungen einer Übersetzung."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κάρτες με το ίδιο κλειδί λέξης είναι μία λέξη, όπως οι δύο κατευθύνσεις μιας μετάφρασης."
+            "value": "Karten mit demselben Wortschlüssel zählen als ein Wort: beide Richtungen einer Übersetzung teilen ihn. Ändere ihn nur, um Karten zu verknüpfen oder zu trennen."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карточки с одним ключом слова — одно слово, например оба направления перевода."
+            "value": "Карточки с одним ключом слова считаются одним словом: у обоих направлений перевода ключ общий. Меняй его, только чтобы связать или разделить карточки."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κάρτες με το ίδιο κλειδί λέξης μετράνε ως μία λέξη: οι δύο κατευθύνσεις μιας μετάφρασης το μοιράζονται. Άλλαξέ το μόνο για να συνδέσεις ή να αποσυνδέσεις κάρτες."
           }
         }
       }
@@ -5295,24 +5675,46 @@
         }
       }
     },
-    "Checked %@, kept: no better fit": {
+    "Check that you are signed in to iCloud and that the folder is still in iCloud Drive, then choose it again.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Geprüft am %@, beibehalten: keine bessere Anpassung"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Έλεγχος %@, διατηρήθηκε: καμία καλύτερη προσαρμογή"
+            "value": "Prüfe, ob du bei iCloud angemeldet bist und der Ordner noch in iCloud Drive liegt, und wähle ihn dann erneut aus."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверено %@, оставлено: подбор не лучше"
+            "value": "Проверь вход в iCloud и что папка по-прежнему лежит в iCloud Drive, и выбери её снова."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ελέγξτε ότι έχετε συνδεθεί στο iCloud και ότι ο φάκελος βρίσκεται ακόμα στο iCloud Drive, και επιλέξτε τον ξανά."
+          }
+        }
+      }
+    },
+    "Checked %@, kept: no clear gain": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geprüft am %@, beibehalten: kein klarer Gewinn"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверено %@, оставлено: явного выигрыша нет"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ελέγχθηκε %@, διατηρήθηκε: καθαρό όφελος δεν υπάρχει"
           }
         }
       }
@@ -5339,6 +5741,28 @@
         }
       }
     },
+    "Choose Another File": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Andere Datei wählen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрать другой файл"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επιλογή άλλου αρχείου"
+          }
+        }
+      }
+    },
     "Choose Another Folder…": {
       "localizations": {
         "de": {
@@ -5357,6 +5781,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Выбрать другую папку…"
+          }
+        }
+      }
+    },
+    "Choose Folder Again": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordner erneut wählen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрать папку снова"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επιλογή φακέλου ξανά"
           }
         }
       }
@@ -6390,7 +6836,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Желаемое усвоение"
+            "value": "Шанс вспомнить"
           }
         }
       }
@@ -6412,7 +6858,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Желаемое усвоение: %@"
+            "value": "Шанс вспомнить: %@"
           }
         }
       }
@@ -6434,7 +6880,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Желаемое усвоение: шанс, что ты ещё помнишь карточку, когда она возвращается. Выше — больше повторений; %@ — хороший баланс."
+            "value": "Шанс вспомнить: вероятность, что ты ещё помнишь карточку, когда она возвращается. Выше — больше повторений; %@ — хороший баланс."
           }
         }
       }
@@ -6699,6 +7145,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не удалось загрузить"
+          }
+        }
+      }
+    },
+    "Downloading from iCloud…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird aus iCloud geladen …"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загружается из iCloud…"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Λήψη από το iCloud…"
           }
         }
       }
@@ -7935,46 +8403,46 @@
         }
       }
     },
-    "How many new cards this deck gives a day. Auto lets Mnemit decide from your day: fewer when reviews pile up, more when you keep up. A number takes exactly that many, as in Anki.": {
+    "How many times you grade a new or forgotten card Good before longer intervals begin. Anki’s list “1m 10m” is 2.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wie viele neue Karten dieser Stapel pro Tag gibt. „Auto“ überlässt es deinem Tag: weniger, wenn sich Wiederholungen stauen, mehr, wenn du mithältst. Eine Zahl nimmt genau so viele, wie in Anki."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πόσες νέες κάρτες δίνει αυτή η τράπουλα την ημέρα. Το «Αυτόματα» αφήνει το Mnemit να αποφασίσει από τη μέρα σου: λιγότερες όταν μαζεύονται επαναλήψεις, περισσότερες όταν προλαβαίνεις. Ένας αριθμός παίρνει ακριβώς τόσες, όπως στο Anki."
+            "value": "Wie oft du eine neue oder vergessene Karte mit „Gut“ bewertest, bevor längere Abstände beginnen. Die Anki-Liste „1m 10m“ sind 2."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сколько новых карточек колода даёт в день. «Авто» оставляет решение твоему дню: меньше, когда копятся повторения, больше, когда ты успеваешь. Число берёт ровно столько, как в Anki."
+            "value": "Сколько раз нужно оценить новую или забытую карточку «Хорошо», прежде чем начнутся длинные интервалы. Список «1m 10m» в Anki — это 2."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πόσες φορές βαθμολογείς μια νέα ή ξεχασμένη κάρτα «Καλά» πριν αρχίσουν μεγαλύτερα διαστήματα. Η λίστα «1m 10m» του Anki είναι 2."
           }
         }
       }
     },
-    "How many times you grade a new or forgotten card Good before it moves on to longer intervals.": {
+    "How to Export from Anki": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wie oft du eine neue oder vergessene Karte mit „Gut“ bewertest, bevor sie zu längeren Abständen übergeht."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Πόσες φορές βαθμολογείς μια νέα ή ξεχασμένη κάρτα «Καλά» πριν περάσει σε μεγαλύτερα διαστήματα."
+            "value": "So exportierst du aus Anki"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сколько раз ты оцениваешь новую или забытую карточку «Хорошо», прежде чем она перейдёт к более длинным интервалам."
+            "value": "Как экспортировать из Anki"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πώς να εξαγάγεις από το Anki"
           }
         }
       }
@@ -8415,6 +8883,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оставить карточку"
+          }
+        }
+      }
+    },
+    "Keep Card goes on asking a leech. Suspend Card stops asking it until you resume it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Karte behalten“ fragt eine Lernbremse weiter. „Karte aussetzen“ hört auf, bis du sie wieder aufnimmst."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Оставить карточку» продолжает спрашивать приставучую. «Приостановить карточку» перестаёт, пока ты её не возобновишь."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η «Διατήρηση κάρτας» συνεχίζει να ρωτά μια βδέλλα. Η «Αναστολή κάρτας» σταματά μέχρι να την ξαναενεργοποιήσεις."
           }
         }
       }
@@ -9272,7 +9762,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Максимум повторяемых в день"
+            "value": "Максимум повторений в день"
           }
         }
       }
@@ -9383,6 +9873,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Память"
+          }
+        }
+      }
+    },
+    "Memory Model (FSRS)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gedächtnismodell (FSRS)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Модель памяти (FSRS)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μοντέλο μνήμης (FSRS)"
           }
         }
       }
@@ -9541,24 +10053,24 @@
         }
       }
     },
-    "Needs %lld reviews, each on a later day than the card's previous one.": {
+    "Needs %lld reviews from all your decks together, each on a later day than the card's previous one.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Braucht %lld Wiederholungen, jede an einem späteren Tag als die vorige der Karte."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Χρειάζονται %lld επαναλήψεις, καθεμία σε μεταγενέστερη ημέρα από την προηγούμενη της κάρτας."
+            "value": "Braucht %lld Abfragen aus allen Stapeln zusammen, jede an einem späteren Tag als die vorige der Karte."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нужно %lld повторений, каждое в более поздний день, чем предыдущее у той же карточки."
+            "value": "Нужно %lld ответов во всех колодах вместе, каждый в день позже предыдущего ответа на это слово."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Χρειάζονται %lld επαναλήψεις από όλες τις τράπουλες μαζί, κάθε μία σε μεταγενέστερη μέρα από την προηγούμενη της κάρτας."
           }
         }
       }
@@ -9695,6 +10207,28 @@
         }
       }
     },
+    "New cards a day. Auto: Mnemit decides, fewer when reviews pile up. A number: exactly that many. None: no new cards.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Karten pro Tag. „Auto“: Mnemit entscheidet, weniger, wenn sich Wiederholungen stauen. Eine Zahl: genau so viele. „Keine“: keine neuen Karten."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новых карточек в день. «Авто»: Mnemit решает сам, меньше, когда копятся повторения. Число: ровно столько. «Нет»: новых не будет."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Νέες κάρτες την ημέρα. «Αυτόματα»: το Mnemit αποφασίζει, λιγότερες όταν μαζεύονται επαναλήψεις. Ένας αριθμός: ακριβώς τόσες. «Καμία»: καμία νέα κάρτα."
+          }
+        }
+      }
+    },
     "New cards admitted": {
       "localizations": {
         "de": {
@@ -9801,6 +10335,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Следующее повторение %@"
+          }
+        }
+      }
+    },
+    "Next, create your first deck.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lege als Nächstes deinen ersten Stapel an."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дальше создай первую колоду."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Στη συνέχεια, δημιούργησε την πρώτη σου τράπουλα."
           }
         }
       }
@@ -10113,6 +10669,28 @@
         }
       }
     },
+    "None": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Καμία"
+          }
+        }
+      }
+    },
     "None yet": {
       "localizations": {
         "de": {
@@ -10399,28 +10977,6 @@
         }
       }
     },
-    "One word per line: the word, then =, – or - with spaces, then the translation.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ein Wort pro Zeile: das Wort, dann =, – oder - mit Leerzeichen, dann die Übersetzung."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Μία λέξη ανά γραμμή: η λέξη, μετά =, – ή - με κενά, και μετά η μετάφραση."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Одно слово в строке: слово, затем =, – или - с пробелами, затем перевод."
-          }
-        }
-      }
-    },
     "Only on This iPhone": {
       "localizations": {
         "de": {
@@ -10663,6 +11219,28 @@
         }
       }
     },
+    "Other direction: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Andere Richtung: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Другое направление: %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Άλλη κατεύθυνση: %@"
+          }
+        }
+      }
+    },
     "Pace": {
       "localizations": {
         "de": {
@@ -10707,24 +11285,24 @@
         }
       }
     },
-    "Parameters are fitted first at %@ reviews, again at %@, then every %@ or after %@ more reviews. A new fit is kept only if it predicts your latest reviews better.": {
+    "Parameters are fitted first at %@ reviews, again at %@, then every %@ or after %@ more reviews, counting all your decks together. A new fit is kept only if it predicts your latest reviews clearly better.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Parameter werden erstmals bei %@ Wiederholungen angepasst, wieder bei %@, danach alle %@ oder nach %@ weiteren Wiederholungen. Eine neue Anpassung bleibt nur, wenn sie deine neuesten Wiederholungen besser vorhersagt."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι παράμετροι προσαρμόζονται πρώτη φορά στις %@ επαναλήψεις, ξανά στις %@, και μετά κάθε %@ ή μετά από %@ ακόμη επαναλήψεις. Μια νέα προσαρμογή κρατιέται μόνο αν προβλέπει καλύτερα τις πιο πρόσφατες επαναλήψεις σου."
+            "value": "Die Parameter werden zuerst bei %@ Abfragen angepasst, dann bei %@, danach alle %@ oder nach %@ weiteren Abfragen, alle Stapel zusammengezählt. Eine neue Anpassung bleibt nur, wenn sie deine letzten Abfragen deutlich besser vorhersagt."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Параметры подгоняются впервые при %@ повторений, затем при %@, потом каждые %@ или после %@ новых повторений. Новая подгонка остаётся, только если лучше предсказывает твои последние повторения."
+            "value": "Параметры подгоняются первый раз при %@ ответах, потом при %@, дальше раз в %@ или после ещё %@ ответов; считаются все колоды вместе. Новый подбор остаётся, только если заметно лучше предсказывает ваши последние ответы."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Οι παράμετροι προσαρμόζονται πρώτα στις %@ επαναλήψεις, ξανά στις %@, μετά κάθε %@ ή μετά από %@ ακόμη επαναλήψεις, με όλες τις τράπουλες μαζί. Η νέα προσαρμογή διατηρείται μόνο αν προβλέπει καθαρά καλύτερα τις τελευταίες σας επαναλήψεις."
           }
         }
       }
@@ -12379,6 +12957,28 @@
         }
       }
     },
+    "Select Cards": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karten auswählen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрать карточки"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επιλογή καρτών"
+          }
+        }
+      }
+    },
     "Select None": {
       "localizations": {
         "de": {
@@ -12441,6 +13041,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отложить"
+          }
+        }
+      }
+    },
+    "Set by hand or by an Anki preset: kept as they are.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von Hand oder per Anki-Voreinstellung gesetzt: bleiben unverändert."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заданы вручную или пресетом Anki: остаются как есть."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ορίστηκαν με το χέρι ή από προεπιλογή του Anki: μένουν όπως είναι."
           }
         }
       }
@@ -12885,6 +13507,50 @@
         }
       }
     },
+    "Skip Introduction": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einführung überspringen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропустить введение"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Παράλειψη εισαγωγής"
+          }
+        }
+      }
+    },
+    "Something is wrong with this deck": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit diesem Stapel stimmt etwas nicht"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "С этой колодой что-то не так"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κάτι δεν πάει καλά με αυτή την τράπουλα"
+          }
+        }
+      }
+    },
     "Sort": {
       "localizations": {
         "de": {
@@ -13210,7 +13876,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Учёба"
+            "value": "Учиться"
           }
         }
       }
@@ -13567,6 +14233,28 @@
         }
       }
     },
+    "The Mnemit folder can't be reached": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Mnemit-Ordner ist nicht erreichbar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Папка Mnemit недоступна"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δεν είναι δυνατή η πρόσβαση στον φάκελο Mnemit"
+          }
+        }
+      }
+    },
     "The chance you still remember a card when it comes back. Higher means more reviews; %@ suits most learners.": {
       "localizations": {
         "de": {
@@ -13585,6 +14273,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вероятность, что ты вспомнишь карточку, когда она вернётся. Выше — больше повторений; %@ подходит большинству."
+          }
+        }
+      }
+    },
+    "The deck could not be saved. The app keeps your latest changes and tries again; leave it open until this message goes away.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Stapel konnte nicht gespeichert werden. Die App behält deine letzten Änderungen und versucht es erneut; lass sie geöffnet, bis diese Meldung verschwindet."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Колоду не удалось сохранить. Приложение хранит последние изменения и пробует снова; не закрывай его, пока это сообщение не исчезнет."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η τράπουλα δεν αποθηκεύτηκε. Η εφαρμογή κρατά τις τελευταίες σου αλλαγές και ξαναδοκιμάζει· άφησέ την ανοιχτή μέχρι να φύγει αυτό το μήνυμα."
           }
         }
       }
@@ -13611,24 +14321,24 @@
         }
       }
     },
-    "The memory model behind the schedule. Mnemit fits it to your reviews by itself; Optimize does it now. Restore Defaults leaves it as it is.": {
+    "The memory model behind the schedule, fitted by itself to the reviews of all your decks. Optimize does it now.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Das Gedächtnismodell hinter dem Zeitplan. Mnemit passt es von selbst an deine Wiederholungen an; „Optimieren“ tut es jetzt. „Standardwerte“ lässt es, wie es ist."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Το μοντέλο μνήμης πίσω από το πρόγραμμα. Το Mnemit το προσαρμόζει μόνο του στις επαναλήψεις σου· η «Βελτιστοποίηση» το κάνει τώρα. Η «Επαναφορά προεπιλογών» το αφήνει όπως είναι."
+            "value": "Das Gedächtnismodell hinter dem Plan, von selbst an die Abfragen aller Stapel angepasst. Optimieren tut es jetzt."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Модель памяти, на которой строится расписание. Mnemit сам подгоняет её под твои повторения; «Оптимизировать» делает это сейчас. «Вернуть значения по умолчанию» её не трогает."
+            "value": "Модель памяти за расписанием: сама подгоняется под ответы во всех колодах. «Оптимизировать» делает это сейчас."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το μοντέλο μνήμης πίσω από το πρόγραμμα, προσαρμόζεται μόνο του στις επαναλήψεις όλων των τράπουλών σας. Η Βελτιστοποίηση το κάνει τώρα."
           }
         }
       }
@@ -13897,24 +14607,24 @@
         }
       }
     },
-    "The most review cards this deck asks a day. No limit asks every card that is due, which keeps your memory on schedule. A number leaves the rest for the next days, as in Anki.": {
+    "The most reviews asked a day. No limit asks every due card; a number leaves the rest for later.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wie viele Wiederholungskarten dieser Stapel pro Tag höchstens fragt. „Kein Limit“ fragt jede fällige Karte; so bleibt dein Gedächtnis im Plan. Eine Zahl lässt den Rest für die nächsten Tage, wie in Anki."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Οι περισσότερες κάρτες επανάληψης που ζητά αυτή η τράπουλα την ημέρα. Το «Χωρίς όριο» ζητά κάθε κάρτα που είναι προς επανάληψη, ώστε η μνήμη σου να μένει στο πρόγραμμα. Ένας αριθμός αφήνει τις υπόλοιπες για τις επόμενες ημέρες, όπως στο Anki."
+            "value": "Höchstens so viele Wiederholungen pro Tag. „Kein Limit“ fragt jede fällige Karte; bei einer Zahl wartet der Rest."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сколько карточек на повторение колода спрашивает в день, не больше. «Без лимита» спрашивает каждую карточку, срок которой пришёл: так память остаётся в графике. Число оставляет остальные на следующие дни, как в Anki."
+            "value": "Не больше стольких повторений в день. «Без лимита» спрашивает всё, что пора повторить; остальное при числе ждёт."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το πολύ τόσες επαναλήψεις την ημέρα. Το «Χωρίς όριο» ρωτά κάθε κάρτα που είναι προς επανάληψη· με αριθμό οι υπόλοιπες περιμένουν."
           }
         }
       }
@@ -13980,7 +14690,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "В логе оценок карточки «%@» больше оценок, чем было у карточки."
+            "value": "В истории оценок карточки «%@» больше оценок, чем было у карточки."
           }
         }
       }
@@ -14002,7 +14712,29 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Лог оценок этой колоды (reviews.jsonl) отсутствует, хотя некоторые её карточки уже изучались."
+            "value": "История оценок этой колоды (reviews.jsonl) отсутствует, хотя некоторые её карточки уже изучались."
+          }
+        }
+      }
+    },
+    "The review log of this deck (reviews.jsonl) lacks reviews of the card “%@”. Wait until the deck has finished syncing and open it again; if that doesn't help, restore a copy from the .backups folder next to it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Wiederholungsprotokoll dieses Stapels (reviews.jsonl) fehlen Wiederholungen der Karte „%@“. Warte, bis der Stapel fertig synchronisiert ist, und öffne ihn erneut; hilft das nicht, stelle eine Kopie aus dem Ordner .backups daneben wieder her."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В журнале повторений этой колоды (reviews.jsonl) не хватает повторений слова «%@». Подождите, пока колода досинхронизируется, и откройте её снова; если не помогло, верните копию из папки .backups рядом с ней."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Στο αρχείο επαναλήψεων αυτής της τράπουλας (reviews.jsonl) λείπουν επαναλήψεις της κάρτας «%@». Περίμενε να ολοκληρωθεί ο συγχρονισμός και άνοιξέ την ξανά· αν δεν βοηθήσει, επαναφέρετε ένα αντίγραφο από τον φάκελο .backups δίπλα της."
           }
         }
       }
@@ -14024,7 +14756,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Лог оценок этой колоды содержит оценки карточки, которой нет в колоде (строка %lld)."
+            "value": "История оценок этой колоды содержит оценки карточки, которой нет в колоде (строка %lld)."
           }
         }
       }
@@ -14046,7 +14778,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Лог оценок этой колоды повреждён (строка %lld)."
+            "value": "История оценок этой колоды повреждена (строка %lld)."
           }
         }
       }
@@ -14139,24 +14871,24 @@
         }
       }
     },
-    "This deck was created by a newer version of Mnemit.": {
+    "This deck was created by a newer version of Mnemit. Update Mnemit to open it.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dieser Stapel wurde mit einer neueren Version von Mnemit erstellt."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Αυτή η τράπουλα δημιουργήθηκε από νεότερη έκδοση του Mnemit."
+            "value": "Dieser Stapel wurde mit einer neueren Version von Mnemit erstellt. Aktualisiere Mnemit, um ihn zu öffnen."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Эта колода создана более новой версией Mnemit."
+            "value": "Эта колода создана более новой версией Mnemit. Обнови Mnemit, чтобы открыть её."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αυτή η τράπουλα δημιουργήθηκε από νεότερη έκδοση του Mnemit. Ενημέρωσε το Mnemit για να την ανοίξεις."
           }
         }
       }
@@ -14579,6 +15311,28 @@
         }
       }
     },
+    "Try Again": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneut versuchen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторить"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δοκιμή ξανά"
+          }
+        }
+      }
+    },
     "Try the Gestures": {
       "localizations": {
         "de": {
@@ -14865,24 +15619,24 @@
         }
       }
     },
-    "Updated %@ from %@ answers": {
+    "Updated %@. Fitted on %@ reviews from all your decks.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aktualisiert am %@ aus %@ Antworten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ενημερώθηκε στις %@ από %@ απαντήσεις"
+            "value": "Aktualisiert am %@. Angepasst an %@ Abfragen aus allen Stapeln."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Обновлено %@ по %@ ответам"
+            "value": "Обновлено %@. Подбор по ответам во всех колодах: %@."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ενημερώθηκε %@. Προσαρμογή σε %@ επαναλήψεις από όλες τις τράπουλές σας."
           }
         }
       }
@@ -15103,28 +15857,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отлично"
-          }
-        }
-      }
-    },
-    "What happens to a leech. Keep Card goes on asking it; Suspend Card stops asking it until you resume it.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Was mit einer Lernbremse geschieht. „Karte behalten“ fragt sie weiter; „Karte aussetzen“ hört auf, sie zu fragen, bis du sie wieder aufnimmst."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Τι γίνεται με μια βδέλλα. Η «Διατήρηση κάρτας» συνεχίζει να τη ρωτά· η «Αναστολή κάρτας» σταματά να τη ρωτά μέχρι να την ξαναενεργοποιήσεις."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Что происходит с приставучей карточкой. «Оставить карточку» продолжает её спрашивать, «Приостановить карточку» перестаёт, пока ты её не возобновишь."
           }
         }
       }
@@ -15389,6 +16121,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сделано (мин)"
+          }
+        }
+      }
+    },
+    "Write each word on its own line as: word = translation. A dash works too.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schreibe jedes Wort in eine eigene Zeile: Wort = Übersetzung. Ein Gedankenstrich geht auch."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каждое слово в своей строке: слово = перевод. Вместо = можно писать тире."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κάθε λέξη σε δική της γραμμή: λέξη = μετάφραση. Κάνει και η παύλα."
           }
         }
       }
