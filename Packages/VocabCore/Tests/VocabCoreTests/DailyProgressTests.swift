@@ -1022,6 +1022,29 @@ struct DailyProgressTests {
         #expect(progress.streak == Streak(days: interval, repairCards: nil))
     }
 
+    @Test func theDaysPlanOfCardsImportedWithoutHistoryHoldsAsTheyAreReviewed() throws {
+        // Eight review cards that came from Anki with a state and no log, all due today: their log can't be replayed
+        // to the day's start, and each review left the plan one card shorter.
+        var deck = try Deck(
+            learningOptions: options(),
+            cards: (0..<8).map { index in
+                var card = due("c\(index)", onDay: today)
+                card.log = []
+                return card
+            })
+        #expect(deck.cards.allSatisfy { !$0.hasCompleteLog && $0.learningState != nil })
+        #expect(evaluate([deck]).ring == DailyRing(done: 0, goal: 8))
+        for step in 1...8 {
+            review(1, of: &deck, at: now)
+            #expect(deck.cards.contains { !$0.hasCompleteLog && !$0.log.isEmpty })
+            let progress = evaluate([deck])
+            #expect(progress.ring == DailyRing(done: step, goal: 8), "after \(step) reviews")
+            #expect(DeckActivity(deck: deck, calendar: calendar).plan(onDayOf: now, calendar: calendar).total == 8, "after \(step) reviews")
+        }
+        // The cards reviewed, the plan of the day is done.
+        #expect(evaluate([deck]).ring.isGoalMet)
+    }
+
     @Test func aMissedDayIsRepairedByCompletingTheNextPlan() throws {
         // Eight cards were due yesterday and nobody studied: the day is missed.
         var deck = try Deck(learningOptions: options(), cards: (0..<8).map { due("c\($0)", onDay: today - 1) })
