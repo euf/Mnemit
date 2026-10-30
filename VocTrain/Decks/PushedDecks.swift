@@ -54,7 +54,10 @@ final class PushedDecks {
     func close(_ slot: Slot) async {
         guard !closed.contains(slot), let deck = decks[slot] else { return }
         closed.insert(slot)
-        await deck.close()
+        // A deck that can't save stays open with its changes and keeps trying; the next close of the slot asks again.
+        if !(await deck.close()) {
+            closed.remove(slot)
+        }
     }
 
     /// Closes the decks of every slot but `live`: the routes that have gone from the path.

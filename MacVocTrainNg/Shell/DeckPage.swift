@@ -27,7 +27,7 @@ struct DeckPage: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .alert("Another version of this deck could not be merged", isPresented: isShowingFailure, presenting: deck.merger.failure) { _ in
+        .alert("Something is wrong with this deck", isPresented: isShowingFailure, presenting: deck.merger.failure) { _ in
         } message: { failure in
             Text(failure)
         }

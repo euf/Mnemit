@@ -40,13 +40,34 @@ final class FileVersionStore: DeckVersionStore {
 
     /// Leaves out versions iCloud Drive hasn't downloaded yet; a later merge gets them.
     func unresolvedConflicts() -> [ConflictVersion] {
-        let versions = NSFileVersion.unresolvedConflictVersionsOfItem(at: url) ?? []
+        let deck = url
+        let versions = NSFileVersion.unresolvedConflictVersionsOfItem(at: deck) ?? []
         return versions.filter(\.hasLocalContents).map { version in
             ConflictVersion(
                 id: version.url.path,
                 read: { try DeckFile.read(at: version.url) },
-                markResolved: { version.isResolved = true }
+                markResolved: { version.isResolved = true },
+                backUp: { Self.backUp(version.url, besides: deck) }
             )
+        }
+    }
+
+    /// Copies the package at `version` to `.backups` next to the deck at `deck`, as `<name>-conflict-<time>.<extension>`.
+    private static func backUp(_ version: URL, besides deck: URL) -> Bool {
+        let files = FileManager.default
+        let folder = deck.deletingLastPathComponent().appending(path: ".backups", directoryHint: .isDirectory)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let time = formatter.string(from: Date())
+        let name = deck.deletingPathExtension().lastPathComponent
+        let copy = folder.appending(path: "\(name)-conflict-\(time)-\(UUID().uuidString.prefix(4)).\(deck.pathExtension)", directoryHint: .isDirectory)
+        do {
+            try files.createDirectory(at: folder, withIntermediateDirectories: true)
+            try files.copyItem(at: version, to: copy)
+            return true
+        } catch {
+            return false
         }
     }
 

@@ -92,17 +92,29 @@ final class OpenDeck {
     }
 
     /// Saves what is unsaved and lets go of the file. A file that failed to open is
-    /// closed already.
-    func close() async {
+    /// closed already. If a save fails the deck stays open with its unsaved changes, the page of the deck says so
+    /// (`VersionMerger.failure`) and the save is tried again; it returns `false` then.
+    @discardableResult
+    func close() async -> Bool {
         merger.suspend()
+        await merger.saves.saving?.value
+        if merger.saves.hasFailed {
+            merger.failure = VersionMerger.saveFailure
+            return false
+        }
         if !file.isClosed {
-            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-                file.close(completion: { @Sendable _ in continuation.resume() })
+            let closed = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                file.close(completion: { @Sendable success in continuation.resume(returning: success) })
+            }
+            guard closed else {
+                merger.failure = VersionMerger.saveFailure
+                return false
             }
         }
         if isAccessingFile {
             url.stopAccessingSecurityScopedResource()
         }
+        return true
     }
 
     /// Lets go of the file while the app is in the background, see

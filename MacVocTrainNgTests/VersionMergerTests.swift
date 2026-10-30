@@ -101,8 +101,28 @@ struct VersionMergerTests {
         #expect(!undoManager.canUndo)
     }
 
-    @Test func aConflictThatCantBeReadStaysAndIsReportedOnce() async {
+    /// A version this app can't read is copied to `.backups`, resolved and reported once; it is not read at every merge.
+    @Test func aConflictThatCantBeReadIsBackedUpResolvedAndReportedOnce() async {
         let conflict = FakeConflict(deck: nil, store: store)
+        store.conflicts = [conflict]
+        let (document, _) = open(base)
+        let merger = makeMerger()
+
+        merger.attach(document, fileURL: url, isEditable: true)
+        await merger.merging?.value
+        #expect(conflict.isBackedUp)
+        #expect(conflict.isResolved)
+        #expect(merger.failure != nil)
+
+        merger.failure = nil
+        await merger.mergeVersions().value
+        #expect(merger.failure == nil)
+    }
+
+    /// Without a copy the version stays, so nothing is lost.
+    @Test func aConflictThatCantBeCopiedStays() async {
+        let conflict = FakeConflict(deck: nil, store: store)
+        conflict.canBackUp = false
         store.conflicts = [conflict]
         let (document, _) = open(base)
         let merger = makeMerger()
@@ -111,11 +131,6 @@ struct VersionMergerTests {
         await merger.merging?.value
         #expect(!conflict.isResolved)
         #expect(merger.failure != nil)
-
-        merger.failure = nil
-        await merger.mergeVersions().value
-        #expect(merger.failure == nil)
-        #expect(!conflict.isResolved)
     }
 
     /// E.g. when the file can't be written (#265).
@@ -401,7 +416,8 @@ final class FakeVersionStore: DeckVersionStore {
                     guard let deck = conflict.deck else { throw DeckFile.Error.notADeck }
                     return deck
                 },
-                markResolved: { conflict.resolve() }
+                markResolved: { conflict.resolve() },
+                backUp: { conflict.backUp() }
             )
         }
     }
@@ -420,7 +436,15 @@ final class FakeConflict {
     let id = UUID().uuidString
     let deck: Deck?
     private(set) var isResolved = false
+    private(set) var isBackedUp = false
+    /// Whether the copy to `.backups` works.
+    var canBackUp = true
     private unowned let store: FakeVersionStore
+
+    func backUp() -> Bool {
+        isBackedUp = canBackUp
+        return canBackUp
+    }
 
     init(deck: Deck?, store: FakeVersionStore) {
         self.deck = deck

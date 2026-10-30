@@ -299,7 +299,7 @@ private struct LoadedSections: View {
         let now = document.clock.now
 
         if let failure = merger.failure {
-            Notice(title: "Another version of this deck could not be merged", message: Text(failure)) {
+            Notice(title: "Something is wrong with this deck", message: Text(failure)) {
                 merger.failure = nil
             }
         }

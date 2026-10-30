@@ -71,11 +71,17 @@ final class DeckFileDocument: NSDocument {
         }
     }
 
-    /// Saves what is unsaved and closes the document.
+    /// Saves what is unsaved and closes the document. A save that fails leaves it open, with what it holds, and
+    /// completes with `false`.
     func close(completion: @escaping @Sendable (Bool) -> Void) {
         Task { @MainActor in
             if isDocumentEdited {
-                try? await saveInPlace()
+                do {
+                    try await saveInPlace()
+                } catch {
+                    failure = error.localizedDescription
+                    return completion(false)
+                }
             }
             close()
             completion(true)

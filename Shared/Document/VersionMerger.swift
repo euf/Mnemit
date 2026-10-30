@@ -33,8 +33,8 @@ import VocabCore
 final class VersionMerger {
     /// Set when a new document ended a study session.
     var endedSession = false
-    /// Why a version in conflict couldn't be merged; the page of the deck shows it. Each version
-    /// is reported once.
+    /// What went wrong with the deck's file that the learner should know: a version in conflict that couldn't be
+    /// merged (each is reported once), or a save that failed; the page of the deck shows it.
     var failure: String?
     /// Whether a study session is under way; the shell on the Mac and the document's view on
     /// the iPhone (`documentSync`) keep it up to date.
@@ -73,10 +73,15 @@ final class VersionMerger {
         self.watch = watch
         saves = SaveScheduler(delay: saveDelay) { [weak watch] in
             guard let store = watch?.store else { return nil }
-            // A failed save leaves the change to autosave.
-            return Task { try? await store.save() }
+            return Task { (try? await store.save()) != nil }
         }
+        saves.onFailure = { [weak self] in self?.failure = Self.saveFailure }
         watch.onChange = { [weak self] in self?.mergeVersions() }
+    }
+
+    /// What the learner reads when a save failed: the changes are still in the app.
+    static var saveFailure: String {
+        String(localized: "The deck could not be saved. The app keeps your latest changes and tries again; leave it open until this message goes away.")
     }
 
     /// Takes `document` as the current document, saved at `fileURL`. Called by the
@@ -153,8 +158,13 @@ final class VersionMerger {
                 versions.append(try conflict.read())
                 conflicts.append(conflict)
             } catch {
+                // A version this app can't read (written by a newer app, damaged) would be read again at every merge and
+                // keep the iPhone from opening the deck: its copy goes to `.backups` and it is resolved.
                 if reportedFailures.insert(conflict.id).inserted {
                     failure = VocabularyDocument.openingError(for: error).localizedDescription
+                }
+                if conflict.backUp() {
+                    conflict.markResolved()
                 }
             }
         }
@@ -275,4 +285,7 @@ struct ConflictVersion {
     var id: String
     var read: () throws -> Deck
     var markResolved: () -> Void
+    /// Copies the version to the `.backups` folder next to the deck, so it can be resolved without losing it;
+    /// whether the copy was made.
+    var backUp: () -> Bool = { false }
 }
