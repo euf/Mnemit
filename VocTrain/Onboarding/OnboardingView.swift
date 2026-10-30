@@ -28,7 +28,7 @@ struct OnboardingView: View {
             Group {
                 switch step {
                 case .welcome:
-                    WelcomeStep(next: advance)
+                    WelcomeStep(next: advance, skip: onFinish)
                 case .firstShowing:
                     FirstShowingView(done: advance)
                 case .swipe:
@@ -56,9 +56,12 @@ struct OnboardingView: View {
     }
 }
 
-/// The first step: the app, and one button.
+/// The first step: the app, and the way in; whoever knows what the app does can skip the whole introduction.
 private struct WelcomeStep: View {
     var next: () -> Void
+    /// Ends the introduction here: Today then offers New Deck, Shared Decks and the iCloud Drive folder, and Settings
+    /// shows the introduction again.
+    var skip: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -84,6 +87,8 @@ private struct WelcomeStep: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            Button("Skip Introduction", action: skip)
+                .padding(.top, 8)
         }
         .padding(20)
     }
@@ -263,7 +268,7 @@ private struct SyncStep: View {
                 Divider()
                 Group {
                     if knownDecks.isLocalFolder {
-                        Text("Add decks in Files, under On My iPhone → Mnemit.")
+                        Text("Next, create your first deck.")
                     } else {
                         Text("Decks in this folder appear here.")
                     }
