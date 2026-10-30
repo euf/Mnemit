@@ -16,6 +16,9 @@ final class DeckFolder {
     private(set) var url: URL?
     /// The decks in it by name; read again whenever the window comes to the front.
     private(set) var decks: [URL] = []
+    /// Whether the folder the learner chose can't be reached: its bookmark does not resolve. The bookmark is kept, so
+    /// `refresh()` finds the folder again if it was only away; Today says it and asks for the folder.
+    private(set) var isLost = false
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var isAccessing = false
@@ -36,6 +39,9 @@ final class DeckFolder {
 
     /// Reads the decks in the folder again, to pick up the ones that arrived since.
     func refresh() {
+        if isLost, let bookmark = defaults.data(forKey: Self.key) {
+            resolve(bookmark)
+        }
         decks = url.map(Self.decks(in:)) ?? []
     }
 
@@ -57,15 +63,17 @@ final class DeckFolder {
         }
         guard let bookmark = Self.bookmark(for: chosen) else { return }
         defaults.set(bookmark, forKey: Self.key)
+        isLost = false
         use(chosen)
     }
 
     private func resolve(_ bookmark: Data) {
         var isStale = false
         guard let folder = try? URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale) else {
-            defaults.removeObject(forKey: Self.key)
+            isLost = true
             return
         }
+        isLost = false
         use(folder)
         if isStale, let fresh = Self.bookmark(for: folder) {
             defaults.set(fresh, forKey: Self.key)

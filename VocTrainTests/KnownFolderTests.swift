@@ -16,6 +16,20 @@ struct KnownFolderTests {
         defaults = try #require(UserDefaults(suiteName: "KnownFolderTests-\(UUID().uuidString)"))
     }
 
+    /// After an iCloud sign-out or a restore the folder's bookmark may not resolve. Today then says the folder can't be
+    /// reached, and the bookmark stays, so a transient failure heals at the next launch instead of looking like a first one.
+    @Test func aFolderThatCannotBeResolvedIsKeptAndReportedLost() throws {
+        let broken = Data("not a bookmark".utf8)
+        defaults.set(broken, forKey: KnownDecks.folderKey)
+
+        let known = KnownDecks(defaults: defaults)
+        #expect(known.folderLost)
+        #expect(known.folder == nil)
+        #expect(defaults.data(forKey: KnownDecks.folderKey) == broken)
+        #expect(known.chooseFolder(try makeFolder(decks: ["Greek B1"], others: [])) == 1)
+        #expect(!known.folderLost)
+    }
+
     @Test func aChosenFolderListsItsDecksByNameAfterTheNextLaunch() throws {
         let folder = try makeFolder(decks: ["Greek B1", "Greek A1–A2"], others: ["notes.txt"])
         let known = KnownDecks(defaults: defaults)

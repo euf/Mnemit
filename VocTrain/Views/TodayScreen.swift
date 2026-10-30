@@ -26,6 +26,8 @@ struct TodayScreen: View {
     var paused: Set<URL> = []
     /// The decks that can't be read, with why (`KnownDeckCounts.failed`): their rows say it.
     var failed: [URL: String] = [:]
+    /// Whether the Mnemit folder can't be reached (`KnownDecks.folderLost`): Today says it and asks for the folder again.
+    var folderLost = false
     /// `nil` until evaluated.
     var progress: DailyProgress?
     var now: Date
@@ -128,28 +130,39 @@ struct TodayScreen: View {
     private var empty: some View {
         ScrollView {
             VStack(spacing: Spacing.section) {
-                EmptyTodayCard()
-                    .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-                VStack(spacing: Spacing.gap) {
-                    Button(action: newDeck) {
-                        Text("New Deck").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button(action: showAnkiWeb) {
-                        Text("Shared Decks").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    Button("Use iCloud Drive Folder", action: chooseFolder)
-                        .font(.footnote)
-                        .controlSize(.regular)
-                        .padding(.top, Spacing.hairline)
+                if folderLost {
+                    // A new deck would have no folder to go to: the one way on is the folder.
+                    LostFolderCard(choose: chooseFolder)
+                        .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+                } else {
+                    emptyActions
                 }
-                .controlSize(.large)
             }
             .padding(Spacing.margin)
             .frame(maxWidth: .infinity)
         }
         .background(Color(.systemGroupedBackground))
+    }
+
+    @ViewBuilder
+    private var emptyActions: some View {
+        EmptyTodayCard()
+            .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        VStack(spacing: Spacing.gap) {
+            Button(action: newDeck) {
+                Text("New Deck").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            Button(action: showAnkiWeb) {
+                Text("Shared Decks").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            Button("Use iCloud Drive Folder", action: chooseFolder)
+                .font(.footnote)
+                .controlSize(.regular)
+                .padding(.top, Spacing.hairline)
+        }
+        .controlSize(.large)
     }
 
     /// Queues the medals of earlier days this device never celebrated, once the day is shown.
@@ -159,6 +172,11 @@ struct TodayScreen: View {
 
     private var list: some View {
         List {
+            if folderLost {
+                Section {
+                    LostFolderCard(choose: chooseFolder)
+                }
+            }
             Section {
                 // The list's own card; the whole of it is a button to Progress, its week row ends in the chevron the deck rows draw too.
                 TodayCard(progress: isDayReady ? progress : nil, now: now, isLoaded: isDayReady, open: progress == nil ? nil : showProgress)

@@ -170,6 +170,32 @@ struct EmptyTodayCard: View {
     }
 }
 
+/// The card of a Mnemit folder that can't be reached (`KnownDecks.folderLost`, `DeckFolder.isLost`): what happened and the
+/// one way on, choosing the folder again. The decks are not gone, and nothing is deleted.
+struct LostFolderCard: View {
+    var choose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.icloud")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text("The Mnemit folder can't be reached")
+                .font(.title3.weight(.semibold))
+            Text("Check that you are signed in to iCloud and that the folder is still in iCloud Drive, then choose it again.")
+                .foregroundStyle(.secondary)
+            Button("Choose Folder Again", action: choose)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+    }
+}
+
 extension View {
     /// The date of today's study day under the title, "Tuesday, October 27": the study day, which a night before 04:00 still
     /// belongs to the day before.

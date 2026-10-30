@@ -8,6 +8,8 @@ import VocabCore
 /// window's title bar has "Today" and the date. Without a deck, the empty card and the ways to get one.
 struct TodayPageContent: View {
     var hasDecks: Bool
+    /// Whether the Mnemit folder can't be reached (`DeckFolder.isLost`): the page says it and asks for the folder again.
+    var folderLost = false
     var progress: DailyProgress?
     var now: Date
     /// `false` until the ring and the decks are read: the figures are placeholders then.
@@ -55,6 +57,16 @@ struct TodayPageContent: View {
     /// No deck yet: the card with the empty ring over the ways to get one: a new deck, shared decks, the iCloud folder as a link.
     @ViewBuilder
     private var empty: some View {
+        if folderLost {
+            LostFolderCard(choose: chooseFolder)
+                .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        } else {
+            emptyActions
+        }
+    }
+
+    @ViewBuilder
+    private var emptyActions: some View {
         EmptyTodayCard()
             .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         VStack(spacing: Spacing.gap) {
@@ -98,7 +110,7 @@ struct TodayPage: View {
     var body: some View {
         let ring = shell.ring
         TodayPageContent(
-            hasDecks: !shell.known.isEmpty, progress: ring.progress, now: Date(), isLoaded: shell.isDayReady,
+            hasDecks: !shell.known.isEmpty, folderLost: shell.folder.isLost, progress: ring.progress, now: Date(), isLoaded: shell.isDayReady,
             action: shell.dayAction, canStudy: shell.canStudyDay, study: { shell.study(.day) }, showProgress: { shell.select(.progress) },
             newDeck: newDeck, chooseFolder: chooseFolder, sharedDecks: { DeckWebWindow.show() }
         )

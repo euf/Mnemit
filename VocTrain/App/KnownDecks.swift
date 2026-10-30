@@ -32,6 +32,10 @@ final class KnownDecks {
     private(set) var folder: URL?
     /// Whether the folder is the app's own Documents directory, not one in iCloud Drive.
     private(set) var isLocalFolder = false
+    /// Whether the folder the learner chose can't be reached: its bookmark does not resolve (after an iCloud sign-out
+    /// or a restore) or the folder can't be listed. The bookmark is kept, so the next launch or `refreshFolder()`
+    /// finds the folder again if it was only away; Today says it and asks for the folder.
+    private(set) var folderLost = false
     /// Where the progress ledger of the folder's decks is kept.
     var ledgerStore: ProgressLedgerStore { ProgressLedgerStore(folder: folder) }
     /// The decks in the folder, as `refreshFolder()` read them last.
@@ -124,6 +128,7 @@ final class KnownDecks {
         defaults.removeObject(forKey: Self.localFolderKey)
         folder = url
         isLocalFolder = false
+        folderLost = false
         isAccessingFolder = isAccessing
         folderDecks = decks
         return decks.count
@@ -135,6 +140,7 @@ final class KnownDecks {
         stopAccessingFolder()
         defaults.removeObject(forKey: Self.folderKey)
         defaults.set(true, forKey: Self.localFolderKey)
+        folderLost = false
         takeLocalFolder()
     }
 
@@ -146,6 +152,9 @@ final class KnownDecks {
 
     /// Reads the folder again, for decks that arrived since.
     func refreshFolder() {
+        if folderLost, let bookmark = defaults.data(forKey: Self.folderKey) {
+            resolveFolder(bookmark)
+        }
         guard let folder else { return }
         folderDecks = Self.decks(in: folder)
     }
@@ -153,10 +162,19 @@ final class KnownDecks {
     private func resolveFolder(_ bookmark: Data) {
         var isStale = false
         guard let url = try? URL(resolvingBookmarkData: bookmark, options: [], relativeTo: nil, bookmarkDataIsStale: &isStale) else {
-            defaults.removeObject(forKey: Self.folderKey)
+            folderLost = true
             return
         }
-        isAccessingFolder = url.startAccessingSecurityScopedResource()
+        let isAccessing = url.startAccessingSecurityScopedResource()
+        guard (try? FileManager.default.contentsOfDirectory(atPath: url.path)) != nil else {
+            if isAccessing {
+                url.stopAccessingSecurityScopedResource()
+            }
+            folderLost = true
+            return
+        }
+        folderLost = false
+        isAccessingFolder = isAccessing
         if isStale, let fresh = Self.bookmark(for: url) {
             defaults.set(fresh, forKey: Self.folderKey)
         }
