@@ -23,7 +23,7 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
   plan: they wait, as buried cards do, and come back on the next study day, the most urgent first (lowest recall
   probability, as the plan orders them). New cards/day and the allowance don't change. The plan of a past day is the
   plan at its start, with nothing reviewed yet. `deck.json` holds the key as `null` while unlimited; a missing key reads as
-  unlimited, and an older app version drops the key on save. Range 1 to 9999.
+  unlimited, and an older app version drops the key on save. Range 0 to 9999; 0 is a review-only stretch.
 - A `deck.json` that still has `cardsPerSession`, `newProductionPerSession` or `productionUnlockDays` reads, and the next
   save leaves the keys out.
 - A deck row on Today reads the whole deck including `reviews.jsonl` (`KnownDeckCounts` through
