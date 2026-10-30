@@ -19,13 +19,22 @@ struct PushedDeckView<Content: View>: View {
 struct CardHost: View {
     var deck: OpenDeck
     var id: Card.ID
+    /// Opens the deck again after it could not be opened.
+    var retry: () -> Void = {}
 
     var body: some View {
         if let document = deck.document {
             CardDetailScreen(document: document, cardID: id, canEdit: deck.isEditable)
                 .background { DocumentAttachment(document: document, deck: deck) }
         } else if let failure = deck.failure {
-            ContentUnavailableView("The deck could not be opened", systemImage: "exclamationmark.triangle", description: Text(failure))
+            ContentUnavailableView {
+                Label("The deck could not be opened", systemImage: "exclamationmark.triangle")
+            } description: {
+                Text(failure)
+            } actions: {
+                Button("Try Again", action: retry)
+                    .buttonStyle(.borderedProminent)
+            }
         } else {
             ProgressView()
         }

@@ -128,7 +128,7 @@ struct StartScreen: View {
             DeckWebBrowserView(browser: browser) { webBrowser = nil }
         }
         .fullScreenCover(item: $run) { run in
-            StudyRunView(run: run, ring: ring, knownDecks: knownDecks, counts: deckCounts.counts) { self.run = nil }
+            StudyRunView(run: run, ring: ring, knownDecks: knownDecks, counts: deckCounts.counts, onRetry: run.ownsDeck ? { retry(run) } : nil) { self.run = nil }
         }
         .fullScreenCover(isPresented: $showsIntroduction) {
             OnboardingView(knownDecks: knownDecks, reminders: reminders, onFinish: finishIntroduction)
@@ -309,11 +309,11 @@ struct StartScreen: View {
                 DeckScreen(
                     deck: deck, knownCounts: deckCounts.counts[deck.url], pace: ring.progress?.pace, start: { studyDeck(deck, entry: $0) },
                     rename: { try await rename(slot, to: $0) }, delete: { try await trash(slot) },
-                    didChangePause: { refreshRing(withOpen: deck) })
+                    didChangePause: { refreshRing(withOpen: deck) }, retry: { Task { await pushed.retry(slot) } })
             }
         case let .card(slot, id):
             PushedDeckView(pushed: pushed, slot: slot) { deck in
-                CardHost(deck: deck, id: id)
+                CardHost(deck: deck, id: id) { Task { await pushed.retry(slot) } }
             }
         case .progress:
             if let progress = ring.progress {
@@ -355,6 +355,19 @@ struct StartScreen: View {
         }
         guard let first = urls.first else { return }
         run = StudyRun(deck: OpenDeck(url: first), entry: entry, upcoming: Array(urls.dropFirst()))
+    }
+
+    /// Try Again on the screen of a run whose deck could not be opened: the run goes, and once its screen is off the glass
+    /// the same decks are opened anew. The onChange of `run` closes the old decks.
+    private func retry(_ failed: StudyRun) {
+        guard run == failed, failed.ownsDeck else { return }
+        run = nil
+        Task {
+            isOpeningStudy = true
+            defer { isOpeningStudy = false }
+            try? await Task.sleep(for: .milliseconds(700))
+            if run == nil { run = failed.triedAgain() }
+        }
     }
 
     /// Starts the stream of the deck whose screen is open, on the deck the screen holds.

@@ -156,7 +156,7 @@ enum DeckFileReader {
     }
 
     /// The deck at `url`, or why it can't be read, in the words of the deck's own screen: "Downloading from iCloud…",
-    /// "This deck was created by a newer version of Mnemit.".
+    /// "This deck was created by a newer version of Mnemit. Update Mnemit to open it.".
     nonisolated static func read(at url: URL) -> Result<Deck, DeckReadFailure> {
         // A deck outside the app's sandbox can be read only while the app accesses it.
         let isAccessing = url.startAccessingSecurityScopedResource()

@@ -33,6 +33,12 @@ final class StudyRun {
     /// Whether the run closes the deck it starts with.
     var ownsDeck: Bool { owned.contains(deck) }
 
+    /// A run of the same decks and entry over decks opened anew, for Try Again on a run whose deck could not be opened;
+    /// `nil` for a run on the deck of a screen, which that screen opens again.
+    func triedAgain() -> StudyRun? {
+        ownsDeck ? StudyRun(deck: OpenDeck(url: deck.url), entry: entry, upcoming: decks.dropFirst().map(\.url)) : nil
+    }
+
     /// Saves what is unsaved and lets go of the decks the run owns.
     func close() async {
         for deck in owned {

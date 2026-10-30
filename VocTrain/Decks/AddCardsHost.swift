@@ -24,7 +24,7 @@ struct AddCardsHost: View {
             }
             .background { DocumentAttachment(document: document, deck: deck) }
         } else {
-            StudyPlaceholder(failure: deck.failure) { dismiss() }
+            StudyPlaceholder(failure: deck.failure, url: deck.url) { dismiss() }
         }
     }
 }

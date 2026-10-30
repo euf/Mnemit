@@ -141,7 +141,7 @@ final class VocabularyDocument: ObservableObject {
         case .notADeck:
             return AppError(String(localized: "This file is not a Mnemit deck, or its deck.json is missing or damaged."))
         case .unsupportedVersion:
-            return AppError(String(localized: "This deck was created by a newer version of Mnemit."))
+            return AppError(String(localized: "This deck was created by a newer version of Mnemit. Update Mnemit to open it."))
         case .outdatedVersion:
             return AppError(String(localized: "This deck is from a test version before the first release and can't be opened."))
         case let .damagedReviewLog(line):
