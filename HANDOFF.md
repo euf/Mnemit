@@ -2,7 +2,11 @@
 
 ## State
 
-- Version 9.0.x on `main` (`VERSION`): the product model of `references/product-model.md` (9.0). Past days are written down
+- Version 11.0 on `main` (`VERSION`): the audit of 10.1.2 and its fixes, `references/audit-2026-10-30.md` (what was found,
+  what changed, the decisions with their rollback, what stays open). Deck format 7 (a review taken back is a note
+  `"undone":true`); the memory model is fitted on the reviews of all decks together; "Keep Going" is the moment after the
+  ring; option menus instead of steppers; dark-mode text in a lighter accent.
+- The product model of `references/product-model.md` (9.0). Past days are written down
   when they end (the progress ledger, `<deck folder>/.mnemit-progress/<device>.jsonl`, one record per day, merged by day,
   raised only by late answers), so pausing or deleting a deck or a card never changes a past day. A deleted card keeps its
   answers as a retired card (deck format version 6). A deck edited while open (the other device, `deck-from-tsv`, which now
@@ -17,12 +21,12 @@
   date as the subtitle; Progress, a deck and Statistics use the same cards and tiles. The introduction teaches a new word's
   first showing; the long texts are shorter in all four languages. Medal toasts stand where they cover nothing.
 - Deck options (both apps) use Anki's names (Desired retention, Leech threshold, Leech action, Maximum interval, Learning steps, Optimize), a "?" popover on each row and Restore Defaults; new option Maximum reviews/day (`maximumReviewsPerDay`, a cap on the day's review cards, `references/scheduling.md`); "Spread out intervals" is gone, `fuzzing` stays on.
-- Both devices run 9.0.38 (c9c236a), the iPhone signed until 03.11. The Mac was seen live on 27.10 (vqa, on 9.0.28): Today, Progress, a deck's page and its
-  columns, Preferences, a stream on a copy of Greek B1 (two buttons, key 2 for Hard, the receipt), `deck-from-tsv` run twice
-  on the open copy (no alert, 2314 → 2316 cards, the stream went on) and an undo after the reread; the ledger wrote
-  21–25.10. Since then only Forgot and Good can be given in two-button mode (tested in the Mac test host, not yet by hand);
-  the iPhone is not yet seen live. Both apps must stay on 9.0: a Mac or
-  iPhone 9.0 that saves a deck writes format 6, which an 8.x app rejects.
+- Both devices run 11.0 since 30.10 (Mac 11.0.2 e19dee3, iPhone 11.0.1 3e0b74b, signed until 06.11). A Mac or iPhone
+  11.0 that saves a deck writes format 7, which a 10.x app rejects: both stay on 11.0, and `deck-from-tsv` runs from
+  source (`swift run`). The decks as they were before: `iCloud Drive/Mnemit/.backups/pre-11.0-20261030-0441`. The Mac was
+  seen live on 30.10 on EF's decks without grading: Today, a deck's page and table, the options sheet and its "?" popover
+  (whole text), Usable reviews 140 / 400 over all decks, Add Cards; the Mac's ledger rebuilt 21–25.10 from the logs
+  (22.10: 52 cards, 161 reviews, was 70 and 211). The iPhone 11.0 is not yet seen live.
 - Decisions of 27.10 and their evidence: `references/product-model.md` §5, §9 ("The grammar of the screens"), §11;
   `references/grades-research.md` and `Tools/grades/` (two buttons), `Tools/ring-sim/leeches.md` and
   `references/leech-research.md` (leeches), `references/today-layout-research.md` and `references/hig-ios26.md` (Today).
@@ -81,19 +85,16 @@ In order of importance to EF. Brief sub-agents by `references/agent-briefs.md`.
 
 The plan of 7.0–7.1 is `references/quality-plan.md`.
 
-1. **9.0 on the iPhone, to verify live:** the Today card at 375 pt on the 13 mini and at AX5 (ring and figures side by
-   side, the ring over them at large sizes, the date under the title), the medium and small widgets and the tinted and
-   clear Home Screen (only simulated so far: the ring's track by opacity, laps as "2×"), the two answer buttons and the
-   setting, the leech moment (it needs a card at 8 lapses), the introduction's first showing, Progress tiles, the deck's
-   Today card with Study This Deck in the bottom bar, the toast over the large title and in the gap above the buttons, and
-   a second device file in `.mnemit-progress` once the iPhone has seen a day end. From 8.0, still unseen on the iPhone:
-   Study These Now, the rests, the reminders and the icon's "1". Xcode's Apple ID was lost once (24.10): `ios-renew` then
-   fails with "No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts.
-2. **The Mac, still to see live:** a cold launch with a deck from Finder, ⌘Q with a stream running, a Dock click after ⌘W,
-   the New Deck sheet, the cheat sheet, Keep Going in the menu, the search over all decks, a sidebar row's Pause, the month's
-   sheet, a medal toast in the header. Seen on 27.10: at a 1000 pt window the card table's four new columns sit past the
-   right edge (the Kind column takes the room); once, right after a file merge, the Z key did nothing until a click (not
-   reproduced); Delete Deck of a deck in `/private/tmp` does nothing (no Trash there).
+1. **11.0 on the iPhone, to verify live** (`references/audit-2026-10-30.md` §5): in Russian and dark at 375 pt, the "?"
+   popovers and the option menus, "Ring closed" with Keep Going and no outline of the last card, Add Cards in list mode,
+   the study card at AX5, the leech moment, the toolbar's "+" and "…" on Today, the widget the morning after a break, a
+   reminder tap from a cold start, the lost-folder card; the iPhone's ledger file rebuilt with `"rule":1` after its first
+   day ends. Xcode's Apple ID was lost once (24.10): `ios-renew` then fails with "No Accounts" until EF signs in again in
+   Xcode ▸ Settings ▸ Apple Accounts.
+2. **The Mac, still to see live:** a stream (only on a deck whose grades may count: the ring and ledger take every open
+   deck), a cold launch with a deck from Finder, ⌘Q with a stream running, a Dock click after ⌘W, Try Again on a failed
+   deck, the streak-ended line, a sheet's default button. Seen on 27.10: at a 1000 pt window the card table's four new
+   columns sit past the right edge; Delete Deck of a deck in `/private/tmp` does nothing (no Trash there).
 3. **Answer buttons and leeches, to watch:** whether EF turns "Hard and Easy Buttons" on (Easy's shorter path for the
    familiar A1–A2 words is only there); the first leech moments and whether Edit is used.
 4. **Share Deck**: a clean `.mnemit` copy (cards and media, no states, no log, no fitted parameters) from
