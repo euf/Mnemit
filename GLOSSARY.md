@@ -47,7 +47,7 @@ _Avoid_: import batch, generation
 
 **Suspended card** (DE Ausgesetzte Karte; RU «приостановленная карточка»):
 A Card the learner suspended, on the Mac or the iPhone, or that a Leech moment set aside: it is never Due and no
-Session asks it until they resume it (Resume; Keep It at the moment). Its Learning state stays as it was meanwhile.
+Session asks it until they resume it (Resume; Keep Card at the moment). Its Learning state stays as it was meanwhile.
 _Avoid_: ignored, disabled, deferred, buried
 
 **Leech** (DE Lernbremse; RU «приставучая»; EL βδέλλα):
@@ -96,7 +96,8 @@ _Avoid_: forgotten, "forgotten card" as a term
 
 **Leech moment** (on screen "Keeps slipping"; DE „Entgleitet immer wieder“; RU «момент приставучей карточки»):
 The stop in the stack right after the Forgot that makes a Card a Leech, before the next card (`LeechMomentView`,
-`SessionDriver.leechMoment`). The question and the answer stay on screen, with **Continue**, **Edit** and **Set Aside**. A
+`SessionDriver.leechMoment`). The question and the answer stay on screen under a sentence that counts the lapses, with **Continue**,
+**Edit** and **Suspend Card**. A
 moment is the lapse that brings the lapses to the threshold T and every ceil(T / 2) lapses after that: 8, 12, 16, 20 for
 T = 8 (`StudySession.isLeechMoment`). Undoing the grade takes the moment back.
 _Avoid_: leech alert, leech warning
@@ -116,11 +117,11 @@ to it.
 The review that makes a Card a Leech suspends it, and the card leaves the stack (`LeechAction.suspend`). Learning options
 offer Keep Card and Suspend Card as the Leech action.
 
-**Set Aside** / **Keep It** (the actions of a Leech moment; DE Beiseitelegen / Behalten; RU «отложить» / «оставить»):
-Set Aside suspends the card from the moment and the stack goes on without it (`SessionCommand.setAside`). When the Deck's
-action is Suspend the review has done that already, and the button reads Keep It: it resumes the card and the stack asks it
+**Suspend Card** / **Keep Card** at the Leech moment (the same words as the Deck's leech action):
+Suspend Card suspends the card from the moment and the stack goes on without it (`SessionCommand.setAside`). When the Deck's
+action is Suspend the review has done that already, and the button reads Keep Card: it resumes the card and the stack asks it
 again (`SessionCommand.keep`). Both are undoable.
-_Avoid_: bury, skip
+_Avoid_: Set Aside, Keep It, bury, skip
 
 ### Learning state
 

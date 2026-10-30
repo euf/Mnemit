@@ -320,7 +320,7 @@ struct StreamRestView: View {
         if prominent {
             button.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
         } else {
-            button.buttonStyle(.bordered)
+            button.secondaryAction()
         }
     }
 

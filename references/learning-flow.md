@@ -137,7 +137,7 @@ of Learn 10 New Words or of Study These Now.
   a sheet, and slides under the stack, where it becomes the deepest line: the stack is as thick as
   before, which is why the card comes back.
 - A word that keeps slipping: after the Forgot that makes a card a leech (`scheduling.md`, "Leech") the stream stops before
-  the next card on "Keeps slipping", the card's question and answer, and Continue, Edit and Set Aside (Keep It when the
+  the next card on "Keeps slipping", the card's question and answer, and Continue, Edit and Suspend Card (Keep Card when the
   deck's action Suspend already suspended it). Undo takes back the grade and the moment together.
 - The last card of a stack has no lines. When it leaves, what lay under it shows: the ring comes down from the
   bar into its place, and the rest's lines come in.

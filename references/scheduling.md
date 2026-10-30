@@ -76,9 +76,9 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
   scheduling it; `.suspend`, Anki's classic action, makes the review suspend the card (`StudySession.review`), which leaves the
   session. The deck options offer the two as a picker. `deck.json` key `leechAction` is `"suspend"` and left out while keep
   (`deck-package.md`).
-- **The moment's actions.** Edit, Set Aside and Continue. Set Aside suspends the card (`SessionCommand.setAside(id)`, an
+- **The moment's actions.** Edit, Suspend Card and Continue. Suspend Card suspends the card (`SessionCommand.setAside(id)`, an
   undoable step like `.suspend`: the session counts the card as suspended, not done). Where the review already suspended the
-  card (Suspend), Set Aside is Keep It (`SessionCommand.keep(id)`): it resumes the card and the session asks it again. Undo of
+  card (Suspend), the button is Keep Card (`SessionCommand.keep(id)`): it resumes the card and the session asks it again. Undo of
   the grade takes back the moment and any suspension.
 - **No flag in the file.** `Card.isLeech(threshold:)` derives from `lapses` (`lapses >= T`), so the Leeches filter
   (`CardFilter.leeches`, the title "Leeches") shows resumed cards too, and merges need no rule.
