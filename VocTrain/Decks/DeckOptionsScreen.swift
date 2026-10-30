@@ -78,6 +78,7 @@ struct DeckOptionsScreen: View {
 /// parameters with their optimizer.
 struct DeckAdvancedOptionsScreen: View {
     @ObservedObject var document: VocabularyDocument
+    @Environment(\.knownDeckFiles) private var knownDeckFiles
 
     init(document: VocabularyDocument) {
         self.document = document
@@ -101,7 +102,9 @@ struct DeckAdvancedOptionsScreen: View {
                 .helpButton("How many times you grade a new or forgotten card Good before it moves on to longer intervals.")
             }
 
-            ParametersSection(options: document.option(\.self), cards: document.deck.trainingCards, calendar: document.calendar, appliesAtOnce: true)
+            ParametersSection(
+                options: document.option(\.self), cards: document.deck.trainingCards, pool: knownDeckFiles.pool(excluding: document.packageURL), calendar: document.calendar,
+                appliesAtOnce: true)
 
         }
         .monospacedDigit()

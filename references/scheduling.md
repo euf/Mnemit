@@ -113,11 +113,13 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 - The optimizer runs off the main thread at background priority, one deck at a time for the whole app
   (`ParameterRefitter.run`). `VocabularyDocument.applyParameterRefit` applies the result as one Undo step
   "Update Parameters" and drops it if the switch is off or another fit is newer.
-- Mac: on opening the document (`DocumentView`), not during the Study stream. iPhone: after launch, once
-  Today is read and nothing is open (`StartScreen.canRefitParameters`), `DeckRefits` reads the file of
-  each known deck, opens a due one through `OpenDeck`, applies and closes it.
-- The switch and the line about the last fit: `ParametersSection` (iPhone: Options → Advanced; Mac: the
-  Learning Options sheet).
+- The pool is a `ReviewPool` (`Shared/Document`): decks in memory and decks read from files. Mac: on opening the document
+  (`DeckPage`), not during the Study stream, over the other open documents and the rest of the folder
+  (`AllDecks.pool(besides:)`). iPhone: after launch, once Today is read and nothing is open (`StartScreen.canRefitParameters`),
+  `DeckRefits` reads the files of all known decks once, then opens each due one through `OpenDeck`, applies and closes it.
+- The switch, the line about the last fit ("Fitted on N reviews from all your decks"), "Usable reviews N / 400" counted over
+  all decks, and the note on a deck whose parameters are its own: `ParametersSection` (iPhone: Options → Advanced; Mac: the
+  Learning Options sheet). Optimize there fits on the pool too and applies to this deck only.
 
 ## The day's stack
 

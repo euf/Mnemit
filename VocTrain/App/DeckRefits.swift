@@ -2,8 +2,8 @@ import Foundation
 import VocabCore
 
 /// The automatic refit of FSRS parameters on the iPhone (`ParameterRefit`): after launch, once
-/// nothing is on the screen but Today, each known deck is read from its file, off the main
-/// actor, and fitted if it is due. A deck with something to apply is opened as a document
+/// nothing is on the screen but Today, the known decks are read from their files, off the main
+/// actor, and each is fitted on the reviews of all of them if it is due. A deck with something to apply is opened as a document
 /// (`OpenDeck`), changed through its editing layer (`applyParameterRefit`) and closed, which
 /// saves it.
 ///
@@ -12,19 +12,18 @@ import VocabCore
 @MainActor
 enum DeckRefits {
     static func run(_ decks: [URL], isIdle: @MainActor () -> Bool) async {
-        for url in decks {
+        // Read once: the reviews of every deck are the log each deck is fitted on, and each deck's own options say whether it is due.
+        let (known, pool) = await Task.detached(priority: .utility) { () -> ([(url: URL, options: LearningOptions)], [Card]) in
+            let read = decks.compactMap { url in DeckFileReader.deck(at: url).map { (url: url, deck: $0) } }
+            return (read.map { (url: $0.url, options: $0.deck.learningOptions) }, read.flatMap { $0.deck.trainingCards })
+        }.value
+        for (url, options) in known {
             guard !Task.isCancelled, isIdle() else { return }
             await ParameterRefitter.run(
-                fit: { try fit(deckAt: url) },
+                fit: { try ParameterRefit.fit(cards: pool, options: options, calendar: StudyCalendar(), now: Date()) },
                 canApply: isIdle,
                 apply: { await apply($0, toDeckAt: url) })
         }
-    }
-
-    /// `nil` for a deck that can't be read now, or is not due.
-    nonisolated static func fit(deckAt url: URL) throws -> ParameterRefit.Result? {
-        guard let deck = DeckFileReader.deck(at: url) else { return nil }
-        return try ParameterRefit.fit(cards: deck.trainingCards, options: deck.learningOptions, calendar: StudyCalendar(), now: Date())
     }
 
     /// Opens the deck, applies `result` as the undo step "Update Parameters" and saves. A
