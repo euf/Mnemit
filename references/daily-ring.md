@@ -45,6 +45,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `reviews`, `done`, `goal`, `keep`, `kept`, `closed`, `time` and `worked` (to 0.1 s), `reason` (`start`, `ringClosed`,
   `closedInARow`, `ringOpen`, `smallPlan`, `sustainedOvershoot`; an unknown one reads `ringOpen`), `filled`, `words`, `rule` (missing: 0). `decode` never
   throws: an unreadable line costs its day only. Where the files live: `deck-package.md`.
+- **One deck, one evaluation**: `refresh` drops every file that is the package of a passed document or an earlier file, compared by
+  `NewCardAllowances.key` (standardized, symlinks resolved), so a deck passed twice never counts its reviews twice: the ledger
+  keeps the larger figure of a day for good. The Mac's `AllDecks` compares by `OpenDecks.key`, the same rule.
 - **The app side**: `DailyRingModel.refresh(documents:files:ledger:reloadFiles:delay:)` takes a `ProgressLedgerStore?` (`nil` in
   previews and tests: no ledger, no write). It reads the ledger off the main actor, with the deck files, when `reloadFiles` is set
   or the store changed, and otherwise keeps the last one. After an evaluation with `ledgerUpdates` it writes
@@ -164,7 +167,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   document (`VocabularyDocument.newCardAllowance`, read by `DueCardCounter`, `StudyModel`,
   `SessionViewModel`, `SessionDriver`) and to `NewCardAllowances.today` per deck file (read by
   `OpenDeck`, `KnownDeckCounts`, `Reminders`, `WidgetSync`; the forecast for future days takes today's
-  allowance).
+  allowance). The set carries the study day it was worked out for: it reads empty from the next day's 4:00 until
+  the first evaluation of that day replaces it.
 - Cards first reviewed today are subtracted from the allowance, Study These Now's cards among them (they stand in for the
   plan's new cards, and go beyond New cards/day); Learn 10 New Words goes beyond the allowance and New cards/day. A card
   counts against the allowance when its first grade is logged.
