@@ -66,6 +66,7 @@ struct CardBrowserScreen: View {
                 } actions: {
                     Button("Add Cards", action: addCards)
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.appAccent)
                         .disabled(!isEditable)
                 }
             } else {
@@ -75,6 +76,9 @@ struct CardBrowserScreen: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: Text("Search Cards"))
+        // The rows end in a hard edge above the search pill and the bar of a selection: the glass over them is clear, and a row's
+        // second line ran through its text.
+        .scrollEdgeEffectStyle(.hard, for: .bottom)
         .safeAreaBar(edge: .top) {
             if !document.deck.cards.isEmpty {
                 FilterBar(selection: $filter, counts: output.counts)
@@ -147,7 +151,7 @@ struct CardBrowserScreen: View {
         Button(card.isSuspended ? "Resume" : "Suspend", systemImage: card.isSuspended ? "play.circle" : "pause.circle") {
             document.setSuspended(!card.isSuspended, of: [card.id])
         }
-        .tint(Color.accentColor)
+        .tint(Color.appAccent)
     }
 
     @ViewBuilder
@@ -295,7 +299,7 @@ struct FilterBar: View {
         .controlSize(.small)
         Group {
             if isSelected {
-                label.buttonStyle(.borderedProminent)
+                label.buttonStyle(.borderedProminent).tint(Color.appAccent)
             } else {
                 label.buttonStyle(.bordered).tint(.secondary)
             }

@@ -131,7 +131,7 @@ struct HomeSnapshotTests {
     func shoot(_ name: String, _ view: some View, height: CGFloat = 812, types: [DynamicTypeSize?] = [nil]) async throws {
         for dark in [false, true] {
             for type in types {
-                let root = AnyView(view.dynamicTypeSize(type ?? .large))
+                let root = AnyView(view.dynamicTypeSize(type ?? .large).appTint())
                 let suffix = type.map { "-\($0)" } ?? ""
                 try await render(root, to: "\(name)\(suffix)-\(dark ? "dark" : "light").png", dark: dark, height: height)
             }

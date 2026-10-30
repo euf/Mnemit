@@ -102,7 +102,7 @@ private struct SmallWidget: View {
             }
             NextStepText(step: step, alignment: .leading)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.cardSecondary)
                 .multilineTextAlignment(.leading)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)

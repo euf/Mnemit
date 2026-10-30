@@ -107,7 +107,7 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   - The calendar, "Last 13 weeks" once there are 13 and "Calendar" before (`WeeksGrid`): rows of seven
     cells, a row per week, the oldest first, Monday to Sunday under the weekday initials; a day is a ring,
     each day its own share of its goal (`DayRecord.ringShare`): a closed day full, and laps past the goal up to
-    three, any other day the share done, none done an empty track, before the first study day nothing; a capsule in `Color.streak` at 18 % lies behind each run of two or more kept days
+    three, any other day the share done, none done a `MissedDayMark` (a thin outline in `Color.inactiveMark`; today's open ring is a track), before the first study day nothing; a capsule lies behind each run of two or more kept days, `Color.streak` at 18 % in light, black at 30 % with a streak outline in dark,
     (`DayRecord.kept`) within a week row (`WeeksGrid.runs(ofKept:)`); a run does not cross rows.
   - Medals (the latest up to five, newest first, and Show All).
   - Memory, once a card is started: the line of words in memory (`MemoryEstimate.line`) and the ladder (`LadderBar` and a row

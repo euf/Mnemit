@@ -55,9 +55,9 @@ struct DeckTodayCard: View {
                 }
             }
         } else if let plan, let minutes = DeckMinutes.minutes(plan, pace: pace) {
-            Figure(label: Text("Today"), value: Text(verbatim: Format.timeLeft(minutes: minutes)), tint: .appAccent)
+            Figure(label: Text("Today"), value: Text(verbatim: Format.timeLeft(minutes: minutes)), tint: .appAccentText)
         } else {
-            Figure(label: Text("Today"), value: Text(verbatim: Format.timeLeft(minutes: 2)), tint: .appAccent)
+            Figure(label: Text("Today"), value: Text(verbatim: Format.timeLeft(minutes: 2)), tint: .appAccentText)
                 .redacted(reason: .placeholder)
         }
     }

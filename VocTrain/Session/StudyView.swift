@@ -465,7 +465,7 @@ struct StudyView: View {
                 .dynamicTypeSize(...GradeChoice.largestText)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: min(showAnswerHeight, GradeChoice.tallest))
-                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.appAccent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)

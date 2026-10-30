@@ -202,7 +202,7 @@ They are named in words, never as a count of days; the widget and Today only sho
 exclamation mark. When that ring closes, the rest's title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
 
 **Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
-dates, the next tier as a grey medal (a dashed outline and the line's symbol in tertiary grey, an earned one on a
+dates, the next tier as a grey medal (a dashed outline and the line's symbol in `Color.inactiveMark`, its title in secondary, an earned one on a
 gradient of the accent with a shadow) without a count of how far there is to go (Deci, Koestner & Ryan 1999:
 `ring-design.md`, "Medals and the monthly recap"), and nothing of the tiers after it: there is always one more to find. A line that repeats shows how often as a badge on the disc,
 never in the title.

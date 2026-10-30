@@ -1,6 +1,7 @@
 import SwiftUI
 import Testing
 import UIKit
+import VocabCore
 
 @testable import VocTrain
 
@@ -265,5 +266,116 @@ struct AccentContrastTests {
             }
         }
         print(lines.joined(separator: "\n"))
+    }
+}
+
+// MARK: The accent as text, the marks of what is not there, the ramp, the track
+
+extension AccentContrastTests {
+    /// The accent as text (`Color.appAccentText`): 4.5:1 or more on every surface of a screen and of a sheet in all four
+    /// appearances; in light the accent itself, in dark a lighter indigo of the same hue. The accent alone holds 3.0:1 on
+    /// the card and 2.5:1 on a sheet's rows, which is why a label in it was hard to read.
+    @Test func theTextAccentHoldsFourAndAHalfToOneOnEverySurface() throws {
+        var lines: [String] = []
+        for appearance in Self.appearances {
+            let screen = Self.traits(appearance)
+            let sheet = Self.traits(appearance, level: .elevated)
+            let accent = try #require(UIColor(named: "AccentColor", in: .main, compatibleWith: screen))
+            let accentLuminance = Self.luminance(accent, in: screen)
+            for (traits, surfaces) in [(screen, Self.surfaces), (sheet, Self.raisedSurfaces)] {
+                let text = Color.textAccent(in: traits)
+                let textLuminance = Self.luminance(text, in: traits)
+                lines.append("\(appearance.name), level \(traits.userInterfaceLevel.rawValue): text accent \(Self.hex(text, in: traits))")
+                for surface in surfaces {
+                    let ratio = Self.contrast(textLuminance, Self.luminance(surface.color, in: traits))
+                    lines.append("    on \(surface.name) \(Self.hex(surface.color, in: traits)): \(String(format: "%.2f", ratio))")
+                    #expect(ratio >= 4.5, "text accent on \(surface.name), \(appearance.name), level \(traits.userInterfaceLevel.rawValue)")
+                }
+            }
+            let text = Color.textAccent(in: screen)
+            if appearance.style == .light {
+                #expect(abs(Self.luminance(text, in: screen) - accentLuminance) < 0.001, "in light it is the accent, \(appearance.name)")
+            } else {
+                var (hue, otherHue) = (CGFloat(0), CGFloat(0))
+                accent.resolvedColor(with: screen).getHue(&hue, saturation: nil, brightness: nil, alpha: nil)
+                text.getHue(&otherHue, saturation: nil, brightness: nil, alpha: nil)
+                #expect(abs(hue - otherHue) < 0.02, "the hue stays, \(appearance.name)")
+                #expect(Self.luminance(text, in: screen) > accentLuminance, "the lighter one, \(appearance.name)")
+            }
+        }
+        print(lines.joined(separator: "\n"))
+    }
+
+    /// The ring of a missed day and the outline of a medal not yet earned (`Color.inactiveMark`): 3:1 or more on the surfaces
+    /// of a screen, in grey, so they stay a quiet mark and not progress.
+    @Test func theInactiveMarkHoldsThreeToOneOnEveryScreenSurface() {
+        var lines: [String] = []
+        for appearance in Self.appearances {
+            let traits = Self.traits(appearance)
+            let mark = UIColor(Color.inactiveMark)
+            let luminance = Self.luminance(mark, in: traits)
+            lines.append("\(appearance.name): mark \(Self.hex(mark, in: traits))")
+            for surface in Self.surfaces {
+                let ratio = Self.contrast(luminance, Self.luminance(surface.color, in: traits))
+                lines.append("    on \(surface.name) \(Self.hex(surface.color, in: traits)): \(String(format: "%.2f", ratio))")
+                #expect(ratio >= 3, "inactive mark on \(surface.name), \(appearance.name)")
+            }
+            var (hue, saturation) = (CGFloat(0), CGFloat(0))
+            mark.resolvedColor(with: traits).getHue(&hue, saturation: &saturation, brightness: nil, alpha: nil)
+            #expect(saturation < 0.08, "grey, not a colour, \(appearance.name)")
+        }
+        print(lines.joined(separator: "\n"))
+    }
+
+    /// The maturity ramp is one ordinal hue (278°, lightness steps of 0.085 or more in one direction), and in dark its
+    /// lowest step stays off the card (2.4:1 on `#1C1C1E`; the former step was 1.9:1) and New, the grey outside it, holds 3:1.
+    @Test func theMaturityRampStaysOneOrdinalHueAndItsLowestStepStaysOffTheCard() throws {
+        let steps = MaturityCategory.allCases.filter { $0 != .new }
+        for appearance in Self.appearances where appearance.contrast == .normal {
+            let traits = Self.traits(appearance)
+            let colors = steps.map { UIColor($0.color) }
+            let values = colors.map { OKLCH.value(of: Self.resolved($0, in: traits)) }
+            for (lower, higher) in zip(values, values.dropFirst()) {
+                let rise = appearance.style == .dark ? higher.lightness - lower.lightness : lower.lightness - higher.lightness
+                #expect(rise >= 0.085, "the ramp is ordered by lightness, \(appearance.name)")
+            }
+            for value in values { #expect((274...282).contains(value.hue), "one hue, \(appearance.name)") }
+            guard appearance.style == .dark else { continue }
+            let card = Self.luminance(.secondarySystemGroupedBackground, in: traits)
+            let lowest = Self.contrast(Self.luminance(colors[0], in: traits), card)
+            let new = Self.contrast(Self.luminance(UIColor(MaturityCategory.new.color), in: traits), card)
+            #expect(lowest >= 2.4, "the lowest step on the card, \(lowest)")
+            #expect(new >= 3, "New on the card, \(new)")
+        }
+    }
+
+    /// The unfilled part of a ring in dark is a visible circle: 1.4:1 or more of the accent over black and over the card
+    /// (0.15 was 1.1:1), and a stronger track than in light.
+    @Test func theTrackOfARingShowsInDark() throws {
+        let dark = Self.traits(Self.appearances[1])
+        let accent = try #require(UIColor(named: "AccentColor", in: .main, compatibleWith: dark))
+        let alpha = RingDrawing.trackAlpha(isFlat: false, isDark: true)
+        #expect(alpha > RingDrawing.trackAlpha(isFlat: false, isDark: false))
+        var (red, green, blue, opacity) = (CGFloat(0), CGFloat(0), CGFloat(0), CGFloat(0))
+        accent.resolvedColor(with: dark).getRed(&red, green: &green, blue: &blue, alpha: &opacity)
+        for surface in [UIColor.systemBackground, .secondarySystemGroupedBackground] {
+            var (r, g, b, a) = (CGFloat(0), CGFloat(0), CGFloat(0), CGFloat(0))
+            surface.resolvedColor(with: dark).getRed(&r, green: &g, blue: &b, alpha: &a)
+            let track = UIColor(red: red * alpha + r * (1 - alpha), green: green * alpha + g * (1 - alpha), blue: blue * alpha + b * (1 - alpha), alpha: 1)
+            let ratio = Self.contrast(Self.luminance(track, in: dark), Self.luminance(surface, in: dark))
+            #expect(ratio >= 1.4, "the track on \(Self.hex(surface, in: dark)): \(ratio)")
+        }
+    }
+
+    /// A past day after the first study day with nothing done is a missed day, drawn as a `MissedDayMark`; today, a partial
+    /// day, a closed one and the days before the first study day are not.
+    @Test func aPastDayWithNothingDoneIsMissed() {
+        let week: [Bool?] = [nil, false, true, false, false, true, false]
+        let rings: [Double?] = [nil, 0, 1, 0.4, 0, 1, 0]
+        let missed = week.indices.map { WeekRings.isMissed($0, week: week, rings: rings) }
+        #expect(missed == [false, true, false, false, true, false, false])
+        // Without the shares, as in the widget: a day that did not close is missed.
+        let flat = week.indices.map { WeekRings.isMissed($0, week: week, rings: nil) }
+        #expect(flat == [false, true, false, true, true, false, false])
     }
 }
