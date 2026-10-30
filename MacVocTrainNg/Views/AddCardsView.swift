@@ -38,8 +38,10 @@ struct AddCardsView: View {
     @State private var listText = ""
     /// The rows of the preview the learner switched against their default, by `Row.id`.
     @State private var flipped: Set<String> = []
-    /// The cards added since the sheet opened, for the confirmation.
+    /// The cards added since the sheet opened, for `onAdded`.
     @State private var addedInSession = 0
+    /// The words added since the sheet opened, for the confirmation: a word is a line of the list, or the one card or pair.
+    @State private var addedWords = 0
     /// Every card added since the sheet opened.
     @State private var addedIDs: [Card.ID] = []
     /// The cards of those that a stream would put first now, for Study These Now.
@@ -71,6 +73,7 @@ struct AddCardsView: View {
         _hint = State(initialValue: hint)
         _listText = State(initialValue: list)
         _addedInSession = State(initialValue: added)
+        _addedWords = State(initialValue: added)
         _showsConfirmation = State(initialValue: added > 0)
     }
 
@@ -217,8 +220,8 @@ struct AddCardsView: View {
                 .frame(minHeight: 110)
                 .overlay(alignment: .topLeading) {
                     if listText.isEmpty {
-                        Text(verbatim: "κλέβω = to steal\nη κλοπή = theft\nο κλέφτης = thief")
-                            .foregroundStyle(.tertiary)
+                        Text(verbatim: "e.g.  κλέβω = to steal\nη κλοπή = theft\nο κλέφτης = thief")
+                            .foregroundStyle(.secondary)
                             .padding(.horizontal, 5)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
@@ -226,7 +229,7 @@ struct AddCardsView: View {
                 }
                 .accessibilityLabel(Text("Lesson words"))
         } footer: {
-            Text("One word per line: the word, then =, – or - with spaces, then the translation.")
+            Text("Write each word on its own line as: word = translation. A dash works too.")
         }
 
         if !preview.invalidLines.isEmpty {
@@ -274,25 +277,26 @@ struct AddCardsView: View {
     // MARK: Adding and leaving
 
     private var buttons: some View {
-        let cards = mode == .fromList ? selectedCards(of: preview).count : 0
+        // The list counts words, a line each, not the cards they make.
+        let words = mode == .fromList ? preview.rows.filter(isSelected).count : 0
         return HStack {
+            Spacer()
             if showsConfirmation {
-                ConfirmationBadge(count: addedInSession)
+                ConfirmationBadge(count: addedWords)
                     .transition(.opacity)
             }
-            Spacer()
             Button("Cancel", role: .cancel, action: cancel)
                 .keyboardShortcut(.cancelAction)
             Button(action: add) {
-                if mode == .oneCard {
+                if mode == .oneCard || words == 0 {
                     Text("Add")
                 } else {
-                    Text("Add \(cards) Cards")
+                    Text("Add \(words) Words")
                 }
             }
             // Return belongs to the fields and the list; ⌘Return adds.
             .keyboardShortcut(.return, modifiers: .command)
-            .disabled(!document.isReadyToEdit || (mode == .oneCard ? text == nil : cards == 0))
+            .disabled(!document.isReadyToEdit || (mode == .oneCard ? text == nil : words == 0))
             if !studyable.isEmpty {
                 Button("Study These Now", action: study)
                     .disabled(!document.isReadyToEdit)
@@ -327,26 +331,28 @@ struct AddCardsView: View {
         answer = ""
         hint = ""
         focus = .question
-        didAdd(count, ids: ids)
+        didAdd(count, words: 1, ids: ids)
     }
 
     private func addList() {
         let cards = selectedCards(of: preview)
+        let words = preview.rows.filter(isSelected).count
         let renewed = preview.renewable(in: document.deck)
         let count = document.addLessonCards(cards, renewing: renewed)
         guard count > 0 else { return }
         listText = ""
         flipped = []
-        didAdd(count, ids: renewed + cards.map(\.id))
+        didAdd(count, words: words, ids: renewed + cards.map(\.id))
     }
 
-    private func didAdd(_ count: Int, ids: [Card.ID]) {
+    private func didAdd(_ count: Int, words: Int, ids: [Card.ID]) {
         addedIDs += ids
         studyable = StudyStream.addableCards(addedIDs, in: document.deck, at: document.clock.now, calendar: document.calendar)
         addedInSession += count
+        addedWords += words
         additions += 1
         showsConfirmation = true
-        AccessibilityNotification.Announcement(String(localized: "Added · \(addedInSession) cards so far")).post()
+        AccessibilityNotification.Announcement(String(localized: "Added · \(addedWords) words so far")).post()
     }
 
     private func cancel() {
