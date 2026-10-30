@@ -230,7 +230,6 @@ struct TodayScreen: View {
                 .containerRelativeFrame(.horizontal) { width, _ in max(180, width - 80) }
         }
         .buttonStyle(.borderedProminent)
-        .tint(stage == .study ? nil : Color.secondary)
         .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
         .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
     }

@@ -174,7 +174,6 @@ struct DeckContent: View {
                 .containerRelativeFrame(.horizontal) { width, _ in max(180, width - 64) }
         }
         .buttonStyle(.borderedProminent)
-        .tint(stage == .study ? nil : Color.secondary)
         .disabled(!canEdit || (document?.deck.cards.isEmpty ?? true))
         .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
     }

@@ -178,7 +178,7 @@ struct DeckPageContent: View {
             Text(isDue ? "Study This Deck" : "Learn 10 New Words")
         }
         .buttonStyle(.borderedProminent)
-        .tint(isDue ? Color.appAccent : .secondary)
+        .tint(Color.appAccent)
         .disabled(!canEdit || document.deck.cards.isEmpty)
     }
 

@@ -141,3 +141,15 @@ struct NextStepTests {
         #expect(NextStep(day(done: 30, left: 0)).sentence == "All done for today")
     }
 }
+
+/// The words of Today's one button: the three stages are the rests' words, and none of them draws grey.
+struct DayActionTests {
+    @Test func theStagesAreStudyKeepGoingAndLearnTenNewWords() {
+        func key(_ action: DayAction) -> String? {
+            Mirror(reflecting: action.title).children.first { $0.label == "key" }?.value as? String
+        }
+        #expect(key(.study) == "Study")
+        #expect(key(.catchUp) == "Keep Going")
+        #expect(key(.pushOn) == "Learn 10 New Words")
+    }
+}

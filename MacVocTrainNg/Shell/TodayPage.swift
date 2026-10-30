@@ -4,7 +4,7 @@ import VocabCore
 
 /// The Today page of the Mac's window, from what it is given so a test can draw it: the iPhone's Today card (`TodayCard`: the
 /// ring, Day streak, the next moment, Words learned, the week; a button to Progress) on a ground of its own, centred at a
-/// readable width, with the day's one button under it (`DayAction`: Study, Catch Up or Learn 10 New Words). No large title: the
+/// readable width, with the day's one button under it (`DayAction`: Study, Keep Going or Learn 10 New Words). No large title: the
 /// window's title bar has "Today" and the date. Without a deck, the empty card and the ways to get one.
 struct TodayPageContent: View {
     var hasDecks: Bool
@@ -48,7 +48,7 @@ struct TodayPageContent: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
-        .tint(action == .study ? Color.appAccent : .secondary)
+        .tint(Color.appAccent)
         .controlSize(.extraLarge)
         .keyboardShortcut(.defaultAction)
         .disabled(!canStudy)
@@ -118,7 +118,7 @@ struct TodayPage: View {
             ToolbarItem(placement: .primaryAction) {
                 Button(shell.dayAction.title) { shell.study(.day) }
                     .buttonStyle(.borderedProminent)
-                    .tint(shell.dayAction == .study ? Color.appAccent : .secondary)
+                    .tint(Color.appAccent)
                     .disabled(!shell.canStudyDay)
                     .help("Study today's plan")
             }
