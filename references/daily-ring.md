@@ -186,7 +186,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `ProgressRing.maxLaps`; `DailyRing.fraction` itself stays capped at 1 and says whether the goal is met). Done cards
   beyond the goal (Catch Up, Study These Now, Learn 10 New Words) count as cards done and draw the laps. A past day's ring is drawn
   the same way from `DayRecord.ringShare`: its share of its goal, a closed day at least full and up to 3 laps, a day
-  with none done an empty track. `DailyProgress.weekRings` (seven days, today last) feeds the week's rings on Today and
+  with none done a `MissedDayMark`. `DailyProgress.weekRings` (seven days, today last) feeds the week's rings on Today and
   on the rests, and the Progress calendar draws the same share.
 - **The ring holds nothing**: a picture of done over goal and its laps, at every size. The `StreakState` of the day
   (`DailyProgress.streakState`) has three values: `open` (today's streak step not done), `kept` (done) and `atRisk` (the day

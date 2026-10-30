@@ -101,6 +101,7 @@ struct GesturePracticeView: View {
                                 .frame(maxWidth: .infinity, minHeight: 36)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.appAccent)
                         .controlSize(.large)
                     }
                     .transition(.opacity)

@@ -172,15 +172,15 @@ struct AddCardsSheet: View {
     @ViewBuilder
     private var oneCard: some View {
         Section {
-            TextField("Question", text: $question)
+            TextField("Question", text: $question, prompt: .prompt("Question"))
                 .focused($focus, equals: .question)
                 .submitLabel(.next)
                 .onSubmit { focus = .answer }
-            TextField("Answer", text: $answer)
+            TextField("Answer", text: $answer, prompt: .prompt("Answer"))
                 .focused($focus, equals: .answer)
                 .submitLabel(.next)
                 .onSubmit { focus = .hint }
-            TextField("Hint", text: $hint, prompt: Text("Hint (optional)"))
+            TextField("Hint", text: $hint, prompt: .prompt("Hint (optional)"))
                 .focused($focus, equals: .hint)
                 .submitLabel(.done)
                 .onSubmit(addOne)
@@ -240,7 +240,7 @@ struct AddCardsSheet: View {
                 .overlay(alignment: .topLeading) {
                     if listText.isEmpty {
                         Text(verbatim: "κλέβω = to steal\nη κλοπή = theft\nο κλέφτης = thief")
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.secondary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 8)
                             .allowsHitTesting(false)
@@ -319,6 +319,7 @@ struct AddCardsSheet: View {
         if studyable.isEmpty {
             add
                 .buttonStyle(.glassProminent)
+                .tint(Color.appAccent)
                 .controlSize(.large)
                 .padding(.horizontal, Spacing.margin)
                 .padding(.bottom, Spacing.tight)
@@ -347,11 +348,11 @@ struct AddCardsSheet: View {
     @ViewBuilder
     private func pair(add: some View, study: some View, canAdd: Bool) -> some View {
         if canAdd {
-            add.buttonStyle(.glassProminent)
+            add.buttonStyle(.glassProminent).tint(Color.appAccent)
             study.buttonStyle(.glass)
         } else {
             add.buttonStyle(.glass)
-            study.buttonStyle(.glassProminent)
+            study.buttonStyle(.glassProminent).tint(Color.appAccent)
         }
     }
 

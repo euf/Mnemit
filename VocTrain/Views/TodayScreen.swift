@@ -133,6 +133,7 @@ struct TodayScreen: View {
                         Text("New Deck").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.appAccent)
                     Button(action: showAnkiWeb) {
                         Text("Shared Decks").frame(maxWidth: .infinity)
                     }
@@ -203,6 +204,7 @@ struct TodayScreen: View {
             stage == .pushOn ? pushOn() : study(.all)
         } label: {
             Text(stage.title)
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 // The bar sizes its items to their content: the button takes the width the search button and its gap leave
@@ -210,7 +212,7 @@ struct TodayScreen: View {
                 .containerRelativeFrame(.horizontal) { width, _ in max(180, width - 80) }
         }
         .buttonStyle(.borderedProminent)
-        .tint(stage == .study ? nil : Color.secondary)
+        .tint(Color.appAccent)
         .disabled(TodayDecks(decks, paused: paused).active.isEmpty)
         .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
     }

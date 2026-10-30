@@ -51,6 +51,7 @@ struct LeechMomentView: View {
                 label("Continue", key: "↩")
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color.appAccent)
             #if os(macOS)
             .keyboardShortcut(.defaultAction)
             #endif

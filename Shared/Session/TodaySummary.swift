@@ -46,7 +46,7 @@ struct TodayFigures: View {
     /// The next moment, its minutes unbroken; without a price its words.
     private var moment: some View {
         let moment = step.moment
-        return Figure(label: Text(verbatim: moment.label), value: Text(verbatim: NextStep.unbroken(moment.value)), tint: .appAccent, size: size, accentable: accentable)
+        return Figure(label: Text(verbatim: moment.label), value: Text(verbatim: NextStep.unbroken(moment.value)), tint: .appAccentText, size: size, accentable: accentable)
     }
 
     private func learned(_ words: Int) -> some View {

@@ -83,6 +83,7 @@ private struct WelcomeStep: View {
                     .frame(maxWidth: .infinity, minHeight: 36)
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color.appAccent)
             .controlSize(.large)
         }
         .padding(20)
@@ -140,6 +141,7 @@ private struct DayStep: View {
                     .frame(maxWidth: .infinity, minHeight: 36)
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color.appAccent)
             .controlSize(.large)
             .padding(.top, 16)
         }
@@ -206,6 +208,7 @@ private struct SyncStep: View {
                             .frame(maxWidth: .infinity, minHeight: 36)
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.appAccent)
                     Button("Choose Another Folder…") { isChoosing = true }
                 } else {
                     VStack(spacing: 6) {
@@ -216,6 +219,7 @@ private struct SyncStep: View {
                                 .frame(maxWidth: .infinity, minHeight: 36)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.appAccent)
                         Text("Pick or create a folder named Mnemit.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -345,6 +349,7 @@ private struct ReminderStep: View {
                         .frame(maxWidth: .infinity, minHeight: 36)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.appAccent)
                 .disabled(isAsking)
                 // Leaves the reminder as it is: off at the first launch, and when the
                 // introduction comes back from the menu, as the learner set it.
