@@ -134,7 +134,7 @@ sizes: `design-spec.md` §4.
   moment of the day beside it (no streak: the rests show it) ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done); after a done card, for 1.5 s, its
   interval ("tomorrow", "in 8 days") takes the text's place. Then an Undo button and the menu "More". A practice names itself
   and has no ring. Closing loses nothing: every grade is saved, and Today picks up the count.
-- The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card, Card Info, Suspend Card, a
+- The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card (the keyboard opens in the answer; on the Mac ⌘E, shown on the item and in the cheat sheet), Card Info, Suspend Card, a
   divider, Pronounce Automatically (where the device has a Greek voice). The iPhone adds Undo above them,
   which is also its own button. The items are disabled at a rest, never hidden.
 - **The answer buttons** appear with the answer: two wide buttons side by side, as tall as the two rows the four once took,
@@ -313,11 +313,12 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 ## Add Cards, New Deck, Import, Export (iPhone)
 
 - **Add Cards** (sheet), two modes in a segmented control, opened on the mode used last
-  (`AddCardsMode`). One Card: Question, Answer, Hint, "Both directions" toggle; **Add** keeps the sheet open
-  for the next card and shows the badge "Added · N cards so far"; **Done** adds what is typed and closes;
+  (`AddCardsMode`) with the keyboard up in it (the Question field, or the list's editor), and the deck the words go to named
+  under the title. One Card: Question, Answer, Hint, "Both directions" toggle; **Add** keeps the sheet open
+  for the next card and shows the badge "Added · N words so far" (a word is a line of the list, or one card or pair); **Done** adds what is typed and closes;
   Cancel asks before discarding typed text. From a List: paste lines `word = translation`, a live preview of
   the cards, a row per word with a tick (duplicates, and words another deck holds, unchecked; a tap
-  switches), Add N Cards. An addition is one undo step ("Add Cards"); the list's words the deck holds but hasn't
+  switches), Add N Words (the checked rows). An addition is one undo step ("Add Cards"); the list's words the deck holds but hasn't
   started join it (`WordListPreview.renewable(in:)`), so the lesson goes first among the new cards. Once cards are added the bottom bar holds Add and **Study These Now**
   side by side (one under the other at large text sizes): while something is typed that can be added Add is the prominent
   button, with nothing left to add Study These Now is; it adds what is typed too, closes the sheet and starts the stream
@@ -325,7 +326,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   new, unlocked, not buried; the Meaning → Word card of a word waits until its Word → Meaning card has an interval of 7 days). From Today (`AddCardsHost`) the stream starts
   after the sheet has gone and the deck is saved and closed; from the deck screen the sheet's `onDismiss` starts it on the open
   deck. The sheet is the Mac's too
-  (`WordList.swift`, `LimitStepper.swift` in `Shared/Support` hold what the two share). On the Mac **Study These Now**
+  (`WordList.swift` in `Shared/Support` holds what the two share). On the Mac **Study These Now**
   sits between Add and Done once cards are added, and Done stays the default button (Return): the iPhone's "prominent while
   nothing is left to add" has no counterpart. It adds what is typed, closes the sheet and the deck page starts the stream
   over that deck with the added cards first (`Shell.study(.deck(url), entry: .studyNow(ids))`, from the sheet's `onDismiss`).

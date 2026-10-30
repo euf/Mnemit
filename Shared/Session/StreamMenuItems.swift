@@ -15,6 +15,7 @@ struct StreamMenuItems: View {
 
     var body: some View {
         Button("Edit Card", systemImage: "pencil", action: onEdit)
+            .keyboardShortcut("e", modifiers: .command)
             .disabled(!hasCard)
         Button("Card Info", systemImage: "info.circle", action: onInfo)
             .disabled(!hasCard)

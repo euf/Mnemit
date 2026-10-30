@@ -236,7 +236,7 @@ struct SessionView: View {
                 .help("More")
             }
         }
-        // ⌘E edits the card from anywhere in the stream; the menu item shows no key of its own.
+        // ⌘E edits the card from anywhere in the stream, with the menu closed too; the menu item shows the key.
         .background {
             Button("Edit Card", action: editCurrentCard)
                 .keyboardShortcut("e", modifiers: .command)

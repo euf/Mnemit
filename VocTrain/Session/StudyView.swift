@@ -144,10 +144,10 @@ struct StudyView: View {
             CardInfoSheet(document: model.document, card: card)
         }
         .sheet(item: $editing) { card in
-            EditCardSheet(document: model.document, card: card)
+            EditCardSheet(document: model.document, card: card, focusesAnswer: true)
         }
         .sheet(item: $editingLeech) { card in
-            EditCardSheet(document: model.leechMoment?.document ?? model.document, card: card, onSave: continueLeech)
+            EditCardSheet(document: model.leechMoment?.document ?? model.document, card: card, focusesAnswer: true, onSave: continueLeech)
         }
         // After the card has flown out: the question changes when the grade is given. The
         // speech waits until the new card has settled.
