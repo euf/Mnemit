@@ -158,16 +158,22 @@ struct AddCardsView: View {
     @ViewBuilder
     private var oneCard: some View {
         Section {
-            TextField("Question", text: $question)
-                .focused($focus, equals: .question)
-                .onSubmit { focus = .answer }
-            TextField("Answer", text: $answer)
-                .focused($focus, equals: .answer)
-                .onSubmit { focus = .hint }
-            TextField("Hint", text: $hint, prompt: Text("Hint (optional)"))
-                .focused($focus, equals: .hint)
-                .onSubmit { submitRequests += 1 }
-                .onChange(of: submitRequests) { addOne() }
+            labelled("Question") {
+                TextField("Question", text: $question)
+                    .focused($focus, equals: .question)
+                    .onSubmit { focus = .answer }
+            }
+            labelled("Answer") {
+                TextField("Answer", text: $answer)
+                    .focused($focus, equals: .answer)
+                    .onSubmit { focus = .hint }
+            }
+            labelled("Hint") {
+                TextField("Hint", text: $hint, prompt: Text("Hint (optional)"))
+                    .focused($focus, equals: .hint)
+                    .onSubmit { submitRequests += 1 }
+                    .onChange(of: submitRequests) { addOne() }
+            }
         } footer: {
             let duplicate = document.deck.cards(withQuestion: question).first
             let hit = otherDeckHit
@@ -204,6 +210,19 @@ struct AddCardsView: View {
             Toggle("Both directions", isOn: $bothDirections)
         } footer: {
             Text("Adds a card that asks the other way round, once you know the first.")
+        }
+    }
+
+    /// A label column and the field beside it, text starting at the left: a grouped Form lines the text of a
+    /// labelled field up at the trailing edge, which on a 600 pt sheet puts it a window's width from its label.
+    private func labelled(_ title: LocalizedStringKey, @ViewBuilder field: () -> some View) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(title)
+                .frame(width: 96, alignment: .leading)
+                .accessibilityHidden(true)
+            field()
+                .labelsHidden()
+                .multilineTextAlignment(.leading)
         }
     }
 
