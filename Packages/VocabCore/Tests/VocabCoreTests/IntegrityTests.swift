@@ -64,7 +64,7 @@ struct IntegrityTests {
     @Test func undoneGradeStaysUndoneAfterMergeWithOtherDevicesCopy() throws {
         var mac = try baseDeck()
         let undoGrade = review(&mac, dom.id, .again, at: day(2))
-        let phone = mac // the phone read the saved version with the grade
+        let phone = mac  // the phone read the saved version with the grade
         _ = mac.apply(undoGrade, at: day(2).addingTimeInterval(30), calendar: calendar)
         #expect(mac.card(withID: dom.id)!.log.count == 2)
         let merged = merging(phone, into: mac, at: day(2).addingTimeInterval(60))
