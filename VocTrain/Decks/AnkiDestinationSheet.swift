@@ -82,7 +82,7 @@ struct AnkiDestinationSheet: View {
                     .textCase(nil)
             }
             if !decks.isEmpty {
-                Section("Decks") {
+                Section {
                     ForEach(decks) { deck in
                         Button {
                             choose(file, .existing(deck))
@@ -96,6 +96,10 @@ struct AnkiDestinationSheet: View {
                         }
                         .tint(.primary)
                     }
+                } header: {
+                    Text("Decks")
+                } footer: {
+                    Text("The next step lists the cards and marks those the deck already has.")
                 }
             }
         }

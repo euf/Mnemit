@@ -53,6 +53,7 @@ struct MonthRecapSheet: View {
         NavigationStack {
             List {
                 Section {
+                    LabeledContent("Days studied") { Text(recap.daysStudied, format: .number) }
                     LabeledContent("Rings closed") { Text("\(recap.ringsClosed) of \(recap.daysStudied) days") }
                     LabeledContent("Cards done") { Text(recap.cardsDone, format: .number) }
                     LabeledContent("Best streak") { Text(verbatim: bestStreak) }
@@ -72,8 +73,8 @@ struct MonthRecapSheet: View {
             .groupedList()
             .navigationTitle(Text(verbatim: name))
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", action: done)
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .close, action: done)
                 }
             }
             .safeAreaBar(edge: .bottom) {

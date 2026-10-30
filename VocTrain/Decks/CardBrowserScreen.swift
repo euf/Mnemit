@@ -74,6 +74,8 @@ struct CardBrowserScreen: View {
             }
         }
         .navigationTitle(title)
+        // The sort menu is one glyph for every order; the bar says which one is on.
+        .navigationSubtitle(Text("Sorted by \(sort.title)"))
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $query, prompt: Text("Search Cards"))
         // The rows end in a hard edge above the search pill and the bar of a selection: the glass over them is clear, and a row's
@@ -277,6 +279,12 @@ struct FilterBar: View {
                 .padding(.vertical, Spacing.tight)
             }
             .scrollClipDisabled()
+            // The chips run past the right edge, and the last one fades out there to say there are more.
+            .mask(
+                LinearGradient(
+                    stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.95), .init(color: .clear, location: 1)],
+                    startPoint: .leading, endPoint: .trailing)
+            )
             // The chosen chip is in view when the screen opens with it chosen too.
             .onChange(of: selection, initial: true) {
                 withAnimation { proxy.scrollTo(selection, anchor: .center) }

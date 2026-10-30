@@ -75,7 +75,7 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
 - A Mnemit folder that can't be reached (signed out of iCloud, the folder gone) is kept, not forgotten: Today shows the card
   "The Mnemit folder can't be reached" with **Choose Folder Again** (`LostFolderCard`, `KnownDecks.folderLost`); a refresh
   reads the folder again once it is back, and New Deck waits.
-- **Paused** section at the bottom, only when a deck is paused (Pausing a deck).
+- **Paused** section at the bottom, only when a deck is paused (Pausing a deck), with the footer "A paused deck is left out of today's plan. Swipe it to resume."
 - Toolbar, trailing: the **+** menu: Add Cards (into the last used deck, `KnownDecks.last`: studied or added
   to), Import… (into the deck used last), Shared Decks on AnkiWeb, New Deck (into the deck folder; without
   one, into the app's Documents). The **…** menu: Choose Mnemit Folder…, Open Deck…, Settings.
@@ -293,7 +293,8 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 - iPhone: a `List` with `.searchable` and the filter row; sort menu `BrowserSort`: Due, Added, A–Z,
   Difficulty, Lapses (most first, new cards last); the logic is in `CardBrowserList`, without a screen and with tests. Row: question
   (primary), answer (secondary), trailing state (relative due date / New / Suspended / Leech: a suspended leech says
-  Suspended, a leech back in rotation says Leech in place of its date).
+  Suspended, a leech back in rotation says Leech in place of its date). The bar's subtitle names the sort ("Sorted by Due"); the
+  filter chips fade out at the right edge.
   Swipe: trailing Delete, Suspend/Resume; context menu: Edit, Speak, Suspend/Resume, Reset Progress,
   Delete. Edit mode: multi-select, then Suspend, Resume, Reset or Delete. Tap pushes Card Detail.
 - Mac: a segmented control `ScopeBar` above the table with a count in each segment (`searchScopes` on the Mac live only during a search, and the filters must always be
@@ -316,7 +317,8 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   sides large, speaker beside the Greek. A Direction row (Word → Meaning / Meaning → Word, `CardKind.title`)
   with the card of the same word the other way round as a link, and "Also in <deck>" when another deck holds
   the word. Memory: one line (`CardMemoryLine`), a dot in the step's colour and the step with when the card
-  returns, "Young · next review in 3 days", "Shaky · due now", "New" (the steps: `MaturityCategory.cardTitle`);
+  returns, "Young · next review in 3 days", "Shaky · due now", "Young · suspended" (no session asks it), "New" (the steps: `MaturityCategory.cardTitle`),
+  and under it what the step means ("Remembered for 4 to 16 days", `MaturityCategory.explanation`; none for New);
   then notes for a suspended card or a leech ("Leech: you keep forgetting this card."; the Mac inspector says it too); then a collapsed **Details**: State, Stability, Difficulty,
   Recall Now, Reviews, Lapses and the Word Key (the Mac also Last Review). History: each review with date and
   the grade's colour and arrow, "Typed" on a typed review of an upstream deck. Toolbar **Edit**; actions:

@@ -78,6 +78,16 @@ struct DeckContent: View {
     /// Whether Add Cards came up by itself for this screen's empty deck, once.
     @State private var offeredAddCards = false
 
+    private func waitingRow(_ title: LocalizedStringKey, symbol: String) -> some View {
+        HStack {
+            RowLabel(title: title, symbol: symbol)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+    }
+
     var body: some View {
         List {
             if let failure {
@@ -95,6 +105,14 @@ struct DeckContent: View {
                 Section {
                     DeckTodayCard(headline: headline, counts: knownCounts, pace: pace, isPaused: false, now: Date())
                 }
+                // The rows the document brings, held in their places so the screen does not re-flow when it is read.
+                Section {
+                    waitingRow("Cards", symbol: "rectangle.stack")
+                    waitingRow("Statistics", symbol: "chart.bar")
+                    waitingRow("Options", symbol: "slider.horizontal.3")
+                }
+                .disabled(true)
+                .accessibilityHidden(true)
             }
         }
         .listStyle(.insetGrouped)

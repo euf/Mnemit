@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// The sheet "How It Works": the figures under the ring and the rounds (`HowTodayWorksView`), with a
-/// Done button; a spinner while `content` is `nil`.
+/// Close button like the other sheets that only read; a spinner while `content` is `nil`.
 struct HowTodayWorksSheet: View {
     var content: HowTodayWorks?
     var done: () -> Void
@@ -12,8 +12,8 @@ struct HowTodayWorksSheet: View {
             HowTodayWorksView(content: content)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done", action: done)
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(role: .close, action: done)
                     }
                 }
         }

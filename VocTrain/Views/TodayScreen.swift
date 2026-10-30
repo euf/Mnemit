@@ -206,7 +206,7 @@ struct TodayScreen: View {
                 }
             }
             if !sections.paused.isEmpty {
-                Section("Paused") {
+                Section {
                     ForEach(sections.paused) { deck in
                         DeckRow(name: deck.name, counts: nil, isPaused: true) { showDeck(deck) }
                             .swipeActions(allowsFullSwipe: !canForget(deck)) {
@@ -215,6 +215,10 @@ struct TodayScreen: View {
                             }
                             .contextMenu { pauseButton(deck, pausing: false) }
                     }
+                } header: {
+                    Text("Paused")
+                } footer: {
+                    Text("A paused deck is left out of today's plan. Swipe it to resume.")
                 }
             }
         }
