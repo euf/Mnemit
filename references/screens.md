@@ -234,7 +234,7 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
   step, Forgot starts it over, Easy finishes at once). The FSRS parameters (they start from averages, are fitted to the
   learner's reviews, give fewer reviews for the same recall, and keep the due dates). The refit schedule, read from
   `ParameterRefit`: the first fit at 400 reviews, again at 1,500, then every 30 days or after 1,000 more; a new fit is kept
-  only if it predicts the latest reviews better.
+  only if it predicts the latest reviews clearly better, on the reviews of all decks together.
 - **FSRS**, one section per deck: desired retention, default or fitted parameters with the 21 values
   (monospaced, four decimals, wrapped), the last automatic fit, learning steps, maximum interval.
 - Code: `HowTodayWorks` (the rows) and `HowTodayWorksView` in `Shared/Statistics`; `DayBreakdown` in

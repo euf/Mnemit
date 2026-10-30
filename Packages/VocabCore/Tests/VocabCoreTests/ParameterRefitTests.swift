@@ -13,7 +13,7 @@ struct ParameterRefitTests {
 
     /// A learner who forgets fast and along a steep curve. Next to the defaults the fit gains
     /// about 4 % of log loss on its reviews; `SyntheticLearner.unusual` gains less than 1 %, which
-    /// is still kept: any gain on the holdout counts.
+    /// is still kept: its 3,600 reviews leave a holdout whose noise it beats.
     static let forgetful: FSRSParameters = {
         var w = SyntheticLearner.unusual.weights
         w[0] = 0.1
@@ -88,20 +88,46 @@ struct ParameterRefitTests {
 
     // MARK: - Keeping the fit
 
-    func comparison(current: Double, computed: Double) -> FSRSOptimizer.Comparison {
+    func comparison(current: Double, computed: Double, standardError: Double = 0) -> FSRSOptimizer.Comparison {
         FSRSOptimizer.Comparison(
             parameters: .default,
             current: .init(logLoss: current, rmse: 0.05),
-            computed: .init(logLoss: computed, rmse: 0.05))
+            computed: .init(logLoss: computed, rmse: 0.05),
+            standardError: standardError)
     }
 
-    @Test func aFitIsKeptWhenLowerOnTheHoldout() {
-        #expect(ParameterRefit.requiredImprovement == 0)
+    /// Without a measured noise any gain counts; with it the gain must exceed one and a half standard errors.
+    @Test func aFitIsKeptWhenItBeatsTheNoiseOfTheComparison() {
+        #expect(ParameterRefit.requiredStandardErrors == 1.5)
         #expect(ParameterRefit.keeps(comparison(current: 0.5, computed: 0.4999)))
         #expect(ParameterRefit.keeps(comparison(current: 0.5, computed: 0.3)))
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.5)))
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.52)))
         #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: .nan)))
+        // A gain of 0.004 with a noise of 0.007, the size of the first fit's holdout: not kept.
+        #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.496, standardError: 0.007)))
+        #expect(!ParameterRefit.keeps(comparison(current: 0.5, computed: 0.490, standardError: 0.007)))
+        #expect(ParameterRefit.keeps(comparison(current: 0.5, computed: 0.489, standardError: 0.007)))
+    }
+
+    /// A learner whose parameters are the deck's own, 431 usable reviews: the fit comes out ahead on the 86 newest, by
+    /// less than the noise of the comparison. Across 60 such learners the fit was kept 18 times before the standard-error
+    /// rule, and worse than the defaults on a fresh log 17 of those; with it 3 times, 2 of them worse, by 0.2 % on average.
+    @Test func aFitThatIsNoBetterInTruthIsNotKeptOnNoise() throws {
+        var learner = SyntheticLearner(parameters: .default, seed: 1)
+        let all = learner.histories(cards: 80, days: 250).enumerated().map { $1.card(index: $0, calendar: calendar) }
+        let optimizer = FSRSOptimizer(cards: Array(all.prefix(65)), learningOptions: LearningOptions(), calendar: calendar)
+        #expect(optimizer.reviewCount == 431)
+        let comparison = try optimizer.compareOnNewest(share: ParameterRefit.holdoutShare, with: .default)
+        #expect(comparison.isBetter)
+        #expect(comparison.standardError > 0)
+        #expect(!ParameterRefit.keeps(comparison))
+    }
+
+    @Test func theNoiseOfIdenticalParametersIsZero() {
+        let optimizer = FSRSOptimizer(cards: cards(), learningOptions: LearningOptions(), calendar: calendar)
+        #expect(optimizer.standardError(ofLossDifference: .default, .default) == 0)
+        #expect(optimizer.standardError(ofLossDifference: .default, Self.forgetful) > 0)
     }
 
     // MARK: - The holdout
@@ -169,6 +195,21 @@ struct ParameterRefitTests {
         let kept = second.applied(to: options)
         #expect(kept.parameters == fitted)
         #expect(kept.lastAutoFit == second.fit)
+    }
+
+    /// Parameters set by hand (an Anki preset, "Use New Parameters") are left alone; the defaults, and parameters an
+    /// automatic fit made, are fitted again.
+    @Test func aDeckWithParametersOfItsOwnIsNotFitted() throws {
+        let cards = cards()
+        var options = LearningOptions()
+        #expect(!ParameterRefit.hasOwnParameters(options))
+        options.parameters = SyntheticLearner.unusual
+        #expect(ParameterRefit.hasOwnParameters(options))
+        #expect(try ParameterRefit.fit(cards: cards, options: options, calendar: calendar, now: now) == nil)
+        options.lastAutoFit = fit(daysAgo: 40, count: 400, adopted: true)
+        #expect(!ParameterRefit.hasOwnParameters(options))
+        options.lastAutoFit = fit(daysAgo: 40, count: 400, adopted: false)
+        #expect(ParameterRefit.hasOwnParameters(options))
     }
 
     @Test func theDateOfAFitIsInWholeSeconds() throws {

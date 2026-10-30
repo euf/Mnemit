@@ -91,13 +91,20 @@ day's stack (Study), Learn 10 New Words and the practices. Terms: `GLOSSARY.md`;
 ## Automatic FSRS refit
 
 - `ParameterRefit` in VocabCore, `ParameterRefitter` in `Shared/Document`.
-- When: the first fit once the deck has `FSRSOptimizer.minimumReviewCount` (400) usable reviews, the
-  second at 1,500, then at most once in 30 days or after 1,000 new reviews, whichever comes first. A
-  deck that arrives with a long log is fitted once right away.
+- The memory model is the learner's: the log a deck is fitted on is the usable reviews of all the decks in the folder
+  together (the caller passes their cards), and every deck whose parameters are not its own gets the fit. Parameters
+  are a deck's own when they are not the defaults and no automatic fit made them (`ParameterRefit.hasOwnParameters`: an
+  Anki preset, "Use New Parameters" on the options screen, which clears `lastAutoFit`); such a deck is left as it is,
+  its reviews still in the others' log, and Reset FSRS Parameters hands it over again.
+- When: the first fit once the folder has `FSRSOptimizer.minimumReviewCount` (400) usable reviews, the
+  second at 1,500, then at most once in 30 days or after 1,000 new reviews, whichever comes first, counted per deck
+  from its own `lastAutoFit`. A deck that arrives with a long log is fitted once right away.
 - The judge is a time holdout: the optimizer learns on the oldest 80 % of reviews, and the current and
   new parameters are scored by log loss on the newest 20 % (`FSRSOptimizer.compareOnNewest`). The new
-  ones stay if their log loss is lower than the current one by any amount (`requiredImprovement` = 0;
-  that constant is the threshold); otherwise the parameters stay and the attempt is recorded.
+  ones stay if their log loss is lower than the current one by more than `ParameterRefit.requiredStandardErrors` (1.5)
+  times the standard error of the difference, review by review (`Comparison.standardError`); otherwise the parameters
+  stay and the attempt is recorded. Of 60 simulated learners with 430 usable reviews and the deck's own parameters as
+  the truth, 18 fits were kept with no margin (17 worse on a fresh log) and 3 with this one.
 - The manual "Optimize" compares over the whole log (`compare(with:)`), and the person
   decides.
 - State in `LearningOptions`: `lastAutoFit` (date, number of usable reviews, accepted or not) and

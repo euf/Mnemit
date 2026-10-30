@@ -29,6 +29,9 @@ public struct FSRSOptimizer: Sendable {
         public var parameters: FSRSParameters
         public var current: Evaluation
         public var computed: Evaluation
+        /// The standard error of `current.logLoss - computed.logLoss`: how far the reviews, each scored by both sets
+        /// of parameters, leave that difference uncertain. 0 where it was not measured.
+        public var standardError = 0.0
 
         /// Whether the fitted parameters predict the reviews better by log loss.
         public var isBetter: Bool { computed.logLoss < current.logLoss }
@@ -132,7 +135,7 @@ public struct FSRSOptimizer: Sendable {
         guard let before = newest.evaluate(current), let after = newest.evaluate(parameters) else {
             throw Error.notEnoughData
         }
-        return Comparison(parameters: parameters, current: before, computed: after)
+        return Comparison(parameters: parameters, current: before, computed: after, standardError: newest.standardError(ofLossDifference: current, parameters))
     }
 
     private static func parameters(_ weights: [Double]) throws -> FSRSParameters {
@@ -252,6 +255,31 @@ public struct FSRSOptimizer: Sendable {
     }
 
     // MARK: - Evaluation
+
+    /// The standard error of the recency-weighted mean of the differences, review by review, between the log loss of
+    /// `current` and that of `computed`: the noise a comparison of the two on these reviews carries.
+    func standardError(ofLossDifference current: FSRSParameters, _ computed: FSRSParameters) -> Double {
+        let before = itemLosses(current)
+        let after = itemLosses(computed)
+        let weights = Self.recencyWeighted(items).map(\.weight)
+        let weightSum = weights.reduce(0, +)
+        guard weightSum > 0 else { return 0 }
+        let differences = zip(before, after).map { $0 - $1 }
+        let mean = zip(weights, differences).reduce(0) { $0 + $1.0 * $1.1 } / weightSum
+        let squares = zip(weights, differences).reduce(0) { $0 + pow($1.0 * ($1.1 - mean), 2) }
+        return squares.squareRoot() / weightSum
+    }
+
+    /// The log loss of each review, in the order of the items.
+    private func itemLosses(_ parameters: FSRSParameters) -> [Double] {
+        let model = FSRSGradient(weights: parameters.weights)
+        let fsrs = FSRS(parameters: parameters)
+        let range = FSRSGradient.minimumProbability...(1 - FSRSGradient.minimumProbability)
+        return items.map { item in
+            let r = fsrs.retrievability(elapsedDays: Double(item.target.elapsedDays), stability: model.stability(before: item)).clamped(to: range)
+            return -(item.target.grade.isRecall ? log(r) : log(1 - r))
+        }
+    }
 
     /// How well `parameters` predict all reviews; `nil` without reviews.
     public func evaluate(_ parameters: FSRSParameters) -> Evaluation? {
