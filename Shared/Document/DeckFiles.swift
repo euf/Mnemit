@@ -19,6 +19,8 @@ enum DeckFiles {
         case invalidName
         /// The folder holds a deck of that name already, of either extension.
         case nameTaken(String)
+        /// The deck holds changes it could not save, so its file is not moved or deleted under them.
+        case unsaved
 
         var errorDescription: String? {
             switch self {
@@ -26,6 +28,8 @@ enum DeckFiles {
                 String(localized: "A deck name can't be empty, start with a dot or contain “/” or “:”.")
             case let .nameTaken(name):
                 String(localized: "A deck named “\(name)” already exists.")
+            case .unsaved:
+                VersionMerger.saveFailure
             }
         }
     }

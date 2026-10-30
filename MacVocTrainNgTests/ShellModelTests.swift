@@ -259,6 +259,29 @@ extension DeckFileTests {
             await f.finish()
         }
 
+        /// A deck whose save failed keeps its changes: the file is neither moved nor trashed under them, the learner is told
+        /// why, and the deck stays open for the next save.
+        @Test func aDeckThatCantSaveIsNeitherRenamedNorDeleted() async throws {
+            let f = try ShellFixture(decks: [("Alpha", 3)])
+            let shell = f.shell
+            shell.select(.deck(f.url("Alpha")))
+            let (deck, _) = try await f.open("Alpha")
+            deck.merger.saves.hasFailed = true
+
+            await #expect(throws: DeckFiles.Failure.unsaved) { try await shell.rename(f.url("Alpha"), to: "Polish") }
+            #expect(FileManager.default.fileExists(atPath: f.url("Alpha").path))
+            #expect(!FileManager.default.fileExists(atPath: f.url("Polish").path))
+            #expect(shell.decks.deck(for: f.url("Alpha")) === deck)
+            #expect(shell.selectedURL == f.url("Alpha"))
+
+            await #expect(throws: DeckFiles.Failure.unsaved) { try await shell.delete(f.url("Alpha")) }
+            #expect(FileManager.default.fileExists(atPath: f.url("Alpha").path))
+            #expect(shell.decks.deck(for: f.url("Alpha")) === deck)
+
+            deck.merger.saves.hasFailed = false
+            await f.finish()
+        }
+
         @Test func deletingTheSelectedDeckMovesItToTheTrashAndShowsToday() async throws {
             let f = try ShellFixture(decks: [("Alpha", 3), ("Beta", 2)])
             let shell = f.shell

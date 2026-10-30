@@ -279,7 +279,11 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 - Study This Deck runs on the screen's deck (`StudyRun(ownsDeck: false)`: the stream doesn't close it;
   after the stream `undoManager.removeAllActions()`, so the browser's Undo doesn't roll back reviews).
 - Rename and Delete close the deck before `DeckFiles.rename`/`trash` and update `KnownDecks`
-  (`replace`, `forget`).
+  (`replace`, `forget`). A deck that can't save stays open with its changes and the file is not moved: both refuse
+  with `DeckFiles.Failure.unsaved`, the text of the deck page's save failure. A run, the Add Cards sheet, the pause
+  and the parameter refit that can't save their deck hand it to `UnsavedDecks`, which keeps it open
+  (the deck retries its save every half minute) until a later `retry()` closes it. `KnownDecks` forgets the bookmark
+  of a deck whose file is gone and keeps one that fails for another reason, trying it again at launch and at `refreshFolder`.
 - Frames: `VocTrainTests/HomeSnapshotTests` (the deck screen too).
 
 ## Card browser
