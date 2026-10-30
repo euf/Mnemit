@@ -17,7 +17,10 @@ import Foundation
 /// them: an older app version would drop the folder, and the media with it, the next time it
 /// saves the deck, so it rejects the deck instead. So did version 6 for `retired` in `deck.json`,
 /// the cards deleted that had reviews (`Deck.retiredCards`), and their lines in `reviews.jsonl`: an
-/// older app version would drop the key and reject the lines of a card it doesn't know.
+/// older app version would drop the key and reject the lines of a card it doesn't know. Version 7 added the lines
+/// of `reviews.jsonl` with `"undone":true`, the reviews the learner took back (`Card.undone`): an older app version
+/// would read them as reviews and bring the taken-back ones back, so it rejects the deck. The app writes every
+/// deck as version 7, so an older app version no longer opens, and drops keys from, a deck of this one.
 ///
 /// `deck.json` is pretty-printed JSON with sorted keys, so it stays readable and
 /// diffs well. Its keys are spelled out by the records at the end of this file and
@@ -80,7 +83,7 @@ public enum DeckFile {
     /// What decks said in `format` before the app moved to the company's identifiers;
     /// still read, never written.
     static let legacyFormats: Set = ["com.mfluch.voctrain.deck"]
-    public static let currentVersion = 6
+    public static let currentVersion = 7
     /// The oldest version this app version reads: 3 and 4 read as decks without media.
     public static let oldestReadableVersion = 3
     public static let deckFileName = "deck.json"
@@ -100,6 +103,9 @@ public enum DeckFile {
         case reviewsOfUnknownCard(line: Int)
         /// The review log of a card is longer than its count of reviews.
         case reviewLogTooLong(question: String)
+        /// The review log of a card stops before its last review, which the card's learning state holds: lines of
+        /// `reviews.jsonl` are missing.
+        case reviewLogTooShort(question: String)
         /// Several cards have the ID of the card with this question.
         case duplicateCardID(question: String)
         /// A weight of the FSRS parameters is outside its range (0-based, as in w0…w20).
@@ -138,9 +144,12 @@ public enum DeckFile {
     /// Reads a package.
     ///
     /// Rejects a review log that doesn't fit the cards, as the app never writes one:
-    /// it is missing although a card was reviewed, has lines of unknown cards, or is
-    /// longer than a card's count of reviews. A shorter one is fine; cards imported
-    /// from MacVocTrain 1 lack the reviews before the import.
+    /// it is missing although a card was reviewed, has lines of unknown cards, is
+    /// longer than a card's count of reviews, or stops before the last review of a card
+    /// (`Card.hasLostReviews`): a torn write or a partial sync, which saving would make permanent.
+    /// A shorter one that ends with the card's last review is fine; cards imported
+    /// from MacVocTrain 1 lack the reviews before the import. A card with reviews and no lines at all
+    /// reads too, as an import not studied since looks the same.
     ///
     /// - Parameters:
     ///   - withMedia: Whether the deck holds the media files of the package, `true` unless the deck
@@ -167,6 +176,9 @@ public enum DeckFile {
         }
         if let card = all.first(where: { $0.log.count > ($0.learningState?.reviews ?? 0) }) {
             throw Error.reviewLogTooLong(question: card.question)
+        }
+        if let card = all.first(where: \.hasLostReviews) {
+            throw Error.reviewLogTooShort(question: card.question)
         }
         deck.cards = Array(all[..<deck.cards.count])
         deck.retiredCards = Array(all[deck.cards.count...])

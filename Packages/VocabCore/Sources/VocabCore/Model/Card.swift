@@ -106,6 +106,26 @@ public struct ReviewLogEntry: Hashable, Sendable {
     }
 }
 
+/// A review as a merge and the review log compare it: at whole seconds, as `reviews.jsonl` stores it.
+struct ReviewKey: Hashable, Comparable, Sendable {
+    var second: Int
+    var grade: Grade
+
+    init(_ entry: ReviewLogEntry) {
+        second = Int(entry.date.timeIntervalSince1970.rounded(.down))
+        grade = entry.grade
+    }
+
+    init(second: Int, grade: Grade) {
+        self.second = second
+        self.grade = grade
+    }
+
+    static func < (lhs: ReviewKey, rhs: ReviewKey) -> Bool {
+        (lhs.second, lhs.grade) < (rhs.second, rhs.grade)
+    }
+}
+
 /// Which direction a card of a note asks: from the foreign word to the native one, or
 /// the other way round.
 public enum CardKind: String, Sendable, CaseIterable {
@@ -147,6 +167,11 @@ public struct Card: Identifiable, Hashable, Sendable {
     public internal(set) var learningState: LearningState?
     /// The review log, oldest first. `FSRSOptimizer` computes parameters from it.
     public internal(set) var log: [ReviewLogEntry]
+    /// The reviews the learner took back with Undo, oldest first, each once. They are not in `log`, which holds the
+    /// reviews that stand and so feeds the schedule, the statistics and the optimizer unchanged. A merge keeps them
+    /// out of the log: without this note, a review one version holds and the other lacks looks the same whether the
+    /// other took it back or has not seen it yet. Reviews before `learningStateReset` drop out of it as out of the log.
+    var undone: [ReviewKey]
     /// When the learner last reset the learning state, in whole seconds; `nil` if never.
     /// A merge leaves out the reviews before it, which the other device may still hold
     /// (#273).
@@ -198,7 +223,8 @@ public struct Card: Identifiable, Hashable, Sendable {
         learningStateReset: Date? = nil,
         isSuspended: Bool = false,
         suspensionChanged: Date? = nil,
-        contentChanged: Date? = nil
+        contentChanged: Date? = nil,
+        undone: [ReviewKey] = []
     ) {
         self.id = id
         self.question = question
@@ -213,6 +239,7 @@ public struct Card: Identifiable, Hashable, Sendable {
         self.created = created
         self.learningState = learningState
         self.log = log
+        self.undone = undone
         self.learningStateReset = learningStateReset
         self.isSuspended = isSuspended
         self.suspensionChanged = suspensionChanged
@@ -236,6 +263,14 @@ public struct Card: Identifiable, Hashable, Sendable {
     /// from MacVocTrain 1 with a learning state lack the reviews before the import.
     public var hasCompleteLog: Bool {
         !log.isEmpty && learningState?.reviews == log.count
+    }
+
+    /// Whether the log has fewer lines than the card has had reviews and stops before the last of them: the
+    /// card's learning state holds a review the log lacks, so lines of `reviews.jsonl` went missing. A log that
+    /// is short because it starts after an import from MacVocTrain 1 ends with the last review.
+    var hasLostReviews: Bool {
+        guard let state = learningState, let last = log.last, log.count < state.reviews else { return false }
+        return ReviewKey(last).second < Int(state.lastReview.timeIntervalSince1970.rounded(.down))
     }
 
     /// Whether the card was new at `start`, say when a study day began: it had no review before.
@@ -324,5 +359,80 @@ public struct Card: Identifiable, Hashable, Sendable {
         learningStateReset = other.learningStateReset
         isSuspended = other.isSuspended
         suspensionChanged = other.suspensionChanged
+    }
+
+    // MARK: - Taking back a review
+
+    /// Takes back `entry`, a review of this card that stands in its log, and keeps a note of it (`undone`), so a
+    /// merge with a version that saw it doesn't bring it back. Only that review goes: the reviews other versions
+    /// added meanwhile stay, and so do a reset and a suspension made since.
+    ///
+    /// - Parameter before: The card as it was before the review. If the log is as it was with the review added,
+    ///   nothing changed since and the card is `before` exactly, fuzz included. Otherwise the log without the
+    ///   review is replayed, or, for a log that doesn't reach back to the first review (`hasCompleteLog`),
+    ///   the count of reviews goes down by one and the learning state stays.
+    mutating func takeBack(_ entry: ReviewLogEntry, before: Card, scheduler: Scheduler) {
+        let key = ReviewKey(entry)
+        undone = (undone.filter { $0 != key } + [key]).sorted()
+        guard let index = log.lastIndex(where: { ReviewKey($0) == key }) else { return }
+        var rest = log
+        rest.remove(at: index)
+        if rest == before.log {
+            learningState = before.learningState
+            log = before.log
+        } else {
+            adopt(rest, scheduler: scheduler)
+        }
+        // The review made the card a leech and suspended it: taking it back resumes the card.
+        if isSuspended, suspensionChanged == Self.wholeSeconds(entry.date) {
+            isSuspended = before.isSuspended
+            suspensionChanged = before.suspensionChanged
+        }
+    }
+
+    /// Puts `entry` back into the log after `takeBack(_:before:scheduler:)` took it, and drops the note of it. If the
+    /// log is as it was after the review, that card, `after`, comes back exactly; else the log with the review
+    /// is replayed, as in `takeBack`.
+    ///
+    /// ponytail: another device that merged the note in takes the review back again at its next merge; a stamp per
+    /// entry would settle that. It takes an Undo, a save the other device read, and a Redo after that.
+    mutating func putBack(_ entry: ReviewLogEntry, after: Card, scheduler: Scheduler) {
+        let key = ReviewKey(entry)
+        undone.removeAll { $0 == key }
+        guard !log.contains(where: { ReviewKey($0) == key }) else { return }
+        var all = log
+        all.insert(entry, at: all.firstIndex { $0.date > entry.date } ?? all.endIndex)
+        if all == after.log {
+            learningState = after.learningState
+            log = after.log
+        } else {
+            adopt(all, scheduler: scheduler)
+        }
+        let suspended = Self.wholeSeconds(entry.date)
+        if after.isSuspended, after.suspensionChanged == suspended, (suspensionChanged ?? .distantPast) <= suspended {
+            isSuspended = true
+            suspensionChanged = suspended
+        }
+    }
+
+    /// Replaces the log by `newLog`, which differs from it by a review, and the learning state with what that
+    /// gives: replayed if the log reaches back to the first review, else counted.
+    private mutating func adopt(_ newLog: [ReviewLogEntry], scheduler: Scheduler) {
+        if hasCompleteLog {
+            let replayed = scheduler.replaying(newLog, of: self)
+            learningState = replayed.learningState
+            log = replayed.log
+        } else {
+            let difference = newLog.count - log.count
+            if var state = learningState {
+                state.reviews = max(0, state.reviews + difference)
+                learningState = state
+            }
+            log = newLog
+        }
+    }
+
+    private static func wholeSeconds(_ date: Date) -> Date {
+        Date(timeIntervalSince1970: date.timeIntervalSince1970.rounded(.down))
     }
 }

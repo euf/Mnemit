@@ -225,6 +225,9 @@ struct LeechTests {
         #expect(StudySession(deck: deck, at: now, calendar: calendar).session.isFinished)
 
         _ = deck.apply(inverse, at: now, calendar: calendar)
+        // The card as it was, but for the note that the review was taken back.
+        #expect(deck.cards[0].undone.count == 1)
+        deck.cards[0].undone = []
         #expect(deck.cards[0] == before)
     }
 
