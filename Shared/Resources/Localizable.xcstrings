@@ -7831,6 +7831,182 @@
         }
       }
     },
+    "Forgotten %lld times and suspended by the deck. Keep Card asks it again.": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Mal vergessen und vom Stapel ausgesetzt. Karte behalten fragt sie wieder ab."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Mal vergessen und vom Stapel ausgesetzt. Karte behalten fragt sie wieder ab."
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Забыто %lld раза, колода приостановила карточку. «Оставить карточку» снова будет её спрашивать."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Забыто %lld раз, колода приостановила карточку. «Оставить карточку» снова будет её спрашивать."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Забыто %lld раз, колода приостановила карточку. «Оставить карточку» снова будет её спрашивать."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Забыто %lld раза, колода приостановила карточку. «Оставить карточку» снова будет её спрашивать."
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ξεχάστηκε %lld φορά και η τράπουλα την έθεσε σε αναστολή. Η διατήρηση κάρτας τη ρωτά ξανά."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ξεχάστηκε %lld φορές και η τράπουλα την έθεσε σε αναστολή. Η διατήρηση κάρτας τη ρωτά ξανά."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forgotten %lld time and suspended by the deck. Keep Card asks it again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forgotten %lld times and suspended by the deck. Keep Card asks it again."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Forgotten %lld times. Suspend it, or keep asking?": {
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Mal vergessen. Aussetzen oder weiter abfragen?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Mal vergessen. Aussetzen oder weiter abfragen?"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Забыто %lld раза. Приостановить или спрашивать дальше?"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Забыто %lld раз. Приостановить или спрашивать дальше?"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Забыто %lld раз. Приостановить или спрашивать дальше?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Забыто %lld раза. Приостановить или спрашивать дальше?"
+                }
+              }
+            }
+          }
+        },
+        "el": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ξεχάστηκε %lld φορά. Αναστολή ή να συνεχίσει να ρωτιέται;"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ξεχάστηκε %lld φορές. Αναστολή ή να συνεχίσει να ρωτιέται;"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forgotten %lld time. Suspend it, or keep asking?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Forgotten %lld times. Suspend it, or keep asking?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Format:": {
       "localizations": {
         "de": {
