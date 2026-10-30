@@ -63,8 +63,8 @@ Read the file for the area you work on.
 
 ## Commands
 
-The active developer dir may be the Command Line Tools; prefix with
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` if needed.
+Xcode is `/Applications/Xcode-27.1.0.app` and `xcode-select -p` points at it; if it shows the Command Line
+Tools, prefix with `DEVELOPER_DIR=/Applications/Xcode-27.1.0.app/Contents/Developer`.
 
 - Core tests: `cd Packages/VocabCore && swift test`
 - App build + all tests: `xcodebuild -project MacVocTrainNg.xcodeproj -scheme MacVocTrainNg test`
@@ -72,8 +72,8 @@ The active developer dir may be the Command Line Tools; prefix with
 - Lint: `xcrun swift-format lint --strict -r MacVocTrainNg MacVocTrainNgTests VocTrain VocTrainTests Shared Packages/VocabCore/Sources Packages/VocabCore/Tests Packages/VocabCore/Package.swift Tools`
   (config in `.swift-format`); `format -i` instead of `lint --strict` fixes the layout.
   Name the paths: `build/` and `.build/` contain generated Swift files.
-- Translations: `swift Tools/check-localizations.swift` after the builds of both apps
-  with `-derivedDataPath build/DerivedData`.
+- Translations: `swift Tools/check-localizations.swift [DerivedData]` after the builds of both apps
+  into that DerivedData (default `build/DerivedData`; a stale one reports keys that are gone).
 - CI: `.github/workflows/ci.yml`; its header comment lists what the job `test` checks.
 - Signing: `Config/Signing.xcconfig` signs ad hoc, `Config/Signing-iOS.xcconfig` signs
   the iPhone app automatically; the untracked `Config/Signing.local.xcconfig` sets the
