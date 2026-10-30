@@ -563,8 +563,9 @@ struct MaturityLabel: View {
 }
 
 /// Where a card stands, as one line in the colour of its step on the ladder of memory: "Young · next review in
-/// 3 days", "Shaky · due now", "New". The colour is a dot, as in the ladder's legend on Progress: the step's
-/// words stay in the text colour, since the palest steps are no colour for text. Card Detail and the Mac inspector
+/// 3 days", "Shaky · due now", "Young · suspended", "New". The colour is a dot, as in the ladder's legend on Progress: the
+/// step's words stay in the text colour, since the palest steps are no colour for text. Under it what the step means,
+/// "Remembered for 4 to 16 days": a step's name alone ("Young") reads as an age. Card Detail and the Mac inspector
 /// show it; stability, difficulty and the other figures go under their Details.
 struct CardMemoryLine: View {
     var card: Card
@@ -574,19 +575,28 @@ struct CardMemoryLine: View {
     static func text(of card: Card, now: Date) -> String {
         let step = MaturityCategory(card: card).cardTitle
         guard let due = card.learningState?.due else { return step }
+        // No session asks a suspended card: "due now" would promise one.
+        if card.isSuspended { return String(localized: "\(step) · suspended") }
         if due <= now { return String(localized: "\(step) · due now") }
         return String(localized: "\(step) · next review \(Format.due(due, now: now))")
     }
 
     var body: some View {
         let step = MaturityCategory(card: card)
-        HStack(spacing: Spacing.tight) {
-            Circle()
-                .fill(step.color)
-                .overlay { Circle().strokeBorder(Color.primary.opacity(0.3), lineWidth: 1) }
-                .frame(width: 10, height: 10)
-                .accessibilityHidden(true)
-            Text(verbatim: Self.text(of: card, now: now))
+        VStack(alignment: .leading, spacing: Spacing.hairline) {
+            HStack(spacing: Spacing.tight) {
+                Circle()
+                    .fill(step.color)
+                    .overlay { Circle().strokeBorder(Color.primary.opacity(0.3), lineWidth: 1) }
+                    .frame(width: 10, height: 10)
+                    .accessibilityHidden(true)
+                Text(verbatim: Self.text(of: card, now: now))
+            }
+            if step != .new {
+                Text(step.explanation)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
         .help(step.explanation)
     }
@@ -699,6 +709,11 @@ extension Color {
     /// a medal not yet earned. Neutral grey, so it never reads as progress, and 3:1 or more on the card and on black
     /// (3.45 on `#1C1C1E` in dark, 3.2 on the grouped grey in light), as a graphic needs.
     static let inactiveMark = Color(light: 0x87878B, dark: 0x707074)
+
+    /// The words under a medal not yet earned, what earns it: 4.5:1 or more on every surface of a screen (5.1 on the grouped
+    /// grey in light, where the system's secondary grey is 3.3:1 on white). The disc beside it stays the dashed `inactiveMark`,
+    /// so the medal reads as not earned and its rule reads at all.
+    static let lockedText = Color(light: 0x66666A, dark: 0x98989F)
 
     /// The daily ring: the app's accent, indigo `#5856D6` (`AccentColor` holds it as sRGB, with
     /// high-contrast variants `#3634A3` light and `#6563E6` dark).

@@ -327,6 +327,22 @@ extension AccentContrastTests {
         print(lines.joined(separator: "\n"))
     }
 
+    /// The words of a medal not yet earned (`Color.lockedText`) hold 4.5:1 on the surfaces of a screen, in grey.
+    @Test func theLockedMedalTextHoldsFourAndAHalfToOneOnEveryScreenSurface() {
+        for appearance in Self.appearances {
+            let traits = Self.traits(appearance)
+            let text = UIColor(Color.lockedText)
+            let luminance = Self.luminance(text, in: traits)
+            for surface in Self.surfaces {
+                let ratio = Self.contrast(luminance, Self.luminance(surface.color, in: traits))
+                #expect(ratio >= 4.5, "locked medal text on \(surface.name), \(appearance.name): \(String(format: "%.2f", ratio))")
+            }
+            var saturation = CGFloat(0)
+            text.resolvedColor(with: traits).getHue(nil, saturation: &saturation, brightness: nil, alpha: nil)
+            #expect(saturation < 0.08, "grey, \(appearance.name)")
+        }
+    }
+
     /// The maturity ramp is one ordinal hue (278°, lightness steps of 0.085 or more in one direction), and in dark its
     /// lowest step stays off the card (2.4:1 on `#1C1C1E`; the former step was 1.9:1) and New, the grey outside it, holds 3:1.
     @Test func theMaturityRampStaysOneOrdinalHueAndItsLowestStepStaysOffTheCard() throws {

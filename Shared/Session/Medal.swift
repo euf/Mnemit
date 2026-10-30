@@ -65,13 +65,13 @@ struct Medal: View {
             MedalDisc(kind: kind, isEarned: isEarned, count: count, size: size)
             Text(verbatim: kind.title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(isEarned ? .primary : .secondary)
+                .foregroundStyle(isEarned ? AnyShapeStyle(.primary) : AnyShapeStyle(Color.lockedText))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
             if let caption {
                 Text(verbatim: caption)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isEarned ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.lockedText))
                     .monospacedDigit()
                     // A grey medal tells what earns it, a sentence of its own.
                     .multilineTextAlignment(.center)

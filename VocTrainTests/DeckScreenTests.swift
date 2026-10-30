@@ -54,8 +54,8 @@ struct DeckScreenTests {
         let house = CardMemoryLine.text(of: sample.house, now: now)
         #expect(house == "Young · next review \(Format.due(sample.house.learningState!.due, now: now))")
         #expect(house.hasPrefix("Young · next review "))
-        // Overdue says so, a card not studied yet is New.
-        #expect(CardMemoryLine.text(of: sample.suspended, now: now) == "Young · due now")
+        // Overdue says so, a suspended card is not "due now" (no session asks it), a card not studied yet is New.
+        #expect(CardMemoryLine.text(of: sample.suspended, now: now) == "Young · suspended")
         #expect(CardMemoryLine.text(of: sample.leech, now: now) == "Shaky · due now")
         #expect(CardMemoryLine.text(of: sample.newCard, now: now) == "New")
     }

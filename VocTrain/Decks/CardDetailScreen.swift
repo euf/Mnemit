@@ -153,12 +153,7 @@ private struct CardDetailList: View {
     @ViewBuilder
     private func memorySection(now: Date) -> some View {
         Section("Memory") {
-            if card.isSuspended {
-                // Not "due now": no session asks a suspended card.
-                Text(verbatim: MaturityCategory(card: card).cardTitle)
-            } else {
-                CardMemoryLine(card: card, now: now)
-            }
+            CardMemoryLine(card: card, now: now)
             if card.isSuspended {
                 Label("Suspended: no session asks it.", systemImage: "pause.circle")
                     .foregroundStyle(.secondary)
