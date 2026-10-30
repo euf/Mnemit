@@ -453,8 +453,28 @@ struct StartScreen: View {
     private func openLastDeck(importing file: ImportedFile?) {
         guard run == nil, addingCards == nil, path.isEmpty else { return }
         let urls = knownDecks.byName.map(\.url)
-        guard let url = lastUsed(in: urls) ?? urls.first else { return }
+        guard let url = lastUsed(in: urls) ?? urls.first else {
+            if let file { importWithoutDeck(file) }
+            return
+        }
         showAddCards(to: url, importing: file)
+    }
+
+    /// No deck yet: an Anki package asks where its cards go (the sheet offers a new deck); a table goes to a deck made
+    /// for it, named after the file.
+    private func importWithoutDeck(_ file: ImportedFile) {
+        Task {
+            if case let .anki(url, _) = file.content {
+                await receiveAnki(url)
+                return
+            }
+            do {
+                let name = file.name.split(separator: ".").dropLast().joined(separator: ".")
+                showAddCards(to: try await makeDeck(named: name.isEmpty ? String(localized: "New Deck") : name, numbered: true), importing: file)
+            } catch {
+                importFailure = error.localizedDescription
+            }
+        }
     }
 
     /// The sheet of Add Cards, or the preview of `file`, over the deck at `url`.

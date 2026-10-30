@@ -140,9 +140,10 @@ private struct CircularWidget: View {
         Gauge(value: min(1, state.ringFraction)) {
             Text("Daily Goal")
         } currentValueLabel: {
-            if state.nextStep.isClosed {
+            let step = state.nextStep
+            if step.isClosed {
                 Image(systemName: "checkmark")
-            } else if let minutes = state.nextStep.minutes {
+            } else if let minutes = step.minutes {
                 VStack(spacing: -2) {
                     Text(verbatim: minutes == 0 ? "<1" : String(minutes))
                         .font(.system(.title3, design: .rounded, weight: .semibold))
@@ -150,6 +151,17 @@ private struct CircularWidget: View {
                     Text("min")
                         .font(.system(size: 9))
                 }
+            } else if step.days > 0 {
+                // Without a price (a snapshot of an older app): the flame over the days, so the circle is never blank.
+                VStack(spacing: -2) {
+                    StreakFlame(state: step.state)
+                        .font(.caption2)
+                    Text(step.days, format: .number.grouping(.never))
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .minimumScaleFactor(0.5)
+                }
+            } else {
+                Image(systemName: "flame")
             }
         }
         .gaugeStyle(.accessoryCircularCapacity)
@@ -217,7 +229,12 @@ private struct EmptyWidget: View {
         switch family {
         case .accessoryInline:
             Text("Open Mnemit to start")
-        case .accessoryCircular, .accessoryRectangular:
+        case .accessoryCircular:
+            Image(systemName: "rectangle.stack.fill")
+                .font(.title2)
+                .widgetAccentable()
+                .accessibilityLabel(Text("Open Mnemit to start"))
+        case .accessoryRectangular:
             Text("Open Mnemit to start")
                 .font(.caption)
                 .multilineTextAlignment(.center)

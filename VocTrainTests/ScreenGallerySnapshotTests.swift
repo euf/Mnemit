@@ -47,8 +47,8 @@ struct ScreenGallerySnapshotTests {
                     savedStreak: index == 220))
         }
         return DailyProgress(
-            ring: DailyRing(done: 14, goal: 24), streak: Streak(days: streak, repairCards: nil), streakKeptToday: true, ladder: [1240, 210, 340, 515, 402, 188],
-            records: records, achievements: Achievements.earned(over: records))
+            ring: DailyRing(done: 14, goal: 24), streak: Streak(days: streak, repairCards: nil), streakKeptToday: true,
+            learned: WordsLearned(words: 1480, wordsAtDayStart: 1470), ladder: [1240, 210, 340, 515, 402, 188], records: records, achievements: Achievements.earned(over: records))
     }
 
     /// Two days of history: the first medals, and a grey next one in every line.

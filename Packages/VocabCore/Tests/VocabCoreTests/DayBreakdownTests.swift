@@ -28,6 +28,29 @@ extension DailyProgressTests {
         #expect(progress.ring.goal == breakdown.plan.reviewsDue + breakdown.plan.learning + breakdown.plan.newAdmitted)
     }
 
+    /// The screen "How It Works" shows the parts of the plan over the cards done and the cards left: they are one number
+    /// from the first card to the last, a card taken twice (a new card in its steps) counted once. The cards have their
+    /// logs, so the plan of the day's start can be read back from the deck as it stands.
+    @Test func theCardsDoneAndLeftAddUpToThePartsOfThePlanAtEveryStageOfTheDay() throws {
+        let yesterday = calendar.start(ofDay: today - 1).addingTimeInterval(10 * 3600)
+        let step = Scheduler(learningOptions: options(), calendar: calendar).replaying(
+            [ReviewLogEntry(date: yesterday, grade: .good, mode: .revealed)], of: Card(question: "l", answer: "l"))
+        let cards = (0..<3).map { due("r\($0)", onDay: today) } + (0..<5).map { due("o\($0)", onDay: today - 3) } + [step] + (0..<40).map { fresh("n\($0)") }
+        for reviewed in [0, 3, 6, 9, 11] {
+            var deck = try Deck(learningOptions: options(), cards: cards)
+            // The stream the app runs: the new cards the day admits, no more.
+            var study = StudySession(
+                deck: deck, at: now, calendar: calendar, random: SeededRandom(seed: 1), reviewMode: .revealed, newCardAllowance: evaluate([deck]).newCardAllowances.first)
+            for _ in 0..<reviewed {
+                let id = study.session.currentCardID!
+                deck.cards[deck.index(of: id)!] = study.review(.good, of: deck.card(withID: id)!, with: deck.learningOptions, at: now, calendar: calendar)!
+            }
+            let (progress, breakdown) = breakdown([deck])
+            let plan = breakdown.plan
+            #expect(plan.reviewsDue + plan.learning + plan.newAdmitted == progress.ring.done + progress.cardsLeft, "after \(reviewed) cards")
+        }
+    }
+
     @Test func aDecksCeilingIsWhatItsLimitsTakeAndItAdmitsNoMoreThanThat() throws {
         var options = options()
         options.newCardsPerSession = 5

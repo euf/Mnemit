@@ -21,7 +21,7 @@ struct NextStepTests {
         #expect(step(.open, keep: 0).sentence == "< 1 min to keep your streak")
         // No price: the moment alone.
         let free = step(.open)
-        #expect(free.sentence == "Keep your streak" && free.minutes == nil && free.short == "7")
+        #expect(free.sentence == "Keep your streak" && free.minutes == nil && free.short == "7 · Keep your streak")
         // The days are not in the sentence: the streak line has them.
         #expect(!open.sentence.contains("7") && open.streakText == "7-day streak")
         #expect(open.streakSpoken == "7-day streak, not kept yet" && open.spoken == "7-day streak, not kept yet · ≈ 2 min to keep your streak")
@@ -41,7 +41,7 @@ struct NextStepTests {
         #expect(kept.minutes == 5 && kept.short == "7 · ≈ 5 min")
         #expect(kept.streakSpoken == "7-day streak, kept today")
         #expect(kept.spoken == "7-day streak, kept today · ≈ 5 min to close the ring")
-        #expect(step(.kept).sentence == "Close the ring" && step(.kept).short == "7")
+        #expect(step(.kept).sentence == "Close the ring" && step(.kept).short == "7 · Close the ring")
     }
 
     @Test func aClosedRingNamesTheReviewsLeftOrIsAllDone() {

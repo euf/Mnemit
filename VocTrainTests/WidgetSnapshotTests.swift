@@ -334,7 +334,7 @@ struct WidgetSnapshotTests {
         #expect(Self.priced(done: 3, streak: 7, due: 17, roundsDone: 0, atRisk: true).nextStep.state == .atRisk)
         // A snapshot of an older app has no price: the moment alone.
         let old = WidgetState(date: Fixtures.date(22, 10), done: 12, goal: 20, streakDays: 7, isGoalMet: false, due: 8, nextReminder: nil)
-        #expect(old.nextStep.minutes == nil && old.nextStep.short == "7" && !old.nextStep.sentence.contains("min"))
+        #expect(old.nextStep.minutes == nil && old.nextStep.short == "7 · " + old.nextStep.sentence && !old.nextStep.sentence.contains("min"))
     }
 
     @Test func unreadableDataIsNoSnapshot() {

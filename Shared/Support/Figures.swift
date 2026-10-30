@@ -68,7 +68,6 @@ struct Figure<Leading: View>: View {
                 if let unit {
                     unit
                         .font(size.unitFont)
-                        .textCase(.uppercase)
                         .foregroundStyle(tint)
                         .widgetAccentable(accentable)
                 }

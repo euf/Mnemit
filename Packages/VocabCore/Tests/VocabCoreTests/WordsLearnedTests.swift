@@ -168,6 +168,24 @@ struct WordsLearnedTests {
         #expect(progress.memory.words > 2)
     }
 
+    /// The words learned and the bar of Memory read the same cards: a word is learned once its card has left learning, a card is
+    /// started once it has a state, so the words are never more than the cards started, whatever the history behind them (a card
+    /// imported with its state and no log counts too).
+    @Test func theWordsLearnedAreNeverMoreThanTheCardsTheMemoryBarHasStarted() throws {
+        let state = LearningState(phase: .review, stability: 40, difficulty: 5, lastReview: noon(today - 30), due: noon(today + 10), reviews: 6)
+        var suspended = learned(recognition("s"), on: today - 3)
+        suspended.isSuspended = true
+        let cards = [
+            learned(recognition("a"), on: today - 8), Card(question: "imported", answer: "a", note: "imported", kind: .recognition, learningState: state),
+            reviewed(recognition("c"), on: today), recognition("new"), suspended,
+        ]
+        let progress = DailyProgress.evaluate([DeckActivity(deck: try Deck(cards: cards), calendar: calendar)], at: noon(today), calendar: calendar)
+        let started = progress.ladder.dropFirst().reduce(0, +)
+        #expect(progress.learned.words == 2)
+        #expect(started == 3)
+        #expect(progress.learned.words <= started)
+    }
+
     // MARK: Milestones
 
     @Test func theMilestonesAreTenFiftyHundredTwoFiftyFiveHundredThousandThenEveryThousand() {

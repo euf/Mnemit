@@ -14,12 +14,12 @@ struct RingSizeTests {
 
     @Test func aRingThatGrewSaysWhereItStarted() {
         #expect(RingSize(progress(time: 480, first: 150)).value == "8")
-        #expect(RingSize(progress(time: 480, first: 150)).footnote == "a day · started at 2.5")
+        #expect(RingSize(progress(time: 480, first: 150)).footnote == "a day (started at 2.5 min)")
     }
 
     @Test func aRingThatShrankSaysSoToo() {
         #expect(RingSize(progress(time: 120, first: 300)).value == "2")
-        #expect(RingSize(progress(time: 120, first: 300)).footnote == "a day · started at 5")
+        #expect(RingSize(progress(time: 120, first: 300)).footnote == "a day (started at 5 min)")
     }
 
     @Test func aRingThatDidNotMoveHasNoStart() {
@@ -40,6 +40,6 @@ struct RingSizeTests {
 
     @Test func minutesShowOneDecimalAtMost() {
         #expect(RingSize(progress(time: 200, first: 150)).value == "3.3")
-        #expect(RingSize(progress(time: 200, first: 150)).footnote == "a day · started at 2.5")
+        #expect(RingSize(progress(time: 200, first: 150)).footnote == "a day (started at 2.5 min)")
     }
 }
