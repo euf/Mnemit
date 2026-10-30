@@ -216,3 +216,20 @@ loaded one, against 338 calls and 113 min. Only step 1 is measured.
    worktree (PNGs land in `~/Library/Containers/com.euf.mnemit/Data/tmp`), and redirect targets
    such as `build/` must exist first. Split drawing, centre label with strings, and tests into
    separate agents when they do not depend on each other.
+
+## Part 3. Parallel fix agents
+
+What carried the audit of 30.10.2026 (`audit-2026-10-30.md`): fifteen fixing agents in five waves, each in its own worktree.
+
+- **One package per agent, files disjoint.** A package names its findings by section of the audit's files and the files it
+  may touch; whatever lies in another package's files goes into the report, not into an edit.
+- **One xcodebuild at a time:** agents call `Scripts/xcb.sh <log> <xcodebuild args>`, which waits for a lock and prints
+  only the summary lines. Without it parallel runs time each other out and fight over the simulator.
+- **The String Catalog is written once.** Every agent appends its strings to a TSV (key, en, de, ru, el, the key it
+  replaces); the coordinator applies them in one pass that keeps the catalog's key order. Edits of the catalog by
+  several branches conflict on every merge.
+- **Merging:** `VERSION` conflicts on every merge (each worktree's commits bump it): take main's. Two packages can each
+  compile and still break together (a local `day` shadowing a new property of the same type) and parallel tests can race
+  on a global (`NewCardAllowances.today` with another test's day): run the full suites on main after each wave.
+- **Budget:** an agent wraps up at about 120 calls; it writes its state and next steps to a file, and a fresh agent in a
+  fresh worktree from main continues from it.
