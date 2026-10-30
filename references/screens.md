@@ -107,7 +107,7 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   - The calendar, "Last 13 weeks" once there are 13 and "Calendar" before (`WeeksGrid`): rows of seven
     cells, a row per week, the oldest first, Monday to Sunday under the weekday initials; a day is a ring,
     each day its own share of its goal (`DayRecord.ringShare`): a closed day full, and laps past the goal up to
-    three, any other day the share done, none done an empty track, before the first study day nothing; a capsule in `Color.streak` at 18 % lies behind each run of two or more kept days
+    three, any other day the share done, none done a `MissedDayMark` (a thin outline in `Color.inactiveMark`; today's open ring is a track), before the first study day nothing; a capsule lies behind each run of two or more kept days, `Color.streak` at 18 % in light, black at 30 % with a streak outline in dark,
     (`DayRecord.kept`) within a week row (`WeeksGrid.runs(ofKept:)`); a run does not cross rows.
   - Medals (the latest up to five, newest first, and Show All).
   - Memory, once a card is started: the line of words in memory (`MemoryEstimate.line`) and the ladder (`LadderBar` and a row
@@ -163,9 +163,10 @@ sizes: `design-spec.md` §4.
 - **The leech moment** (`LeechMomentView`, `SessionDriver.leechMoment`): right after the Forgot that makes a card a leech,
   before the next card, the stream stops on "Keeps slipping" with the card's question and answer as the stream shows them,
   media included, and three ways on: **Continue** (prominent), **Edit** (the card's edit sheet; the stream goes on once it is
-  saved) and **Set Aside**, which suspends the card; when the review already suspended it (the deck's action is Suspend)
-  the button reads **Keep It** and resumes it. On the Mac Return continues, E edits, S sets aside or keeps. VoiceOver reads
-  the title, the question, the answer, then the actions. A moment is the lapse that brings the card's lapses to the
+  saved) and **Suspend Card**, which suspends the card; when the review already suspended it (the deck's action is Suspend)
+  the button reads **Keep Card** and resumes it. A sentence under the title counts the lapses and names the choice. On the
+  Mac Return continues, E edits, S suspends or keeps. VoiceOver reads the title, the sentence, the question, the answer, then
+  the actions. A moment is the lapse that brings the card's lapses to the
   threshold or to each half of it after that (`scheduling.md`, "Leech"); undoing the grade takes back the moment and any
   suspension. A leech resumed under Suspend is asked again in the stream.
 - The card lies on a stack drawn as a book's page edges, 8 pt apart, each 7 pt narrower on a side and
@@ -191,7 +192,7 @@ sizes: `design-spec.md` §4.
     Up** while the plan has cards left; with none, **Done** and **Learn 10 New Words**.
   - *All done* (the end of the plan, and the end of any stream that began past the ring's moment, Catch Up, Learn 10 New
     Words and Study These Now included): the title "All done for today"; the same lines. **Done** (prominent) and, while a
-    deck has new cards, **Learn 10 New Words** (bordered), ten new cards beyond the day's allowance and New cards/day asked at once, with no rest
+    deck has new cards, **Learn 10 New Words** (the accent on a wash of it, `SecondaryActionStyle`), ten new cards beyond the day's allowance and New cards/day asked at once, with no rest
     after. On the Mac a rest taller than the window scrolls under the header (`SessionView`).
   - *Practice complete*: its figures (cards, share recalled) and **Done**.
 - Frames: `VocTrainTests/StudyScreenSnapshotTests`.

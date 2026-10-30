@@ -167,6 +167,7 @@ struct FirstShowingView: View {
                         .frame(maxWidth: .infinity, minHeight: 36)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.appAccent)
                 .controlSize(.large)
                 .transition(.opacity)
             } else {
@@ -199,7 +200,7 @@ struct FirstShowingView: View {
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: buttonHeight)
-                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.appAccent, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)

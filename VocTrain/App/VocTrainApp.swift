@@ -14,6 +14,8 @@ struct VocTrainApp: App {
     init() {
         // A tap on a reminder opens Study, as the widget does; the delegate must be there before the launch is over.
         UNUserNotificationCenter.current().delegate = ReminderTapDelegate.shared
+        // A slider's unfilled track is `#323234` on the card in dark, 1.3:1; `#48484A` is a track one can find.
+        UISlider.appearance().maximumTrackTintColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0x48 / 255, green: 0x48 / 255, blue: 0x4A / 255, alpha: 1) : .systemFill }
         // The app that hosts a test run never speaks by itself: a simulator plays the voice
         // through the speakers of the Mac.
         let environment = ProcessInfo.processInfo.environment
@@ -25,6 +27,7 @@ struct VocTrainApp: App {
     var body: some Scene {
         WindowGroup {
             StartScreen()
+                .appTint()
         }
     }
 }

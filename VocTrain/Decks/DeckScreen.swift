@@ -173,12 +173,14 @@ struct DeckContent: View {
             start(stage == .pushOn ? .pushOn : .study)
         } label: {
             Text(stage == .study ? "Study This Deck" : stage.title)
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 // The bar sizes its items to their content: the button takes the bar's width, as on Today.
                 .containerRelativeFrame(.horizontal) { width, _ in max(180, width - 64) }
         }
         .buttonStyle(.borderedProminent)
+        .tint(Color.appAccent)
         .disabled(!canEdit || (document?.deck.cards.isEmpty ?? true))
         .accessibilityValue(due > 0 ? Text("\(due) cards left") : Text(verbatim: ""))
     }

@@ -39,17 +39,19 @@ extension MaturityCategory {
     }
 
     /// An ordinal one-hue ramp in the accent's indigo (OKLCH hue 278, lightness 0.86 to 0.40 in light mode and
-    /// 0.42 to 0.85 in dark, adjacent steps 10 to 13.5 ΔE2000 apart): the higher the maturity, the more prominent
+    /// 0.48 to 0.88 in dark, adjacent steps 10 to 13.5 ΔE2000 apart): the higher the maturity, the more prominent
     /// the indigo, so memory reads in the colour of the ring, apart from the grades' red and greens.
-    /// New cards are neutral grey, outside the ramp.
+    /// In dark the lowest step keeps 2.4:1 on the card's `#1C1C1E` (the step below it would sink to 1.9:1), and the
+    /// dots and the bar carry a hairline besides (`AccentContrastTests`).
+    /// New cards are neutral grey, outside the ramp, 3.7:1 on the card in dark.
     var color: Color {
         switch self {
-        case .new: Color(light: 0xB4B2AC, dark: 0x5E5D59)
-        case .shaky: Color(light: 0xC6CDFF, dark: 0x3F3F97)
-        case .young: Color(light: 0x9AA3F6, dark: 0x5758C7)
-        case .maturing: Color(light: 0x7277EA, dark: 0x7277EA)
-        case .mature: Color(light: 0x5350CF, dark: 0x959EF8)
-        case .mastered: Color(light: 0x3932A0, dark: 0xC2CAFF)
+        case .new: Color(light: 0xB4B2AC, dark: 0x777671)
+        case .shaky: Color(light: 0xC6CDFF, dark: 0x4C4CB8)
+        case .young: Color(light: 0x9AA3F6, dark: 0x666ADC)
+        case .maturing: Color(light: 0x7277EA, dark: 0x838BF9)
+        case .mature: Color(light: 0x5350CF, dark: 0xA6B0FF)
+        case .mastered: Color(light: 0x3932A0, dark: 0xCED4FF)
         }
     }
 }
@@ -462,6 +464,27 @@ enum Spacing {
     static let section: CGFloat = 24
 }
 
+/// The ring of a day in the past without study, in the week strip and the calendar: a thin outline in `Color.inactiveMark`,
+/// so the day shows as missed and not as an empty hole, and neutral grey so it does not read as progress. The track of
+/// a ring that is open (today, or a partial day) is the accent's, drawn by `ProgressRing`.
+struct MissedDayMark: View {
+    var diameter: CGFloat
+
+    var body: some View {
+        Circle()
+            .strokeBorder(Color.inactiveMark, lineWidth: max(1.5, diameter * 0.07))
+            .frame(width: diameter, height: diameter)
+            .accessibilityHidden(true)
+    }
+}
+
+extension Text {
+    /// The prompt of a text field in the secondary colour: the system's own is `#656569` on a sheet's `#2C2C2E`, 2.4:1 in dark.
+    static func prompt(_ key: LocalizedStringKey) -> Text {
+        Text(key).foregroundColor(.secondary)
+    }
+}
+
 /// A grade's colour as a dot beside its title, with a hairline so the darkest green shows on
 /// a dark background too.
 struct GradeDot: View {
@@ -560,7 +583,7 @@ struct CardMemoryLine: View {
         HStack(spacing: Spacing.tight) {
             Circle()
                 .fill(step.color)
-                .overlay { Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 0.5) }
+                .overlay { Circle().strokeBorder(Color.primary.opacity(0.3), lineWidth: 1) }
                 .frame(width: 10, height: 10)
                 .accessibilityHidden(true)
             Text(verbatim: Self.text(of: card, now: now))
@@ -646,6 +669,37 @@ extension Color {
     }
     #endif
 
+    /// The accent for text and small glyphs: a label, a link, a figure, the filled part of a slider. In light it is the
+    /// accent itself (5.65:1 on white, 5.05 on the grouped grey). In dark the accent holds only 3.0:1 on the card's
+    /// `#1C1C1E` and 2.5:1 on a sheet's rows, so text takes a lighter indigo of the same hue, `#8A88F0`: 6.9 on black,
+    /// 5.6 on the card, 4.9 on `#262629`, 4.55 on a sheet's `#2C2C2E`; with Increase Contrast `#A3A1F7` (5.2 on `#363638`).
+    /// The app applies it as the tint of the iPhone (`appTint()`), so every control and label draws it; the fill of a
+    /// prominent button asks for the accent itself (`.tint(Color.appAccent)`), as its white label needs 4.5:1, which
+    /// the lighter one does not give (3.1). On the Mac, the accent.
+    static var appAccentText: Color {
+        #if os(iOS)
+        Color(uiColor: UIColor { textAccent(in: $0) })
+        #else
+        Color("AccentColor")
+        #endif
+    }
+
+    #if os(iOS)
+    /// `appAccentText` as the traits of a view ask for it.
+    static func textAccent(in traits: UITraitCollection) -> UIColor {
+        guard traits.userInterfaceStyle == .dark else {
+            return UIColor(named: "AccentColor", in: .main, compatibleWith: traits) ?? .tintColor
+        }
+        let hex: UInt32 = traits.accessibilityContrast == .high ? 0xA3A1F7 : 0x8A88F0
+        return UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+    }
+    #endif
+
+    /// A mark that stands for something that is not there: the ring of a day without study, the outline and the glyph of
+    /// a medal not yet earned. Neutral grey, so it never reads as progress, and 3:1 or more on the card and on black
+    /// (3.45 on `#1C1C1E` in dark, 3.2 on the grouped grey in light), as a graphic needs.
+    static let inactiveMark = Color(light: 0x87878B, dark: 0x707074)
+
     /// The daily ring: the app's accent, indigo `#5856D6` (`AccentColor` holds it as sRGB, with
     /// high-contrast variants `#3634A3` light and `#6563E6` dark).
     /// Indigo because red means Forgot and the greens/teal mean recalled; green read as
@@ -720,6 +774,12 @@ extension Color {
 }
 
 extension View {
+    /// The tint of the iPhone's text and controls, `Color.appAccentText`: put on the root of the app, and in a test on
+    /// the view it shoots, as a window has no other way to hand it down.
+    func appTint() -> some View {
+        tint(Color.appAccentText)
+    }
+
     /// The app's indigo as the tint of a Mac window's controls, whatever the system accent: the ring, Study and the
     /// links look as they do on the iPhone.
     func brandTint() -> some View {

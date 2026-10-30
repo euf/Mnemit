@@ -318,9 +318,9 @@ struct StreamRestView: View {
                 .frame(maxWidth: .infinity, minHeight: Metrics.labelHeight)
         }
         if prominent {
-            button.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
+            button.buttonStyle(.borderedProminent).tint(Color.appAccent).keyboardShortcut(.defaultAction)
         } else {
-            button.buttonStyle(.bordered)
+            button.secondaryAction()
         }
     }
 
@@ -395,8 +395,12 @@ struct WeekRings: View {
         HStack(spacing: spacing) {
             ForEach(week.indices, id: \.self) { index in
                 VStack(spacing: 4) {
-                    ProgressRing(fraction: Self.fraction(index, week: week, rings: rings, today: today), diameter: diameter)
-                        .opacity(week[index] == nil ? 0.35 : 1)
+                    if Self.isMissed(index, week: week, rings: rings) {
+                        MissedDayMark(diameter: diameter)
+                    } else {
+                        ProgressRing(fraction: Self.fraction(index, week: week, rings: rings, today: today), diameter: diameter)
+                            .opacity(week[index] == nil ? 0.35 : 1)
+                    }
                     if showsLetters {
                         Text(verbatim: letter(index))
                             .font(.caption2.weight(index == week.count - 1 ? .bold : .regular))
@@ -415,6 +419,11 @@ struct WeekRings: View {
         if index == week.count - 1 { return min(ProgressRing.maxLaps, today) }
         if let rings, rings.indices.contains(index), let share = rings[index] { return share }
         return week[index] == true ? 1 : 0
+    }
+
+    /// A past day after the first study day with no share of its goal done: drawn as a `MissedDayMark`, not as an empty track.
+    static func isMissed(_ index: Int, week: [Bool?], rings: [Double?]?) -> Bool {
+        index < week.count - 1 && week[index] != nil && fraction(index, week: week, rings: rings, today: 0) == 0
     }
 
     private static func isClosed(_ index: Int, week: [Bool?], rings: [Double?]?) -> Bool {
@@ -455,6 +464,8 @@ struct LadderBar: View {
         .frame(height: height)
         .background(Color.secondary.opacity(0.15))
         .clipShape(Capsule())
+        // The first step in dark is 2.5:1 on the card; the hairline holds the bar's end.
+        .overlay { Capsule().strokeBorder(Color.primary.opacity(0.3), lineWidth: 1) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: steps.map { "\($0.step.title) \($0.count)" }.joined(separator: ", ")))
         .accessibilityHidden(steps.isEmpty)

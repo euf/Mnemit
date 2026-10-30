@@ -2,8 +2,8 @@ import SwiftUI
 import VocabCore
 
 /// The disc of a medal: earned, the emoji face at 60 % on a soft gradient of the accent, a thin ring and a
-/// shadow of it; the next one, an empty disc with a dashed outline and the line's SF Symbol, all in the tertiary
-/// grey, its emoji a surprise. A line that repeats shows how often as a badge on the top-trailing edge.
+/// shadow of it; the next one, an empty disc with a dashed outline and the line's SF Symbol, all in
+/// `Color.inactiveMark`, its emoji a surprise. A line that repeats shows how often as a badge on the top-trailing edge.
 struct MedalDisc: View {
     var kind: AchievementKind
     var isEarned = true
@@ -21,10 +21,10 @@ struct MedalDisc: View {
                 Text(verbatim: kind.face)
                     .font(.system(size: size * 0.6))
             } else {
-                Circle().strokeBorder(.tertiary, style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+                Circle().strokeBorder(Color.inactiveMark, style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
                 Image(systemName: kind.symbol)
                     .font(.system(size: size * 0.4))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color.inactiveMark)
             }
         }
         .frame(width: size, height: size)
@@ -65,13 +65,13 @@ struct Medal: View {
             MedalDisc(kind: kind, isEarned: isEarned, count: count, size: size)
             Text(verbatim: kind.title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(isEarned ? .primary : .tertiary)
+                .foregroundStyle(isEarned ? .primary : .secondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
             if let caption {
                 Text(verbatim: caption)
                     .font(.caption2)
-                    .foregroundStyle(isEarned ? .secondary : .tertiary)
+                    .foregroundStyle(.secondary)
                     .monospacedDigit()
                     // A grey medal tells what earns it, a sentence of its own.
                     .multilineTextAlignment(.center)

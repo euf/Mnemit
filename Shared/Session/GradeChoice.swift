@@ -52,12 +52,18 @@ struct GradeChoice: View {
     /// buttons before the answer shows.
     @ScaledMetric(relativeTo: .body) private var scaledHeight: CGFloat = 50
 
+    /// The tallest a button grows with the text size: the buttons of the largest sizes would take the room of the card.
+    nonisolated static let tallest: CGFloat = 64
+    /// The largest text size the labels of the buttons (and of Show Answer) follow: past it the button is as high as it
+    /// gets, and "Don't know" with its glyph would not fit a 375 pt screen.
+    nonisolated static let largestText = DynamicTypeSize.accessibility3
+
     /// Controls of the platform's size: 50 pt on the iPhone, 44 in landscape, 38 on the Mac.
     private var height: CGFloat {
         #if os(macOS)
         38
         #else
-        isCompact ? 44 : scaledHeight
+        isCompact ? 44 : min(scaledHeight, Self.tallest)
         #endif
     }
 
@@ -104,6 +110,7 @@ struct GradeChoice: View {
                 recalled
             }
         }
+        .dynamicTypeSize(...Self.largestText)
         #if os(macOS)
         .background { extraKeys }
         #endif
@@ -177,11 +184,22 @@ struct GradeChoice: View {
         }
     }
 
+    /// The glyph of an answer goes with Forgot (a cross) and Good (a tick) in every set of buttons; Hard and Easy are shades of
+    /// the tick's yes and have none.
+    @ViewBuilder
+    private func segmentLabel(_ grade: Grade) -> some View {
+        if grade == .good {
+            Label(grade.title, systemImage: "checkmark")
+        } else {
+            Text(grade.title)
+        }
+    }
+
     private func segment(_ grade: Grade) -> some View {
         Button {
             onGrade(grade)
         } label: {
-            labelled(grade) { Text(grade.title) }
+            labelled(grade) { segmentLabel(grade) }
                 .font(.body.weight(.semibold))
                 .lineLimit(1)
                 .foregroundStyle(grade.onColor)

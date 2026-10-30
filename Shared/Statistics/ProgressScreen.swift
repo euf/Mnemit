@@ -91,7 +91,7 @@ struct ProgressScreen<Trailing: View>: View {
             total(Text("Days studied"), Text(records.filter { $0.done > 0 }.count, format: .number), footnote: Self.blank)
             total(Text("Rings closed"), Text(ringsClosed, format: .number), footnote: Text("of \(records.count) days"))
             total(Text("Words learned"), Text(progress.learned.words, format: .number), footnote: Self.blank)
-            total(Text("Your ring"), Text(verbatim: ring.value), unit: Text("min"), footnote: Text(verbatim: ring.footnote), tint: .appAccent)
+            total(Text("Your ring"), Text(verbatim: ring.value), unit: Text("min"), footnote: Text(verbatim: ring.footnote), tint: .appAccentText)
         }
     }
 
@@ -160,7 +160,7 @@ struct ProgressScreen<Trailing: View>: View {
                     HStack(spacing: Spacing.hairline) {
                         Circle()
                             .fill(step.color)
-                            .overlay { Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 0.5) }
+                            .overlay { Circle().strokeBorder(Color.primary.opacity(0.3), lineWidth: 1) }
                             .frame(width: 10, height: 10)
                             .accessibilityHidden(true)
                         Text(step.title)
@@ -218,6 +218,7 @@ struct WeeksGrid: View {
     var records: [DayRecord]
     static let weeks = 13
     private let diameter: CGFloat = 20
+    @Environment(\.colorScheme) private var colorScheme
 
     /// The column of a day, 0 for Monday.
     private static func column(_ day: Int) -> Int { (CivilDate.weekday(ofDayNumber: day) + 5) % 7 }
@@ -281,7 +282,11 @@ struct WeeksGrid: View {
                             if day > today {
                                 ProgressRing(fraction: 0, diameter: diameter).opacity(0.3)
                             } else if day >= first, let record = byDay[day] {
-                                ProgressRing(fraction: record.ringShare, diameter: diameter)
+                                if day < today, record.ringShare == 0 {
+                                    MissedDayMark(diameter: diameter)
+                                } else {
+                                    ProgressRing(fraction: record.ringShare, diameter: diameter)
+                                }
                             } else {
                                 Color.clear.frame(width: diameter, height: diameter)
                             }
@@ -307,7 +312,10 @@ struct WeeksGrid: View {
             let column = geometry.size.width / 7
             ForEach(runs, id: \.lowerBound) { run in
                 Capsule()
-                    .fill(Color.streak.opacity(0.18))
+                    .fill(colorScheme == .dark ? Color.black.opacity(0.3) : Color.streak.opacity(0.18))
+                    // In dark the band is darker than the card, with an outline in the streak's colour: a band lighter than the
+                    // card, brown at any opacity, takes a ring's head from 3.0:1 to under 2.5.
+                    .overlay { Capsule().strokeBorder(Color.streak.opacity(colorScheme == .dark ? 0.45 : 0), lineWidth: 1) }
                     .frame(width: column * CGFloat(run.count) - 4, height: diameter + 8)
                     .position(x: column * (CGFloat(run.lowerBound) + CGFloat(run.count) / 2), y: geometry.size.height / 2)
             }

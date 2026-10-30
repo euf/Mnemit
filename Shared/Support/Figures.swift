@@ -74,7 +74,8 @@ struct Figure<Leading: View>: View {
                 if let caption {
                     caption
                         .font(size.captionFont)
-                        .foregroundStyle(.secondary)
+                        // The secondary grey is 3.5:1 on white, small in a widget wants more.
+                        .foregroundStyle(size == .compact ? Color.cardSecondary : Color.secondary)
                 }
             }
         }

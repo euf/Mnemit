@@ -65,7 +65,7 @@ enum MedalToastPlace {
     /// Over the large title, under the bar's buttons: Today on the iPhone.
     case title
     /// One compact line in the gap under the card, above the answer's buttons: the iPhone's stream. Applied to the card with
-    /// the room for the stack's edges under it (`StackPose.reserve`) and `Spacing.gap` to the buttons.
+    /// the room for the stack's edges under it (`StackPose.reserve`) and `Spacing.section` to the buttons.
     case gap
     /// One compact line in the middle of the header's row, between the figures and the buttons: the Mac's stream.
     case header
@@ -86,8 +86,9 @@ extension View {
                 Color.clear.frame(height: 0).overlay(alignment: .bottom) { MedalToastLayer(toasts: toasts, place: place) }
             }
         case .gap:
-            // The compact toast is 32 tall, the gap 32 (the stack's edges) + `Spacing.gap` tall: its middle, 6 below the view's foot.
-            overlay(alignment: .bottom) { MedalToastLayer(toasts: toasts, place: place).offset(y: Spacing.gap / 2) }
+            // The compact toast is 32 tall, the gap 32 (the stack's edges) + `Spacing.section` tall: its middle, 12 below the view's foot,
+            // 12 clear of the card and of the buttons.
+            overlay(alignment: .bottom) { MedalToastLayer(toasts: toasts, place: place).offset(y: Spacing.section / 2) }
         case .header:
             overlay { MedalToastLayer(toasts: toasts, place: place) }
         case .inset:

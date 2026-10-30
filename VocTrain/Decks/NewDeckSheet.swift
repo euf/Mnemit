@@ -63,7 +63,7 @@ struct DeckNameSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Name", text: $name)
+                    TextField("Name", text: $name, prompt: .prompt("Name"))
                         .focused($isFocused)
                         .submitLabel(.done)
                         .onSubmit(submit)

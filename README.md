@@ -120,9 +120,9 @@ are in [`references/`](references/).
   This Deck, and what you review there fills the ring only through the cards of the other decks.
   When you resume it, its overdue reviews are due like any other and come back into the plan.
 - **A word that keeps slipping.** A card forgotten 8 times (a deck option, 0 turns it off), and again at every half of that,
-  stops the stack right after the Forgot: "Keeps slipping" keeps the answer on screen with Edit, Set Aside and Continue. The
+  stops the stack right after the Forgot: "Keeps slipping" keeps the answer on screen with Edit, Suspend Card and Continue. The
   deck's action decides what Continue leaves: Keep, the default, leaves the card in rotation; Suspend suspends it, and the
-  moment offers Keep It instead of Set Aside. A Leeches filter in the card browser lists these cards.
+  moment offers Keep Card instead of Suspend Card. A Leeches filter in the card browser lists these cards.
 - **Greek spoken from memory.** A card's Greek word is rendered into a buffer as the card comes up
   and played from memory, so the voice never stutters on a busy phone; where the deck has a
   recording for the side, the recording plays instead

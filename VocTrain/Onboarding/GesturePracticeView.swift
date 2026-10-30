@@ -101,6 +101,7 @@ struct GesturePracticeView: View {
                                 .frame(maxWidth: .infinity, minHeight: 36)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.appAccent)
                         .controlSize(.large)
                     }
                     .transition(.opacity)
@@ -306,7 +307,7 @@ struct GesturePracticeView: View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccentText)
                 .accessibilityHidden(true)
             Text("Well Done")
                 .font(.title.bold())

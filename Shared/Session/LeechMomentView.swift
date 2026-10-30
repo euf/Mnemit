@@ -2,12 +2,13 @@ import SwiftUI
 import VocabCore
 
 /// The stop in the stream right after a Forgot that made a card a leech, before the next card (`SessionDriver.leechMoment`,
-/// `references/product-model.md` §5): "Keeps slipping", the card's question and answer as it shows them, media included, and
-/// three ways on. Edit opens the card's edit sheet and goes on once it is saved; Set Aside suspends the card, or, when the
-/// review already did (the deck's action Suspend), Keep It resumes it; Continue goes on with the stream. The Mac has the keys:
-/// Return continues, E edits, S sets aside or keeps.
+/// `references/product-model.md` §5): "Keeps slipping" with a sentence under it that counts the lapses and names the choice, the
+/// card's question and answer as it shows them, media included, and three ways on. Edit opens the card's edit sheet and goes on
+/// once it is saved; Suspend Card suspends the card, or, when the review already did (the deck's action Suspend), Keep Card
+/// resumes it, the words of the deck's options; Continue goes on with the stream. The Mac has the keys: Return continues, E
+/// edits, S suspends or keeps.
 ///
-/// VoiceOver reads the title, the question, the answer, then the three actions.
+/// VoiceOver reads the title, the sentence, the question, the answer, then the three actions.
 struct LeechMomentView: View {
     var card: Card
     /// The deck's media, for the images and sounds of the card.
@@ -16,16 +17,29 @@ struct LeechMomentView: View {
     var onToggleAside: () -> Void
     var onContinue: () -> Void
 
-    /// The review suspended the card, so the way to put it aside is already taken: Keep It resumes it.
-    private var asideTitle: LocalizedStringKey { card.isSuspended ? "Keep It" : "Set Aside" }
+    /// The review suspended the card, so the way to suspend it is already taken: Keep Card resumes it.
+    private var asideTitle: LocalizedStringKey { card.isSuspended ? "Keep Card" : "Suspend Card" }
+
+    /// What the card did and what the choice is, in the words of the buttons.
+    private var explanation: Text {
+        let lapses = card.learningState?.lapses ?? 0
+        return card.isSuspended
+            ? Text("Forgotten \(lapses) times and suspended by the deck. Keep Card asks it again.")
+            : Text("Forgotten \(lapses) times. Suspend it, or keep asking?")
+    }
 
     var body: some View {
         VStack(spacing: Spacing.margin) {
             Spacer(minLength: 0)
-            Text("Keeps slipping")
-                .font(.title2.weight(.semibold))
-                .multilineTextAlignment(.center)
-                .accessibilityAddTraits(.isHeader)
+            VStack(spacing: Spacing.tight) {
+                Text("Keeps slipping")
+                    .font(.title2.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+                explanation
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .multilineTextAlignment(.center)
             face
             actions
                 .frame(maxWidth: Metrics.actionsWidth)
@@ -51,26 +65,55 @@ struct LeechMomentView: View {
                 label("Continue", key: "↩")
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color.appAccent)
             #if os(macOS)
             .keyboardShortcut(.defaultAction)
             #endif
-            HStack(spacing: Spacing.gap) {
-                Button(action: onEdit) {
-                    label("Edit", key: "E")
-                }
-                #if os(macOS)
-                .keyboardShortcut("e", modifiers: [])
-                #endif
-                Button(action: onToggleAside) {
-                    label(asideTitle, key: "S")
-                }
-                #if os(macOS)
-                .keyboardShortcut("s", modifiers: [])
-                #endif
-            }
-            .buttonStyle(.bordered)
+            secondaryRow
+                .secondaryAction()
         }
         .controlSize(.large)
+    }
+
+    /// Edit and Suspend Card side by side; on the iPhone, one under the other when a long title ("Приостановить карточку") does
+    /// not leave them the width.
+    @ViewBuilder
+    private var secondaryRow: some View {
+        #if os(iOS)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.gap) {
+                editButton
+                asideButton
+            }
+            VStack(spacing: Spacing.gap) {
+                editButton
+                asideButton
+            }
+        }
+        #else
+        HStack(spacing: Spacing.gap) {
+            editButton
+            asideButton
+        }
+        #endif
+    }
+
+    private var editButton: some View {
+        Button(action: onEdit) {
+            label("Edit", key: "E")
+        }
+        #if os(macOS)
+        .keyboardShortcut("e", modifiers: [])
+        #endif
+    }
+
+    private var asideButton: some View {
+        Button(action: onToggleAside) {
+            label(asideTitle, key: "S")
+        }
+        #if os(macOS)
+        .keyboardShortcut("s", modifiers: [])
+        #endif
     }
 
     /// The button's title, and on the Mac the key it answers to.

@@ -62,8 +62,9 @@ struct ActivityRing: View, Animatable {
             let progress = CGFloat(progress)
             let lineWidth = lineWidth
             let scale = displayScale
+            let trackAlpha = RingDrawing.trackAlpha(isFlat: isFlat, isDark: context.environment.colorScheme == .dark)
             context.withCGContext { cg in
-                RingDrawing.draw(in: cg, bounds: CGRect(origin: .zero, size: size), progress: progress, startColor: start, endColor: end, ringWidth: lineWidth, gradientImageScale: scale, trackAlpha: isFlat ? 0.25 : 0.15, shadowOpacity: isFlat ? 0 : RingDrawing.endShadowOpacity)
+                RingDrawing.draw(in: cg, bounds: CGRect(origin: .zero, size: size), progress: progress, startColor: start, endColor: end, ringWidth: lineWidth, gradientImageScale: scale, trackAlpha: trackAlpha, shadowOpacity: isFlat ? 0 : RingDrawing.endShadowOpacity)
             }
         }
     }
@@ -73,6 +74,13 @@ struct ActivityRing: View, Animatable {
 /// `CGMutablePath.addArc(…, clockwise: false)` in the y-down context both draw in.
 enum RingDrawing {
     static let endShadowOpacity: CGFloat = 1.0
+
+    /// The opacity of the accent the track is drawn in: 0.15 in light, 0.25 in a tinted or clear widget, which keeps one
+    /// tone, and 0.40 in dark, where 0.15 over black or the card is 1.1:1 and the unfilled part of a ring cannot be seen
+    /// (0.40 is 1.4:1 on black and 1.5:1 on `#1C1C1E`: a circle, which is all a track has to be).
+    static func trackAlpha(isFlat: Bool, isDark: Bool) -> CGFloat {
+        isFlat ? 0.25 : (isDark ? 0.40 : 0.15)
+    }
     static let hidesRingForZeroProgress = true
 
     static func draw(in context: CGContext, bounds: CGRect, progress: CGFloat, startColor: CGColor, endColor: CGColor, ringWidth: CGFloat, gradientImageScale: CGFloat, trackAlpha: CGFloat = 0.15, shadowOpacity: CGFloat = endShadowOpacity) {

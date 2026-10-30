@@ -169,6 +169,7 @@ struct ImportPreviewSheet: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.glassProminent)
+                .tint(Color.appAccent)
                 .controlSize(.large)
                 .padding(.horizontal, Spacing.margin)
                 .padding(.bottom, Spacing.tight)

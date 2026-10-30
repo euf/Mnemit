@@ -86,6 +86,7 @@ private struct WelcomeStep: View {
                     .frame(maxWidth: .infinity, minHeight: 36)
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color.appAccent)
             .controlSize(.large)
             Button("Skip Introduction", action: skip)
                 .padding(.top, 8)
@@ -145,6 +146,7 @@ private struct DayStep: View {
                     .frame(maxWidth: .infinity, minHeight: 36)
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color.appAccent)
             .controlSize(.large)
             .padding(.top, 16)
         }
@@ -158,7 +160,7 @@ private struct DayStep: View {
     private func row(_ symbol: String, _ text: Text) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: symbol)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccentText)
                 .frame(width: 24)
                 .accessibilityHidden(true)
             text
@@ -211,6 +213,7 @@ private struct SyncStep: View {
                             .frame(maxWidth: .infinity, minHeight: 36)
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.appAccent)
                     Button("Choose Another Folder…") { isChoosing = true }
                 } else {
                     VStack(spacing: 6) {
@@ -221,6 +224,7 @@ private struct SyncStep: View {
                                 .frame(maxWidth: .infinity, minHeight: 36)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(Color.appAccent)
                         Text("Pick or create a folder named Mnemit.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -262,7 +266,7 @@ private struct SyncStep: View {
                 .fontWeight(.semibold)
             } icon: {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color.appAccentText)
             }
             if decks.isEmpty {
                 Divider()
@@ -350,6 +354,7 @@ private struct ReminderStep: View {
                         .frame(maxWidth: .infinity, minHeight: 36)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color.appAccent)
                 .disabled(isAsking)
                 // Leaves the reminder as it is: off at the first launch, and when the
                 // introduction comes back from the menu, as the learner set it.
