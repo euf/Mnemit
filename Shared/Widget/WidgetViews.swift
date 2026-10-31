@@ -89,23 +89,39 @@ private struct WidgetStreakLine: View {
     }
 }
 
-/// The ring and the streak figure side by side, the sentence under them: a small widget has room for little else.
+/// The ring at the top left, the streak at the top right (the flame over the days, large, no label: the flame says it), the
+/// sentence at the bottom left in the primary colour: three blocks pinned to the corners fill the square, as the system's
+/// own small widgets do.
 private struct SmallWidget: View {
     var state: WidgetState
 
     var body: some View {
         let step = state.nextStep
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                WidgetRing(state: state, diameter: 56)
-                StreakFigure(step: step, size: .compact, accentable: true)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 4) {
+                WidgetRing(state: state, diameter: 62)
+                Spacer(minLength: 0)
+                VStack(alignment: .trailing, spacing: -4) {
+                    StreakFlame(state: step.state)
+                        .font(.title3)
+                        .widgetAccentable(step.state != .open)
+                    Text(verbatim: step.days.formatted(.number.grouping(.never)))
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(step.days > 0 ? Color.streak : Color.secondary)
+                        .widgetAccentable()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
             }
+            // The days keep one size in every state; a sentence of three lines gives way instead.
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
             NextStepText(step: step, alignment: .leading)
-                .font(.caption2)
-                .foregroundStyle(Color.cardSecondary)
+                .font(.subheadline.weight(.semibold))
                 .multilineTextAlignment(.leading)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
+                .lineLimit(3)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .ignore)

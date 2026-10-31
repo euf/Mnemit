@@ -498,7 +498,8 @@ edited options; Save applies everything as one change.
   the same figures as Today (`TodayFigures`, `NextStep`): the flame in the streak figure and the sentence, whose shape is the
   streak's state. No widget has a button, a capsule or a card count; the whole widget opens the stream. VoiceOver reads each
   widget as one element, the sentence with the state.
-  - Small: the ring (56 pt) with the Day streak figure beside it, the sentence under them (caption2, up to two lines).
+  - Small: the ring (62 pt) at the top left, the flame over the days (large title, bold rounded, in the streak's orange) at the
+    top right, the sentence at the bottom left (subheadline semibold, primary, up to three lines).
   - Medium: the ring (96 pt) at the left; at the right Day streak, the next moment and Words learned
     (`TodayFigures(size: .compact)`: label caption, value headline rounded), without the week.
   - Circular: the system gauge, in its middle the minutes of the next step ("2" over a small "min", "<1"), a `checkmark`

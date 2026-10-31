@@ -54,8 +54,7 @@ struct TodayFigures: View {
     }
 }
 
-/// The streak as a figure: "Day streak" over the flame by its state and the days in the streak's orange; the small widget draws
-/// it alone. VoiceOver reads the days and the state, which the flame's shape shows.
+/// The streak as a figure: "Day streak" over the flame by its state and the days in the streak's orange. VoiceOver reads the days and the state, which the flame's shape shows.
 struct StreakFigure: View {
     var step: NextStep
     var size: FigureSize = .regular
