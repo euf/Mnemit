@@ -112,7 +112,22 @@ def novelty(u):
         out['share of days without a new card'] = none.mean()
     return out
 
-STATS = (activity, daily, prices, newload, fresh, returns, bigdays, novelty)
+AGE_B, AGE_N = [4, 8, 26, 52], ['1-4', '5-8', '9-26', '27-52', '>52']  # weeks since the user's first review
+
+def weekly(u):
+    """Per week since the first review (only weeks with a review): answers, minutes, durable gain (answers passed, rating 2-4,
+    21 or more days after the card's previous review), the review-state answers (state 2) and those passed, first answers of
+    new cards (state 0) and those Again, the median seconds of an answer (the lower middle one)."""
+    wi = (u['day_offset'] - u['day_offset'][0]) // 7; r, s = u['rating'], u['state']; bc = lambda x: np.bincount(wi, weights=x)
+    out = {'answers': np.bincount(wi), 'minutes': bc(u['sec']) / 60, 'durable': bc((u['elapsed_days'] >= 21) & (r >= 2)),
+           'rev': bc(s == 2), 'pass': bc((s == 2) & (r >= 2)), 'new': bc(s == 0), 'again new': bc((s == 0) & (r == 1))}
+    n = out['answers']; o = np.lexsort((u['sec'], wi)); out['med sec'] = np.where(n > 0, u['sec'][o][np.cumsum(n) - n + np.maximum(n - 1, 0) // 2], NAN)
+    c4 = lambda a: (lambda c: c - np.concatenate([np.zeros(4), c[:-4]]))(np.cumsum(a))  # the last 4 weeks, this one included
+    out['rev4'], out['pass4'] = c4(out['rev']), c4(out['pass']); out['age'] = np.arange(len(out['answers']))
+    act = out['answers'] > 0
+    return {'P:wk_' + k: v[act] for k, v in out.items()}
+
+STATS = (activity, daily, prices, newload, fresh, returns, bigdays, novelty, weekly)
 
 def user(c):
     u = prep(c); out = {}
@@ -184,7 +199,39 @@ def report(S, P, tally, ids, per):
     rows += [['without, run of ' + name, int((rn == i + 1).sum()), fmt(nx[rn == i + 1].mean()), fmt(g7[rn == i + 1].mean())] for i, name in enumerate(NN)]
     table(['study days (pooled)', 'days', 'P(next day studied)', 'P(gap >= 7 starts)'], rows)
     dist(S, ['share of days without a new card', 'no-new minus new: P(next day)', 'no-new minus new: P(gap >= 7)'], 'Per user (>= 10 days of each kind): the same, without a new card minus with')
+    competition(P)
     appendix(per)
+
+def competition(P):
+    W = {k[3:]: P[k] for k in P if k.startswith('wk_')}; age = np.concatenate(W['age']); dur = np.concatenate(W['durable']); ans = np.concatenate(W['answers'])
+    print('### 9. Weekly durable gain: answers passed (Hard, Good, Easy) 21 days or more after the card\'s previous review, per week since the user\'s first review, weeks with a review')
+    b = np.digitize(age + 1, [x + 1 for x in AGE_B]); rows = []
+    for lab, k in [('all', age >= 0)] + [(n, b == i) for i, n in enumerate(AGE_N)]:
+        d = dur[k]; rows.append([lab, len(d), fmt(100 * (d == 0).mean()) + '%'] + [fmt(x) for x in np.percentile(d, [10, 25, 50, 75, 90])] + [fmt(d.mean()), fmt(np.median(d / ans[k]))])
+    table(['weeks since first review', 'user-weeks', 'durable = 0', 'p10', 'p25', 'median', 'p75', 'p90', 'mean', 'median durable / answers'], rows)
+    late = [(d[a >= 8], n[a >= 8]) for d, a, n in zip(W['durable'], W['age'], W['answers'])]; late = [x for x in late if len(x[0]) >= 4]
+    S = {'median durable a week (weeks 9+)': [np.median(d) for d, n in late], 'share of weeks with durable 0 (weeks 9+)': [(d == 0).mean() for d, n in late],
+         'median answers a week (weeks 9+)': [np.median(n) for d, n in late]}
+    dist(S, list(S), 'Per user with >= 4 weeks of study from week 9 on (%d users)' % len(late))
+    print('### 10. Plausibility flags on real users: how often each fires (eligible weeks only; a user fires "persistently" in half or more of their eligible weeks)')
+    tr = [p / np.maximum(r, 1) for p, r in zip(W['pass4'], W['rev4'])]; e_tr = [r >= 30 for r in W['rev4']]
+    an = [a / np.maximum(n, 1) for a, n in zip(W['again new'], W['new'])]; e_an = [n >= 20 for n in W['new']]
+    fs = W['med sec']; e_fs = [n >= 30 for n in W['answers']]
+    rows = []
+    for name, vals, el, tests in [('true retention, 4 weeks (>= 30 review-state answers)', tr, e_tr, [('>= 0.97', lambda x: x >= .97), ('>= 0.98', lambda x: x >= .98), ('>= 0.99', lambda x: x >= .99), ('= 1', lambda x: x >= 1)]),
+                                  ('Again on first answers of new cards (>= 20 new cards in the week)', an, e_an, [('= 0', lambda x: x <= 0), ('< 2 %', lambda x: x < .02), ('< 5 %', lambda x: x < .05)]),
+                                  ('median seconds an answer (>= 30 answers in the week)', fs, e_fs, [('< 1.5 s', lambda x: x < 1.5), ('< 2 s', lambda x: x < 2), ('< 3 s', lambda x: x < 3)])]:
+        v = [x[e] for x, e in zip(vals, el)]; pooled = np.concatenate(v); users = [x for x in v if len(x)]
+        rows.append([name, '', len(pooled), '', len(users), '', ''] )
+        rows += [['', lab, '', fmt(100 * f(pooled).mean()) + '%', '', fmt(100 * np.mean([f(x).any() for x in users])) + '%', fmt(100 * np.mean([f(x).mean() >= .5 for x in users])) + '%'] for lab, f in tests]
+    table(['indicator', 'fires when', 'eligible user-weeks', 'user-weeks firing', 'users eligible', 'users firing in any week', 'users firing persistently'], rows)
+    t = np.concatenate([x[e] for x, e in zip(tr, e_tr)]); q = np.clip(1 - np.abs(t - .9) / .1, 0, 1)
+    table(['true retention, 4 weeks, pooled user-weeks', 'p10', 'p25', 'median', 'p75', 'p90', 'closeness to 0.9 = 1 - |TR - 0.9| / 0.1: mean', 'closeness 0', 'closeness < 0.5'],
+          [[len(t)] + [fmt(x) for x in np.percentile(t, [10, 25, 50, 75, 90])] + [fmt(q.mean()), fmt(100 * (q == 0).mean()) + '%', fmt(100 * (q < .5).mean()) + '%']])
+    m = np.concatenate([x[e] for x, e in zip(fs, e_fs)])
+    table(['median seconds an answer, pooled user-weeks (>= 30 answers)', 'p1', 'p5', 'p10', 'p25', 'median', 'p75'], [[len(m)] + [fmt(x) for x in np.percentile(m, [1, 5, 10, 25, 50, 75])]])
+    a = np.concatenate([x[e] for x, e in zip(an, e_an)])
+    table(['Again share on new cards, pooled user-weeks (>= 20 new)', 'p10', 'p25', 'median', 'p75', 'p90'], [[len(a)] + [fmt(x) for x in np.percentile(a, [10, 25, 50, 75, 90])]])
 
 def appendix(per):
     print('### Per user (one row each; minutes are of capped durations)')
@@ -197,17 +244,20 @@ def selftest():
     for i, d in enumerate(days):
         rows.append((i, d, 10000, 0)); rows += [(0, d, 6000, 2)] if i else []
     a = np.array(rows)
-    out = user({'card_id': a[:, 0], 'day_offset': a[:, 1], 'duration': a[:, 2], 'state': a[:, 3]})
+    out = user({'card_id': a[:, 0], 'day_offset': a[:, 1], 'duration': a[:, 2], 'state': a[:, 3], 'rating': np.full(len(a), 3), 'elapsed_days': np.full(len(a), -1)})
     assert out['longest_gap'] == 5 and out['gap 4-7'] == 1 and out['new_med'] == 10 and out['other_med'] == 6, out
     assert len(out['P:ret_ratio']) == 1 and abs(out['P:ret_ratio'][0] - 1) < 1e-9 and out['P:ret_back'][0] == 1
     assert (out['P:big_bin'] == 2).all() and out['first14 study days of 14'] == 14 and abs(out['reviews/new card, days 1-7'] - 1 / 3) < 1e-9 and out['reviews/new card, days 8-30'] == 6
+    w = weekly(prep({'card_id': np.array([0, 1, 0, 1]), 'day_offset': np.array([0, 0, 30, 31]), 'duration': np.array([5000, 5000, 1000, 3000]),
+                      'state': np.array([0, 0, 2, 2]), 'rating': np.array([1, 3, 3, 1]), 'elapsed_days': np.array([-1, -1, 30, 31])}))
+    assert list(w['P:wk_age']) == [0, 4] and list(w['P:wk_durable']) == [0, 1] and list(w['P:wk_pass4']) == [0, 1] and w['P:wk_again new'][0] == 1 and list(w['P:wk_med sec']) == [5, 1]
     assert len(out['P:daymins']) == 28 and abs(out['first14 median min, calendar days 8-14'] - 16 / 60) < 1e-9 and len(out['P:f1']) == 7
     print('selftest ok')
 
 def main(folder):
     S, P, per, tally, ids = {}, {}, [], {'rows': 0, 'over': 0, 'zero': 0, 'rating': Counter(), 'state': Counter()}, []
     for f in sorted(glob.glob(os.path.join(folder, 'user_id=*', 'data.parquet')), key=lambda p: int(re.search(r'user_id=(\d+)', p).group(1))):
-        t = pq.read_table(f, columns=['card_id', 'day_offset', 'rating', 'state', 'duration'])
+        t = pq.read_table(f, columns=['card_id', 'day_offset', 'rating', 'state', 'duration', 'elapsed_days'])
         c = {k: t[k].to_numpy() for k in t.schema.names}
         o = np.argsort(c['day_offset'], kind='stable'); c = {k: v[o] for k, v in c.items()}
         if not len(o):

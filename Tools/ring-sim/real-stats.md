@@ -128,3 +128,49 @@ Durations: 1356051 reviews (0.94%) exceed 60 s and are capped to 60 s; 96009 rev
 | no-new minus new: P(next day) | 1813 | -0.101 | -0.261 | -0.180 | -0.039 | 0.021 |
 | no-new minus new: P(gap >= 7) | 1813 | 0.030 | -0.012 | 0.004 | 0.075 | 0.138 |
 
+### 9. Weekly durable gain: answers passed (Hard, Good, Easy) 21 days or more after the card's previous review, per week since the user's first review, weeks with a review
+| weeks since first review | user-weeks | durable = 0 | p10 | p25 | median | p75 | p90 | mean | median durable / answers |
+|---|---|---|---|---|---|---|---|---|---|
+| all | 188748 | 28.4% | 0.000 | 0.000 | 21 | 101 | 264 | 96.5 | 0.092 |
+| 1-4 | 5813 | 97.5% | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.330 | 0.000 |
+| 5-8 | 4510 | 46.0% | 0.000 | 0.000 | 1 | 13 | 44 | 16.0 | 0.003 |
+| 9-26 | 17245 | 30.1% | 0.000 | 0.000 | 13 | 63 | 155 | 55.2 | 0.056 |
+| 27-52 | 22200 | 27.9% | 0.000 | 0.000 | 21 | 88 | 218 | 78.9 | 0.087 |
+| >52 | 138980 | 24.8% | 0.000 | 1 | 28 | 121 | 303 | 111 | 0.122 |
+
+### Per user with >= 4 weeks of study from week 9 on (1988 users)
+| statistic (per user) | N users | median | p10 | p25 | p75 | p90 |
+|---|---|---|---|---|---|---|
+| median durable a week (weeks 9+) | 1988 | 8.50 | 0.000 | 0.000 | 42.5 | 113 |
+| share of weeks with durable 0 (weeks 9+) | 1988 | 0.318 | 0.024 | 0.107 | 0.568 | 0.760 |
+| median answers a week (weeks 9+) | 1988 | 275 | 75 | 136 | 592 | 1185 |
+
+### 10. Plausibility flags on real users: how often each fires (eligible weeks only; a user fires "persistently" in half or more of their eligible weeks)
+| indicator | fires when | eligible user-weeks | user-weeks firing | users eligible | users firing in any week | users firing persistently |
+|---|---|---|---|---|---|---|
+| true retention, 4 weeks (>= 30 review-state answers) |  | 160150 |  | 1996 |  |  |
+|  | >= 0.97 |  | 19.6% |  | 68.9% | 14.9% |
+|  | >= 0.98 |  | 15.6% |  | 61.6% | 11.3% |
+|  | >= 0.99 |  | 11.5% |  | 53.6% | 8.57% |
+|  | = 1 |  | 6.44% |  | 45.2% | 4.26% |
+| Again on first answers of new cards (>= 20 new cards in the week) |  | 105217 |  | 2000 |  |  |
+|  | = 0 |  | 24.1% |  | 72.4% | 22.5% |
+|  | < 2 % |  | 29.9% |  | 75.1% | 29.4% |
+|  | < 5 % |  | 35.7% |  | 81.3% | 35.5% |
+| median seconds an answer (>= 30 answers in the week) |  | 164502 |  | 2000 |  |  |
+|  | < 1.5 s |  | 1.57% |  | 21.4% | 0.400% |
+|  | < 2 s |  | 2.49% |  | 28.1% | 0.650% |
+|  | < 3 s |  | 6.88% |  | 45% | 3.35% |
+
+| true retention, 4 weeks, pooled user-weeks | p10 | p25 | median | p75 | p90 | closeness to 0.9 = 1 - |TR - 0.9| / 0.1: mean | closeness 0 | closeness < 0.5 |
+|---|---|---|---|---|---|---|---|---|
+| 160150 | 0.662 | 0.793 | 0.892 | 0.957 | 0.993 | 0.343 | 26.2% | 65.2% |
+
+| median seconds an answer, pooled user-weeks (>= 30 answers) | p1 | p5 | p10 | p25 | median | p75 |
+|---|---|---|---|---|---|---|
+| 164502 | 1.03 | 2.63 | 3.40 | 5.01 | 8.16 | 14.2 |
+
+| Again share on new cards, pooled user-weeks (>= 20 new) | p10 | p25 | median | p75 | p90 |
+|---|---|---|---|---|---|
+| 105217 | 0.000 | 0.004 | 0.182 | 0.453 | 0.679 |
+
