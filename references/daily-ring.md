@@ -9,7 +9,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - Today (the ring, the plan, the goal, the pace) comes from the review log (`reviews.jsonl`) of the active decks. The days
   before today come from the progress ledger, one record per study day (next section). A deck stores no ring and no streak.
 - The day is measured in cards: the ring, the goal and the streak count cards; the screens translate
-  cards into minutes ("≈ 2 min", an estimate at the learner's pace; `product-model.md` §3). A review (one grade of one card) counts toward neither the goal, the ring nor the
+  cards into minutes ("2 min", an estimate at the learner's pace; `product-model.md` §3). A review (one grade of one card) counts toward neither the goal, the ring nor the
   streak; reviews are for the optimizer, statistics and pace.
 
 ## The study day's clock
@@ -112,8 +112,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `minutesToNextRound` (at the pace the day started with), `minutes(ofRound:)` (for the rest screen),
   `memory` (`MemoryEstimate` over the decks), `streakKeptToday` (streak step done or the plan empty).
 - The step never shows by number (`product-model.md` §3). `DailyProgress.minutesToStreak` gives its minutes while it is
-  open, which the sentence (`NextStep`) says: before the step "≈ 2 min to keep your streak", after it "≈ 5 min to close the
-  ring". `RoundStatus` (`Shared/Session/DayLines.swift`) carries the three round figures the widget
+  open, which the sentence (`NextStep`) says: before the step "Keep your streak · 2 min", after it "Close your ring · 5 min".
+  `RoundStatus` (`Shared/Session/DayLines.swift`) carries the three round figures the widget
   snapshot stores.
 - In a day that started with an empty plan, the ends cut the cards as they are.
 
@@ -211,22 +211,24 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (`DailyProgress.streakState`) has three values: `open` (today's streak step not done), `kept` (done) and `atRisk` (the day
   after a missed one, ring open: `DailyProgress.isStreakAtRisk`). `StreakFlame(state:)` draws them, an outline in grey,
   `flame.fill` in `Color.streak`, an outline in `Color.streak` with an `exclamationmark` after it. `NextStep`
-  (`Shared/Support/NextStep.swift`, pure) says the next moment of the day and its minutes, with no days in it. As a figure
-  (`NextStep.moment`) it is a label over a value: "To keep your streak" · "≈ 2 min", "To close the ring" · "≈ 5 min", "To save
-  your streak" (the day after a miss), "Reviews left" · "≈ 12 min" (ring closed, cards left), "To start your streak" (no
-  streak), "Today" · "All done"; without a price the label is "Next" over the moment in words ("Keep your streak", "Close the
-  ring", "Save your streak", "Keep Going", "Start your streak"). As a sentence, where one line is all there is room for: "≈ 2
-  min to keep your streak", "≈ 5 min to close the ring", at risk "≈ 6 min to close the ring and save your streak", without a
-  streak "≈ 2 min to start your streak", "Ring closed · ≈ 12 min of reviews left" (two parts, `NextStep.lines`), "All done for
-  today". Without a price (`nil` minutes) the time is left out: "Keep your streak", "Close the ring", "Close the ring to save
-  your streak", "Start your streak", "Ring closed". `priceLine` is what a rest says under its title ("≈ 5 min to close the
-  ring", "≈ 12 min of reviews left"); `short` is "12 · ≈ 2 min" for a line with room for little.
+  (`Shared/Support/NextStep.swift`, pure) says the next moment of the day as an action and its price, with no days in it. As a
+  figure (`NextStep.moment`) it is a label over a value, the action over its price: "Keep your streak" · "2 min", "Close your
+  ring" · "5 min", "Save your streak" · "6 min" (the day after a miss; its minutes are the ring's), "Finish your reviews" ·
+  "12 min" (ring closed, cards left), "Start your streak" · "2 min" (no streak), "Today" · "All done"; without a price the
+  label is "Next" over the action ("Keep your streak", "Close your ring", "Save your streak", "Finish your reviews", "Start
+  your streak"). As a sentence, where one line is all there is room for, the action and its price joined with " · ": "Keep
+  your streak · 2 min", "Close your ring · 5 min", at risk "Save your streak · 6 min", without a streak "Start your streak ·
+  2 min", "Finish your reviews · 12 min", "All done for today". Where there are two lines (`NextStep.lines`, drawn by
+  `NextStepText` in the small and the rectangular widgets) the action stands over its price, the price in
+  `Color.appAccentText`. Without a price (`nil` minutes) the action stands alone: "Keep your streak", "Close your ring",
+  "Save your streak", "Finish your reviews", "Start your streak". `priceLine` is what a rest says under its title ("Close
+  your ring · 4 min", "Finish your reviews · 12 min"); `short` is "12 · 2 min" for a line with room for little.
 - **The streak line** (`StreakLine`): `StreakFlame`, then "12-day streak" (`NextStep.streakText`), hidden at 0 days. VoiceOver
   reads `streakSpoken`: "12-day streak, kept today", "not kept yet" or "at risk".
 - **Where they stand.** Today draws the figures (`TodayCard`, `Shared/Session/TodaySummary.swift`: the ring, Day streak, the
   moment, Words learned, the week). The rests carry the streak line in their chip and the price line under their title; the
-  stream's header is the ring and "≈ N min", no streak; the small and rectangular widgets say the sentence, the medium
-  shows the figures, the inline one "🔥 12 · ≈ 2 min"; the reminders take its streak and its "≈ 2 min". `DailyRingView` has no
+  stream's header is the ring and "N min", no streak; the small and rectangular widgets say the sentence, the medium
+  shows the figures, the inline one "🔥 12 · 2 min"; the reminders take its streak and its "2 min". `DailyRingView` has no
   popover and is no button. Sizes, colours and VoiceOver: `design-spec.md` §5.7.
 - **The stack** is drawn as the cards left before the next moment, up to four edges, never as a number. Past the goal, after
   the ring, it counts the cards left in the plan's lanes (Keep Going), or the cards of Learn 10 New Words or Study These
@@ -234,7 +236,8 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - **Cards left**: the plan's cards not done yet, `StudySession.counts(...).total` now (`DailyProgress.cardsLeft`). Done +
   left = plan, which is the goal or more (review cards beyond the day's time are left too). No screen shows it as a count;
   the Study button's VoiceOver value says it.
-- **Minutes** ("≈ 7 min", `Format.timeLeft`, under a minute "< 1 min"; estimates, cards × pace, never a goal):
+- **Minutes** ("7 min", `Format.timeLeft` with a no-break space between number and unit, under a minute "< 1 min";
+  estimates, cards × pace, read the way a reading time is, never a goal):
   `DailyGoal.minutesLeft` = ceil((new × new pace + other × other pace) / 60). New: the cards left that were new at the start
   of the day, including a new card started today and still in its steps (`StudyCounts.newAtDayStart`); other: the rest of the
   cards left. The sentence uses three figures: `DailyProgress.minutesToStreak` (the first round; nil once the streak is

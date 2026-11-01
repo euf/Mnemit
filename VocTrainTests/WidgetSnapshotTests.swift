@@ -222,7 +222,7 @@ struct WidgetSnapshotTests {
         #expect(state.isStreakAtRisk && state.week == week && state.weekRings == rings)
         // The widget draws it as Today does: an outlined flame in the streak's colour, with an exclamation mark.
         #expect(state.progress.streakState == .atRisk)
-        #expect(state.nextStep.sentence.hasSuffix("to close the ring and save your streak"))
+        #expect(state.nextStep.action == "Save your streak")
         // A ring that is closed is not at risk any more.
         let closed = WidgetSnapshot(
             now: now, progress: DailyProgress(ring: DailyRing(done: 20, goal: 20), streak: Streak(days: 7, repairCards: 17)), dates: [now], dueByDeck: [[0]],
@@ -324,7 +324,7 @@ struct WidgetSnapshotTests {
         // The streak step open: the first round's 2 min, and the 17 cards that close the ring at 10 s each, 3 min.
         let open = Self.priced(done: 3, streak: 7, due: 17, roundsDone: 0)
         #expect(open.nextStep == NextStep(days: 7, state: .open, isClosed: false, minutesToKeep: 2, minutesToClose: 3, reviewsLeft: true, minutesOfReviews: 3))
-        #expect(open.nextStep.sentence == "\(Format.timeLeft(minutes: 2)) to keep your streak")
+        #expect(open.nextStep.sentence == "Keep your streak · \(Format.timeLeft(minutes: 2))")
         // The step done: the first round is behind, the 8 cards left that close the ring take 2 min.
         let kept = Self.priced(done: 12, streak: 7, due: 8, roundsDone: 1)
         #expect(kept.nextStep == NextStep(days: 7, state: .kept, isClosed: false, minutesToKeep: nil, minutesToClose: 2, reviewsLeft: true, minutesOfReviews: 2))
@@ -432,9 +432,9 @@ struct WidgetSnapshotTests {
     }
 
     @Test func theTimeLeftReadsAsMinutesOrUnderOne() {
-        #expect(Format.timeLeft(minutes: 7) == "≈ 7 min")
-        #expect(Format.timeLeft(minutes: 120) == "≈ 120 min")
-        #expect(Format.timeLeft(minutes: 0) == "< 1 min")
+        #expect(Format.timeLeft(minutes: 7) == "7\u{00A0}min")
+        #expect(Format.timeLeft(minutes: 120) == "120\u{00A0}min")
+        #expect(Format.timeLeft(minutes: 0) == "<\u{00A0}1\u{00A0}min")
     }
 
     @Test func syncMakesTheSnapshotFromOpenAndSavedDecks() throws {

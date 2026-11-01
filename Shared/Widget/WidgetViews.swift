@@ -5,8 +5,8 @@ import WidgetKit
 
 /// The picture of the widget in each family, from the figures of one timeline entry: the day's ring as a picture, nothing
 /// in its middle. The medium widget is Today's card without its week: the ring on the left, its three figures on the right
-/// (`TodayFigures`: Day streak, the next moment, Words learned); the small one has the ring with the streak figure and the
-/// sentence under them (`NextStep`); the lock screen's circle, a gauge, has the minutes of the next step. In a tinted or clear
+/// (`TodayFigures`: Day streak, the next moment, Words learned); the small one has the ring, the flame over the days and the
+/// next step under them (`NextStepText`: the action over its price); the lock screen's circle, a gauge, has the minutes of the next step. In a tinted or clear
 /// rendering (`widgetRenderingMode`) the ring's track and arc differ by opacity, ring and values are `widgetAccentable`, and a
 /// ring past its goal says its lap as a number. `nil` before the app wrote a snapshot.
 ///
@@ -213,7 +213,7 @@ private struct RectangularWidget: View {
     }
 }
 
-/// The line over the lock screen's clock: the flame and "7 · ≈ 2 min"; the flame carries an exclamation mark at risk.
+/// The line over the lock screen's clock: the flame and "7 · 2 min"; the flame carries an exclamation mark at risk.
 /// Without a streak the sentence alone.
 private struct InlineWidget: View {
     var state: WidgetState

@@ -47,8 +47,8 @@ struct NextDeck {
 
 /// The short stop in the stream, twice a day at most (`references/learning-flow.md`). The ring on top is a picture, with no
 /// number in it, and under it the streak, "12-day streak". After the first round the title is the streak, "12-day streak",
-/// with the filled flame large (the streak's moment, so nothing under the ring), and the time to the ring ("≈ 5 min to
-/// close the ring", the price line of the sentence, `NextStep`); Keep Going or Done for Now. "Ring closed" when the day's
+/// with the filled flame large (the streak's moment, so nothing under the ring), and the time to the ring ("Close your ring ·
+/// 5 min", the price line of the sentence, `NextStep`); Keep Going or Done for Now. "Ring closed" when the day's
 /// goal is done, with the minutes of the reviews left: the medal, the words learned and the week's rings, then one way
 /// on, the most useful first: Catch Up when the plan has cards left, else Learn 10 New Words, new cards beyond the daily
 /// limit, whose reviews make the next days harder. "All done for today" when the plan is. A finished practice ends with
@@ -302,8 +302,8 @@ struct StreamRestView: View {
         return lines
     }
 
-    /// The sentence of the next moment (`NextStep`) under the title, which has the streak and the moment: "≈ 4 min to close
-    /// the ring" at the streak's moment, "≈ 12 min of reviews left" at the ring's. `nil` without a price.
+    /// The sentence of the next moment (`NextStep`) under the title, which has the streak and the moment: "Close your ring ·
+    /// 4 min" at the streak's moment, "Finish your reviews · 12 min" at the ring's. `nil` without a price.
     private var priceLine: Line? {
         guard let progress, let price = NextStep(progress).priceLine else { return nil }
         return Line("price") { Text(verbatim: NextStep.unbroken(price, endTogether: true)) }

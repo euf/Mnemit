@@ -17,7 +17,7 @@ enum ReminderPlan {
     }
 
     /// What a reminder says, in the words of Today: the streak it keeps, "Keep your 12-day streak", and the price of the streak
-    /// step, "≈ 2 min"; without a streak, "Start your streak". `nil` when no deck has cards, and then no reminder is
+    /// step, "2 min"; without a streak, "Start your streak". `nil` when no deck has cards, and then no reminder is
     /// due either. A count of the cards due, which after a break can be hundreds, is never in it.
     ///
     /// The step is the first two minutes of the day's plan, or all of it when it is shorter (`DailyGoal.streakStepCards`) at

@@ -19,10 +19,10 @@ Today ─Study─► the stack ─► Streak kept ─Keep Going─► the stack 
 
 The ordinary days:
 
-1. A usual day: Study, the first ≈ 2 minutes fill the flame (Streak kept), Keep Going, the ring closes with the plan done:
+1. A usual day: Study, the first 2 minutes fill the flame (Streak kept), Keep Going, the ring closes with the plan done:
    Done or Learn 10 New Words. The third moment does not exist.
 2. After a lesson: Add Cards, Study These Now, the stream over that deck (the next journey), then the day as above.
-3. After a break: Study, Streak kept, Ring closed with reviews left (Today's figure reads "Reviews left ≈ 12 min"), Keep Going,
+3. After a break: Study, Streak kept, Ring closed with reviews left (Today's figure reads "Finish your reviews" over "12 min"), Keep Going,
    All done: Done or Learn 10 New Words.
 4. After a missed day: the flame carries "!" and the first two moments are one: Study until the ring closes, "Streak saved",
    the Comeback medal; then as above.
@@ -101,14 +101,14 @@ until then their extra words come through Learn 10 New Words.
 ### A return after a break
 
 Days without study leave the time as it was. The plan holds every overdue card; the ring is the most forgotten that fit
-the time, with no new word while reviews fill it; the rest waits behind Keep Going once the ring is closed, where the next moment's figure prices it ("Reviews left ≈ 12 min"). A learner who
+the time, with no new word while reviews fill it; the rest waits behind Keep Going once the ring is closed, where the next moment's figure prices it ("Finish your reviews" over "12 min"). A learner who
 stops at the ring meets Keep Going on 6.9 % of a newcomer's study days and 10.4 % of a real user's.
 
 ### An Anki user
 
 The imported collection brings its history, and the replay of the history runs the day's-time rule (`daily-ring.md`), so the time arrives near the
-learner's usual day. The ring holds the whole queue up to an hour, and what is due beyond it is "Reviews left ≈ 45 min" after the ring, not a
-ring that cannot close. A deck's Today card shows "≈ 4 min" beside Anki's counts, Due 14, New 6 and Learning 2; How It Works shows the plan,
+learner's usual day. The ring holds the whole queue up to an hour, and what is due beyond it is "Finish your reviews" over "45 min" after the ring, not a
+ring that cannot close. A deck's Today card shows "4 min" beside Anki's counts, Due 14, New 6 and Learning 2; How It Works shows the plan,
 the time and the FSRS parameters. A deck's new cards are asked at once, whether the deck is made in the app or by an Anki package.
 An Anki package's new cards keep Anki's new-card order. New cards/day, Anki's setting under Anki's name, works as in
 Anki: the deck takes that many new cards a day, outside the ring's allowance, and the other decks keep theirs.
@@ -197,8 +197,8 @@ They are named in words, never as a count of days; the widget and Today only sho
 | Double ring, Triple ring | one each, on every day that reaches it | a day whose ring went round 2 or 3 times (`DayRecord.ringShare`); a 3-lap day earns both |
 | Comeback | one, then counted | a missed day made up by closing the next day's ring: the streak survived |
 
-**The comeback scenario.** The day after a missed day, Today's next moment reads "To save your streak ≈ 6 min" instead of
-"To keep your streak ≈ 2 min", and the Day streak figure beside it, still 12 days, carries an orange outline of a flame with an
+**The comeback scenario.** The day after a missed day, Today's next moment reads "Save your streak" over "6 min" instead of
+"Keep your streak" over "2 min", and the Day streak figure beside it, still 12 days, carries an orange outline of a flame with an
 exclamation mark. When that ring closes, the rest's title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
 
 **Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
@@ -245,8 +245,8 @@ cards done, the best streak of the month, the achievements of the month, and See
 | Not in the day | Instead | Why |
 |---|---|---|
 | A rest after every round | one rest, at the streak; the next at the ring | a stop every 2 min breaks the flow; the ring already shows progress; the one stop that pays is the streak (Duolingo: the streak screen raised day-7 retention by 1.7 %) |
-| "Round 2 of 4 · ≈ 2 min" on Today, in the bar, in the widget, on the Mac | one figure with the minutes to the next moment | two progress measures beside one ring; rounds are an internal unit of time |
-| The day's time, "Next round ≈ 2 min" | How It Works only | the size of the day is learned, not chosen |
+| "Round 2 of 4 · 2 min" on Today, in the bar, in the widget, on the Mac | one figure with the minutes to the next moment | two progress measures beside one ring; rounds are an internal unit of time |
+| The day's time, "Next round 2 min" | How It Works only | the size of the day is learned, not chosen |
 | Review ahead after catch-up | gone from Keep Going | reviewing before due gains FSRS little, and fills the ring with low-value work; more work is a new card |
 | Keep Going running catch-up, then review ahead, then practice | Keep Going when the plan has cards left; Learn 10 New Words once the stack is done | one named way on; practice stays on the deck screen |
 | Practice after the plan, a stream that never ended | gone: the stack ends with the plan | a day with an end; practice changes no card and stays on the deck screen |

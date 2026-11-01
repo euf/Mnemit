@@ -1351,8 +1351,8 @@ public struct DailyProgress: Hashable, Sendable {
     /// The one price of a card left, for the widget, whose forecast counts cards and not their kinds.
     public var secondsPerCardLeft: Double { pace.secondsPerCard(newCards: newCardsLeft, otherCards: otherCardsLeft) }
 
-    /// The minutes to the streak mark, the end of the first round, at the pace of the day: an estimate, so the
-    /// screen says "≈"; whole minutes up, 0 for under one. `nil` once the streak is kept today, or if the plan is empty.
+    /// The minutes to the streak mark, the end of the first round, at the pace of the day: an estimate, which the
+    /// screens show as a plain "2 min"; whole minutes up, 0 for under one. `nil` once the streak is kept today, or if the plan is empty.
     public var minutesToStreak: Int? { streakKeptToday || roundsDone > 0 ? nil : roundPlan.minutesToNextRound(cardsDone: ring.done) }
 
     /// The minutes to the ring's closing, the end of the goal, at the pace of the day, as `minutesToStreak`; `nil` once

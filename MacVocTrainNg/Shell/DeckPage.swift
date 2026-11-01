@@ -56,7 +56,7 @@ struct DeckPageContent: View {
     @ObservedObject var document: VocabularyDocument
     /// `false` while the deck can only be viewed: nothing then changes it or starts a stream.
     var isEditable: Bool
-    /// The day's pace, which prices the plan left as "≈ 4 min"; `nil` until the ring is worked out.
+    /// The day's pace, which prices the plan left as "4 min"; `nil` until the ring is worked out.
     var pace: Pace?
     @Binding var screen: Shell.DeckScreen
     /// Whether the cards' inspector is open, for View ▸ Show Inspector.

@@ -26,28 +26,6 @@
         }
       }
     },
-    "%@ of reviews left": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "noch %@ Wiederholungen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ επαναλήψεις ακόμη"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "осталось повторений на %@"
-          }
-        }
-      }
-    },
     "%@ recalled": {
       "localizations": {
         "de": {
@@ -66,270 +44,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ вспомнил"
-          }
-        }
-      }
-    },
-    "%@ to close the ring": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, um den Ring zu schließen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ για να κλείσεις τον κύκλο"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, чтобы закрыть кольцо"
-          }
-        }
-      }
-    },
-    "%@ to close the ring and save your %lld-day streak": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, um den Ring zu schließen und deine Serie von %lld Tag zu retten"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, um den Ring zu schließen und deine Serie von %lld Tagen zu retten"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@ για να κλείσεις τον κύκλο και να σώσεις το σερί σου: %lld ημέρα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@ για να κλείσεις τον κύκλο και να σώσεις το σερί σου: %lld ημέρες"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@ to close the ring and save your %lld-day streak"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@ to close the ring and save your %lld-day streak"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, чтобы закрыть кольцо и спасти стрик: %lld дня"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, чтобы закрыть кольцо и спасти стрик: %lld дней"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, чтобы закрыть кольцо и спасти стрик: %lld день"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, чтобы закрыть кольцо и спасти стрик: %lld дня"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%@ to close the ring and save your streak": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, um den Ring zu schließen und deine Serie zu retten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ για να κλείσεις τον κύκλο και να σώσεις το σερί σου"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, чтобы закрыть кольцо и спасти стрик"
-          }
-        }
-      }
-    },
-    "%@ to keep your %lld-day streak": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, um deine Serie von %lld Tag zu halten"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, um deine Serie von %lld Tagen zu halten"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@ για να κρατήσεις το σερί σου: %lld ημέρα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@ για να κρατήσεις το σερί σου: %lld ημέρες"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@ to keep your %lld-day streak"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@ to keep your %lld-day streak"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, чтобы сохранить стрик: %lld дня"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, чтобы сохранить стрик: %lld дней"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, чтобы сохранить стрик: %lld день"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%@, чтобы сохранить стрик: %lld дня"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%@ to keep your streak": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, um deine Serie zu halten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ για να κρατήσεις το σερί σου"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, чтобы сохранить стрик"
-          }
-        }
-      }
-    },
-    "%@ to start your streak": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, um deine Serie zu starten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ για να ξεκινήσεις το σερί σου"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, чтобы начать стрик"
           }
         }
       }
@@ -6005,134 +5719,24 @@
         }
       }
     },
-    "Close the ring": {
+    "Close your ring": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Schließe den Ring"
+            "value": "Schließe deinen Ring"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Κλείσε τον κύκλο"
+            "value": "Κλείσε τον κύκλο σου"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
             "value": "Закрой кольцо"
-          }
-        }
-      }
-    },
-    "Close the ring to save your %lld-day streak": {
-      "localizations": {
-        "de": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Schließe den Ring, um deine Serie von %lld Tag zu retten"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Schließe den Ring, um deine Serie von %lld Tagen zu retten"
-                }
-              }
-            }
-          }
-        },
-        "el": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Κλείσε τον κύκλο για να σώσεις το σερί σου: %lld ημέρα"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Κλείσε τον κύκλο για να σώσεις το σερί σου: %lld ημέρες"
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Close the ring to save your %lld-day streak"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Close the ring to save your %lld-day streak"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Закрой кольцо, чтобы спасти стрик: %lld дня"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Закрой кольцо, чтобы спасти стрик: %lld дней"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Закрой кольцо, чтобы спасти стрик: %lld день"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Закрой кольцо, чтобы спасти стрик: %lld дня"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "Close the ring to save your streak": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Schließe den Ring, um deine Serie zu retten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Κλείσε τον κύκλο για να σώσεις το σερί σου"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Закрой кольцо, чтобы спасти стрик"
           }
         }
       }
@@ -6159,24 +5763,24 @@
         }
       }
     },
-    "Closed the ring for the first time": {
+    "Closed your ring for the first time": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zum ersten Mal den Ring geschlossen"
+            "value": "Zum ersten Mal deinen Ring geschlossen"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Έκλεισες τον κύκλο για πρώτη φορά"
+            "value": "Έκλεισες τον κύκλο σου για πρώτη φορά"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Кольцо закрыто впервые"
+            "value": "Впервые закрыл кольцо"
           }
         }
       }
@@ -12231,18 +11835,18 @@
         }
       }
     },
-    "Recall a card and the ring moves.": {
+    "Recall a card and your ring moves.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Erinnerst du dich an eine Karte, bewegt sich der Ring."
+            "value": "Erinnerst du dich an eine Karte, bewegt sich dein Ring."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Θυμήθηκες μια κάρτα; Ο κύκλος προχωρά."
+            "value": "Θυμήθηκες μια κάρτα; Ο κύκλος σου προχωρά."
           }
         },
         "ru": {
@@ -12935,24 +12539,24 @@
         }
       }
     },
-    "Reviews left": {
+    "Finish your reviews": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wiederholungen übrig"
+            "value": "Beende deine Wiederholungen"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Υπόλοιπες επαναλήψεις"
+            "value": "Ολοκλήρωσε τις επαναλήψεις σου"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Осталось повторений"
+            "value": "Закончи повторения"
           }
         }
       }
@@ -15179,24 +14783,24 @@
         }
       }
     },
-    "The ring is today's goal: the cards you usually have time for. Close it and the day is done; Keep Going takes the reviews still waiting.": {
+    "Your ring is today's goal: the cards you usually have time for. Close it and the day is done; Keep Going takes the reviews still waiting.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Der Ring ist das Tagesziel: die Karten, für die du sonst Zeit hast. Ist er geschlossen, ist der Tag erledigt; „Weitermachen“ nimmt die Wiederholungen, die noch warten."
+            "value": "Dein Ring ist das Tagesziel: die Karten, für die du sonst Zeit hast. Ist er geschlossen, ist der Tag erledigt; „Weitermachen“ nimmt die Wiederholungen, die noch warten."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ο κύκλος είναι ο στόχος της ημέρας: οι κάρτες για τις οποίες συνήθως έχεις χρόνο. Όταν κλείσει, η μέρα έχει τελειώσει· το «Συνέχισε» παίρνει τις επαναλήψεις που περιμένουν ακόμη."
+            "value": "Ο κύκλος σου είναι ο στόχος της ημέρας: οι κάρτες για τις οποίες συνήθως έχεις χρόνο. Όταν κλείσει, η μέρα έχει τελειώσει· το «Συνέχισε» παίρνει τις επαναλήψεις που περιμένουν ακόμη."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Кольцо — цель на сегодня: столько карточек, на сколько у тебя обычно есть время. Закрыл его — день сделан; «Учиться дальше» берёт повторения, которые ещё ждут."
+            "value": "Твоё кольцо — цель на сегодня: столько карточек, на сколько у тебя обычно есть время. Закрыл его — день сделан; «Учиться дальше» берёт повторения, которые ещё ждут."
           }
         }
       }
@@ -15443,94 +15047,6 @@
         }
       }
     },
-    "To close the ring": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um den Ring zu schließen"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Για να κλείσεις τον κύκλο"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чтобы закрыть кольцо"
-          }
-        }
-      }
-    },
-    "To keep your streak": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um die Serie zu halten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Για να κρατήσεις το σερί"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чтобы сохранить стрик"
-          }
-        }
-      }
-    },
-    "To save your streak": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um die Serie zu retten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Για να σώσεις το σερί"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чтобы спасти стрик"
-          }
-        }
-      }
-    },
-    "To start your streak": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um die Serie zu starten"
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Για να ξεκινήσεις το σερί"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чтобы начать стрик"
-          }
-        }
-      }
-    },
     "Today": {
       "localizations": {
         "de": {
@@ -15773,18 +15289,18 @@
         }
       }
     },
-    "Two minutes keep your streak. Close the ring and the day is done.": {
+    "Two minutes keep your streak. Close your ring and the day is done.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zwei Minuten erhalten deine Serie. Schließ den Ring, und der Tag ist geschafft."
+            "value": "Zwei Minuten erhalten deine Serie. Schließ deinen Ring, und der Tag ist geschafft."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Δύο λεπτά κρατούν το σερί σου. Κλείσε τον κύκλο και η μέρα τελείωσε."
+            "value": "Δύο λεπτά κρατούν το σερί σου. Κλείσε τον κύκλο σου και η μέρα τελείωσε."
           }
         },
         "ru": {
@@ -17613,7 +17129,7 @@
         }
       }
     },
-    "≈ %lld min": {
+    "%lld min": {
       "localizations": {
         "de": {
           "variations": {
@@ -17621,13 +17137,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld Min."
+                  "value": "%lld Min."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld Min."
+                  "value": "%lld Min."
                 }
               }
             }
@@ -17639,13 +17155,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld λεπ."
+                  "value": "%lld λεπ."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld λεπ."
+                  "value": "%lld λεπ."
                 }
               }
             }
@@ -17657,13 +17173,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld min"
+                  "value": "%lld min"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld min"
+                  "value": "%lld min"
                 }
               }
             }
@@ -17675,25 +17191,25 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld мин"
+                  "value": "%lld мин"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld мин"
+                  "value": "%lld мин"
                 }
               },
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld мин"
+                  "value": "%lld мин"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "≈ %lld мин"
+                  "value": "%lld мин"
                 }
               }
             }

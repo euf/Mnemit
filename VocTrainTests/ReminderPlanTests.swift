@@ -37,18 +37,18 @@ struct ReminderPlanTests {
     @Test func theReminderNamesTheStreakItKeeps() {
         let text = ReminderPlan.content([("B1", 23), ("A1–A2", 60), ("C1", 0)], streak: 12)
         #expect(text?.title == "Keep your 12-day streak")
-        #expect(text?.body == "≈ 2 min")
+        #expect(text?.body == "2\u{00A0}min")
         #expect(ReminderPlan.content([("B1", 23)], streak: 0)?.title == "Start your streak")
     }
 
     @Test func theReminderPricesTheStreakStepByThePlanOfItsDay() {
         // Five cards at 10 s are the whole day: less than a minute, not the two minutes of a long plan.
-        #expect(ReminderPlan.content([("B1", 5)], streak: 12, secondsPerCard: 10)?.body == "< 1 min")
-        #expect(ReminderPlan.content([("B1", 300)], streak: 12, secondsPerCard: 10)?.body == "≈ 2 min")
+        #expect(ReminderPlan.content([("B1", 5)], streak: 12, secondsPerCard: 10)?.body == "<\u{00A0}1\u{00A0}min")
+        #expect(ReminderPlan.content([("B1", 300)], streak: 12, secondsPerCard: 10)?.body == "2\u{00A0}min")
         // Three cards at 50 s reach the two minutes, as the app's step does: 150 s.
-        #expect(ReminderPlan.content([("B1", 100)], streak: 12, secondsPerCard: 50)?.body == "≈ 3 min")
+        #expect(ReminderPlan.content([("B1", 100)], streak: 12, secondsPerCard: 50)?.body == "3\u{00A0}min")
         // Without a price the step is the constant two minutes.
-        #expect(ReminderPlan.content([("B1", 5)], streak: 12)?.body == "≈ 2 min")
+        #expect(ReminderPlan.content([("B1", 5)], streak: 12)?.body == "2\u{00A0}min")
     }
 
     @Test func aDailyReminderNamesTheStreakOnlyWhileItStillStandsThatDay() {
@@ -99,7 +99,7 @@ struct ReminderPlanTests {
             at: fires, days: [[(name: "B1", total: 23)]], now: now, streak: 12, isKeptToday: false, studyCalendar: studyCalendar)
         #expect(reminders.map(\.fire) == [date(21, 21)])
         #expect(reminders.first?.title == "Keep your 12-day streak")
-        #expect(reminders.first?.body == "≈ 2 min")
+        #expect(reminders.first?.body == "2\u{00A0}min")
     }
 
     @Test func aStreakAtStakeGetsTheEveningReminder() {

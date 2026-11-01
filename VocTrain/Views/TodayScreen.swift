@@ -325,7 +325,7 @@ struct TodayScreen: View {
     }
 }
 
-/// A deck: its name and what is left of today's plan in it, "≈ 4 min", a ✓ when nothing is; a tap opens its screen.
+/// A deck: its name and what is left of today's plan in it, "4 min", a ✓ when nothing is; a tap opens its screen.
 /// The chevron is drawn by hand, as the row is a button, not a `NavigationLink`: the deck has
 /// to be opened before the push, see `PushedDecks`.
 ///

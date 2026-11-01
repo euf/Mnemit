@@ -59,10 +59,10 @@ are in [`references/`](references/).
 - **One ring a day, up to three moments.** The product model, the one description of what Mnemit is for and what every screen
   shows, is [`product-model.md`](references/product-model.md); the learner's paths through a day are in
   [`learning-flow.md`](references/learning-flow.md). Today is one card: the ring, a picture with no number in it, and beside it
-  three figures, the Day streak, the next moment with its minutes ("To keep your streak", "≈ 2 min") and the words learned, with
+  three figures, the Day streak, the next moment with its minutes ("Keep your streak", "2 min") and the words learned, with
   the week of rings under them. The button under it names
   what comes next: Study while the ring is open, Keep Going once it is closed and the plan has cards left, Learn 10 New Words
-  once the plan is done. The streak is kept after the first ≈ 2 minutes, where Study rests once ("Streak kept": Keep Going or
+  once the plan is done. The streak is kept after the first 2 minutes, where Study rests once ("Streak kept": Keep Going or
   Done for Now); the next rest is the closed ring ("Ring closed"), then, after Keep Going, "All done". Study These Now, in Add
   Cards, studies the cards just added first. Inside, the day has a time in minutes of work at your own pace, learned from your
   review logs (`daily-ring.md`): two and a half minutes on the first day, then more after rings you close, less after one
@@ -248,9 +248,9 @@ are in [`references/`](references/).
   a pasted `word = translation` list), decks, options, import and export, reminders, and a widget
   (the ring, the streak and the next moment, on the home screen and the lock screen).
 - **Mac** (macOS 26): one window. Its sidebar lists Today, Progress and the decks of the Mnemit folder, each
-  deck with "≈ 4 min" or a check (the minutes left of its plan); Today holds the Today card
+  deck with "4 min" or a check (the minutes left of its plan); Today holds the Today card
   (the ring with the Day streak, the next moment, the words learned and the week) over all of them with the same button as the
-  iPhone (Study, Keep Going or Learn 10 New Words); a deck's page opens with the deck's own card ("≈ 4 min" with Due, New and
+  iPhone (Study, Keep Going or Learn 10 New Words); a deck's page opens with the deck's own card ("4 min" with Due, New and
   Learning) and Study This Deck, then either the card table (filters, inspector, multi-select, keyboard) or its statistics.
   Study is by keys and buttons, and neither app has a typed answer: the two buttons are Forgot and Good (← or 1, → or 3),
   named Don't know and Know on a card's first showing, Hard and Easy are ↓ ↑ or 2 4 (and buttons with "Hard and Easy Buttons"

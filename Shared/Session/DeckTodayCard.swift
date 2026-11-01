@@ -2,7 +2,7 @@ import SwiftUI
 import VocabCore
 
 /// A deck's Today card, the top of its screen on both apps, in the grammar of the screens: the label "Today" over the plan's
-/// time, "≈ 4 min" in the ring's colour, and beside it Due, New and Learning as figures in the primary colour. A count of 0 is
+/// time, "4 min" in the ring's colour, and beside it Due, New and Learning as figures in the primary colour. A count of 0 is
 /// left out, as on the deck's row. A deck with nothing left says "Done" with its next review, a paused one "Paused".
 /// VoiceOver reads the headline, the same words in one line.
 struct DeckTodayCard: View {

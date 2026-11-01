@@ -100,7 +100,7 @@ extension AchievementKind {
         case .streak, .wordsLearned: nil
         case .doubleRing: String(localized: "Two laps of the ring in a day")
         case .tripleRing: String(localized: "Three laps of the ring in a day")
-        case .firstRing: String(localized: "Closed the ring for the first time")
+        case .firstRing: String(localized: "Closed your ring for the first time")
         case .perfectWeek: String(localized: "Seven rings in a row")
         case .comeback: String(localized: "Saved your streak after a missed day")
         }
@@ -622,9 +622,11 @@ enum Format {
         return String(localized: "in \(years) years")
     }
 
-    /// What the cards left take, "≈ 7 min", or "< 1 min" for no whole minute (`DailyGoal.minutesLeft`).
+    /// What the cards left take, "7 min", or "< 1 min" for no whole minute (`DailyGoal.minutesLeft`): an estimate read as one,
+    /// like a reading time, so without "≈". The spaces do not break, so a price never splits over two lines.
     static func timeLeft(minutes: Int) -> String {
-        minutes == 0 ? String(localized: "< 1 min") : String(localized: "≈ \(minutes) min")
+        let time = minutes == 0 ? String(localized: "< 1 min") : String(localized: "\(minutes) min")
+        return time.replacingOccurrences(of: " ", with: "\u{00A0}")
     }
 
     /// An FSRS difficulty as "5.2 / 10".

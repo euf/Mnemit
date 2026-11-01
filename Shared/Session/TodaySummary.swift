@@ -23,7 +23,7 @@ struct HeroRing: View {
 
 /// Today's ring and figures in the screens' grammar (`references/product-model.md`, "The grammar of the screens"): three
 /// figures, each a label over a value in its entity's colour. **Day streak**: the flame by its state and the days in the
-/// streak's orange (secondary at 0); **the next moment** (`NextStep.moment`): "To keep your streak" over "≈ 2 min" in the ring's
+/// streak's orange (secondary at 0); **the next moment** (`NextStep.moment`): "Keep your streak" over "2 min" in the ring's
 /// indigo ("Next" over "Keep your streak" without a price), "Today" over "All done" once nothing is left; **Words learned**: the words, "+12 today" after them on a day that added some. The
 /// card on the screens puts them beside the ring and the widgets draw their own ring, so the figures are a view of their own.
 struct TodayFigures: View {

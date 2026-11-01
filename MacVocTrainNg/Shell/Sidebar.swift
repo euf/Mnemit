@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 import VocabCore
 
-/// What a row of the sidebar says of the plan left in it, as the iPhone's deck rows do: the time it takes, "≈ 4 min", or a
+/// What a row of the sidebar says of the plan left in it, as the iPhone's deck rows do: the time it takes, "4 min", or a
 /// check once nothing is left.
 enum SidebarBadge: Hashable {
     case minutes(Int)

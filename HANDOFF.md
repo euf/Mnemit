@@ -17,7 +17,7 @@
   screen shows (a swipe up or down springs back, 2 and 4 do nothing); the setting "Hard and Easy Buttons" adds Hard and
   Easy as buttons, swipes and keys together. The greens rise in chroma from Hard (sage) to
   Easy (vivid jade). Today is one card in the screens' grammar (Fitness Summary through the iOS 26 rules, `hig-ios26.md`):
-  the ring on the left, Day streak, the next moment with ≈ minutes and Words learned on the right, the week under them, the
+  the ring on the left, Day streak, the next moment with its minutes and Words learned on the right, the week under them, the
   date as the subtitle; Progress, a deck and Statistics use the same cards and tiles. The introduction teaches a new word's
   first showing; the long texts are shorter in all four languages. Medal toasts stand where they cover nothing.
 - Deck options (both apps) use Anki's names (Desired retention, Leech threshold, Leech action, Maximum interval, Learning steps, Optimize), a "?" popover on each row and Restore Defaults; new option Maximum reviews/day (`maximumReviewsPerDay`, a cap on the day's review cards, `references/scheduling.md`); "Spread out intervals" is gone, `fuzzing` stays on.
@@ -128,7 +128,7 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
 Drafts from 23.10, not approved by EF; the decisions and everything measured are in `references/ring-design.md`.
 
 1. **A lasting backlog in plain words** (EF asked for plain-language texts "по-человечески"): veterans with hundreds of due cards
-   see "≈ 45 min of reviews left" after the ring; the longer text ("480 cards have piled up; the ring takes the most forgotten
+   see "Finish your reviews · 45 min" after the ring; the longer text ("480 cards have piled up; the ring takes the most forgotten
    first; at this pace about 3 weeks") is not built.
 2. **Forecast** in How It Works: what the current intake of new words costs in a month and a year (as Anki's simulator
    and Noos do).

@@ -9,7 +9,7 @@ struct DeckHeadline: Equatable {
 
     /// - Parameters:
     ///   - counts: The deck's plan for today; `nil` before the list has read it.
-    ///   - pace: The day's pace, which prices the plan as "≈ 4 min"; `nil` leaves the time out.
+    ///   - pace: The day's pace, which prices the plan as "4 min"; `nil` leaves the time out.
     ///   - hasCards: Whether the deck has any card.
     init?(counts: StudyCounts?, pace: Pace? = nil, isPaused: Bool, hasCards: Bool, now: Date) {
         if isPaused {
@@ -29,7 +29,7 @@ struct DeckHeadline: Equatable {
         self.isDone = isDone
     }
 
-    /// "≈ 4 min · 14 due · 6 new · 2 learning": Anki's counts (`StudyCounts.due`, `.new`, `.learning`) after the time of the
+    /// "4 min · 14 due · 6 new · 2 learning": Anki's counts (`StudyCounts.due`, `.new`, `.learning`) after the time of the
     /// plan; a count of 0 is left out.
     static func counts(_ counts: StudyCounts, pace: Pace?) -> String {
         let time = DeckMinutes.minutes(counts, pace: pace).map(Format.timeLeft(minutes:))

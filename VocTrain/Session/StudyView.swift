@@ -494,7 +494,7 @@ private struct StudyHeader: View {
         .animation(.easeOut(duration: 0.2), value: motion.showsRest && motion.travel >= 1)
     }
 
-    /// A small ring, empty inside, then the minutes to the next moment of the day ("≈ 2 min": to the streak, to the ring, of
+    /// A small ring, empty inside, then the minutes to the next moment of the day ("2 min": to the streak, to the ring, of
     /// the reviews left; none once all is done). No streak here: beside the ring the cards fill it would draw the eye, and the
     /// rests show it. For a moment after a done card
     /// the interval it was given, "in 8 days", takes the place of the text. The ring is first, so it does not move when the

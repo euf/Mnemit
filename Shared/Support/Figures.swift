@@ -35,7 +35,7 @@ enum FigureSize {
     var captionFont: Font { self == .regular ? .footnote : .caption2 }
 }
 
-/// A figure: a label over a large value, "Day streak / 12", "To keep your streak / ≈ 2 min". The value is rounded and in its
+/// A figure: a label over a large value, "Day streak / 12", "Keep your streak / 2 min". The value is rounded and in its
 /// entity's colour (`Color.appAccent` for the ring's minutes, `Color.streak` for the days), else the primary colour; a
 /// `unit` follows it smaller, in small capitals ("12 days" reads "12 DAYS"); a `caption` sits after it in secondary
 /// ("412 +12 today"). `leading` goes before the value, a flame say. In a widget `accentable` marks the value for the tinted

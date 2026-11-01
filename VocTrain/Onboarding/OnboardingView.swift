@@ -131,8 +131,8 @@ private struct DayStep: View {
                         .padding(.bottom, 16)
                     VStack(alignment: .leading, spacing: 14) {
                         row("rectangle.stack", Text("Mnemit lays out a few minutes' worth of cards every day."))
-                        row("circle.circle", Text("Recall a card and the ring moves."))
-                        row("flame.fill", Text("Two minutes keep your streak. Close the ring and the day is done."))
+                        row("circle.circle", Text("Recall a card and your ring moves."))
+                        row("flame.fill", Text("Two minutes keep your streak. Close your ring and the day is done."))
                         row("chart.bar.fill", Text("Words climb from New to Mastered as they stick."))
                     }
                 }

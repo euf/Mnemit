@@ -295,8 +295,8 @@ Russian word. The product model, the one description of what Mnemit is, is `refe
 names its terms. Seven entities appear on screen: **Deck**, **Card**, **Stack**, **Ring**, **Streak**, **Words learned**
 and **Medal**. The rule behind the numbers: **a card is never a review, and a review is never a card.**
 A day is measured in cards; reviews only price the time. The day has a time in seconds, and the app learns it from the work
-the learner really does. Minutes on screen ("≈ 2 min") translate cards into a decision and are estimates at the
-learner's own pace.
+the learner really does. Minutes on screen ("2 min") translate cards into a decision and are estimates at the
+learner's own pace, read the way a reading time is.
 
 **Review** (on screen: not counted; RU «оценка»):
 One grade of one card, as above: one swipe, button or key. A card can take several reviews on
@@ -319,7 +319,7 @@ when they coincide. Doing the step keeps the streak (`DailyProgress.streakKeptTo
 there once; the goal is the ring's rest. `DailyProgress` holds `rounds` (the number of ends),
 `roundsDone`, `roundEnds`, `cardsToNextRound` and `minutesToNextRound`, at the pace the day began with.
 A day that began with an empty plan cuts the cards as they stand. Before the step the next-moment figure of Today says
-"To keep your streak" over "≈ 2 min"; How It Works names the step (`references/learning-flow.md`).
+"Keep your streak" over "2 min"; How It Works names the step (`references/learning-flow.md`).
 _Avoid_: round, session, lap, segment
 
 **Day's time** (RU «время дня»):
@@ -379,7 +379,7 @@ _Avoid_: history (that is the Review log), Daily snapshot (a Deck's cards by sta
 
 **Backlog** (RU «хвост»):
 Overdue cards, part of the plan, worked off as the day's time allows: after the ring they are the cards of Keep Going, priced
-as "≈ 12 min of reviews left".
+as "Finish your reviews · 12 min".
 
 **Ring** (RU «кольцо»):
 How far today is: done cards against the daily goal, with the **cards underway**: a card reviewed today and still due
@@ -398,7 +398,7 @@ Study days in a row that kept it. A day keeps it with its streak step done (done
 (done ≥ goal): the streak step of that day is not enough, and then the streak starts anew with
 it. Two missed days in a row end the streak; the best run stays in Progress. Days before `DailyGoal.planRuleStart` (23.10.2026)
 count with one review. On screen the streak is the figure **Day streak**, the **Streak line** and "🔥 12" in the stream's
-header; the sentences say no days: "≈ 2 min to keep your streak", "≈ 6 min to close the ring and save your streak"
+header; the sentences say no days: "Keep your streak · 2 min", "Save your streak · 6 min"
 (**Flame**).
 _Avoid_: streak chip, series, «серия»
 
@@ -422,12 +422,12 @@ widget. Hidden at 0 days.
 
 **Today card** (on screen the first card of Today; DE „Heute“; RU «карточка дня»):
 The picture of the day (`TodayCard`): the ring on the left, its three figures on the right (the **Day streak**, the next
-moment of the day with its "≈ 2 min", **Words learned** with "+N today"), the week of small rings under a divider; the whole
+moment of the day with its "2 min", **Words learned** with "+N today"), the week of small rings under a divider; the whole
 card opens Progress. The Mac's Today page draws the same card, and an empty Mnemit an empty one (`EmptyTodayCard`). A deck's
-screen opens with its own, `DeckTodayCard`: "≈ 4 min" and the figures Due, New, Learning.
+screen opens with its own, `DeckTodayCard`: "4 min" and the figures Due, New, Learning.
 _Avoid_: hero, summary, header
 
-**Pace** ("≈ 7 min" / „≈ 7 Min.“; RU «темп»):
+**Pace** ("7 min" / „7 Min.“; RU «темп»):
 Seconds per done card, in two prices (`Pace`): one for cards that were new when their study day
 began (no review before the day), one for all others (review, relearning, learning carried over
 from an earlier day). The time of a review is how long its card was on screen, from the question
@@ -502,8 +502,8 @@ rest: only the closed ring keeps the streak ("Streak saved").
 
 **Ring closed** (the second moment; DE „Ring geschlossen“; RU «кольцо закрыто»):
 The end of the stack that closes the goal: the day's learning is done and the ring bursts. The rest shows the medal, the
-words learned, the week and "≈ 12 min of reviews left" when due cards remain, with **Keep Going** (the default) and **Done for Now**,
-or **Done** and **Learn 10 New Words** when none remain.
+words learned, the week and "Finish your reviews · 12 min" when due cards remain, with **Keep Going** (the default) and
+**Done for Now**, or **Done** and **Learn 10 New Words** when none remain.
 
 **All done** (the third moment; on screen "All done for today"; DE „Alles für heute erledigt“; RU «всё на сегодня сделано»):
 The end of the plan's last due card, Keep Going included: nothing is due until tomorrow. It is also the title of a rest that

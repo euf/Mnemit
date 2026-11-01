@@ -41,8 +41,8 @@ Rejected: auto-start of the stream at launch. The learner would not see what is 
 │ ┌───────────────────────────────────┐ │ the Today card (`TodayCard`), the list's first section: padding 20 / 16, one button to Progress
 │ │ ╭──────╮  Day streak              │ │ ring 112 left (a picture, no number in it); right three figures,
 │ │ │      │  🔥 12                    │ │   each a label (subheadline) over a value (title2, rounded, semibold):
-│ │ │      │  To keep your streak     │ │   the streak's days in orange,
-│ │ │      │  ≈ 2 min                 │ │   the minutes in the accent
+│ │ │      │  Keep your streak        │ │   the streak's days in orange,
+│ │ │      │  2 min                   │ │   the price in the accent
 │ │ │      │  Words learned           │ │
 │ │ ╰──────╯  412  +12 today          │ │
 │ │ ───────────────────────────────── │ │ Divider
@@ -50,7 +50,7 @@ Rejected: auto-start of the stream at launch. The learner would not see what is 
 │ └───────────────────────────────────┘ │
 │ DECKS                                 │ system section header
 │ ┌───────────────────────────────────┐ │
-│ │ Greek B1               ≈ 4 min ›  │ │ body | body, monospaced, secondary | chevron.forward, footnote semibold, tertiary
+│ │ Greek B1                 4 min ›  │ │ body | body, monospaced, secondary | chevron.forward, footnote semibold, tertiary
 │ │ ───────────────────────────────── │ │
 │ │ Greek A1–A2                  ✓ ›  │ │
 │ └───────────────────────────────────┘ │
@@ -71,11 +71,11 @@ Vertical budget on the 13 mini (an estimate, not measured): 50 + 44 + about 52 (
 | Toolbar | `ToolbarItemGroup(.primaryAction)` | Trailing: `Menu("Add", systemImage: "plus")` and `Menu("More", systemImage: "ellipsis")` (their items: `screens.md`, Today). No info button: How It Works is the last row of the Progress screen. The HIG prefers symbols without borders in toolbars [H:toolbars]: `ellipsis` without the circle. |
 | Today card | `TodayCard` in the list's first `Section` | A `VStack` (spacing 16, padding 20 horizontal and 16 vertical): the ring and its figures, a `Divider`, the week. A `Button` behind the content (`.buttonStyle(.plain)`) pushes Progress, so VoiceOver reads the ring and each figure on its own. Until every deck is read and the ring is evaluated (`isDayReady`) the figures are redacted placeholders (12 days, 2 min, 412 words). The Mac's page draws the same card on `Color.tileGround` (§6.2). |
 | Ring | `HeroRing` over `ProgressRing` | 112 pt on `@ScaledMetric(relativeTo: .title)`, line 18/168 of its diameter; the drawing and sources in §5.7. A picture: the arc of the cards done against today's goal and its laps, nothing in the middle at any size or text size. The owner asked for Fitness quality on 22.10.2026; [H:activity-rings] advises against imitating the Activity rings, the ring here follows the owner. VoiceOver reads "Daily Goal" and its percent. |
-| Figures | `TodayFigures`: three `Figure`s, spacing 10 | Each a label (`.subheadline`) over a value (`.title2`, rounded, semibold, `.monospacedDigit()`); a unit would follow smaller and in capitals, a caption in `.footnote` secondary (`Figure`, §2.6). **Day streak**: the flame by its state (`StreakFlame`) and the days in `Color.streak`; at 0 days the outline flame and "0" in secondary. **The next moment** (`NextStep.moment`): the label names the moment, the value is its minutes in `Color.appAccent` ("≈ 2 min", "< 1 min"; non-breaking); the labels are in §2.4. **Words learned**: the words and, on a day that added some, "+12 today" as the caption; shown from 0. |
+| Figures | `TodayFigures`: three `Figure`s, spacing 10 | Each a label (`.subheadline`) over a value (`.title2`, rounded, semibold, `.monospacedDigit()`); a unit would follow smaller and in capitals, a caption in `.footnote` secondary (`Figure`, §2.6). **Day streak**: the flame by its state (`StreakFlame`) and the days in `Color.streak`; at 0 days the outline flame and "0" in secondary. **The next moment** (`NextStep.moment`): the label is the action, the value its price, the minutes in `Color.appAccent` ("2 min", "< 1 min"; non-breaking); the labels are in §2.4. **Words learned**: the words and, on a day that added some, "+12 today" as the caption; shown from 0. |
 | Layout | `ViewThatFits` | The ring and the figures side by side at their own width (`fixedSize` horizontally, so a wide card centres the pair), spacing 20; where they do not fit, at the larger text sizes, the ring over the figures. |
 | Week | `WeekRings` | Seven rings of 22 pt, spacing 10, a past day with nothing done a thin outline in `Color.inactiveMark` (`MissedDayMark`, 3:1) and not an empty track, weekday initials in `.caption2`, today last and bold. The chevron `chevron.forward` (footnote semibold, tertiary) ends the row; an invisible one at its start keeps the rings centred. |
 | Section header | `Section("Decks")` | System. |
-| Deck row | `Button` with an `HStack` | `.buttonStyle(.plain)`, `contentShape(Rectangle())`, pushes the deck screen. Name `.body`; what the deck's plan leaves of today at the day's pace, "≈ 4 min" (`DeckRow`, `DeckMinutes`: backlog included, "< 1 min" under a minute), `.body`, `.monospacedDigit()`, secondary, trailing, or a `checkmark` in secondary when nothing is left; then `chevron.forward`. No subtitle. Until the deck is read the time is a redacted placeholder. A paused deck sits in the section "Paused": name in secondary, no time. |
+| Deck row | `Button` with an `HStack` | `.buttonStyle(.plain)`, `contentShape(Rectangle())`, pushes the deck screen. Name `.body`; what the deck's plan leaves of today at the day's pace, "4 min" (`DeckRow`, `DeckMinutes`: backlog included, "< 1 min" under a minute), `.body`, `.monospacedDigit()`, secondary, trailing, or a `checkmark` in secondary when nothing is left; then `chevron.forward`. No subtitle. Until the deck is read the time is a redacted placeholder. A paused deck sits in the section "Paused": name in secondary, no time. |
 | Swipe | `.swipeActions`, `.contextMenu` | Pause Deck (Resume Deck in the Paused section); Remove from List for decks outside the folder. |
 | Bottom bar | `.searchable` + `.searchToolbarBehavior(.minimize)`, `ToolbarItem(.bottomBar)`, `DefaultToolbarItem(kind: .search)` | One bar holds the day's button and the minimised Search All Cards. The button is `.borderedProminent`, labelled by `DayAction`: `Study` while the ring is open, `Keep Going` once the ring is closed and the plan has cards left, `Learn 10 New Words` once the plan is done, all three in the accent with a white label. No footnote under it. Its width is the bar's less 80 pt, at least 180 (`containerRelativeFrame`): 211 of the bar's 291 pt at 375 pt, room for "Learn 10 New Words" in one line. |
 | Accessibility | | Study button `accessibilityValue("\(due) cards left")`. The card: the ring says "Daily Goal" and its percent; the Day streak figure "12-day streak, kept today" ("not kept yet", "at risk": `NextStep.streakSpoken`); the other figures read as label and value. |
@@ -84,13 +84,13 @@ Vertical budget on the 13 mini (an estimate, not measured): 50 + 44 + about 52 (
 
 | State | Figures | Button |
 |---|---|---|
-| Before the streak step | Day streak: outline flame and "12"; "To keep your streak" over "≈ 2 min" | `Study` |
-| After the streak step, ring open | Day streak: filled flame; "To close the ring" over "≈ 5 min" | `Study` |
-| Ring closed, cards left | "Reviews left" over "≈ 12 min" | `Keep Going` |
+| Before the streak step | Day streak: outline flame and "12"; "Keep your streak" over "2 min" | `Study` |
+| After the streak step, ring open | Day streak: filled flame; "Close your ring" over "5 min" | `Study` |
+| Ring closed, cards left | "Finish your reviews" over "12 min" | `Keep Going` |
 | Plan done, or nothing due | "Today" over "All done" | `Learn 10 New Words`; opens the stream with ten new cards at once |
-| The day after a missed day, ring open | the flame an orange outline with an exclamation mark; "To save your streak" over "≈ 6 min" | `Study` |
-| No streak | Day streak: outline flame and "0" in secondary; "To start your streak" over "≈ 2 min" | `Study` |
-| Rounds not known yet | "Next" over the moment's name: "Keep your streak", "Close the ring", "Save your streak", "Start your streak" or "Keep Going" | `Study` |
+| The day after a missed day, ring open | the flame an orange outline with an exclamation mark; "Save your streak" over "6 min" | `Study` |
+| No streak | Day streak: outline flame and "0" in secondary; "Start your streak" over "2 min" | `Study` |
+| Rounds not known yet | "Next" over the action: "Keep your streak", "Close your ring", "Save your streak", "Start your streak" or "Finish your reviews" | `Study` |
 | Decks not read yet | placeholders, redacted, until every deck and the ring are in (`isDayReady`) | `Study` |
 | No decks | `EmptyTodayCard`: the empty ring and "Add the words you are learning." (`.title3.weight(.semibold)`) on `Color.tileGround` (radius 26), then `New Deck` (`.borderedProminent`, large), `Shared Decks` (`.bordered`, large) and `Use iCloud Drive Folder` as a small text button; Open Deck… is in the `…` menu; no glass | – |
 | Deck unreadable (iCloud) | row without its time | row stays tappable; the stream cover shows the existing failure view |
@@ -123,6 +123,17 @@ Where the parts stand:
 - **Statistics** (`SummaryTiles`): Cards, Due, New, Suspended (once a card is) and Remembered Now as tiles; on the iPhone `StatisticsScreen` is a grouped list of the tiles and a section Retention.
 - **A deck's Today card** (`DeckTodayCard`, §3.2) is the first section of the deck screen and the strip of the Mac's deck page.
 
+### 2.7 Voice
+
+How the screens speak of the next step (`NextStep`) and of time. The rules hold on every surface that says it: Today, the rests, the study bar, the widgets, the reminders and VoiceOver.
+
+- **A call to action.** The next step is an imperative with "your": "Keep your streak", "Close your ring", "Finish your reviews". Apple Fitness says "Close your rings" the same way.
+- **The action first, its price after it.** On one line "Keep your streak · 2 min"; on two lines the price stands under the action in the ring's indigo (`Color.appAccentText`). Today's figure takes the same order: the label is the action, the value the price; without a price "Next" stands over the action.
+- **Minutes are a plain "2 min", with no "≈".** A time estimate reads as one, the way a reading time ("5 min read") does; `Format.timeLeft` keeps number and unit together with a no-break space, and "< 1 min" stands under a minute. Minutes stay a translation of cards at the learner's own pace, never a goal.
+- **At risk the action names what is at stake**: "Save your streak" and not "Close your ring"; its minutes are the ring's, because closing the ring saves the streak.
+- **Status lines are short past participles or a plain statement, with no price:** "Streak kept", "Ring closed", "Streak saved", "All done for today".
+- **Every language keeps the form.** German says du with dein ("Schließe deinen Ring", "Halte deine Serie"), Greek the imperative with σου ("Κλείσε τον κύκλο σου", "Κράτα το σερί σου"), Russian the ты-imperative without a possessive, as Russian speaks ("Закрой кольцо", "Сохрани стрик"); the minute is "Min.", "λεπ." and "мин". Where English addresses the learner's ring, it is "your ring" there too ("Recall a card and your ring moves.").
+
 ## 3. iPhone deck screen
 
 Pushed onto Today's stack from a deck row; what it shows and does: `screens.md`, Deck screen.
@@ -134,7 +145,7 @@ Pushed onto Today's stack from a deck row; what it shows and does: `screens.md`,
 │ ‹ Today       Greek B1         (+)(…) │ inline title; back; plus and ellipsis menus
 │ ┌───────────────────────────────────┐ │ the deck's Today card (`DeckTodayCard`), the first section
 │ │ Today        Due   New   Learning │ │ label (subheadline) over value (title2, rounded, semibold)
-│ │ ≈ 4 min      14    6     2        │ │ the time in the accent, the counts in the primary colour
+│ │ 4 min        14    6     2        │ │ the time in the accent, the counts in the primary colour
 │ └───────────────────────────────────┘ │
 │ ┌───────────────────────────────────┐ │
 │ │ ▤ Cards                    2 236  │ │ LabeledContent, monospaced digits
@@ -152,7 +163,7 @@ Pushed onto Today's stack from a deck row; what it shows and does: `screens.md`,
 | Element | SwiftUI | Values |
 |---|---|---|
 | Container | `List` in the stack | `.listStyle(.insetGrouped)`, `.navigationBarTitleDisplayMode(.inline)`. |
-| Today card | `DeckTodayCard` in the first `Section` | "Today" over the time of what today's plan leaves in the deck, "≈ 4 min" in `Color.appAccent` (backlog included), and beside it Due, New and Learning as figures in the primary colour; a count of 0 is left out, as on the deck's row. A deck with nothing left: "Today" over a check and "Done", and "Next review tomorrow" (`.footnote`, secondary; "Done" alone without a next date). A paused deck: "Today" over "Paused" (wins over the counts). Layout (`ViewThatFits`): the time beside the counts; else the counts in a row under the time; else one column, at accessibility sizes. One element for VoiceOver, the words of `DeckHeadline`. No card before the counts are read, or for a deck with no cards. |
+| Today card | `DeckTodayCard` in the first `Section` | "Today" over the time of what today's plan leaves in the deck, "4 min" in `Color.appAccent` (backlog included), and beside it Due, New and Learning as figures in the primary colour; a count of 0 is left out, as on the deck's row. A deck with nothing left: "Today" over a check and "Done", and "Next review tomorrow" (`.footnote`, secondary; "Done" alone without a next date). A paused deck: "Today" over "Paused" (wins over the counts). Layout (`ViewThatFits`): the time beside the counts; else the counts in a row under the time; else one column, at accessibility sizes. One element for VoiceOver, the words of `DeckHeadline`. No card before the counts are read, or for a deck with no cards. |
 | Toolbar | `ToolbarItem(.primaryAction)` twice | `Menu("Add", systemImage: "plus")`: Add Cards, Import Cards… (wait for `isReadyToEdit`). `Menu("More", systemImage: "ellipsis")`: Practice Newest Words and Practice Today's Mistakes (`DeckPractice`; grey with nothing to practise), a divider, Rename…, Pause Deck or Resume Deck, Export…, Delete Deck. |
 | Rows | `NavigationLink` with `RowLabel(title:symbol:)` | Cards with its count (`rectangle.stack`), Statistics (`chart.bar`), Options (`slider.horizontal.3`). |
 | Study | `ToolbarItem(.bottomBar)` in `DeckScreen` | `.borderedProminent`: **Study This Deck** in the accent while the deck has cards in today's plan, else **Learn 10 New Words**, also in the accent: ten new cards of this deck at once. Width the bar's less 64 pt, at least 180 (`containerRelativeFrame`); disabled for a deck without cards or one that cannot be edited yet; `accessibilityValue("\(due) cards left")`. |
@@ -164,7 +175,7 @@ Pushed onto Today's stack from a deck row; what it shows and does: `screens.md`,
 
 ```
 ┌───────────────────────────────────────┐
-│ ✕  ◔ ≈ 4 min                   ↶  (…)  │ nav 44: close, ring 30, minutes, subheadline from the leading edge | undo | ellipsis
+│ ✕  ◔ 4 min                     ↶  (…)  │ nav 44: close, ring 30, minutes, subheadline from the leading edge | undo | ellipsis
 │ ┌───────────────────────────────────┐ │
 │ │                                   │ │ card: margin 16, inner padding 24, radius 22,
 │ │         ο Άγγλος    [spk]         │ │   secondarySystemBackground
@@ -187,7 +198,7 @@ Width: 343 inside the 16 pt margins; each of the two buttons is (343 − 12) / 2
 What the header shows: `screens.md`, Study.
 
 - Leading: `Button(role: .close)` (xmark). It replaces the `chevron.backward` End Session button; the stream has no session to end, every grade is saved. The HIG asks for the standard Close symbol and no text label [H:toolbars].
-- Leading, right after the close button (`.topBarLeading`, no shared background): `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44), and the minutes to the next moment ("≈ 4 min", `.subheadline`, `.monospacedDigit()`; none once all is done), spacing 8, one combined element for VoiceOver. The ring is empty inside and goes on over itself past the goal, up to three laps. The flame is an outline until today's streak step is done, filled in the streak's orange from then on, an outline with an exclamation mark at risk. For 1.5 s after a done card the interval it was given ("in 8 days", after a `repeat` glyph) takes the place of the minutes. A practice shows the word `Practice` as the principal text, without the ring.
+- Leading, right after the close button (`.topBarLeading`, no shared background): `StreamRing` (a `ProgressRing`, 30 pt, `@ScaledMetric(relativeTo: .subheadline)` up to 44), and the minutes to the next moment ("4 min", `.subheadline`, `.monospacedDigit()`; none once all is done), spacing 8, one combined element for VoiceOver. The ring is empty inside and goes on over itself past the goal, up to three laps. The flame is an outline until today's streak step is done, filled in the streak's orange from then on, an outline with an exclamation mark at risk. For 1.5 s after a done card the interval it was given ("in 8 days", after a `repeat` glyph) takes the place of the minutes. A practice shows the word `Practice` as the principal text, without the ring.
 - Trailing: an icon button `arrow.uturn.backward` (Undo) left of `Menu("More", systemImage: "ellipsis")`; nothing hangs under the bar: its room goes to the card.
 - The ring is where the cards go (`study-screen.md`, Motion): its frame is reported to `StudyMotion.ringHome` (global coordinates, nothing fixed), it steps and glows when a card is done, and the figures stand beside it.
 - No streak in the bar: a flame beside the ring draws the eye from the cards filling it; the rests show it. The goal-met moment is the ring that closes as the last card leaves and bursts at the rest of the plan.
@@ -321,7 +332,7 @@ The sectors, the pull of the card, the haptics, the flight, the stack, the ring'
 
 - **A New Word** (`FirstShowingView`) is a card's first showing as the stream draws it. The title "A New Word" (`.title.bold()`) with Skip; a sample card ("a janela", "the window") on a stack of three sheets; Show Answer, then the two wide buttons Don't know and Know in the place Show Answer had, of one height with Continue, which takes their place once one is pressed. Don't know slides the card out to the left and under the stack, with the line "It comes back after a few cards."; Know slides it out to the right, with "It comes back once more before you're done." Both lines are in the layout, one unseen, so nothing moves. Once the card is under the stack only the stack's edges show; Reduce Motion fades the card into the stack. Nothing is graded or recorded.
 - **The swipes** (`GesturePracticeView`): two sample cards, a swipe left (Forgot) and a swipe right (Good).
-- **One stack a day** (`DayStep`): a stack of cards and a 72 pt ring that fills to 0.7, then four rows, each with a symbol: "Mnemit lays out a few minutes' worth of cards every day." (`rectangle.stack`), "Recall a card and the ring moves." (`circle.circle`), "Two minutes keep your streak. Close the ring and the day is done." (`flame.fill`), "Words climb from New to Mastered as they stick." (`chart.bar.fill`); Continue (`.borderedProminent`, large).
+- **One stack a day** (`DayStep`): a stack of cards and a 72 pt ring that fills to 0.7, then four rows, each with a symbol: "Mnemit lays out a few minutes' worth of cards every day." (`rectangle.stack`), "Recall a card and your ring moves." (`circle.circle`), "Two minutes keep your streak. Close your ring and the day is done." (`flame.fill`), "Words climb from New to Mastered as they stick." (`chart.bar.fill`); Continue (`.borderedProminent`, large).
 
 ## 5. Accent and colour roles
 
@@ -472,10 +483,10 @@ Level 0 is Today and Progress in the sidebar, which cover every deck; level 1 is
 
 ### 6.2 Window, toolbar and stream header
 
-- Window: a `NavigationSplitView` with `.listStyle(.sidebar)`, the sidebar 200 to 320 pt wide (240 ideal), the window at least 760 x 520 pt, titled by the page. Sidebar symbols: Today `circle.circle`, Progress `chart.bar.xaxis`, a deck `rectangle.stack`, a paused deck `pause.circle`. The badge (`SidebarBadge`) is the plan left at the day's pace, "≈ 4 min", or a check once nothing is left, neutral like the counts everywhere; Today's badge prices the plan of the decks of the day as one, and a paused deck, a deck not read and any row before the ring is worked out have none. The (+) menu (`plus`, borderless) sits under the list.
+- Window: a `NavigationSplitView` with `.listStyle(.sidebar)`, the sidebar 200 to 320 pt wide (240 ideal), the window at least 760 x 520 pt, titled by the page. Sidebar symbols: Today `circle.circle`, Progress `chart.bar.xaxis`, a deck `rectangle.stack`, a paused deck `pause.circle`. The badge (`SidebarBadge`) is the plan left at the day's pace, "4 min", or a check once nothing is left, neutral like the counts everywhere; Today's badge prices the plan of the decks of the day as one, and a paused deck, a deck not read and any row before the ring is worked out have none. The (+) menu (`plus`, borderless) sits under the list.
 - Toolbar by page: Today has the search field; the day's button is in the page. A deck's page has the segmented `Cards | Statistics` (principal), Add Cards (`text.badge.plus`) and Learning Options (`slider.horizontal.3`), and on Cards the Details button (`sidebar.trailing`, the inspector); the table carries its own search field.
-- Strip (`DeckPage.strip`): under the toolbar of a deck, the deck's Today card (`DeckTodayCard`, §3.2: "Today" over "≈ 4 min" in the accent, Due, New and Learning as figures, "Done" with a check and "Next review tomorrow", "Paused") at the left and one `.borderedProminent` large button at the right: **Study This Deck** in the accent while the plan has cards left in the deck, else **Learn 10 New Words** in grey, ten new cards at once. The same button is last in the toolbar. ⌘L is the day's action from any page and ⌥⌘L the deck's.
-- Session header (`SessionView.header`): `ProgressRing` at 28 pt, empty inside as the iPhone's study bar is, then the minutes to the next moment of the day as the iPhone bar says them (`NextStep`: "≈ 4 min"; none once all is done), left right after Done, Undo and the More menu; Done ends the stream and brings the sidebar back. A medal's toast stands in the middle of the row (§4.7). The stack under the card is the cards left to the next moment, after the ring too (Keep Going, Learn 10 New Words, Study These Now), and the rests are the iPhone's `StreamRestView`.
+- Strip (`DeckPage.strip`): under the toolbar of a deck, the deck's Today card (`DeckTodayCard`, §3.2: "Today" over "4 min" in the accent, Due, New and Learning as figures, "Done" with a check and "Next review tomorrow", "Paused") at the left and one `.borderedProminent` large button at the right: **Study This Deck** in the accent while the plan has cards left in the deck, else **Learn 10 New Words** in grey, ten new cards at once. The same button is last in the toolbar. ⌘L is the day's action from any page and ⌥⌘L the deck's.
+- Session header (`SessionView.header`): `ProgressRing` at 28 pt, empty inside as the iPhone's study bar is, then the minutes to the next moment of the day as the iPhone bar says them (`NextStep`: "4 min"; none once all is done), left right after Done, Undo and the More menu; Done ends the stream and brings the sidebar back. A medal's toast stands in the middle of the row (§4.7). The stack under the card is the cards left to the next moment, after the ring too (Keep Going, Learn 10 New Words, Study These Now), and the rests are the iPhone's `StreamRestView`.
 - Today (`TodayPageContent`): the iPhone's Today card (`TodayCard`, §2.3) on `Color.tileGround` (radius 16), 560 pt wide at most and centred, as a button to Progress; the day's button under it (`.borderedProminent`, extra large, the default action) and in the toolbar. No large title: the title bar holds "Today" and the date. A medal's toast stands under the button (§4.7). Without a deck: `EmptyTodayCard`, New Deck (`.borderedProminent`), Shared Decks (`.bordered`) and Use iCloud Drive Folder as a footnote-size link.
 - Answer buttons (`GradeChoice`, §4.3): Forgot (← or 1) and Good (→ or 3), each with its arrow keycap and 38 pt high; Don't know and Know on a card's first showing. Return and Space mean Good (Know on a first showing). ↓ or 2 give Hard and ↑ or 4 give Easy with or without buttons for them; the preference "Hard and Easy Buttons" adds the buttons. The cheat sheet (`?`) names the grades while such a card is on screen: "Show the answer, then grade Know", "Grade: ← Don't know, → Know, ↑ Easy, ↓ Hard"; on later showings "Good" and "← Forgot, → Good, ↑ Easy, ↓ Hard".
 - Study These Now: a button between Add and Done in the Add Cards sheet once cards are added (Done stays the default), and beside Import in the preview of a table of 1 to 50 cards imported into an empty deck. It adds what is typed or checked, closes the sheet and the stream of that deck starts with the added cards first.

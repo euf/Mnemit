@@ -40,11 +40,11 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
       outline until the streak step is done, `flame.fill` once it is, an outline with an `exclamationmark` at risk
       (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open). At 0 days the outline and "0" in the secondary
       colour. VoiceOver reads "12-day streak, kept today" (`NextStep.streakSpoken`).
-    - **The next moment** (`NextStep.moment`), its value the minutes in the ring's indigo. The label names the moment: "To
-      keep your streak" over "≈ 2 min"; the step done, "To close the ring"; the day after a missed day, "To save your
-      streak"; without a streak, "To start your streak"; the ring closed with cards of the plan left, "Reviews left"; nothing
-      left, "Today" over "All done". Without a price the label is "Next" and the value is the moment's name ("Keep your
-      streak", "Close the ring", "Save your streak", "Start your streak", "Keep Going").
+    - **The next moment** (`NextStep.moment`), its value the price in minutes in the ring's indigo. The label is the action:
+      "Keep your streak" over "2 min"; the step done, "Close your ring"; the day after a missed day, "Save your streak" (its
+      minutes are the ring's); without a streak, "Start your streak"; the ring closed with cards of the plan left, "Finish
+      your reviews"; nothing left, "Today" over "All done". Without a price the label is "Next" and the value is the action
+      ("Keep your streak", "Close your ring", "Save your streak", "Start your streak", "Finish your reviews").
     - **Words learned**: the words, with "+12 today" after them on a day that added some; shown from 0 words too.
   - Under a divider, the week's seven rings with their weekday letters (`WeekRings`), a chevron at the end of the row.
   - Where the figures do not fit beside the ring (the larger text sizes, `ViewThatFits`) the ring stands over them.
@@ -64,7 +64,7 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   line and shrinks to 75 %. Study and Keep Going open the stream over the screen (`StudyRunView`) over every active
   deck. Learn 10 New Words opens it with ten new cards at once over every active deck (`StudyModel.Entry.pushOn`),
   without the rest first. With every deck paused the button is disabled.
-- Decks section: a row per deck with its name and what its plan leaves of today at the day's pace, "≈ 4 min", a check when
+- Decks section: a row per deck with its name and what its plan leaves of today at the day's pace, "4 min", a check when
   nothing is (`DeckRow`, `DeckMinutes`: the deck's new cards at the new-card price, the others at the other price, whole
   minutes up, "< 1 min", backlog included); no subtitle. Ring and streak cover all decks; decks are rows. Tapping a
   row pushes the deck screen. Swipe and context menu: **Pause Deck** (`pause.circle`); a swipe also offers Remove from
@@ -143,7 +143,7 @@ sizes: `design-spec.md` §4.
   (`SessionDriver.setDoneElsewhere`); the stopwatch runs only in the lane whose card is on screen.
   Tests: `MultiDeckStudyTests`.
 - Header, left, right after the close button: the small ring (`StreamRing`, empty inside) and the minutes to the next
-  moment of the day beside it (no streak: the rests show it) ("≈ 2 min": to the streak, to the ring, of the reviews left; none once all is done); after a done card, for 1.5 s, its
+  moment of the day beside it (no streak: the rests show it) ("2 min": to the streak, to the ring, of the reviews left; none once all is done); after a done card, for 1.5 s, its
   interval ("tomorrow", "in 8 days") takes the text's place. Then an Undo button and the menu "More". A practice names itself
   and has no ring. Closing loses nothing: every grade is saved, and Today picks up the count.
 - The menu "More" is one menu on both apps (`StreamMenuItems`): Edit Card (the keyboard opens in the answer; on the Mac ⌘E, shown on the item and in the cheat sheet), Card Info, Suspend Card, a
@@ -184,10 +184,10 @@ sizes: `design-spec.md` §4.
   were others.
   - *Streak kept* (once a day, after the streak step, inside the plan): the title "12-day streak" with the filled flame
     large beside it, which bursts as the title comes in (a milestone's name replaces the title on a milestone day), the
-    medal, the price line of the sentence ("≈ 4 min to close the ring"). **Keep Going** (default, prominent) or **Done for
+    medal, the price line of the sentence ("Close your ring · 4 min"). **Keep Going** (default, prominent) or **Done for
     Now**. The rest has no card on screen, so nothing is spoken and nothing is graded.
   - *Ring closed* (the end of the stack that closes the goal): the title "Ring closed" ("Streak saved" when the ring saved
-    the streak), the medal, the price line "≈ 12 min of reviews left" while cards of the plan are left, the words learned
+    the streak), the medal, the price line "Finish your reviews · 12 min" while cards of the plan are left, the words learned
     ("412 words learned · +12 today"), the rings of the last seven days (`WeekRings`). **Keep Going** (prominent) and
     **Done for Now** while the plan has cards left; with none, **Done** and **Learn 10 New Words**.
   - *All done* (the end of the plan, and the end of any stream that began past the ring's moment, Keep Going, Learn 10 New
@@ -257,13 +257,13 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 ## Deck screen
 
 - A deck row pushes the deck screen onto Today's stack (`DeckScreen`/`DeckContent`; it replaces the details sheet). Its first
-  section is the deck's Today card (`DeckTodayCard`, `Shared/Session/`): the label "Today" over "≈ 4 min" in the ring's indigo
+  section is the deck's Today card (`DeckTodayCard`, `Shared/Session/`): the label "Today" over "4 min" in the ring's indigo
   (the minutes of what today's plan leaves in the deck, backlog included; a placeholder until the ring is worked out) and
   beside it Due, New and Learning as figures in the primary colour, a part of 0 left out. The counts go under the time when
   the card is narrow, all in one column at the accessibility sizes. A deck with nothing left: "Today" over a check and "Done",
   "Next review tomorrow" under it (none when no review is coming); a paused deck: "Today" over "Paused", which wins over the
   counts. A deck with no cards, or counts not read yet, has no card. VoiceOver reads `DeckHeadline.text`, the one line
-  "≈ 4 min · 14 due · 6 new · 2 learning".
+  "4 min · 14 due · 6 new · 2 learning".
 - Rows under it, at the body size: Cards (count) → Card Browser; Statistics; Options. **Study This Deck** is the bottom bar's
   button (`.borderedProminent`) while the deck has cards in today's plan, else **Learn 10 New Words** (grey): ten new cards of
   this deck at once; it is disabled for a deck without cards or one that cannot be edited.
@@ -472,7 +472,7 @@ edited options; Save applies everything as one change.
   if named `Mnemit`). Mac: `DeckFolder` (a scoped bookmark, entitlement `bookmarks.app-scope`).
 - Reminders: `Reminders`, local notifications 7 days ahead on the days whose decks have cards
   (`StudySession.counts(for:at:)`), in the words of Today (`ReminderPlan.content`): the title "Keep your 12-day streak"
-  and the body "≈ 2 min" (the time to keep the streak, not the length of the day: the first two minutes of that day's plan at the
+  and the body "2 min" (the time to keep the streak, not the length of the day: the first two minutes of that day's plan at the
   price of a card, "< 1 min" for a plan shorter than one, `DailyGoal.streakStepCards`); "Start your streak" and the same body
   without a streak; never a count of the cards due. A daily reminder names the streak only while it still stands on its day
   (`ReminderPlan.streakNamed`, in study days like the evening one). The number on the icon is "1" while today's ring is open and 0 once it
@@ -480,7 +480,7 @@ edited options; Save applies everything as one change.
   after closing a deck and on a time change. The notifications are local and fixed at the app's last run: a step the learner
   does on the Mac afterwards reaches the iPhone's reminders only when the app next runs there.
 - Streak reminder: a second notification at 21:00 (`ReminderPlan.streakMinutes`), ids `streak-reminder-0…6`, in
-  the first reminder's words (title "Keep your 12-day streak", body "≈ 2 min"), scheduled in the same
+  the first reminder's words (title "Keep your 12-day streak", body "2 min"), scheduled in the same
   pass for the next seven 21:00s. A streak must be at stake: it is 1 or more and, for today, the streak step is
   not done; for tomorrow, either way (a streak holds through one missed day); for the day after tomorrow, only
   when today's step is done; and the day must have cards. None when the first reminder's time is at or after
@@ -499,14 +499,15 @@ edited options; Save applies everything as one change.
   streak's state. No widget has a button, a capsule or a card count; the whole widget opens the stream. VoiceOver reads each
   widget as one element, the sentence with the state.
   - Small: the ring (62 pt) at the top left, the flame over the days (large title, bold rounded, in the streak's orange) at the
-    top right, the sentence at the bottom left (subheadline semibold, primary, up to three lines).
+    top right, the action of the next step at the bottom left (subheadline semibold, primary, up to three lines) with its
+    price under it in the ring's indigo (`NextStepText`).
   - Medium: the ring (96 pt) at the left; at the right Day streak, the next moment and Words learned
     (`TodayFigures(size: .compact)`: label caption, value headline rounded), without the week.
   - Circular: the system gauge, in its middle the minutes of the next step ("2" over a small "min", "<1"), a `checkmark`
     once the ring is closed, nothing without a price.
   - Rectangular (lock screen): the ring (44 pt), beside it the streak line (caption semibold) and the sentence (caption2, up
-    to two lines).
-  - Inline (`accessoryInline`, over the lock screen's clock): the flame and the short form of the sentence, "12 · ≈ 2 min",
+    to two lines): the action over its price in the ring's indigo (`NextStepText`).
+  - Inline (`accessoryInline`, over the lock screen's clock): the flame and the short form of the sentence, "12 · 2 min",
     "12 · Done" when nothing is left, the days alone without a price; with no streak the sentence, with no flame. Before the
     first snapshot: "Open Mnemit to start".
   - Tinted, clear and vibrant renderings (`widgetRenderingMode` not `.fullColor`): the ring is flat, one tone with its track at
@@ -571,7 +572,7 @@ the words over every deck of the Mnemit folder (`DailyRingModel`, the iPhone ove
 | Studying | question, Show Answer, grade; swipes | question, Show Answer, grade; keys and buttons; no typed answer on either |
 | The answer buttons | two wide buttons, Forgot and Good (Don't know and Know on a first showing); Hard and Easy by swipe, or as buttons with the setting Hard and Easy Buttons | the same, each with its arrow as a keycap (← and →); keys 1 and 3; 2 4 ↓ ↑ grade Hard and Easy; the same setting in Preferences |
 | Study These Now | Add Cards; the import of a table of 1 to 50 cards into an empty deck | the same two places; File ▸ Import Cards… into an empty deck and the import into a new deck both reach it |
-| Deck rows, deck header | "≈ 4 min" or a check; header "≈ 4 min · 14 due · 6 new · 2 learning" | the sidebar's badges and the deck page's strip say the same |
+| Deck rows, deck header | "4 min" or a check; header "4 min · 14 due · 6 new · 2 learning" | the sidebar's badges and the deck page's strip say the same |
 | Reminders, the icon's number | yes | no: one device reminds, the Mac would remind twice |
 | Widget | yes | no: a Mac widget needs an App Group, which the self-signed Mac app has no team for |
 
@@ -586,7 +587,7 @@ first (`applicationShouldTerminate` replies once `Shell.closeAll()` is done). Se
 window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`.
 
 - **Sidebar** (`SidebarContent`, 200 to 320 pt): Today with the plan left of the day as its badge, Progress, then
-  the sections Decks, Paused and Other Decks. A badge (`SidebarBadge`) is the iPhone's deck row: "≈ 4 min" (`DailyGoal.minutesLeft`:
+  the sections Decks, Paused and Other Decks. A badge (`SidebarBadge`) is the iPhone's deck row: "4 min" (`DailyGoal.minutesLeft`:
   the plan left in the deck at the day's pace, "< 1 min" under a minute) or a check once nothing is left. Today's
   badge prices the plan of all the decks of the day as one (the new cards at their price, the rest at theirs), so it can
   differ from the sum of the decks' rounded minutes. A paused deck, a deck not read yet and every row before the ring is
@@ -610,7 +611,7 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
   closed, Words learned and Your ring sharing one card, the calendar, Medals, the words in memory in the Memory section), with How It Works as a
   sheet (`HowItWorksSheet`, 520 x 640, Done).
 - **A deck's page** (`DeckPage`, `DeckPageContent`): the strip, then the Cards table or the Statistics. The strip holds the
-  deck's Today card (`DeckTodayCard`, as the iPhone's deck screen: "≈ 4 min" with Due, New and Learning beside it, the time left
+  deck's Today card (`DeckTodayCard`, as the iPhone's deck screen: "4 min" with Due, New and Learning beside it, the time left
   out until the ring is worked out; or a check and "Done" with "Next review tomorrow"; or "Paused") and **Study This Deck**
   (prominent, large) while the plan has cards left in the deck, else **Learn 10 New Words** (grey); the same button is the last
   toolbar item, after Add Cards and Learning Options, behind a fixed spacer. Toolbar: the segmented Cards | Statistics in the
@@ -651,7 +652,7 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
   next moment, at most four, after the ring too: the cards of Keep Going, of Learn 10 New Words and of Study These Now;
   `StackPose` in `Shared/Session/CardStackEdges.swift`); the bar with Done and, right
   after it, the day's ring (empty inside) and the minutes to the next moment of the day as the iPhone's
-  bar says them (`NextStep`: "≈ 4 min"; none once all is done), then Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
+  bar says them (`NextStep`: "4 min"; none once all is done), then Undo and the menu "More" (`StreamMenuItems`, the iPhone's: Edit Card, Card Info, Suspend Card, Pronounce
   Automatically, disabled at a rest); Show Answer prominent in indigo with a keycap "Space or ↩". The bar of
   the last answer (`UndoChip`) stays under the header. The rests are the iPhone's `StreamRestView`, titles included
   ("Ring closed", "All done for today").

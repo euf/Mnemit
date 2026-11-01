@@ -182,7 +182,7 @@ struct SessionView: View {
         }
     }
 
-    /// Today's ring, empty inside, and what the iPhone's bar says: the minutes to the next moment of the day, "≈ 4 min". No
+    /// Today's ring, empty inside, and what the iPhone's bar says: the minutes to the next moment of the day, "4 min". No
     /// streak, as on the iPhone: the rests show it. The ring comes first, so it does not move when the
     /// text changes its width.
     private var ringAndFigures: some View {
