@@ -30,6 +30,12 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - A deleted deck: `DeckFiles.trash` keeps its `deck.json` and `reviews.jsonl` in `.mnemit-progress/retired/`; the ring and How
   It Works add each as a paused deck of retired cards (`ProgressLedgerStore.retiredDecks()`, `Deck.retired(_:excluding:)`), so
   today's done cards, the streak step and the words right keep the deck's work; a card back in a deck counts there.
+- **Today, once it reached a mark.** Today is in the ledger from the moment its streak step is done or its ring closed: its
+  record has today's figures at that moment and is written again when the ring closes later. Today's `kept` and `closed` read it,
+  so a deck back from a pause or the Trash adds its cards to the cards left without opening the ring or taking back the
+  streak, and the ring's goal stays at the goal it closed at; a day that began with an empty plan has no goal to hold, and its
+  ring follows the plan as it stands. An undone review takes neither back either. Tomorrow the record
+  is raised like any past day's. Pausing or deleting a deck still lowers today's plan: its cards cannot be studied today.
 - **What reads from where** (`DailyProgress.evaluate(_:at:calendar:planRuleStart:ledger:cache:)`). From the ledger: the days
   before today (the first study day through yesterday), their `records`, `week`, `weekRings`, `ringDays` (the size rule's
   input), `achievements`, and the streak (`Streak.walk`: kept and closed from the records, the ledger's `reviews` for past
@@ -47,10 +53,10 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   done reaches `keepAt`; `closed` likewise at `goal`. `goal`, `keepAt`, `time`, `reason` and `filled` never change. A day
   that is over only rises, when real reviews of it arrive late (the other device's log, an Anki import).
 - **`ledgerUpdates`**: the days before today whose record is new or differs from the ledger `evaluate` was given, oldest first,
-  today never. A day the ledger lacks (the first run, a missed day) is worked out from the logs and the days before it, and
+  then today's when it keeps the streak or closes the ring. A day the ledger lacks (the first run, a missed day) is worked out from the logs and the days before it, and
   is listed there. The app merges the updates into its ledger and writes it (`DayLedger.updating(_:)`).
-- **Merge** (`DayLedger.merging`): per day the record with the larger `done`, then `reviews`, `wordsLearned` and `goal`, then
-  the smaller encoded line. Commutative and idempotent, so any device can read any file again.
+- **Merge** (`DayLedger.merging`): per day the record with the larger `done`, then `reviews` and `wordsLearned`, then the
+  one `kept`, the one `closed`, the larger `goal`, then the smaller encoded line. Commutative and idempotent, so any device can read any file again.
 - **File**: JSON Lines, one record per day, oldest first (`DayLedger.encoded()`, `decode(_:)`); keys `day` (ISO date),
   `reviews`, `done`, `goal`, `keep`, `kept`, `closed`, `time` and `worked` (to 0.1 s), `reason` (`start`, `ringClosed`,
   `closedInARow`, `ringOpen`, `smallPlan`, `sustainedOvershoot`; an unknown one reads `ringOpen`), `filled`, `words`, `rule` (missing: 0). `decode` never

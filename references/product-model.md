@@ -133,7 +133,9 @@ kept the streak and closed the ring, the words learned by its end. Past days are
 the cards, so pausing, resuming or deleting a deck, or deleting or rewriting a card, never changes a past day. A pause
 takes nothing from today either: a paused deck asks nothing of the day, and what was done in it stays done. Nor does a
 deletion: a deleted deck leaves its reviews beside the records, so today's ring, the streak and the words right keep its
-work, and a deck taken back out of the Trash counts it once. A record
+work, and a deck taken back out of the Trash counts it once. What today reached is written down at once: from the
+moment the streak is kept or the ring closed, resuming a deck or taking one out of the Trash adds cards left, never
+opens the ring or takes the streak back. A record
 only rises, when answers of that day arrive late from the other device; both devices keep the same records beside the
 decks.
 

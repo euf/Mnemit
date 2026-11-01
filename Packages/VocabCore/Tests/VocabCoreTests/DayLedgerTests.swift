@@ -50,7 +50,7 @@ struct DayLedgerTests {
 
     // MARK: The merge
 
-    @Test func ofADayInBothTheLargerDoneWinsThenReviewsWordsAndGoalThenTheSmallerLine() {
+    @Test func ofADayInBothTheLargerDoneWinsThenReviewsWordsKeptClosedAndGoalThenTheSmallerLine() {
         let base = record(5, reviews: 10, done: 5, goal: 8, words: 3)
         let pairs: [(loser: LedgerDay, winner: LedgerDay)] = [
             (record(5, reviews: 99, done: 4, goal: 99, words: 99), base),
@@ -58,6 +58,15 @@ struct DayLedgerTests {
             (record(5, reviews: 10, done: 5, goal: 99, words: 2), base),
             (record(5, reviews: 10, done: 5, goal: 7, words: 3), base),
         ]
+        // The same counts: the record that kept the streak, then the one that closed the ring, wins over a larger goal.
+        let open = LedgerDay(day: 5, reviews: 10, done: 5, goal: 9, keepAt: 6, time: 150, reason: .start, worked: 60, filled: true, wordsLearned: 3)
+        let kept = LedgerDay(day: 5, reviews: 10, done: 5, goal: 7, keepAt: 5, time: 150, reason: .start, worked: 60, filled: true, wordsLearned: 3)
+        let closed = LedgerDay(day: 5, reviews: 10, done: 5, goal: 5, keepAt: 5, time: 150, reason: .start, worked: 60, filled: true, wordsLearned: 3)
+        #expect(!open.kept && kept.kept && !kept.closed && closed.closed)
+        for (loser, winner) in [(open, kept), (kept, closed), (open, closed)] {
+            #expect(ledger(loser).merging(ledger(winner)) == ledger(winner))
+            #expect(ledger(winner).merging(ledger(loser)) == ledger(winner))
+        }
         for (loser, winner) in pairs {
             #expect(ledger(loser).merging(ledger(winner)) == ledger(winner))
             #expect(ledger(winner).merging(ledger(loser)) == ledger(winner))
@@ -310,7 +319,7 @@ extension DailyProgressTests {
         #expect(written.days.filter { $0.key < day } == ledger.days.filter { $0.key < day })
     }
 
-    @Test func todayStaysLiveAndNeverReachesTheLedger() throws {
+    @Test func todayStaysLiveAndOutOfTheLedgerUntilItKeepsTheStreak() throws {
         let made = try fixture()
         var a = made.a
         let b = made.b
@@ -321,7 +330,7 @@ extension DailyProgressTests {
         let noon = evaluate([a, b], at: at(day: today, hour: 12), ledger: ledger)
         #expect(noon.ring.done >= 4 && noon.ring.fraction > morning.ring.fraction)
         #expect(noon.records.last?.done == noon.ring.done && noon.records.last?.day == today)
-        #expect(noon.ledgerUpdates.isEmpty)
+        #expect(!noon.streakKeptToday && noon.ledgerUpdates.isEmpty)
         // The ring is today's alone: the same grade moves it as it does without a ledger.
         #expect(noon.ring == evaluate([a, b], at: at(day: today, hour: 12)).ring)
         // Tomorrow, today is the past: it is in the updates, with what it ended at.
@@ -329,6 +338,20 @@ extension DailyProgressTests {
         let tomorrow = evaluate([a, b], at: at(day: today + 1, hour: 6), ledger: ledger)
         #expect(tomorrow.ledgerUpdates.map(\.day) == [today])
         #expect(tomorrow.ledgerUpdates.first?.done == noon.ring.done)
+    }
+
+    /// A day that began with an empty plan keeps the streak at once and is written down, but it has no goal to hold: the
+    /// cards added later are its ring, as without the record.
+    @Test func aDayThatBeganEmptyHasItsRingFollowThePlanAsItStands() throws {
+        var deck = try Deck(learningOptions: options(), cards: (0..<5).map { due("c\($0)", onDay: today + 3) })
+        let empty = evaluate([deck], ledger: DayLedger())
+        #expect(empty.streakKeptToday && empty.ring.goal == 0)
+        let ledger = DayLedger().updating(empty.ledgerUpdates)
+        #expect(ledger.days[today]?.kept == true)
+        deck.cards += (0..<5).map { Card(question: "late\($0)", answer: "x", created: now.addingTimeInterval(-60)) }
+        let added = evaluate([deck], ledger: ledger)
+        #expect(added.ring == evaluate([deck], ledger: DayLedger()).ring && added.ring.goal > 0 && !added.ring.isGoalMet)
+        #expect(added.streakKeptToday && added.ledgerUpdates.isEmpty)
     }
 
     @Test func aNewLedgerNeverReusesTheStaleDaysOfTheCache() throws {

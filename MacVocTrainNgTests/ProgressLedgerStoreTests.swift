@@ -150,10 +150,11 @@ struct ProgressLedgerStoreTests {
         #expect(progress.records.count >= 3)
         let past = progress.records.dropLast().map(\.done)
         #expect(past.reduce(0, +) > 0)
-        // The first evaluation wrote the days before today.
+        // The first evaluation wrote the days before today, and today: its plan is empty, which keeps the streak.
         let written = store.read()
-        #expect(written.days.count >= 3)
-        #expect(written.days.values.allSatisfy { $0.reviews == 24 })
+        let today = try #require(progress.records.last?.day)
+        #expect(written.days.count >= 4 && written.days[today]?.kept == true)
+        #expect(written.days.values.filter { $0.day < today }.allSatisfy { $0.reviews == 24 })
 
         try FileManager.default.removeItem(at: second)
 

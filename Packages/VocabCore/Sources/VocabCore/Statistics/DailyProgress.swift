@@ -1432,7 +1432,10 @@ public struct DailyProgress: Hashable, Sendable {
     /// The days before today come from the `ledger`: a day it holds is its record raised by what the logs say of it now
     /// (`LedgerDay.raised(reviews:done:worked:wordsLearned:)`), so pausing or deleting a deck, or deleting a card, takes
     /// nothing from a day that was over; a day it lacks is worked out from the logs and the days before it, a missed day
-    /// too. `ledgerUpdates` names the days whose record is new or higher. Today is always the logs'.
+    /// too. Today is the logs', and what it reached stays reached as on the days before it: the ledger holds today from the
+    /// moment its streak step is done or its ring closed, so a deck back from a pause or the Trash lifts the plan and the
+    /// cards left, never a closed ring or a kept streak; an undone review takes them back no more. `ledgerUpdates` names the
+    /// days whose record is new or higher, today's when it keeps the streak or closes the ring.
     ///
     /// With a `cache` that an earlier call over the same decks and ledger filled, the days before today that the decks'
     /// own caches kept (`DeckHistoryCache`) are not stepped through again: only today is.
@@ -1515,7 +1518,9 @@ public struct DailyProgress: Hashable, Sendable {
         let pasts = allHistories.compactMap(\.pastID)
         let key =
             pasts.count == allHistories.count
-            ? DailyProgressCache.Key(pasts: pasts, paused: given.map(\.isPaused), first: first, today: today, calendar: calendar, ledger: ledger) : nil
+            ? DailyProgressCache.Key(
+                pasts: pasts, paused: given.map(\.isPaused), first: first, today: today, calendar: calendar,
+                ledger: DayLedger(days: ledger.days.filter { $0.key < today })) : nil
         let before: DailyProgressCache.Before
         if let key, let known = cache?.before(for: key) {
             before = known
@@ -1539,24 +1544,32 @@ public struct DailyProgress: Hashable, Sendable {
         let startNew = zip(allowances, histories).reduce(0) { $0 + min($1.0, $1.1.starts[today]?.new ?? 0) }
         let startRounds = DayRounds(otherCards: other, newCards: startNew, pace: startPace, seconds: time)
 
+        // What today reached, if it reached anything yet: its record from an earlier call.
+        let held = ledger.days[today].flatMap { $0.rule >= LedgerDay.currentRule ? $0 : nil }
         let counts = decks.indices.map { decks[$0].owed(now: now, calendar: calendar, newCardAllowance: allowances[$0]) }
         let owed = counts.reduce(0) { $0 + $1.total }
         let owedNew = counts.reduce(0) { $0 + $1.newAtDayStart }
         let done = given.reduce(0) { $0 + $1.done(onDayOf: now, calendar: calendar) }
         let underway = given.reduce(0) { $0 + $1.underway(onDayOf: now, calendar: calendar) }
-        let ring = DailyRing(done: done, goal: DailyGoal.goal(done: done, owed: owed, plan: startRounds.goal), underway: underway)
+        let planned = DailyGoal.goal(done: done, owed: owed, plan: startRounds.goal)
+        // A ring closed on a plan stays full: a plan that grew since adds cards left, not a goal. A day that began with an
+        // empty plan has no goal to hold: its ring follows the plan as it stands.
+        let closedOn = held.flatMap { $0.closed && $0.goal > 0 ? $0.goal : nil }
+        let ring = DailyRing(done: done, goal: closedOn.map { min(planned, $0) } ?? planned, underway: underway)
         // A day that began with an empty plan has the plan as it stands, which is new cards the learner
         // is doing: they are its rounds.
         let roundPlan =
             startRounds.goal > 0
             ? startRounds : DayRounds(otherCards: owed - owedNew, newCards: done + owedNew, pace: startPace, seconds: time)
-        let isKeptToday = startRounds.ends.first.map { done >= $0 } ?? true
+        let isKeptToday = (startRounds.ends.first.map { done >= $0 } ?? true) || held?.kept == true
         // An empty plan that nothing could fill, every deck paused or every card suspended, keeps the streak for
         // nobody: it neither grows nor breaks. Today shows it as kept (nothing is at stake), the records as idle.
-        let isIdleToday = startRounds.goal == 0 && done == 0 && !hasWork
+        let isIdleToday = startRounds.goal == 0 && done == 0 && !hasWork && held == nil
         // Today is closed by its ring: cards added after the day began are extra work, not debt.
-        kept[today] = isKeptToday && !isIdleToday
-        closed[today] = ring.isGoalMet && !isIdleToday
+        let isKept = isKeptToday && !isIdleToday
+        let isClosed = (ring.isGoalMet || closedOn != nil) && !isIdleToday
+        kept[today] = isKept
+        closed[today] = isClosed
         idle[today] = isIdleToday
         let (streak, steps) = Streak.walk(
             reviews: streakReviews, today: today, planRuleStart: planRuleStart, isKept: { kept[$0] ?? false }, isClosed: { closed[$0] ?? false },
@@ -1579,6 +1592,15 @@ public struct DailyProgress: Hashable, Sendable {
                 kept: kept[day] ?? false, closed: closed[day] ?? false, streak: day == today ? streak.days : steps[day]?.days ?? 0,
                 savedStreak: steps[day]?.saved ?? false, wordsLearned: day == today ? wordsToday : past?.wordsLearned ?? 0)
         }
+        // Today joins the ledger when it keeps the streak and when it closes the ring, with the figures it reached them at.
+        var updates = before.updates
+        if isKept && held?.kept != true || isClosed && held?.closed != true {
+            updates.append(
+                LedgerDay(
+                    day: today, reviews: max(reviews[today] ?? 0, held?.reviews ?? 0), done: max(done, held?.done ?? 0), goal: ring.goal,
+                    keepAt: startRounds.ends.first ?? 0, kept: isKept, closed: isClosed, time: time, reason: size.reason, worked: ringToday.worked,
+                    filled: startRounds.filled, wordsLearned: max(wordsToday, held?.wordsLearned ?? 0)))
+        }
         // In the order of the decks given: the shares of the decks that take part, 0 for a paused one.
         var shares = allowances.makeIterator()
         let givenAllowances = given.map { $0.isPaused ? 0 : shares.next() ?? 0 }
@@ -1597,6 +1619,6 @@ public struct DailyProgress: Hashable, Sendable {
             },
             climbedToday: given.reduce(0) { $0 + $1.climbs(onDayOf: now, calendar: calendar) }, records: records,
             achievements: Achievements.earned(over: records), ringDays: before.days + [ringToday],
-            ledgerUpdates: before.updates)
+            ledgerUpdates: updates)
     }
 }

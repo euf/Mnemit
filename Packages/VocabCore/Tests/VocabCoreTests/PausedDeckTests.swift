@@ -96,6 +96,32 @@ extension DailyProgressTests {
         #expect(after.memory == before.memory)
     }
 
+    /// The ring closed while one deck was paused, then the deck resumed: its cards come back as cards left, while the
+    /// ring stays closed and the streak kept, today and once today is over, as on a past day. Without today's record in
+    /// the ledger the resumed deck would open the ring again; a deck taken out of the Trash comes back the same way.
+    @Test func aResumedDeckTakesNothingTodayReached() throws {
+        var first = try deck((0..<10).map { waiting("a\($0)") })
+        let second = (0..<10).map { waiting("b\($0)") }
+        reviewPlan(of: &first, at: now)
+        let reached = evaluate([first, try deck(second, isPaused: true)], ledger: DayLedger())
+        #expect(reached.ring == DailyRing(done: 10, goal: 10) && reached.streakKeptToday)
+        let record = try #require(reached.ledgerUpdates.last)
+        #expect(record.day == today && record.kept && record.closed && record.goal == 10)
+        let ledger = DayLedger().updating(reached.ledgerUpdates)
+        #expect(evaluate([first, try deck(second, isPaused: true)], ledger: ledger).ledgerUpdates.isEmpty)
+
+        let resumed = try deck(second)
+        let open = evaluate([first, resumed], ledger: DayLedger())
+        #expect(!open.ring.isGoalMet && open.cardsLeft == 10)
+        let after = evaluate([first, resumed], ledger: ledger)
+        #expect(after.ring == DailyRing(done: 10, goal: 10) && after.streakKeptToday && after.streak == reached.streak)
+        #expect(after.cardsLeft == 10 && after.records.last?.closed == true)
+        #expect(after.ledgerUpdates.isEmpty)
+        let tomorrow = evaluate([first, resumed], at: at(day: today + 1, hour: 6), ledger: ledger)
+        let past = try #require(tomorrow.records.first { $0.day == today })
+        #expect(past.kept && past.closed)
+    }
+
     /// On resume the overdue cards of the days of the pause are due like any: the plan holds them all.
     @Test func aResumedDeckBringsItsOverdueCardsBackIntoThePlan() throws {
         let overdue = (0..<30).map { waiting("o\($0)", onDay: today - 10) }

@@ -311,14 +311,22 @@ struct AnkiImportTests {
         #expect(throws: AnkiImport.Error.unreadableArchive) { try AnkiImport.read(url.appendingPathExtension("missing")) }
     }
 
-    @Test func leavesNoTemporaryDatabaseBehind() throws {
+    @Test func leavesNoTemporaryDatabaseBehind() async throws {
         func databases() -> Set<String> {
             Set(((try? FileManager.default.contentsOfDirectory(atPath: FileManager.default.temporaryDirectory.path)) ?? []).filter { $0.hasPrefix("anki-import-") })
         }
         let before = databases()
         _ = try AnkiImport.read(Fixtures.zip([("collection.anki2", Self.collection(current: false))]))
         #expect(throws: AnkiImport.Error.unreadableCollection) { try AnkiImport.read(Fixtures.zip([("collection.anki2", Data("garbage".utf8))])) }
-        #expect(databases().subtracting(before).isEmpty)
+        // The other Anki suites run alongside and open databases of their own: each goes away within moments, a database
+        // left behind never does.
+        var left = databases().subtracting(before)
+        let deadline = Date().addingTimeInterval(5)
+        while !left.isEmpty && Date() < deadline {
+            try await Task.sleep(for: .milliseconds(50))
+            left.formIntersection(databases())
+        }
+        #expect(left.isEmpty)
     }
 
     // MARK: Packages made by Anki

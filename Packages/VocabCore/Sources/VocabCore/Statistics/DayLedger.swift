@@ -91,7 +91,8 @@ public struct LedgerDay: Hashable, Sendable {
     fileprivate static func tenths(_ seconds: Double) -> Double { (seconds * 10).rounded() }
 }
 
-/// The progress ledger: one `LedgerDay` per study day, frozen once the day is over, filled from the logs on first
+/// The progress ledger: one `LedgerDay` per study day, frozen once the day is over (today's from the moment it keeps the
+/// streak or closes the ring, so neither is taken back), filled from the logs on first
 /// run and merged by day across devices. The past reads from it and today from the logs
 /// (`DailyProgress.evaluate(_:at:calendar:planRuleStart:ledger:cache:)`), so progress never goes back.
 ///
@@ -104,7 +105,7 @@ public struct DayLedger: Hashable, Sendable {
     }
 
     /// Both ledgers' days; of a day in both, the record that is more: the newer `rule`, then the larger `done`,
-    /// `reviews`, `wordsLearned` and `goal`, then the smaller encoded line. A device that has not learned the new rule
+    /// `reviews` and `wordsLearned`, then the one `kept`, the one `closed`, the larger `goal`, then the smaller encoded line. A device that has not learned the new rule
     /// yet cannot lift a day back to its old figures. Commutative and idempotent.
     public func merging(_ other: DayLedger) -> DayLedger {
         DayLedger(days: days.merging(other.days, uniquingKeysWith: Self.winner))
@@ -116,7 +117,10 @@ public struct DayLedger: Hashable, Sendable {
     }
 
     private static func winner(_ a: LedgerDay, _ b: LedgerDay) -> LedgerDay {
-        let keys = [(a.rule, b.rule), (a.done, b.done), (a.reviews, b.reviews), (a.wordsLearned, b.wordsLearned), (a.goal, b.goal)]
+        let keys = [
+            (a.rule, b.rule), (a.done, b.done), (a.reviews, b.reviews), (a.wordsLearned, b.wordsLearned), (a.kept ? 1 : 0, b.kept ? 1 : 0),
+            (a.closed ? 1 : 0, b.closed ? 1 : 0), (a.goal, b.goal),
+        ]
         for (x, y) in keys where x != y { return x > y ? a : b }
         return line(a) <= line(b) ? a : b
     }
