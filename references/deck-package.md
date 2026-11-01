@@ -119,6 +119,12 @@ the decks.
 - Reading takes every `*.jsonl` of the folder, merged. A hidden placeholder `.<name>.jsonl.icloud` is skipped and its download
   started (`startDownloadingUbiquitousItem`). Each read and write goes through `NSFileCoordinator` inside the folder's
   security-scoped access; a write is atomic and makes the folder if it is missing. An unreadable line costs its day only.
+- `<deck folder>/.mnemit-progress/retired/<uuid>.mnemit`: a deleted deck's `deck.json` and `reviews.jsonl`, without media,
+  copied by `DeckFiles.trash` before the deck goes to the Trash (`DeckFiles.keepReviews(of:)`; nothing for a deck never
+  studied). `ProgressLedgerStore.retiredDecks()` reads them, newest first, a package iCloud Drive hasn't downloaded left
+  out until it has; `Deck.retired(_:excluding:)` turns each into a paused deck of retired cards, without the cards a deck in
+  the folder holds again (taken out of the Trash) or a newer copy holds, so the reviews of today, the words right and the
+  pace keep a deleted deck's work and count it once.
 - The deck listings skip the folder: `DeckFolder.decks(in:)` skips hidden files, `KnownDecks.decks(in:)` takes only deck names.
 - `ProgressLedgerStore` (`Shared/Document`) does all of it.
 

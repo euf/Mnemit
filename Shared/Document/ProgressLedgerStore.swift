@@ -12,6 +12,8 @@ struct ProgressLedgerStore: Equatable, Sendable {
     /// The user defaults key of the device id.
     static let deviceKey = "ProgressLedgerDevice"
     static let directoryName = ".mnemit-progress"
+    /// The folder in `directory` of the review logs of deleted decks (`DeckFiles.trash`).
+    static let retiredDirectoryName = "retired"
     static let fileExtension = "jsonl"
 
     /// The folder of the decks, the one whose security-scoped access the reads and writes take.
@@ -29,6 +31,28 @@ struct ProgressLedgerStore: Equatable, Sendable {
         } else {
             deviceID = UUID().uuidString
             defaults.set(deviceID, forKey: Self.deviceKey)
+        }
+    }
+
+    /// Where the review logs of deleted decks are kept, a deck package each (`DeckFiles.trash`).
+    var retiredDirectory: URL { directory.appending(path: Self.retiredDirectoryName, directoryHint: .isDirectory) }
+
+    /// The decks the learner deleted, as `DeckFiles.trash` kept them, the newest first, for the days they were studied
+    /// (`Deck.retired(_:excluding:)`). A package iCloud Drive hasn't downloaded yet is left out until it has; its download
+    /// starts here.
+    func retiredDecks() -> [Deck] {
+        let isAccessing = folder.startAccessingSecurityScopedResource()
+        defer {
+            if isAccessing {
+                folder.stopAccessingSecurityScopedResource()
+            }
+        }
+        let urls = (try? FileManager.default.contentsOfDirectory(at: retiredDirectory, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+        func modified(_ url: URL) -> Date { (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast }
+        return urls.filter { $0.pathExtension == DeckFile.fileExtension }.sorted { modified($0) > modified($1) }.compactMap { url in
+            if let deck = DeckFileReader.deck(at: url) { return deck }
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            return nil
         }
     }
 

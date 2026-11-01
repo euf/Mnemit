@@ -9,7 +9,8 @@ import VocabCore
 ///
 /// Today comes from the review logs (`DailyProgress`), the days before it from the progress ledger
 /// (`DayLedger`, kept on disk by `ProgressLedgerStore` in the folder of the decks, one file per device), which the
-/// logs raise and fill: so the past stays as it stood when a deck is paused, deleted or not downloaded yet. A day
+/// logs raise and fill: so the past stays as it stood when a deck is paused, deleted or not downloaded yet. A deleted
+/// deck's reviews stay as well (`ProgressLedgerStore.retiredDecks()`), so today keeps its work too. A day
 /// the ledger lacks is written to this device's file; every device reads all the files. The decks that are
 /// open come as documents, with their reviews not yet saved; the others are read from their files, and the ledger
 /// from its folder, once per `reloadFiles` (or when the folder changes), and kept.
@@ -51,6 +52,9 @@ final class DailyRingModel {
     }
 
     @ObservationIgnored private var fileActivities: [URL: DeckActivity] = [:]
+    /// The decks the learner deleted, read with the ledger (`ProgressLedgerStore.retiredDecks()`): their reviews stay in
+    /// the days they were studied, today's too.
+    @ObservationIgnored private var retiredActivities: [DeckActivity] = []
     /// The progress ledger as read from `ledgerStore` last, with what this device wrote since.
     @ObservationIgnored private var ledger = DayLedger()
     @ObservationIgnored private var ledgerStore: ProgressLedgerStore?
@@ -89,6 +93,7 @@ final class DailyRingModel {
         let known = fileActivities
         let mustRead = reloadFiles || Set(files) != Set(known.keys)
         let knownLedger = ledger
+        let knownRetired = retiredActivities
         let mustReadLedger = reloadFiles || store != ledgerStore
 
         evaluation?.cancel()
@@ -96,7 +101,7 @@ final class DailyRingModel {
             try? await Task.sleep(for: delay)
             await GreekSpeech.shared.whenQuiet()
             guard !Task.isCancelled else { return }
-            let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity], NewCardAllowances, [URL], DayLedger) in
+            let result = await Task.detached(priority: .utility) { () -> (DailyProgress, [URL: DeckActivity], NewCardAllowances, [URL], DayLedger, [DeckActivity]) in
                 var fileActivities = known
                 if mustRead {
                     fileActivities = [:]
@@ -107,7 +112,14 @@ final class DailyRingModel {
                     }
                 }
                 let read = files.filter { fileActivities[$0] != nil }
-                let activities = zip(decks, caches).map { DeckActivity(deck: $0, calendar: calendar, historyCache: $1) } + read.compactMap { fileActivities[$0] }
+                var retired = knownRetired
+                if mustRead || mustReadLedger {
+                    // A card back in a deck (taken out of the Trash) counts there, not in the deleted deck's copy.
+                    let live = Set(decks.flatMap { $0.trainingCards.map(\.id) }).union(fileActivities.values.flatMap(\.cardIDs))
+                    retired = Deck.retired(store?.retiredDecks() ?? [], excluding: live).map { DeckActivity(deck: $0, calendar: calendar) }
+                }
+                let activities =
+                    zip(decks, caches).map { DeckActivity(deck: $0, calendar: calendar, historyCache: $1) } + read.compactMap { fileActivities[$0] } + retired
                 var ledger = knownLedger
                 if mustReadLedger {
                     ledger = store?.read() ?? DayLedger()
@@ -131,12 +143,13 @@ final class DailyRingModel {
                         allowances[url] = allowance
                     }
                 }
-                return (progress, fileActivities, allowances, paused, ledger)
+                return (progress, fileActivities, allowances, paused, ledger, retired)
             }.value
             guard !Task.isCancelled, let self else { return }
             StallTrace.measure("ringApply") {
                 fileActivities = result.1
                 self.ledger = result.4
+                retiredActivities = result.5
                 ledgerStore = store
                 progress = result.0
                 self.day = day

@@ -308,12 +308,19 @@ extension HowTodayWorks {
         var deck: Deck
     }
 
-    /// Works the screen out of `decks` at `now`, the way the daily ring does: from the decks and their logs and the
-    /// progress `ledger` the app read (`ProgressLedgerStore`; writes nothing), so it shows what Today shows; a paused
+    /// Works the screen out of `decks` at `now`, the way the daily ring does: from the decks and their logs, the
+    /// progress `ledger` the app read (`ProgressLedgerStore`; writes nothing) and the `retired` decks the learner deleted,
+    /// so it shows what Today shows; a paused
     /// deck is left out of the figures and named in the plan. Replays the logs: call it off the main actor.
-    nonisolated static func make(_ decks: [Source], at now: Date, calendar: StudyCalendar, swipes: SwipeTally.Counts?, showsFourButtons: Bool = false, ledger: DayLedger = DayLedger()) -> HowTodayWorks {
+    nonisolated static func make(
+        _ decks: [Source], at now: Date, calendar: StudyCalendar, swipes: SwipeTally.Counts?, showsFourButtons: Bool = false, ledger: DayLedger = DayLedger(),
+        retired: [Deck] = []
+    ) -> HowTodayWorks {
         let activities = decks.map { DeckActivity(deck: $0.deck, calendar: calendar) }
-        let progress = DailyProgress.evaluate(activities, at: now, calendar: calendar, ledger: ledger)
+        // The deleted decks' reviews count in the figures, as on Today; the plan names only the decks there are.
+        let live = Set(decks.flatMap { $0.deck.trainingCards.map(\.id) })
+        let retiredActivities = Deck.retired(retired, excluding: live).map { DeckActivity(deck: $0, calendar: calendar) }
+        let progress = DailyProgress.evaluate(activities + retiredActivities, at: now, calendar: calendar, ledger: ledger)
         return HowTodayWorks(
             progress: progress,
             breakdown: DayBreakdown(activities, progress: progress, at: now, calendar: calendar),
@@ -328,6 +335,8 @@ extension HowTodayWorks {
         let sources = files.compactMap { url in
             DeckFileReader.deck(at: url).map { Source(name: url.deletingPathExtension().lastPathComponent, deck: $0) }
         }
-        return make(sources, at: now, calendar: calendar, swipes: swipes, showsFourButtons: showsFourButtons, ledger: store?.read() ?? DayLedger())
+        return make(
+            sources, at: now, calendar: calendar, swipes: swipes, showsFourButtons: showsFourButtons, ledger: store?.read() ?? DayLedger(),
+            retired: store?.retiredDecks() ?? [])
     }
 }

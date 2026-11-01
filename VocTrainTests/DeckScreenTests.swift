@@ -67,12 +67,30 @@ struct DeckScreenTests {
 
     // MARK: The calendar
 
-    @Test func aRunIsTwoKeptDaysOrMoreInAWeekRow() {
-        func runs(_ pattern: String) -> [ClosedRange<Int>] { WeeksGrid.runs(ofKept: pattern.map { $0 == "x" }) }
-        #expect(runs("xx.xxx.") == [0...1, 3...5])
-        #expect(runs("xxxxxxx") == [0...6])
-        #expect(runs("x.x.x.x") == [])
-        #expect(runs(".......") == [])
-        #expect(runs("..xxxxx") == [2...6])
+    @Test func aBandFollowsTheStreakAsItsCounterCountsItAcrossTheRows() {
+        // A Monday: day 0 is a Thursday.
+        let monday = 4 + 7 * 2900
+        func day(_ offset: Int, kept: Bool, closed: Bool = false, streak: Int, saved: Bool = false) -> DayRecord {
+            DayRecord(day: monday + offset, done: kept ? 10 : 1, goal: 8, kept: kept, closed: closed || kept, streak: streak, savedStreak: saved)
+        }
+        // Wednesday to Sunday kept, Monday kept, Tuesday missed and saved by Wednesday's closed ring, Thursday to Saturday
+        // kept, today, Sunday, not kept yet: 11 days, as the counter says.
+        let records = [
+            day(2, kept: true, streak: 1), day(3, kept: true, streak: 2), day(4, kept: true, streak: 3), day(5, kept: true, streak: 4),
+            day(6, kept: true, streak: 5), day(7, kept: true, streak: 6), day(8, kept: false, streak: 6),
+            day(9, kept: true, closed: true, streak: 8, saved: true), day(10, kept: true, streak: 9), day(11, kept: true, streak: 10),
+            day(12, kept: true, streak: 11), day(13, kept: false, streak: 11),
+        ]
+        let streak = WeeksGrid.streakDays(records)
+        #expect(streak == Set((2...12).map { monday + $0 }))
+        let rows = [Array(monday..<monday + 7), Array(monday + 7..<monday + 14)]
+        #expect(WeeksGrid.bands(rows[0], streak: streak) == [WeeksGrid.Band(columns: 2...6, continuesAfter: true)])
+        #expect(WeeksGrid.bands(rows[1], streak: streak) == [WeeksGrid.Band(columns: 0...5, continuesBefore: true)])
+
+        // A streak of one day is its ring; a run that ends on Sunday is closed there when Monday breaks it.
+        #expect(WeeksGrid.bands(rows[0], streak: [monday + 3]).isEmpty)
+        #expect(WeeksGrid.bands(rows[0], streak: [monday + 5, monday + 6]) == [WeeksGrid.Band(columns: 5...6)])
+        // A Monday alone in its row, after a streak that ran through Sunday, is the open end of that band.
+        #expect(WeeksGrid.bands(rows[1], streak: [monday + 6, monday + 7]) == [WeeksGrid.Band(columns: 0...0, continuesBefore: true)])
     }
 }

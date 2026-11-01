@@ -3516,28 +3516,6 @@
         }
       }
     },
-    "A full ring is a closed day; a band joins days that kept the streak.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ein voller Ring ist ein geschlossener Tag; ein Band verbindet Tage, die die Serie gehalten haben."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Полное кольцо — закрытый день; полоса соединяет дни, в которые стрик сохранён."
-          }
-        },
-        "el": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ένας γεμάτος δακτύλιος είναι μια κλεισμένη ημέρα· μια ταινία ενώνει ημέρες που κράτησαν τη σειρά."
-          }
-        }
-      }
-    },
     "A new or forgotten card comes back in the session until you grade it Good as many times as Learning steps says. Hard keeps its step, Forgot starts it over, Easy finishes it at once.": {
       "localizations": {
         "de": {
@@ -17499,6 +17477,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ с"
+          }
+        }
+      }
+    },
+    "A full ring is a closed day; a band joins the days of a streak.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein voller Ring ist ein geschlossener Tag; ein Band verbindet die Tage einer Serie."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ένας γεμάτος κύκλος είναι μια κλειστή μέρα· μια λωρίδα ενώνει τις μέρες ενός σερί."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Полное кольцо — закрытый день; полоса соединяет дни одного стрика."
           }
         }
       }

@@ -172,4 +172,43 @@ struct ProgressLedgerStoreTests {
         #expect(later.week == progress.week)
         #expect(store.read() == written)
     }
+
+    /// Cards learned over the two days before `now` and answered Good a minute ago: today's done cards.
+    func cardsDoneToday(_ count: Int, now: Date) -> [Card] {
+        (0..<count).map { index in
+            let log = [now.addingTimeInterval(-2 * 86400), now.addingTimeInterval(-86400), now.addingTimeInterval(-60)].map { ReviewLogEntry(date: $0, grade: .good) }
+            let state = LearningState(phase: .review, stability: 20, difficulty: 5, lastReview: log.last!.date, due: now.addingTimeInterval(20 * 86400), reviews: 3)
+            return Card(question: "today \(index)", answer: "a", learningState: state, log: log)
+        }
+    }
+
+    /// A deck deleted on a day it was studied keeps that day's work: `DeckFiles.trash` keeps its reviews in
+    /// `.mnemit-progress/retired/`, and the ring reads them with the ledger.
+    @Test func aDeckDeletedTodayKeepsTodaysWork() async throws {
+        let folder = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let now = Date()
+        let first = try writeDeck(named: "First", cards: reviewedCards(4, now: now), in: folder)
+        let second = try writeDeck(named: "Second", cards: cardsDoneToday(6, now: now), in: folder)
+        let store = ProgressLedgerStore(folder: folder, defaults: device())
+        let before = DailyRingModel()
+        await before.refresh(documents: [], files: [first, second], ledger: store, reloadFiles: true, delay: .zero).value
+        let progress = try #require(before.progress)
+        #expect(progress.ring.done >= 6)
+
+        // Deleted for good, not into the Trash of the Mac that runs the test.
+        try await DeckFiles.trash(second, using: { try FileManager.default.removeItem(at: $0) })
+        #expect(store.retiredDecks().map(\.cards.count) == [6])
+
+        let after = DailyRingModel()
+        await after.refresh(documents: [], files: [first], ledger: store, reloadFiles: true, delay: .zero).value
+        #expect(after.progress?.ring.done == progress.ring.done)
+        #expect(after.progress?.wordsRight == progress.wordsRight)
+        #expect(after.progress?.records == progress.records)
+
+        // The control: without the store, which holds the copy, today loses the deck's work.
+        let forgetful = DailyRingModel()
+        await forgetful.refresh(documents: [], files: [first], reloadFiles: true, delay: .zero).value
+        #expect((forgetful.progress?.ring.done ?? 0) < progress.ring.done)
+    }
 }

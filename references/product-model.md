@@ -131,9 +131,15 @@ deck's Cards have a Leeches filter; the Mac's table adds the columns Lapses, Sta
 **The past is written down.** When a study day is over, its record is kept: the cards done against its goal, whether it
 kept the streak and closed the ring, the words learned by its end. Past days are read from these records and today from
 the cards, so pausing, resuming or deleting a deck, or deleting or rewriting a card, never changes a past day. A pause
-takes nothing from today either: a paused deck asks nothing of the day, and what was done in it stays done. A record
+takes nothing from today either: a paused deck asks nothing of the day, and what was done in it stays done. Nor does a
+deletion: a deleted deck leaves its reviews beside the records, so today's ring, the streak and the words right keep its
+work, and a deck taken back out of the Trash counts it once. A record
 only rises, when answers of that day arrive late from the other device; both devices keep the same records beside the
 decks.
+
+**The calendar's bands are the streak** as its counter counts it: a band joins the days of one streak, a missed day that
+the next day's closed ring saved included, and where the streak runs from Sunday into Monday the band stays open at the
+end of the one row and the start of the next.
 
 **A deck that changes while it is open** (on the other device, or rebuilt from a table) changes in place: kept cards
 keep their progress, new cards come as new, a deleted card leaves the stack without a grade while its answers stay in

@@ -45,7 +45,7 @@ struct ProgressScreen<Trailing: View>: View {
             } header: {
                 WeeksGrid(records: records).title
             } footer: {
-                Text("A full ring is a closed day; a band joins days that kept the streak.")
+                Text("A full ring is a closed day; a band joins the days of a streak.")
             }
             Section("Medals") {
                 latestMedals
@@ -253,20 +253,50 @@ struct WeeksGrid: View {
         return (0..<count).map { week in (0..<7).map { start + 7 * week + $0 } }
     }
 
-    /// The runs of kept days within one week, as the columns they span: two days or more in a row. A single kept day
-    /// is its ring; a run does not go on into the next week's row.
-    static func runs(ofKept kept: [Bool]) -> [ClosedRange<Int>] {
-        var runs: [ClosedRange<Int>] = []
-        var start: Int?
-        for (column, isKept) in (kept + [false]).enumerated() {
-            if isKept {
-                start = start ?? column
-            } else if let first = start {
-                if column - first >= 2 { runs.append(first...(column - 1)) }
-                start = nil
+    /// The days of a streak as its counter counts them (`Streak.walk`): a day that kept it, a day that saved it by closing
+    /// its ring after a single missed day, the missed day it saved, a day with nothing to ask inside a streak, and a day
+    /// before the plan's rule that the streak counted for its reviews. Today is one once it keeps the streak.
+    static func streakDays(_ records: [DayRecord]) -> Set<Int> {
+        var days = Set<Int>()
+        for (index, record) in records.enumerated() {
+            let savedByNext = index + 1 < records.count && records[index + 1].savedStreak
+            let grew = record.streak > (index > 0 ? records[index - 1].streak : 0)
+            if record.kept || record.savedStreak || savedByNext || grew || (record.isIdle && record.streak > 0) {
+                days.insert(record.day)
             }
         }
-        return runs
+        return days
+    }
+
+    /// A piece of a streak's band in one row: the columns it covers, and whether the streak goes on before the row's first
+    /// column (from the row above) or after its last (into the row below).
+    struct Band: Equatable {
+        var columns: ClosedRange<Int>
+        var continuesBefore = false
+        var continuesAfter = false
+    }
+
+    /// The bands of a row of study days, Monday first: each run of streak days in it that is two days or more long,
+    /// counted across the rows, so a streak from Sunday into Monday is open at the end of the one row and at the start of
+    /// the next. A streak of one day is its ring.
+    static func bands(_ row: [Int], streak days: Set<Int>) -> [Band] {
+        var bands: [Band] = []
+        var column = 0
+        while column < row.count {
+            guard days.contains(row[column]) else {
+                column += 1
+                continue
+            }
+            var end = column
+            while end + 1 < row.count, days.contains(row[end + 1]) { end += 1 }
+            let before = column == 0 && days.contains(row[column] - 1)
+            let after = end == row.count - 1 && days.contains(row[end] + 1)
+            if end > column || before || after {
+                bands.append(Band(columns: column...end, continuesBefore: before, continuesAfter: after))
+            }
+            column = end + 1
+        }
+        return bands
     }
 
     /// The initial of the weekday of `column`.
@@ -278,6 +308,7 @@ struct WeeksGrid: View {
         let byDay = Dictionary(records.map { ($0.day, $0) }, uniquingKeysWith: { first, _ in first })
         let today = records.last?.day ?? 0
         let first = records.first?.day ?? 0
+        let streak = Self.streakDays(records)
         // Rows of seven equal cells, so a run's band can be laid over the columns it spans.
         VStack(spacing: Spacing.tight) {
             HStack(spacing: 0) {
@@ -308,7 +339,7 @@ struct WeeksGrid: View {
                     }
                 }
                 .background {
-                    bands(Self.runs(ofKept: cells[row].map { $0 >= first && $0 <= today && byDay[$0]?.kept == true }))
+                    bands(Self.bands(cells[row], streak: streak))
                 }
             }
         }
@@ -318,19 +349,30 @@ struct WeeksGrid: View {
         .accessibilityValue(Text("\(records.suffix(Self.weeks * 7).filter(\.closedWithWork).count) rings closed"))
     }
 
-    /// A capsule in the streak's colour behind each run of a row, from the left of its first column to the right of
-    /// its last.
-    private func bands(_ runs: [ClosedRange<Int>]) -> some View {
+    /// A capsule in the streak's colour behind each band of a row, from the left of its first column to the right of its
+    /// last; where the streak goes on in the next row or came from the one above, the band runs to the row's edge with a
+    /// square, open end.
+    private func bands(_ bands: [Band]) -> some View {
         GeometryReader { geometry in
             let column = geometry.size.width / 7
-            ForEach(runs, id: \.lowerBound) { run in
+            // Shorter than a row with its gap, so the bands of a long streak stay rows, not one block.
+            let height = diameter + 4
+            ForEach(bands, id: \.columns.lowerBound) { band in
+                let left = band.continuesBefore ? 0 : column * CGFloat(band.columns.lowerBound) + 2
+                let right = band.continuesAfter ? geometry.size.width : column * CGFloat(band.columns.upperBound + 1) - 2
+                // A capsule longer by its height on an open side, cut to the band: that end is square and its outline open.
+                let extraLeft = band.continuesBefore ? height : 0
+                let extraRight = band.continuesAfter ? height : 0
                 Capsule()
                     .fill(colorScheme == .dark ? Color.black.opacity(0.3) : Color.streak.opacity(0.18))
                     // In dark the band is darker than the card, with an outline in the streak's colour: a band lighter than the
                     // card, brown at any opacity, takes a ring's head from 3.0:1 to under 2.5.
                     .overlay { Capsule().strokeBorder(Color.streak.opacity(colorScheme == .dark ? 0.45 : 0), lineWidth: 1) }
-                    .frame(width: column * CGFloat(run.count) - 4, height: diameter + 8)
-                    .position(x: column * (CGFloat(run.lowerBound) + CGFloat(run.count) / 2), y: geometry.size.height / 2)
+                    .frame(width: right - left + extraLeft + extraRight, height: height)
+                    .offset(x: (extraRight - extraLeft) / 2)
+                    .frame(width: right - left, height: height)
+                    .clipped()
+                    .position(x: (left + right) / 2, y: geometry.size.height / 2)
             }
         }
         .accessibilityHidden(true)

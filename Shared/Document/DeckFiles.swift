@@ -112,12 +112,16 @@ enum DeckFiles {
     /// folder "Deleted Decks" next to it instead and says so with `Trashed.setAside`:
     /// the learner can still take it back. It never deletes a deck for good.
     ///
+    /// First it keeps the deck's review log in the folder's `.mnemit-progress/retired/` (`keepReviews(of:)`): the days
+    /// it was studied keep their work, today's too, wherever the deck went.
+    ///
     /// - Parameter trashItem: Moves the deck to the Trash; throws `CocoaError.featureUnsupported`
     ///   where there is none. A test replaces it to try the fallback.
     @discardableResult
     static func trash(_ deck: URL, using trashItem: @escaping @Sendable (URL) throws -> Void = { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) }) async throws -> Trashed {
         try await Task.detached {
             try coordinate(writing: deck, options: .forDeleting) { coordinator, url -> Trashed in
+                keepReviews(of: url)
                 do {
                     try trashItem(url)
                     return .trash
@@ -131,6 +135,26 @@ enum DeckFiles {
                 }
             }
         }.value
+    }
+
+    /// Copies the `deck.json` and `reviews.jsonl` of the deck package at `url` into a package of their own in the
+    /// folder's `.mnemit-progress/retired/` (`ProgressLedgerStore.retiredDecks()`), without the media; nothing for a deck
+    /// that was never studied. A copy that fails costs the deck's today only: the days before it are in the ledger.
+    static func keepReviews(of url: URL) {
+        let reviews = url.appending(path: DeckFile.reviewsFileName, directoryHint: .notDirectory)
+        guard let size = try? reviews.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 0 else { return }
+        let target = url.deletingLastPathComponent()
+            .appending(path: ProgressLedgerStore.directoryName, directoryHint: .isDirectory)
+            .appending(path: ProgressLedgerStore.retiredDirectoryName, directoryHint: .isDirectory)
+            .appending(path: UUID().uuidString + "." + DeckFile.fileExtension, directoryHint: .isDirectory)
+        do {
+            try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+            for name in [DeckFile.deckFileName, DeckFile.reviewsFileName] {
+                try FileManager.default.copyItem(at: url.appending(path: name, directoryHint: .notDirectory), to: target.appending(path: name, directoryHint: .notDirectory))
+            }
+        } catch {
+            try? FileManager.default.removeItem(at: target)
+        }
     }
 
     // MARK: - Helpers

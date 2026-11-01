@@ -30,7 +30,7 @@ struct HowTodayWorksLoader: View {
                     let read = files.compactMap { url in
                         DeckFileReader.deck(at: url).map { HowTodayWorks.Source(name: url.deletingPathExtension().lastPathComponent, deck: $0) }
                     }
-                    return HowTodayWorks.make(sources + read, at: now, calendar: calendar, swipes: nil, ledger: ledger.read())
+                    return HowTodayWorks.make(sources + read, at: now, calendar: calendar, swipes: nil, ledger: ledger.read(), retired: ledger.retiredDecks())
                 }.value
             }
     }

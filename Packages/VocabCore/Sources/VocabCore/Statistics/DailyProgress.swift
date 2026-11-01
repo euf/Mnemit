@@ -649,6 +649,10 @@ public struct DeckActivity: Sendable {
         (reviewsByDay, rightAnswers) = Self.reviewsByDay(of: deck, calendar: calendar)
     }
 
+    /// The IDs of the deck's cards and retired cards: what a deleted deck's reviews leave out once a deck holds them
+    /// again (`Deck.retired(excluding:)`).
+    public var cardIDs: Set<Card.ID> { Set(deck.trainingCards.map(\.id)) }
+
     /// Whether the learner paused the deck (`LearningOptions.isPaused`): `DailyProgress.evaluate` and
     /// `DayBreakdown` leave it out of the day's plan and count its work.
     public var isPaused: Bool { deck.learningOptions.isPaused }

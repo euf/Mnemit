@@ -27,6 +27,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   (`DailyGoal.SizeReason`), `worked` (seconds of the cards done at the day's prices), `filled`, `wordsLearned` (cumulative at
   the day's end), `rule` (the rule that wrote it, `LedgerDay.currentRule`). A missed day has a record too, done 0, so a later pause cannot turn its empty plan into a kept day.
   `DayLedger` holds one record per day.
+- A deleted deck: `DeckFiles.trash` keeps its `deck.json` and `reviews.jsonl` in `.mnemit-progress/retired/`; the ring and How
+  It Works add each as a paused deck of retired cards (`ProgressLedgerStore.retiredDecks()`, `Deck.retired(_:excluding:)`), so
+  today's done cards, the streak step and the words right keep the deck's work; a card back in a deck counts there.
 - **What reads from where** (`DailyProgress.evaluate(_:at:calendar:planRuleStart:ledger:cache:)`). From the ledger: the days
   before today (the first study day through yesterday), their `records`, `week`, `weekRings`, `ringDays` (the size rule's
   input), `achievements`, and the streak (`Streak.walk`: kept and closed from the records, the ledger's `reviews` for past

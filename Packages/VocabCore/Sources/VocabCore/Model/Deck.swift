@@ -286,3 +286,28 @@ public struct Deck: Hashable, Sendable {
         }
     }
 }
+
+extension Deck {
+    /// The deck as its reviews outlive it once the learner deletes it, for the figures of the days it was studied
+    /// (`DailyProgress.evaluate`): every card with a review retired (`retiredCards`), none left to study, and the deck
+    /// paused, so no day plans it. The cards of `ids`, which are back in a deck the learner took out of the Trash, are
+    /// left out, so their reviews count once.
+    public func retired(excluding ids: Set<Card.ID> = []) -> Deck {
+        var options = learningOptions
+        options.isPaused = true
+        let reviewed = trainingCards.filter { !$0.log.isEmpty && !ids.contains($0.id) }
+        return (try? Deck(learningOptions: options, cards: [], retiredCards: reviewed)) ?? Deck()
+    }
+
+    /// The deleted decks `decks`, the newest first, each `retired(excluding:)` the cards a deck of `live` or a newer copy
+    /// holds: a deck deleted, taken back and deleted again leaves two copies, and its reviews count once. A copy left
+    /// without a card is dropped.
+    public static func retired(_ decks: [Deck], excluding live: Set<Card.ID>) -> [Deck] {
+        var taken = live
+        return decks.compactMap { deck in
+            let retired = deck.retired(excluding: taken)
+            taken.formUnion(retired.retiredCards.map(\.id))
+            return retired.retiredCards.isEmpty ? nil : retired
+        }
+    }
+}
