@@ -550,8 +550,9 @@ LIARS = {  # name: (median minutes a day, seconds a new card, a review (None: th
     'Easy on every new card': (20, None, None, 'easy', 'true'),
     'Good on every review': (20, None, None, 'true', 'good'),
     'click for volume: 1.5 s, Good': (20, 1.5, 1.5, 'good', 'good'),
-    'click, Again on a tenth of reviews': (20, 1.5, 1.5, 'tenth', 'tenth')}
-WEEKS = (2, 4, 6, 8, 12, 16, 20, 24)
+    'click, Again on a tenth of reviews': (20, 1.5, 1.5, 'tenth', 'tenth'),
+    'skim: 5 s a new card, Good on everything': (20, 5, None, 'good', 'good')}
+WEEKS = (1, 2, 4, 6, 8, 12, 16, 20, 24)
 
 def compete(days=168, seeds=40, deck=10000, rng=None):
     """Honest learners of LEVELS minutes a day and the LIARS spend each day's minutes (lognormal, sigma 0.5, 15 % of days
@@ -559,11 +560,14 @@ def compete(days=168, seeds=40, deck=10000, rng=None):
     buttons pressed; it sets the due dates by SCHED at 0.9) and the true one (FSRS-6 on what was recalled). An honest
     button is the truth: a review recalled with the true R, a new card's first answer Again for A_NEW of them. A liar's
     lapse brings no relearning step, so the true memory gets none. Easy-on-new reads its new cards as honestly as anyone
-    (Again's or Good's stability, no steps) and presses Easy; a clicker's new card is a glance: Again's stability, no steps,
+    (Again's or Good's stability, no steps) and presses Easy; a clicker's or a skimmer's new card is a glance: Again's stability, no steps,
     whatever the button (the tenth-clicker presses Again on A_NEW of them). An answer under 2 s is no retrieval: the true
     memory of a clicked review takes the post-lapse stability, as on seeing the answer; "truly" counts what it would recall.
     Returns the names and weekly sums [B, weeks]: answers (card-days), the app's and the true sum of R gained, reviews
-    passed MATURE days or more after the last one (by the button and truly), reviews and reviews passed by the button."""
+    passed MATURE days or more after the last one (by the button and truly), reviews and reviews passed by the button,
+    new words (the gain of Words learned: a lapse is relearned the same day), words remembered (cards passed on review,
+    each once a week), words right (cards answered right this week, new or reviewed, each once: a lapse ends the day right
+    after its relearning step) and the seconds spent."""
     rng = rng or np.random.default_rng(11)
     spec = [(f'honest {m} min', m, P_NEW, P_OTHER, 'true', 'true') for m in LEVELS] + [(k, m, a or P_NEW, b or P_OTHER, f, r) for k, (m, a, b, f, r) in LIARS.items()]
     col = lambda i: np.repeat([s[i] for s in spec], seeds)
@@ -573,7 +577,8 @@ def compete(days=168, seeds=40, deck=10000, rng=None):
     Wm = lv[:, None] * np.exp(.5 * rng.standard_normal((B, days))) * (rng.random((B, days)) >= .15)
     Sm, Dm = np.ones((B, deck)), np.full((B, deck), 5.); St, Dt = Sm.copy(), Dm.copy()
     last, due, nn = np.zeros((B, deck), int), np.full((B, deck), 1 << 30), np.zeros(B, int)
-    wk = {k: np.zeros((B, nw7)) for k in ('answers', 'app R', 'true R', 'durable', 'truly durable', 'reviews', 'passed')}
+    wk = {k: np.zeros((B, nw7)) for k in ('answers', 'app R', 'true R', 'durable', 'truly durable', 'reviews', 'passed', 'new words', 'remembered', 'right', 'seconds')}
+    cw, cr = np.full((B, deck), -1), np.full((B, deck), -1)  # the week a card last counted as remembered, as right
     sumR = lambda S, t: np.where(ix < nn[:, None], retr(t - last, S), 0).sum(1)
     a0, g0 = sshort(sshort(W[0], 3), 3), sshort(sshort(W[2], 3), 3)  # an honest new card: Again or Good, then two Good steps
     for t in range(nw7 * 7):
@@ -592,6 +597,8 @@ def compete(days=168, seeds=40, deck=10000, rng=None):
         Dt = np.where(done, np.where(rec & ~clk, dnext(Dt, 3), np.where(ps, dnext(Dt, 1), dnext(dnext(Dt, 1), 3))), Dt)
         for k, x in (('durable', ps & (el >= MATURE)), ('truly durable', rec & (el >= MATURE)), ('reviews', True), ('passed', ps)):
             wk[k][:, w] += (done & x).sum(1)
+        rem = done & ps & (cw != w); wk['remembered'][:, w] += rem.sum(1); cw = np.where(rem, w, cw)
+        rg = done & (cr != w); wk['right'][:, w] += rg.sum(1); cr = np.where(rg, w, cr)
         nw = np.minimum(np.floor(np.maximum(ws - no * po, 0) / pn + 1e-9), deck - nn).astype(int)
         new = (ix >= nn[:, None]) & (ix < (nn + nw)[:, None]); ag = rng.random((B, deck)) < A_NEW
         easy, glance = fn == 'easy', (fn == 'good') | (fn == 'tenth'); agm = ag & (fn != 'good')
@@ -600,7 +607,7 @@ def compete(days=168, seeds=40, deck=10000, rng=None):
         St = np.where(new, np.where(glance | (easy & ag), W[0], np.where(easy, W[2], Sm)), St)
         Dt = np.where(new, np.where(glance | (easy & ag), e1, np.where(easy, e3, Dm)), Dt)
         upd = done | new; due = schedule(t, np.maximum(1, np.round(Sm)).astype(int), upd, due, ix < nn[:, None], rng); last = np.where(upd, t, last)
-        nn = nn + nw; wk['answers'][:, w] += done.sum(1) + nw
+        nn = nn + nw; wk['answers'][:, w] += done.sum(1) + nw; wk['new words'][:, w] += nw; wk['right'][:, w] += nw; cr = np.where(new, w, cr); wk['seconds'][:, w] += no * po + nw * pn
         if t % 7 == 6: wk['app R'][:, w], wk['true R'][:, w] = sumR(Sm, t + 1) - r0m, sumR(St, t + 1) - r0t
     return names, wk
 
@@ -612,7 +619,10 @@ def closeness(wk):
 
 def compete_report(days=168, seeds=40):
     names, wk = compete(days, seeds); tr, q = closeness(wk)
-    M = {'answers': wk['answers'], 'sum of R gained, the app\'s': wk['app R'], 'durable: reviews passed 21+ days on': wk['durable'],
+    mins = np.maximum(wk['seconds'] / 60, 1e-9)
+    M = {'words right this week (cards answered right, new or reviewed, each once)': wk['right'], 'words right a minute': wk['right'] / mins,
+         'words learned this week (new words)': wk['new words'], 'words remembered this week (cards passed on review, each once)': wk['remembered'],
+         'words learned a minute': wk['new words'] / mins, 'words remembered a minute': wk['remembered'] / mins, 'answers': wk['answers'], 'sum of R gained, the app\'s': wk['app R'], 'durable: reviews passed 21+ days on': wk['durable'],
          'durable x closeness of true retention to 0.9': wk['durable'] * q, 'true retention, 4 weeks': tr,
          'sum of R gained, true': wk['true R'], 'durable, truly recalled': wk['truly durable']}
     groups = list(dict.fromkeys(names)); hon = groups[:len(LEVELS)]
@@ -622,7 +632,7 @@ def compete_report(days=168, seeds=40):
     def eq(x, h):  # honest minutes whose median scores x: linear between LEVELS, proportional beyond them
         h = np.maximum.accumulate(h)
         return '-' if h[-1] <= 0 else f'{LEVELS[-1] * x / h[-1]:.0f}' if x >= h[-1] else f'{LEVELS[0] * x / h[0]:.1f}' if x <= h[0] else f'{np.interp(x, h, LEVELS):.0f}'
-    keys = [k for k in M if not k.startswith('true retention')]; at = (4, 8, 12, 16, 24)
+    keys = [k for k in M if not k.startswith('true retention') and not k.endswith('a minute')]; at = (1, 4, 8, 12, 16, 24)
     print('\n### Each liar (20 min a day) as the honest minutes a day that score the same; true rows: what the liar earned')
     table(['liar', 'metric'] + [f'week {w}' for w in at], [[g, k] + [eq(med[k][i, w - 1], med[k][:len(hon), w - 1]) for w in at]
                                                           for i, g in enumerate(groups) if g not in hon for k in keys])
@@ -637,6 +647,7 @@ def selftest():
     names, wk = compete(days=63, seeds=3, deck=800); tr, q = closeness(wk); h = names == 'honest 20 min'
     assert np.allclose(wk['app R'][h], wk['true R'][h]) and (wk['durable'][h] == wk['truly durable'][h]).all()  # honest: one memory
     assert (tr[names == 'Good on every review'][:, 1:] == 1).all() and wk['durable'][:, :3].sum() == 0  # nothing durable before day 21
+    assert (wk['remembered'] <= wk['passed']).all() and (wk['right'] >= wk['new words']).all() and (wk['right'] <= wk['new words'] + wk['reviews']).all() and (wk['remembered'][np.char.startswith(names.astype(str), 'honest'), 0] > 0).all()  # an honest newcomer remembers words in week 1
     print('selftest ok')
 
 def main():

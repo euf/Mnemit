@@ -174,3 +174,13 @@ Durations: 1356051 reviews (0.94%) exceed 60 s and are capped to 60 s; 96009 rev
 |---|---|---|---|---|---|
 | 105217 | 0.000 | 0.004 | 0.182 | 0.453 | 0.679 |
 
+### 11. The simple numbers by week since the user's first review: words right (cards with an answer passed, any state, each once a week), words learned (first answers of new cards, the gain of Words learned before lapses), words remembered (cards passed in the review state, each once a week); weeks with a review
+| weeks since first review | user-weeks | minutes, median | right = 0 | right, median | right a minute, median | learned = 0 | learned, median | learned a minute, median | remembered = 0 | remembered, median | remembered a minute, median |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| all | 188748 | 69.5 | 0.993% | 179 | 2.54 | 22.4% | 28 | 0.410 | 12.4% | 106 | 1.61 |
+| 1 | 2000 | 29.5 | 2.55% | 44 | 1.68 | 0.000% | 45 | 1.90 | 44.5% | 3 | 0.107 |
+| 2-4 | 3813 | 62.9 | 0.682% | 123 | 2.01 | 10.4% | 55 | 0.864 | 14.8% | 63 | 1.05 |
+| 5-8 | 4510 | 70.9 | 1.13% | 160 | 2.28 | 12.0% | 49 | 0.687 | 11.7% | 98 | 1.37 |
+| 9-26 | 17245 | 66.3 | 0.992% | 166 | 2.47 | 17.8% | 34 | 0.513 | 11.8% | 103 | 1.63 |
+| 27-52 | 22200 | 66.7 | 1.06% | 171 | 2.55 | 19.9% | 29 | 0.446 | 11.8% | 104 | 1.67 |
+| >52 | 138980 | 71.3 | 0.964% | 189 | 2.59 | 24.3% | 25 | 0.359 | 12.0% | 112 | 1.65 |

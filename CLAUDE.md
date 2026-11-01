@@ -57,7 +57,7 @@ Read the file for the area you work on.
   FSRS, learning science), `references/fsrs-research.md`, `references/fsrs-vs-sm17.md`,
   `references/production-cards-research.md`, `references/cross-deck-overlap.md`,
   `references/anki-parity.md`, `references/deck-formats-and-sources.md`, `references/competition-metric.md`
-  (the number learners compare: cards held three weeks, with the median seconds an answer).
+  (the number learners compare: words right this week, with the median seconds an answer).
 - Briefing sub-agents: `references/agent-briefs.md`.
 - Domain: `GLOSSARY.md` (terms, English with German UI words and Russian equivalents) and `docs/adr/`
   (decisions).

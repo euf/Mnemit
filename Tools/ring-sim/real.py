@@ -117,10 +117,13 @@ AGE_B, AGE_N = [4, 8, 26, 52], ['1-4', '5-8', '9-26', '27-52', '>52']  # weeks s
 def weekly(u):
     """Per week since the first review (only weeks with a review): answers, minutes, durable gain (answers passed, rating 2-4,
     21 or more days after the card's previous review), the review-state answers (state 2) and those passed, first answers of
-    new cards (state 0) and those Again, the median seconds of an answer (the lower middle one)."""
+    new cards (state 0) and those Again, the median seconds of an answer (the lower middle one), words remembered (cards passed
+    in the review state, each once a week), words right (cards with an answer passed, any state, each once a week)."""
     wi = (u['day_offset'] - u['day_offset'][0]) // 7; r, s = u['rating'], u['state']; bc = lambda x: np.bincount(wi, weights=x)
     out = {'answers': np.bincount(wi), 'minutes': bc(u['sec']) / 60, 'durable': bc((u['elapsed_days'] >= 21) & (r >= 2)),
            'rev': bc(s == 2), 'pass': bc((s == 2) & (r >= 2)), 'new': bc(s == 0), 'again new': bc((s == 0) & (r == 1))}
+    m = (s == 2) & (r >= 2); nc = u['ci'].max() + 1; out['remembered'] = np.bincount(np.unique(wi[m] * nc + u['ci'][m]) // nc, minlength=len(out['answers']))
+    m = r >= 2; out['right'] = np.bincount(np.unique(wi[m] * nc + u['ci'][m]) // nc, minlength=len(out['answers']))
     n = out['answers']; o = np.lexsort((u['sec'], wi)); out['med sec'] = np.where(n > 0, u['sec'][o][np.cumsum(n) - n + np.maximum(n - 1, 0) // 2], NAN)
     c4 = lambda a: (lambda c: c - np.concatenate([np.zeros(4), c[:-4]]))(np.cumsum(a))  # the last 4 weeks, this one included
     out['rev4'], out['pass4'] = c4(out['rev']), c4(out['pass']); out['age'] = np.arange(len(out['answers']))
@@ -200,6 +203,7 @@ def report(S, P, tally, ids, per):
     table(['study days (pooled)', 'days', 'P(next day studied)', 'P(gap >= 7 starts)'], rows)
     dist(S, ['share of days without a new card', 'no-new minus new: P(next day)', 'no-new minus new: P(gap >= 7)'], 'Per user (>= 10 days of each kind): the same, without a new card minus with')
     competition(P)
+    simple(P)
     appendix(per)
 
 def competition(P):
@@ -250,9 +254,20 @@ def selftest():
     assert (out['P:big_bin'] == 2).all() and out['first14 study days of 14'] == 14 and abs(out['reviews/new card, days 1-7'] - 1 / 3) < 1e-9 and out['reviews/new card, days 8-30'] == 6
     w = weekly(prep({'card_id': np.array([0, 1, 0, 1]), 'day_offset': np.array([0, 0, 30, 31]), 'duration': np.array([5000, 5000, 1000, 3000]),
                       'state': np.array([0, 0, 2, 2]), 'rating': np.array([1, 3, 3, 1]), 'elapsed_days': np.array([-1, -1, 30, 31])}))
-    assert list(w['P:wk_age']) == [0, 4] and list(w['P:wk_durable']) == [0, 1] and list(w['P:wk_pass4']) == [0, 1] and w['P:wk_again new'][0] == 1 and list(w['P:wk_med sec']) == [5, 1]
+    assert list(w['P:wk_right']) == [1, 1] and list(w['P:wk_remembered']) == [0, 1] and list(w['P:wk_age']) == [0, 4] and list(w['P:wk_durable']) == [0, 1] and list(w['P:wk_pass4']) == [0, 1] and w['P:wk_again new'][0] == 1 and list(w['P:wk_med sec']) == [5, 1]
     assert len(out['P:daymins']) == 28 and abs(out['first14 median min, calendar days 8-14'] - 16 / 60) < 1e-9 and len(out['P:f1']) == 7
     print('selftest ok')
+
+def simple(P):
+    W = {k[3:]: P[k] for k in P if k.startswith('wk_')}; g = lambda k: np.concatenate(W[k]); age, mins = g('age'), g('minutes')
+    print('### 11. The simple numbers by week since the user\'s first review: words right (cards with an answer passed, any state, each once a week), words learned (first answers of new cards, the gain of Words learned before lapses), words remembered (cards passed in the review state, each once a week); weeks with a review')
+    rows = []
+    for lab, k in [('all', age >= 0), ('1', age == 0), ('2-4', (age >= 1) & (age < 4)), ('5-8', (age >= 4) & (age < 8)), ('9-26', (age >= 8) & (age < 26)), ('27-52', (age >= 26) & (age < 52)), ('>52', age >= 52)]:
+        mn = np.maximum(mins[k], MIN); r = [lab, k.sum(), fmt(med(mins[k]))]
+        for x in (g('right')[k], g('new')[k], g('remembered')[k]):
+            r += [fmt(100 * (x == 0).mean()) + '%', fmt(med(x)), fmt(med(x / mn))]
+        rows.append(r)
+    table(['weeks since first review', 'user-weeks', 'minutes, median', 'right = 0', 'right, median', 'right a minute, median', 'learned = 0', 'learned, median', 'learned a minute, median', 'remembered = 0', 'remembered, median', 'remembered a minute, median'], rows)
 
 def main(folder):
     S, P, per, tally, ids = {}, {}, [], {'rows': 0, 'over': 0, 'zero': 0, 'rating': Counter(), 'state': Counter()}, []
