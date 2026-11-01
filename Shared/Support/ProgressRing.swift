@@ -25,7 +25,9 @@ struct StreakFlame: View {
     var state: StreakState
 
     var body: some View {
-        HStack(alignment: .top, spacing: 1) {
+        // On the text's baseline, as symbols beside text sit: the disc is a glyph of the flame's line, centred on it and on the
+        // days beside it, not a badge raised to the flame's top.
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
             Image(systemName: state == .kept ? "flame.fill" : "flame")
             if state == .atRisk {
                 Image(systemName: "exclamationmark.circle.fill")
