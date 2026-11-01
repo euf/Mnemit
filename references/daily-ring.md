@@ -224,7 +224,7 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   `NextStepText` in the small and the rectangular widgets) the action stands over its price, the price in
   `Color.appAccentText`. Without a price (`nil` minutes) the action stands alone: "Keep your streak", "Close your ring",
   "Save your streak", "Finish your reviews", "Start your streak". `priceLine` is what a rest says under its title ("Close
-  your ring · 4 min", "Finish your reviews · 12 min"); `short` is "12 · 2 min" for a line with room for little.
+  your ring · 4 min", "Finish your reviews · 12 min"), the action in the line's grey and the price in the ring's indigo; `short` is "12 · 2 min" for a line with room for little.
 - **The streak line** (`StreakLine`): `StreakFlame`, then "12-day streak" (`NextStep.streakText`), hidden at 0 days. VoiceOver
   reads `streakSpoken`: "12-day streak, kept today", "not kept yet" or "at risk".
 - **Where they stand.** Today draws the figures (`TodayCard`, `Shared/Session/TodaySummary.swift`: the ring, Day streak, the

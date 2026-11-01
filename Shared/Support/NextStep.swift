@@ -99,8 +99,16 @@ struct NextStep: Equatable, Sendable {
     var sentence: String { [action, price].compactMap { $0 }.joined(separator: "\u{00A0}· ") }
 
     /// The price line of a rest, which has the streak and the moment in its title: "Close your ring · 4 min" while the ring is
-    /// open, "Finish your reviews · 12 min" once it is closed; `nil` without a price.
-    var priceLine: String? { price == nil ? nil : sentence }
+    /// open, "Finish your reviews · 12 min" once it is closed; `nil` without a price. The action takes the line's colour and
+    /// the price the ring's indigo, as every next step has it.
+    var priceLine: AttributedString? {
+        guard let price else { return nil }
+        var line = AttributedString(action + "\u{00A0}· ")
+        var cost = AttributedString(price)
+        cost.foregroundColor = .appAccentText
+        line.append(cost)
+        return line
+    }
 
     /// "12-day streak": the words of the streak line.
     var streakText: String { String(localized: "\(days)-day streak") }

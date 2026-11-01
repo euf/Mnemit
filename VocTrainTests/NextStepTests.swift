@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 
 @testable import VocTrain
@@ -71,11 +72,14 @@ struct NextStepTests {
     }
 
     /// A rest has the streak and the moment in its title and says the next step under it.
-    @Test func theRestSaysThePriceUnderItsTitle() {
-        #expect(step(.kept, keep: 2, close: 5).priceLine == "Close your ring\u{00A0}· " + min("5 min"))
-        #expect(step(.kept, closed: true, reviews: true, left: 12).priceLine == "Finish your reviews\u{00A0}· " + min("12 min"))
+    @Test func theRestSaysThePriceUnderItsTitle() throws {
+        #expect(step(.kept, keep: 2, close: 5).priceLine.map { String($0.characters) } == "Close your ring\u{00A0}· " + min("5 min"))
+        #expect(step(.kept, closed: true, reviews: true, left: 12).priceLine.map { String($0.characters) } == "Finish your reviews\u{00A0}· " + min("12 min"))
         #expect(step(.kept).priceLine == nil && step(.kept, closed: true, reviews: true).priceLine == nil)
         #expect(step(.kept, closed: true).priceLine == nil)
+        // The price in the ring's indigo, the action in the line's colour.
+        let line = try #require(step(.kept, keep: 2, close: 5).priceLine)
+        #expect(line.runs.filter { $0.foregroundColor != nil }.map { String(line[$0.range].characters) } == [min("5 min")])
     }
 
     @Test func theTimeNeverBreaksAcrossLines() {

@@ -305,8 +305,8 @@ struct StreamRestView: View {
     /// The sentence of the next moment (`NextStep`) under the title, which has the streak and the moment: "Close your ring ·
     /// 4 min" at the streak's moment, "Finish your reviews · 12 min" at the ring's. `nil` without a price.
     private var priceLine: Line? {
-        guard let progress, let price = NextStep(progress).priceLine else { return nil }
-        return Line("price") { Text(verbatim: NextStep.unbroken(price, endTogether: true)) }
+        guard let progress, let line = NextStep(progress).priceLine else { return nil }
+        return Line("price") { Text(line) }
     }
 
     // MARK: The buttons
