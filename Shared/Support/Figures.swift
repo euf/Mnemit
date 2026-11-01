@@ -36,7 +36,7 @@ enum FigureSize {
 }
 
 /// A figure: a label over a large value, "Day streak / 12", "Keep your streak / 2 min". The value is rounded and in its
-/// entity's colour (`Color.appAccent` for the ring's minutes, `Color.streak` for the days), else the primary colour; a
+/// entity's colour (`Color.appAccent` for the ring's minutes, the flame's colour for the days, `StreakState.tint`), else the primary colour; a
 /// `unit` follows it smaller, in small capitals ("12 days" reads "12 DAYS"); a `caption` sits after it in secondary
 /// ("412 +12 today"). `leading` goes before the value, a flame say. In a widget `accentable` marks the value for the tinted
 /// rendering (`widgetAccentable`), where the label stays in the primary group.
@@ -60,9 +60,9 @@ struct Figure<Leading: View>: View {
                 .minimumScaleFactor(size == .compact ? 0.75 : 1)
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 leading
+                // Proportional figures: nothing here ticks in place, and tabular ones open a gap inside "11".
                 value
                     .font(size.valueFont)
-                    .monospacedDigit()
                     .foregroundStyle(tint)
                     .widgetAccentable(accentable)
                 if let unit {

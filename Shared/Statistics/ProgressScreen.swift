@@ -342,7 +342,7 @@ extension View {
     }
 }
 
-/// The streak at the top of Progress, a card: "Day streak" over the flame and the days large in the streak's colour, and
+/// The streak at the top of Progress, a card: "Day streak" over the flame and the days large in the flame's colour, and
 /// "Best: 21" after them when the best run is not the current one. At 0 days the outlined flame and "Start your streak".
 private struct StreakCard: View {
     var days: Int
@@ -368,8 +368,7 @@ private struct StreakCard: View {
                         .font(.system(size: size * 0.7, weight: .semibold))
                     Text(days, format: .number.grouping(.never))
                         .font(.system(size: size, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.streak)
+                        .foregroundStyle(state.tint)
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                     if best > days {

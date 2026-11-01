@@ -324,7 +324,7 @@ struct WidgetSnapshotTests {
         // The streak step open: the first round's 2 min, and the 17 cards that close the ring at 10 s each, 3 min.
         let open = Self.priced(done: 3, streak: 7, due: 17, roundsDone: 0)
         #expect(open.nextStep == NextStep(days: 7, state: .open, isClosed: false, minutesToKeep: 2, minutesToClose: 3, reviewsLeft: true, minutesOfReviews: 3))
-        #expect(open.nextStep.sentence == "Keep your streak · \(Format.timeLeft(minutes: 2))")
+        #expect(open.nextStep.sentence == "Keep your streak\u{00A0}· \(Format.timeLeft(minutes: 2))")
         // The step done: the first round is behind, the 8 cards left that close the ring take 2 min.
         let kept = Self.priced(done: 12, streak: 7, due: 8, roundsDone: 1)
         #expect(kept.nextStep == NextStep(days: 7, state: .kept, isClosed: false, minutesToKeep: nil, minutesToClose: 2, reviewsLeft: true, minutesOfReviews: 2))

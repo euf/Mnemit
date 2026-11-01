@@ -70,7 +70,7 @@ private struct WidgetRing: View {
     }
 }
 
-/// The streak's line (`StreakLine`): the flame, filled once today keeps the streak and with an exclamation mark the day after a
+/// The streak's line (`StreakLine`): the flame, filled once today keeps the streak and with a solid alert disc the day after a
 /// missed one, marked accentable so a tinted widget keeps the state by the flame's shape, and "12-day streak". Nothing without
 /// a streak. The size and the weight are the caller's.
 private struct WidgetStreakLine: View {
@@ -89,39 +89,53 @@ private struct WidgetStreakLine: View {
     }
 }
 
-/// The ring at the top left, the streak at the top right (the flame over the days, large, no label: the flame says it), the
-/// sentence at the bottom left in the primary colour: three blocks pinned to the corners fill the square, as the system's
-/// own small widgets do.
+/// The ring at the top left, the days at the top right with the flame over them (large, no label: the flame says it), the
+/// next step at the bottom left: three blocks pinned to the corners fill the square, as the system's own small widgets do.
+/// The edges are the drawn ones. The flame hangs from the ring's top and the days stand on its bottom, so the pair spans the
+/// ring and the row is the ring's height (the days' descent hangs into the gap); the last line's baseline sits on the bottom
+/// margin as the ring's edge sits on the side ones; the flame and the days move out by their glyphs' side bearing, so their
+/// ink meets the right margin.
 private struct SmallWidget: View {
     var state: WidgetState
+    /// The days, as large as the ring's height allows under the flame; with the text size.
+    @ScaledMetric(relativeTo: .largeTitle) private var daysSize: CGFloat = 44
+
+    private let ring: CGFloat = 62
+    /// The side bearing of the flame and the figures at their size, and the space above the flame's tip in its image.
+    private let bearing: CGFloat = 1.5
+    private let flameTop: CGFloat = 1.3
 
     var body: some View {
         let step = state.nextStep
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top, spacing: 4) {
-                WidgetRing(state: state, diameter: 62)
+            HStack(alignment: .bottom, spacing: 8) {
+                WidgetRing(state: state, diameter: ring)
                 Spacer(minLength: 0)
-                VStack(alignment: .trailing, spacing: -4) {
-                    StreakFlame(state: step.state)
-                        .font(.title3)
-                        .widgetAccentable(step.state != .open)
-                    Text(verbatim: step.days.formatted(.number.grouping(.never)))
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                        .monospacedDigit()
-                        .foregroundStyle(step.days > 0 ? Color.streak : Color.secondary)
-                        .widgetAccentable()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                }
+                // Proportional figures: tabular ones open a gap inside "11", and nothing here ticks in place.
+                Text(verbatim: step.days.formatted(.number.grouping(.never)))
+                    .font(.system(size: daysSize, weight: .bold, design: .rounded))
+                    .foregroundStyle(step.state.tint)
+                    .widgetAccentable()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .alignmentGuide(.bottom) { $0[.lastTextBaseline] }
+                    .offset(x: bearing)
             }
-            // The days keep one size in every state; a sentence of three lines gives way instead.
-            .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 4)
+            .frame(height: ring, alignment: .top)
+            .overlay(alignment: .topTrailing) {
+                StreakFlame(state: step.state)
+                    .font(.title3)
+                    .widgetAccentable(step.state != .open)
+                    .offset(x: bearing, y: -flameTop)
+            }
             NextStepText(step: step, alignment: .leading)
                 .font(.subheadline.weight(.semibold))
                 .multilineTextAlignment(.leading)
                 .lineLimit(3)
                 .minimumScaleFactor(0.8)
+                .alignmentGuide(.bottom) { $0[.lastTextBaseline] }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                .padding(.top, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
@@ -213,7 +227,7 @@ private struct RectangularWidget: View {
     }
 }
 
-/// The line over the lock screen's clock: the flame and "7 · 2 min"; the flame carries an exclamation mark at risk.
+/// The line over the lock screen's clock: the flame and "7 · 2 min"; the flame carries an alert disc at risk.
 /// Without a streak the sentence alone.
 private struct InlineWidget: View {
     var state: WidgetState

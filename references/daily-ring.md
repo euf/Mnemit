@@ -210,7 +210,9 @@ How the day is measured, and the screen that explains it. Terms with their Russi
 - **The ring holds nothing**: a picture of done over goal and its laps, at every size. The `StreakState` of the day
   (`DailyProgress.streakState`) has three values: `open` (today's streak step not done), `kept` (done) and `atRisk` (the day
   after a missed one, ring open: `DailyProgress.isStreakAtRisk`). `StreakFlame(state:)` draws them, an outline in grey,
-  `flame.fill` in `Color.streak`, an outline in `Color.streak` with an `exclamationmark` after it. `NextStep`
+  `flame.fill` in `Color.streak`, an outline in `Color.streak` followed by a solid `exclamationmark.circle.fill`. The days
+  beside the flame take its colour (`StreakState.tint`): secondary while `open`, `Color.streak` when `kept` or `atRisk`.
+  `NextStep`
   (`Shared/Support/NextStep.swift`, pure) says the next moment of the day as an action and its price, with no days in it. As a
   figure (`NextStep.moment`) it is a label over a value, the action over its price: "Keep your streak" · "2 min", "Close your
   ring" · "5 min", "Save your streak" · "6 min" (the day after a miss; its minutes are the ring's), "Finish your reviews" ·

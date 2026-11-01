@@ -36,10 +36,10 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   October 27") stands under the large title (`todaySubtitle`).
   - The ring (`HeroRing`, 112 pt, scaled with the text): a picture, with no number in it.
   - Three figures right of the ring (`TodayFigures`), each a label over a value:
-    - **Day streak**: the flame by its state and the days in `Color.streak`. The flame has three states (`StreakState`): an
-      outline until the streak step is done, `flame.fill` once it is, an outline with an `exclamationmark` at risk
-      (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open). At 0 days the outline and "0" in the secondary
-      colour. VoiceOver reads "12-day streak, kept today" (`NextStep.streakSpoken`).
+    - **Day streak**: the flame by its state and the days, in one colour (`StreakState.tint`). The flame has three states
+      (`StreakState`): an outline until the streak step is done, `flame.fill` once it is, an outline followed by a solid
+      `exclamationmark.circle.fill` at risk (`DailyProgress.isStreakAtRisk`: the day after a missed day, ring open). Flame and
+      days are secondary while the step is open and at 0 days, `Color.streak` when kept or at risk. VoiceOver reads "12-day streak, kept today" (`NextStep.streakSpoken`).
     - **The next moment** (`NextStep.moment`), its value the price in minutes in the ring's indigo. The label is the action:
       "Keep your streak" over "2 min"; the step done, "Close your ring"; the day after a missed day, "Save your streak" (its
       minutes are the ring's); without a streak, "Start your streak"; the ring closed with cards of the plan left, "Finish
@@ -96,8 +96,9 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
 - The Today card is a button with a chevron; it pushes `ProgressScreen` (`DeckRoute.progress`, no deck).
   `learning-flow.md` has the contract; everything comes from `DailyProgress.records` and `.achievements`.
 - A grouped form (`.formStyle(.grouped)`), top to bottom; each section stands under its list header:
-  - The streak card (`StreakCard`): "Day streak" over the flame and the days large in `Color.streak`, "Best: 21" after them only
-    when the best run is longer than the current one; at 0 days the outlined flame and "Start your streak".
+  - The streak card (`StreakCard`): "Day streak" over the flame and the days large (proportional digits), both in
+    `StreakState.tint` (secondary until today's streak step is done, `Color.streak` when kept or at risk), "Best: 21" after
+    them only when the best run is longer than the current one; at 0 days the outlined flame and "Start your streak".
   - The totals as `FigureTile`s on the page, not in a card, two to a row in an adaptive grid (at least 150 pt wide; one
     column at the accessibility sizes): Days studied, Rings closed (footnote "of 110 days": the days from the first study day
     to today), Words learned, Your ring ("8 MIN" in the ring's indigo, footnote "a day · started at 2.5", or "a day" while the
@@ -498,9 +499,12 @@ edited options; Save applies everything as one change.
   the same figures as Today (`TodayFigures`, `NextStep`): the flame in the streak figure and the sentence, whose shape is the
   streak's state. No widget has a button, a capsule or a card count; the whole widget opens the stream. VoiceOver reads each
   widget as one element, the sentence with the state.
-  - Small: the ring (62 pt) at the top left, the flame over the days (large title, bold rounded, in the streak's orange) at the
-    top right, the action of the next step at the bottom left (subheadline semibold, primary, up to three lines) with its
-    price under it in the ring's indigo (`NextStepText`).
+  - Small (`SmallWidget`): the ring (62 pt) at the top left; at the top right the days (44 pt, bold rounded, proportional
+    digits) with their baseline on the ring's bottom and the flame (`.title3`) hanging from the ring's top, both in
+    `StreakState.tint` (secondary until the streak step is done, `Color.streak` when kept or at risk) and moved out by their
+    glyphs' side bearing (1.5 pt) so their ink meets the right margin; the top row is exactly the ring's height. At the
+    bottom left the next step (`NextStepText`): the action (subheadline semibold, primary, up to three lines) with its price
+    under it in the ring's indigo, its last baseline on the bottom margin. All four drawn margins are 16 pt.
   - Medium: the ring (96 pt) at the left; at the right Day streak, the next moment and Words learned
     (`TodayFigures(size: .compact)`: label caption, value headline rounded), without the week.
   - Circular: the system gauge, in its middle the minutes of the next step ("2" over a small "min", "<1"), a `checkmark`

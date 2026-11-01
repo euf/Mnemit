@@ -95,7 +95,8 @@ struct NextStep: Equatable, Sendable {
     }
 
     /// The action and its price on one line, "Keep your streak · 2 min"; the action alone without a price.
-    var sentence: String { [action, price].compactMap { $0 }.joined(separator: " · ") }
+    /// The dot holds to the action, so a line that wraps never starts with it.
+    var sentence: String { [action, price].compactMap { $0 }.joined(separator: "\u{00A0}· ") }
 
     /// The price line of a rest, which has the streak and the moment in its title: "Close your ring · 4 min" while the ring is
     /// open, "Finish your reviews · 12 min" once it is closed; `nil` without a price.
@@ -125,14 +126,20 @@ struct NextStep: Equatable, Sendable {
     }
 
     /// `text` where it must not break: the hyphen of "7-day" stays whole (a price never breaks: `Format.timeLeft`); with
-    /// `endTogether`, the last two words too, so a line of text never ends on a line of one word.
+    /// `endTogether`, the last two words too, so text of three words or more never ends on a line of one word: "Finish" over
+    /// "your reviews". Only a short pair is glued: a long one ("deine Wiederholungen") would not fit a narrow line and break
+    /// inside a word, and a text of two words would not break at all.
     nonisolated static func unbroken(_ text: String, endTogether: Bool = false) -> String {
         let text = text.replacingOccurrences(of: "-", with: "\u{2011}")
-        return endTogether ? text.replacingOccurrences(of: "(\\S+) (\\S+)$", with: "$1\u{00A0}$2", options: .regularExpression) : text
+        let words = text.split(separator: " ")
+        // ponytail: characters stand in for width (12 fit the small widget's line); a custom Layout would measure the pair.
+        guard endTogether, words.count >= 3, words.suffix(2).joined(separator: " ").count <= 12 else { return text }
+        return words.dropLast().joined(separator: " ") + "\u{00A0}" + words.last!
     }
 }
 
-/// The next moment where there is room for two lines: the action, wrapping at words, and under it its price in the ring's
+/// The next moment where there is room for two lines: the action, wrapping at words and never ending on a line of one word
+/// (`NextStep.unbroken`), and under it its price in the ring's
 /// indigo, as the moment's figure has it. The font, the alignment of the text and the number of lines are the caller's;
 /// `alignment` places the two against each other. VoiceOver reads them as one line.
 struct NextStepText: View {

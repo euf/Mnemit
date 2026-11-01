@@ -211,7 +211,7 @@ row of small rings for the week; a calendar of rings. Mnemit takes that grammar 
   box inside a box (tiles stand on the page, not in a card), and corners concentric with their container.
 - **A hero card** holds the ring on the left and its figures on the right: each figure a label over a value, the value
   in a text style with rounded numerals and in its entity's colour (the ring's indigo for the minutes, the streak's
-  orange for the days), the others in the primary colour; each value carries its unit or its label says it ("Day streak
+  orange for the days of a streak that is kept or at risk, grey before), the others in the primary colour; each value carries its unit or its label says it ("Day streak
   12", "2 min", "Words learned 412"). At accessibility text sizes the ring stands over the figures.
 - **Tiles**, two to a row in an adaptive grid, one column at accessibility sizes: a label, a large value, at most one
   small line under it.

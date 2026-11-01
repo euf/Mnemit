@@ -406,15 +406,17 @@ _Avoid_: streak chip, series, «серия»
 The streak's symbol, drawn by `StreakFlame(state:)` from the `StreakState` of the day
 (`DailyProgress.streakState`), with three states in shape and colour: **open**, a grey outline, while today's
 streak step is not done; **kept**, `flame.fill` in `Color.streak`, once it is done; **at risk**, an outline in
-`Color.streak` followed by an `exclamationmark`, on the day after a missed one until the ring closes
-(`DailyProgress.isStreakAtRisk`). It stands in the Day streak figure on Today and in the small widget, in the Streak line of
+`Color.streak` followed by a solid `exclamationmark.circle.fill`, on the day after a missed one until the ring
+closes (`DailyProgress.isStreakAtRisk`). The fill says done: an outline while an action is due, filled once the day is
+kept. The days beside the flame take its colour (`StreakState.tint`): secondary while open, `Color.streak` when kept or
+at risk. It stands in the Day streak figure on Today and in the small widget, in the Streak line of
 the rests and the rectangular widget, and on the streak card at the top of Progress; it is never inside a ring.
 VoiceOver says the state: "12-day streak, kept today", "not kept yet" or "at risk".
 _Avoid_: lit and unlit flame, streak icon
 
 **Day streak** (the figure; DE „Tage in Folge“; RU «дней подряд»):
-The streak as a figure (`StreakFigure`): the label "Day streak" over the flame and the days in `Color.streak`, in
-secondary at 0 days. It is the first figure of the **Today card** and the small widget's.
+The streak as a figure (`StreakFigure`): the label "Day streak" over the flame and the days, both in `StreakState.tint`:
+secondary while open and always at 0 days, `Color.streak` when kept or at risk. It is the first figure of the **Today card** and the small widget's.
 
 **Streak line** (`StreakLine`; RU «строка стрика»):
 The flame and "12-day streak" (`NextStep.streakText`) in one line, in the same form all day: on the rests, in the rectangular

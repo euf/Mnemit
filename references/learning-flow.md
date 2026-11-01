@@ -198,8 +198,8 @@ They are named in words, never as a count of days; the widget and Today only sho
 | Comeback | one, then counted | a missed day made up by closing the next day's ring: the streak survived |
 
 **The comeback scenario.** The day after a missed day, Today's next moment reads "Save your streak" over "6 min" instead of
-"Keep your streak" over "2 min", and the Day streak figure beside it, still 12 days, carries an orange outline of a flame with an
-exclamation mark. When that ring closes, the rest's title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
+"Keep your streak" over "2 min", and the Day streak figure beside it, still 12 days, carries an orange outline of a flame followed by a
+solid exclamation mark, and its days are orange. When that ring closes, the rest's title is "Streak saved", and Comeback is earned. Two missed days in a row end the streak as before.
 
 **Hidden progression.** On the Progress screen each line shows its earned tiers in colour with their
 dates, the next tier as a grey medal (a dashed outline and the line's symbol in `Color.inactiveMark`, its title in secondary, an earned one on a

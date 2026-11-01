@@ -1,9 +1,11 @@
 import SwiftUI
 import VocabCore
 
-/// The streak's state on screen, which shape and colour both say: `flame` outlined in secondary grey until today's
-/// streak step is done, `flame.fill` in `Color.streak` after, and, the day after a missed one, an outline in
-/// `Color.streak` followed by an `exclamationmark` until the ring closes.
+/// The streak's state on screen, which shape and colour both say. The fill says done: an outline until today's streak step
+/// is done, `flame.fill` once it is. The colour says whether the streak is in play today: secondary grey while the day is
+/// routine and not yet kept, `Color.streak` once it is kept, and at risk, the day after a missed one until the ring closes,
+/// when an orange outline carries a solid `exclamationmark.circle.fill`. The days take the flame's colour (`tint`), so the
+/// pair never says two things.
 enum StreakState: Equatable {
     /// Today's streak step is not done.
     case open
@@ -11,23 +13,26 @@ enum StreakState: Equatable {
     case kept
     /// The day after a missed day, until the ring closes: the streak survives only if it does.
     case atRisk
+
+    /// The colour of the flame and of the days beside it: grey until the streak is in play today, orange once it is.
+    var tint: Color { self == .open ? .secondary : .streak }
 }
 
 /// The streak's flame, drawn by the state: the one sign of the streak on every screen, always outside a ring. At risk
-/// the outline is followed by an `exclamationmark`, so the state shows without its colour (vibrant and tinted
-/// widgets keep one colour). The size is the caller's font.
+/// the outline is followed by a solid alert disc, so the state shows without its colour (vibrant and tinted widgets keep
+/// one colour) and catches the eye at a glance. The size is the caller's font.
 struct StreakFlame: View {
     var state: StreakState
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .top, spacing: 1) {
             Image(systemName: state == .kept ? "flame.fill" : "flame")
-                .foregroundStyle(state == .open ? Color.secondary : Color.streak)
             if state == .atRisk {
-                Image(systemName: "exclamationmark")
-                    .foregroundStyle(Color.streak)
+                Image(systemName: "exclamationmark.circle.fill")
+                    .imageScale(.small)
             }
         }
+        .foregroundStyle(state.tint)
         .symbolRenderingMode(.monochrome)
     }
 }

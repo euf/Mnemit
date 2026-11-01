@@ -87,7 +87,7 @@ are in [`references/`](references/).
   median, so a break does not count; until there is enough data, 30 seconds a new card and 10 any
   other. The daily goal does not move during the day:
   cards added later, Study These Now, Learn 10 New Words and Keep Going count as cards done beyond it. The ring is
-  full at the goal and goes on over itself past it, up to three laps. The flame stands in the Day streak figure: filled once the day keeps the streak, an orange outline with an exclamation mark the day after a missed one, a grey outline otherwise; no ring holds a number. A missed day is repaired when the next day closes its ring, the streak step
+  full at the goal and goes on over itself past it, up to three laps. The flame and the days beside it in the Day streak figure share one colour: grey with an outline flame until the day keeps the streak, orange with a filled flame once it does, and orange the day after a missed one, when the outline flame is followed by a solid exclamation mark; no ring holds a number. A missed day is repaired when the next day closes its ring, the streak step
   is not enough then; two missed days in a row end the streak. Today is computed from the review
   logs; a day that is over is kept as a progress record, one file per device in the deck folder (`.mnemit-progress/`), and a
   record only rises, so deleting a card or a deck cannot take a past day's ring back. A study day starts at 4:00.
