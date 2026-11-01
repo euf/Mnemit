@@ -107,10 +107,59 @@ struct FigureTile: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 14))
+        .tile()
         .accessibilityElement(children: .combine)
+    }
+}
+
+extension View {
+    /// A tile's ground: the content at the top left, 14 pt in, on `Color.tileGround` with 14 pt corners, as tall as the
+    /// place it is given, so the tiles of a row (`TileGrid`) end on one line.
+    func tile() -> some View {
+        frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(14)
+            .background(Color.tileGround, in: RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+/// Tiles in rows: as many columns as fit at `minimum` wide (or `columns`), the gap between them the same both ways, and
+/// each row as tall as its tallest tile, which every tile of the row fills (`tile()`), so their tops and bottoms line up.
+/// `LazyVGrid` centres tiles of different heights in their row instead.
+struct TileGrid: Layout {
+    var columns: Int?
+    var minimum: CGFloat = 150
+    var spacing: CGFloat = Spacing.gap
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? minimum * 2 + spacing
+        let rows = heights(subviews, width: width)
+        return CGSize(width: width, height: rows.reduce(0, +) + spacing * CGFloat(max(0, rows.count - 1)))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let count = count(bounds.width)
+        let width = columnWidth(bounds.width, count)
+        var y = bounds.minY
+        for (row, height) in heights(subviews, width: bounds.width).enumerated() {
+            for column in 0..<count where row * count + column < subviews.count {
+                let x = bounds.minX + CGFloat(column) * (width + spacing)
+                subviews[row * count + column].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(width: width, height: height))
+            }
+            y += height + spacing
+        }
+    }
+
+    private func count(_ width: CGFloat) -> Int { columns ?? max(1, Int((width + spacing) / (minimum + spacing))) }
+
+    private func columnWidth(_ width: CGFloat, _ count: Int) -> CGFloat { (width - spacing * CGFloat(count - 1)) / CGFloat(count) }
+
+    /// The height of each row: its tallest tile at the column's width.
+    private func heights(_ subviews: Subviews, width: CGFloat) -> [CGFloat] {
+        let count = count(width)
+        let column = ProposedViewSize(width: columnWidth(width, count), height: nil)
+        return stride(from: 0, to: subviews.count, by: count).map { start in
+            subviews[start..<min(start + count, subviews.count)].map { $0.sizeThatFits(column).height }.max() ?? 0
+        }
     }
 }
 

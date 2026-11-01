@@ -9,10 +9,7 @@ struct SummaryTiles: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        LazyVGrid(
-            columns: dynamicTypeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: 150), spacing: Spacing.gap)],
-            spacing: Spacing.gap
-        ) {
+        TileGrid(columns: dynamicTypeSize.isAccessibilitySize ? 1 : nil) {
             tile("Cards", summary.total.formatted())
             tile("Due", summary.due.formatted())
             tile("New", summary.new.formatted())

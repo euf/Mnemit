@@ -20,18 +20,26 @@ struct ProgressScreen<Trailing: View>: View {
 
     var body: some View {
         Form {
+            #if os(iOS)
+            // The streak card and the tiles in one stack, a tile apart, on the page: as two sections they stood a section
+            // apart, three times the gap between the tiles.
+            Section {
+                VStack(spacing: Spacing.gap) {
+                    StreakCard(days: progress.streak.days, state: progress.streakState, best: longest)
+                        .tile()
+                    tiles
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+            #else
             Section {
                 StreakCard(days: progress.streak.days, state: progress.streakState, best: longest)
             }
             Section {
-                #if os(iOS)
                 tiles
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                #else
-                tiles
-                #endif
             }
+            #endif
             Section {
                 WeeksGrid(records: records)
             } header: {
@@ -84,36 +92,30 @@ struct ProgressScreen<Trailing: View>: View {
     /// on Today.
     private var tiles: some View {
         let ring = RingSize(progress)
-        return LazyVGrid(
-            columns: dynamicTypeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: 150), spacing: Spacing.gap)],
-            spacing: Spacing.gap
-        ) {
-            total(Text("Days studied"), Text(records.filter { $0.done > 0 }.count, format: .number), footnote: Self.blank)
+        return TileGrid(columns: dynamicTypeSize.isAccessibilitySize ? 1 : nil) {
+            total(Text("Days studied"), Text(records.filter { $0.done > 0 }.count, format: .number))
             total(Text("Rings closed"), Text(ringsClosed, format: .number), footnote: Text("of \(records.count) days"))
-            total(Text("Words learned"), Text(progress.learned.words, format: .number), footnote: Self.blank)
-            total(Text("Your ring"), Text(verbatim: ring.value), unit: Text("min"), footnote: Text(verbatim: ring.footnote), tint: .appAccentText)
+            total(Text("Words learned"), Text(progress.learned.words, format: .number))
+            total(Text("Your ring"), Text(verbatim: ring.value), unit: Text("min a day"), footnote: ring.footnote.map { Text(verbatim: $0) }, tint: .appAccentText)
         }
     }
 
     /// A total: a tile on the iPhone's page; on the Mac, whose grouped form keeps its card behind the row, the figure alone,
     /// so the four share one card and no box stands in a box.
     @ViewBuilder
-    private func total(_ label: Text, _ value: Text, unit: Text? = nil, footnote: Text, tint: Color = .primary) -> some View {
+    private func total(_ label: Text, _ value: Text, unit: Text? = nil, footnote: Text? = nil, tint: Color = .primary) -> some View {
         #if os(iOS)
         FigureTile(label: label, value: value, unit: unit, footnote: footnote, tint: tint)
         #else
         VStack(alignment: .leading, spacing: 2) {
             Figure(label: label, value: value, unit: unit, tint: tint)
-            footnote
+            footnote?
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
         #endif
     }
-
-    /// The line under a value that has nothing to say, so the tiles of a row are of one height.
-    private static var blank: Text { Text(verbatim: " ") }
 
     // MARK: The medals
 
@@ -180,7 +182,7 @@ struct ProgressScreen<Trailing: View>: View {
 }
 
 /// The size of the learner's ring, which grows with them: today's time in minutes and the time of the first day, the tile
-/// "Your ring 8 min" over "a day (started at 2.5 min)". The first day's alone, as it was, when the ring has not moved.
+/// "Your ring 8 min a day" over "started at 2.5 min". The first day's alone, as it was, when the ring has not moved.
 struct RingSize: Equatable {
     /// Today's time and the first study day's, in minutes.
     var minutes: Double
@@ -194,10 +196,10 @@ struct RingSize: Equatable {
     /// The minutes, "8" and "2.5".
     var value: String { Self.format(minutes) }
 
-    /// "a day (started at 2.5 min)", or "a day" while the ring has not moved.
-    var footnote: String {
+    /// "started at 2.5 min", one short line under "8 min a day"; `nil` while the ring has not moved.
+    var footnote: String? {
         let began = Self.format(started)
-        return began == value ? String(localized: "a day") : String(localized: "a day (started at \(began) min)")
+        return began == value ? nil : String(localized: "started at \(began) min")
     }
 
     /// One decimal at most, "8" and "2.5".

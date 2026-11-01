@@ -146,7 +146,7 @@ the log, so today's ring keeps what it counted; an undo still takes back the las
 - **The learning loop (a sitting):** the card, the answer, the stack shrinking, the ring filling → the ring closes → Keep Going
   if due cards remain, Learn 10 New Words if not.
 - **The progress loop (weeks):** words learned and their milestones, the week of rings, the calendar with streak runs and
-  laps, medals, and the ring's own size growing with the learner (the tile "Your ring 8 MIN · a day · started at 2.5").
+  laps, medals, and the ring's own size growing with the learner (the tile "Your ring 8 min a day", "started at 2.5 min" under it).
 
 ## 7. Rewards
 
@@ -273,8 +273,8 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
   stacked at accessibility sizes; on the Mac their keys are ← or 1 and → or 3. In two-button mode a swipe counts only
   left or right (Forgot 210°–330°, Good 30°–150°, the rest springs back) and 2, 4, ↑ and ↓ do nothing; with "Hard and Easy
   Buttons" on, later showings draw four and the four directions and keys 1 to 4 give their grades.
-- **Progress totals** are tiles: Days studied, Rings closed ("of 110 days"), Words learned, Your ring ("8 MIN", "a day ·
-  started at 2.5", or "a day" while the ring has not moved); words in memory sit in the Memory section.
+- **Progress totals** are tiles: Days studied, Rings closed ("of 110 days"), Words learned, Your ring ("8 min a day",
+  "started at 2.5 min" under it, nothing while the ring has not moved); words in memory sit in the Memory section.
 - **The sentence**, where a figure has no room, without a streak is "Start your streak · 2 min" and, once nothing is
   left, "All done for today".
 - **Text** on every screen is one short sentence in plain words, in en, de, ru and el: what is there or what comes next,

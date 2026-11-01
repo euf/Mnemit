@@ -16257,46 +16257,46 @@
         }
       }
     },
-    "a day": {
+    "min a day": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "pro Tag"
+            "value": "Min. pro Tag"
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "την ημέρα"
+            "value": "λεπ. τη μέρα"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "в день"
+            "value": "мин в день"
           }
         }
       }
     },
-    "a day (started at %@ min)": {
+    "started at %@ min": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "pro Tag (Start bei %@ Min.)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "в день (начало: %@ мин)"
+            "value": "Start bei %@ Min."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "την ημέρα (ξεκίνησε στα %@ λεπτά)"
+            "value": "ξεκίνησε στα %@ λεπ."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "начало: %@ мин"
           }
         }
       }

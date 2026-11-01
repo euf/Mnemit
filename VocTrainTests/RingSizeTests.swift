@@ -14,32 +14,32 @@ struct RingSizeTests {
 
     @Test func aRingThatGrewSaysWhereItStarted() {
         #expect(RingSize(progress(time: 480, first: 150)).value == "8")
-        #expect(RingSize(progress(time: 480, first: 150)).footnote == "a day (started at 2.5 min)")
+        #expect(RingSize(progress(time: 480, first: 150)).footnote == "started at 2.5 min")
     }
 
     @Test func aRingThatShrankSaysSoToo() {
         #expect(RingSize(progress(time: 120, first: 300)).value == "2")
-        #expect(RingSize(progress(time: 120, first: 300)).footnote == "a day (started at 5 min)")
+        #expect(RingSize(progress(time: 120, first: 300)).footnote == "started at 5 min")
     }
 
     @Test func aRingThatDidNotMoveHasNoStart() {
         #expect(RingSize(progress(time: 150, first: 150)).value == "2.5")
-        #expect(RingSize(progress(time: 150, first: 150)).footnote == "a day")
+        #expect(RingSize(progress(time: 150, first: 150)).footnote == nil)
     }
 
     @Test func withoutAStudyDayTheStartIsToday() {
         #expect(RingSize(progress(time: 150, first: nil)).value == "2.5")
-        #expect(RingSize(progress(time: 150, first: nil)).footnote == "a day")
+        #expect(RingSize(progress(time: 150, first: nil)).footnote == nil)
     }
 
     @Test func sizesThatAreTheSameInMinutesAreOne() {
         // 151.5 s is 2.525 min, which shows as 2.5, as the first day's 150 s.
         #expect(RingSize(progress(time: 151.5, first: 150)).value == "2.5")
-        #expect(RingSize(progress(time: 151.5, first: 150)).footnote == "a day")
+        #expect(RingSize(progress(time: 151.5, first: 150)).footnote == nil)
     }
 
     @Test func minutesShowOneDecimalAtMost() {
         #expect(RingSize(progress(time: 200, first: 150)).value == "3.3")
-        #expect(RingSize(progress(time: 200, first: 150)).footnote == "a day (started at 2.5 min)")
+        #expect(RingSize(progress(time: 200, first: 150)).footnote == "started at 2.5 min")
     }
 }

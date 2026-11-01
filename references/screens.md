@@ -101,9 +101,10 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
     them only when the best run is longer than the current one; at 0 days the outlined flame and "Start your streak".
   - The totals as `FigureTile`s on the page, not in a card, two to a row in an adaptive grid (at least 150 pt wide; one
     column at the accessibility sizes): Days studied, Rings closed (footnote "of 110 days": the days from the first study day
-    to today), Words learned, Your ring ("8 MIN" in the ring's indigo, footnote "a day · started at 2.5", or "a day" while the
-    ring has not moved; `RingSize.value` and `.footnote`). A tile with nothing under its value carries a blank line, so a row
-    is of one height. On the Mac the grouped form keeps a card behind the row: the four figures share it, without tile
+    to today), Words learned, Your ring ("8 min a day" in the ring's indigo, footnote "started at 2.5 min", none while the
+    ring has not moved; `RingSize.value` and `.footnote`). The tiles stand in a `TileGrid`: a row is as tall as its tallest tile,
+    which every tile of the row fills, and the gap is 12 pt both ways; on the iPhone the streak card is the first tile of the
+    stack, a gap above them. On the Mac the grouped form keeps a card behind the row: the four figures share it, without tile
     grounds. No ring here: the day's ring is on Today.
   - The calendar, "Last 13 weeks" once there are 13 and "Calendar" before (`WeeksGrid`): rows of seven
     cells, a row per week, the oldest first, Monday to Sunday under the weekday initials; a day is a ring,
