@@ -89,8 +89,9 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    popovers and the option menus, "Ring closed" with Keep Going and no outline of the last card, Add Cards in list mode,
    the study card at AX5, the leech moment, the toolbar's "+" and "…" on Today, the widget the morning after a break, a
    reminder tap from a cold start, the lost-folder card; the iPhone's ledger file rebuilt with `"rule":1` after its first
-   day ends. Xcode's Apple ID was lost once (24.10): `ios-renew` then fails with "No Accounts" until EF signs in again in
-   Xcode ▸ Settings ▸ Apple Accounts.
+   day ends. Xcode drops its Apple ID when a device build runs with the session locked (the
+   keychain can't be read, secd -25308); `ios-renew` skips the build while the screen is locked and notifies when the
+   account is gone ("No Accounts" until EF signs in again in Xcode ▸ Settings ▸ Apple Accounts).
 2. **The Mac, still to see live:** a stream (only on a deck whose grades may count: the ring and ledger take every open
    deck), a cold launch with a deck from Finder, ⌘Q with a stream running, a Dock click after ⌘W, Try Again on a failed
    deck, the streak-ended line, a sheet's default button. Seen on 27.10: at a 1000 pt window the card table's four new
