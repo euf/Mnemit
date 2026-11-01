@@ -292,8 +292,8 @@ A card's stage in MacVocTrain 1, which fixed its next interval. Stability takes 
 
 Terms of the fork. Each entry gives the term in code, the words on screen (EN / DE) and the
 Russian word. The product model, the one description of what Mnemit is, is `references/product-model.md`; this section
-names its terms. Seven entities appear on screen: **Deck**, **Card**, **Stack**, **Ring**, **Streak**, **Words learned**
-and **Medal**. The rule behind the numbers: **a card is never a review, and a review is never a card.**
+names its terms. Eight entities appear on screen: **Deck**, **Card**, **Stack**, **Ring**, **Streak**, **Words learned**,
+**Words right** and **Medal**. The rule behind the numbers: **a card is never a review, and a review is never a card.**
 A day is measured in cards; reviews only price the time. The day has a time in seconds, and the app learns it from the work
 the learner really does. Minutes on screen ("2 min") translate cards into a decision and are estimates at the
 learner's own pace, read the way a reading time is.
@@ -484,6 +484,15 @@ suspended and lies in an active deck (`WordsLearned`). A card without a kind cou
 **gain of the day** (`shownGain`, "+12 today") is the count now less the count at 04:00 from the card states before the day's
 reviews, and is left out on a day that has none. Words-learned medals: 10, 50, 100, 250, 500, 1000, then every 1000.
 _Avoid_: words in memory (the sum of recall probabilities, a detail), vocabulary size
+
+**Words right** ("Words right" "184" over "7 days · 8 s each" in the tiles of Progress, "184 words right this week" on the
+shared card; DE „Richtige Wörter“; RU «верные слова»):
+The week's work in words, the number learners compare (`WordsRight`): the different words answered right (Hard, Good or
+Easy) on the last 7 study days, today included, new or reviewed, each counted once; a word held twice (the same **Word
+key**) is one word, a card without a key a word of its own, and the cards of a paused deck or a deleted card count. Beside
+it the **seconds an answer**, the median of the same days' measured answer times, and the **best week**, the most words
+right in any 7 days so far. The choice against the other numbers is `references/competition-metric.md`. No medal.
+_Avoid_: reviews this week, XP, score
 
 **Medal** (DE Medaille; RU «медаль»):
 A moment worth remembering, shown as a toast when it is earned and kept on the shelf of Progress (All Medals): streak

@@ -12682,7 +12682,7 @@
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Κύκλοι που έκλεισαν"
+            "value": "Κλειστοί κύκλοι"
           }
         },
         "ru": {
@@ -17213,6 +17213,292 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Words right": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richtige Wörter"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σωστές λέξεις"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Верных слов"
+          }
+        }
+      }
+    },
+    "7 days · %@ each": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 Tage · je %@"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 ημέρες · %@ η μία"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 дней · по %@"
+          }
+        }
+      }
+    },
+    "Share Your Week": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Woche teilen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μοιράσου την εβδομάδα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поделиться неделей"
+          }
+        }
+      }
+    },
+    "My Week in Mnemit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meine Woche in Mnemit"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η εβδομάδα μου στο Mnemit"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Моя неделя в Mnemit"
+          }
+        }
+      }
+    },
+    "Words right in 7 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richtige Wörter in 7 Tagen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σωστές λέξεις σε 7 ημέρες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Верных слов за 7 дней"
+          }
+        }
+      }
+    },
+    "Best week": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beste Woche"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Καλύτερη εβδομάδα"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лучшая неделя"
+          }
+        }
+      }
+    },
+    "Per answer": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro Antwort"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ανά απάντηση"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На ответ"
+          }
+        }
+      }
+    },
+    "Words right, last 7 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richtige Wörter, letzte 7 Tage"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σωστές λέξεις, τελευταίες 7 ημέρες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Верных слов за последние 7 дней"
+          }
+        }
+      }
+    },
+    "Seconds an answer (median)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sekunden pro Antwort (Median)"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δευτερόλεπτα ανά απάντηση (διάμεσος)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Секунд на ответ (медиана)"
+          }
+        }
+      }
+    },
+    "Best 7 days": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beste 7 Tage"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Καλύτερες 7 ημέρες"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лучшие 7 дней"
+          }
+        }
+      }
+    },
+    "Words Right": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richtige Wörter"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σωστές λέξεις"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Верных слов"
+          }
+        }
+      }
+    },
+    "Every word you answered right (Hard, Good or Easy) in the last 7 study days, new or reviewed, counted once; a word answered only Forgot doesn't count. The number to compare with friends.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedes Wort, das du in den letzten 7 Lerntagen richtig beantwortet hast (Schwer, Gut oder Leicht), neu oder wiederholt, einmal gezählt; ein Wort, das nur „Vergessen“ bekam, zählt nicht. Die Zahl zum Vergleichen mit Freunden."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κάθε λέξη που απάντησες σωστά (Δύσκολο, Καλά ή Εύκολο) τις τελευταίες 7 ημέρες μελέτης, νέα ή σε επανάληψη, μετράει μία φορά· μια λέξη που πήρε μόνο «Ξέχασα» δεν μετράει. Ο αριθμός για σύγκριση με φίλους."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каждое слово с верным ответом (Трудно, Хорошо или Легко) за последние 7 учебных дней, новое или на повторении, считается один раз; слово, получившее только «Не вспомнил», не считается. Это число для сравнения с друзьями."
+          }
+        }
+      }
+    },
+    "%@ s": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ s"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ δ"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ с"
           }
         }
       }

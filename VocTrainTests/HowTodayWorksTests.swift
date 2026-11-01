@@ -57,7 +57,7 @@ struct HowTodayWorksTests {
 
     @Test func theRowsAreTheFiguresOfTheObjectsInTheOrderOfTheScreen() throws {
         let content = Self.content()
-        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Swipes", "Options", "FSRS"])
+        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Words Right", "Swipes", "Options", "FSRS"])
         // The first section is three plain sentences, with no rule under them: the ring, Catch Up, Learn 10 New Words.
         let today = content.sections[0]
         #expect(today.footer.isEmpty)
@@ -115,8 +115,11 @@ struct HowTodayWorksTests {
         #expect(words["Gain today"]?.hasPrefix("+") == true)
         #expect(words["Next milestone"] == "500")
 
+        // The words right: none in the fixture's progress, and no time to take a median of.
+        #expect(values(content.sections[6]) == ["Words right, last 7 days": "0", "Seconds an answer (median)": "–", "Best 7 days": "0"])
+
         // The swipes: the gap misses of all that tried, and the sectors in compass degrees in the rule.
-        let swipes = content.sections[6]
+        let swipes = content.sections[7]
         #expect(swipes.rows == [.value(label: "Swipes that sprang back from a gap", value: "3 of 41 today")])
         // They are the constants of `GradeSwipe`, in compass degrees (90 - the code's angle, modulo 360). The setting
         // is off: two sectors and the gaps up and down.
@@ -133,7 +136,7 @@ struct HowTodayWorksTests {
         #expect(!swipes.footer.contains("Easy") && !swipes.footer.contains("Hard"))
 
         // With "Hard and Easy Buttons" on: the four sectors, and the two of a first showing.
-        let four = HowTodayWorks(progress: Self.progress, breakdown: Self.breakdown, memory: Self.memory, swipes: Self.swipes, showsFourButtons: true, decks: []).sections[6]
+        let four = HowTodayWorks(progress: Self.progress, breakdown: Self.breakdown, memory: Self.memory, swipes: Self.swipes, showsFourButtons: true, decks: []).sections[7]
         let fourWay = [
             "Easy \(bearing(GradeSwipe.easyEnd))°–\(bearing(GradeSwipe.goodReach))°",
             "Good \(bearing(GradeSwipe.goodReach))°–\(bearing(-GradeSwipe.goodReach))°",
@@ -148,7 +151,7 @@ struct HowTodayWorksTests {
             #expect(four.footer.contains(sector), "\(sector)")
         }
 
-        let fsrs = content.sections[8]
+        let fsrs = content.sections[9]
         #expect(values(fsrs)["Desired retention"] == Format.percent(0.9))
         #expect(values(fsrs)["Parameters"] == "Default")
         #expect(values(fsrs)["Learning steps"] == "2")
@@ -170,10 +173,10 @@ struct HowTodayWorksTests {
             decks: [HowTodayWorks.DeckInfo(name: nil, options: LearningOptions()), HowTodayWorks.DeckInfo(name: "Greek", options: fitted)])
         #expect(values(content.sections[4]) == ["Days": "5", "Today": "Not yet", "Cards to repair yesterday": "7"])
         // Where nothing is swiped (the Mac) there is no section of swipes.
-        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Options", "FSRS · Deck 1", "FSRS · Greek"])
-        #expect(values(content.sections[7])["Parameters"] == "Default")
-        #expect(values(content.sections[8])["Parameters"] == "Fitted")
-        #expect(values(content.sections[8])["Last automatic fit"] == "None yet")
+        #expect(content.sections.map(\.title) == ["Today", "Today's Plan", "Today's time", "Pace", "Streak", "Words in Memory", "Words Right", "Options", "FSRS · Deck 1", "FSRS · Greek"])
+        #expect(values(content.sections[8])["Parameters"] == "Default")
+        #expect(values(content.sections[9])["Parameters"] == "Fitted")
+        #expect(values(content.sections[9])["Last automatic fit"] == "None yet")
     }
 
     /// The options section says in sentences what the one-line footers of the Options screen leave out: the rules

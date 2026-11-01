@@ -102,10 +102,16 @@ The iPhone starts on Today, the root of a `NavigationStack` (`StartScreen` holds
   - The totals as `FigureTile`s on the page, not in a card, two to a row in an adaptive grid (at least 150 pt wide; one
     column at the accessibility sizes): Days studied, Rings closed (footnote "of 110 days": the days from the first study day
     to today), Words learned, Your ring ("8 min a day" in the ring's indigo, footnote "started at 2.5 min", none while the
-    ring has not moved; `RingSize.value` and `.footnote`). The tiles stand in a `TileGrid`: a row is as tall as its tallest tile,
+    ring has not moved; `RingSize.value` and `.footnote`), Words right (`WordsRight`: the words answered right in the last
+    7 study days, footnote "7 days · 8 sec each" with the median seconds an answer, `Format.seconds`, a tenth under 2 s;
+    "7 days" while no answer has a time). The tiles stand in a `TileGrid`: a row is as tall as its tallest tile,
     which every tile of the row fills, and the gap is 12 pt both ways; on the iPhone the streak card is the first tile of the
-    stack, a gap above them. On the Mac the grouped form keeps a card behind the row: the four figures share it, without tile
+    stack, a gap above them. On the Mac the grouped form keeps a card behind the row: the five figures share it, without tile
     grounds. No ring here: the day's ring is on Today.
+  - **Share Your Week** in the toolbar (`ShareLink`, off while no word is right this week) shares `WeekCard` as a PNG drawn
+    at 3× on white in light (`WeekCardImage`): "Mnemit" and the 7 days' dates, the words right large over "Words right in 7
+    days", "Best week" with a star when this week beats every earlier one (`WordsRight.isBestWeek`), then Day streak (in
+    `Color.streak`), Words learned and Per answer.
   - The calendar, "Last 13 weeks" once there are 13 and "Calendar" before (`WeeksGrid`): rows of seven
     cells, a row per week, the oldest first, Monday to Sunday under the weekday initials; a day is a ring,
     each day its own share of its goal (`DayRecord.ringShare`): a closed day full, and laps past the goal up to
@@ -238,6 +244,8 @@ Progress page (`HowItWorksSheet`), over every deck, each named by its file.
 - **Pace**: seconds for a new card and for another card, each with its source (Durations (n), Gaps (n)
   or Default) and the reviews each done card took.
 - **Streak**: days, whether today is kept, the cards that would repair yesterday.
+- **Words Right**: the words right in the last 7 days, the median seconds an answer, the best 7 days; the footer is the
+  rule (any of Hard, Good or Easy in the last 7 study days, new or reviewed, once; Forgot alone doesn't count).
 - **Words in Memory**: the value to two decimals, at the start of the day, the gain, the next
   milestone.
 - **Swipes** (iPhone only): "Swipes that sprang back from a gap: N of M today" (`SwipeTally`,
@@ -613,7 +621,7 @@ window. `Support/` holds `DeckFolder`, `DeckWebWindow` and `HowTodayWorksLoader`
   as toasts, and the month's sheet (`MonthRecapSheet`) shows on the first open of a month, its See All Progress opening
   Progress. The window reads the folder again when it becomes key and every minute.
 - **Progress page** (`ProgressPage`): the iPhone's `ProgressScreen` over every deck (the streak card, the totals Days studied, Rings
-  closed, Words learned and Your ring sharing one card, the calendar, Medals, the words in memory in the Memory section), with How It Works as a
+  closed, Words learned, Your ring and Words right sharing one card, Share Your Week in the toolbar, the calendar, Medals, the words in memory in the Memory section), with How It Works as a
   sheet (`HowItWorksSheet`, 520 x 640, Done).
 - **A deck's page** (`DeckPage`, `DeckPageContent`): the strip, then the Cards table or the Statistics. The strip holds the
   deck's Today card (`DeckTodayCard`, as the iPhone's deck screen: "4 min" with Due, New and Learning beside it, the time left

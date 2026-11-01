@@ -43,7 +43,7 @@ minutes, a goal sized to their usual day, and a gain they can see grow.
 
 ## 4. The entities
 
-Seven, and only these appear on screen.
+Eight, and only these appear on screen.
 
 | Entity | What it is to the learner | Shown as |
 |---|---|---|
@@ -53,6 +53,7 @@ Seven, and only these appear on screen.
 | **Ring** | how far today is | an arc of the cards done against today's goal, laps past it; never a number |
 | **Streak** | the habit: days in a row | a flame and the days, a line of its own under the ring |
 | **Words learned** | what they keep: words whose Word → Meaning card has left learning | "412 words learned · +12 today" |
+| **Words right** | the week's work, the number to compare with others: the different words answered right in the last 7 days, new or reviewed, each once | a tile in Progress, "184" over "7 days · 8 s each"; the card they share |
 | **Medal** | a moment worth remembering | a toast when earned, a shelf in Progress |
 
 Not entities, never named on Today: minutes (a translation), reviews and answers, rounds and steps, the plan, the goal's
@@ -147,6 +148,9 @@ the log, so today's ring keeps what it counted; an undo still takes back the las
   if due cards remain, Learn 10 New Words if not.
 - **The progress loop (weeks):** words learned and their milestones, the week of rings, the calendar with streak runs and
   laps, medals, and the ring's own size growing with the learner (the tile "Your ring 8 min a day", "started at 2.5 min" under it).
+- **The bragging loop (a week):** words right climb day by day through the first week, then follow the learner's
+  minutes; Share in Progress makes a card of the week (the words right, the seconds an answer, the streak, the words
+  learned, "Best week" when it is one) for a friend, a class or a chat; the friend's own card answers it.
 
 ## 7. Rewards
 
@@ -158,7 +162,8 @@ the log, so today's ring keeps what it counted; an undo still takes back the las
 | Double ring, Triple ring | 2 or 3 laps of the goal, on every day that reaches them | extra, kept rare by the goal's size (§8) |
 | Words learned (10, 50, 100, 250, 500, 1000, then every 1000) | the gain | the newcomer's meta-progression |
 
-Rewards are for consistency and gain, never for volume alone: no medal for cards answered.
+Rewards are for consistency and gain, never for volume alone: no medal for cards answered, and none for words right.
+Words right are for comparing, with others and with the learner's own best week.
 
 ## 8. The goal's size and the laps
 
@@ -187,7 +192,7 @@ Every surface is the entities above and nothing else.
 | **Today** | the date under the title; the Today card: the ring (no number) left, its figures right (Day streak, the next moment with its minutes, Words learned with +today), the week of rings under them, the card opening Progress; the Decks card (rows with minutes or ✓); the button; empty: the ring and "Add the words you are learning.", New Deck, Shared Decks |
 | **The stream** | the card, the stack, the header: ring and the minutes to the next moment; the rests at the moments, with the streak |
 | **A deck** | its Today card: "4 min" as the large value, Due, New and Learning as figures beside it; then Cards (browser with filters), Statistics (tiles Cards, Due, New, Suspended, Remembered Now; the Retention card), Options |
-| **Progress** | the Streak card (flame, days, best); tiles Days studied, Rings closed, Words learned, Your ring (8 min a day, started at 2.5); the calendar card of rings; Medals; Memory; How It Works |
+| **Progress** | the Streak card (flame, days, best); tiles Days studied, Rings closed, Words learned, Your ring (8 min a day, started at 2.5), Words right (7 days, seconds an answer); Share, the week's card; the calendar card of rings; Medals; Memory; How It Works |
 | **Widgets** | medium: the Today card (the ring left, the three figures right); small: the ring, the streak and the sentence under it; lock screen: circular the ring with minutes, rectangular the streak and the sentence beside a small ring, inline "🔥 12 · 2 min" |
 | **Reminders** | "Keep your 12-day streak · 2 min", and at 21:00 while the streak is at stake; the badge "1" while the ring is open |
 | **The Mac** | one window: the same Today, stream, decks and Progress, by keyboard |
@@ -237,6 +242,10 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
   the evening lesson's 20 words go in at the desk and Study These Now puts them first (added the same day, they head the
   queue anyway; the ring decides how many come); the stack runs out at the ring; laps show the extra; tomorrow the words
   come back as reviews.
+- **Any learner, at the end of a week:** Share in Progress: "184 words right this week · 8 s an answer". A newcomer's
+  first week is short of reviews and counts mostly new words; from the second week a minute is worth about as much to a
+  newcomer as to a veteran (real logs: 1.7 words a minute in week 1, 2.0 in weeks 2–4, 2.5–2.6 from week 9). Lying with
+  the buttons earns nothing; tapping through at under 2 s shows in the seconds an answer (`competition-metric.md`).
 - **Anki veteran, the first week:** the import brings cards, history and review times, the new cards in Anki's new-card
   order; the goal starts at their usual day; 2,000 overdue cards read "Finish your reviews · 45 min" after the ring, not a ring
   that can't close; the deck screen shows Anki's counts; New cards/day works as in
@@ -274,7 +283,13 @@ confusion, `ring-streak-design.md` §2), and minutes stay beside the ring as wor
   left or right (Forgot 210°–330°, Good 30°–150°, the rest springs back) and 2, 4, ↑ and ↓ do nothing; with "Hard and Easy
   Buttons" on, later showings draw four and the four directions and keys 1 to 4 give their grades.
 - **Progress totals** are tiles: Days studied, Rings closed ("of 110 days"), Words learned, Your ring ("8 min a day",
-  "started at 2.5 min" under it, nothing while the ring has not moved); words in memory sit in the Memory section.
+  "started at 2.5 min" under it, nothing while the ring has not moved), Words right ("7 days · 8 s each", the median
+  seconds of the week's answers; "7 days" alone before any answer has a time); words in memory sit in the Memory section.
+- **Words right** count a word once in the last 7 study days, today included, if any of its cards got Hard, Good or Easy:
+  a lapse relearned the same day counts, a card answered only Forgot doesn't, and a word held twice (the same Word key) is
+  one. The log gives it, so the imported history of an Anki veteran counts from the day of import. How It Works names
+  the rule, the count, the median seconds and the best 7 days so far. The shared card is an image of the week drawn by
+  the app, the same on both devices; "Best week" stands on it when this week beats every earlier one.
 - **The sentence**, where a figure has no room, without a streak is "Start your streak · 2 min" and, once nothing is
   left, "All done for today".
 - **Text** on every screen is one short sentence in plain words, in en, de, ru and el: what is there or what comes next,

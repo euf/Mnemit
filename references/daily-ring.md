@@ -380,6 +380,18 @@ How the day is measured, and the screen that explains it. Terms with their Russi
   rounded down, the day's gain to a whole number; milestones 50…5000 (`MemoryEstimate.milestones`). Today shows words
   learned, not this number.
 
+## Words right
+
+- `WordsRight` in VocabCore, the tile Words right in Progress, its shared card (`WeekCard`) and a section of How It Works:
+  the words answered right (any grade but Again) on the last 7 study days, today included, each once, paused decks and
+  deleted cards included. `DeckActivity` collects each card's days with a right answer in the same pass that counts the
+  reviews by day (`WordsRight.Answers`); `WordsRight.words(byDay:)` turns cards into words across the decks by
+  `WordKey.groups(of:)`, a card without a key a word of its own; `count(_:endingOn:)` is the union of a window's days.
+- `secondsPerAnswer` is the lower median of the `ReviewLogEntry.duration` of every answer since the window's first day
+  began, `nil` without one. `bestBefore` is the most words right of any window that ended before today, worked out with the
+  days before today and kept in their cache (`DailyProgressCache.Before.bestWordsRight`); `isBestWeek` once this week beats
+  a week that had a word. Nothing is stored; why this number, `competition-metric.md`.
+
 ## How It Works
 
 - `HowTodayWorks` and `HowTodayWorksView` in `Shared/Statistics`: the numbers and rules under the ring

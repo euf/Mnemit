@@ -75,6 +75,14 @@ struct ProgressScreen<Trailing: View>: View {
         }
         .formStyle(.grouped)
         .navigationTitle("Progress")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                ShareLink(item: WeekCardImage(card: WeekCard(progress: progress, calendar: calendar)), preview: SharePreview(Text("My Week in Mnemit"))) {
+                    Label("Share Your Week", systemImage: "square.and.arrow.up")
+                }
+                .disabled(progress.wordsRight.words == 0)
+            }
+        }
     }
 
     // MARK: The streak and the totals
@@ -88,8 +96,8 @@ struct ProgressScreen<Trailing: View>: View {
     }
 
     /// The totals as tiles, two to a row (one column at accessibility sizes) on the page, not inside a card: days studied,
-    /// rings closed of the days since the first, words learned and the ring's size. There is no ring here: the day's ring is
-    /// on Today.
+    /// rings closed of the days since the first, words learned, the ring's size and the words right in the last 7 days with
+    /// the seconds an answer (`WordsRight`). There is no ring here: the day's ring is on Today.
     private var tiles: some View {
         let ring = RingSize(progress)
         return TileGrid(columns: dynamicTypeSize.isAccessibilitySize ? 1 : nil) {
@@ -97,6 +105,9 @@ struct ProgressScreen<Trailing: View>: View {
             total(Text("Rings closed"), Text(ringsClosed, format: .number), footnote: Text("of \(records.count) days"))
             total(Text("Words learned"), Text(progress.learned.words, format: .number))
             total(Text("Your ring"), Text(verbatim: ring.value), unit: Text("min a day"), footnote: ring.footnote.map { Text(verbatim: $0) }, tint: .appAccentText)
+            total(
+                Text("Words right"), Text(progress.wordsRight.words, format: .number),
+                footnote: progress.wordsRight.secondsPerAnswer.map { Text("7 days · \(Format.seconds($0)) each") } ?? Text("7 days"))
         }
     }
 

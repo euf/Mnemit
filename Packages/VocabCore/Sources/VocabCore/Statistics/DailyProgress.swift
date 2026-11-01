@@ -638,13 +638,15 @@ public struct DeckActivity: Sendable {
     /// days the learner studied and nothing more: the ring counts cards
     /// (`done(onDayOf:calendar:)`).
     public let reviewsByDay: [Int: Int]
+    /// The cards answered right by study day, which `WordsRight` counts words from.
+    let rightAnswers: WordsRight.Answers
 
     /// - Parameter historyCache: What the activities of one deck share while it changes, an open document's:
     ///   each keeps the days before today that its change left alone for the next (`DeckHistoryCache`).
     public init(deck: Deck, calendar: StudyCalendar, historyCache: DeckHistoryCache = DeckHistoryCache()) {
         self.deck = deck
         pastCache = historyCache
-        reviewsByDay = Self.reviewsByDay(of: deck, calendar: calendar)
+        (reviewsByDay, rightAnswers) = Self.reviewsByDay(of: deck, calendar: calendar)
     }
 
     /// Whether the learner paused the deck (`LearningOptions.isPaused`): `DailyProgress.evaluate` and
@@ -658,12 +660,15 @@ public struct DeckActivity: Sendable {
     /// Counts the entries of every card's log. A day is looked up once per quarter of an
     /// hour: every time zone's offset, daylight saving time's included, is a multiple of
     /// 15 minutes, so a quarter never straddles the start of a study day, and a log of
-    /// tens of thousands of reviews needs only a few thousand calendar calls.
-    private static func reviewsByDay(of deck: Deck, calendar: StudyCalendar) -> [Int: Int] {
+    /// tens of thousands of reviews needs only a few thousand calendar calls. On the way, the days each card was
+    /// answered right.
+    private static func reviewsByDay(of deck: Deck, calendar: StudyCalendar) -> ([Int: Int], WordsRight.Answers) {
         var counts: [Int: Int] = [:]
+        var right = WordsRight.Answers()
         var dayOfQuarter: [Int: Int] = [:]
         // The reviews of a deleted card were real, too (`Deck.retiredCards`).
-        for card in deck.trainingCards {
+        for (index, card) in deck.trainingCards.enumerated() {
+            var rightDays = Set<Int>()
             for entry in card.log {
                 let quarter = Int((entry.date.timeIntervalSince1970 / 900).rounded(.down))
                 let day: Int
@@ -674,9 +679,22 @@ public struct DeckActivity: Sendable {
                     dayOfQuarter[quarter] = day
                 }
                 counts[day, default: 0] += 1
+                if entry.grade.isRecall, rightDays.insert(day).inserted {
+                    right.byDay[day, default: []].append(index)
+                }
+            }
+            if !rightDays.isEmpty, let key = WordKey(card: card) {
+                right.keys[index] = key
             }
         }
-        return counts
+        return (counts, right)
+    }
+
+    /// The seconds of each answer since `start` that has a time (`ReviewLogEntry.duration`).
+    func answerSeconds(since start: Date) -> [Double] {
+        deck.trainingCards.flatMap { card in
+            card.log.lazy.filter { $0.date >= start }.compactMap { $0.duration.map { $0 / .seconds(1) } }
+        }
     }
 
     /// What the plan still waits for now, on the study day of `now`: `StudySession.counts(for:at:calendar:)`,
@@ -1099,6 +1117,8 @@ public final class DailyProgressCache: @unchecked Sendable {
         var records: [Int: LedgerDay] = [:]
         /// The records that are new or differ from the ledger's, oldest first.
         var updates: [LedgerDay] = []
+        /// The most words right in any 7 days that ended before today (`WordsRight.bestBefore`).
+        var bestWordsRight = 0
     }
 
     private let lock = NSLock()
@@ -1290,6 +1310,8 @@ public struct DailyProgress: Hashable, Sendable {
     /// The words learned across the decks now, and when the day began (`WordsLearned`): whole words, the gain the
     /// app headlines, "+N today" once `shownGain` is not `nil`.
     public var learned: WordsLearned
+    /// The words right in the last 7 study days, with the seconds an answer and the best week before (`WordsRight`).
+    public var wordsRight: WordsRight
     /// The rings of the last seven study days, today last: closed or not, `nil` before the first study day.
     /// Today's is closed once its ring is.
     public var week: [Bool?]
@@ -1318,7 +1340,7 @@ public struct DailyProgress: Hashable, Sendable {
         ring: DailyRing, streak: Streak, cardsLeft: Int = 0, newCardsLeft: Int = 0, pace: Pace = Pace(), time: Double = DailyGoal.initialSeconds,
         roundPlan: DayRounds = DayRounds(otherCards: 0, newCards: 0, pace: Pace(), seconds: DailyGoal.initialSeconds), streakKeptToday: Bool = false,
         newCardAllowances: [Int] = [], memory: MemoryEstimate = MemoryEstimate(words: 0, wordsAtDayStart: 0),
-        learned: WordsLearned = WordsLearned(words: 0, wordsAtDayStart: 0), week: [Bool?] = [],
+        learned: WordsLearned = WordsLearned(words: 0, wordsAtDayStart: 0), wordsRight: WordsRight = WordsRight(), week: [Bool?] = [],
         ladder: [Int] = [], climbedToday: Int = 0, records: [DayRecord] = [], achievements: [Achievement] = [],
         ringDays: [DailyGoal.RingDay] = [], ledgerUpdates: [LedgerDay] = []
     ) {
@@ -1340,6 +1362,7 @@ public struct DailyProgress: Hashable, Sendable {
         self.newCardAllowances = newCardAllowances
         self.memory = memory
         self.learned = learned
+        self.wordsRight = wordsRight
     }
 
     /// The cards left that were not new when the day began.
@@ -1440,6 +1463,7 @@ public struct DailyProgress: Hashable, Sendable {
         }
 
         let wordsByDay = WordsLearned.cumulative(given.flatMap { $0.leftLearning(calendar: calendar) }, from: first, through: today)
+        let rightByDay = WordsRight.words(byDay: given.map(\.rightAnswers))
         // Whether any active deck holds a card to study: without one an empty plan is nobody's doing, an idle day.
         let hasWork = decks.contains(where: \.hasActiveCards)
 
@@ -1478,6 +1502,7 @@ public struct DailyProgress: Hashable, Sendable {
                 if record != ledger.days[day] { before.updates.append(record) }
                 before.records[day] = record
                 before.days.append(record.ringDay)
+                before.bestWordsRight = max(before.bestWordsRight, WordsRight.count(rightByDay, endingOn: day))
             }
             return before
         }
@@ -1558,6 +1583,10 @@ public struct DailyProgress: Hashable, Sendable {
             roundPlan: roundPlan, streakKeptToday: isKeptToday, newCardAllowances: givenAllowances,
             memory: MemoryEstimate.total(given.map { $0.memory(at: now, calendar: calendar) }),
             learned: learned,
+            wordsRight: WordsRight(
+                words: WordsRight.count(rightByDay, endingOn: today),
+                secondsPerAnswer: WordsRight.median(given.flatMap { $0.answerSeconds(since: calendar.start(ofDay: today - WordsRight.days + 1)) }),
+                bestBefore: before.bestWordsRight),
             week: (today - 6...today).map { $0 < first ? nil : closed[$0] ?? false },
             ladder: given.map { $0.ladder() }.reduce(into: [Int](repeating: 0, count: MaturityCategory.allCases.count)) { sum, steps in
                 for index in sum.indices { sum[index] += steps[index] }

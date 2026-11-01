@@ -8,7 +8,7 @@ import VocabCore
 ///
 /// Built into sections of rows that are already text, so a test can compare them and the view only lays
 /// them out. The sections come in the order of the screen: the three sentences, the plan, the day's time, the pace, the
-/// streak, the words in memory, the swipes (where the screen has them: the iPhone), the options (the rules
+/// streak, the words in memory, the words right, the swipes (where the screen has them: the iPhone), the options (the rules
 /// the Options screen only names), then the FSRS settings of each deck. A section's footer is its rule.
 struct HowTodayWorks: Equatable, Sendable {
     enum Row: Equatable, Sendable {
@@ -51,6 +51,7 @@ struct HowTodayWorks: Equatable, Sendable {
                 Self.pace(progress, breakdown),
                 Self.streak(progress),
                 Self.wordsInMemory(memory),
+                Self.wordsRight(progress.wordsRight),
             ] + (swipes.map { [Self.swipes($0, showsFourButtons: showsFourButtons)] } ?? [])
             + [Self.options()]
             + decks.indices.map { Self.fsrs(decks[$0], position: $0, of: decks.count) }
@@ -186,6 +187,18 @@ struct HowTodayWorks: Equatable, Sendable {
         ]
         let footer = String(localized: "The sum of the recall chances of your learned Word → Meaning cards, now.")
         return Section(title: String(localized: "Words in Memory"), rows: rows, footer: footer)
+    }
+
+    private static func wordsRight(_ right: WordsRight) -> Section {
+        let rows: [Row] = [
+            .value(label: String(localized: "Words right, last 7 days"), value: right.words.formatted()),
+            .value(label: String(localized: "Seconds an answer (median)"), value: right.secondsPerAnswer.map { Format.seconds($0) } ?? "–"),
+            .value(label: String(localized: "Best 7 days"), value: right.best.formatted()),
+        ]
+        let footer = String(
+            localized:
+                "Every word you answered right (Hard, Good or Easy) in the last 7 study days, new or reviewed, counted once; a word answered only Forgot doesn't count. The number to compare with friends.")
+        return Section(title: String(localized: "Words Right"), rows: rows, footer: footer)
     }
 
     private static func swipes(_ counts: SwipeTally.Counts, showsFourButtons: Bool) -> Section {

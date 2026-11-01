@@ -629,6 +629,13 @@ enum Format {
         return time.replacingOccurrences(of: " ", with: "\u{00A0}")
     }
 
+    /// The seconds an answer takes, "8 s", with a tenth under 2 s, where tapping through begins ("1.4 s"). The spaces do not
+    /// break.
+    static func seconds(_ seconds: Double) -> String {
+        let value = seconds.formatted(.number.precision(.fractionLength(seconds < 2 ? 1 : 0)))
+        return String(localized: "\(value) s").replacingOccurrences(of: " ", with: "\u{00A0}")
+    }
+
     /// An FSRS difficulty as "5.2 / 10".
     static func difficulty(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(1))) + " / 10"

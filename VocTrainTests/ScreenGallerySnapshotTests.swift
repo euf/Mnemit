@@ -5,8 +5,8 @@ import UIKit
 @testable import VocTrain
 @testable import VocabCore
 
-/// The iPhone screens that the home, browser and study snapshots don't draw, as PNGs for a designer: Progress, all
-/// medals, the month's screen, How It Works, Settings, a deck's statistics and options, the sheets of a deck's
+/// The iPhone screens that the home, browser and study snapshots don't draw, as PNGs for a designer: Progress, the card of
+/// the week it shares, all medals, the month's screen, How It Works, Settings, a deck's statistics and options, the sheets of a deck's
 /// name, where an Anki package goes, and a card's information. The frames are `gallery-<screen>[-state]-<light|dark>.png`
 /// at 375 x 812 pt (an iPhone 13 mini), made by `HomeSnapshotTests.shoot`, so they go to the same directory
 /// (`HOME_SHOTS_DIR`, passed as `TEST_RUNNER_HOME_SHOTS_DIR`). A tall list has a second frame, `-full`, in a window tall
@@ -48,7 +48,7 @@ struct ScreenGallerySnapshotTests {
         }
         return DailyProgress(
             ring: DailyRing(done: 14, goal: 24), streak: Streak(days: streak, repairCards: nil), streakKeptToday: true,
-            learned: WordsLearned(words: 1480, wordsAtDayStart: 1470), ladder: [1240, 210, 340, 515, 402, 188], records: records, achievements: Achievements.earned(over: records))
+            learned: WordsLearned(words: 1480, wordsAtDayStart: 1470), wordsRight: WordsRight(words: 412, secondsPerAnswer: 7.6, bestBefore: 389), ladder: [1240, 210, 340, 515, 402, 188], records: records, achievements: Achievements.earned(over: records))
     }
 
     /// Two days of history: the first medals, and a grey next one in every line.
@@ -91,6 +91,10 @@ struct ScreenGallerySnapshotTests {
     @Test func progressOfALongRun() async throws {
         let progress = Self.longProgress()
         try await shoot("progress-long-run", NavigationStack { ProgressScreen(progress: progress) }, tall: 1700)
+    }
+
+    @Test func weekCard() async throws {
+        try await shoot("week-card", WeekCard(progress: Self.longProgress(), calendar: StudyCalendar()))
     }
 
     @Test func medals() async throws {
