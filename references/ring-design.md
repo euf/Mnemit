@@ -5,7 +5,7 @@ The decision of 23.10.2026 (Mnemit 5.5, the step of T from 5.6) and the measurem
 workload; goal setting and habits; comparable products); the evidence for the day's other decisions is the last section here.
 Measurements, all in `Tools/ring-sim/`: `real.py` (statistics of 2,000 Anki users, `real-stats.md`), `sim.py` (rules for the
 day's time on minutes alone, `minutes.md`), `cards.py` (FSRS-6 cards under each rule: words in memory, backlog, the first two
-weeks).
+weeks; the retention target at a fixed day's time, `retention.md`).
 
 The aim: a newcomer is drawn in over the first two weeks, and an Anki user finds the reviews at least as well kept as in Anki,
 with no settings.
@@ -40,7 +40,7 @@ budget from the learner's behaviour: everyone else asks for it.
 | Lever | How it works | Source | In Mnemit |
 |---|---|---|---|
 | A review limit with new cards under it | When the day's review limit is reached no new card is shown (Anki's default: "New cards ignore review limit" off); with a backlog, stop introducing new cards, as they "can make the backlog worse" | [Anki Manual, Deck Options](https://docs.ankiweb.net/deck-options.html) | The ring: T is the limit in seconds, due cards come first, new cards take what is left |
-| The retention target | The main lever on the load: above 90 % it climbs fast, above 97 % it can overwhelm; the manual's simulator ("Help Me Decide") draws a personal retention-workload graph and asks how many minutes a day one can really spend | same | Fixed per deck (0.9); the ring does not move it |
+| The retention target | The main lever on the load: above 90 % it climbs fast, above 97 % it can overwhelm; the manual's simulator ("Help Me Decide") draws a personal retention-workload graph and asks how many minutes a day one can really spend | same | Per deck, 0.9 by default; the ring does not move it. At the same day's time, 0.80 keeps about 18 % more words in memory after a year than 0.90 (`Tools/ring-sim/retention.md`) |
 | Spreading the load | Anki's built-in load balancer (since 24.11) picks the due day inside the fuzz range by the load of each day; Easy Days lightens chosen weekdays; FSRS Helper adds flatten, postpone and advance | `rslib/src/scheduler/states/load_balancer.rs`; [Anki Forums, 2025](https://forums.ankiweb.net/t/force-load-balancing-with-lots-of-unbalanced-reviews/54894) | Fuzz only, no balancing (measured below) |
 | New cards by a leading signal | New cards are released while the pool of young cards is under a cap | the add-on Limit New by Young (`day-model-research.md`, Part 1 §3) | No |
 | The reason for all of it | A queueing model of the Leitner system shows a sharp phase transition: once new items arrive faster than reviews can serve, learning collapses; a Mechanical Turk experiment confirmed it | Reddy, Labutov, Banerjee, Joachims, KDD 2016, [arXiv:1602.07032](https://arxiv.org/abs/1602.07032) | New cards stay under the time, as above |

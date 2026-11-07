@@ -209,5 +209,6 @@ same-day reviews, desired retention other than SuperMemo's own, or vocabulary-on
    are about half of EF's log.
 3. Keep one parameter set per learner over all decks, as `ParameterRefit` does; no per-deck test.
 4. Choose desired retention after the first fit, from the learner's own retention-workload curve
-   at the day's time. `Tools/ring-sim/cards.py` has the retention loop (80-95 %) but runs on FSRS-6
-   defaults; it needs the fitted parameters as an input.
+   at the day's time: `Tools/ring-sim/cards.py --retention` with `--params`. On default weights and EF's
+   prices, 0.80 keeps about 18 % more words in memory after a year than 0.90 at the same minutes
+   (`Tools/ring-sim/retention.md`).

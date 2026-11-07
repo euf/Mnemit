@@ -8,6 +8,8 @@ rules that size the ring. Where sim.py compares rules on minutes alone, this one
 admit new cards, lets those cards come back as reviews, and scores words in memory.
 Usage: cards.py [--real <revlog folder>] [--seeds 40] [--days 120] [--selftest]
        cards.py --compete --days 168 --sched fuzz: honest learners against liars on the numbers learners could compare
+       cards.py --retention 5 --prices 17 8 --fail 21 [--params <deck.json | .mnemit | 21 weights>]: desired retention 70-95 %
+         for a learner of 5 minutes a day, words in memory after 180 and 365 days (--params: the deck's fitted weights)
 Model, rules and numbers: references/ring-design.md; the comparison: references/competition-metric.md."""
 import argparse, glob, os, warnings
 import numpy as np
@@ -25,8 +27,23 @@ CEIL = 20  # a deck's new-card ceiling a day (newCardsPerSession)
 H = 30  # days ahead that EF's idea 1 reserves for a new card's reviews
 SCHED = 'plain'  # due dates: 'plain' (the interval), 'fuzz' (Mnemit's fuzz, py-fsrs ranges), 'balance' (fuzz + Anki's load balancer)
 SKIP = 0.  # the chance that an open ring makes the learner skip the next day (--skip)
+TR = .9  # desired retention: a card is due when its R falls to TR; at 0.9 the interval is S
+P_FAIL = 0.  # seconds a forgotten review costs on top of P_OTHER, its relearning the same day (--fail)
+
+def set_params(arg):
+    """--params: the 21 FSRS-6 weights of a deck (its deck.json or .mnemit package) or a comma-separated list."""
+    global W, DECAY, FACTOR
+    if os.path.exists(arg):
+        import json
+        with open(os.path.join(arg, 'deck.json') if os.path.isdir(arg) else arg) as f:
+            w = json.load(f)['learningOptions']['parameters']
+    else:
+        w = [float(x) for x in arg.split(',')]
+    assert len(w) == 21, f'{len(w)} weights; FSRS-6 has 21'
+    W = np.array(w, float); DECAY = -W[20]; FACTOR = 0.9 ** (1 / DECAY) - 1
 
 def retr(el, S): return (1 + FACTOR * np.maximum(el, 0) / S) ** DECAY
+def ivl(S): return S / FACTOR * (TR ** (1 / DECAY) - 1)  # days until R falls to TR (unrounded)
 def d0(g): return W[4] - np.exp(W[5] * (g - 1)) + 1
 def dnext(D, g): return np.clip(W[7] * d0(4) + (1 - W[7]) * (D + (10 - D) * (-W[6] * (g - 3)) / 9), 1, 10)
 def sshort(S, g):
@@ -269,7 +286,7 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
     if nv:  # a veteran: 2000 cards learned in Anki, stability lognormal around 30 days, due spread over one interval
         m = vet[:, None] & (ix < np.where(heavy, 4000, 2000)[:, None])
         S[m] = np.exp(np.log(np.where(heavy[:, None], 15, 30) * np.ones((1, N)))[m] + rng.standard_normal(m.sum())); D[m] = rng.uniform(3, 8, m.sum())
-        last[m] = -np.floor(rng.random(m.sum()) * S[m]).astype(int); due[m] = last[m] + np.maximum(1, np.round(S[m])).astype(int)
+        last[m] = -np.floor(rng.random(m.sum()) * S[m]).astype(int); due[m] = last[m] + np.maximum(1, np.round(ivl(S[m]))).astype(int)
         nn[vet] = np.where(heavy[vet], 4000, 2000)
     T, step = rule(B); wasopen = np.zeros(B, bool); avgnew = np.full(B, np.nan)
     if vt0 is not None: T = np.where(np.isnan(vt0), T, vt0)
@@ -321,19 +338,20 @@ def run(rule, comp, Wm, E, vet, rng, size=None, weekly=True, vt0=None, heavy=Non
         closed = st & (ws >= gc - 1e-9)
         bud = np.where(e, ws, np.minimum(ws, gc)) * st
         no = np.where(e, np.minimum(nd, np.floor(bud / P_OTHER + 1e-9)), np.minimum(go, np.floor(bud / P_OTHER + 1e-9)))
-        nw = np.floor(np.maximum(bud - no * P_OTHER, 0) / P_NEW + 1e-9)
-        nw = np.where(e, np.minimum(nw, rem), np.minimum(nw, gn)).astype(int); no = no.astype(int)
+        no = no.astype(int)
         key = np.where(isdue, R, np.inf); thr = np.sort(key, 1)[rows, np.maximum(no - 1, 0)]
         done = isdue & (key <= thr[:, None]) & (no > 0)[:, None]
         ok = done & (rng.random((B, N)) < R)
-        bad = done & ~ok
+        bad = done & ~ok; nb = bad.sum(1)
+        nw = np.floor(np.maximum(bud - no * P_OTHER - nb * P_FAIL, 0) / P_NEW + 1e-9)  # relearning the lapses comes first
+        nw = np.where(e, np.minimum(nw, rem), np.minimum(nw, gn)).astype(int)
         Sn = np.where(ok, srecall(D, S, R), sshort(sforget(D, S, R), 3))
         D = np.where(ok, dnext(D, 3), np.where(bad, dnext(dnext(D, 1), 3), D)); S = np.where(done, Sn, S)
         new = (ix >= nn[:, None]) & (ix < (nn + nw)[:, None]); ag = new & (rng.random((B, N)) < A_NEW)
         S = np.where(new, np.where(ag, sshort(sshort(W[0], 3), 3), sshort(sshort(W[2], 3), 3)), S)
         D = np.where(new, np.where(ag, dnext(dnext(d0(1), 3), 3), dnext(dnext(d0(3), 3), 3)), D)
-        upd = done | new; last = np.where(upd, t, last); due = schedule(t, np.maximum(1, np.round(S)).astype(int), upd, due, intro, rng)
-        nn = nn + nw; wk = no * P_OTHER + nw * P_NEW
+        upd = done | new; last = np.where(upd, t, last); due = schedule(t, np.maximum(1, np.round(ivl(S))).astype(int), upd, due, intro, rng)
+        nn = nn + nw; wk = no * P_OTHER + nb * P_FAIL + nw * P_NEW
         for k, x in (('study', st), ('closed', closed), ('goal', gc), ('worked', wk), ('T', T), ('due', nd),
                      ('overdue', (intro & (due < t)).sum(1)), ('new', nw), ('rev', done.sum(1)), ('ok', ok.sum(1)), ('week', wb & st), ('none', none & st), ('kept', st & (no >= nd)), ('over', np.where(st, np.maximum(nd - go, 0), 0)), ('gn', np.where(st, gn, 0))):
             log[k][:, t] = x
@@ -637,8 +655,31 @@ def compete_report(days=168, seeds=40):
     table(['liar', 'metric'] + [f'week {w}' for w in at], [[g, k] + [eq(med[k][i, w - 1], med[k][:len(hon), w - 1]) for w in at]
                                                           for i, g in enumerate(groups) if g not in hon for k in keys])
 
+def retention_report(minutes, seeds=40, sigma=.6, skip=.07, rates=(.70, .75, .80, .85, .90, .95), horizons=(180, 365)):
+    """Desired retention at a fixed willingness: the chosen ring rule, a learner of `minutes` a day (lognormal with `sigma`, a
+    day skipped with the chance `skip`; EF's log from 22 Oct to 4 Nov 2026: median 4.9 minutes, 13 study days of 14,
+    log-sd about 0.6), who stops at the ring (S) or goes on past it (E). Every rate runs on the same learners and draws.
+    Words in memory: the sum of R over the introduced cards on the last day."""
+    global TR
+    rule, comp, weekly = RULES[next(iter(RULES))]
+    rows = []
+    for days in horizons:
+        rng = np.random.default_rng(311)
+        Wm = minutes * np.exp(sigma * rng.standard_normal((seeds, days))) * (rng.random((seeds, days)) >= skip)
+        for resp in 'SE':
+            E = np.full(Wm.shape, resp == 'E')
+            for TR in rates:
+                log, w, nn = run(rule, comp, Wm, E, np.zeros(seeds, bool), np.random.default_rng(308), weekly=weekly)
+                m = metrics(log, w); ns = np.maximum((log['study'] > 0).sum(1), 1)
+                rows.append([days, resp, f'{TR:.2f}', f"{m['words'].mean():.0f} ± {m['words'].std() / np.sqrt(seeds):.0f}", f'{nn.mean():.0f}',
+                             f"{m['minutes'].mean():.1f}", f"{(log['rev'].sum(1) / ns).mean():.1f}", f"{m['retention'].mean():.3f}", f"{m['closure'].mean():.2f}"])
+    TR = .9
+    table(['days', 'learner', 'retention', 'words in memory', 'new words', 'min/study day', 'reviews/study day', 'recalled', 'rings closed'], rows)
+
 def selftest():
+    global TR
     assert abs(retr(10, 10.) - .9) < 1e-12  # R falls to 0.9 after S days, so the interval at 0.9 is S
+    assert abs(ivl(10.) - 10.) < 1e-9; TR = .8; assert abs(retr(ivl(10.), 10.) - .8) < 1e-12; TR = .9  # due when R reaches TR
     assert abs(sshort(sshort(W[2], 3), 3) - W[2]) < 1e-12  # Good steps keep a Good first answer's stability
     rng = np.random.default_rng(1); Wm = np.full((20, 60), 10.); E = np.zeros_like(Wm, bool)
     log, w, nn = run(tracker(1.075, .775), 'cut', Wm, E, np.zeros(20, bool), rng)
@@ -651,17 +692,20 @@ def selftest():
     print('selftest ok')
 
 def main():
-    global P_NEW, P_OTHER, SKIP
+    global P_NEW, P_OTHER, SKIP, P_FAIL
     ap = argparse.ArgumentParser(); ap.add_argument('--real'); ap.add_argument('--seeds', type=int, default=40)
+    ap.add_argument('--params'); ap.add_argument('--retention', type=float); ap.add_argument('--fail', type=float, default=0.)
     ap.add_argument('--days', type=int, default=120); ap.add_argument('--prices', type=float, nargs=2)
     ap.add_argument('--rules'); ap.add_argument('--skip', type=float, default=0.); ap.add_argument('--resp', default='SE'); ap.add_argument('--sched', default='plain'); ap.add_argument('--selftest', action='store_true'); ap.add_argument('--noos', action='store_true')
     ap.add_argument('--first', action='store_true'); ap.add_argument('--echo', action='store_true'); ap.add_argument('--compete', action='store_true'); a = ap.parse_args()
+    if a.params: set_params(a.params)
     if a.selftest: return selftest()
     if a.noos: return noos()
     if a.first: return first_days()
     if a.echo: return echo()
     if a.prices: P_NEW, P_OTHER = a.prices
-    SKIP = a.skip; global SCHED; SCHED = a.sched
+    SKIP = a.skip; P_FAIL = a.fail; global SCHED; SCHED = a.sched
+    if a.retention: return retention_report(a.retention, a.seeds)
     if a.compete: return compete_report(a.days, a.seeds)
     rng = np.random.default_rng(307)
     Wm, vet, names, scen, size, vt0, heavy, refill, ceil = scenarios(a.seeds, a.days, rng)
