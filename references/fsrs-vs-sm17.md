@@ -129,14 +129,16 @@ It does not contain SM-17 (it points to fsrs-vs-sm15 and fsrs-vs-sm17). **[S]**
 
 ## 7. FSRS-7 availability and size of the change **[S]** unless marked
 
-- `fsrs-rs`: latest release v6.6.2 (crates.io 2026-08-29) has no FSRS-7 files. FSRS-7 is on `main`
+- `fsrs-rs`: latest release v6.6.2 (crates.io 2026-08-29; still the latest GitHub release on
+  2026-11-07) has no FSRS-7 files. FSRS-7 is on `main`
   only (`model_v7.rs`, `training_v7.rs`, `analytic_v7.rs`; `Cargo.toml` still says 6.6.2); on
   2026-09-18 `main` made FSRS-7 the default for empty parameters, and on 2026-09-28/30 training was
   re-aligned with srs-benchmark and parameter pre-training removed. The target is still moving.
 - `py-fsrs` v6.3.2 (2026-08-09): no FSRS-7. `ts-fsrs` stable 5.4.2 is FSRS-6; 6.0.0-beta.15
   (npm `beta`) and `@open-spaced-repetition/binding` 0.5.0 carry FSRS-7 and its optimizer.
-- Anki: on 2026-06-05 a forum moderator wrote that FSRS-7 was not released and had no PR in the
-  Anki repo. State after that date not checked. **[U]**
+- Anki: 26.09.4 (2026-11-04) is the latest release; 26.09 updated FSRS to `fsrs-rs` 6.6.2, i.e.
+  FSRS-6, and no release note from 26.09b1 to 26.09.4 mentions FSRS-7 (GitHub releases of
+  `ankitects/anki`, read 2026-11-07).
 - Model: 34 weights instead of 21; three-part state (slow stability, fast stability, difficulty);
   recall is a state-weighted mixture of two power curves; the next interval has no closed form
   (Newton in log time with a bisection fallback); elapsed time is fractional days; no separate
@@ -165,8 +167,10 @@ measurable from it before it has a held-out check on the learner's own log.
 
 **Newer FSRS.** FSRS-7 with recency is the only FSRS variant that is ahead of FSRS-6 with
 recency by a clear margin (0.0073 log loss against FSRS-rs, 2.1 %, better for 82.7 % of users),
-and the only version that models same-day reviews, which Mnemit's learning steps produce. It is
-not yet a stable port target (section 7).
+and the only version that models same-day reviews, which Mnemit's learning steps produce. Scored
+with same-day reviews, the gap is 0.3206 against 0.3842 for FSRS-6 (section 6), and same-day answers
+are about half of a learner's log in Mnemit: 323 of 661 in EF's four decks from 2026-10-21 to
+2026-11-04. It is not yet a stable port target (section 7).
 
 **When FSRS is worse or better than SM-17.** Better with 1.5k or more reviews and when fitted;
 roughly even with default parameters below about 1.5k reviews; SM-17's RMSE (bins) stays close
@@ -175,24 +179,35 @@ same-day reviews, desired retention other than SuperMemo's own, or vocabulary-on
 
 **Settings.**
 - Few reviews: default FSRS-6 parameters already beat SM-17 in 15 of 19; fitting below about 1.5k
-  reviews gains a median 0.004 log loss. Mnemit's 400-review minimum for offering the optimizer
-  starts fitting where the gain is still within noise, so keep the new parameters only when they
-  score better on a time-split holdout (`FSRSOptimizer.Evaluation` already gives log loss and RMSE).
+  reviews gains a median 0.004 log loss. Mnemit's 400-review minimum starts fitting where the gain
+  is still within noise; `ParameterRefit` keeps a fit only when it beats the current parameters on
+  the newest 20 % of the log by 1.5 standard errors (`references/scheduling.md`, "Automatic FSRS refit").
 - Per deck or pooled: srs-benchmark shows per-deck parameters losing 0.0088 log loss to one
-  parameter set per user (FSRS-7; no FSRS-6 deck row). For two Greek decks of the same learner,
-  about 2,750 cards each, a pooled fit is the default to test first; per-deck only if the holdout
-  says so. Recognition and production behave differently, but that is a per-card-kind question the
-  benchmark does not answer.
+  parameter set per user (FSRS-7; no FSRS-6 deck row). `ParameterRefit` fits one set over all decks
+  of the folder, which is the better side of that comparison. Recognition and production behave
+  differently, but that is a per-card-kind question the benchmark does not answer.
 - Refit cadence: no ablation in either repo. The SM-17 comparison refits online every 64 reviews;
   the Anki manual says once a month is enough. A refit after the first 400 and 1,500 reviews, then
   monthly or every few thousand reviews, fits both.
 - Desired retention 90 % sits near the benchmark's own mean success rate (0.87); the repo says
   nothing about 70-97 %.
+- Desired retention is the setting that moves the learner's time. SSP-MMC-FSRS
+  simulates five years with FSRS default parameters (one user, 10,000 cards, 10 new a day): 30.5
+  minutes a day and 6,881 cards remembered on average at 90 %, 25.6 and 6,676 at 85 %, 22.6 and
+  6,454 at 80 %. Its cost-minimizing policy (SSP-MMC, Ye et al., KDD 2022, on FSRS's model) saves
+  about 10 % of the time at the knowledge of 78-80 %, about 2 % near 88 %, and loses above 92 %.
+  **[S]** <https://github.com/open-spaced-repetition/SSP-MMC-FSRS>, README, read 2026-11-07. The
+  ring fixes the day's time, so the retention target decides how many new words fit in it
+  (`references/ring-design.md`, the levers table).
 
 ## 9. Verdict
 
 1. Keep FSRS-6; drop SM-17/18 as a candidate (16 of 19 and 15 of 19 collections against it).
-2. Do not port FSRS-7 yet: unreleased in fsrs-rs, beta in ts-fsrs, about one to two weeks of work;
-   recheck when `fsrs` on crates.io ships `model_v7` (the gain to expect is about 0.007 log loss).
-3. One cheap change now: score per-deck against pooled parameters on the learner's holdout and
-   keep the better; refit by the cadence above.
+2. Do not port FSRS-7 yet: unreleased in fsrs-rs and Anki, beta in ts-fsrs, about one to two weeks
+   of work; recheck when `fsrs` on crates.io ships `model_v7`. The gain to expect is about 0.007 log
+   loss scored on reviews of later days and 0.064 with same-day reviews scored too; same-day answers
+   are about half of EF's log.
+3. Keep one parameter set per learner over all decks, as `ParameterRefit` does; no per-deck test.
+4. Choose desired retention after the first fit, from the learner's own retention-workload curve
+   at the day's time. `Tools/ring-sim/cards.py` has the retention loop (80-95 %) but runs on FSRS-6
+   defaults; it needs the fitted parameters as an input.
