@@ -107,8 +107,8 @@ The plan of 7.0–7.1 is `references/quality-plan.md`.
    decisions of the day and their evidence"; five to measure on EF's own log):
    - Desired retention: after the first automatic fit (`lastAutoFit` in `deck.json`; 400 usable reviews,
      about 19 Nov 2026 at EF's pace) rerun `Tools/ring-sim/cards.py --retention 5 --prices 17 8 --fail 21
-     --params <deck>`; if 0.80 still keeps the most words in memory short of the flat part below it, set it
-     on EF's decks (`Tools/ring-sim/retention.md`). Until the fit, 0.90: on default weights EF recalls 78.5 %
+     --params <deck>`; if 0.80 still keeps clearly more words in memory than 0.90 (about 18 % on default
+     weights), set 0.80 on EF's decks (`Tools/ring-sim/retention.md`). Until the fit, 0.90: on default weights EF recalls 78.5 %
      of later-day reviews (to 4 Nov).
    - The day's time: at 60 study days count the closed rings in the Progress calendar: a share outside
      0.7-0.85 reopens it.
